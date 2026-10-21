@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
+import ConcurrencyExtensions
 import Foundation
 import SwiftUI
-import Combine
 
 #if canImport(UIKit)
 typealias PlatformFont = UIFont
@@ -294,7 +295,7 @@ enum Metrics {
     let extraView = {
         HStack {
             Spacer()
-            Image("Sync-Desktop-New-128")
+            Image("Desktop-Sync-Passwords-128")
             Spacer()
         }
     }()

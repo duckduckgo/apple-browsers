@@ -339,7 +339,7 @@ let mockBufferBloatTester = MockBufferBloatTester()
 
 ## Requirements
 
-- macOS 11.4+
+- macOS 12.3+
 - Swift 5.0+
 - SwiftUI for UI components
 

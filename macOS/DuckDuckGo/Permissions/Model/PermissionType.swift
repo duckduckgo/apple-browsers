@@ -19,7 +19,7 @@
 import AppKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import PrivacyConfig
 import WebKit
@@ -77,42 +77,43 @@ enum PermissionType: Hashable {
 
 extension PermissionType {
 
+    /// Duck.ai's native voice flow overrides microphone decisions at read time, so permission
+    /// editors hide that row while the override is active. The saved decision is kept for rollback.
+    func isUserEditable(forDomain domain: String, nativeVoiceFlowEnabled: Bool) -> Bool {
+        !(self == .microphone && domain == URL.duckAi.host && nativeVoiceFlowEnabled)
+    }
+
+    func isUserEditable(forDomain domain: String, featureFlagger: FeatureFlagger) -> Bool {
+        isUserEditable(forDomain: domain, nativeVoiceFlowEnabled: featureFlagger.isFeatureOn(.aiChatNativeVoicePermissionFlow))
+    }
+
     static var permissionsUpdatedExternally: [PermissionType] {
         return [.camera, .microphone, .geolocation, .notification]
     }
 
-    func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            switch self {
-            case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy:
-                return true
-            }
-        } else {
-            switch self {
-            case .camera, .microphone, .externalScheme, .popups, .notification, .autoplayPolicy:
-                return true
-            case .geolocation:
-                return false
-            }
+    var canPersistGrantedDecision: Bool {
+        switch self {
+        case .camera, .microphone, .externalScheme, .popups, .geolocation, .notification, .autoplayPolicy:
+            return true
         }
     }
 
-    func canPersistDeniedDecision(featureFlagger: FeatureFlagger) -> Bool {
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            switch self {
-            case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy:
-                return true
-            case .popups:
-                return false
-            }
-        } else {
-            switch self {
-            case .camera, .microphone, .geolocation, .notification, .autoplayPolicy:
-                return true
-            case .popups, .externalScheme:
-                return false
-            }
+    var canPersistDeniedDecision: Bool {
+        switch self {
+        case .camera, .microphone, .geolocation, .externalScheme, .notification, .autoplayPolicy:
+            return true
+        case .popups:
+            return false
         }
+    }
+
+    var editableDecisions: [PersistedPermissionDecision] {
+        // Autoplay's three states are a scale rather than a grant, so they are ordered from most
+        // to least permissive, matching the Website Permissions design.
+        if case .autoplayPolicy = self {
+            return [.allow, .ask, .deny]
+        }
+        return canPersistDeniedDecision ? [.ask, .allow, .deny] : [.ask, .allow]
     }
 
     var isExternalScheme: Bool {
@@ -145,7 +146,7 @@ extension PermissionType {
         case .externalScheme:
             return DesignSystemImages.Glyphs.Size16.openIn
         case .autoplayPolicy:
-            return DesignSystemImages.Glyphs.Size16.videoPlayer
+            return DesignSystemImages.Glyphs.Size16.permissionAutoplay
         }
     }
 
@@ -165,6 +166,23 @@ extension PermissionType {
 
     /// Whether this permission type requires system-level permission to be enabled
     var requiresSystemPermission: Bool {
+        switch self {
+        case .camera, .microphone, .geolocation, .notification:
+            return true
+        case .popups, .externalScheme, .autoplayPolicy:
+            return false
+        }
+    }
+
+    /// Whether the permission center should query the OS-level authorization state for this
+    /// type and surface a "System X disabled" warning when the user has denied access at the
+    /// system level. Decoupled from `requiresSystemPermission` (which gates the two-step
+    /// authorization flow) so we can light up the warning UI without changing the prompt flow.
+    ///
+    /// `.microphone` is *not* included here — duck.ai's mic warning is surfaced via a synthetic
+    /// row built by `PermissionCenterViewModel` and gated behind `aiChatNativeVoicePermissionFlow`,
+    /// so non-duck.ai mic rows keep their previous Permission Center behavior.
+    var surfacesSystemDisabledWarning: Bool {
         switch self {
         case .geolocation, .notification:
             return true

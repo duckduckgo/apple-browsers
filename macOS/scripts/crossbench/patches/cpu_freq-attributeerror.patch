@@ -1,0 +1,12 @@
+diff --git a/crossbench/plt/macos.py b/crossbench/plt/macos.py
+--- a/crossbench/plt/macos.py
++++ b/crossbench/plt/macos.py
+@@ class MacOSPlatform(PosixPlatform):
+       return None
+     try:
+       return super()._cpu_freq()
+-    except (FileNotFoundError, SystemError, RuntimeError) as e:
++    except (AttributeError, FileNotFoundError, SystemError, RuntimeError) as e:
+       # TODO(crbug.com/505086693): Need a workaround to read CPU frequency.
+       logging.debug("psutil.cpu_freq() failed (normal on Apple Silicon): %s", e)
+       return None

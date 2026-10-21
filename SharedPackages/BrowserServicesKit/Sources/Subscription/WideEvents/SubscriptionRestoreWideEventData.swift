@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 public class SubscriptionRestoreWideEventData: WideEventData {
     public static let metadata = WideEventMetadata(
@@ -25,7 +25,7 @@ public class SubscriptionRestoreWideEventData: WideEventData {
         featureName: "subscription-restore",
         mobileMetaType: "ios-subscription-restore",
         desktopMetaType: "macos-subscription-restore",
-        version: "1.0.1"
+        version: "1.1.0"
     )
 
     public static let restoreTimeout: TimeInterval = .minutes(15)

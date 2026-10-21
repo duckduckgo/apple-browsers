@@ -24,20 +24,37 @@ import Suggestions
 final class NewTabPageOmnibarSuggestionsProviderTests: XCTestCase {
 
     private var suggestionContainerMock: SuggestionContainerMock!
+    private var searchPreferencesPersistorMock: MockSearchPreferencesPersistor!
     private var provider: NewTabPageOmnibarSuggestionsProvider!
 
+    @MainActor
     override func setUp() {
         super.setUp()
         suggestionContainerMock = SuggestionContainerMock()
-        provider = NewTabPageOmnibarSuggestionsProvider(suggestionContainer: suggestionContainerMock)
+        searchPreferencesPersistorMock = MockSearchPreferencesPersistor()
+        searchPreferencesPersistorMock.showAutocompleteSuggestions = true
+        provider = makeProvider()
     }
 
     override func tearDown() {
         suggestionContainerMock = nil
+        searchPreferencesPersistorMock = nil
         provider = nil
         super.tearDown()
     }
 
+    @MainActor
+    private func makeProvider() -> NewTabPageOmnibarSuggestionsProvider {
+        NewTabPageOmnibarSuggestionsProvider(
+            suggestionContainer: suggestionContainerMock,
+            searchPreferences: SearchPreferences(
+                persistor: searchPreferencesPersistorMock,
+                windowControllersManager: WindowControllersManagerMock()
+            )
+        )
+    }
+
+    @MainActor
     func testWhenSuggestionsAreReturned_thenSuggestionsAreMappedCorrectly() async {
         suggestionContainerMock.suggestionResultToReturn = SuggestionResult.aSuggestionResult
 
@@ -48,8 +65,22 @@ final class NewTabPageOmnibarSuggestionsProviderTests: XCTestCase {
         XCTAssertEqual(suggestions.localSuggestions.count, 0)
     }
 
+    @MainActor
     func testWhenNoSuggestionsReturned_thenEmptySuggestionsAreReturned() async {
         suggestionContainerMock.suggestionResultToReturn = nil
+
+        let suggestions = await provider.suggestions(for: "duck")
+
+        XCTAssertTrue(suggestions.topHits.isEmpty)
+        XCTAssertTrue(suggestions.duckduckgoSuggestions.isEmpty)
+        XCTAssertTrue(suggestions.localSuggestions.isEmpty)
+    }
+
+    @MainActor
+    func testWhenAutocompleteSuggestionsDisabled_thenEmptySuggestionsAreReturned() async {
+        searchPreferencesPersistorMock.showAutocompleteSuggestions = false
+        provider = makeProvider()
+        suggestionContainerMock.suggestionResultToReturn = SuggestionResult.aSuggestionResult
 
         let suggestions = await provider.suggestions(for: "duck")
 

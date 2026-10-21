@@ -16,12 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Foundation
 import WebKit
 import Combine
 import ContentBlocking
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit
@@ -260,8 +263,6 @@ final class AppContentBlocking {
             switch listName {
             case defaultTDSListName:
                 listType = .tds
-            case DefaultContentBlockerRulesListsSource.Constants.clickToLoadRulesListName:
-                listType = .clickToLoad
             case AdClickAttributionRulesSplitter.blockingAttributionRuleListName(forListNamed: defaultTDSListName):
                 listType = .blockingAttribution
             case AdClickAttributionRulesProvider.Constants.attributedTempRuleListName:

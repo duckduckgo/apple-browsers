@@ -61,16 +61,12 @@ extension VPNUpsellPopoverViewModel {
                 return UserText.pirFeatureTitle
             }
         }
-
-        var subtitle: String? {
-            switch self {
-            case .pir:
-                return "(\(UserText.pirFeatureSubtitle))"
-            default:
-                return nil
-            }
-        }
     }
+}
+
+protocol VPNUpsellDismissing: AnyObject {
+    @MainActor
+    func dismissUpsell()
 }
 
 @MainActor
@@ -79,7 +75,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
 
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
-    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let upsellDismisser: any VPNUpsellDismissing
     private let urlOpener: @MainActor (URL) -> Void
     private let onDismiss: () -> Void
     private let pixelHandler: (SubscriptionPixel) -> Void
@@ -92,7 +88,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
 
     init(subscriptionManager: any SubscriptionManager,
          featureFlagger: FeatureFlagger,
-         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+         upsellDismisser: any VPNUpsellDismissing,
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
@@ -101,7 +97,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
     {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.upsellDismisser = upsellDismisser
         self.urlOpener = urlOpener
         self.onDismiss = onDismiss
         self.pixelHandler = pixelHandler
@@ -146,20 +142,16 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
         pixelHandler(.subscriptionToolbarButtonPopoverProceedButtonClicked)
         onDismiss()
 
-        guard let components = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.vpnUpsell.rawValue),
-              let url = components.url else {
-            // Fallback to original URL
-            let url = subscriptionManager.url(for: .purchase)
-            urlOpener(url)
-            return
-        }
-
+        let origin = SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue
+        let url = SubscriptionURL.purchaseURLComponentsWithOrigin(origin)?.url
+            ?? subscriptionManager.url(for: .purchase)
         urlOpener(url)
+        pixelHandler(.subscriptionOfferScreenImpression(origin: origin))
     }
 
     func dismiss() {
         pixelHandler(.subscriptionToolbarButtonPopoverDismissButtonClicked)
-        vpnUpsellVisibilityManager.dismissUpsell()
+        upsellDismisser.dismissUpsell()
         onDismiss()
     }
 }

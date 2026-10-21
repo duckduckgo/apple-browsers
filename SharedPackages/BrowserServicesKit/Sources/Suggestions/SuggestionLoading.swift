@@ -29,7 +29,7 @@ public protocol SuggestionLoading: AnyObject {
 
 public class SuggestionLoader: SuggestionLoading {
 
-    static let remoteSuggestionsUrl = URL(string: "https://duckduckgo.com/ac/")!
+    public static let remoteSuggestionsURL = URL(string: "https://duckduckgo.com/ac/")!
     static let searchParameter = "q"
     static let isNavParameter = "is_nav"
 
@@ -57,21 +57,17 @@ public class SuggestionLoader: SuggestionLoading {
             return
         }
 
-        // 1) Getting all necessary data
-        let bookmarks = dataSource.bookmarks(for: self)
-        let history = dataSource.history(for: self)
-        let internalPages = dataSource.internalPages(for: self)
-        let openTabs = dataSource.openTabs(for: self)
         var apiResult: APIResult?
         var apiError: Error?
 
+        // 1) Kick off the remote suggestions fetch.
         let shouldLoadSuggestions = shouldLoadSuggestionsForUserInput(query)
 
         let group = DispatchGroup()
         if shouldLoadSuggestions {
             group.enter()
             dataSource.suggestionLoading(self,
-                                         suggestionDataFromUrl: Self.remoteSuggestionsUrl,
+                                         suggestionDataFromUrl: Self.remoteSuggestionsURL,
                                          withParameters: [ Self.searchParameter: query,
                                                            Self.isNavParameter: "1", // Enables is_nav in the JSON response
                                                          ]) { data, error in
@@ -90,7 +86,13 @@ public class SuggestionLoader: SuggestionLoading {
             apiResult = nil
         }
 
-        // 2) Processing it
+        // 2) Gather local data while the autocomplete suggestions request is in-flight.
+        let bookmarks = dataSource.bookmarks(for: self)
+        let history = dataSource.history(for: self)
+        let internalPages = dataSource.internalPages(for: self)
+        let openTabs = dataSource.openTabs(for: self)
+
+        // 3) Processing it
         group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
             guard let self else { return }
             let processor = SuggestionProcessing(platform: dataSource.platform, isUrlIgnored: isUrlIgnored)

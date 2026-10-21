@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import Onboarding
@@ -40,14 +41,25 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         windowControllersManager = WindowControllersManagerMock()
         featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+
+        let fireproofDomains = MockFireproofDomains()
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
         fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),
                                           visualizeFireAnimationDecider: nil,
                                           onboardingContextualDialogsManager: nil,
-                                          fireproofDomains: MockFireproofDomains(),
-                                          faviconManagement: FaviconManagerMock(),
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: dataClearingPreferences,
                                           pixelFiring: nil,
                                           historyProvider: MockHistoryViewDataProvider())
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
@@ -62,6 +74,22 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         windowControllersManager = nil
         fireCoordinator = nil
     }
+
+    // MARK: - Rebranded Onboarding
+
+    func testWhenMakeRebrandedViewThenDialogShownPixelIsFiredForDialogType() {
+        // GIVEN
+        let dialogType = ContextualDialogType.tryASearch
+        let factory = RebrandedContextualDaxDialogsFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
+
+        // WHEN
+        _ = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onManualDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}, onSuggestionPressed: {})
+
+        // THEN
+        XCTAssertEqual(reporter.shownDialog, dialogType)
+    }
+
+    // MARK: - Default Onboarding
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
         // GIVEN
@@ -291,7 +319,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenMakeViewForTryFireButtonAndFireButtonIsPressedThenOnFireButtonPressedActionIsCalled() throws {
+    func testWhenMakeViewForTryFireButtonAndFireButtonIsPressedThenOnFireButtonPressedActionIsCalled() async throws {
         // GIVEN
         var onFireButtonRun = false
         var onDismissRun = false
@@ -308,6 +336,8 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
+        window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
@@ -330,6 +360,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         // WHEN
         window.isVisible = true
         view.viewModel.tryFireButton()
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         // THEN
         XCTAssertTrue(onFireButtonRun)

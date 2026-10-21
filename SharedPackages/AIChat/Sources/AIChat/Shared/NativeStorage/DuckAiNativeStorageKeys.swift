@@ -30,3 +30,16 @@ public struct DuckAiNativeStorageSettings: StoringKeys {
     public let migrationStatus = StorageKey<Data>(DuckAiNativeStorageKeyNames.migrationStatus)
     public let settings = StorageKey<Data>(DuckAiNativeStorageKeyNames.settings)
 }
+
+/// Well-known entry keys that carry a contract with the Duck.ai web app. The direction differs per key.
+public enum DuckAiNativeStorageReservedEntryKeys: String, CaseIterable {
+    /// Native-written, web-read: the web app reconciles deletions it did not itself initiate. Value: `[String]`.
+    case locallyDeletedChatIds
+
+    /// Web-written, native-read. JSON-encoded `String`; decode with `DuckAiUsageSnapshot.make`.
+    case usageLimits
+
+    /// Web-written, native-read: `true` once the web app has shown the file-upload privacy
+    /// disclosure. Native adopts it once and owns the count from then on.
+    case fileUploadDisclaimerShown = "duckaiFileUploadDisclaimerShown"
+}

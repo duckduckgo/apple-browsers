@@ -75,11 +75,11 @@ final class AutoplayPreferences: ObservableObject {
             persistor.autoplayBlockingModeRawValue = autoplayBlockingMode.rawValue
             switch autoplayBlockingMode {
             case .allowAll:
-                PixelKit.fire(GeneralPixel.autoplaySettingAllowAll, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.autoplaySettingAllowAll)
             case .blockAudio:
-                PixelKit.fire(GeneralPixel.autoplaySettingBlockAudio, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.autoplaySettingBlockAudio)
             case .blockAll:
-                PixelKit.fire(GeneralPixel.autoplaySettingBlockAll, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.autoplaySettingBlockAll)
             }
         }
     }

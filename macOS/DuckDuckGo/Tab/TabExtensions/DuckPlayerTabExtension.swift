@@ -18,10 +18,11 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import DuckPlayer
 import Foundation
-import Navigation
+import DDGNavigation
 import PixelKit
 import WebKit
 
@@ -115,6 +116,7 @@ final class DuckPlayerTabExtension {
         if let hostname = url?.host, let script = youtubeOverlayScript {
             if script.messageOriginPolicy.isAllowed(hostname) {
                 duckPlayer.$mode
+                        .removeDuplicates()
                         .dropFirst()
                         .receive(on: DispatchQueue.main)
                         .sink { [weak self] playerMode in
@@ -130,6 +132,7 @@ final class DuckPlayerTabExtension {
             youtubePlayerScript?.isEnabled = true
 
             duckPlayer.$mode
+                .removeDuplicates()
                 .dropFirst()
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self] playerMode in

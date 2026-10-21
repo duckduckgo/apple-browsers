@@ -71,7 +71,7 @@ public final class ScriptletConfigProvider: ScriptletConfigProviding {
         switch extensionType {
         case .adBlockingExtension:
             return .adBlockingExtension
-        case .embedded, .darkReader:
+        case .embedded, .darkReader, .searchToken:
             return nil
         }
     }

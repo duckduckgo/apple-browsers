@@ -34,6 +34,7 @@ final class RetentionTests: XCTestCase {
         let timeMachine: TimeMachine
         let pixelKit: PixelKit
         let dataStorage: AttributedMetricDataStorage
+        let installDateProvider: AttributedMetricInstallDateProvidingMock
         let attributionManager: AttributedMetricManager
 
         func cleanup() {
@@ -60,7 +61,7 @@ final class RetentionTests: XCTestCase {
             appVersion: "1.0.0",
             source: "TESTS",
             defaultHeaders: [:],
-            dailyPixelCalendar: nil,
+            pixelCalendar: nil,
             dateGenerator: timeMachine.now,
             defaults: userDefaults,
             fireRequest: pixelHandler
@@ -73,6 +74,7 @@ final class RetentionTests: XCTestCase {
         )
         let subscriptionProvider = SubscriptionStateProviderMock()
         let settingsProvider = AttributedMetricSettingsProviderMock()
+        let installDateMock = AttributedMetricInstallDateProvidingMock()
 
         let returningUserProvider = AttributedMetricReturningUserProvidingMock()
 
@@ -84,6 +86,7 @@ final class RetentionTests: XCTestCase {
             defaultBrowserProviding: defaultBrowserProvider,
             subscriptionStateProvider: subscriptionProvider,
             returningUserProvider: returningUserProvider,
+            installDateProvider: installDateMock,
             dateProvider: timeMachine,
             settingsProvider: settingsProvider
         )
@@ -94,6 +97,7 @@ final class RetentionTests: XCTestCase {
             timeMachine: timeMachine,
             pixelKit: pixelKit,
             dataStorage: dataStorage,
+            installDateProvider: installDateMock,
             attributionManager: attributionManager
         )
     }
@@ -109,7 +113,7 @@ final class RetentionTests: XCTestCase {
         }
         defer { fixture.cleanup() }
 
-        fixture.dataStorage.installDate = nil
+        fixture.installDateProvider.installDate = nil
         fixture.dataStorage.lastRetentionThreshold = nil
         fixture.attributionManager.processRetention()
 
@@ -127,7 +131,7 @@ final class RetentionTests: XCTestCase {
         }
         defer { fixture.cleanup() }
 
-        fixture.dataStorage.installDate = fixture.timeMachine.now()
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
         fixture.timeMachine.travel(by: .day, value: 1) // Week 1
         fixture.dataStorage.lastRetentionThreshold = .weeks(1)
 
@@ -156,7 +160,7 @@ final class RetentionTests: XCTestCase {
         )
         defer { fixture.cleanup() }
 
-        fixture.dataStorage.installDate = fixture.timeMachine.now()
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
         fixture.timeMachine.travel(by: .day, value: 1) // Week 1
 
         fixture.attributionManager.processRetention()
@@ -187,7 +191,7 @@ final class RetentionTests: XCTestCase {
         )
         defer { fixture.cleanup() }
 
-        fixture.dataStorage.installDate = fixture.timeMachine.now()
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
         fixture.timeMachine.travel(by: .day, value: 29) // Month 2
 
         fixture.attributionManager.processRetention()
@@ -213,7 +217,7 @@ final class RetentionTests: XCTestCase {
         }
         defer { fixture.cleanup() }
 
-        fixture.dataStorage.installDate = fixture.timeMachine.now()
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
         fixture.timeMachine.travel(by: .day, value: 1) // Week 1
 
         fixture.attributionManager.processRetention()
@@ -234,7 +238,7 @@ final class RetentionTests: XCTestCase {
         }
         defer { fixture.cleanup() }
 
-        fixture.dataStorage.installDate = fixture.timeMachine.now()
+        fixture.installDateProvider.installDate = fixture.timeMachine.now()
         fixture.dataStorage.lastRetentionThreshold = nil
 
         fixture.attributionManager.processRetention()

@@ -17,10 +17,11 @@
 //
 
 import Combine
+import CombineExtensions
 import Persistence
 import AppKit
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 public final class SyncDeviceButtonModel: ObservableObject {

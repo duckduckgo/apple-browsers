@@ -19,15 +19,22 @@
 import BrowserServicesKit
 import Combine
 import Common
-import WebKit
+import FoundationExtensions
+import Network
+import PrivacyConfig
 import UserScript
+import WebExtensions
+import WebKit
 
 extension WKWebViewConfiguration {
 
     static var sharedVisitedLinkStore: WKVisitedLinkStoreWrapper?
 
     @MainActor
-    func applyStandardConfiguration(contentBlocking: some ContentBlockingProtocol, burnerMode: BurnerMode, earlyAccessHandlers: [UserScript] = []) {
+    func applyStandardConfiguration(featureFlagger: FeatureFlagger,
+                                    contentBlocking: some ContentBlockingProtocol,
+                                    burnerMode: BurnerMode,
+                                    earlyAccessHandlers: [UserScript] = []) {
         if case .burner(let websiteDataStore) = burnerMode {
             self.websiteDataStore = websiteDataStore
             // Fire Window: disable audio/video item info reporting to macOS Control Center / Lock Screen
@@ -41,13 +48,10 @@ extension WKWebViewConfiguration {
             Self.sharedVisitedLinkStore = self.visitedLinkStore
         }
 
-        allowsAirPlayForMediaPlayback = true
+        applyWebViewProxyIfNeeded()
 
-        if #available(macOS 12.3, *) {
-            preferences.isElementFullscreenEnabled = true
-        } else {
-            preferences[.fullScreenEnabled] = true
-        }
+        allowsAirPlayForMediaPlayback = true
+        preferences.isElementFullscreenEnabled = true
 
         if !NSApp.isSandboxed {
             preferences[.allowsPictureInPictureMediaPlayback] = true
@@ -58,16 +62,18 @@ extension WKWebViewConfiguration {
         preferences.javaScriptCanOpenWindowsAutomatically = true
         preferences.isFraudulentWebsiteWarningEnabled = false
 
+        lazy var duckHandler = DuckURLSchemeHandler(featureFlagger: featureFlagger)
         if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
-            let featureFlagger = NSApp.delegateTyped.featureFlagger
-            setURLSchemeHandler(
-                DuckURLSchemeHandler(featureFlagger: featureFlagger),
-                forURLScheme: URL.NavigationalScheme.duck.rawValue
-            )
+            setURLSchemeHandler(duckHandler, forURLScheme: URL.NavigationalScheme.duck.rawValue)
+        }
+
+        if featureFlagger.isFeatureOn(.debugURLScheme),
+           urlSchemeHandler(forURLScheme: URL.debugURLScheme) == nil {
+            setURLSchemeHandler(duckHandler, forURLScheme: URL.debugURLScheme)
         }
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            self.webExtensionController = webExtensionManager.controller
+            attachWebExtensions(of: webExtensionManager)
         }
 
         let userContentController = UserContentController(assetsPublisher: contentBlocking.contentBlockingAssetsPublisher,
@@ -78,6 +84,21 @@ extension WKWebViewConfiguration {
         self.processPool.geolocationProvider = GeolocationProvider(processPool: self.processPool)
     }
 
+    @MainActor
+    private func applyWebViewProxyIfNeeded() {
+        guard #available(macOS 14.0, *),
+              let proxy = LaunchOptionsHandler().webViewProxy,
+              let port = NWEndpoint.Port(rawValue: proxy.port) else {
+            return
+        }
+        let endpoint = NWEndpoint.hostPort(
+            host: NWEndpoint.Host(proxy.host),
+            port: port
+        )
+        websiteDataStore.proxyConfigurations = [
+            ProxyConfiguration(socksv5Proxy: endpoint)
+        ]
+    }
 }
 
 extension WKPreferences {

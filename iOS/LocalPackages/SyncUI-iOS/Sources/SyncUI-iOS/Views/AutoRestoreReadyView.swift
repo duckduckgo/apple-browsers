@@ -20,7 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
-import UIKit
+import DesignResourcesKitIcons
 
 public struct AutoRestoreReadyView: View {
 
@@ -36,68 +36,57 @@ public struct AutoRestoreReadyView: View {
     }
 
     public var body: some View {
-        UnderflowContainer {
-            VStack(spacing: 0) {
-                HStack {
-                    Button(action: onCancel, label: {
-                        Text(UserText.cancelButton)
-                    })
-                    Spacer()
+        NavigationView {
+            UnderflowContainer {
+                VStack(spacing: 0) {
+                    Image(rebrandable: "Sync-Pending-128")
+                        .padding(20)
+
+                    Text(UserText.autoRestoreReadyTitle)
+                        .daxTitle1()
+                        .multilineTextAlignment(.center)
+                        .padding(.bottom, 12)
+
+                    Text(UserText.autoRestoreReadyDescription)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(Color(designSystemColor: .textPrimary))
                 }
-                .frame(height: 56)
+                .padding(.horizontal, 20)
+                .foregroundStyle(Color(designSystemColor: .textPrimary))
+            } foregroundContent: {
+                VStack(spacing: 8) {
+                    Button {
+                        model.startAutoRestore()
+                    } label: {
+                        Text(UserText.autoRestoreReadyRestoreButton)
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .frame(maxWidth: 360)
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 8)
 
-                Image("Sync-Pending-128")
-                    .padding(20)
-
-                Text(UserText.autoRestoreReadyTitle)
-                    .daxTitle1()
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, 12)
-
-                Text(UserText.autoRestoreReadyDescription)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(Color(designSystemColor: .textPrimary))
+                    Button {
+                        Task { await model.startAutoRestoreSecondaryAction() }
+                    } label: {
+                        Text(UserText.autoRestoreReadyScanCodeLink)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .frame(maxWidth: 360)
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 8)
+                }
             }
-            .padding(.horizontal, 20)
-            .foregroundStyle(Color(designSystemColor: .textPrimary))
-        } foregroundContent: {
-            VStack(spacing: 8) {
-                Button {
-                    model.startAutoRestore()
-                } label: {
-                    Text(UserText.autoRestoreReadyRestoreButton)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: onCancel) {
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+                    }
+                    .accessibilityLabel(UserText.simplifiedScanCloseButton)
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .frame(maxWidth: 360)
-                .padding(.horizontal, 30)
-                .padding(.bottom, 8)
-
-                Button {
-                    model.startAutoRestoreSecondaryAction()
-                } label: {
-                    Text(UserText.autoRestoreReadyScanCodeLink)
-                }
-                .buttonStyle(GhostButtonStyle())
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color(designSystemColor: .accent), lineWidth: 1)
-                        .padding(1)
-                )
-                .frame(maxWidth: 360)
-                .padding(.horizontal, 30)
-                .padding(.bottom, 8)
             }
         }
         .background(Color(designSystemColor: .backgroundSheets))
-        .alert(isPresented: $model.shouldShowPasscodeRequiredAlert) {
-            Alert(
-                title: Text(UserText.syncPasscodeRequiredAlertTitle),
-                message: Text(UserText.syncPasscodeRequiredAlertMessage),
-                dismissButton: .default(Text(UserText.syncPasscodeRequiredAlertGoToSettingsButton), action: {
-                    UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!)
-                    model.shouldShowPasscodeRequiredAlert = false
-                })
-            )
-        }
+        .syncPasscodeRequiredAlert(isPresented: $model.shouldShowPasscodeRequiredAlert)
     }
 }

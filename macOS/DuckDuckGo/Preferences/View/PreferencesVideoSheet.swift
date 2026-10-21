@@ -20,6 +20,7 @@ import AppKit
 import AVFoundation
 import AVKit
 import Common
+import FoundationExtensions
 import os.log
 import SwiftUI
 

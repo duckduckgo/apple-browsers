@@ -19,7 +19,7 @@
 import PixelKit
 import DDGSync
 
-enum SyncFeatureUsagePixels: PixelKitEvent {
+enum SyncFeatureUsagePixels: PixelKit.Event {
     private enum ParameterKeys {
         static let connectedDevices = "connected_devices"
     }
@@ -52,7 +52,192 @@ enum SyncFeatureUsagePixels: PixelKitEvent {
     }
 }
 
-enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
+enum SyncSettingsPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let syncPromptOption = "option"
+        static let isEnabled = "is_enabled"
+    }
+
+    enum AnotherDevicePromptOption: String {
+        case thisDeviceOnly = "this_device_only"
+        case syncAnotherDevice = "sync_another_device"
+    }
+
+    case settingsScreenShown(isSyncEnabled: Bool)
+    case backUpThisDeviceTapped
+    case recoverSyncedDataTapped
+    case recoveryConfirmedTapped
+    case anotherDevicePromptShown
+    case anotherDevicePromptOptionTapped(option: AnotherDevicePromptOption)
+    case syncThisDeviceFallbackShown
+    case syncThisDeviceFallbackSyncTapped
+    case syncThisDeviceFallbackCancelTapped
+    case authenticationCancelledPromptShown
+    case authenticationCancelledPromptRetryTapped
+    case authenticationCancelledPromptDismissed
+    case authenticationCancelledPromptRetrySucceeded
+    case authenticationCancelledPromptRetryFailed
+    case successScreenShown
+    case successScreenCopyCodeTapped
+    case successScreenDownloadRecoveryPDFTapped
+    case successScreenDoneTapped
+    case thisDeviceDetailsScreenShown
+    case thisDeviceDetailsNameUpdated
+    case thisDeviceDetailsTurnOffSyncTapped
+    case otherDeviceDetailsScreenShown
+    case otherDeviceDetailsRemoveDeviceTapped
+    case otherDeviceDetailsRemoveDeviceConfirmed
+
+    var name: String {
+        switch self {
+        case .settingsScreenShown: return "sync_settings_open_mac"
+        case .backUpThisDeviceTapped: return "sync_settings_back_up_this_device_tapped_mac"
+        case .recoverSyncedDataTapped: return "sync_settings_recover_synced_data_tapped_mac"
+        case .recoveryConfirmedTapped: return "sync_settings_recovery_confirmed_tapped_mac"
+        case .anotherDevicePromptShown: return "sync_settings_another_device_prompt_shown_mac"
+        case .anotherDevicePromptOptionTapped: return "sync_settings_another_device_prompt_option_tapped_mac"
+        case .syncThisDeviceFallbackShown: return "sync_settings_sync_this_device_fallback_shown_mac"
+        case .syncThisDeviceFallbackSyncTapped: return "sync_settings_sync_this_device_fallback_sync_tapped_mac"
+        case .syncThisDeviceFallbackCancelTapped: return "sync_settings_sync_this_device_fallback_cancel_tapped_mac"
+        case .authenticationCancelledPromptShown: return "sync_settings_authentication_cancelled_prompt_shown_mac"
+        case .authenticationCancelledPromptRetryTapped: return "sync_settings_authentication_cancelled_prompt_retry_tapped_mac"
+        case .authenticationCancelledPromptDismissed: return "sync_settings_authentication_cancelled_prompt_dismissed_mac"
+        case .authenticationCancelledPromptRetrySucceeded: return "sync_settings_authentication_cancelled_prompt_retry_succeeded_mac"
+        case .authenticationCancelledPromptRetryFailed: return "sync_settings_authentication_cancelled_prompt_retry_failed_mac"
+        case .successScreenShown: return "sync_settings_success_screen_shown_mac"
+        case .successScreenCopyCodeTapped: return "sync_settings_success_screen_copy_code_tapped_mac"
+        case .successScreenDownloadRecoveryPDFTapped: return "sync_settings_success_screen_download_recovery_pdf_tapped_mac"
+        case .successScreenDoneTapped: return "sync_settings_success_screen_done_tapped_mac"
+        case .thisDeviceDetailsScreenShown: return "sync_settings_this_device_details_screen_shown_mac"
+        case .thisDeviceDetailsNameUpdated: return "sync_settings_this_device_details_name_updated_mac"
+        case .thisDeviceDetailsTurnOffSyncTapped: return "sync_settings_this_device_details_turn_off_sync_tapped_mac"
+        case .otherDeviceDetailsScreenShown: return "sync_settings_other_device_details_screen_shown_mac"
+        case .otherDeviceDetailsRemoveDeviceTapped: return "sync_settings_other_device_details_remove_device_tapped_mac"
+        case .otherDeviceDetailsRemoveDeviceConfirmed: return "sync_settings_other_device_details_remove_device_confirmed_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .settingsScreenShown(let isSyncEnabled):
+            return [ParameterKey.isEnabled: isSyncEnabled ? "1" : "0"]
+        case .anotherDevicePromptOptionTapped(let option):
+            return [ParameterKey.syncPromptOption: option.rawValue]
+        default:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
+enum SyncTurnOffPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let option = "option"
+    }
+
+    enum Option: String {
+        case thisDevice = "this_device"
+        case allDevicesAndServerData = "all_devices_and_server_data"
+    }
+
+    case dialogShown
+    case optionSelected(Option)
+    case deleteServerDataConfirmationConfirmed
+    case deleteServerDataConfirmationDismissed
+
+    var name: String {
+        switch self {
+        case .dialogShown: return "sync_turn_off_sheet_shown_mac"
+        case .optionSelected: return "sync_turn_off_option_selected_mac"
+        case .deleteServerDataConfirmationConfirmed: return "sync_delete_server_data_confirmation_confirmed_mac"
+        case .deleteServerDataConfirmationDismissed: return "sync_delete_server_data_confirmation_dismissed_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .optionSelected(let option):
+            return [ParameterKey.option: option.rawValue]
+        case .dialogShown, .deleteServerDataConfirmationConfirmed, .deleteServerDataConfirmationDismissed:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
+enum SyncSetupAuthenticationPixelKitEvent: PixelKit.Event {
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    enum ParameterKey {
+        static let result = "result"
+        static let source = "source"
+    }
+
+    enum Result: String {
+        case succeeded
+        case failed
+        case unconfigured
+
+        init(_ deviceAuthenticationResult: DeviceAuthenticationResult) {
+            switch deviceAuthenticationResult {
+            case .success: self = .succeeded
+            case .failure: self = .failed
+            case .noAuthAvailable: self = .unconfigured
+            }
+        }
+    }
+
+    enum Source: String {
+        case settingsNotSynced = "settings_not_synced"
+        case settingsSynced = "settings_synced"
+        case thisDevice = "this_device"
+        case recover
+    }
+
+    case result(Result, source: Source)
+
+    var name: String {
+        switch self {
+        case .result: return "sync_setup_authentication_result_mac"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .result(let result, let source):
+            return [ParameterKey.result: result.rawValue, ParameterKey.source: source.rawValue]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+}
+
+enum SyncDeviceNamePixel: PixelKit.Event {
+    case computerNameUnavailable
+
+    var namePrefix: PixelKitNamePrefix { .none }
+    var name: String { "sync_computer_name_unavailable_mac" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
+enum SyncSwitchAccountPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
+
     case syncAskUserToSwitchAccount
     case syncUserAcceptedSwitchingAccount
     case syncUserCancelledSwitchingAccount
@@ -88,49 +273,198 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
     }
 }
 
-enum SyncSetupPixelKitEvent: PixelKitEvent {
+enum SyncSetupPixelKitEvent: PixelKit.Event {
+    /// Frozen: these names are already complete. This was `doNotEnforcePrefix: true` repeated at
+    /// every call site that fires this type.
+    var namePrefix: PixelKitNamePrefix { .none }
 
     enum ParameterKey {
         static let source = "source"
+        static let flowVersion = "flow_version"
+        static let myKind = "my_kind"
+        static let codeType = "code_type"
+        static let codeVersion = "code_version"
+        static let path = "path"
+        static let reason = "reason"
+        static let timeoutStage = "timeout_stage"
+        static let peerKind = "peer_kind"
+        static let myRole = "my_role"
+        static let pairingFailureStage = "pairing_failure_stage"
+        static let pairingFailureKind = "pairing_failure_kind"
     }
 
-    case syncSetupBarcodeScreenShown(SyncSetupSource)
-    case syncSetupBarcodeCodeCopied(SyncSetupSource)
-    case syncSetupManualCodeEntryScreenShown
-    case syncSetupManualCodeEnteredSuccess(SyncSetupSource)
-    case syncSetupManualCodeEnteredFailed
-    case syncSetupEndedAbandoned(SyncSetupSource)
-    case syncSetupEndedSuccessful(SyncSetupSource)
+    enum ParameterValue {
+        static let ddg = "ddg"
+        static let recovery = "recovery"
+        static let pairing = "pairing"
+        static let linking = "linking"
+        static let v1 = "v1"
+        static let v2 = "v2"
+        static let v2Point1 = "v2.1"
+        static let alreadyPaired = "already_paired"
+        static let scanningCancelled = "scanning_cancelled"
+        static let syncConfirmationDenied = "sync_confirmation_denied"
+        static let host = "host"
+        static let joiner = "joiner"
+        static let fallback = "fallback"
+    }
+
+    case syncSetupBarcodeScreenShown(SyncSetupSource, flowVersion: String?)
+    case syncSetupBarcodeCodeCopied(SyncSetupSource, flowVersion: String?)
+    case syncSetupManualCodeEntryScreenShown(flowVersion: String?)
+    case syncSetupManualCodeEnteredSuccess(SyncSetupSource, flowVersion: String?, codeVersion: String?)
+    case syncSetupManualCodeEnteredFailed(SyncSetupSource?, flowVersion: String?, reason: String?)
+    case syncSetupEndedAbandoned(SyncSetupSource, flowVersion: String?, reason: String? = nil)
+    case syncSetupEndedFailed(SyncSetupSource?,
+                              flowVersion: String?,
+                              peerKind: String?,
+                              myRole: String?,
+                              reason: String?,
+                              timeoutStage: String?,
+                              pairingV2FailureContext: PairingV2FailureContext?)
+    case syncSetupEndedSuccessful(SyncSetupSource, flowVersion: String?, peerKind: String?, myRole: String?)
+    case syncSetupEndedSuccessfulFromFallback(flowVersion: String?)
 
     var name: String {
         switch self {
-        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
-        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
-        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
-        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
-        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
-        case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown_mac"
+        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied_mac"
+        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown_mac"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success_mac"
+        case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed_mac"
+        case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned_mac"
+        case .syncSetupEndedFailed: return "sync_setup_ended_failed_mac"
+        case .syncSetupEndedSuccessful, .syncSetupEndedSuccessfulFromFallback: return "sync_setup_ended_successful_mac"
         }
     }
 
     var parameters: [String: String]? {
-        guard let source else { return nil }
-        return [ParameterKey.source: source.rawValue]
+        var parameters = [ParameterKey.myKind: ParameterValue.ddg]
+        parameters[ParameterKey.source] = source
+        parameters[ParameterKey.flowVersion] = flowVersion
+        parameters[ParameterKey.codeType] = codeType
+        parameters[ParameterKey.codeVersion] = codeVersion
+        parameters[ParameterKey.path] = path
+        parameters[ParameterKey.reason] = reason
+        parameters[ParameterKey.timeoutStage] = timeoutStage
+        parameters[ParameterKey.peerKind] = peerKind
+        parameters[ParameterKey.myRole] = myRole
+        parameters[ParameterKey.pairingFailureStage] = pairingV2FailureContext?.stage.rawValue
+        parameters[ParameterKey.pairingFailureKind] = pairingV2FailureContext?.kind?.rawValue
+        return parameters
     }
 
-    private var source: SyncSetupSource? {
+    private var source: String? {
         switch self {
         case
-            .syncSetupBarcodeScreenShown(let source),
-            .syncSetupBarcodeCodeCopied(let source),
-            .syncSetupManualCodeEnteredSuccess(let source),
-            .syncSetupEndedAbandoned(let source),
-            .syncSetupEndedSuccessful(let source):
-            return source
+            .syncSetupBarcodeScreenShown(let source, _),
+            .syncSetupBarcodeCodeCopied(let source, _),
+            .syncSetupManualCodeEnteredSuccess(let source, _, _),
+            .syncSetupEndedAbandoned(let source, _, _),
+            .syncSetupEndedSuccessful(let source, _, _, _):
+            return source.rawValue
         case
-            .syncSetupManualCodeEntryScreenShown,
-            .syncSetupManualCodeEnteredFailed:
+            .syncSetupManualCodeEnteredFailed(let source, _, _),
+            .syncSetupEndedFailed(let source, _, _, _, _, _, _):
+            return source?.rawValue
+        case
+            .syncSetupEndedSuccessfulFromFallback:
+            return ParameterValue.fallback
+        case
+            .syncSetupManualCodeEntryScreenShown:
+            return nil
+        }
+    }
+
+    private var flowVersion: String? {
+        switch self {
+        case .syncSetupBarcodeScreenShown(_, let flowVersion),
+                .syncSetupBarcodeCodeCopied(_, let flowVersion),
+                .syncSetupManualCodeEntryScreenShown(let flowVersion),
+                .syncSetupManualCodeEnteredSuccess(_, let flowVersion, _),
+                .syncSetupManualCodeEnteredFailed(_, let flowVersion, _),
+                .syncSetupEndedAbandoned(_, let flowVersion, _),
+                .syncSetupEndedFailed(_, let flowVersion, _, _, _, _, _),
+                .syncSetupEndedSuccessful(_, let flowVersion, _, _),
+                .syncSetupEndedSuccessfulFromFallback(let flowVersion):
+            return flowVersion
+        }
+    }
+
+    private var codeType: String? {
+        switch self {
+        case .syncSetupManualCodeEnteredSuccess(let source, _, _):
+            return source.syncSetupCodeType
+        default:
+            return nil
+        }
+    }
+
+    private var codeVersion: String? {
+        switch self {
+        case .syncSetupManualCodeEnteredSuccess(_, _, let codeVersion):
+            return codeVersion
+        default:
+            return nil
+        }
+    }
+
+    private var path: String? {
+        switch self {
+        case .syncSetupEndedSuccessful(let source, _, _, _):
+            return source.syncSetupPath
+        case .syncSetupEndedFailed(let source, _, _, _, _, _, _):
+            return source?.syncSetupPath
+        default:
+            return nil
+        }
+    }
+
+    private var reason: String? {
+        switch self {
+        case .syncSetupManualCodeEnteredFailed(_, _, let reason),
+                .syncSetupEndedAbandoned(_, _, let reason),
+                .syncSetupEndedFailed(_, _, _, _, let reason, _, _):
+            return reason
+        default:
+            return nil
+        }
+    }
+
+    private var peerKind: String? {
+        switch self {
+        case .syncSetupEndedSuccessful(_, _, let peerKind, _),
+                .syncSetupEndedFailed(_, _, let peerKind, _, _, _, _):
+            return peerKind
+        default:
+            return nil
+        }
+    }
+
+    private var myRole: String? {
+        switch self {
+        case .syncSetupEndedSuccessful(_, _, _, let myRole),
+                .syncSetupEndedFailed(_, _, _, let myRole, _, _, _):
+            return myRole
+        default:
+            return nil
+        }
+    }
+
+    private var timeoutStage: String? {
+        switch self {
+        case .syncSetupEndedFailed(_, _, _, _, _, let timeoutStage, _):
+            return timeoutStage
+        default:
+            return nil
+        }
+    }
+
+    private var pairingV2FailureContext: PairingV2FailureContext? {
+        switch self {
+        case .syncSetupEndedFailed(_, _, _, _, _, _, let pairingV2FailureContext):
+            return pairingV2FailureContext
+        default:
             return nil
         }
     }
@@ -143,8 +477,78 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
                 .syncSetupManualCodeEnteredSuccess,
                 .syncSetupManualCodeEnteredFailed,
                 .syncSetupEndedAbandoned,
-                .syncSetupEndedSuccessful:
+                .syncSetupEndedFailed,
+                .syncSetupEndedSuccessful,
+                .syncSetupEndedSuccessfulFromFallback:
             return [.pixelSource]
         }
+    }
+}
+
+struct SyncJoinReportPixel: PixelKit.Event {
+    let report: PairingV2JoinReport
+
+    var name: String {
+        let outcome = report.didSucceed ? "success" : "failed"
+        return "sync_setup_joiner_recovery_code_done_\(outcome)_mac"
+    }
+
+    var namePrefix: PixelKitNamePrefix { .none }
+
+    var parameters: [String: String]? {
+        ["host_has_account": String(report.hostHasAccount),
+         "host_kind": report.hostKind.rawValue,
+         "joiner_has_account": String(report.joinerHasAccount),
+         "joiner_kind": report.joinerKind.rawValue,
+         "protocol_version": report.protocolVersion]
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { [.pixelSource] }
+}
+
+private extension SyncSetupSource {
+
+    var syncSetupCodeType: String? {
+        switch self {
+        case .recovery:
+            return SyncSetupPixelKitEvent.ParameterValue.recovery
+        case .exchange, .connect:
+            return SyncSetupPixelKitEvent.ParameterValue.linking
+        case .unknown:
+            return nil
+        }
+    }
+
+    var syncSetupPath: String? {
+        switch self {
+        case .recovery:
+            return SyncSetupPixelKitEvent.ParameterValue.recovery
+        case .exchange, .connect:
+            return SyncSetupPixelKitEvent.ParameterValue.pairing
+        case .unknown:
+            return nil
+        }
+    }
+
+}
+
+extension SyncSetupSource {
+
+    var syncSetupMyRole: String? {
+        switch self {
+        case .connect:
+            return SyncSetupPixelKitEvent.ParameterValue.host
+        case .exchange:
+            return SyncSetupPixelKitEvent.ParameterValue.joiner
+        case .recovery, .unknown:
+            return nil
+        }
+    }
+}
+
+extension PairingV2DeviceKind {
+
+    var syncSetupPeerKind: String {
+        rawValue
     }
 }

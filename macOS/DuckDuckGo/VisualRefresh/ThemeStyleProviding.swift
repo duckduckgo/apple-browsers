@@ -18,7 +18,7 @@
 
 import AppKit
 import Combine
-import FeatureFlags
+import FeatureFlags_macOS
 import NetworkProtectionUI
 import DesignResourcesKit
 import PixelKit
@@ -79,22 +79,22 @@ struct ThemeStyle: ThemeStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
+    static func buildThemeStyle(themeName: ThemeName) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger, displaysTabsAnimations: displaysTabsAnimations)
+        return buildThemeStyle(name: themeName, palette: palette)
     }
 
-    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) -> ThemeStyle {
+    private static func buildThemeStyle(name: ThemeName, palette: ThemeColors) -> ThemeStyle {
         ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
-            fireWindowGraphic: .burnerWindowGraphicNew,
-            addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
-            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(displaysTabsAnimations: displaysTabsAnimations),
-            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette, displaysTabsAnimations: displaysTabsAnimations),
-            colorsProvider: NewColorsProviding(palette: palette),
-            iconsProvider: CurrentIconsProvider(),
+            fireWindowGraphic: NSImage(resource: .burnerWindowGraphicNew),
+            addressBarStyleProvider: AddressBarStyleProvidingFactory.buildStyleProvider(),
+            navigationBarStyleProvider: NavigationBarStyleProvidingFactory.buildStyleProvider(),
+            tabStyleProvider: TabStyleProvidingFactory.buildStyleProvider(palette: palette),
+            colorsProvider: ColorsProvidingFactory.buildColorsProvider(palette: palette),
+            iconsProvider: IconsProvidingFactory.buildIconsProvider(),
             fireButtonSize: 32,
             navigationToolbarButtonsSpacing: 2,
             tabBarButtonSize: 30,

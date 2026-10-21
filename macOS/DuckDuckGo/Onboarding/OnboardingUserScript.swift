@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 import UserScript
@@ -44,6 +45,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
         case setDuckAiInAddressBar
         case requestAddToDock
         case requestImport
+        case requestChromeExtensionInstall
         case requestSetAsDefault
         case reportInitException
         case reportPageException
@@ -64,6 +66,7 @@ final class OnboardingUserScript: NSObject, Subfeature {
             .dismissToSettings: dismissToSettings,
             .requestDockOptIn: requestDockOptIn,
             .requestImport: requestImport,
+            .requestChromeExtensionInstall: requestChromeExtensionInstall,
             .requestSetAsDefault: requestSetAsDefault,
             .setBookmarksBar: setBookmarksBar,
             .setSessionRestore: setSessionRestore,
@@ -92,19 +95,19 @@ final class OnboardingUserScript: NSObject, Subfeature {
 extension OnboardingUserScript {
     @MainActor
     private func setInit(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.onboardingStarted()
+        onboardingActionsManager.onboardingStarted(from: original.webView)
         return onboardingActionsManager.configuration
     }
 
     @MainActor
     private func dismissToAddressBar(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.goToAddressBar()
+        onboardingActionsManager.goToAddressBar(from: original.webView)
         return nil
     }
 
     @MainActor
     private func dismissToSettings(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        onboardingActionsManager.goToSettings()
+        onboardingActionsManager.goToSettings(from: original.webView)
         return nil
     }
 
@@ -117,6 +120,12 @@ extension OnboardingUserScript {
     private func requestImport(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let isDataImported = await onboardingActionsManager.importData()
         return OnboardingImportResponse(enabled: isDataImported)
+    }
+
+    @MainActor
+    private func requestChromeExtensionInstall(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        onboardingActionsManager.installChromeExtension()
+        return nil
     }
 
     private func requestSetAsDefault(params: Any, original: WKScriptMessage) async throws -> Encodable? {

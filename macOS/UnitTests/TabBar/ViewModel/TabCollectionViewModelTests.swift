@@ -60,6 +60,101 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertEqual(tabCollectionViewModel.tabs[0].content, .newtab)
     }
 
+    // MARK: - Close lifecycle
+
+    @MainActor
+    func testLockedCloseDoesNotNotifyButForcedCloseDoes() {
+        let sut = TabCollectionViewModel.aTabCollectionViewModel()
+        guard case .loaded(let tab) = sut.tabs[0] else { return XCTFail("Expected loaded tab") }
+        var closes = 0
+        let tabID = tab.uuid
+        tab.onClose = { [weak sut] in
+            XCTAssertTrue(sut?.tabCollection.contains(uuid: tabID) == true)
+            closes += 1
+        }
+        sut.close(at: .unpinned(100))
+        XCTAssertEqual(closes, 0)
+        sut.changesEnabled = false
+        sut.close(at: .unpinned(0))
+        XCTAssertEqual(closes, 0)
+        XCTAssertEqual(sut.tabs.count, 1)
+        sut.close(at: .unpinned(0), forceChange: true)
+        XCTAssertEqual(closes, 1)
+        XCTAssertTrue(sut.tabs.isEmpty)
+    }
+
+    @MainActor
+    func testMovesPinningAndRawRemovalDoNotNotifyClose() {
+        let source = TabCollectionViewModel.aTabCollectionViewModel()
+        let destination = TabCollectionViewModel.aTabCollectionViewModel()
+        guard case .loaded(let tab) = source.tabs[0] else { return XCTFail("Expected loaded tab") }
+        var closes = 0
+        tab.onClose = { closes += 1 }
+
+        source.pinTab(at: 0)
+        XCTAssertEqual(source.pinnedTabs.count, 1)
+        source.unpinTab(at: 0)
+        XCTAssertTrue(source.tabCollection.contains(tab: tab))
+        source.moveTab(at: 0, to: destination, at: 1)
+        XCTAssertFalse(source.tabCollection.contains(tab: tab))
+        XCTAssertTrue(destination.tabCollection.contains(tab: tab))
+        destination.remove(at: .unpinned(1))
+        XCTAssertFalse(destination.tabCollection.contains(tab: tab))
+
+        XCTAssertEqual(closes, 0)
+    }
+
+    @MainActor
+    func testWhenReorderingTabThenWebExtensionMoveIsReportedWithOldIndexAndSameIdentity() {
+        let firstTab = Tab(content: .newtab)
+        let secondTab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let sut = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [firstTab, secondTab]),
+            pinnedTabsManagerProvider: nil)
+        sut.delegate = delegate
+
+        sut.moveTab(at: .unpinned(0), to: .unpinned(1))
+
+        XCTAssertEqual(delegate.webExtensionTabMoves.count, 1)
+        XCTAssertIdentical(delegate.webExtensionTabMoves[0].tab, firstTab)
+        XCTAssertEqual(delegate.webExtensionTabMoves[0].oldIndex, 0)
+    }
+
+    @MainActor
+    func testWhenMovingTabToSameIndexThenWebExtensionMoveIsNotReported() {
+        let tab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let sut = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [tab]),
+            pinnedTabsManagerProvider: nil)
+        sut.delegate = delegate
+
+        sut.moveTab(at: .unpinned(0), to: .unpinned(0))
+
+        XCTAssertTrue(delegate.webExtensionTabMoves.isEmpty)
+        XCTAssertIdentical(sut.tabCollection.loadedTabs.first, tab)
+    }
+
+    @MainActor
+    func testWhenMovingTabToAnotherViewModelThenWebExtensionMoveIsReportedBySource() {
+        let movedTab = Tab(content: .newtab)
+        let delegate = TabCollectionViewModelDelegateMock()
+        let source = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [movedTab]),
+            pinnedTabsManagerProvider: nil)
+        source.delegate = delegate
+        let destination = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [Tab(content: .newtab)]),
+            pinnedTabsManagerProvider: nil)
+
+        source.moveTab(at: .unpinned(0), to: destination, at: .unpinned(1))
+
+        XCTAssertEqual(delegate.webExtensionTabMoves.count, 1)
+        XCTAssertIdentical(delegate.webExtensionTabMoves[0].tab, movedTab)
+        XCTAssertEqual(delegate.webExtensionTabMoves[0].oldIndex, 0)
+    }
+
     // MARK: - Select
 
     @MainActor
@@ -337,11 +432,12 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssert(tab === tabCollectionViewModel.tabViewModel(at: 2)?.tab)
     }
 
-    // Regression tests for APPLE-MACOS-BD7: setting `selectionIndex` from inside
-    // `insert`/`append` publishes `selectedTabViewModel`, which can synchronously
-    // re-enter and call `reloadItems` on the collection view. The delegate must
-    // be notified before that publication so the collection view's item count
-    // stays in sync with the data source.
+    // Regression tests for APPLE-MACOS-BD7 and APPLE-MACOS-D57: setting `selectionIndex`
+    // from inside incremental `insert`/`append` publishes `selectedTabViewModel`, and subscribers
+    // can synchronously re-enter and mutate tabs. The delegate must be notified before that
+    // publication so the collection view's item count stays in sync with the data source.
+    // Cell sizing does not depend on this ordering — the tab bar sizes the incoming tab
+    // from the `index`/`selected` arguments of the delegate call itself.
     @MainActor
     func testWhenInsertWithSelected_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
@@ -382,8 +478,10 @@ final class TabCollectionViewModelTests: XCTestCase {
         cancellable.cancel()
     }
 
+    // Bulk changes reload the whole collection, so the delegate needs the final selection
+    // rather than the incremental-update ordering asserted above.
     @MainActor
-    func testWhenAppendTabsWithSelectLast_ThenDelegateIsNotifiedBeforeSelectionPublishes() {
+    func testWhenAppendTabsWithSelectLast_ThenSelectionPublishesBeforeDelegateIsNotified() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let delegate = TabCollectionViewModelDelegateMock()
         tabCollectionViewModel.delegate = delegate
@@ -398,7 +496,38 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         tabCollectionViewModel.append(tabs: [.loaded(Tab()), .loaded(Tab())], andSelect: true)
 
-        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, true)
+        XCTAssertEqual(didMultipleChangesCalledWhenSelectionPublished, false)
+        XCTAssertTrue(delegate.didMultipleChangesCalled)
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(tabCollectionViewModel.tabCollection.tabs.count - 1))
+        cancellable.cancel()
+    }
+
+    // Regression test for APPLE-MACOS-D57: a `selectedTabViewModel` subscriber inserting a
+    // tab (a queued pop-up reaching `createdChild` while the web view is attached on
+    // selection) must not find the collection view mid-update. Without the ordering above
+    // the nested insert reports one insertion while the model has grown by two, which is
+    // what NSCollectionView raises NSInternalInconsistencyException for.
+    @MainActor
+    func testWhenSelectionSubscriberInsertsAnotherTab_ThenCollectionViewCountStaysInSync() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        let initialCount = tabCollectionViewModel.tabCollection.tabs.count
+        let delegate = ItemCountMirroringDelegateMock(mirroring: tabCollectionViewModel)
+        tabCollectionViewModel.delegate = delegate
+
+        var hasReentered = false
+        let cancellable = tabCollectionViewModel.$selectedTabViewModel
+            .dropFirst()
+            .sink { [weak tabCollectionViewModel] _ in
+                guard !hasReentered, let tabCollectionViewModel else { return }
+                hasReentered = true
+                tabCollectionViewModel.insert(Tab(), at: .unpinned(tabCollectionViewModel.tabCollection.tabs.count), selected: false)
+            }
+
+        tabCollectionViewModel.insert(Tab(), at: .unpinned(0), selected: true)
+
+        XCTAssertTrue(hasReentered, "The selection subscriber never re-entered, so the test proves nothing")
+        XCTAssertEqual(delegate.violations, [])
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, initialCount + 2)
         cancellable.cancel()
     }
 
@@ -470,6 +599,12 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.removeAllTabs(except: 0)
 
         XCTAssertEqual(firstTab, tabCollectionViewModel.selectedTabViewModel.map { .loaded($0.tab) })
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
+        guard case .loaded(let retainedTab) = tabCollectionViewModel.tabCollection.tabs[0],
+              case .loaded(let originalTab) = firstTab else {
+            return XCTFail("Expected the retained tab to stay loaded")
+        }
+        XCTAssertTrue(retainedTab === originalTab)
     }
 
     @MainActor
@@ -484,6 +619,33 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.removeTabs(before: 2)
 
         XCTAssertEqual(tabCollectionViewModel.selectionIndex?.item, 0)
+    }
+
+    @MainActor
+    func testWhenClosingTabsToTheLeftRemovesSelection_ThenUnloadedSurvivorIsMaterialized() throws {
+        for isSuspended in [false, true] {
+            let survivor = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                       isSuspended: isSuspended)
+            let backgroundTab = UnloadedTab(content: .url(.duckDuckGoEmail, credential: nil, source: .pendingStateRestoration))
+            let tabCollection = TabCollection(tabs: [.loaded(Tab(content: .newtab)), .unloaded(survivor), .unloaded(backgroundTab)])
+            let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
+            let delegate = TabCollectionViewModelDelegateMock()
+            vm.delegate = delegate
+
+            XCTAssertNil(vm.tabViewModel(at: 1))
+
+            vm.removeTabs(before: 1)
+
+            XCTAssertEqual(delegate.tabCountsOnReplacement, [3], "Item reload must precede the change in tab count")
+            XCTAssertEqual(delegate.tabCountsOnMultipleChanges, [2])
+            let selectedTab = try XCTUnwrap(vm.selectedTabViewModel?.tab, "Survivor should be materialized (isSuspended: \(isSuspended))")
+            XCTAssertEqual(vm.selectionIndex, .unpinned(0))
+            XCTAssertEqual(vm.tabs.map(\.uuid), [survivor.uuid, backgroundTab.uuid])
+            XCTAssertEqual(selectedTab.uuid, survivor.uuid)
+            XCTAssertEqual(selectedTab.url, .duckDuckGo)
+            XCTAssertIdentical(vm.selectedTabViewModel, vm.tabViewModel(at: 0))
+            if case .unloaded = vm.tabs[1] {} else { XCTFail("Background tab should remain unloaded") }
+        }
     }
 
     @MainActor
@@ -528,6 +690,52 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.removeTabs(after: 0)
 
         XCTAssertEqual(tabCollectionViewModel.selectionIndex?.item, 0)
+    }
+
+    @MainActor
+    func testWhenClosingTabsToTheRightRemovesSelection_ThenUnloadedSurvivorIsMaterialized() throws {
+        for isSuspended in [false, true] {
+            let survivor = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration),
+                                       isSuspended: isSuspended)
+            let backgroundTab = UnloadedTab(content: .url(.duckDuckGoEmail, credential: nil, source: .pendingStateRestoration))
+            let tabCollection = TabCollection(tabs: [.unloaded(backgroundTab), .unloaded(survivor), .loaded(Tab(content: .newtab))])
+            let vm = TabCollectionViewModel(tabCollection: tabCollection, selectionIndex: .unpinned(2), pinnedTabsManagerProvider: nil)
+            let delegate = TabCollectionViewModelDelegateMock()
+            vm.delegate = delegate
+
+            XCTAssertNil(vm.tabViewModel(at: 1))
+
+            vm.removeTabs(after: 1)
+
+            XCTAssertEqual(delegate.tabCountsOnReplacement, [3], "Item reload must precede the change in tab count")
+            XCTAssertEqual(delegate.tabCountsOnMultipleChanges, [2])
+            let selectedTab = try XCTUnwrap(vm.selectedTabViewModel?.tab, "Survivor should be materialized (isSuspended: \(isSuspended))")
+            XCTAssertEqual(vm.selectionIndex, .unpinned(1))
+            XCTAssertEqual(vm.tabs.map(\.uuid), [backgroundTab.uuid, survivor.uuid])
+            XCTAssertEqual(selectedTab.uuid, survivor.uuid)
+            XCTAssertEqual(selectedTab.url, .duckDuckGo)
+            XCTAssertIdentical(vm.selectedTabViewModel, vm.tabViewModel(at: 1))
+            if case .unloaded = vm.tabs[0] {} else { XCTFail("Background tab should remain unloaded") }
+        }
+    }
+
+    @MainActor
+    func testWhenClosingRightTabWithSuspendedLeftTab_ThenItemReloadPrecedesRemoval() throws {
+        let survivor = UnloadedTab(content: .url(.duckDuckGo, credential: nil, source: .ui), isSuspended: true)
+        let tabCollection = TabCollection(tabs: [.unloaded(survivor), .loaded(Tab(content: .newtab))])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, selectionIndex: .unpinned(1), pinnedTabsManagerProvider: nil)
+        let delegate = TabCollectionViewModelDelegateMock()
+        vm.delegate = delegate
+
+        vm.removeTabs(after: 0)
+
+        XCTAssertEqual(delegate.tabCountsOnReplacement, [2], "Reloading an item after removal would leave the tab bar's item count out of sync")
+        XCTAssertEqual(delegate.tabCountsOnMultipleChanges, [1])
+        XCTAssertEqual(vm.tabs.map(\.uuid), [survivor.uuid])
+        XCTAssertEqual(vm.selectionIndex, .unpinned(0))
+        let selectedTab = try XCTUnwrap(vm.selectedTabViewModel?.tab)
+        XCTAssertEqual(selectedTab.uuid, survivor.uuid)
+        XCTAssertEqual(selectedTab.url, .duckDuckGo)
     }
 
     @MainActor
@@ -592,7 +800,7 @@ final class TabCollectionViewModelTests: XCTestCase {
 
         // Select and remove childTab2
         tabCollectionViewModel.selectPrevious()
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertEqual(tabCollectionViewModel.selectedTabViewModel?.tab, childTab1)
     }
@@ -650,7 +858,7 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.appendNewTab()
         let selectedTab = tabCollectionViewModel.selectedTabViewModel?.tab
 
-        _ = tabCollectionViewModel.removeSelected()
+        _ = tabCollectionViewModel.closeSelected()
 
         XCTAssertFalse(tabCollectionViewModel.tabCollection.contains(tab: selectedTab!))
     }
@@ -676,6 +884,19 @@ final class TabCollectionViewModelTests: XCTestCase {
         tabCollectionViewModel.duplicateTab(at: .unpinned(0))
 
         XCTAssertEqual(firstTabViewModel?.tab.url, tabCollectionViewModel.tabViewModel(at: 1)?.tab.url)
+    }
+
+    @MainActor
+    func testWhenTabIsDuplicatedThenItsCopyLabelsItsDuckAIChatAsACopy() {
+        let aiChatExtensions = AIChatTabExtensionMock.installForAllTabs()
+        defer { TestTabExtensionsBuilder.shared = .default }
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+
+        tabCollectionViewModel.duplicateTab(at: .unpinned(0))
+
+        let copy = tabCollectionViewModel.tabViewModel(at: 1)?.tab.aiChat as? AIChatTabExtensionMock
+        XCTAssertEqual(copy?.recreationSources, [.tabCopy])
+        XCTAssertEqual(aiChatExtensions.recreationSources, [.tabCopy], "The original tab must not be labelled")
     }
 
     // MARK: - Move
@@ -1076,7 +1297,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testPopupVM_WhenDuplicatingTab_OpensInCorrectLocation() {
+    func testPopupVM_WhenDuplicatingTab_OpensInCorrectLocation() throws {
         // Given: A popup window with a tab that has a parent
         let parentTab = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
         let initialTab = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui), parentTab: parentTab)
@@ -1093,9 +1314,12 @@ final class TabCollectionViewModelTests: XCTestCase {
         // Verify window manager calls
         XCTAssertEqual(windowControllersManager.showTabCalls, [])
         XCTAssertEqual(windowControllersManager.openCalls, [])
-        XCTAssertEqual(windowControllersManager.openTabCalls, [
-            .init(tab: initialTab, parentTab: parentTab, selected: true)
-        ])
+        XCTAssertEqual(windowControllersManager.openTabCalls.count, 1)
+        let openTabCall = try XCTUnwrap(windowControllersManager.openTabCalls.first)
+        XCTAssertFalse(openTabCall.tab === initialTab)
+        XCTAssertEqual(openTabCall.tab.content, initialTab.content.loadedFromCache())
+        XCTAssertEqual(openTabCall.parentTab, parentTab)
+        XCTAssertTrue(openTabCall.selected)
         XCTAssertEqual(windowControllersManager.openWindowCalls, [])
     }
 
@@ -1423,6 +1647,95 @@ final class TabCollectionViewModelTests: XCTestCase {
         XCTAssertNotNil(vm.tabViewModel(at: 1))
         XCTAssertEqual(vm.selectionIndex, .unpinned(1))
     }
+
+    // MARK: - addressBarSharedTextState survives cross-collection moves
+
+    @MainActor
+    func testWhenTabIsMovedToAnotherCollection_addressBarSharedTextStateSurvives() {
+        let source = TabCollectionViewModel.aTabCollectionViewModel()
+        let dest = TabCollectionViewModel.aTabCollectionViewModel()
+        let tab = Tab(content: .newtab)
+        guard let sourceIndex = source.append(tab: tab, selected: true) else {
+            return XCTFail("Failed to append tab to source")
+        }
+
+        tab.addressBarSharedTextState.updateText("hello duck.ai")
+        tab.addressBarSharedTextState.setDuckAIMode(true)
+        tab.addressBarSharedTextState.setAIChatToolMode(.imageGeneration)
+
+        source.moveTab(at: sourceIndex, to: dest, at: 0)
+
+        let movedVM = dest.tabViewModel(at: 0)
+        XCTAssertTrue(movedVM?.tab === tab, "moveTab must reuse the same Tab instance in the destination")
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.text, "hello duck.ai")
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.isInDuckAIMode, true)
+        XCTAssertEqual(movedVM?.addressBarSharedTextState.aiChatToolMode, .imageGeneration)
+    }
+
+    @MainActor
+    func testWhenTabCollectionViewModelIsInitializedWithStatefulTab_tabViewModelExposesSameState() {
+        // Mirrors the WindowsManager.openNewWindow(with: tab) path: a fresh TabCollectionViewModel
+        // is built around a TabCollection that already contains a Tab carrying live omnibar state.
+        let tab = Tab(content: .newtab)
+        tab.addressBarSharedTextState.updateText("draft prompt")
+        tab.addressBarSharedTextState.setDuckAIMode(true)
+        tab.addressBarSharedTextState.setAIChatToolMode(.webSearch)
+
+        let vm = TabCollectionViewModel(
+            tabCollection: TabCollection(tabs: [tab]),
+            pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock()
+        )
+
+        let tabVM = vm.tabViewModel(at: 0)
+        XCTAssertTrue(tabVM?.tab === tab)
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.text, "draft prompt")
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.isInDuckAIMode, true)
+        XCTAssertEqual(tabVM?.addressBarSharedTextState.aiChatToolMode, .webSearch)
+    }
+
+    // MARK: - removeAllTabs(andAppend:)
+
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalled_ThenAllTabsAreReplacedWithTheGivenTab() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.appendNewTab()
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 3)
+
+        let newTab = Tab(content: .newtab)
+        tabCollectionViewModel.removeAllTabs(andAppend: newTab)
+
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1)
+        XCTAssertTrue(tabCollectionViewModel.selectedTabViewModel?.tab === newTab)
+    }
+
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalled_ThenTheAppendedTabIsSelected() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.appendNewTab()
+        tabCollectionViewModel.select(at: .unpinned(2))
+
+        tabCollectionViewModel.removeAllTabs(andAppend: Tab(content: .newtab))
+
+        XCTAssertEqual(tabCollectionViewModel.selectionIndex, .unpinned(0))
+    }
+
+    // The point of this API is to replace the window's tabs in a single batched change, so the tab
+    // bar reloads (didMultipleChanges) rather than animating an insertion (didAppend) followed by a
+    // bulk removal — which is what caused the transient extra tabs during a non-animated burn.
+    @MainActor
+    func testWhenRemoveAllTabsAndAppendCalled_ThenDelegateReceivesMultipleChangesAndNotAppend() {
+        let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
+        tabCollectionViewModel.appendNewTab()
+        let delegate = TabCollectionViewModelDelegateMock()
+        tabCollectionViewModel.delegate = delegate
+
+        tabCollectionViewModel.removeAllTabs(andAppend: Tab(content: .newtab))
+
+        XCTAssertTrue(delegate.didMultipleChangesCalled)
+        XCTAssertFalse(delegate.didAppendCalled)
+    }
 }
 
 fileprivate extension TabCollectionViewModel {
@@ -1431,6 +1744,56 @@ fileprivate extension TabCollectionViewModel {
         let tabCollection = TabCollection()
         let provider = PinnedTabsManagerProvidingMock()
         return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: provider)
+    }
+}
+
+/// Mirrors an `NSCollectionView`'s item count so a test can assert the invariant the real
+/// collection view enforces: the count it already knows about, plus the update it is being
+/// asked to perform, must equal the model's count at that moment.
+@MainActor
+private final class ItemCountMirroringDelegateMock: TabCollectionViewModelDelegate {
+
+    private(set) var violations: [String] = []
+    private var mirroredCount: Int
+
+    /// Seeded like a collection view that has already loaded its data.
+    init(mirroring tabCollectionViewModel: TabCollectionViewModel) {
+        mirroredCount = tabCollectionViewModel.tabCollection.tabs.count
+    }
+
+    func tabCollectionViewModelDidAppend(_ tabCollectionViewModel: TabCollectionViewModel, selected: Bool) {
+        apply(1, in: tabCollectionViewModel, from: "didAppend")
+    }
+
+    func tabCollectionViewModelDidInsert(_ tabCollectionViewModel: TabCollectionViewModel, at index: TabIndex, selected: Bool) {
+        guard index.isUnpinnedTab else { return }
+        apply(1, in: tabCollectionViewModel, from: "didInsert")
+    }
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didRemoveTabAt removalIndex: Int,
+                                andSelectTabAt selectionIndex: Int?) {
+        apply(-1, in: tabCollectionViewModel, from: "didRemove")
+    }
+
+    func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {
+        // The tab bar answers this one with `reloadData`, which resynchronises unconditionally.
+        mirroredCount = tabCollectionViewModel.tabCollection.tabs.count
+    }
+
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didReplaceTabAt index: TabIndex) {}
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didMoveTabAt index: TabIndex, to newIndex: TabIndex) {}
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel,
+                                didMoveTab tab: Tab,
+                                fromWebExtensionIndex oldIndex: Int) {}
+    func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {}
+
+    private func apply(_ change: Int, in tabCollectionViewModel: TabCollectionViewModel, from method: String) {
+        let modelCount = tabCollectionViewModel.tabCollection.tabs.count
+        if mirroredCount + change != modelCount {
+            violations.append("\(method): collection view had \(mirroredCount), model has \(modelCount), \(change) applied")
+        }
+        mirroredCount = modelCount
     }
 }
 

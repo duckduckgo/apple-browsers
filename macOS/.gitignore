@@ -82,3 +82,6 @@ release/
 scripts/assets/loc/*.xliff
 
 PixelDefinitions/pixels/pixel_processing_results
+
+LocalOverrides.xcconfig
+LocalOverridesAppStore.xcconfig

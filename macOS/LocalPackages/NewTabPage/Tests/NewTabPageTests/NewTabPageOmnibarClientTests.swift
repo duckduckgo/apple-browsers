@@ -17,9 +17,12 @@
 //
 
 import AIChat
+import Combine
+import WebKit
 import XCTest
 @testable import NewTabPage
 
+@MainActor
 final class NewTabPageOmnibarClientTests: XCTestCase {
 
     private var suggestionsProvider: MockNewTabPageOmnibarSuggestionsProvider!
@@ -27,6 +30,8 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     private var configProvider: MockNewTabPageOmnibarConfigProvider!
     private var modelsProvider: StubNewTabPageOmnibarModelsProvider!
     private var actionHandler: NewTabPageOmnibarActionsHandling!
+    private var tabsProvider: StubNewTabPageOmnibarTabsProvider!
+    private var subscriptionDialogPresenter: MockNewTabPageOmnibarSubscriptionDialogPresenter!
     private var client: NewTabPageOmnibarClient!
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageOmnibarClient.MessageName>!
@@ -39,11 +44,15 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         configProvider = MockNewTabPageOmnibarConfigProvider()
         modelsProvider = StubNewTabPageOmnibarModelsProvider()
         actionHandler = MockNewTabPageOmnibarActionsHandler()
+        tabsProvider = StubNewTabPageOmnibarTabsProvider()
+        subscriptionDialogPresenter = MockNewTabPageOmnibarSubscriptionDialogPresenter()
         client = NewTabPageOmnibarClient(configProvider: configProvider,
                                          suggestionsProvider: suggestionsProvider,
                                          aiChatsProvider: aiChatsProvider,
                                          modelsProvider: modelsProvider,
-                                         actionHandler: actionHandler)
+                                         actionHandler: actionHandler,
+                                         tabsProvider: tabsProvider,
+                                         subscriptionDialogPresenter: subscriptionDialogPresenter)
 
         userScript = NewTabPageUserScript()
         messageHelper = .init(userScript: userScript)
@@ -59,28 +68,98 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         configProvider.isAIChatShortcutEnabled = true
         configProvider.isAIChatSettingVisible = false
         configProvider.isWebSearchEnabled = true
+        configProvider.isCustomizeResponsesEnabled = true
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.mode, configProvider.mode)
         XCTAssertEqual(config.enableAi, configProvider.isAIChatShortcutEnabled)
         XCTAssertEqual(config.showAiSetting, configProvider.isAIChatSettingVisible)
         XCTAssertEqual(config.enableWebSearch, configProvider.isWebSearchEnabled)
+        XCTAssertEqual(config.enableCustomizeResponses, configProvider.isCustomizeResponsesEnabled)
+    }
+
+    @MainActor
+    func testGetConfigIncludesCustomizeResponsesStateFromProvider() async throws {
+        configProvider.customizeResponsesStateResult = .init(subLabel: "Professional", hasCustomization: true, active: true)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.hasCustomization, true)
+        XCTAssertEqual(config.customizationActive, true)
+        XCTAssertEqual(config.customizeSubLabel, "Professional")
+    }
+
+    @MainActor
+    func testGetConfigIncludesRequiresAiTermsAcceptanceFromProvider() async throws {
+        configProvider.requiresAiTermsAcceptance = true
+        var config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.requiresAiTermsAcceptance, true)
+
+        configProvider.requiresAiTermsAcceptance = false
+        config = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.requiresAiTermsAcceptance, false)
+    }
+
+    @MainActor
+    func testGetConfigIncludesFreeTrialEligibilityFromProvider() async throws {
+        modelsProvider.isEligibleForFreeTrial = true
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.isEligibleForFreeTrial, true)
+    }
+
+    /// The web omnibar sends no focus message, so entering Duck.ai mode is the read trigger.
+    @MainActor
+    func testUsageLimitsAreReadOnlyWhenTheOmnibarIsInDuckAiMode() async throws {
+        configProvider.mode = .search
+        var config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.mode, .search)
+        XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 0)
+
+        configProvider.mode = .ai
+        config = try await messageHelper.handleMessage(named: .getConfig)
+        XCTAssertEqual(config.mode, .ai)
+        XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 1)
+    }
+
+    /// NTP reuses one webview per window rather than a fresh one per "new tab", so an already-open
+    /// tab relies on this refetch to notice a subscription purchase completing.
+    @MainActor
+    func testWhenModelsProviderSignalsChangeThenModelsAreRefetched() async throws {
+        let expectation = expectation(description: "modelsRefetched")
+        modelsProvider.onFetch = { expectation.fulfill() }
+
+        modelsProvider.modelsDidChangeSubject.send(())
+
+        await fulfillment(of: [expectation], timeout: 1)
     }
 
     // MARK: - setConfig
 
     @MainActor
     func testSetConfigUpdatesModeAndSettings() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: false, showAiSetting: true, showCustomizePopover: true, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.mode, .ai)
         XCTAssertEqual(configProvider.isAIChatShortcutEnabled, false)
         XCTAssertEqual(configProvider.isAIChatSettingVisible, true)
+        XCTAssertEqual(configProvider.refreshUsageLimitsCallCount, 1)
+    }
+
+    /// The web echoes its whole config back, so a stale `true` (or a forged `false`) must change nothing.
+    @MainActor
+    func testWhenSetConfigEchoesRequiresAiTermsAcceptanceThenItIsIgnored() async throws {
+        configProvider.requiresAiTermsAcceptance = true
+        var newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+        newConfig.requiresAiTermsAcceptance = false
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertTrue(configProvider.requiresAiTermsAcceptance)
     }
 
     @MainActor
     func testWhenSetConfigWithSelectedModelIdThenModelIdIsPersisted() async throws {
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
         XCTAssertEqual(configProvider.selectedModelId, "gpt-4o-mini")
     }
@@ -89,11 +168,11 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     func testWhenSetConfigWithSelectedModelIdThenShortNameIsCachedFromModelsProvider() async throws {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
-                NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isEnabled: true, supportsImageUpload: false, supportedTools: []),
-                NewTabPageDataModel.AIModelItem(id: "maverick", name: "Maverick", shortName: "Maverick", isEnabled: true, supportsImageUpload: false, supportedTools: [])
+                NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isAvailable: true, supportsImageUpload: false, supportedTools: []),
+                NewTabPageDataModel.AIModelItem(id: "maverick", name: "Maverick", shortName: "Maverick", isAvailable: true, supportsImageUpload: false, supportedTools: [])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "maverick", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "maverick", aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -106,10 +185,10 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         configProvider.selectedModelShortName = "StaleName"
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
-                NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isEnabled: true, supportsImageUpload: false, supportedTools: [])
+                NewTabPageDataModel.AIModelItem(id: "gpt-4o-mini", name: "GPT-4o mini", shortName: "G4m", isAvailable: true, supportsImageUpload: false, supportedTools: [])
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "brand-new-model", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "brand-new-model", aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -125,7 +204,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = nil
 
         // When — web echoes back the same id (typical on launch)
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil)
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "gpt-4o-mini", aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
         // Then — cached short name is preserved (not wiped by a failed lookup)
@@ -136,19 +215,19 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     // MARK: - reasoning effort (getConfig / notifyConfigUpdated)
 
     @MainActor
-    func testWhenReasoningEffortDisabledThenSupportedReasoningEffortStrippedInGetConfig() async throws {
+    func testWhenReasoningEffortDisabledThenReasoningEffortsStrippedInGetConfig() async throws {
         configProvider.isReasoningEffortEnabled = false
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["none", "low", "medium"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["none", "low", "medium"]))
             ])
         ]
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedReasoningEffort, [])
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts, [])
     }
 
     @MainActor
@@ -157,9 +236,9 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
+                                                 isAvailable: true, supportsImageUpload: false,
                                                  supportedTools: ["WebSearch"],
-                                                 supportedReasoningEffort: ["none", "low", "medium"])
+                                                 reasoningEfforts: availableEfforts(["none", "low", "medium"]))
             ])
         ]
 
@@ -169,19 +248,58 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenReasoningEffortEnabledThenSupportedReasoningEffortPreservedInGetConfig() async throws {
-        configProvider.isReasoningEffortEnabled = true
+    func testWhenReasoningEffortDisabledThenSupportedFileTypesPreservedInGetConfig() async throws {
+        // Stripping reasoning effort must not also drop supportedFileTypes, or PDF attachment
+        // would be hidden for capable models whenever reasoning effort is off.
+        configProvider.isReasoningEffortEnabled = false
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
-                NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["none", "low", "medium"])
+                NewTabPageDataModel.AIModelItem(id: "model", name: "Model", shortName: "M",
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["none", "low"]),
+                                                 supportedFileTypes: ["application/pdf"])
             ])
         ]
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
-        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedReasoningEffort, ["none", "low", "medium"])
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.supportedFileTypes, ["application/pdf"])
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts, [])
+    }
+
+    @MainActor
+    func testWhenReasoningEffortDisabledThenDescriptionPreservedInGetConfig() async throws {
+        // Stripping reasoning effort must not also drop the recommendation label subtitle.
+        configProvider.isReasoningEffortEnabled = false
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "model", name: "Model", shortName: "M",
+                                                 description: "Recommended",
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["none", "low"]))
+            ])
+        ]
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.description, "Recommended")
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts, [])
+    }
+
+    @MainActor
+    func testWhenReasoningEffortEnabledThenReasoningEffortsPreservedInGetConfig() async throws {
+        configProvider.isReasoningEffortEnabled = true
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["none", "low", "medium"]))
+            ])
+        ]
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.aiModelSections?.flatMap(\.items).first?.reasoningEfforts.map(\.id), ["none", "low", "medium"])
     }
 
     @MainActor
@@ -203,11 +321,11 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["none", "low", "medium"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["none", "low", "medium"]))
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low", enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -222,15 +340,82 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "limited-model", name: "Limited", shortName: "L",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["low"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["low"]))
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "limited-model", aiModelSections: nil, selectedReasoningEffort: "medium")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "limited-model", aiModelSections: nil, selectedReasoningEffort: "medium", enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
         XCTAssertEqual(configProvider.selectedReasoningEffort, "low")
+    }
+
+    /// A gated (`isAvailable == false`) effort must be rejected same as an unsupported one — a
+    /// stale web selection from before a tier change shouldn't persist.
+    @MainActor
+    func testWhenSetConfigWithGatedReasoningEffortThenItIsIgnored() async throws {
+        configProvider.isReasoningEffortEnabled = true
+        configProvider.selectedReasoningEffort = "none"
+        configProvider.selectedModelId = "reasoning-model"
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: [
+                                                    NewTabPageDataModel.AIModelReasoningEffort(id: "none", name: "Fast", isAvailable: true),
+                                                    NewTabPageDataModel.AIModelReasoningEffort(id: "medium", name: "Extended Reasoning", isAvailable: false, upsell: "upgrade")
+                                                 ])
+            ])
+        ]
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "medium", enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.selectedReasoningEffort, "none")
+    }
+
+    /// A stale or forged `selectedModelId` shouldn't persist a model the user's tier doesn't grant.
+    @MainActor
+    func testWhenSetConfigWithGatedModelIdThenItIsIgnored() async throws {
+        configProvider.selectedModelId = "free-model"
+        configProvider.selectedModelShortName = "Free"
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "free-model", name: "Free", shortName: "Free",
+                                                 isAvailable: true, supportsImageUpload: false),
+                NewTabPageDataModel.AIModelItem(id: "gated-model", name: "Gated", shortName: "Gated",
+                                                 isAvailable: false, supportsImageUpload: false, upsell: "upgrade")
+            ])
+        ]
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "gated-model", aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertEqual(configProvider.selectedModelId, "free-model")
+        XCTAssertEqual(configProvider.selectedModelShortName, "Free")
+    }
+
+    /// The model-level gate has to win even when the effort's own `isAvailable` is `true`.
+    @MainActor
+    func testWhenSetConfigWithGatedModelIdThenReasoningEffortIsAlsoIgnored() async throws {
+        configProvider.isReasoningEffortEnabled = true
+        configProvider.selectedReasoningEffort = nil
+        configProvider.selectedModelId = "gated-model"
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "gated-model", name: "Gated", shortName: "Gated",
+                                                 isAvailable: false, supportsImageUpload: false,
+                                                 reasoningEfforts: [
+                                                    NewTabPageDataModel.AIModelReasoningEffort(id: "high", name: "Extended Reasoning", isAvailable: true)
+                                                 ], upsell: "upgrade")
+            ])
+        ]
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "gated-model", aiModelSections: nil, selectedReasoningEffort: "high", enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+
+        XCTAssertNil(configProvider.selectedReasoningEffort)
     }
 
     @MainActor
@@ -240,11 +425,11 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["low"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["low"]))
             ])
         ]
-        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low")
+        let newConfig = NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: "reasoning-model", aiModelSections: nil, selectedReasoningEffort: "low", enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
@@ -259,18 +444,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["low", "medium"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["low", "medium"]))
             ])
         ]
         let expectation = expectation(description: "submitChatCalled")
         var forwardedEffort: String?
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort, _, _ in
             forwardedEffort = reasoningEffort
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium", pageContext: nil, files: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
 
@@ -283,21 +468,102 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "limited-model", name: "Limited", shortName: "L",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["low"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["low"]))
             ])
         ]
         let expectation = expectation(description: "submitChatCalled")
         var forwardedEffort: String?
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort, _, _ in
             forwardedEffort = reasoningEffort
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "limited-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "limited-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium", pageContext: nil, files: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
 
+        XCTAssertNil(forwardedEffort)
+    }
+
+    /// A gated effort must be dropped at submit time too, not just at selection time.
+    @MainActor
+    func testWhenSubmitChatWithGatedReasoningEffortThenItIsDropped() async throws {
+        configProvider.isReasoningEffortEnabled = true
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: [
+                                                    NewTabPageDataModel.AIModelReasoningEffort(id: "low", name: "Reasoning", isAvailable: true),
+                                                    NewTabPageDataModel.AIModelReasoningEffort(id: "medium", name: "Extended Reasoning", isAvailable: false, upsell: "upgrade")
+                                                 ])
+            ])
+        ]
+        let expectation = expectation(description: "submitChatCalled")
+        var forwardedEffort: String?
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort, _, _ in
+            forwardedEffort = reasoningEffort
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "medium", pageContext: nil, files: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+
+        XCTAssertNil(forwardedEffort)
+    }
+
+    /// A stale or forged `modelId` shouldn't submit against a model the user's tier doesn't grant.
+    @MainActor
+    func testWhenSubmitChatWithGatedModelIdThenModelIdIsDropped() async throws {
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "gated-model", name: "Gated", shortName: "Gated",
+                                                 isAvailable: false, supportsImageUpload: false, upsell: "upgrade")
+            ])
+        ]
+        let expectation = expectation(description: "submitChatCalled")
+        var forwardedModelId: String?
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, _, _, _, _, _ in
+            forwardedModelId = modelId
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "gated-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+
+        XCTAssertNil(forwardedModelId)
+    }
+
+    /// The model-level gate has to win even when the effort's own `isAvailable` is `true`.
+    @MainActor
+    func testWhenSubmitChatWithGatedModelIdThenReasoningEffortIsAlsoDropped() async throws {
+        configProvider.isReasoningEffortEnabled = true
+        modelsProvider.lastFetchedSections = [
+            NewTabPageDataModel.AIModelSection(header: nil, items: [
+                NewTabPageDataModel.AIModelItem(id: "gated-model", name: "Gated", shortName: "Gated",
+                                                 isAvailable: false, supportsImageUpload: false,
+                                                 reasoningEfforts: [
+                                                    NewTabPageDataModel.AIModelReasoningEffort(id: "high", name: "Extended Reasoning", isAvailable: true)
+                                                 ], upsell: "upgrade")
+            ])
+        ]
+        let expectation = expectation(description: "submitChatCalled")
+        var forwardedModelId: String?
+        var forwardedEffort: String?
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, _, _, reasoningEffort, _, _ in
+            forwardedModelId = modelId
+            forwardedEffort = reasoningEffort
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "gated-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "high", pageContext: nil, files: nil)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+
+        XCTAssertNil(forwardedModelId)
         XCTAssertNil(forwardedEffort)
     }
 
@@ -307,18 +573,18 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         modelsProvider.lastFetchedSections = [
             NewTabPageDataModel.AIModelSection(header: nil, items: [
                 NewTabPageDataModel.AIModelItem(id: "reasoning-model", name: "Reasoning", shortName: "R",
-                                                 isEnabled: true, supportsImageUpload: false,
-                                                 supportedReasoningEffort: ["low"])
+                                                 isAvailable: true, supportsImageUpload: false,
+                                                 reasoningEfforts: availableEfforts(["low"]))
             ])
         ]
         let expectation = expectation(description: "submitChatCalled")
         var forwardedEffort: String?
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, reasoningEffort, _, _ in
             forwardedEffort = reasoningEffort
             expectation.fulfill()
         }
 
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "low")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: "reasoning-model", images: nil, mode: nil, toolChoice: nil, reasoningEffort: "low", pageContext: nil, files: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
 
@@ -384,6 +650,42 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    // MARK: - openPrivacyTerms
+
+    func testOpenPrivacyTermsIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openPrivacyTermsCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openPrivacyTermsHandler = {
+            expectation.fulfill()
+        }
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openPrivacyTerms)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    // MARK: - openCustomizeResponses
+
+    func testOpenCustomizeResponsesIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "openCustomizeResponsesCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openCustomizeResponsesHandler = {
+            expectation.fulfill()
+        }
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openCustomizeResponses)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testSetCustomizeResponsesActiveIsForwardedToHandler() async throws {
+        let expectation = expectation(description: "setCustomizeResponsesActiveCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.setCustomizeResponsesActiveHandler = { active in
+            XCTAssertTrue(active)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SetCustomizeResponsesActiveAction(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setCustomizeResponsesActive, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
     // MARK: - getAiChats
 
     func testGetAiChatsReturnsChatsFromProvider() async throws {
@@ -397,6 +699,37 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         let response: NewTabPageDataModel.AiChatsData = try await messageHelper.handleMessage(named: .getAiChats, parameters: request)
 
         XCTAssertEqual(response, expectedChats)
+    }
+
+    func testGetAiChatsRoundTripsModelField() async throws {
+        let expectedChats = NewTabPageDataModel.AiChatsData(chats: [
+            NewTabPageDataModel.AiChat(chatId: "v", title: "Voice", model: AIChatNativePrompt.voiceMode),
+            NewTabPageDataModel.AiChat(chatId: "i", title: "Image", model: AIChatNativePrompt.imageGenerationMode),
+            NewTabPageDataModel.AiChat(chatId: "t", title: "Text", model: nil)
+        ])
+        aiChatsProvider.aiChatsHandler = { _ in expectedChats }
+
+        let request = NewTabPageDataModel.OmnibarGetAiChatsRequest(query: nil)
+        let response: NewTabPageDataModel.AiChatsData = try await messageHelper.handleMessage(named: .getAiChats, parameters: request)
+
+        XCTAssertEqual(response, expectedChats)
+        XCTAssertEqual(response.chats[0].model, "voice-mode")
+        XCTAssertEqual(response.chats[1].model, "image-generation")
+        XCTAssertNil(response.chats[2].model)
+    }
+
+    func testGetAiChatsOmitsModelKeyWhenNil() async throws {
+        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1")
+        let encoded = try JSONEncoder().encode(chat)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertFalse(json.keys.contains("model"), "Expected `model` key to be absent when nil; got: \(json.keys.sorted())")
+    }
+
+    func testGetAiChatsEncodesModelKeyWhenPresent() async throws {
+        let chat = NewTabPageDataModel.AiChat(chatId: "1", title: "Chat 1", model: AIChatNativePrompt.voiceMode)
+        let encoded = try JSONEncoder().encode(chat)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(json["model"] as? String, "voice-mode")
     }
 
     func testGetAiChatsPassesQueryToProvider() async throws {
@@ -458,7 +791,7 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
     func testSubmitChatIsForwardedToHandler() async throws {
         let expectation = expectation(description: "submitChatCalled")
-        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target, modelId, images, mode, toolChoice, reasoningEffort in
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { chat, target, modelId, images, mode, toolChoice, reasoningEffort, _, _ in
             XCTAssertEqual(chat, "Hello Chat")
             XCTAssertEqual(target, .newWindow)
             XCTAssertEqual(modelId, "gpt-4o-mini")
@@ -470,17 +803,569 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
         }
 
         let image = NewTabPageDataModel.SubmitChatImage(data: "base64data", format: "png")
-        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image], mode: AIChatNativePrompt.imageGenerationMode, toolChoice: ["WebSearch"], reasoningEffort: nil)
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hello Chat", target: .newWindow, modelId: "gpt-4o-mini", images: [image], mode: AIChatNativePrompt.imageGenerationMode, toolChoice: ["WebSearch"], reasoningEffort: nil, pageContext: nil, files: nil)
         try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
         await fulfillment(of: [expectation], timeout: 1)
     }
 
+    func testWhenSubmitChatAcceptsTermsThenAcceptanceIsForwardedToHandler() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.aiTermsAccepted = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.lastSubmitChatAiTermsAccepted, true)
+    }
+
+    func testWhenSubmitChatOmitsTermsAcceptanceThenHandlerIsToldTermsWereNotAccepted() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.lastSubmitChatAiTermsAccepted, false)
+    }
+
+    func testWhenUpdatedCreateImageIsSubmittedThenResolvedImageGenerationModelIsUsed() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.imageGenerationModelId = "preferred-image-model"
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, reasoningEffort, _, _ in
+            XCTAssertEqual(modelId, "preferred-image-model")
+            XCTAssertNil(mode)
+            XCTAssertEqual(toolChoice, [AIChatRAGTool.imageGeneration.rawValue])
+            XCTAssertNil(reasoningEffort)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(
+            chat: "Draw a duck",
+            target: .sameTab,
+            modelId: "unsupported-web-model",
+            images: nil,
+            mode: AIChatNativePrompt.imageGenerationMode,
+            toolChoice: nil,
+            reasoningEffort: "medium",
+            pageContext: nil,
+            files: nil
+        )
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenUpdatedCreateImageHasNoResolvedModelThenSubmissionUsesLegacyModeWithoutWebModel() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.imageGenerationModelId = nil
+        let expectation = expectation(description: "submitChatCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, modelId, _, mode, toolChoice, _, _, _ in
+            XCTAssertNil(modelId)
+            XCTAssertEqual(mode, AIChatNativePrompt.imageGenerationMode)
+            XCTAssertNil(toolChoice)
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.SubmitChatAction(
+            chat: "Draw a duck",
+            target: .sameTab,
+            modelId: "unsupported-web-model",
+            images: nil,
+            mode: AIChatNativePrompt.imageGenerationMode,
+            toolChoice: [AIChatRAGTool.imageGeneration.rawValue],
+            reasoningEffort: nil,
+            pageContext: nil,
+            files: nil
+        )
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testWhenImageGenerationIsActivatedThenNativeSwitchNoticeIsIncludedInConfig() async throws {
+        let notice = NewTabPageDataModel.OmnibarCreateImageModelSwitch(message: "Now using Luna", secondaryText: "Mistral can't create images.")
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.activateImageGenerationResult = notice
+
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(configProvider.activateImageGenerationCallCount, 1)
+        XCTAssertEqual(config.createImageModelSwitch, notice)
+    }
+
+    func testWhenCreateImageSwitchNoticeIsDismissedThenItIsRemovedFromConfig() async throws {
+        configProvider.isUpdatedCreateImageEnabled = true
+        configProvider.activateImageGenerationResult = NewTabPageDataModel.OmnibarCreateImageModelSwitch(
+            message: "Now using Luna",
+            secondaryText: "Mistral can't create images."
+        )
+        let request = NewTabPageDataModel.OmnibarSetImageGenerationActive(active: true)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .setImageGenerationActive, parameters: request)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissCreateImageModelSwitch)
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.createImageModelSwitch)
+    }
+
+    // MARK: - attachment privacy disclaimer
+
+    @MainActor
+    func testTheProvidersAttachmentPrivacyAnswerIsIncludedInConfig() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, true)
+    }
+
+    @MainActor
+    func testWhenTheProviderRefusesThenConfigSaysSo() async throws {
+        configProvider.showAttachmentPrivacyDisclaimer = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.showAttachmentPrivacyDisclaimer, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyDisclaimerShownForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown(kind: .image)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown, parameters: action)
+
+        XCTAssertEqual(configProvider.attachmentPrivacyDisclaimerShownKinds, [.image])
+    }
+
+    @MainActor
+    func testWhenTheKindIsUnrecognisedThenNoDisplayIsSpent() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .attachmentPrivacyDisclaimerShown,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue(configProvider.attachmentPrivacyDisclaimerShownKinds.isEmpty)
+    }
+
+    @MainActor
+    func testOpenAttachmentPrivacyLearnMoreForwardsTheKind() async throws {
+        let action = NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore(kind: .file)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore, parameters: action)
+
+        XCTAssertEqual((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds, [.file])
+    }
+
+    @MainActor
+    func testWhenTheLearnMoreKindIsUnrecognisedThenNothingIsForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .openAttachmentPrivacyLearnMore,
+                                                                  parameters: ["kind": "audio"])
+
+        XCTAssertTrue((actionHandler as? MockNewTabPageOmnibarActionsHandler)?.openAttachmentPrivacyLearnMoreKinds.isEmpty == true)
+    }
+
+    // MARK: - usage limits
+
+    @MainActor
+    func testUsageLimitsFromTheProviderAreIncludedInConfig() async throws {
+        let drawer = NewTabPageDataModel.OmnibarUsageLimits(
+            message: "75% of weekly limit",
+            secondaryText: " \u{00B7} Resets in 2d",
+            dismissible: true,
+            icon: .ring,
+            percent: 75,
+            severity: .warning,
+            cta: .init(label: "Switch to Haiku 4.5", leadingIcon: .convert, primaryModelId: "haiku", showMenu: false)
+        )
+        configProvider.usageLimitsResult = drawer
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.usageLimits, drawer)
+    }
+
+    @MainActor
+    func testWhenThereIsNoUsageMessageThenConfigOmitsTheDrawer() async throws {
+        configProvider.usageLimitsResult = nil
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertNil(config.usageLimits)
+    }
+
+    @MainActor
+    func testLauncherPromoFromTheProviderIsIncludedInConfig() async throws {
+        let promo = NewTabPageDataModel.OmnibarLauncherPromo(message: "Chat privately from anywhere",
+                                                             secondaryText: " • Show Duck.ai in the menu bar",
+                                                             ctaLabel: "Try Now", dismissible: true)
+        configProvider.launcherPromoResult = promo
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.launcherPromo, promo)
+    }
+
+    @MainActor
+    func testLauncherPromoMessagesAreForwarded() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .launcherPromoShown)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectLauncherPromoCta)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissLauncherPromo)
+
+        XCTAssertEqual(configProvider.launcherPromoShownCallCount, 1)
+        XCTAssertEqual(configProvider.selectLauncherPromoCtaCallCount, 1)
+        XCTAssertEqual(configProvider.dismissLauncherPromoCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionPastTheLauncherPromoIsForwarded() async throws {
+        var action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        action.launcherPromoVisible = true
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 1)
+    }
+
+    @MainActor
+    func testSubmissionWithoutTheLauncherPromoLeavesItAlone() async throws {
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.launcherPromoIgnoredCallCount, 0)
+    }
+
+    @MainActor
+    func testDismissUsageLimitsIsForwardedToTheProvider() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .dismissUsageLimits)
+
+        XCTAssertEqual(configProvider.dismissUsageLimitsCallCount, 1)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaForwardsThePickedModel() async throws {
+        let action = NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction(modelId: "claude-haiku-4-5")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: action)
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, ["claude-haiku-4-5"])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testSelectUsageLimitsCtaWithNoModelForwardsNil() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(configProvider.selectUsageLimitsCtaModelIds, [nil])
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+    }
+
+    @MainActor
+    func testWhenTheProviderAsksForAnUpsellThenTheDialogIsPresented() async throws {
+        configProvider.selectUsageLimitsCtaOutcome = .requiresSubscriptionUpsell
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .selectUsageLimitsCta, parameters: [String: String]())
+
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .usageLimit)
+    }
+
+    // MARK: - attach tabs (config)
+
+    @MainActor
+    func testWhenAttachTabsEnabledThenGetConfigIncludesEnableAttachTabsTrue() async throws {
+        configProvider.isAttachTabsEnabled = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableAttachTabs, true)
+    }
+
+    @MainActor
+    func testWhenAttachTabsDisabledThenGetConfigIncludesEnableAttachTabsFalse() async throws {
+        configProvider.isAttachTabsEnabled = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableAttachTabs, false)
+    }
+
+    // MARK: - getOpenTabs / getTabContent
+
+    @MainActor
+    func testGetOpenTabsReturnsTabsFromProvider() async throws {
+        tabsProvider.openTabsResult = [
+            NewTabPageDataModel.OmnibarTabMetadata(tabId: "tab-1", title: "Apple", url: "https://apple.com", favicon: NewTabPageDataModel.OmnibarTabFavicon(src: "data:image/png;base64,AAAA", maxAvailableSize: 32)),
+            NewTabPageDataModel.OmnibarTabMetadata(tabId: "tab-2", title: "DDG", url: "https://duckduckgo.com", favicon: nil)
+        ]
+
+        let response: NewTabPageDataModel.OmnibarGetOpenTabsResponse = try await messageHelper.handleMessage(named: .getOpenTabs)
+
+        XCTAssertEqual(response.tabs.map(\.tabId), ["tab-1", "tab-2"])
+        XCTAssertEqual(response.tabs.first?.favicon?.src, "data:image/png;base64,AAAA")
+    }
+
+    @MainActor
+    func testGetTabContentForwardsTabIdAndReturnsPageContext() async throws {
+        tabsProvider.tabContentResult = NewTabPageDataModel.OmnibarPageContext(
+            tabId: "tab-1", title: "Apple", url: "https://apple.com", favicon: nil,
+            content: "## Hello", truncated: false, fullContentLength: 8
+        )
+
+        let request = NewTabPageDataModel.OmnibarGetTabContentRequest(tabId: "tab-1")
+        let response: NewTabPageDataModel.OmnibarGetTabContentResponse = try await messageHelper.handleMessage(named: .getTabContent, parameters: request)
+
+        XCTAssertEqual(tabsProvider.requestedTabId, "tab-1")
+        XCTAssertEqual(response.pageContext?.tabId, "tab-1")
+        XCTAssertEqual(response.pageContext?.content, "## Hello")
+    }
+
+    @MainActor
+    func testGetTabContentReturnsNullWhenProviderReturnsNil() async throws {
+        tabsProvider.tabContentResult = nil
+
+        let request = NewTabPageDataModel.OmnibarGetTabContentRequest(tabId: "missing")
+        let response: NewTabPageDataModel.OmnibarGetTabContentResponse = try await messageHelper.handleMessage(named: .getTabContent, parameters: request)
+
+        XCTAssertNil(response.pageContext)
+    }
+
+    // MARK: - submitChat (attachments)
+
+    @MainActor
+    func testSubmitChatForwardsPageContextsAndFiles() async throws {
+        let expectation = expectation(description: "submitChatCalled")
+        var forwardedContexts: [NewTabPageDataModel.OmnibarPageContext]?
+        var forwardedFiles: [NewTabPageDataModel.OmnibarPromptFile]?
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.submitChatHandler = { _, _, _, _, _, _, _, pageContexts, files in
+            forwardedContexts = pageContexts
+            forwardedFiles = files
+            expectation.fulfill()
+        }
+
+        let context = NewTabPageDataModel.OmnibarPageContext(tabId: "tab-1", title: "Apple", url: "https://apple.com", favicon: nil, content: "...", truncated: false, fullContentLength: 3)
+        let file = NewTabPageDataModel.OmnibarPromptFile(data: "base64", fileName: "doc.pdf", mimeType: "application/pdf")
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: [context], files: [file])
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+
+        XCTAssertEqual(forwardedContexts?.count, 1)
+        XCTAssertEqual(forwardedContexts?.first?.tabId, "tab-1")
+        XCTAssertEqual(forwardedFiles?.first?.fileName, "doc.pdf")
+    }
+
+    // MARK: - voice chat access
+
+    @MainActor
+    func testWhenVoiceChatAccessEnabledThenGetConfigIncludesEnableVoiceChatAccessTrue() async throws {
+        configProvider.isVoiceChatAccessEnabled = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableVoiceChatAccess, true)
+    }
+
+    @MainActor
+    func testWhenVoiceChatAccessDisabledThenGetConfigIncludesEnableVoiceChatAccessFalse() async throws {
+        configProvider.isVoiceChatAccessEnabled = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableVoiceChatAccess, false)
+    }
+
+    // MARK: - subscription dialogs
+
+    @MainActor
+    func testShowSubscriptionUpsellPresentsUpsellDialog() async throws {
+        let action = NewTabPageDataModel.ShowSubscriptionUpsellAction(source: .reasoning)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .showSubscriptionUpsell, parameters: action)
+
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.upgradeDialogShownCount, 0)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .reasoning)
+    }
+
+    @MainActor
+    func testShowSubscriptionUpgradePresentsUpgradeDialog() async throws {
+        let action = NewTabPageDataModel.ShowSubscriptionUpgradeAction(source: .model)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .showSubscriptionUpgrade, parameters: action)
+
+        XCTAssertEqual(subscriptionDialogPresenter.upgradeDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 0)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpgradeSource, .model)
+    }
+
+    /// `source` should default gracefully rather than dropping the whole dialog-show action —
+    /// the dialog itself doesn't depend on it, only the telemetry does.
+    @MainActor
+    func testShowSubscriptionUpsellWithMissingSourceDefaultsToModel() async throws {
+        try await messageHelper.handleMessageExpectingNilResponse(named: .showSubscriptionUpsell)
+
+        XCTAssertEqual(subscriptionDialogPresenter.upsellDialogShownCount, 1)
+        XCTAssertEqual(subscriptionDialogPresenter.lastUpsellSource, .model)
+    }
+
+    // MARK: - chat/suggestion deletion (config)
+
+    @MainActor
+    func testWhenAiChatDeletionEnabledThenGetConfigIncludesEnableAiChatDeletionTrue() async throws {
+        configProvider.isAIChatDeletionEnabled = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableAiChatDeletion, true)
+    }
+
+    @MainActor
+    func testWhenAiChatDeletionDisabledThenGetConfigIncludesEnableAiChatDeletionFalse() async throws {
+        configProvider.isAIChatDeletionEnabled = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableAiChatDeletion, false)
+    }
+
+    @MainActor
+    func testWhenSearchSuggestionDeletionEnabledThenGetConfigIncludesEnableSearchSuggestionDeletionTrue() async throws {
+        configProvider.isSearchSuggestionDeletionEnabled = true
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableSearchSuggestionDeletion, true)
+    }
+
+    @MainActor
+    func testWhenSearchSuggestionDeletionDisabledThenGetConfigIncludesEnableSearchSuggestionDeletionFalse() async throws {
+        configProvider.isSearchSuggestionDeletionEnabled = false
+
+        let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
+
+        XCTAssertEqual(config.enableSearchSuggestionDeletion, false)
+    }
+
+    // MARK: - confirmDeleteAiChat
+
+    @MainActor
+    func testConfirmDeleteAiChatWhenConfirmedReturnsDeleteAction() async throws {
+        configProvider.isAIChatDeletionEnabled = true
+        var receivedChatId: String?
+        var receivedTitle: String?
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.confirmDeleteAiChatHandler = { chatId, title, _ in
+            receivedChatId = chatId
+            receivedTitle = title
+            return true
+        }
+
+        let action = NewTabPageDataModel.ConfirmDeleteAiChatAction(chatId: "abc-123", title: "My Chat")
+        let response: NewTabPageDataModel.ConfirmDeleteAiChatResponse = try await messageHelper.handleMessage(named: .confirmDeleteAiChat, parameters: action)
+
+        XCTAssertEqual(response.action, .delete)
+        XCTAssertEqual(receivedChatId, "abc-123")
+        XCTAssertEqual(receivedTitle, "My Chat")
+    }
+
+    @MainActor
+    func testConfirmDeleteAiChatWhenCancelledReturnsNoneAction() async throws {
+        configProvider.isAIChatDeletionEnabled = true
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.confirmDeleteAiChatHandler = { _, _, _ in false }
+
+        let action = NewTabPageDataModel.ConfirmDeleteAiChatAction(chatId: "abc-123", title: "My Chat")
+        let response: NewTabPageDataModel.ConfirmDeleteAiChatResponse = try await messageHelper.handleMessage(named: .confirmDeleteAiChat, parameters: action)
+
+        XCTAssertEqual(response.action, .none)
+    }
+
+    @MainActor
+    func testConfirmDeleteAiChatWhenDisabledReturnsNoneWithoutInvokingHandler() async throws {
+        configProvider.isAIChatDeletionEnabled = false
+        var handlerCalled = false
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.confirmDeleteAiChatHandler = { _, _, _ in
+            handlerCalled = true
+            return true
+        }
+
+        let action = NewTabPageDataModel.ConfirmDeleteAiChatAction(chatId: "abc-123", title: "My Chat")
+        let response: NewTabPageDataModel.ConfirmDeleteAiChatResponse = try await messageHelper.handleMessage(named: .confirmDeleteAiChat, parameters: action)
+
+        XCTAssertEqual(response.action, .none)
+        XCTAssertFalse(handlerCalled)
+    }
+
+    // MARK: - removeSuggestion
+
+    @MainActor
+    func testRemoveSuggestionForwardsUrlToHandler() async throws {
+        configProvider.isSearchSuggestionDeletionEnabled = true
+        let expectation = expectation(description: "removeSuggestionCalled")
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.removeSuggestionHandler = { url in
+            XCTAssertEqual(url, "https://example.com")
+            expectation.fulfill()
+        }
+
+        let action = NewTabPageDataModel.RemoveSuggestionAction(url: "https://example.com")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .removeSuggestion, parameters: action)
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    @MainActor
+    func testRemoveSuggestionWhenDisabledDoesNothing() async throws {
+        configProvider.isSearchSuggestionDeletionEnabled = false
+        var handlerCalled = false
+        (actionHandler as? MockNewTabPageOmnibarActionsHandler)?.removeSuggestionHandler = { _ in handlerCalled = true }
+
+        let action = NewTabPageDataModel.RemoveSuggestionAction(url: "https://example.com")
+        try await messageHelper.handleMessageExpectingNilResponse(named: .removeSuggestion, parameters: action)
+
+        XCTAssertFalse(handlerCalled)
+    }
+
+    // MARK: - Helpers
+
+    private func availableEfforts(_ ids: [String]) -> [NewTabPageDataModel.AIModelReasoningEffort] {
+        ids.map { NewTabPageDataModel.AIModelReasoningEffort(id: $0, name: $0, isAvailable: true) }
+    }
+
 }
 
+@MainActor
 private final class StubNewTabPageOmnibarModelsProvider: NewTabPageOmnibarModelsProviding {
     var lastFetchedSections: [NewTabPageDataModel.AIModelSection]?
+    var isEligibleForFreeTrial = false
+    let modelsDidChangeSubject = PassthroughSubject<Void, Never>()
+    var modelsDidChangePublisher: AnyPublisher<Void, Never> { modelsDidChangeSubject.eraseToAnyPublisher() }
+    var onFetch: (() -> Void)?
 
     func fetchAIModelSections() async -> [NewTabPageDataModel.AIModelSection] {
-        lastFetchedSections ?? []
+        onFetch?()
+        return lastFetchedSections ?? []
+    }
+}
+
+@MainActor
+private final class MockNewTabPageOmnibarSubscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting {
+    var upsellDialogShownCount = 0
+    var upgradeDialogShownCount = 0
+    var lastUpsellSource: NewTabPageDataModel.OmnibarSubscriptionUpsellSource?
+    var lastUpgradeSource: NewTabPageDataModel.OmnibarSubscriptionUpsellSource?
+
+    func showSubscriptionUpsellDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        upsellDialogShownCount += 1
+        lastUpsellSource = source
+    }
+
+    func showSubscriptionUpgradeDialog(source: NewTabPageDataModel.OmnibarSubscriptionUpsellSource) {
+        upgradeDialogShownCount += 1
+        lastUpgradeSource = source
+    }
+}
+
+private final class StubNewTabPageOmnibarTabsProvider: NewTabPageOmnibarTabsProviding {
+    var openTabsResult: [NewTabPageDataModel.OmnibarTabMetadata] = []
+    var tabContentResult: NewTabPageDataModel.OmnibarPageContext?
+    var requestedTabId: String?
+
+    @MainActor
+    func openTabs(requestingWebView: WKWebView?) async -> [NewTabPageDataModel.OmnibarTabMetadata] {
+        openTabsResult
+    }
+
+    @MainActor
+    func tabContent(tabId: String, requestingWebView: WKWebView?) async -> NewTabPageDataModel.OmnibarPageContext? {
+        requestedTabId = tabId
+        return tabContentResult
     }
 }

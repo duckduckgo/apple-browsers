@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 import os.log
@@ -450,17 +451,18 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     private func willStart(_ navigation: Navigation) {
         Logger.navigation.log("willStart \(navigation.debugDescription)")
 
-        var isSameDocumentNavigation: Bool {
-            guard startedNavigation !== navigation && startedNavigation?.url.isSameDocument(navigation.url) == true else { return false }
+        let isRedirectedSameDocumentNavigation: Bool = {
+            guard startedNavigation !== navigation && startedNavigation?.url.equals(navigation.url, by: .sameDocument) == true else { return false }
 #if PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED
             return navigation.navigationAction.navigationType == .sameDocumentNavigation(.anchorNavigation)
 #else
             return navigation.navigationAction.navigationType == .sameDocumentNavigation
 #endif
-        }
-        if navigation.navigationAction.navigationType.redirect?.isClient == true // is client redirect?
+        }()
+        if case .willPerformClientRedirect = startedNavigation?.state,
+           navigation.navigationAction.navigationType.redirect?.isClient == true // is client redirect?
             // is same document navigation received as client redirect?
-            || isSameDocumentNavigation {
+            || isRedirectedSameDocumentNavigation {
 
             // notify the original (redirected) Navigation about the redirect NavigationAction received
             // this should call the overriden ResponderChain inside `willPerformClientRedirect`
@@ -468,7 +470,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             startedNavigation?.didPerformClientRedirect(with: navigation.navigationAction)
         }
 
-        navigation.willStart()
+        navigation.willStart(isSameDocument: navigation.navigationAction.navigationType.isSameDocumentNavigation)
         for responder in navigation.navigationResponders {
             responder.willStart(navigation)
         }
@@ -669,10 +671,10 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
         guard let redirectedNavigation = startedNavigation,
               redirectedNavigation.state.isResponseReceived,
               // don‘t handle same-document navigations
-              !(url.absoluteString.hashedSuffix != nil && redirectedNavigation.url.absoluteString.droppingHashedSuffix() == url.absoluteString.droppingHashedSuffix())
+              !(url.hasFragment && redirectedNavigation.url.equals(url, by: .sameDocument))
         else { return }
 
-        Logger.navigation.log("willPerformClientRedirect to: \(url.absoluteString), current: \(redirectedNavigation.debugDescription)")
+        Logger.navigation.log("willPerformClientRedirect to: \(url.shortDescription), current: \(redirectedNavigation.debugDescription)")
 
         // keep the original Navigation non-finished until the redirect NavigationAction is received
         let originalResponders = redirectedNavigation.navigationResponders

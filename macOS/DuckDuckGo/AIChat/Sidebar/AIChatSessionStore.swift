@@ -19,7 +19,7 @@
 import AIChat
 import Combine
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 typealias TabIdentifier = String
@@ -119,7 +119,12 @@ final class AIChatSessionStore: AIChatSessionStoring {
 
     func restoreState(_ statesByTab: AIChatStatesByTab) {
         removeOrphanedSessions(currentTabIDs: [])
-        self.sessions = statesByTab.mapValues { AIChatSession(state: $0, burnerMode: .regular) }
+        self.sessions = statesByTab.mapValues { state in
+            let session = AIChatSession(state: state, burnerMode: .regular)
+            // A hidden chat isn't shown at launch. It comes back only when the user opens it again, which isn't a restore.
+            session.isRestoredFromPreviousSession = state.presentationMode != .hidden
+            return session
+        }
     }
 
     func removeSession(for tabID: TabIdentifier) {

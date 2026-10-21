@@ -49,18 +49,18 @@ public extension UIFont {
     }
 
     static func daxBodyRegular() -> UIFont {
-        return UIFont.preferredFont(forTextStyle: .callout)
+        return UIFont.preferredFont(forTextStyle: .body)
     }
 
     static func daxBodySemibold() -> UIFont {
-        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .callout)
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.semibold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
 
     static func daxBodyBold() -> UIFont {
-        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .callout)
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .body)
         let newDescriptor = descriptor.addingAttributes([.traits: [
             UIFontDescriptor.TraitKey.weight: UIFont.Weight.bold]])
         return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
@@ -121,6 +121,13 @@ public extension UIFont {
             return UIFont.preferredFont(forTextStyle: .caption2)
         }
         return UIFont(descriptor: boldDescriptor, size: 0)
+    }
+
+    static func daxCaptionMedium() -> UIFont {
+        let descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: .caption2)
+        let newDescriptor = descriptor.addingAttributes([.traits: [
+            UIFontDescriptor.TraitKey.weight: UIFont.Weight.medium]])
+        return UIFont(descriptor: newDescriptor, size: descriptor.pointSize)
     }
 
 }

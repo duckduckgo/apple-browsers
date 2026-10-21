@@ -19,8 +19,7 @@
 @testable import Crashes
 import MetricKit
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Common
 
 class CrashCollectionTests: XCTestCase {
@@ -60,6 +59,77 @@ class CrashCollectionTests: XCTestCase {
                 MXCrashDiagnostic()
             ])
         ])
+        XCTAssertFalse(crashCollection.isFirstCrash)
+    }
+
+    func testCrashesOlderThanMaxAgeAreExcludedFromCrashPixels() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        var uploadedPayloadCount = 0
+        crashCollection.start(process: { payloads in
+            uploadedPayloadCount = payloads.count
+            return payloads.map { _ in Data() }
+        }, didFindCrashReports: { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        })
+
+        let threeDaysAgo = Date().addingTimeInterval(-3 * 24 * 60 * 60)
+        let tenDaysAgo = Date().addingTimeInterval(-10 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: threeDaysAgo),
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: tenDaysAgo)
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.count, 1, "Only the crash within the age limit should be reported as a pixel")
+        XCTAssertEqual(uploadedPayloadCount, 2, "Both crashes should still be uploaded regardless of age")
+    }
+
+    func testCrashesWithinMaxAgeAreReportedAsCrashPixels() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        let sixDaysAgo = Date().addingTimeInterval(-6 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: sixDaysAgo)
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.count, 1)
+    }
+
+    func testFirstCrashFlagIsRetainedUntilAnInWindowCrashIsReported() {
+        let crashReportSender = CrashReportSender(platform: .iOS, pixelEvents: nil)
+        let crashCollection = CrashCollection(crashReportSender: crashReportSender,
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        // A batch of exclusively stale crashes fires no pixel and must not consume the first-crash flag.
+        let tenDaysAgo = Date().addingTimeInterval(-10 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: tenDaysAgo)
+        ])
+        XCTAssertTrue(reportedPixelParameters.isEmpty)
+        XCTAssertTrue(crashCollection.isFirstCrash)
+
+        // A later in-window crash should still be reported as the first crash.
+        let oneDayAgo = Date().addingTimeInterval(-1 * 24 * 60 * 60)
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [MXCrashDiagnostic()], timeStampBegin: oneDayAgo)
+        ])
+        XCTAssertEqual(reportedPixelParameters.count, 1)
+        XCTAssertEqual(reportedPixelParameters.first?[.first], "1")
         XCTAssertFalse(crashCollection.isFirstCrash)
     }
 
@@ -158,6 +228,43 @@ class CrashCollectionTests: XCTestCase {
         self.wait(for: [expectation], timeout: 3)
 
         XCTAssertEqual(store.object(forKey: CRCIDManager.crcidKey) as? String, crcid)
+    }
+
+    // MARK: - Termination Reason Tests
+
+    func testCrashPixelIncludesNormalizedTerminationReason() {
+        let crashCollection = CrashCollection(crashReportSender: CrashReportSender(platform: .iOS, pixelEvents: nil),
+                                              crashCollectionStorage: MockKeyValueStore())
+
+        var reportedPixelParameters: [[CrashReportPixelParameter: String]] = []
+        crashCollection.start { pixelParameters, _, _ in
+            reportedPixelParameters = pixelParameters
+        }
+
+        crashCollection.crashHandler.didReceive([
+            MockPayload(mockCrashes: [
+                MockCrashDiagnostic(terminationReason: "Namespace SPRINGBOARD, Code 0x8badf00d, scene-update watchdog transgression"),
+                MockCrashDiagnostic(terminationReason: nil)
+            ])
+        ])
+
+        XCTAssertEqual(reportedPixelParameters.map { $0[.terminationReason] }, ["springboard_0x8badf00d", "-1"])
+    }
+
+    func testPixelTerminationReason_keepsOnlyNamespaceAndCode() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SPRINGBOARD, Code 0x8badf00d"), "springboard_0x8badf00d")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace RUNNINGBOARD, Code 0xDEAD10CC"), "runningboard_0xdead10cc")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Namespace SIGNAL, Code 9"), "signal_9")
+        XCTAssertEqual(
+            CrashCollection.pixelTerminationReason(from: "Namespace FRONTBOARD, Code 0xc51bad03, process-launch watchdog transgression for user@example.com"),
+            "frontboard_0xc51bad03"
+        )
+    }
+
+    func testPixelTerminationReason_withMissingOrUnparseableReason() {
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: nil), "-1")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: ""), "-1")
+        XCTAssertEqual(CrashCollection.pixelTerminationReason(from: "Something unexpected happened"), "unknown")
     }
 
     // MARK: - limitCallStackTreeDepth Tests
@@ -299,9 +406,11 @@ class CrashCollectionTests: XCTestCase {
 class MockPayload: MXDiagnosticPayload {
 
     var mockCrashes: [MXCrashDiagnostic]?
+    let mockTimeStampBegin: Date
 
-    init(mockCrashes: [MXCrashDiagnostic]?) {
+    init(mockCrashes: [MXCrashDiagnostic]?, timeStampBegin: Date = Date()) {
         self.mockCrashes = mockCrashes
+        self.mockTimeStampBegin = timeStampBegin
         super.init()
     }
 
@@ -309,8 +418,30 @@ class MockPayload: MXDiagnosticPayload {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override var timeStampBegin: Date {
+        return mockTimeStampBegin
+    }
+
     override var crashDiagnostics: [MXCrashDiagnostic]? {
         return mockCrashes
+    }
+}
+
+class MockCrashDiagnostic: MXCrashDiagnostic {
+
+    let mockTerminationReason: String?
+
+    init(terminationReason: String?) {
+        self.mockTerminationReason = terminationReason
+        super.init()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var terminationReason: String? {
+        return mockTerminationReason
     }
 }
 
@@ -320,9 +451,9 @@ class MockCrashReportSender: CrashReportSending {
     var responseCRCID: String?
     var responseStatusCode = 200
 
-    var pixelEvents: EventMapping<CrashReportSenderError>?
+    var pixelEvents: EventMapping<CrashReportSenderEvent>?
 
-    required init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderError>?) {
+    required init(platform: CrashCollectionPlatform, pixelEvents: EventMapping<CrashReportSenderEvent>?) {
         self.platform = platform
     }
 

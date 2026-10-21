@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import PixelKit
+import WideEvent
 @testable import BrowserServicesKit
 
 final class DataImportWideEventDataTests: XCTestCase {

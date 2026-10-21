@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 import BrowserServicesKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
 @testable import DuckDuckGo_Privacy_Browser
 
 final class SessionRestorePromptCoordinatorTests: XCTestCase {

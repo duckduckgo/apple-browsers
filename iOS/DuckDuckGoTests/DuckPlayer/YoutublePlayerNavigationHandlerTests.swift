@@ -23,6 +23,7 @@ import Combine
 import PrivacyConfig
 import Core
 import BrowserServicesKitTestsUtils
+@_spi(Testing) import PixelKit
 
 @testable import DuckDuckGo
 
@@ -38,6 +39,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
     var handler: WebDuckPlayerNavigationHandler!
     var tabNavigator: MockDuckPlayerTabNavigator!
     var nativeUIPresenter: MockDuckPlayerNativeUIPresenting!
+    var pixelKitMock: PixelKitMock!
 
     override func setUp() {
         super.setUp()
@@ -55,16 +57,14 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         // Create and assign the mock tab navigator
         tabNavigator = MockDuckPlayerTabNavigator()
 
+        pixelKitMock = PixelKitMock()
         handler = WebDuckPlayerNavigationHandler(duckPlayer: player,
                                               featureFlagger: featureFlagger,
                                               appSettings: mockAppSettings,
-                                              pixelFiring: PixelFiringMock.self,
-                                              dailyPixelFiring: PixelFiringMock.self)
+                                              pixelFiring: pixelKitMock)
 
         // Inject the mock tab navigator
         handler.tabNavigationHandler = tabNavigator
-
-        PixelFiringMock.tearDown()
     }
 
     override func tearDown() {
@@ -76,7 +76,7 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         featureFlagger = nil
         tabNavigator = nil
         handler = nil
-        PixelFiringMock.tearDown()
+        pixelKitMock = nil
         super.tearDown()
     }
 
@@ -574,10 +574,13 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         mockWebView.setCurrentURL(duckPlayerURL)
 
         // Act
-        handler.handleReload(webView: mockWebView)
+        let result = handler.handleReload(webView: mockWebView)
 
         // Assert
         XCTAssertNil(tabNavigator.openedURL, "No new tabs should open")
+        XCTAssertEqual(result, .handled, "Duck Player should redirect instead of reloading")
+        XCTAssertEqual(mockWebView.lastLoadedRequest?.url?.isDuckPlayer, true, "Duck Player should load the redirect itself")
+        XCTAssertFalse(mockWebView.reloadCalled, "Handler should leave the reload to the caller")
     }
 
     @MainActor
@@ -590,10 +593,39 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         mockWebView.setCurrentURL(duckPlayerURL)
 
         // Act
-        handler.handleReload(webView: mockWebView)
+        let result = handler.handleReload(webView: mockWebView)
 
         // Assert
         XCTAssertNil(tabNavigator.openedURL, "No new tabs should open")
+        XCTAssertEqual(result, .handled, "Duck Player should redirect instead of reloading")
+        XCTAssertNotNil(mockWebView.lastLoadedRequest, "Duck Player should load the redirect itself")
+        XCTAssertFalse(mockWebView.reloadCalled, "Handler should leave the reload to the caller")
+    }
+
+    @MainActor
+    func testWhenReloadingYoutubeWatchURLWithDuckPlayerAlwaysEnabledThenCallerReloads() {
+        mockWebView.setCurrentURL(URL(string: "https://www.youtube.com/watch?v=abc123")!)
+        playerSettings.mode = .enabled
+        featureFlagger.enabledFeatures = [.duckPlayer]
+
+        let result = handler.handleReload(webView: mockWebView)
+
+        XCTAssertEqual(result, .reload)
+        XCTAssertNil(mockWebView.lastLoadedRequest)
+        XCTAssertFalse(mockWebView.reloadCalled)
+    }
+
+    @MainActor
+    func testWhenReloadingDuckPlayerURLWithFeatureOffThenCallerReloads() {
+        mockWebView.setCurrentURL(URL(string: "duck://player/abc123")!)
+        playerSettings.mode = .enabled
+        featureFlagger.enabledFeatures = []
+
+        let result = handler.handleReload(webView: mockWebView)
+
+        XCTAssertEqual(result, .reload)
+        XCTAssertNil(mockWebView.lastLoadedRequest)
+        XCTAssertFalse(mockWebView.reloadCalled)
     }
 
     @MainActor

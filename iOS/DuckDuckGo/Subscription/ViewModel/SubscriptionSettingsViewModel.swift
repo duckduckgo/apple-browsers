@@ -26,6 +26,9 @@ import os.log
 import PrivacyConfig
 import Networking
 import Persistence
+import FeatureFlags_iOS
+import PixelKit
+import AIChat
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -41,6 +44,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private var subscriptionChangeObserver: Any?
     private let featureFlagger: FeatureFlagger
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
+    private let onboardingKeyValueStore: ThrowingKeyValueStoring
+    private let aiChatSettings: AIChatSettingsProvider
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -90,6 +95,18 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     /// Cancel-downgrade error; use this for alert binding so SwiftUI reliably updates when set from callbacks.
     @Published private(set) var cancelDowngradeError: SubscriptionPurchaseError?
+
+    enum OnboardingSetupState {
+        case hidden
+        case setup(SubscriptionOnboardingProgress)
+    }
+
+    /// Whether the "Continue Setup" card and re-entry flow are available, and the checklist to show if so. See `refreshOnboardingState(hasActiveSubscription:isPIRAvailable:)`.
+    @Published private(set) var onboardingSetupState: OnboardingSetupState = .hidden
+
+    var onboardingPersistor: SubscriptionOnboardingProgressPersistor {
+        SubscriptionOnboardingProgressPersistor(keyValueStore: onboardingKeyValueStore)
+    }
 
     public let usesUnifiedFeedbackForm: Bool
 
@@ -154,9 +171,9 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         // Fire appropriate pixel
         if tier != nil {
-            Pixel.fire(pixel: .subscriptionUpgradeClick)
+            PixelKit.fire(Pixel.Event.subscriptionUpgradeClick)
         } else {
-            Pixel.fire(pixel: .subscriptionViewAllPlansClick)
+            PixelKit.fire(Pixel.Event.subscriptionViewAllPlansClick)
         }
 
         switch platform {
@@ -185,11 +202,15 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
+         onboardingKeyValueStore: ThrowingKeyValueStoring,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil) {
+         subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
+        self.onboardingKeyValueStore = onboardingKeyValueStore
+        self.aiChatSettings = aiChatSettings
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: AppDependencyProvider.shared.wideEvent)
@@ -212,62 +233,82 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         return dateFormatter
     }()
 
+    /// Refreshes `onboardingSetupState`. Call on first appear, and again once the onboarding flow finishes —
+    /// a step completed there can change what the card shows.
+    @MainActor
+    func refreshOnboardingState(hasActiveSubscription: Bool, isPIRAvailable: Bool) async {
+        let isEnabled = SubscriptionOnboardingExperiment.isSettingsReEntryEnabled(
+            using: featureFlagger,
+            hasStartedFlow: onboardingPersistor.postCheckoutFlowStartedAt != nil,
+            hasActiveSubscription: hasActiveSubscription)
+        guard isEnabled else {
+            onboardingSetupState = .hidden
+            return
+        }
+        let entitlement = await subscriptionManager.getAllEntitlementStatus()
+        // Once fully done, a Duck.ai toggle flip in Settings shouldn't resurrect or alter the checklist.
+        let checklist = SubscriptionOnboardingChecklistItem.checklist(isPIRAvailable: isPIRAvailable, entitlement: entitlement)
+        let currentPercentage = SubscriptionOnboardingChecklistItem.completionPercentage(completed: onboardingPersistor.completedItems, checklist: checklist)
+        let duckAIChatStatus: SubscriptionOnboardingDuckAIChatStatus = currentPercentage < 100
+            ? (aiChatSettings.isAIChatEnabled ? .enabled : .disabled)
+            : .reconciliationNotNeeded
+        let progress = SubscriptionOnboardingProgress(persistor: onboardingPersistor,
+                                                      isPIRAvailable: isPIRAvailable,
+                                                      entitlement: entitlement,
+                                                      duckAIChatStatus: duckAIChatStatus)
+        onboardingSetupState = progress.checklist.isEmpty ? .hidden : .setup(progress)
+    }
+
     func onFirstAppear() {
         Task {
             // Load initial state from the cache
-            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(cachePolicy: .cacheFirst)
-            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheFirst,
+            async let loadedEmailFromCache = await self.fetchAndUpdateAccountEmail(forceRefresh: false)
+            async let loadedSubscriptionFromCache = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: false,
                                                                                                  loadingIndicator: false)
-            let (hasLoadedEmailFromCache, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
+            let (_, hasLoadedSubscriptionFromCache) = await (loadedEmailFromCache, loadedSubscriptionFromCache)
 
             // Reload remote subscription and email state
-            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(cachePolicy: .remoteFirst)
-            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(cachePolicy: .remoteFirst,
+            async let reloadedEmail = await self.fetchAndUpdateAccountEmail(forceRefresh: true)
+            async let reloadedSubscription = await self.fetchAndUpdateSubscriptionDetails(forceRefresh: true,
                                                                                           loadingIndicator: !hasLoadedSubscriptionFromCache)
-            let (hasReloadedEmail, hasReloadedSubscription) = await (reloadedEmail, reloadedSubscription)
+            _ = await (reloadedEmail, reloadedSubscription)
         }
     }
 
-    private func fetchAndUpdateSubscriptionDetails(cachePolicy: SubscriptionCachePolicy, loadingIndicator: Bool) async -> Bool {
+    @MainActor
+    private func fetchAndUpdateSubscriptionDetails(forceRefresh: Bool, loadingIndicator: Bool) async -> Bool {
         Logger.subscription.log("Fetch and update subscription details")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        if loadingIndicator { self.displaySubscriptionLoader(true) }
+        state.isLoadingSubscriptionInfo = loadingIndicator
 
         do {
-            let subscription = try await self.subscriptionManager.getSubscription(cachePolicy: cachePolicy)
-            if loadingIndicator {
-                Task { @MainActor in
-                    self.displaySubscriptionLoader(false)
-                }
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: forceRefresh) else {
+                Logger.subscription.log("No subscription available — resetting subscription state")
+                state.isLoadingSubscriptionInfo = false
+                state.subscriptionInfo = nil
+                state.subscriptionDetails = ""
+                state.cancelPendingDowngradeDetails = nil
+                return false
             }
-
-            await updateSubscriptionsStatusMessage(subscription: subscription,
-                                                   date: subscription.expiresOrRenewsAt,
-                                                   product: subscription.productId,
-                                                   billingPeriod: subscription.billingPeriod)
+            state.isLoadingSubscriptionInfo = false
+            updateSubscriptionsStatusMessage(subscription: subscription,
+                                             date: subscription.expiresOrRenewsAt,
+                                             product: subscription.productId,
+                                             billingPeriod: subscription.billingPeriod)
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
-            Task { @MainActor in
-                if loadingIndicator { self.displaySubscriptionLoader(true) }
-            }
+            Logger.subscription.error("Failed to fetch subscription details: \(error, privacy: .public)")
+            state.isLoadingSubscriptionInfo = false
             return false
         }
     }
 
-    func fetchAndUpdateAccountEmail(cachePolicy: SubscriptionCachePolicy = .cacheFirst) async -> Bool {
+    func fetchAndUpdateAccountEmail(forceRefresh: Bool = false) async -> Bool {
         Logger.subscription.log("Fetch and update account email")
         guard subscriptionManager.isUserAuthenticated else { return false }
 
-        let tokensPolicy: AuthTokensCachePolicy
-
-        switch cachePolicy {
-        case .remoteFirst:
-            tokensPolicy = .localForceRefresh
-        case .cacheFirst:
-            tokensPolicy = .localValid
-        }
+        let tokensPolicy: AuthTokensCachePolicy = forceRefresh ? .localForceRefresh : .localValid
 
         do {
             let tokenContainer = try await subscriptionManager.getTokenContainer(policy: tokensPolicy)
@@ -276,19 +317,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             }
             return true
         } catch {
-            Logger.subscription.error("\(#function) error: \(error.localizedDescription)")
+            Logger.subscription.error("Failed to fetch account email: \(error, privacy: .public)")
             return false
         }
     }
 
-    private func displaySubscriptionLoader(_ show: Bool) {
-        DispatchQueue.main.async {
-            self.state.isLoadingSubscriptionInfo = show
-        }
-    }
-
     func manageSubscription() {
-        Logger.subscription.log("User action: \(#function)")
+        Logger.subscription.log("User action: manageSubscription")
 
         guard let platform = state.subscriptionInfo?.platform else {
             assertionFailure("Invalid subscription platform")
@@ -325,7 +360,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             state.cancelDowngradeTransactionStatus = .planChangeInProgress
             state.cancelDowngradeError = nil
             cancelDowngradeError = nil
-            Pixel.fire(pixel: .subscriptionCancelPendingDowngradeClick)
+            PixelKit.fire(Pixel.Event.subscriptionCancelPendingDowngradeClick)
             Task { await self.runCancelHandler() }
         case .google:
             displayGoogleView(true)
@@ -347,7 +382,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         let setStatus: (SubscriptionTransactionStatus) -> Void = { [weak self] in self?.setCancelDowngradeStatus($0) }
         await subscriptionFlowsExecuter.performTierChange(to: productId,
                                                           changeType: "upgrade",
-                                                          contextName: SubscriptionFunnelOrigin.cancelDowngrade.rawValue,
+                                                          contextName: SubscriptionPlanChangeOrigin.cancelDowngrade.rawValue,
                                                           setTransactionStatus: setStatus,
                                                           setTransactionError: setError,
                                                           pushPurchaseUpdate: nil)
@@ -410,7 +445,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         subscriptionChangeObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] _ in
             Task { [weak self] in
-                _ = await self?.fetchAndUpdateSubscriptionDetails(cachePolicy: .cacheFirst, loadingIndicator: false)
+                _ = await self?.fetchAndUpdateSubscriptionDetails(forceRefresh: false, loadingIndicator: false)
             }
         }
     }
@@ -564,7 +599,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
                 }
             }
         } catch {
-            Logger.subscription.error("\(error.localizedDescription)")
+            Logger.subscription.error("Failed to get Stripe customer portal URL: \(error, privacy: .public)")
         }
         Task { @MainActor in
             self.displayStripeView(true)

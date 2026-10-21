@@ -18,211 +18,323 @@
 //
 
 import AIChat
+import DesignResourcesKitIcons
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
 final class UnifiedToggleInputModelMenuTests: XCTestCase {
 
-    private let freeModel = AIChatModel(id: "gpt-4o-mini", name: "GPT-4o mini", provider: .openAI, supportsImageUpload: false, entityHasAccess: true, accessTier: ["free"])
-    private let freeModel2 = AIChatModel(id: "claude-3-haiku", name: "Claude 3 Haiku", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true, accessTier: ["free"])
-    private let premiumModel = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: false, accessTier: ["plus", "pro"])
-    private let premiumModel2 = AIChatModel(id: "claude-opus", name: "Claude Opus", provider: .anthropic, supportsImageUpload: true, entityHasAccess: false, accessTier: ["plus", "pro"])
-
-    // MARK: - Free User: Section Structure
-
-    func test_freeUser_allAccessible_producesSingleSection() {
-        let menu = buildFreeMenu(models: [freeModel, freeModel2], selectedId: "gpt-4o-mini")
+    func testWhenFreeTierModelIsPresentThenItAppearsInHeaderlessFreeSection() {
+        let menu = buildMenu(models: [
+            makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true),
+        ])
 
         XCTAssertEqual(menu.sections.count, 1)
-        XCTAssertEqual(menu.sections[0].items.count, 2)
-    }
-
-    func test_freeUser_mixedAccess_producesTwoSections() {
-        let menu = buildFreeMenu(models: [freeModel, premiumModel], selectedId: "gpt-4o-mini")
-
-        XCTAssertEqual(menu.sections.count, 2)
-    }
-
-    func test_freeUser_allPremium_producesTwoSections() {
-        let menu = buildFreeMenu(models: [premiumModel, premiumModel2], selectedId: "")
-
-        XCTAssertEqual(menu.sections.count, 2)
-        XCTAssertTrue(menu.sections[0].items.isEmpty)
-        XCTAssertEqual(menu.sections[1].items.count, 2)
-    }
-
-    // MARK: - Free User: Section Ordering
-
-    func test_freeUser_topAnchored_accessibleSectionFirst() {
-        let menu = buildFreeMenu(models: [freeModel, premiumModel], selectedId: "gpt-4o-mini")
-
         XCTAssertEqual(menu.sections[0].title, "")
-        XCTAssertEqual(menu.sections[0].items[0].modelId, "gpt-4o-mini")
-        XCTAssertEqual(menu.sections[1].title, "Advanced")
-        XCTAssertEqual(menu.sections[1].items[0].modelId, "gpt-5")
+        XCTAssertEqual(menu.sections[0].items.map(\.modelId), ["free-model"])
     }
 
-    func test_freeUser_bottomAnchored_reversesSectionOrder() {
-        let menu = buildFreeMenu(models: [freeModel, premiumModel], selectedId: "gpt-4o-mini", isBottomAnchored: true)
+    func testWhenPlusTierModelIsPresentThenItAppearsUnderPlusSection() {
+        let menu = buildMenu(models: [
+            makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false),
+        ])
 
-        XCTAssertEqual(menu.sections[0].title, "Advanced")
-        XCTAssertEqual(menu.sections[0].items[0].modelId, "gpt-5")
-        XCTAssertEqual(menu.sections[1].title, "")
-        XCTAssertEqual(menu.sections[1].items[0].modelId, "gpt-4o-mini")
+        XCTAssertEqual(menu.sections.count, 1)
+        XCTAssertEqual(menu.sections[0].title, "Plus")
+        XCTAssertEqual(menu.sections[0].items.map(\.modelId), ["plus-model"])
     }
 
-    // MARK: - Free User: Item Properties
+    func testWhenProTierModelIsPresentThenItAppearsUnderProSection() {
+        let menu = buildMenu(models: [
+            makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
+        ])
 
-    func test_freeUser_accessibleItems_areNotDisabled() {
-        let menu = buildFreeMenu(models: [freeModel], selectedId: "")
-
-        XCTAssertFalse(menu.sections[0].items[0].isDisabled)
+        XCTAssertEqual(menu.sections.count, 1)
+        XCTAssertEqual(menu.sections[0].title, "Pro")
+        XCTAssertEqual(menu.sections[0].items.map(\.modelId), ["pro-model"])
     }
 
-    func test_freeUser_premiumItems_areDisabled() {
-        let menu = buildFreeMenu(models: [premiumModel], selectedId: "")
+    func testWhenModelsContainMultipleTiersThenTheyUseLowestPublicTier() {
+        let menu = buildMenu(models: [
+            makeFakeModel(id: "free-plus-model", accessTier: ["free", "plus", "pro"], hasAccess: true),
+            makeFakeModel(id: "plus-pro-model", accessTier: ["plus", "pro"], hasAccess: false),
+            makeFakeModel(id: "pro-internal-model", accessTier: ["pro", "internal"], hasAccess: false),
+        ])
 
-        XCTAssertTrue(menu.sections[1].items[0].isDisabled)
+        XCTAssertEqual(menu.sections.map(\.title), ["", "Plus", "Pro"])
+        XCTAssertEqual(menu.sections[0].items.map(\.modelId), ["free-plus-model"])
+        XCTAssertEqual(menu.sections[1].items.map(\.modelId), ["plus-pro-model"])
+        XCTAssertEqual(menu.sections[2].items.map(\.modelId), ["pro-internal-model"])
     }
 
-    func test_selectedModel_hasIsSelectedTrue() {
-        let menu = buildFreeMenu(models: [freeModel, freeModel2], selectedId: "claude-3-haiku")
+    func testWhenModelsAreGroupedThenInputOrderIsPreservedWithinEachSection() {
+        let firstPlus = makeFakeModel(id: "first-plus", accessTier: ["plus"], hasAccess: false)
+        let firstFree = makeFakeModel(id: "first-free", accessTier: ["free"], hasAccess: true)
+        let firstPro = makeFakeModel(id: "first-pro", accessTier: ["pro"], hasAccess: false)
+        let secondPlus = makeFakeModel(id: "second-plus", accessTier: ["plus"], hasAccess: false)
+        let secondFree = makeFakeModel(id: "second-free", accessTier: ["free"], hasAccess: true)
+
+        let menu = buildMenu(models: [firstPlus, firstFree, firstPro, secondPlus, secondFree])
+
+        XCTAssertEqual(menu.sections[0].items.map(\.modelId), ["first-free", "second-free"])
+        XCTAssertEqual(menu.sections[1].items.map(\.modelId), ["first-plus", "second-plus"])
+        XCTAssertEqual(menu.sections[2].items.map(\.modelId), ["first-pro"])
+    }
+
+    func testWhenSelectedModelMatchesThenOnlyThatItemIsSelected() {
+        let menu = buildMenu(models: [
+            makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false),
+        ], selectedId: "plus-model")
 
         XCTAssertFalse(menu.sections[0].items[0].isSelected)
-        XCTAssertTrue(menu.sections[0].items[1].isSelected)
+        XCTAssertTrue(menu.sections[1].items[0].isSelected)
     }
 
-    func test_noMatchingSelection_allDeselected() {
-        let menu = buildFreeMenu(models: [freeModel, freeModel2], selectedId: "nonexistent")
-
-        XCTAssertTrue(menu.sections[0].items.allSatisfy { !$0.isSelected })
-    }
-
-    // MARK: - Item Metadata
-
-    func test_itemPreservesModelMetadata() {
-        let menu = buildFreeMenu(models: [freeModel], selectedId: "")
-
-        let item = menu.sections[0].items[0]
-        XCTAssertEqual(item.modelId, "gpt-4o-mini")
-        XCTAssertEqual(item.name, "GPT-4o mini")
-        XCTAssertEqual(item.provider, .openAI)
-    }
-
-    // MARK: - Ordering Preserves Model Order
-
-    func test_itemOrderMatchesInputOrder() {
-        let menu = buildFreeMenu(models: [freeModel2, freeModel], selectedId: "")
-
-        XCTAssertEqual(menu.sections[0].items[0].modelId, "claude-3-haiku")
-        XCTAssertEqual(menu.sections[0].items[1].modelId, "gpt-4o-mini")
-    }
-
-    // MARK: - Empty Models
-
-    func test_emptyModels_producesSingleEmptySection() {
-        let menu = buildFreeMenu(models: [], selectedId: "")
-
-        XCTAssertEqual(menu.sections.count, 1)
-        XCTAssertTrue(menu.sections[0].items.isEmpty)
-    }
-
-    // MARK: - Advanced Section Title
-
-    func test_advancedSectionUsesProvidedTitle() {
-        let menu = UnifiedToggleInputModelMenu.build(
-            models: [freeModel, premiumModel],
-            selectedId: "",
-            isBottomAnchored: false,
-            hasActiveSubscription: false,
-            advancedSectionTitle: "Premium Models",
-            basicSectionTitle: "Basic"
+    func testWhenFactoryBuildsMenuThenTierActionsAreNotDisabled() {
+        let menu = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: false).makeMenu(
+            models: [
+                makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true),
+                makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false),
+                makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
+            ],
+            selectedId: nil,
+            userTier: .free,
+            onSelect: { _ in }
         )
 
-        XCTAssertEqual(menu.sections[1].title, "Premium Models")
+        XCTAssertTrue(actions(in: menu).allSatisfy { !$0.attributes.contains(.disabled) })
     }
 
-    // MARK: - Subscribed User: Section Layout
+    func testWhenFactoryBuildsLegacyMenuThenUpdatedMenuPresentationIsNotApplied() {
+        let menu = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: false).makeMenu(
+            models: [
+                makeFakeModel(id: "free-model", accessTier: ["free"], hasAccess: true, label: .everydayUse),
+                makeFakeModel(id: "plus-model", accessTier: ["plus"], hasAccess: false, label: .everydayUse),
+                makeFakeModel(id: "pro-model", accessTier: ["pro"], hasAccess: false),
+            ],
+            selectedId: nil,
+            userTier: .free,
+            onSelect: { _ in }
+        )
 
-    func test_subscribedUser_splitsIntoAdvancedAndBasicSections() {
-        let subscribedPremium = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let menu = buildSubscribedMenu(models: [subscribedPremium, freeModel], selectedId: "gpt-5")
-
-        XCTAssertEqual(menu.sections.count, 2)
-        XCTAssertEqual(menu.sections[0].title, "Advanced")
-        XCTAssertEqual(menu.sections[0].items[0].modelId, "gpt-5")
-        XCTAssertEqual(menu.sections[1].title, "Basic")
-        XCTAssertEqual(menu.sections[1].items[0].modelId, "gpt-4o-mini")
+        let sections = menu.children.compactMap { $0 as? UIMenu }
+        let menuActions = actions(in: menu)
+        XCTAssertEqual(sections.map(\.title), ["", "Plus", "Pro"])
+        XCTAssertEqual(menuActions.map(\.title), ["free-model", "plus-model", "pro-model"])
+        if #available(iOS 16.0, *) {
+            XCTAssertTrue(menuActions.allSatisfy { $0.subtitle == nil })
+        }
     }
 
-    func test_subscribedUser_allAccessibleItems_enabled() {
-        let subscribedPremium = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let menu = buildSubscribedMenu(models: [subscribedPremium, freeModel], selectedId: "gpt-5")
+    // MARK: - Updated Menu
 
-        XCTAssertTrue(menu.sections.flatMap(\.items).allSatisfy { !$0.isDisabled })
+    func testWhenUpdatedMenuHasThreeAvailableAndTwoGatedModelsThenGroupsThemByCurrentAccess() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "available-1", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "gated-1", accessTier: ["plus", "pro"], hasAccess: false),
+            makeFakeModel(id: "available-2", accessTier: ["plus"], hasAccess: true),
+            makeFakeModel(id: "gated-2", accessTier: ["pro"], hasAccess: false),
+            makeFakeModel(id: "available-3", accessTier: ["pro"], hasAccess: true),
+        ])
+
+        let gatedSections = menu.children.compactMap { $0 as? UIMenu }
+        XCTAssertEqual(availableActions(in: menu).map(\.title), ["available-1", "available-2", "available-3"])
+        XCTAssertEqual(gatedSections.count, 1)
+        XCTAssertEqual(gatedSections[0].children.compactMap { $0 as? UIAction }.map(\.title), ["gated-1…", "gated-2…"])
     }
 
-    func test_subscribedUser_bottomAnchored_reversesSections() {
-        let subscribedPremium = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let menu = buildSubscribedMenu(models: [subscribedPremium, freeModel], selectedId: "gpt-5", isBottomAnchored: true)
+    func testWhenUpdatedMenuAvailableModelsHaveRecommendationLabelsThenOrdersThemFirstInBackendOrder() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "without-1", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "with-1", accessTier: ["free"], hasAccess: true, label: .everydayUse),
+            makeFakeModel(id: "unknown", accessTier: ["free"], hasAccess: true, label: .unknown("FUTURE_LABEL")),
+            makeFakeModel(id: "without-2", accessTier: ["free"], hasAccess: true),
+        ])
 
-        XCTAssertEqual(menu.sections[0].title, "Basic")
-        XCTAssertEqual(menu.sections[1].title, "Advanced")
+        let actions = availableActions(in: menu)
+        XCTAssertEqual(actions.map(\.title), ["with-1", "unknown", "without-1", "without-2"])
+        if #available(iOS 16.0, *) {
+            XCTAssertEqual(actions.first?.subtitle, AIChatModelLabel.everydayUse.localizedText)
+            XCTAssertNil(actions[1].subtitle)
+        }
     }
 
-    func test_subscribedUser_allBasicModels_singleSection() {
-        let menu = buildSubscribedMenu(models: [freeModel, freeModel2], selectedId: "gpt-4o-mini")
+    func testWhenUpdatedMenuGatedModelsHaveLabelsThenKeepsBackendOrderAndOmitsSubtitles() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "gated-without", accessTier: ["plus"], hasAccess: false),
+            makeFakeModel(id: "gated-with", accessTier: ["plus"], hasAccess: false, label: .everydayUse),
+        ])
 
-        XCTAssertEqual(menu.sections.count, 1)
-        XCTAssertEqual(menu.sections[0].title, "Basic")
+        let gatedActions = gatedSection(in: menu)?.children.compactMap { $0 as? UIAction } ?? []
+        XCTAssertTrue(availableActions(in: menu).isEmpty)
+        XCTAssertEqual(gatedActions.map(\.title), ["gated-without…", "gated-with…"])
+        if #available(iOS 16.0, *) {
+            XCTAssertTrue(gatedActions.allSatisfy { $0.subtitle == nil })
+        }
     }
 
-    func test_subscribedUser_allAdvancedModels_singleSection() {
-        let subscribedPremium = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let subscribedPremium2 = AIChatModel(id: "claude-opus", name: "Claude Opus", provider: .anthropic, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let menu = buildSubscribedMenu(models: [subscribedPremium, subscribedPremium2], selectedId: "gpt-5")
+    func testWhenUpdatedMenuModelIsAccessibleThenDoesNotAddTierBadgeToTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: true)],
+            userTier: .plus
+        )
 
-        XCTAssertEqual(menu.sections.count, 1)
-        XCTAssertEqual(menu.sections[0].title, "Advanced")
+        XCTAssertEqual(availableActions(in: menu).first?.title, "plus")
     }
 
-    func test_subscribedUser_advancedSectionUsesCorrectTitle() {
-        let subscribedPremium = AIChatModel(id: "gpt-5", name: "GPT-5", provider: .openAI, supportsImageUpload: true, entityHasAccess: true, accessTier: ["plus", "pro"])
-        let menu = buildSubscribedMenu(models: [subscribedPremium, freeModel], selectedId: "gpt-5")
+    func testWhenUpdatedMenuFreeUserTrialEligibilityIsUnknownThenUsesTryFreeTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
+            userTier: .free,
+            freeTrialEligibility: .unknown
+        )
 
-        XCTAssertEqual(menu.sections[0].title, "Advanced")
-        XCTAssertNotEqual(menu.sections[0].title, "Advanced Models - DuckDuckGo subscription")
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerTryFree)
     }
 
-    func test_subscribedUser_proOnlyModel_disabledForPlusUser() {
-        let proOnly = AIChatModel(id: "gpt-5-ultra", name: "GPT-5 Ultra", provider: .openAI, supportsImageUpload: true, entityHasAccess: false, accessTier: ["pro"])
-        let menu = buildSubscribedMenu(models: [proOnly, freeModel], selectedId: "gpt-4o-mini")
+    func testWhenUpdatedMenuFreeUserIsEligibleForTrialThenUsesTryFreeTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
+            userTier: .free,
+            freeTrialEligibility: .eligible
+        )
 
-        let advancedSection = menu.sections.first(where: { $0.title == "Advanced" })!
-        XCTAssertTrue(advancedSection.items[0].isDisabled)
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerTryFree)
+    }
+
+    func testWhenUpdatedMenuFreeUserIsIneligibleForTrialThenUsesSubscriberExclusiveTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false)],
+            userTier: .free,
+            freeTrialEligibility: .ineligible
+        )
+
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerSubscriberExclusive)
+    }
+
+    func testWhenUpdatedMenuPlusUserHasGatedModelsThenUsesProPlanExclusiveTitle() {
+        let menu = makeUpdatedMenu(
+            models: [makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)],
+            userTier: .plus,
+            freeTrialEligibility: .ineligible
+        )
+
+        XCTAssertEqual(gatedSection(in: menu)?.title, UserText.aiChatModelPickerProPlanExclusive)
+    }
+
+    func testWhenUpdatedMenuAvailableModelsHaveMixedRecommendationLabelsThenDoesNotAddSectionSeparator() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "with", accessTier: ["pro"], hasAccess: true, label: .everydayUse),
+            makeFakeModel(id: "without", accessTier: ["pro"], hasAccess: true),
+        ], userTier: .pro)
+
+        XCTAssertEqual(menu.children.compactMap { $0 as? UIMenu }.count, 0)
+        XCTAssertEqual(availableActions(in: menu).map(\.title), ["with", "without"])
+    }
+
+    func testWhenUpdatedMenuModelIsSelectedThenItsActionIsOn() {
+        let menu = makeUpdatedMenu(
+            models: [
+                makeFakeModel(id: "selected", accessTier: ["free"], hasAccess: true),
+                makeFakeModel(id: "other", accessTier: ["free"], hasAccess: true),
+            ],
+            selectedId: "selected"
+        )
+
+        XCTAssertEqual(availableActions(in: menu).map(\.state), [.on, .off])
+        XCTAssertTrue(menu.options.contains(.singleSelection))
+    }
+
+    func testWhenUpdatedMenuModelProviderIsUnknownThenUsesOSSIcon() {
+        let menu = makeUpdatedMenu(models: [
+            makeFakeModel(id: "unknown", provider: .unknown, accessTier: ["free"], hasAccess: true),
+        ])
+
+        XCTAssertEqual(
+            availableActions(in: menu).first?.image?.pngData(),
+            DesignSystemImages.Glyphs.Size16.aiModelOSS.pngData()
+        )
+    }
+
+    func testUnavailablePurchaseOmitsGatedModelsAndHeadingsInBothMenuVariants() {
+        let models = [
+            makeFakeModel(id: "free", accessTier: ["free"], hasAccess: true),
+            makeFakeModel(id: "plus", accessTier: ["plus"], hasAccess: false),
+            makeFakeModel(id: "pro", accessTier: ["pro"], hasAccess: false)
+        ]
+        for updated in [true, false] {
+            let factory = UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: updated)
+            let menu = factory.makeMenu(models: models, selectedId: "free", userTier: .free,
+                                        allowsSubscriptionUpsell: false, onSelect: { _ in })
+            let visibleActions = updated ? availableActions(in: menu) : actions(in: menu)
+            XCTAssertEqual(visibleActions.map(\.title), ["free"])
+            XCTAssertEqual(visibleActions.first?.state, .on)
+            XCTAssertTrue(menu.children.compactMap { $0 as? UIMenu }.allSatisfy { $0.title.isEmpty })
+
+            let restored = factory.makeMenu(models: models, selectedId: "free", userTier: .free, onSelect: { _ in })
+            let restoredActions = updated ? availableActions(in: restored) + actions(in: restored) : actions(in: restored)
+            XCTAssertEqual(restoredActions.count, 3)
+        }
     }
 
     // MARK: - Helpers
 
-    private func buildFreeMenu(models: [AIChatModel], selectedId: String, isBottomAnchored: Bool = false) -> UnifiedToggleInputModelMenu {
+    private func buildMenu(models: [AIChatModel], selectedId: String? = nil) -> UnifiedToggleInputModelMenu {
         UnifiedToggleInputModelMenu.build(
             models: models,
             selectedId: selectedId,
-            isBottomAnchored: isBottomAnchored,
-            hasActiveSubscription: false,
-            advancedSectionTitle: "Advanced",
-            basicSectionTitle: "Basic"
+            plusSectionTitle: "Plus",
+            proSectionTitle: "Pro"
         )
     }
 
-    private func buildSubscribedMenu(models: [AIChatModel], selectedId: String, isBottomAnchored: Bool = false) -> UnifiedToggleInputModelMenu {
-        UnifiedToggleInputModelMenu.build(
+    private func actions(in menu: UIMenu) -> [UIAction] {
+        menu.children.compactMap { $0 as? UIMenu }.flatMap { section in
+            section.children.compactMap { $0 as? UIAction }
+        }
+    }
+
+    private func makeUpdatedMenu(
+        models: [AIChatModel],
+        selectedId: String? = nil,
+        userTier: AIChatUserTier = .free,
+        freeTrialEligibility: FreeTrialEligibility = .unknown
+    ) -> UIMenu {
+        UnifiedToggleInputModelMenuFactory(isUpdatedModelPickerEnabled: true).makeMenu(
             models: models,
             selectedId: selectedId,
-            isBottomAnchored: isBottomAnchored,
-            hasActiveSubscription: true,
-            advancedSectionTitle: "Advanced",
-            basicSectionTitle: "Basic"
+            userTier: userTier,
+            freeTrialEligibility: freeTrialEligibility,
+            onSelect: { _ in }
+        )
+    }
+
+    private func availableActions(in menu: UIMenu) -> [UIAction] {
+        menu.children.compactMap { $0 as? UIAction }
+    }
+
+    private func gatedSection(in menu: UIMenu) -> UIMenu? {
+        menu.children.compactMap { $0 as? UIMenu }.first
+    }
+
+    private func makeFakeModel(
+        id: String,
+        name: String? = nil,
+        provider: AIChatModel.ModelProvider = .openAI,
+        accessTier: [String],
+        hasAccess: Bool,
+        label: AIChatModelLabel? = nil
+    ) -> AIChatModel {
+        AIChatModel(
+            id: id,
+            name: name ?? id,
+            provider: provider,
+            supportsImageUpload: false,
+            entityHasAccess: hasAccess,
+            accessTier: accessTier,
+            label: label
         )
     }
 }

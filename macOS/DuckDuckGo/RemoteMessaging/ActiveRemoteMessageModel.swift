@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import PixelKit
 import RemoteMessaging
@@ -38,7 +39,6 @@ final class ActiveRemoteMessageModel: ObservableObject {
     @Published private var remoteMessage: RemoteMessageModel?
     @Published var newTabPageRemoteMessage: RemoteMessageModel?
     @Published var tabBarRemoteMessage: RemoteMessageModel?
-    @Published var isViewOnScreen: Bool = false
 
     /**
      * A block that returns a remote messaging store, if it exists.
@@ -55,6 +55,11 @@ final class ActiveRemoteMessageModel: ObservableObject {
     let openURLHandler: (URL) async -> Void
 
     /**
+     * Handler for refreshing usage-related survey parameters before opening the URL.
+     */
+    let surveyURLRefresher: (String) -> String
+
+    /**
      * Handler for opening the user feedback dialog.
      */
     let navigateToFeedbackHandler: () async -> Void
@@ -69,18 +74,22 @@ final class ActiveRemoteMessageModel: ObservableObject {
      */
     let navigateToSoftwareUpdateHandler: () async -> Void
 
+    private let pixelFiring: (any PixelKitFiring)?
+
     convenience init(remoteMessagingClient: RemoteMessagingClient,
                      openURLHandler: @escaping (URL) async -> Void,
                      navigateToFeedbackHandler: @escaping () async -> Void,
                      navigateToPIRHandler: @escaping () async -> Void,
-                     navigateToSoftwareUpdateHandler: @escaping () async -> Void) {
+                     navigateToSoftwareUpdateHandler: @escaping () async -> Void,
+                     pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.init(
             remoteMessagingStore: remoteMessagingClient.store,
             remoteMessagingAvailabilityProvider: remoteMessagingClient.remoteMessagingAvailabilityProvider,
             openURLHandler: openURLHandler,
             navigateToFeedbackHandler: navigateToFeedbackHandler,
             navigateToPIRHandler: navigateToPIRHandler,
-            navigateToSoftwareUpdateHandler: navigateToSoftwareUpdateHandler
+            navigateToSoftwareUpdateHandler: navigateToSoftwareUpdateHandler,
+            pixelFiring: pixelFiring
         )
     }
 
@@ -91,15 +100,19 @@ final class ActiveRemoteMessageModel: ObservableObject {
         remoteMessagingStore: @escaping @autoclosure () -> RemoteMessagingStoring?,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding?,
         openURLHandler: @escaping (URL) async -> Void,
+        surveyURLRefresher: @escaping (String) -> String = ActiveRemoteMessageModel.defaultSurveyURLRefresher,
         navigateToFeedbackHandler: @escaping () async -> Void,
         navigateToPIRHandler: @escaping () async -> Void,
-        navigateToSoftwareUpdateHandler: @escaping () async -> Void
+        navigateToSoftwareUpdateHandler: @escaping () async -> Void,
+        pixelFiring: (any PixelKitFiring)? = PixelKit.shared
     ) {
         self.store = remoteMessagingStore
         self.openURLHandler = openURLHandler
+        self.surveyURLRefresher = surveyURLRefresher
         self.navigateToFeedbackHandler = navigateToFeedbackHandler
         self.navigateToPIRHandler = navigateToPIRHandler
         self.navigateToSoftwareUpdateHandler = navigateToSoftwareUpdateHandler
+        self.pixelFiring = pixelFiring
 
         let messagesDidChangePublisher = NotificationCenter.default.publisher(for: RemoteMessagingStore.Notifications.remoteMessagesDidChange)
             .asVoid()
@@ -142,23 +155,6 @@ final class ActiveRemoteMessageModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        let remoteMessagePublisher = $remoteMessage
-            .compactMap({ $0 })
-            .filter { [weak self] _ in self?.isViewOnScreen == true }
-            .asVoid()
-        let isViewOnScreenPublisher = $isViewOnScreen.removeDuplicates().filter({ $0 }).asVoid()
-        Publishers.Merge(remoteMessagePublisher, isViewOnScreenPublisher)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                guard let self else {
-                    return
-                }
-                Task {
-                    await self.markRemoteMessageAsShown()
-                }
-            }
-            .store(in: &cancellables)
-
         updateRemoteMessage()
     }
 
@@ -190,24 +186,34 @@ final class ActiveRemoteMessageModel: ObservableObject {
         }()
 
         if let pixel {
-            PixelKit.fire(pixel, withAdditionalParameters: ["message": remoteMessage.id])
+            pixelFiring?.fire(pixel, options: .parameters(["message": remoteMessage.id]))
         }
     }
 
-    func markRemoteMessageAsShown() async {
-        guard let remoteMessage, let store = store() else {
+    @MainActor
+    func markRemoteMessageAsShown(withID messageID: String, on surface: RemoteMessageSurfaceType) async {
+        guard let remoteMessage,
+              remoteMessage.id == messageID,
+              remoteMessage.surfaces.contains(surface) || (surface == .tabBar && remoteMessage.isLegacyTabBarSurvey),
+              remoteMessage.content?.isSupported == true,
+              let store = store() else {
+            return
+        }
+        let result = await store.recordRemoteMessageImpression(withID: messageID)
+        guard case .recorded(let isFirstImpression, _) = result else {
+            refreshRemoteMessageForPresentation()
             return
         }
         Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
+
         if remoteMessage.isMetricsEnabled {
-            PixelKit.fire(GeneralPixel.remoteMessageShown, withAdditionalParameters: ["message": remoteMessage.id])
+            pixelFiring?.fire(GeneralPixel.remoteMessageShown, options: .parameters(["message": messageID]))
         }
-        if !store.hasShownRemoteMessage(withID: remoteMessage.id) {
+        if isFirstImpression {
             Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
-                PixelKit.fire(GeneralPixel.remoteMessageShownUnique, withAdditionalParameters: ["message": remoteMessage.id])
+                pixelFiring?.fire(GeneralPixel.remoteMessageShownUnique, options: .parameters(["message": messageID]))
             }
-            await store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
         }
     }
 
@@ -218,6 +224,10 @@ final class ActiveRemoteMessageModel: ObservableObject {
     private func updateRemoteMessage() {
         // Only new tab page and tab bar are supported on macOS.
         remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
+    }
+
+    func refreshRemoteMessageForPresentation() {
+        updateRemoteMessage()
     }
 
     private var cancellables = Set<AnyCancellable>()

@@ -77,6 +77,28 @@ final class PairingInfoTests: XCTestCase {
         }
     }
 
+    func testInit_whenPairingV2URLThenReturnsPairingV2Info() throws {
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/sync/pairing/#&code2=abc"))
+        let pairingInfo = try XCTUnwrap(PairingInfo(url: url))
+
+        XCTAssertEqual(pairingInfo.base64Code, url.absoluteString)
+        XCTAssertEqual(pairingInfo.deviceName, "")
+        XCTAssertTrue(pairingInfo.isPairingV2)
+        if case .pairingV2(let pairingV2URL) = pairingInfo.kind {
+            XCTAssertEqual(pairingV2URL, url)
+        } else {
+            XCTFail("Expected Pairing V2 kind")
+        }
+    }
+
+    func testInit_whenURLContainsCodeAndCode2ThenPairingV2Wins() throws {
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/sync/pairing/#&code=v1stale&code2=v2current&deviceName=iPhone"))
+        let pairingInfo = try XCTUnwrap(PairingInfo(url: url))
+
+        XCTAssertEqual(pairingInfo.base64Code, url.absoluteString)
+        XCTAssertTrue(pairingInfo.isPairingV2)
+    }
+
     // MARK: toURL
 
     func testToURL_replacesPlusesWithHyphens() {
@@ -103,6 +125,19 @@ final class PairingInfoTests: XCTestCase {
             let pairingInfo = PairingInfo(base64Code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9", deviceName: input)
             XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing/#&code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=\(output)"
             )
+        }
+    }
+
+    func testToURL_whenPairingV2URLThenReturnsPairingV2URL() throws {
+        let url = try XCTUnwrap(URL(string: "https://duckduckgo.com/sync/pairing/#&code2=abc"))
+        let pairingInfo = PairingInfo(pairingV2URL: url, deviceName: "iPhone")
+
+        XCTAssertEqual(pairingInfo.base64Code, url.absoluteString)
+        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL), url)
+        if case .pairingV2(let pairingV2URL) = pairingInfo.kind {
+            XCTAssertEqual(pairingV2URL, url)
+        } else {
+            XCTFail("Expected Pairing V2 kind")
         }
     }
 }

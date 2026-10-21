@@ -18,7 +18,7 @@
 
 import XCTest
 import PixelKit
-import Navigation
+import DDGNavigation
 import Onboarding
 import PrivacyDashboard
 @testable import DuckDuckGo_Privacy_Browser
@@ -27,7 +27,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
 
     var reporter: OnboardingPixelReporter!
     var onboardingState: MockContextualOnboardingState!
-    var eventSent: PixelKitEvent?
+    var eventSent: PixelKit.Event?
     var frequency: PixelKit.Frequency?
     var userDefaults: UserDefaults?
     private var sharedPixelHandler: MockOnboardingSharedPixelHandler!
@@ -338,10 +338,13 @@ class MockContextualOnboardingState: ContextualOnboardingStateUpdater, Contextua
 
 }
 
-private class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
+final class MockOnboardingSharedPixelHandler: OnboardingSharedPixelHandling {
     var eventsReceived: [OnboardingSharedPixelEvent] = []
 
-    func fire(_ event: OnboardingSharedPixelEvent) {
+    func fire(_ event: OnboardingSharedPixelEvent,
+              source: OnboardingPixelParameter.Source?,
+              flow: OnboardingPixelParameter.Flow?,
+              variant: OnboardingPixelParameter.Variant?) {
         eventsReceived.append(event)
     }
 

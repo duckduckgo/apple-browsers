@@ -18,7 +18,9 @@
 
 import AppKitExtensions
 import Combine
+import CombineExtensions
 import Common
+import FoundationExtensions
 import Foundation
 import NewTabPage
 import os.log
@@ -35,7 +37,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
 
     let appearancePreferences: AppearancePreferences
     let customImagesManager: UserBackgroundImagesManaging?
-    let sendPixel: (PixelKitEvent) -> Void
+    let sendPixel: (PixelKit.Event) -> Void
     let openFilePanel: () -> URL?
     let showAddImageFailedAlert: () -> Void
     let customizerOpener = NewTabPageCustomizerOpener()
@@ -74,7 +76,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
     init(
         appearancePreferences: AppearancePreferences,
         userBackgroundImagesManager: UserBackgroundImagesManaging?,
-        sendPixel: @escaping (PixelKitEvent) -> Void,
+        sendPixel: @escaping (PixelKit.Event) -> Void,
         openFilePanel: @escaping () -> URL?,
         showAddImageFailedAlert: @escaping () -> Void
     ) {

@@ -26,14 +26,26 @@ extension MainWindowController: WKWebExtensionWindow {
         case notSupported
     }
 
+    /// Called by WebKit through `WKWebExtensionWindow` when an extension needs the ordered tabs exposed by this window.
+    /// The context identifies the requesting extension and its open-window state.
     func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
         // Only loaded tabs are returned — WKWebExtensionTab requires a WKWebView,
         // which unloaded tabs don't have. They become visible as the lazy loader materializes them.
-        return mainViewController.tabCollectionViewModel.loadedTabs
+        // Pinned tabs are included so the extension can see and message them like any other tab.
+        if let closingTabs = webExtensionTabsForClosingWindow(in: context) { return closingTabs }
+        return mainViewController.tabCollectionViewModel.loadedPinnedTabs
+            + mainViewController.tabCollectionViewModel.loadedTabs
     }
 
     func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
-        return mainViewController.tabCollectionViewModel.selectedTab
+        let selectedTab = mainViewController.tabCollectionViewModel.selectedTab
+        if let closingTabs = webExtensionTabsForClosingWindow(in: context) {
+            if let selectedTab, closingTabs.contains(where: { $0 === selectedTab }) { return selectedTab }
+            // WebKit requires an active tab in every nonempty list, including during didCloseWindow.
+            // Keep its closing list consistent without changing the browser's real selection.
+            return closingTabs.first
+        }
+        return selectedTab
     }
 
     func windowType(for context: WKWebExtensionContext) -> WKWebExtension.WindowType {

@@ -19,12 +19,13 @@
 import AutoconsentStats
 import Combine
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import NewTabPage
-import PersistenceTestingUtils
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import PrivacyStats
@@ -73,7 +74,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
-    var firePixelCalls: [PixelKitEvent] = []
+    var firePixelCalls: [PixelKit.Event] = []
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
@@ -125,14 +126,24 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             contextualOnboardingPublisher: Just(false).eraseToAnyPublisher()
         )
 
+        let fireproofDomains = MockFireproofDomains()
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
         let fireCoordinator = FireCoordinator(tld: TLD(),
-                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              featureFlagger: featureFlagger,
                                               historyCoordinating: HistoryCoordinatingMock(),
                                               visualizeFireAnimationDecider: nil,
                                               onboardingContextualDialogsManager: nil,
-                                              fireproofDomains: MockFireproofDomains(),
-                                              faviconManagement: FaviconManagerMock(),
+                                              fireproofDomains: fireproofDomains,
+                                              faviconManagement: faviconManager,
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: dataClearingPreferences,
                                               pixelFiring: nil,
                                               wideEventManaging: WideEventMock(),
                                               historyProvider: MockHistoryViewDataProvider())

@@ -29,6 +29,7 @@
                         "DuckDuckGo VPN Alpha",
                         "DuckDuckGo VPN Review",
                         "DuckDuckGo VPN App Store",
+                        "NetworkProtectionAppExtension",
                         "com.duckduckgo.macos.vpn.network-extension",
                         "com.duckduckgo.macos.vpn.network-extension.debug",
                         "com.duckduckgo.macos.vpn.network-extension.review",
@@ -76,7 +77,7 @@
                                 "trigger": {
                                     "type": "string",
                                     "description": "What caused the leak check cycle to run",
-                                    "enum": ["tunnel_start", "reassert", "periodic"]
+                                    "enum": ["tunnel_start", "reassert", "periodic", "rekey"]
                                 },
                                 "status_reason": {
                                     "type": "string",

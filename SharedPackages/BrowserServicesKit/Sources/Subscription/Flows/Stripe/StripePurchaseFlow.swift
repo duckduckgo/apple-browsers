@@ -17,11 +17,13 @@
 //
 
 import Foundation
+import DDGError
 import StoreKit
 import os.log
 import Networking
 import Common
-import PixelKit
+import FoundationExtensions
+import WideEvent
 
 public enum StripePurchaseFlowError: DDGError {
     case noProductsFound
@@ -126,7 +128,7 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
     }
 
     private func isSubscriptionExpired() async -> Bool? {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .remoteFirst) else {
+        guard let subscription = try? await subscriptionManager.getSubscription(forceRefresh: true) else {
             return nil
         }
         return !subscription.isActive
@@ -134,8 +136,8 @@ public final class DefaultStripePurchaseFlow: StripePurchaseFlow {
 
     public func completeSubscriptionPurchase() async {
         Logger.subscriptionStripePurchaseFlow.log("Completing subscription purchase")
-        subscriptionManager.clearSubscriptionCache()
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        _ = try? await subscriptionManager.getSubscription(forceRefresh: true)
         NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
     }
 }

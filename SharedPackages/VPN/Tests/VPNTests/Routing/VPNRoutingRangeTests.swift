@@ -265,7 +265,13 @@ final class VPNRoutingRangeTests: XCTestCase {
             "1.0.0.0/8",      // APNIC
             "8.0.0.0/7",      // Various (Level 3, Google, etc.)
             "64.0.0.0/3",     // Part of former 64.0.0.0/2 (64-95)
-            "96.0.0.0/4",     // Part of former 64.0.0.0/2 (96-111)
+            // 96-111 used to be a single /4, now split into 6 sub-blocks carving out CGNAT
+            "96.0.0.0/6",     // 96-99
+            "100.0.0.0/10",   // 100.0-100.63
+            "100.128.0.0/9",  // 100.128-100.255
+            "101.0.0.0/8",
+            "102.0.0.0/7",    // 102-103
+            "104.0.0.0/5",    // 104-111
             "128.0.0.0/3",    // Various global
             "::/0"            // IPv6 default
         ]
@@ -282,6 +288,16 @@ final class VPNRoutingRangeTests: XCTestCase {
             XCTAssertTrue(isCovered, "Public network range should contain \(expectedBlock)")
         }
 
+        // CGNAT (100.64/10) must NOT be in publicNetworkRange — it's added conditionally
+        // by VPNRoutingTableResolver based on the excludeCGNAT toggle.
+        guard let cgnatRange = IPAddressRange(from: "100.64.0.0/10") else {
+            XCTFail("Invalid CGNAT range")
+            return
+        }
+        let cgnatInPublic = publicNetworks.contains { publicRange in
+            publicRange.overlaps(cgnatRange)
+        }
+        XCTAssertFalse(cgnatInPublic, "publicNetworkRange must not overlap CGNAT (100.64/10)")
     }
 
     // MARK: - Performance Tests

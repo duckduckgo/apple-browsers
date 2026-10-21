@@ -1,0 +1,29 @@
+# duckai_chrome_shortcut_setup.yaml
+#
+# Shared launch for the iPad Duck.ai chrome shortcut flows.
+# The shortcut is iPad-only. `aiChatChromeMenuButtonIPad` replaces the legacy split
+# chip with the single "Duck.ai" menu button, so these flows pin it ON rather than
+# inheriting whatever the remote config currently says. `contextualDuckAIMode` and
+# `aiChatAddressBarRecentChats` decide what the button's menu offers, so they are
+# pinned too. The Navigation Bar user setting defaults to ON, so no extra setup is
+# needed for the button to appear.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- launchApp:
+    appId: "com.duckduckgo.mobile.ios"
+    clearState: true
+    clearKeychain: true
+    arguments:
+        isOnboardingCompleted: ${ONBOARDING_COMPLETED}
+        currentAppVariant: ${APP_VARIANT}
+        isRunningUITests: true
+        ff.browsingMenuSheetEnabledByDefault: "true"
+        "ff.aiChatChromeShortcutIPad": "true"
+        "ff.aiChatChromeMenuButtonIPad": "true"
+        "ff.contextualDuckAIMode": "true"
+        "ff.aiChatAddressBarRecentChats": "true"
+
+# Dismiss the Dax onboarding tips if they appear over the New Tab Page.
+- runFlow: ./hide_daxdialogs.yaml

@@ -7,7 +7,7 @@ let package = Package(
     name: "SERPSettings",
     platforms: [
         .iOS("15.0"),
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
@@ -16,16 +16,23 @@ let package = Package(
         ),
     ],
     dependencies: [
+        .package(path: "../Common"),
+        .package(path: "../Persistence"),
+        .package(path: "../PixelKit"),
         .package(path: "../BrowserServicesKit"),
+        .package(path: "../Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../AIChat")
     ],
     targets: [
         .target(
             name: "SERPSettings",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PixelKit", package: "PixelKit"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "AIChat", package: "AIChat")
             ]
@@ -35,8 +42,7 @@ let package = Package(
             dependencies: [
                 "SERPSettings",
                 .product(name: "BrowserServicesKitTestsUtils", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-                .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
+                .product(name: "Persistence", package: "Persistence"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "AIChat", package: "AIChat")
             ]

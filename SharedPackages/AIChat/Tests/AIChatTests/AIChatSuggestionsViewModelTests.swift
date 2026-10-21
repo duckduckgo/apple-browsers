@@ -56,19 +56,23 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
 
     // MARK: - Setting Chats Tests
 
-    func testSetChats_MergesAndSortsByRecency() {
+    func testSetChats_MergesAndSortsByRecencyWhileAccountingForPinnedTabs() {
         // Given - pinned is older, recent is newer
         let pinnedChats = [makeSuggestion(id: "p1", title: "Pinned", isPinned: true, timestamp: Date().addingTimeInterval(-3600))]
-        let recentChats = [makeSuggestion(id: "r1", title: "Recent", timestamp: Date())]
+        let recentChats = [
+            makeSuggestion(id: "r1", title: "Recent", timestamp: Date()),
+            makeSuggestion(id: "r2", title: "Recent", timestamp: Date.distantPast)
+        ]
 
         // When
         viewModel.setChats(pinned: pinnedChats, recent: recentChats)
 
         // Then - sorted by recency, most recent first
-        XCTAssertEqual(viewModel.filteredSuggestions.count, 2)
+        XCTAssertEqual(viewModel.filteredSuggestions.count, 3)
         XCTAssertTrue(viewModel.hasSuggestions)
-        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "r1") // More recent
-        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "p1") // Older
+        XCTAssertEqual(viewModel.filteredSuggestions[0].id, "p1") // Pinned must go at the top
+        XCTAssertEqual(viewModel.filteredSuggestions[1].id, "r1") // Recent
+        XCTAssertEqual(viewModel.filteredSuggestions[2].id, "r2") // Oldest
     }
 
     func testSetChats_ReplacesExistingChats() {
@@ -405,5 +409,37 @@ final class AIChatSuggestionsViewModelTests: XCTestCase {
         // Then
         XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)
         XCTAssertNil(viewModel.selectedIndex)
+    }
+
+    func testSetChats_ClearsShowViewAllChatsWhenEmpty() {
+        viewModel.setChats(pinned: [], recent: [makeSuggestion(id: "1", title: "First")], showViewAllChats: true)
+        XCTAssertTrue(viewModel.showViewAllChats)
+
+        viewModel.setChats(pinned: [], recent: [], showViewAllChats: true)
+
+        XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)
+        XCTAssertFalse(viewModel.showViewAllChats)
+    }
+
+    func testRemoveSuggestion_ClearsShowViewAllChatsWhenLastChatRemoved() {
+        let chat = makeSuggestion(id: "1", title: "Only chat")
+        viewModel.setChats(pinned: [], recent: [chat], showViewAllChats: true)
+        XCTAssertTrue(viewModel.showViewAllChats)
+
+        viewModel.removeSuggestion(chat)
+
+        XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)
+        XCTAssertFalse(viewModel.showViewAllChats)
+    }
+
+    func testSetChats_ClearsShowViewAllChatsWhenPendingRemovalEmptiesList() {
+        let chat = makeSuggestion(id: "1", title: "Only chat")
+        viewModel.setChats(pinned: [], recent: [chat], showViewAllChats: true)
+        viewModel.removeSuggestion(chat)
+
+        viewModel.setChats(pinned: [], recent: [chat], showViewAllChats: true)
+
+        XCTAssertTrue(viewModel.filteredSuggestions.isEmpty)
+        XCTAssertFalse(viewModel.showViewAllChats)
     }
 }

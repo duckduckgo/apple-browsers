@@ -18,8 +18,9 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import os.log
-import PixelKit
+import WideEvent
 
 // MARK: - Free Trial Pixel Handling
 

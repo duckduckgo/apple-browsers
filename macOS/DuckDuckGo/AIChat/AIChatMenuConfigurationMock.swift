@@ -29,6 +29,7 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldOpenAIChatInSidebar = false
     var shouldDisplaySummarizationMenuItem = false
     var shouldDisplayTranslationMenuItem = false
+    var shouldDisplaySelectionContextMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?

@@ -20,6 +20,7 @@ import XCTest
 import AppKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 @testable import DuckDuckGo_Privacy_Browser
 

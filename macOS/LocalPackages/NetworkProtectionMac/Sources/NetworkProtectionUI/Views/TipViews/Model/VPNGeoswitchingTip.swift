@@ -45,7 +45,7 @@ extension VPNGeoswitchingTip: Tip {
     }
 
     var image: Image? {
-        Image(.geolocationTip)
+        Image(.location56)
     }
 
     var rules: [Rule] {

@@ -23,6 +23,7 @@ import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import PixelKit
 import Common
+import FoundationExtensions
 import Networking
 import os.log
 

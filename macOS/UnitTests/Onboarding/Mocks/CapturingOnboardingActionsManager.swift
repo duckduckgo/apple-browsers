@@ -17,12 +17,16 @@
 //
 
 import Foundation
+import WebKit
 @testable import DuckDuckGo_Privacy_Browser
 
 class CapturingOnboardingActionsManager: OnboardingActionsManaging {
 
     var configuration: OnboardingConfiguration = OnboardingConfiguration(
-        stepDefinitions: StepDefinitions(systemSettings: SystemSettings(rows: [])),
+        stepDefinitions: StepDefinitions(
+            systemSettings: SystemSettings(rows: []),
+            getStarted: GetStarted(options: [])
+        ),
         exclude: [],
         order: "",
         env: "environment",
@@ -30,6 +34,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
         platform: .init(name: "")
     )
 
+    var sourceWebView: WKWebView?
     var goToAddressBarCalled = false
     var goToSettingsCalled = false
     var addToDockCalled = false
@@ -39,6 +44,7 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var setSessionRestoreCalled = false
     var setHomeButtonPositionCalled = false
     var setDuckAiInAddressBarCalled = false
+    var installChromeExtensionCalled = false
     var onboardingStartedCalled = false
     var reportExceptionCalled = false
     var exceptionParams: [String: String] = [:]
@@ -50,15 +56,18 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     var duckAiInAddressBarEnabled: Bool?
     var reportedTelemetryEvent: OnboardingUserScript.TelemetryEvent?
 
-    func onboardingStarted() {
+    func onboardingStarted(from webView: WKWebView?) {
+        sourceWebView = webView
         onboardingStartedCalled = true
     }
 
-    func goToAddressBar() {
+    func goToAddressBar(from webView: WKWebView?) {
+        sourceWebView = webView
         goToAddressBarCalled = true
     }
 
-    func goToSettings() {
+    func goToSettings(from webView: WKWebView?) {
+        sourceWebView = webView
         goToSettingsCalled = true
     }
 
@@ -93,6 +102,10 @@ class CapturingOnboardingActionsManager: OnboardingActionsManaging {
     func setDuckAiInAddressBar(enabled: Bool) {
         setDuckAiInAddressBarCalled = true
         duckAiInAddressBarEnabled = enabled
+    }
+
+    func installChromeExtension() {
+        installChromeExtensionCalled = true
     }
 
     func stepCompleted(step: OnboardingSteps) {

@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Persistence
 import WebExtensions
 
@@ -31,6 +32,31 @@ protocol AutofillPreferencesPersistor {
     var passwordManager: PasswordManager { get set }
     var debugScriptEnabled: Bool { get set }
     var showInMenuBar: Bool { get set }
+    /// Whether a password manager extension has taken autofill over, so DuckDuckGo leaves all of it alone:
+    /// it neither fills nor saves anything, including the login it would otherwise create without asking
+    /// when the user picks a private Duck Address. Only `WebExtensionAutofillTakeover` writes it.
+    var isManagedByExtension: Bool { get set }
+}
+
+extension AutofillPreferencesPersistor {
+
+    /// Whether DuckDuckGo autofills and offers to save usernames and passwords: the user wants it, and
+    /// no extension has taken autofill over.
+    var isUsernamesAndPasswordsAutofillActive: Bool {
+        askToSaveUsernamesAndPasswords && !isManagedByExtension
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save addresses: the user wants it, and no extension
+    /// has taken autofill over.
+    var isAddressesAutofillActive: Bool {
+        askToSaveAddresses && !isManagedByExtension
+    }
+
+    /// Whether DuckDuckGo autofills and offers to save payment methods: the user wants it, and no
+    /// extension has taken autofill over.
+    var isPaymentMethodsAutofillActive: Bool {
+        askToSavePaymentMethods && !isManagedByExtension
+    }
 }
 
 enum PasswordManager: String, CaseIterable {
@@ -88,6 +114,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
 
     enum Key: String {
         case showPasswordsInMenuBar = "preferences.passwords.show-in-menu-bar"
+        case isManagedByExtension = "preferences.autofill.managed-by-extension"
     }
 
     public var isAutoLockEnabled: Bool {
@@ -141,6 +168,15 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
             if oldValue != newValue {
                 NotificationCenter.default.post(name: .autofillShowInMenuBarDidChange, object: nil)
             }
+        }
+    }
+
+    var isManagedByExtension: Bool {
+        get {
+            (try? keyValueStore.object(forKey: Key.isManagedByExtension.rawValue) as? Bool) ?? false
+        }
+        set {
+            try? keyValueStore.set(newValue, forKey: Key.isManagedByExtension.rawValue)
         }
     }
 

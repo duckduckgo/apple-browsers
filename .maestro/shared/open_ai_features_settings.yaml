@@ -1,0 +1,20 @@
+# open_ai_features_settings.yaml
+#
+# Opens Settings -> AI Features. Works on iPhone and iPad.
+appId: com.duckduckgo.mobile.ios
+
+---
+
+- tapOn:
+    id: "Browser.OmniBar.Button.BrowsingMenu"
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- scrollUntilVisible:
+    element:
+      text: "AI Features"
+    direction: DOWN
+    centerElement: true
+- tapOn: "AI Features"
+- waitForAnimationToEnd

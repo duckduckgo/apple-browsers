@@ -16,14 +16,20 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import Combine
 import Common
+import FeatureFlags_macOS
+import DuckPlayer
+import FoundationExtensions
 import Foundation
 import Onboarding
 import os.log
 import PixelKit
 import PrivacyConfig
+import WebKit
 
 enum OnboardingSteps: String, CaseIterable {
     case welcome
@@ -38,6 +44,7 @@ enum OnboardingSteps: String, CaseIterable {
 /// Defines which onboarding steps should be excluded from the flow
 enum OnboardingExcludedStep: String {
     case addressBarMode
+    case duckPlayerSingle
 }
 
 enum OnboardingRow: String, Decodable {
@@ -46,18 +53,22 @@ enum OnboardingRow: String, Decodable {
     case dataImport = "import"
 }
 
+enum OnboardingOption: String {
+    case chromeExtensionInstall = "chrome-extension-install"
+}
+
 protocol OnboardingActionsManaging {
     /// Provides the configuration needed to set up the FE onboarding
     var configuration: OnboardingConfiguration { get }
 
     /// Used for any setup necessary for during the onboarding
-    func onboardingStarted()
+    func onboardingStarted(from webView: WKWebView?)
 
     /// At the end of the onboarding the user will be taken to the DuckDuckGo search page
-    func goToAddressBar()
+    func goToAddressBar(from webView: WKWebView?)
 
     /// At the end of the onboarding the user can be taken to the Settings page
-    func goToSettings()
+    func goToSettings(from webView: WKWebView?)
 
     /// At user imput adds the app to the dock
     func addToDock()
@@ -80,6 +91,9 @@ protocol OnboardingActionsManaging {
     /// At user input set the Duck.ai toggle visibility in the address bar
     func setDuckAiInAddressBar(enabled: Bool)
 
+    /// At user input installs the Chrome browser extension
+    func installChromeExtension()
+
     /// It is called every time the user ends an onboarding step
     func stepCompleted(step _: OnboardingSteps)
 
@@ -95,9 +109,13 @@ protocol OnboardingActionsManaging {
 
 protocol OnboardingNavigating: AnyObject {
     func replaceTabWith(_ tab: Tab)
+    func onboardingTab(for webView: WKWebView?) -> Tab?
+    func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool
     func focusOnAddressBar()
     func showImportDataView()
     func updatePreventUserInteraction(prevent: Bool)
+    func setOnboardingHandlers(onClose: @escaping @MainActor (Tab) -> Void,
+                               onSkipInPlace: @escaping @MainActor () -> Void)
 }
 
 final class OnboardingActionsManager: OnboardingActionsManaging {
@@ -109,31 +127,51 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     private let startupPreferences: StartupPreferences
     private let dataImportProvider: DataImportStatusProviding
     private var aiChatPreferencesStorage: AIChatPreferencesStorage
+    private let homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor
     private let featureFlagger: FeatureFlagger
-    private let applicationBuildType: ApplicationBuildType
+    private let chromeExtensionExperiment: OnboardingChromeExtensionExperiment
+    private let nonBlockingOnboarding: NonBlockingOnboarding
+    private let nonBlockingExperiment: OnboardingNonBlockingExperiment
     private let onboardingSharedPixelHandler: OnboardingSharedPixelHandling
+    private let chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling
+    private weak var contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater?
     private var cancellables = Set<AnyCancellable>()
+    private var hasInstalledHandlers = false
+    private let onboardingPersistor: NonBlockingOnboardingPersistor
+
+    /// Early and fully installed scripts can have different managers for the same first-run flow.
+    private var canEndOnboarding: Bool {
+        if nonBlockingOnboarding.isNonBlocking {
+            return !Self.isOnboardingFinished && onboardingPersistor.outcome == nil
+        }
+        return !Self.isOnboardingFinished
+    }
 
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
     static var isOnboardingFinished: Bool
 
     var configuration: OnboardingConfiguration {
         let systemSettings: SystemSettings
-        let order = "v3"
         let platform = OnboardingPlatform(name: "macos")
-        if applicationBuildType.isAppStoreBuild {
-            let rows = [
-                featureFlagger.isFeatureOn(.addToDockAppStore) ? OnboardingRow.dockInstructions.rawValue : nil,
-                OnboardingRow.dataImport.rawValue,
-            ].compactMap { $0 }
-            systemSettings = SystemSettings(rows: rows)
-        } else {
+        if dockCustomization.supportsAddingToDock {
             systemSettings = SystemSettings(rows: [
                 OnboardingRow.dock.rawValue,
+                OnboardingRow.dataImport.rawValue,
+            ])
+        } else {
+            systemSettings = SystemSettings(rows: [
+                OnboardingRow.dockInstructions.rawValue,
                 OnboardingRow.dataImport.rawValue
             ])
         }
-        let stepDefinitions = StepDefinitions(systemSettings: systemSettings)
+        var getStartedOptions: [String] = []
+        if shouldShowChromeInstallOption {
+            getStartedOptions.append(OnboardingOption.chromeExtensionInstall.rawValue)
+        }
+        let stepDefinitions = StepDefinitions(
+            systemSettings: systemSettings,
+            getStarted: GetStarted(options: getStartedOptions)
+        )
         let preferredLocale = Bundle.main.preferredLocalizations.first ?? "en"
         var env: String
         let buildType = StandardApplicationBuildType()
@@ -147,19 +185,18 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
         return OnboardingConfiguration(stepDefinitions: stepDefinitions,
                                        exclude: excludedSteps,
-                                       order: order,
+                                       order: "v4",
                                        env: env,
                                        locale: preferredLocale,
                                        platform: platform)
     }
 
     private func buildExcludedSteps() -> [String] {
-        var excludedSteps: [String] = []
+        var excludedSteps: [String] = [OnboardingExcludedStep.duckPlayerSingle.rawValue]
 
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
 
-        if !(isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled) {
+        if !isAIChatOmnibarOnboardingEnabled {
             excludedSteps.append(OnboardingExcludedStep.addressBarMode.rawValue)
         }
 
@@ -167,6 +204,17 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     private var didRequestDefaultBrowser: Bool = false
+
+    // MARK: Chrome extension install
+
+    private var isEligibleForChromeExtensionInstall: Bool {
+        chromeExtensionInstaller.canInstallDDGExtension
+    }
+
+    private var shouldShowChromeInstallOption: Bool {
+        isEligibleForChromeExtensionInstall
+            && chromeExtensionExperiment.cohort == .treatment
+    }
 
     convenience init(
         navigationDelegate: OnboardingNavigating,
@@ -178,8 +226,16 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         pinningManager: PinningManager,
         featureFlagger: FeatureFlagger,
         reinstallUserDetection: ReinstallingUserDetecting,
-        installDateProvider: @escaping () -> Date
+        installDateProvider: @escaping () -> Date,
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil
     ) {
+        let chromeExtensionInstaller = ChromeExtensionInstaller(
+            buildType: StandardApplicationBuildType(),
+            isChromeInstalled: { ThirdPartyBrowser.chrome.isInstalled },
+            applicationSupportURL: .nonSandboxApplicationSupportDirectoryURL,
+            fileManager: .default,
+            pixelFiring: PixelKit.shared
+        )
         self.init(
             navigationDelegate: navigationDelegate,
             dockCustomization: dockCustomization,
@@ -191,9 +247,13 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             featureFlagger: featureFlagger,
             onboardingSharedPixelHandler: OnboardingSharedPixelHandler(
                 platform: .macOS,
-                installType: reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall,
+                installTypeProvider: {
+                    reinstallUserDetection.isReinstallingUser ? .reinstall : .newInstall
+                },
                 installDateProvider: installDateProvider
-             )
+             ),
+            chromeExtensionInstaller: chromeExtensionInstaller,
+            contextualOnboardingStateUpdater: contextualOnboardingStateUpdater
         )
     }
 
@@ -205,10 +265,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         startupPreferences: StartupPreferences,
         dataImportProvider: DataImportStatusProviding,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        homepageSearchModeSeedPersistor: HomepageSearchModeSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor(),
         featureFlagger: FeatureFlagger,
-        applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
-        onboardingSharedPixelHandler: OnboardingSharedPixelHandling
+        onboardingSharedPixelHandler: OnboardingSharedPixelHandling,
+        chromeExtensionInstaller: ThirdPartyBrowserExtensionInstalling,
+        contextualOnboardingStateUpdater: ContextualOnboardingStateUpdater? = nil,
+        onboardingPersistor: NonBlockingOnboardingPersistor = NonBlockingOnboardingPersistor()
     ) {
+        self.onboardingPersistor = onboardingPersistor
         self.navigation = navigationDelegate
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
@@ -216,22 +280,43 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         self.startupPreferences = startupPreferences
         self.dataImportProvider = dataImportProvider
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.homepageSearchModeSeedPersistor = homepageSearchModeSeedPersistor
         self.featureFlagger = featureFlagger
-        self.applicationBuildType = applicationBuildType
+        self.chromeExtensionExperiment = OnboardingChromeExtensionExperiment(featureFlagger: featureFlagger)
+        self.nonBlockingOnboarding = NonBlockingOnboarding(featureFlagger: featureFlagger)
+        self.nonBlockingExperiment = OnboardingNonBlockingExperiment(featureFlagger: featureFlagger)
         self.onboardingSharedPixelHandler = onboardingSharedPixelHandler
+        self.chromeExtensionInstaller = chromeExtensionInstaller
+        self.contextualOnboardingStateUpdater = contextualOnboardingStateUpdater
     }
 
-    func onboardingStarted() {
-        navigation.updatePreventUserInteraction(prevent: true)
+    /// Installed when the tab is established, before the page can receive user input.
+    func installNonBlockingHandlers() {
+        guard nonBlockingOnboarding.isNonBlocking, !hasInstalledHandlers, canEndOnboarding else { return }
+        hasInstalledHandlers = true
+        navigation.setOnboardingHandlers(
+            onClose: { [weak self] tab in self?.skipOnboarding(from: tab.webView) },
+            onSkipInPlace: { [weak self] in self?.recordSkipInPlace() }
+        )
+    }
+
+    func onboardingStarted(from webView: WKWebView?) {
+        if nonBlockingOnboarding.isNonBlocking {
+            guard canEndOnboarding,
+                  navigation.onboardingTab(for: webView) != nil else { return }
+        } else {
+            navigation.updatePreventUserInteraction(prevent: true)
+        }
+
         stepShown(step: .welcome)
+        if isEligibleForChromeExtensionInstall {
+            chromeExtensionExperiment.enroll()
+        }
     }
 
     @MainActor
-    func goToAddressBar() {
-        onboardingHasFinished()
-        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
-        navigation.replaceTabWith(tab)
-
+    func goToAddressBar(from webView: WKWebView?) {
+        guard let tab = leaveOnboarding(from: webView, content: .url(URL.duckDuckGo, source: .ui)) else { return }
         tab.navigationDidEndPublisher
             .first()
             .sink { [weak self] _ in
@@ -241,22 +326,54 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     }
 
     @MainActor
-    func goToSettings() {
-        onboardingHasFinished()
-        let tab = Tab(content: .settings(pane: nil))
+    func goToSettings(from webView: WKWebView?) {
+        _ = leaveOnboarding(from: webView, content: .settings(pane: nil))
+    }
+
+    /// Records a skip before the caller performs normal tab removal.
+    @MainActor
+    func skipOnboarding(from webView: WKWebView?) {
+        if nonBlockingOnboarding.isNonBlocking {
+            guard navigation.onboardingTab(for: webView) != nil else { return }
+        }
+        _ = finishOnboarding(.skipped)
+    }
+
+    @MainActor
+    private func leaveOnboarding(from webView: WKWebView?, content: TabContent) -> Tab? {
+        if nonBlockingOnboarding.isNonBlocking {
+            // Validate before recording anything. A late message from a page that is no longer
+            // onboarding must neither finish a new session nor replace its browsing tab.
+            guard let source = navigation.onboardingTab(for: webView) else { return nil }
+            _ = finishOnboarding(.completed)
+            let tab = Tab(content: content)
+            return navigation.replaceOnboardingTab(source, with: tab) ? tab : nil
+        }
+        _ = finishOnboarding(.completed)
+        navigation.updatePreventUserInteraction(prevent: false)
+        let tab = Tab(content: content)
         navigation.replaceTabWith(tab)
+        return tab
+    }
+
+    @MainActor
+    private func recordSkipInPlace() {
+        guard !Self.isOnboardingFinished else { return }
+        _ = finishOnboarding(.skipped)
     }
 
     func addToDock() {
         dockCustomization.addToDock()
         onboardingSharedPixelHandler.fire(.addToDock(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.addToDockRequested)
     }
 
     @MainActor
     func importData() async -> Bool {
         onboardingSharedPixelHandler.fire(.importData(.clicked(.engage)))
+        nonBlockingExperiment.fireMetric(.importRequested)
         return await withCheckedContinuation { continuation in
-            dataImportProvider.showImportWindow(customTitle: UserText.importDataTitleOnboarding, completion: { [weak self] in
+            dataImportProvider.showImportWindow(completion: { [weak self] in
                 guard let self else {
                     continuation.resume(returning: false)
                     return
@@ -272,6 +389,7 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
     func setAsDefault() {
         try? defaultBrowserProvider.presentDefaultBrowserPrompt()
         onboardingSharedPixelHandler.fire(.setDefault(.clicked(.engage)))
+        chromeExtensionExperiment.fireMetric(.setAsDefault)
         didRequestDefaultBrowser = true
     }
 
@@ -292,6 +410,14 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
 
     func setDuckAiInAddressBar(enabled: Bool) {
         aiChatPreferencesStorage.showSearchAndDuckAIToggle = enabled
+        guard featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg) else { return }
+        aiChatPreferencesStorage.showShortcutOnNewTabPage = enabled
+        homepageSearchModeSeedPersistor.pendingShowSearchModeToggle = enabled
+    }
+
+    func installChromeExtension() {
+        chromeExtensionInstaller.installDDGExtension()
+        onboardingSharedPixelHandler.fire(.chromeExtensionInstall(.clicked(.engage)))
     }
 
     private func onMainThreadIfNeeded(_ function: @escaping () -> Void) {
@@ -376,7 +502,8 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
             pixel = .welcome(.shown)
         case .getStarted:
             // This step is measured as part of the welcome step, since it is shown automatically
-            pixel = nil
+            // We only need to measure if the Chrome extension option is shown
+            pixel = shouldShowChromeInstallOption ? .chromeExtensionInstall(.shown) : nil
         case .makeDefaultSingle:
             pixel = .setDefault(.shown)
         case .systemSettings:
@@ -424,32 +551,64 @@ final class OnboardingActionsManager: OnboardingActionsManaging {
         }
     }
 
-    private func onboardingHasFinished() {
+    /// Accepts an outcome once, before callers replace tabs or perform other navigation.
+    private func finishOnboarding(_ outcome: NonBlockingOnboardingPersistor.Outcome) -> Bool {
+        guard canEndOnboarding else { return false }
         Self.isOnboardingFinished = true
         navigation.updatePreventUserInteraction(prevent: false)
+        Self.applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: featureFlagger)
 
-        let userSawToggleOnboarding = wasToggleOnboardingStepShown()
+        recordOnboardingOutcome(outcome)
+        return true
+    }
 
-        /// If user completed onboarding while the toggle onboarding step was shown,
-        /// mark the flag to skip the popover
-        if userSawToggleOnboarding {
-            aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
+    private func recordOnboardingOutcome(_ outcome: NonBlockingOnboardingPersistor.Outcome) {
+        let isFirstOutcome = onboardingPersistor.outcome == nil
+        if nonBlockingOnboarding.isNonBlocking {
+            onboardingPersistor.record(outcome)
         }
+        switch outcome {
+        case .completed:
+            let userSawToggleOnboarding = wasToggleOnboardingStepShown()
+            if userSawToggleOnboarding {
+                aiChatPreferencesStorage.userDidSeeToggleOnboarding = true
+            }
+            if !nonBlockingOnboarding.isNonBlocking || isFirstOutcome {
+                fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+            }
+        case .skipped:
+            // Skipping must not record a final step or suppress a toggle popover the user never saw.
+            if !nonBlockingOnboarding.isNonBlocking {
+                contextualOnboardingStateUpdater?.state = .onboardingCompleted
+            }
+            if isFirstOutcome {
+                PixelKit.fire(GeneralPixel.onboardingSkipped, frequency: .dailyAndCount)
+            }
+        }
+    }
 
-        fireOnboardingFinishedPixels(userSawToggleOnboarding: userSawToggleOnboarding)
+    /// Applies the Duck Player default dictated by the ad-blocking defaults rollout for a
+    /// newly-onboarded user (Duck Player off). Static so every onboarding-completion path can invoke
+    /// it — normal completion, the debug "Skip Onboarding" action, and the automation/UI-test bypass
+    /// — keeping the behavior consistent regardless of how onboarding ends.
+    static func applyAdBlockingRolloutDuckPlayerDefaultIfNeeded(featureFlagger: FeatureFlagger) {
+        guard AdBlockingAvailability.areAdBlockingDefaultsActive(featureFlagger: featureFlagger) else { return }
+        DuckPlayerPreferencesUserDefaultsPersistor().duckPlayerModeBool = DuckPlayerMode.disabled.boolValue
+        // Refresh any live DuckPlayerPreferences (e.g. the app delegate's) so its in-memory
+        // @Published mode reflects the new stored value without waiting for a cold relaunch.
+        NotificationCenter.default.post(name: DuckPlayerPreferences.duckPlayerModeDidChangeNotification, object: nil)
     }
 
     /// Returns true if the toggle onboarding step was shown to the user.
-    /// The step is only shown when both aiChatOmnibarToggle AND aiChatOmnibarOnboarding flags are enabled.
+    /// The step is only shown when the aiChatOmnibarOnboarding flag is enabled.
     private func wasToggleOnboardingStepShown() -> Bool {
-        let isAIChatOmnibarToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        let isAIChatOmnibarOnboardingEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
-        return isAIChatOmnibarToggleEnabled && isAIChatOmnibarOnboardingEnabled
+        return featureFlagger.isFeatureOn(.aiChatOmnibarOnboarding)
     }
 
     private func fireOnboardingFinishedPixels(userSawToggleOnboarding: Bool) {
         PixelKit.fire(GeneralPixel.onboardingFinalStepComplete, frequency: .dailyAndCount)
         fireSharedPixelForFinalStep(userSawToggleOnboarding)
+        chromeExtensionExperiment.fireMetric(.onboardingCompleted)
 
         guard userSawToggleOnboarding else { return }
 

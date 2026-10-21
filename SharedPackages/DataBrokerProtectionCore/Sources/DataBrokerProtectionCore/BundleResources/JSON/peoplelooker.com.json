@@ -1,7 +1,7 @@
 {
   "name": "PeopleLooker",
   "url": "peoplelooker.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "parent": "beenverified.com",
   "optOutUrl": "https://www.peoplelooker.com/svc/optout/search/optouts",
   "steps": [
@@ -195,6 +195,9 @@
             },
             "addressCityState": {
               "selector": ".MuiGrid-item.MuiGrid-grid-xs-12 > p.MuiTypography-body1"
+            },
+            "profileUrl": {
+              "identifierType": "hash"
             }
           },
           "id": "4285ef9d-aebf-4176-80e6-2959fc9f5c8a"
@@ -214,5 +217,5 @@
     "maxAttempts": -1
   },
   "addedDatetime": 1745320373493,
-  "removedAt": null
+  "removedAt": 1784914357593
 }

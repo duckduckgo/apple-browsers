@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import DesignResourcesKitIcons
 
 protocol BookmarkOutlineCellViewDelegate: AnyObject {
     func outlineCellViewRequestedMenu(_ cell: BookmarkOutlineCellView)
@@ -49,7 +50,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
     private lazy var titleLabel = NSTextField(string: "Bookmark/Folder")
     private lazy var countLabel = NSTextField(string: "42")
     private lazy var urlLabel = NSTextField(string: "URL")
-    private lazy var menuButton = NSButton(title: "", image: .settings, target: self, action: #selector(cellMenuButtonClicked))
+    private lazy var menuButton = NSButton(title: "", image: NSImage(resource: .settings), target: self, action: #selector(cellMenuButtonClicked))
     private lazy var favoriteImageView = NSImageView()
 
     private var leadingConstraint = NSLayoutConstraint()
@@ -104,7 +105,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         addSubview(favoriteImageView)
 
         faviconImageView.translatesAutoresizingMaskIntoConstraints = false
-        faviconImageView.image = .bookmarkDefaultFavicon
+        faviconImageView.image =  DesignSystemImages.Color.Size16.bookmark
         faviconImageView.imageScaling = .scaleProportionallyDown
         faviconImageView.wantsLayer = true
         faviconImageView.layer?.cornerRadius = 2.0
@@ -128,7 +129,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         countLabel.drawsBackground = false
         countLabel.font = .preferredFont(forTextStyle: .body)
         countLabel.alignment = .right
-        countLabel.textColor = .blackWhite60
+        countLabel.textColor = NSColor(resource: .blackWhite60)
         countLabel.lineBreakMode = .byClipping
 
         urlLabel.translatesAutoresizingMaskIntoConstraints = false
@@ -141,7 +142,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         urlLabel.lineBreakMode = .byTruncatingTail
 
         menuButton.translatesAutoresizingMaskIntoConstraints = false
-        menuButton.contentTintColor = .button
+        menuButton.contentTintColor = NSColor(resource: .button)
         menuButton.imagePosition = .imageTrailing
         menuButton.isBordered = false
         menuButton.isHidden = true
@@ -362,10 +363,20 @@ final class BookmarkOutlineCellView: NSTableCellView {
         }()) : ""
         urlLabel.isHidden = urlLabel.stringValue.isEmpty
         self.toolTip = bookmark.url
-        favoriteImageView.image = bookmark.isFavorite ? .favoriteFilledBorder : nil
+        favoriteImageView.image = bookmark.isFavorite ? DesignSystemImages.Color.Size16.favorite : nil
         favoriteImageView.isHidden = favoriteImageView.image == nil
 
         updateConstraints(isSearch: isSearch)
+    }
+
+    /// Upgrades the displayed favicon in place to the latest cached image, if one is available.
+    ///
+    /// Used by the bookmarks bar menu to reflect lazily-decoded favicons without a full
+    /// `reloadData()` — a reload while a submenu is open dismisses the submenu and flickers the
+    /// menu. Never downgrades an already-shown favicon back to the placeholder on a transient miss.
+    func refreshFavicon(for bookmark: Bookmark) {
+        guard let favicon = bookmark.favicon(.small) else { return }
+        faviconImageView.image = favicon
     }
 
     func update(from folder: BookmarkFolder, isSearch: Bool = false) {
@@ -373,7 +384,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         faviconImageView.isHidden = false
         titleLabel.stringValue = folder.title
         titleLabel.isEnabled = true
-        favoriteImageView.image = shouldShowChevron ? .chevronMediumRight16 : nil
+        favoriteImageView.image = shouldShowChevron ? NSImage(resource: .chevronMediumRight16) : nil
         favoriteImageView.isHidden = favoriteImageView.image == nil
         urlLabel.stringValue = ""
         self.toolTip = nil
@@ -439,7 +450,7 @@ extension BookmarkOutlineCellView {
 
             translatesAutoresizingMaskIntoConstraints = true
 
-            let theme = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
+            let theme = ThemeStyle.buildThemeStyle(themeName: .default)
             let cells = [
                 BookmarkOutlineCellView(identifier: .init(""), theme: theme),
                 BookmarkOutlineCellView(identifier: .init(""), theme: theme),

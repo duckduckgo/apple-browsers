@@ -22,7 +22,7 @@ import PixelKit
 /**
  * This enum keeps pixels related to HTML New Tab Page.
  */
-enum NewTabPagePixel: PixelKitEvent {
+enum NewTabPagePixel: PixelKit.Event {
 
     /**
      * Event Trigger: New Tab Page is displayed to user.
@@ -161,12 +161,17 @@ enum NewTabPagePixel: PixelKitEvent {
     case aiChatRecentChatSelectedMouse
     case aiChatRecentChatSelectedKeyboard
 
+    case ntpAiChatRecentChatDeleteButtonClicked
+    case ntpAiChatRecentChatDeleteConfirmed
+    case ntpAiChatRecentChatDeleteCancelled
+    case ntpAutocompleteResultDeleted
+
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
-    case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
+    case newTabPageLoadingTime(duration: TimeInterval)
 
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
-    case nextStepsCardClicked(_ card: String)
-    case nextStepsCardDismissed(_ card: String)
+    case nextStepsCardClicked(_ card: String, cardImpressionCount: Int, ntpImpressionCount: Int, daysSinceInstall: Int?, activeUsageDays: Int)
+    case nextStepsCardDismissed(_ card: String, cardImpressionCount: Int, ntpImpressionCount: Int, daysSinceInstall: Int?, activeUsageDays: Int)
     case nextStepsCardShown(_ card: String)
 
     // MARK: -
@@ -199,9 +204,13 @@ enum NewTabPagePixel: PixelKitEvent {
         case .aiChatRecentChatSelectedPinnedKeyboard: return "new-tab-page_aichat_recent_chat_selected_pinned_keyboard"
         case .aiChatRecentChatSelectedMouse: return "new-tab-page_aichat_recent_chat_selected_mouse"
         case .aiChatRecentChatSelectedKeyboard: return "new-tab-page_aichat_recent_chat_selected_keyboard"
+        case .ntpAiChatRecentChatDeleteButtonClicked: return "ntp_aichat_recent_chat_delete_button_clicked"
+        case .ntpAiChatRecentChatDeleteConfirmed: return "ntp_aichat_recent_chat_delete_confirmed"
+        case .ntpAiChatRecentChatDeleteCancelled: return "ntp_aichat_recent_chat_delete_cancelled"
+        case .ntpAutocompleteResultDeleted: return "ntp_autocomplete_result_deleted"
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
-        case .nextStepsCardClicked(let card): return "new-tab-page_next-steps_\(card)_clicked"
-        case .nextStepsCardDismissed(let card): return "new-tab-page_next-steps_\(card)_dismissed"
+        case .nextStepsCardClicked(let card, _, _, _, _): return "new-tab-page_next-steps_\(card)_clicked"
+        case .nextStepsCardDismissed(let card, _, _, _, _): return "new-tab-page_next-steps_\(card)_dismissed"
         case .nextStepsCardShown(let card): return "new-tab-page_next-steps_\(card)_shown"
         }
     }
@@ -222,12 +231,25 @@ enum NewTabPagePixel: PixelKitEvent {
             return [
                 "mode": mode.rawValue
             ]
-        case .newTabPageLoadingTime(let duration, let osMajorVersion):
+        case .newTabPageLoadingTime(let duration):
             // "loadingTime" is reported in **milliseconds**
             return [
-                "loadingTime": String(Int(duration * 1000)),
-                "osMajorVersion": "\(osMajorVersion)"
+                "loadingTime": String(Int(duration * 1000))
             ]
+        case let .nextStepsCardClicked(_, cardImpressionCount, ntpImpressionCount, daysSinceInstall, activeUsageDays),
+            let .nextStepsCardDismissed(_, cardImpressionCount, ntpImpressionCount, daysSinceInstall, activeUsageDays):
+            var parameters = [
+                "cardImpressionCount": String(NextStepsCards.cardImpressions(cardImpressionCount)),
+                "ntpImpressionCount": String(NextStepsCards.newTabPageImpressions(ntpImpressionCount)),
+                "daysSinceInstall": String(NextStepsCards.daysSinceInstall(daysSinceInstall ?? 0)),
+                "nextStepsActiveUsageDays": String(NextStepsCards.activeUsageDays(activeUsageDays))
+            ]
+
+            if let daysSinceInstall {
+                parameters["daysSinceInstall"] = String(NextStepsCards.daysSinceInstall(daysSinceInstall))
+            }
+
+            return parameters
         case .favoriteSectionHidden,
                 .protectionsSectionHidden,
                 .blockedTrackingAttemptsShowLess,
@@ -245,8 +267,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
-                .nextStepsCardClicked,
-                .nextStepsCardDismissed,
+                .ntpAiChatRecentChatDeleteButtonClicked,
+                .ntpAiChatRecentChatDeleteConfirmed,
+                .ntpAiChatRecentChatDeleteCancelled,
+                .ntpAutocompleteResultDeleted,
                 .nextStepsCardShown:
             return nil
         }
@@ -255,6 +279,52 @@ enum NewTabPagePixel: PixelKitEvent {
     enum OmnibarMode: String {
         case search
         case duckAI = "duck_ai"
+    }
+
+    enum NextStepsCards {
+        static func daysSinceInstall(_ days: Int) -> Int {
+            switch days {
+            case 0: return 0
+            case 1: return 1
+            case 2...3: return 2
+            default: return 4
+            }
+        }
+
+        static func activeUsageDays(_ days: Int) -> Int {
+            switch days {
+            case 0: return 0
+            case 1: return 1
+            case 2: return 2
+            case 3: return 3
+            case 4...5: return 4
+            case 6...8: return 6
+            case 9...13: return 9
+            default: return 14
+            }
+        }
+
+        static func newTabPageImpressions(_ impressions: Int) -> Int {
+            switch impressions {
+            case 0...1: return 1
+            case 2: return 2
+            case 3: return 3
+            case 4: return 4
+            case 5: return 5
+            case 6: return 6
+            case 7: return 7
+            case 8...9: return 8
+            case 10...14: return 10
+            case 15...24: return 15
+            case 25...49: return 25
+            default: return 50
+            }
+        }
+
+        static func cardImpressions(_ impressions: Int) -> Int {
+            let maximum = 10
+            return impressions < maximum ? impressions : maximum
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
@@ -279,6 +349,10 @@ enum NewTabPagePixel: PixelKitEvent {
                 .aiChatRecentChatSelectedPinnedKeyboard,
                 .aiChatRecentChatSelectedMouse,
                 .aiChatRecentChatSelectedKeyboard,
+                .ntpAiChatRecentChatDeleteButtonClicked,
+                .ntpAiChatRecentChatDeleteConfirmed,
+                .ntpAiChatRecentChatDeleteCancelled,
+                .ntpAutocompleteResultDeleted,
                 .newTabPageLoadingTime:
             return [.pixelSource]
         case .nextStepsCardClicked,

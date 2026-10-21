@@ -19,7 +19,7 @@
 import ContentScopeScripts
 import Foundation
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import SpecialErrorPages
 import WebKit
@@ -43,10 +43,21 @@ private extension ErrorPageHTMLFactory {
             return SpecialErrorPageHTMLTemplate.htmlFromTemplate
 
         default:
-            return ErrorPageHTMLTemplate(error: WKError(_nsError: error as NSError), header: header ?? UserText.errorPageHeader)
+            let configuration: ErrorPageHTMLConfiguration? = error.isWebContentProcessTerminated ? .reportBrokenSite : nil
+            return ErrorPageHTMLTemplate(error: WKError(_nsError: error as NSError),
+                                         header: header ?? UserText.errorPageHeader,
+                                         configuration: configuration)
                 .makeHTMLFromTemplate()
         }
     }
+}
+
+private extension ErrorPageHTMLConfiguration {
+
+    static let reportBrokenSite = ErrorPageHTMLConfiguration(
+        linkText: UserText.sendFeedback,
+        linkFunction: "function() { window.location.href = '\(URL.errorPageReportBrokenSite.absoluteString)'; }"
+    )
 }
 
 private extension String {

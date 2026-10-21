@@ -28,10 +28,14 @@ final class SubscriptionPromoModalPromptProvider: ModalPromptProvider {
         self.coordinator = coordinator
     }
 
+    func isEligibleToPresent(isOnboardingComplete: Bool) -> Bool {
+        coordinator.isEligibleToPresent(isOnboardingComplete: isOnboardingComplete)
+    }
+
     func provideModalPrompt() -> ModalPromptConfiguration? {
         guard coordinator.shouldPresentLaunchPrompt() else { return nil }
         let prompt = presenter.makeSubscriptionPromoPrompt()
-        return ModalPromptConfiguration(viewController: prompt, animated: true)
+        return ModalPromptConfiguration(exposureID: .subscriptionPromoModal, viewController: prompt, animated: true)
     }
 
     func didPresentModal() {

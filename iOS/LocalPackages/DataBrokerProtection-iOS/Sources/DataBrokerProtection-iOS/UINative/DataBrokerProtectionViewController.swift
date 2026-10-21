@@ -20,6 +20,7 @@
 import UIKit
 import SwiftUI
 import Common
+import FoundationExtensions
 import BrowserServicesKit
 import PixelKit
 import WebKit
@@ -27,6 +28,7 @@ import Combine
 import DataBrokerProtectionCore
 import os.log
 import PrivacyConfig
+import Subscription
 
 final public class DataBrokerProtectionViewController: UIViewController {
 
@@ -44,13 +46,23 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private var reloadObserver: NSObjectProtocol?
     private var cancellables = Set<AnyCancellable>()
     private let isWebViewInspectable: Bool
+    private let freeScanEntryPoint: FreemiumDBPEntryPoint?
+    private var isViewVisible = false
+    private var hasLoadedDashboard = false
 
-    private lazy var webUIViewModel: DBPUIViewModel = {
+    private lazy var sharedPixelsHandler: DataBrokerProtectionSharedPixelsHandler = {
         guard let pixelKit = PixelKit.shared else {
             fatalError("PixelKit not set up")
         }
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        return DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+    }()
 
+    private lazy var interactionPixels = DataBrokerProtectionInteractionPixels(
+        handler: sharedPixelsHandler,
+        repository: DataBrokerProtectionInteractionPixelsUserDefaults(userDefaults: .dbp)
+    )
+
+    private lazy var webUIViewModel: DBPUIViewModel = {
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
                               feedbackFormDelegate: self,
@@ -58,7 +70,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
                               webUISettings: webUISettings,
                               pixelHandler: sharedPixelsHandler,
                               privacyConfigManager: privacyConfigManager,
-                              contentScopeProperties: contentScopeProperties)
+                              contentScopeProperties: contentScopeProperties,
+                              freeScanEntryPoint: freeScanEntryPoint)
     }()
 
     private lazy var webView: WKWebView = {
@@ -86,7 +99,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 openURLHandler: @escaping (URL) -> Void,
                 feedbackViewCreator: @escaping () -> (any View),
-                isWebViewInspectable: Bool = false) {
+                isWebViewInspectable: Bool = false,
+                freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.openURLHandler = openURLHandler
         self.feedbackViewCreator = feedbackViewCreator
         self.webUISettings = webUISettings
@@ -97,25 +111,37 @@ final public class DataBrokerProtectionViewController: UIViewController {
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
         self.isWebViewInspectable = isWebViewInspectable
+        self.freeScanEntryPoint = freeScanEntryPoint
 
         super.init(nibName: nil, bundle: nil)
+    }
+
+    deinit {
+        if let reloadObserver {
+            NotificationCenter.default.removeObserver(reloadObserver)
+        }
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     public override func viewDidLoad() {
         super.viewDidLoad()
 
-        setupWebView()
         setupLoadingView()
+        subscribeToSubscriptionChangeNotifications()
 
-        if let url = URL(string: webUISettings.selectedURL) {
-            webView.load(url)
-        } else {
-            loadingView.stopAnimating()
-            assertionFailure("Selected URL is not valid \(webUISettings.selectedURL)")
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await databaseDelegate.prepareDatabaseAccess()
+                webUIViewModel.updatePartialProfile()
+                loadDashboard()
+            } catch {
+                Logger.dataBrokerProtection.error("Failed to wait for dashboard database access: \(error.localizedDescription, privacy: .public)")
+                loadingView.stopAnimating()
+            }
         }
     }
 
@@ -131,6 +157,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
         if #available(iOS 16.4, *) {
             webView.isInspectable = isWebViewInspectable
         }
+
+        view.bringSubviewToFront(loadingView)
     }
 
     private func setupLoadingView() {
@@ -146,14 +174,46 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
     override public func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        webUIViewModel.viewDidAppear()
-        subscribeToBackgroundRefreshNotifications()
+        isViewVisible = true
+
+        guard hasLoadedDashboard else { return }
+        dashboardDidBecomeVisible()
     }
 
     override public func viewDidDisappear(_ animated: Bool) {
+        isViewVisible = false
         cancellables.removeAll()
-        webUIViewModel.viewDidDisappear()
+        if hasLoadedDashboard {
+            webUIViewModel.viewDidDisappear()
+        }
         super.viewDidDisappear(animated)
+    }
+
+    private func loadDashboard() {
+        setupWebView()
+        hasLoadedDashboard = true
+
+        if let url = URL(string: webUISettings.selectedURL) {
+            webView.load(url)
+        } else {
+            loadingView.stopAnimating()
+            assertionFailure("Selected URL is not valid \(webUISettings.selectedURL)")
+        }
+
+        if isViewVisible {
+            dashboardDidBecomeVisible()
+        }
+    }
+
+    private func dashboardDidBecomeVisible() {
+        webUIViewModel.viewDidAppear()
+        subscribeToBackgroundRefreshNotifications()
+        Task { [weak self] in
+            guard let self else { return }
+            let isAuthenticated = await self.authenticationDelegate.isUserAuthenticated()
+            self.interactionPixels.fireInteractionPixel(isAuthenticated: isAuthenticated)
+            self.sharedPixelsHandler.fire(.dashboardOpen(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+        }
     }
 
     private func subscribeToBackgroundRefreshNotifications() {
@@ -171,10 +231,29 @@ final public class DataBrokerProtectionViewController: UIViewController {
         .store(in: &cancellables)
     }
 
+    private func subscribeToSubscriptionChangeNotifications() {
+        reloadObserver = NotificationCenter.default.addObserver(forName: .subscriptionDidChange,
+                                                                object: nil,
+                                                                queue: .main) { [weak self] _ in
+            // Refresh the web UI under the subscription flow so PIR handshakes with the new auth state.
+            self?.webView.reload()
+        }
+    }
+
     private func notifyBackgroundAppRefreshChange() {
         Task { @MainActor in
             await webUIViewModel.sendBackgroundAppRefreshDidChange(into: webView)
         }
+    }
+
+    private func shouldOpenExternally(_ url: URL) -> Bool {
+        guard let selectedURL = URL(string: webUISettings.selectedURL),
+              let selectedHost = selectedURL.host,
+              url.host?.caseInsensitiveCompare(selectedHost) == .orderedSame else {
+            return false
+        }
+
+        return SubscriptionPurchaseFlowPath.contains(url.path)
     }
 }
 
@@ -219,6 +298,17 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
         return .allow
     }
 
+    public func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard navigationAction.targetFrame?.isMainFrame == true,
+              let url = navigationAction.request.url,
+              shouldOpenExternally(url) else {
+            return .allow
+        }
+
+        openURLHandler(url)
+        return .cancel
+    }
+
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         loadingView.startAnimating()
     }
@@ -231,9 +321,12 @@ extension DataBrokerProtectionViewController: WKNavigationDelegate {
 public struct DataBrokerProtectionViewControllerRepresentation: UIViewControllerRepresentable {
 
     private let dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider
+    private let freeScanEntryPoint: FreemiumDBPEntryPoint?
 
-    public init(dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider) {
+    public init(dbpViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider,
+                freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.dbpViewControllerProvider = dbpViewControllerProvider
+        self.freeScanEntryPoint = freeScanEntryPoint
     }
 
     public func updateUIViewController(_ uiViewController: UIViewControllerType, context: Context) {
@@ -242,6 +335,6 @@ public struct DataBrokerProtectionViewControllerRepresentation: UIViewController
 
     public func makeUIViewController(context: Context) -> some UIViewController {
 
-        return dbpViewControllerProvider.dataBrokerProtectionViewController()
+        return dbpViewControllerProvider.dataBrokerProtectionViewController(freeScanEntryPoint: freeScanEntryPoint)
     }
 }

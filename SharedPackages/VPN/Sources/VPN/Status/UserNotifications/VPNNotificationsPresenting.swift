@@ -25,6 +25,10 @@ public protocol VPNNotificationsPresenting {
     /// Present a "connected" notification to the user.
     func showConnectedNotification(serverLocation: String?, snoozeEnded: Bool)
 
+    /// Present a notice reminding the user to turn Strict routing back on.
+    /// Shown right after the "connected" notification while Strict routing is off.
+    func showStrictRoutingReminderNotification()
+
     /// Present a "reconnecting" notification to the user.
     func showReconnectingNotification()
 
@@ -48,4 +52,11 @@ public protocol VPNNotificationsPresenting {
     /// This is only available by enabling debug event notifications in the debug menu.
     func showDebugEventNotification(message: String)
 
+    /// Clears any pending authorization-request suppression, without presenting a notification.
+    func clearAuthorizationSuppression()
+
+}
+
+public extension VPNNotificationsPresenting {
+    func clearAuthorizationSuppression() {}
 }

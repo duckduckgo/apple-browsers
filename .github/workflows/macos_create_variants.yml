@@ -6,8 +6,18 @@ defaults:
 
 on:
   workflow_dispatch:
+    inputs:
+      dmg-url:
+        description: "DMG URL to download (overrides RELEASE_DMG_URL variable when set)"
+        required: false
+        type: string
 
   workflow_call:
+    inputs:
+      dmg-url:
+        description: "DMG URL to download (overrides RELEASE_DMG_URL variable when set)"
+        required: false
+        type: string
     secrets:
       ASANA_ACCESS_TOKEN:
         required: true
@@ -30,10 +40,14 @@ jobs:
     outputs:
       build-variants-1: ${{ steps.get-build-variants.outputs.build-variants-1 }}
       build-variants-2: ${{ steps.get-build-variants.outputs.build-variants-2 }}
+      build-variants-3: ${{ steps.get-build-variants.outputs.build-variants-3 }}
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Print macOS version
+        run: sw_vers
 
       - name: Fetch Build Variants
         id: get-build-variants
@@ -62,12 +76,17 @@ jobs:
             macOS/fastlane
             macOS/scripts
 
+      - name: Print macOS version
+        run: sw_vers
+
       - name: Download release app
+        env:
+          DMG_URL: ${{ inputs.dmg-url != '' && inputs.dmg-url || vars.RELEASE_DMG_URL }}
         run: |
-          curl -fLSs "${{ vars.RELEASE_DMG_URL }}" --output duckduckgo.dmg
+          curl -fLSs "${DMG_URL}" --output duckduckgo.dmg
 
       - name: Upload DMG artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: duckduckgo-dmg
           path: ${{ github.workspace }}/macOS/duckduckgo.dmg
@@ -101,10 +120,24 @@ jobs:
       origin-variant: ${{ matrix.origin }}
     secrets: inherit
 
+  create-variants-3:
+
+    name: Create Variant
+    needs: [set-up-variants, download-dmg-and-upload-artifact]
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.set-up-variants.outputs.build-variants-3) }}
+    uses: ./.github/workflows/macos_create_variant.yml
+    with:
+      atb-variant: ${{ matrix.variant }}
+      origin-variant: ${{ matrix.origin }}
+    secrets: inherit
+
   mattermost:
 
     name: Send Mattermost message
-    needs: [create-variants-1, create-variants-2]
+    needs: [create-variants-1, create-variants-2, create-variants-3]
     runs-on: macos-26
 
     env:
@@ -122,6 +155,10 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
             macOS/scripts
+
+      - name: Print macOS version
+        if: ${{ env.success || env.failure }} # Don't execute when cancelled
+        run: sw_vers
 
       - name: Setup Ruby and dependencies
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

@@ -17,20 +17,15 @@
 //
 
 import Cocoa
-import FeatureFlags
-import PrivacyConfig
 import SwiftUI
 
 final class PopupBlockedPopover: NSPopover {
 
-    private let featureFlagger: FeatureFlagger
-
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
+    override init() {
         super.init()
 
         behavior = .applicationDefined
-        setupContentController()
+        contentViewController = PopupBlockedViewController()
     }
 
     required init?(coder: NSCoder) {
@@ -48,32 +43,10 @@ final class PopupBlockedPopover: NSPopover {
     var viewController: PopupBlockedViewController {
         get {
             if contentViewController == nil {
-                setupContentController()
+                contentViewController = PopupBlockedViewController()
             }
             return contentViewController as! PopupBlockedViewController
         }
-    }
-    // swiftlint:enable force_cast
-
-    private func setupContentController() {
-        let controller: PopupBlockedViewController
-
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            // Create programmatically for SwiftUI
-            controller = PopupBlockedViewController(newPermissionView: true)
-        } else {
-            // Load from storyboard
-            controller = setupStoryboardController()
-        }
-
-        contentViewController = controller
-    }
-
-    // swiftlint:disable force_cast
-    private func setupStoryboardController() -> PopupBlockedViewController {
-        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
-        return storyboard
-            .instantiateController(withIdentifier: "PopupBlockedViewController") as! PopupBlockedViewController
     }
     // swiftlint:enable force_cast
 
@@ -81,63 +54,42 @@ final class PopupBlockedPopover: NSPopover {
 
 final class PopupBlockedViewController: NSViewController {
 
-    @IBOutlet weak var descriptionLabel: NSTextField!
-
     private var swiftUIHostingView: NSHostingView<PopupBlockedSwiftUIView>?
-    private let newPermissionView: Bool
     private var dismissWorkItem: DispatchWorkItem?
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
-            if newPermissionView {
-                setupSwiftUIView()
-            }
+            setupSwiftUIView()
         }
     }
 
-    // Programmatic initializer for SwiftUI mode
-    init(newPermissionView: Bool) {
-        self.newPermissionView = newPermissionView
+    init() {
         super.init(nibName: nil, bundle: nil)
     }
 
-    // Storyboard initializer
+    @available(*, unavailable)
     required init?(coder: NSCoder) {
-        self.newPermissionView = false
-        super.init(coder: coder)
+        fatalError("PopupBlockedViewController: Use init() instead")
     }
 
     override func loadView() {
-        if newPermissionView {
-            // Create a simple container view for SwiftUI
-            view = NSView()
-        } else {
-            // Load from nib/storyboard
-            super.loadView()
-        }
+        view = NSView()
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        if newPermissionView {
-            setupSwiftUIView()
-        } else {
-            descriptionLabel.stringValue = UserText.permissionPopupBlockedPopover
-        }
+        setupSwiftUIView()
     }
 
     override func viewDidAppear() {
         // Cancel any existing work item to prevent multiple timers
         dismissWorkItem?.cancel()
 
-        // New UI with Open button needs more time for user interaction
-        let dismissDelay: TimeInterval = newPermissionView ? 4.0 : 2.0
         let workItem = DispatchWorkItem { [weak self] in
             self?.dismiss()
         }
         dismissWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + dismissDelay, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0, execute: workItem)
     }
 
     override func viewWillDisappear() {
@@ -147,8 +99,6 @@ final class PopupBlockedViewController: NSViewController {
     }
 
     private func setupSwiftUIView() {
-        guard newPermissionView else { return }
-
         view.subviews.forEach { $0.removeFromSuperview() }
         swiftUIHostingView = nil
 

@@ -21,13 +21,11 @@ import Foundation
 extension PromoServiceFactory {
 
     static func subscriptionPromo(delegate: FireWindowSubscriptionPromoDelegate) -> Promo {
-        Promo(
+        ExternalPromo(
             id: "subscription-promo-fire-window",
-            triggers: [], // External promo — visibility is driven by SubscriptionPromoViewModel
             initiated: .app,
             promoType: PromoType(.banner),
             context: .fireWindow,
-            respectsGlobalCooldown: false, // ViewModel handles its own display rules
             setsGlobalCooldown: false,
             delegate: delegate
         )

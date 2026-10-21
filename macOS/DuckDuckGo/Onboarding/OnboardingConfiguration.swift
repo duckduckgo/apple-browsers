@@ -31,6 +31,11 @@ struct OnboardingConfiguration: Codable, Equatable {
 /// Defines the onboarding steps desired
 struct StepDefinitions: Codable, Equatable {
     var systemSettings: SystemSettings
+    var getStarted: GetStarted
+}
+
+struct GetStarted: Codable, Equatable {
+    var options: [String]
 }
 
 struct SystemSettings: Codable, Equatable {

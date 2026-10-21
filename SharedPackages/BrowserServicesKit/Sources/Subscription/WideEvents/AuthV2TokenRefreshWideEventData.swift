@@ -18,20 +18,23 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import Networking
-import PixelKit
+import WideEvent
 
 #if canImport(UIKit)
 import UIKit
 #endif
 
 public class AuthV2TokenRefreshWideEventData: WideEventData {
+    public static let launchCleanupTimeout: TimeInterval = .minutes(5)
+
     public static let metadata = WideEventMetadata(
         pixelName: "auth_v2_token_refresh",
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
         desktopMetaType: "macos-authv2-token-refresh",
-        version: "1.0.1"
+        version: "1.3.0"
     )
 
     public var globalData: WideEventGlobalData
@@ -40,21 +43,100 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
 
     public var refreshTokenDuration: WideEvent.MeasuredInterval?
     public var fetchJWKSDuration: WideEvent.MeasuredInterval?
+    public var recoveryDuration: WideEvent.MeasuredInterval?
+    public var recoveryOutcome: TokenRecoveryOutcome?
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
+
+    public var refreshTrigger: TokenRefreshTrigger?
+    public var startedAt: Date?
+
+    /// Whether this refresh journey ended in the user being signed out. Always known once the
+    /// journey reaches a sign-out decision point, so unlike the other `ext` fields below it has no
+    /// "not applicable" state - it defaults to `false` and is only ever flipped to `true`.
+    public var signedOut: Bool = false
+
+    /// The cached subscription's status as of the start of this refresh. `.unavailable` when there
+    /// is no cached subscription, distinct from `.unknown` which is a status the backend itself returned.
+    public var subscriptionStatus: SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus = .unavailable
+
+    /// Whether the VPN tunnel was connected when this refresh started, as observed from the process
+    /// handling it. `nil` where that process has no meaningful notion of VPN state (e.g. the main app).
+    /// There is deliberately no "enabled" counterpart: inside the tunnel extension it would always be true.
+    public var netpIsRunning: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case globalData, contextData, appData
+        case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, recoveryOutcome
+        case failingStep, errorData, refreshTrigger, startedAt
+        case signedOut, subscriptionStatus, netpIsRunning
+    }
 
     public init(failingStep: FailingStep? = nil,
                 errorData: WideEventErrorData? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
-                globalData: WideEventGlobalData = WideEventGlobalData()) {
+                globalData: WideEventGlobalData = WideEventGlobalData(),
+                startedAt: Date? = Date()) {
         self.failingStep = failingStep
         self.errorData = errorData
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
+        self.startedAt = startedAt
     }
+
+    public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        globalData = try container.decode(WideEventGlobalData.self, forKey: .globalData)
+        contextData = try container.decode(WideEventContextData.self, forKey: .contextData)
+        appData = try container.decode(WideEventAppData.self, forKey: .appData)
+        refreshTokenDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .refreshTokenDuration)
+        fetchJWKSDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .fetchJWKSDuration)
+        recoveryDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .recoveryDuration)
+        recoveryOutcome = try container.decodeIfPresent(TokenRecoveryOutcome.self, forKey: .recoveryOutcome)
+        failingStep = try container.decodeIfPresent(FailingStep.self, forKey: .failingStep)
+        errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
+        refreshTrigger = try container.decodeIfPresent(TokenRefreshTrigger.self, forKey: .refreshTrigger)
+        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt)
+        // Absent on flows started before this schema change (e.g. still pending across an app update).
+        signedOut = try container.decodeIfPresent(Bool.self, forKey: .signedOut) ?? false
+        subscriptionStatus = try container.decodeIfPresent(SubscriptionAutomaticSignOutPixelData.CachedSubscriptionStatus.self, forKey: .subscriptionStatus) ?? .unavailable
+        netpIsRunning = try container.decodeIfPresent(Bool.self, forKey: .netpIsRunning)
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(globalData, forKey: .globalData)
+        try container.encode(contextData, forKey: .contextData)
+        try container.encode(appData, forKey: .appData)
+        try container.encodeIfPresent(refreshTokenDuration, forKey: .refreshTokenDuration)
+        try container.encodeIfPresent(fetchJWKSDuration, forKey: .fetchJWKSDuration)
+        try container.encodeIfPresent(recoveryDuration, forKey: .recoveryDuration)
+        try container.encodeIfPresent(recoveryOutcome, forKey: .recoveryOutcome)
+        try container.encodeIfPresent(failingStep, forKey: .failingStep)
+        try container.encodeIfPresent(errorData, forKey: .errorData)
+        try container.encodeIfPresent(refreshTrigger, forKey: .refreshTrigger)
+        try container.encodeIfPresent(startedAt, forKey: .startedAt)
+        try container.encode(signedOut, forKey: .signedOut)
+        try container.encode(subscriptionStatus, forKey: .subscriptionStatus)
+        try container.encodeIfPresent(netpIsRunning, forKey: .netpIsRunning)
+    }
+}
+
+/// The outcome of an invalid-token recovery within a token refresh journey.
+///
+/// `notAttempted` is distinct from `failed`: recovery is only ever *attempted* for App Store
+/// subscriptions with a recovery handler configured. On other platforms (or with no handler) the
+/// recovery path bails before any restore runs, which must not be conflated with a restore that ran
+/// and failed.
+public enum TokenRecoveryOutcome: String, Codable, CaseIterable {
+    case notAttempted = "not_attempted"
+    case succeeded
+    case failed
 }
 
 extension AuthV2TokenRefreshWideEventData {
@@ -66,6 +148,7 @@ extension AuthV2TokenRefreshWideEventData {
         case verifyingAccessToken = "verify_access_token"
         case verifyingRefreshToken = "verify_refresh_token"
         case tokenWrite = "token_write"
+        case recoverInvalidToken = "recover_invalid_token"
     }
 
     public enum StatusReason: String {
@@ -75,11 +158,42 @@ extension AuthV2TokenRefreshWideEventData {
     public func jsonParameters() -> [String: Encodable] {
         let bucket: DurationBucket = .bucketed(Self.bucket)
 
-        return Dictionary(compacting: [
+        var parameters: [String: Encodable] = Dictionary(compacting: [
             (WideEventParameter.AuthV2RefreshFeature.failingStep, failingStep?.rawValue),
+            // Always emitted: a refresh always has an origin, so fall back to `.client` rather than dropping it.
+            (WideEventParameter.AuthV2RefreshFeature.refreshTrigger, (refreshTrigger ?? .client).rawValue),
             (WideEventParameter.AuthV2RefreshFeature.refreshTokenLatency, refreshTokenDuration?.intValue(bucket)),
             (WideEventParameter.AuthV2RefreshFeature.fetchJWKSLatency, fetchJWKSDuration?.intValue(bucket)),
+            (WideEventParameter.AuthV2RefreshFeature.recoveryLatency, recoveryDuration?.intValue(bucket)),
+            // nil (rather than false/true) where the current process has no notion of VPN state.
+            (WideEventParameter.AuthV2RefreshFeature.netpIsRunning, netpIsRunning),
         ])
+        // Emit only when the recovery path was reached (this event's params are sparse - absent means no recovery).
+        if let recoveryOutcome {
+            parameters[WideEventParameter.AuthV2RefreshFeature.recoveryOutcome] = recoveryOutcome.rawValue
+        }
+        // Always emitted: every refresh has a sign-out outcome and a subscription status at start.
+        parameters[WideEventParameter.AuthV2RefreshFeature.signedOut] = signedOut
+        parameters[WideEventParameter.AuthV2RefreshFeature.subscriptionStatus] = subscriptionStatus.rawValue
+        return parameters
+    }
+
+    public func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
+        // A refresh flow still pending at app launch never reached a terminal point - for example a
+        // invalid-token refresh on the recovery-less API refresher path, or a process kill mid-refresh.
+        // Reconcile it as UNKNOWN rather than leaving it pending forever.
+        switch trigger {
+        case .appLaunch:
+            guard let startedAt else {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            if Date() >= startedAt.addingTimeInterval(Self.launchCleanupTimeout) {
+                return .complete(.unknown(reason: StatusReason.partialData.rawValue))
+            }
+
+            return .keepPending
+        }
     }
 
     private static func bucket(_ ms: Int) -> Int {
@@ -96,73 +210,18 @@ extension AuthV2TokenRefreshWideEventData {
 
 }
 
-extension AuthV2TokenRefreshWideEventData {
-
-    public static func authV2RefreshEventMapping(wideEvent: WideEventManaging, isFeatureEnabled: @escaping () -> Bool) -> EventMapping<OAuthClientRefreshEvent> {
-        return .init { event, _, _, _ in
-            guard isFeatureEnabled() else {
-                return
-            }
-
-            switch event {
-            case .tokenRefreshStarted(let refreshID):
-                let globalData = WideEventGlobalData(id: refreshID)
-                let data = AuthV2TokenRefreshWideEventData(globalData: globalData)
-                data.failingStep = .tokenRead
-                wideEvent.startFlow(data)
-            case .tokenRefreshRefreshingAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.refreshTokenDuration = .startingNow()
-                    event.failingStep = .refreshAccessToken
-                }
-            case .tokenRefreshRefreshedAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.refreshTokenDuration?.complete()
-                }
-            case .tokenRefreshFetchingJWKS(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.fetchJWKSDuration = .startingNow()
-                    event.failingStep = .fetchingJWKS
-                }
-            case .tokenRefreshFetchedJWKS(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.fetchJWKSDuration?.complete()
-                }
-            case .tokenRefreshVerifyingAccessToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .verifyingAccessToken
-                }
-            case .tokenRefreshVerifyingRefreshToken(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .verifyingRefreshToken
-                }
-            case .tokenRefreshSavingTokens(refreshID: let refreshID):
-                wideEvent.updateFlow(globalID: refreshID) { (event: inout AuthV2TokenRefreshWideEventData) in
-                    event.failingStep = .tokenWrite
-                }
-            case .tokenRefreshSucceeded(let refreshID):
-                if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.failingStep = nil
-                    wideEvent.completeFlow(data, status: .success(reason: nil), onComplete: { _, _ in })
-                }
-            case .tokenRefreshFailed(let refreshID, let error):
-                if let data = wideEvent.getFlowData(AuthV2TokenRefreshWideEventData.self, globalID: refreshID) {
-                    data.errorData = WideEventErrorData(error: error)
-                    wideEvent.updateFlow(data)
-                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-                }
-            }
-        }
-    }
-
-}
-
 extension WideEventParameter {
 
     public enum AuthV2RefreshFeature {
         static let failingStep = "feature.data.ext.failing_step"
+        static let refreshTrigger = "feature.data.ext.refresh_trigger"
         static let refreshTokenLatency = "feature.data.ext.refresh_token_latency_ms_bucketed"
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
+        static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"
+        static let recoveryOutcome = "feature.data.ext.recovery_outcome"
+        static let signedOut = "feature.data.ext.signed_out"
+        static let subscriptionStatus = "feature.data.ext.subscription_status"
+        static let netpIsRunning = "feature.data.ext.netp_is_running"
     }
 
 }

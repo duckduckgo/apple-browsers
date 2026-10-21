@@ -23,7 +23,7 @@ import PackageDescription
 let package = Package(
     name: "Utilities",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(
@@ -31,13 +31,17 @@ let package = Package(
             targets: ["Utilities"]),
     ],
     dependencies: [
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
     ],
     targets: [
         .target(
             name: "Utilities",
             dependencies: [
-                .product(name: "Common", package: "BrowserServicesKit"),
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ]
         )
     ]

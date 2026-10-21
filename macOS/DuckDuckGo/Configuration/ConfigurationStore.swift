@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import os.log
 import Foundation
 import Configuration

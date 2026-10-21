@@ -21,10 +21,10 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 import Common
+import FoundationExtensions
 import History
 import AIChat
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 
 // swiftlint:disable force_try
 

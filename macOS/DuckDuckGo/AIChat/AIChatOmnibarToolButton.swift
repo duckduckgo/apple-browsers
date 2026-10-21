@@ -17,11 +17,66 @@
 //
 
 import AppKit
+import ConcurrencyExtensions
+import DesignResourcesKit
 
 /// An image view that doesn't intercept mouse events, allowing its superview to handle them.
 private final class NonInteractiveImageView: NSImageView {
     override func hitTest(_ point: NSPoint) -> NSView? {
         return nil  // Pass all hits to superview
+    }
+}
+
+/// A control whose focus ring shows for keyboard focus only.
+@MainActor
+protocol FocusRingControlling: AnyObject {
+
+    /// Opts into the ring, unlike a plain `makeFirstResponder` — so a click never rings the control.
+    func takeKeyboardFocus()
+
+    var isFocusRingSuppressed: Bool { get set }
+
+    /// Drops the press fill and re-derives hover from the pointer's real position.
+    func resetTransientFillState()
+}
+
+extension FocusRingControlling {
+
+    /// Modal menu tracking swallows `mouseExited`, and `popUp` returns only after AppKit's flash
+    /// and dismissal animations — so reset on this notification, which lands at the user's click.
+    func sendMenuOpeningAction(_ sendAction: () -> Void) {
+        let observer = NotificationCenter.default.addObserver(
+            forName: NSMenu.didEndTrackingNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            // Submenus post this too, under a still-open parent; only the root menu means done.
+            guard (notification.object as? NSMenu)?.supermenu == nil else { return }
+            // `queue: nil` posts synchronously, and menu tracking runs on the main thread.
+            MainActor.assumeMainThread {
+                self?.resetTransientFillState()
+            }
+        }
+        sendAction()
+        NotificationCenter.default.removeObserver(observer)
+        // Covers an action that popped no menu, so posted no notification.
+        resetTransientFillState()
+    }
+}
+
+extension FocusRingControlling where Self: NSView {
+
+    /// Tracks the full pointer sequence so NSWindow cannot redispatch drag events to every custom view under the cursor.
+    func trackMouseInteraction() {
+        while let event = window?.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
+            if event.type == .leftMouseDragged {
+                mouseDragged(with: event)
+                continue
+            }
+            mouseUp(with: event)
+            return
+        }
+        resetTransientFillState()
     }
 }
 
@@ -31,6 +86,8 @@ final class AIChatOmnibarToolButton: NSView {
     private enum Constants {
         static let buttonSize: CGFloat = 28
         static let iconSize: CGFloat = 16
+        static let labelTrailingPadding: CGFloat = 28
+        static let iconLeadingInset: CGFloat = 11
     }
 
     private let iconImageView: NonInteractiveImageView = {
@@ -62,6 +119,15 @@ final class AIChatOmnibarToolButton: NSView {
     private var trailingImageTrailingConstraint: NSLayoutConstraint?
 
     private let backgroundLayer = CALayer()
+    private let focusRingLayer: CAShapeLayer = {
+        let layer = CAShapeLayer()
+        layer.fillColor = nil
+        layer.lineWidth = 1.5
+        layer.lineCap = .round
+        layer.lineJoin = .round
+        layer.isHidden = true
+        return layer
+    }()
 
     weak var target: AnyObject?
     var action: Selector?
@@ -80,6 +146,22 @@ final class AIChatOmnibarToolButton: NSView {
         didSet {
             updateAppearance()
         }
+    }
+
+    /// Stroke colour for the keyboard-focus ring. Defaults to the design-system primary
+    /// accent; the container VC re-assigns this from `theme.colorsProvider.addressBarActiveBorderColor(isBurner:)`
+    /// via `applyTheme(theme:)` so the ring follows in-app theme switches (Pink, Blue, etc.).
+    var focusRingColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
+        didSet { updateFocusRingStrokeColor() }
+    }
+
+    private func updateFocusRingStrokeColor() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            focusRingLayer.strokeColor = focusRingColor.cgColor
+        }
+        CATransaction.commit()
     }
 
     /// When true, the icon always uses the leading constraint instead of centering.
@@ -121,6 +203,10 @@ final class AIChatOmnibarToolButton: NSView {
 
     var isEnabled: Bool = true {
         didSet {
+            if !isEnabled {
+                isMouseDown = false
+                isHovered = false
+            }
             updateAppearance()
         }
     }
@@ -177,7 +263,7 @@ final class AIChatOmnibarToolButton: NSView {
     override var intrinsicContentSize: NSSize {
         if let label, !label.isEmpty {
             let labelWidth = textLabel.intrinsicContentSize.width
-            var width = Constants.iconSize + labelWidth + 18
+            var width = Constants.iconSize + labelWidth + Constants.labelTrailingPadding
             if trailingImage != nil {
                 width += Self.trailingImageSize + 4
             }
@@ -202,22 +288,66 @@ final class AIChatOmnibarToolButton: NSView {
     override var canBecomeKeyView: Bool { true }
 
     override func becomeFirstResponder() -> Bool {
-        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
-        return super.becomeFirstResponder()
+        let didBecome = super.becomeFirstResponder()
+        if didBecome { isFocused = true }
+        return didBecome
     }
 
     override func resignFirstResponder() -> Bool {
-        setNeedsDisplay(bounds.insetBy(dx: -3, dy: -3))
-        return super.resignFirstResponder()
+        let didResign = super.resignFirstResponder()
+        if didResign {
+            isFocused = false
+            wantsFocusRing = false
+        }
+        return didResign
+    }
+
+    func takeKeyboardFocus() {
+        wantsFocusRing = true
+        window?.makeFirstResponder(self)
+    }
+
+    private var isFocused = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    /// AppKit promotes any clicked view that accepts first responder, so focus can't gate the ring.
+    private var wantsFocusRing = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    var isFocusRingSuppressed = false {
+        didSet { applyFocusRingVisibility() }
+    }
+
+    private func applyFocusRingVisibility() {
+        setFocusRingHidden(!isFocused || !wantsFocusRing || isFocusRingSuppressed)
+    }
+
+    private func setFocusRingHidden(_ hidden: Bool) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        focusRingLayer.isHidden = hidden
+        CATransaction.commit()
     }
 
     private func setupView() {
         wantsLayer = true
+        // The focus ring sublayer extends 1pt past the view's bounds. On macOS Monterey
+        // the hosting layer clips its sublayers to bounds by default, which would hide
+        // the ring; explicitly disable masking so the ring renders on every supported OS.
+        layer?.masksToBounds = false
         setAccessibilityRole(.button)
 
         // Setup background layer (shape updated in layout())
         backgroundLayer.opacity = 0
         layer?.insertSublayer(backgroundLayer, at: 0)
+
+        // Focus ring sublayer sits above the background so it stays visible while hovered/toggled.
+        // Stroke colour follows `focusRingColor` and re-resolves against the view's effective
+        // appearance — see `updateFocusRingStrokeColor()`.
+        layer?.addSublayer(focusRingLayer)
+        updateFocusRingStrokeColor()
 
         // Setup icon image view
         addSubview(iconImageView)
@@ -226,7 +356,7 @@ final class AIChatOmnibarToolButton: NSView {
 
         iconCenterXConstraint = iconImageView.centerXAnchor.constraint(equalTo: centerXAnchor)
         iconCenterXConstraint?.isActive = true
-        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6)
+        iconLeadingConstraint = iconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.iconLeadingInset)
         iconLeadingConstraint?.isActive = false
 
         trailingImageTrailingConstraint = trailingImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8)
@@ -268,6 +398,22 @@ final class AIChatOmnibarToolButton: NSView {
             )
             backgroundLayer.cornerRadius = Constants.buttonSize / 2
         }
+
+        // Focus ring tracks the background's shape, offset 1pt outward so the stroke
+        // sits just outside the visible button. Rendered as a sublayer rather than
+        // in `draw(_:)` so the 1pt overflow is not clipped by the view's backing layer
+        // (which was the cause of the broken ring on macOS Monterey).
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        let ringRect = backgroundLayer.frame.insetBy(dx: -1, dy: -1)
+        focusRingLayer.frame = ringRect
+        focusRingLayer.path = CGPath(
+            roundedRect: focusRingLayer.bounds,
+            cornerWidth: ringRect.height / 2,
+            cornerHeight: ringRect.height / 2,
+            transform: nil
+        )
+        CATransaction.commit()
     }
 
     private func updateAppearance() {
@@ -289,7 +435,7 @@ final class AIChatOmnibarToolButton: NSView {
 
             let effectiveTint: NSColor?
             if showPressedEffect {
-                if let activeBackgroundColor, let activePressedBackgroundColor {
+                if activeBackgroundColor != nil, let activePressedBackgroundColor {
                     backgroundLayer.backgroundColor = activePressedBackgroundColor.cgColor
                 } else {
                     backgroundLayer.backgroundColor = pressedBackgroundColor.cgColor
@@ -325,6 +471,7 @@ final class AIChatOmnibarToolButton: NSView {
     }
 
     private var trackingArea: NSTrackingArea?
+    private var lastHoverEventTimestamp: TimeInterval = 0
 
     private func setupHoverTracking() {
         updateTrackingAreas()
@@ -339,29 +486,66 @@ final class AIChatOmnibarToolButton: NSView {
 
         let newTrackingArea = NSTrackingArea(
             rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
         addTrackingArea(newTrackingArea)
         trackingArea = newTrackingArea
+
+        // A new tracking area reports nothing about a pointer already outside it.
+        refreshHoverState()
+    }
+
+    /// Re-derives hover from the pointer's real position when event ordering or modal menu tracking makes callbacks unreliable.
+    private func refreshHoverState() {
+        guard isEnabled, let window else {
+            isHovered = false
+            return
+        }
+        isHovered = bounds.contains(convert(window.mouseLocationOutsideOfEventStream, from: nil))
+    }
+
+    func resetTransientFillState() {
+        isMouseDown = false
+        refreshHoverState()
+    }
+
+    /// AppKit can deliver an older enter event after a newer exit event. Trusting that enter
+    /// unconditionally would leave the hover fill visible until the pointer crosses the view again.
+    private func updateHoverState(_ hovering: Bool, from event: NSEvent) {
+        guard event.timestamp >= lastHoverEventTimestamp else {
+            resetTransientFillState()
+            return
+        }
+        lastHoverEventTimestamp = event.timestamp
+        let canShowHover = NSEvent.pressedMouseButtons == 0 || isMouseDown
+        isHovered = hovering && isEnabled && canShowHover
+        if !hovering {
+            isMouseDown = false
+        }
     }
 
     override func mouseEntered(with event: NSEvent) {
-        isHovered = true
+        updateHoverState(true, from: event)
         NSCursor.arrow.set()
     }
 
     override func mouseMoved(with event: NSEvent) {
+        isMouseDown = false
+        updateHoverState(true, from: event)
         NSCursor.arrow.set()
     }
 
     override func mouseExited(with event: NSEvent) {
-        isHovered = false
+        updateHoverState(false, from: event)
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard isEnabled else { return }
+        wantsFocusRing = false
         isMouseDown = true
+        trackMouseInteraction()
     }
 
     override func mouseDragged(with event: NSEvent) {
@@ -376,29 +560,13 @@ final class AIChatOmnibarToolButton: NSView {
                 isToggled.toggle()
             }
             if let action, let target {
-                NSApp.sendAction(action, to: target, from: self)
+                sendMenuOpeningAction {
+                    NSApp.sendAction(action, to: target, from: self)
+                }
+                return
             }
         }
-        isMouseDown = false
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-        guard window?.firstResponder == self else { return }
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-        context.saveGState()
-        context.resetClip()
-
-        NSColor.controlAccentColor.setStroke()
-        let borderRect = bounds.insetBy(dx: -1, dy: -1)
-        let focusPath = NSBezierPath(roundedRect: borderRect, xRadius: borderRect.height / 2, yRadius: borderRect.height / 2)
-        focusPath.lineWidth = 1.5
-        focusPath.lineCapStyle = .round
-        focusPath.lineJoinStyle = .round
-        focusPath.stroke()
-
-        context.restoreGState()
+        resetTransientFillState()
     }
 
     override func keyDown(with event: NSEvent) {
@@ -421,6 +589,7 @@ final class AIChatOmnibarToolButton: NSView {
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
         updateAppearance()
+        updateFocusRingStrokeColor()
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
@@ -434,3 +603,5 @@ final class AIChatOmnibarToolButton: NSView {
         addCursorRect(bounds, cursor: .arrow)
     }
 }
+
+extension AIChatOmnibarToolButton: FocusRingControlling {}

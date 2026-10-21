@@ -148,19 +148,3 @@ struct DataBrokerDatabaseBrowserData {
     }
 
 }
-
-extension AttemptInformation: Comparable {
-    public static func < (lhs: AttemptInformation, rhs: AttemptInformation) -> Bool {
-        if lhs.extractedProfileId != rhs.extractedProfileId {
-            return lhs.extractedProfileId < rhs.extractedProfileId
-        } else if lhs.dataBroker != rhs.dataBroker {
-            return lhs.dataBroker < rhs.dataBroker
-        } else {
-            return lhs.startDate < rhs.startDate
-        }
-    }
-
-    public static func == (lhs: AttemptInformation, rhs: AttemptInformation) -> Bool {
-        lhs.attemptId == rhs.attemptId
-    }
-}

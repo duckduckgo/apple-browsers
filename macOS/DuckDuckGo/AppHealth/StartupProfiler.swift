@@ -32,6 +32,7 @@ final class StartupProfiler: @unchecked Sendable {
 
     private let lock = NSLock()
     private var metrics = StartupMetrics()
+    private var isInvalid = false
     private let logger: Logger
     weak var delegate: StartupProfilerDelegate?
 
@@ -74,6 +75,16 @@ final class StartupProfiler: @unchecked Sendable {
             metrics
         }
     }
+
+    /// Invalidates the current startup measurement so its metrics are discarded. The completion
+    /// callback — and therefore the startup metrics pixel — is suppressed for this launch.
+    /// Used when something contaminates the timings, such as the Move to Applications Folder
+    /// prompt blocking the launch before the measured sequence begins.
+    func invalidate() {
+        lock.withLock {
+            isInvalid = true
+        }
+    }
 }
 
 // MARK: - Private Helpers
@@ -108,6 +119,11 @@ private extension StartupProfiler {
 
     func notifyCompletionIfNeeded(metrics: StartupMetrics?) {
         guard let delegate, let metrics, metrics.isComplete else {
+            return
+        }
+
+        guard !lock.withLock({ isInvalid }) else {
+            logger.log(level: .debug, "🏁 [Startup Metrics] discarded — measurement invalidated")
             return
         }
 

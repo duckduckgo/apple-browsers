@@ -214,7 +214,7 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
     var delegate: (any DuckDuckGo.TabDelegate)?
     var webView: WKWebView!
     var contentBottomConstraint: NSLayoutConstraint?
-    var persistentBottomBarHeight: CGFloat = 0
+    var floatingBottomChromeObscuredHeight: CGFloat = 0
     var presentCalled = false
     private var _presentedVC: UIViewController?
 
@@ -418,6 +418,10 @@ final class MockDuckPlayerFeatureFlagger: FeatureFlagger {
         return nil
     }
 
+    func assignedCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        return nil
+    }
+
     var allActiveExperiments: Experiments = [:]
 }
 
@@ -582,6 +586,7 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     enum Message: Equatable {
         case setBarsHidden(Bool)
+        case resetBars
         case setNavigationBarHidden(Bool)
         case setBarsVisibility(CGFloat)
         case setRefreshControlEnabled(Bool)
@@ -591,6 +596,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     func setBarsHidden(_ hidden: Bool, animated: Bool) {
         receivedMessages.append(.setBarsHidden(hidden))
+    }
+
+    func resetBars(animated: Bool) {
+        receivedMessages.append(.resetBars)
     }
 
     func setNavigationBarHidden(_ hidden: Bool) {
@@ -605,7 +614,15 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
         receivedMessages.append(.setRefreshControlEnabled(isEnabled))
     }
 
+    var isUnifiedInputContentOverlaySuppressed = false
+
+    func setUnifiedInputContentOverlaySuppressed(_ suppressed: Bool) {
+        isUnifiedInputContentOverlaySuppressed = suppressed
+    }
+
     var canHideBars: Bool = false
+
+    var isChromeScrollInteractionDisabled: Bool = false
 
     var isToolbarHidden: Bool = false
 
@@ -613,13 +630,28 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var barsMaxHeight: CGFloat = 30
 
+    var currentBarsVisibilityOverride: CGFloat?
+
+    var currentBarsVisibility: CGFloat { currentBarsVisibilityOverride ?? (isToolbarHidden ? 0 : 1) }
+
+    var isInMinimalChromeLayout: Bool = false
+
+    func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }
+
+    var obscuredContentInsets: UIEdgeInsets = .zero
+
+    func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets { obscuredContentInsets }
+
+    var floatingNewTabPageTopObscuredHeight: CGFloat = 0
+
     var omniBar: OmniBar = DefaultOmniBarViewController(
         dependencies: MockOmnibarDependency(
             voiceSearchHelper: MockVoiceSearchHelper(
                 isSpeechRecognizerAvailable: true,
                 voiceSearchEnabled: true
             )
-        )
+        ),
+        isFloatingUIEnabled: false
     )
 
     var tabBarContainer: UIView = UIView()

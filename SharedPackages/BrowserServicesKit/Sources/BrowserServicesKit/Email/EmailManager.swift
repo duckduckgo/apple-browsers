@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 
 public enum EmailKeychainAccessType: String {
     case getUsername
@@ -346,8 +347,19 @@ public class EmailManager {
         }
     }
 
+    /// Set while `forceSignOut()` runs on the current thread.
+    /// Keychain failures during the forced sign-out itself are reported through
+    /// `emailManagerKeychainAccessFailed`, and the delegate may respond to them by
+    /// calling `forceSignOut()` again. Without this guard every failed attempt would
+    /// start another one, recursing until the stack overflows.
+    @TaskLocal
+    private static var isForceSignOutInProgress = false
+
     public func forceSignOut() {
-        try? signOut(isForced: true)
+        guard !Self.isForceSignOutInProgress else { return }
+        Self.$isForceSignOutInProgress.withValue(true) {
+            try? signOut(isForced: true)
+        }
     }
 
     public func emailAddressFor(_ alias: String) -> String {

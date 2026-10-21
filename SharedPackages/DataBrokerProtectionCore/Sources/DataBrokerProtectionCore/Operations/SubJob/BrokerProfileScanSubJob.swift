@@ -19,7 +19,7 @@
 import Foundation
 import Common
 import BrowserServicesKit
-import PixelKit
+import WideEvent
 import os.log
 
 struct BrokerProfileScanSubJob {
@@ -98,10 +98,15 @@ struct BrokerProfileScanSubJob {
         )
 
         do {
+            let shouldFireFirstScanPixel = try !dependencies.database.hasScanHistoryEvents()
             try markScanStarted(brokerId: brokerId,
                                 profileQueryId: profileQueryId,
                                 stageCalculator: stageCalculator,
                                 database: dependencies.database)
+
+            if shouldFireFirstScanPixel {
+                dependencies.pixelHandler.fire(.firstScan(isAuthenticated: isAuthenticated, isFreeScan: !isAuthenticated))
+            }
 
             let runner = makeScanRunner(brokerProfileQueryData: brokerProfileQueryData,
                                         stageCalculator: stageCalculator,
@@ -109,7 +114,6 @@ struct BrokerProfileScanSubJob {
                                         runnerFactory: dependencies.createScanRunner)
 
             let profilesFoundDuringCurrentScanJob = try await executeScan(runner: runner,
-                                                                          brokerProfileQueryData: brokerProfileQueryData,
                                                                           showWebView: showWebView,
                                                                           shouldRunNextStep: shouldRunNextStep)
 
@@ -243,12 +247,10 @@ struct BrokerProfileScanSubJob {
     }
 
     internal func executeScan(runner: BrokerProfileScanSubJobWebRunning,
-                              brokerProfileQueryData: BrokerProfileQueryData,
                               showWebView: Bool,
                               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         // 4b. Get extracted profiles from the runner:
-        try await runner.scan(brokerProfileQueryData,
-                              showWebView: showWebView,
+        try await runner.scan(showWebView: showWebView,
                               shouldRunNextStep: shouldRunNextStep)
     }
 
@@ -406,6 +408,10 @@ struct BrokerProfileScanSubJob {
                     try database.add(reAppearanceEvent)
                     try database.updateRemovedDate(nil, on: id)
                 }
+                if dependencies.featureFlagger.isExtractedProfileRefreshOn,
+                   let identifier = extractedProfile.identifier, !identifier.isEmpty {
+                    try database.updateExtractedProfile(existingProfile.refreshed(from: extractedProfile), on: id)
+                }
                 Logger.dataBrokerProtection.log("Extracted profile already exists in database: \(id.description)")
             } else {
                 try scheduleNewOptOutJob(from: extractedProfile,
@@ -475,6 +481,10 @@ struct BrokerProfileScanSubJob {
         var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
             if let extractedProfileId = removedProfile.id {
+                let recordFoundDate = RecordFoundDateResolver.resolve(repository: database,
+                                                                      brokerId: brokerId,
+                                                                      profileQueryId: profileQueryId,
+                                                                      extractedProfileId: extractedProfileId)
                 let event = HistoryEvent(
                     extractedProfileId: extractedProfileId,
                     brokerId: brokerId,
@@ -487,11 +497,10 @@ struct BrokerProfileScanSubJob {
 
                 markConfirmationWideEventCompleted(
                     brokerProfileQueryData: brokerProfileQueryData,
-                    database: database,
-                    profileIdentifier: removedProfile.identifier,
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
-                    extractedProfileId: extractedProfileId
+                    extractedProfileId: extractedProfileId,
+                    recordFoundDate: recordFoundDate
                 )
 
                 try updateOperationDataDates(
@@ -533,17 +542,11 @@ struct BrokerProfileScanSubJob {
     }
 
     private func markConfirmationWideEventCompleted(brokerProfileQueryData: BrokerProfileQueryData,
-                                                    database: DataBrokerProtectionRepository,
-                                                    profileIdentifier: String?,
                                                     brokerId: Int64,
                                                     profileQueryId: Int64,
-                                                    extractedProfileId: Int64) {
-        let recordFoundDate = RecordFoundDateResolver.resolve(repository: database,
-                                                              brokerId: brokerId,
-                                                              profileQueryId: profileQueryId,
-                                                              extractedProfileId: extractedProfileId)
-        let wideEventId = OptOutWideEventIdentifier(profileIdentifier: profileIdentifier,
-                                                    brokerId: brokerId,
+                                                    extractedProfileId: Int64,
+                                                    recordFoundDate: Date?) {
+        let wideEventId = OptOutWideEventIdentifier(brokerId: brokerId,
                                                     profileQueryId: profileQueryId,
                                                     extractedProfileId: extractedProfileId)
         OptOutConfirmationWideEventRecorder.startIfPossible(
@@ -558,9 +561,7 @@ struct BrokerProfileScanSubJob {
     private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,
                                                      database: DataBrokerProtectionRepository) {
 
-        // Jobs for removed brokers will already be prevented from being scheduled upstream
-        guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: false)
-            .flatMap({ $0.extractedProfiles }),
+        guard let savedExtractedProfiles = try? database.fetchAllExtractedProfiles(),
               savedExtractedProfiles.count > 0 else {
             return
         }
@@ -584,7 +585,8 @@ struct BrokerProfileScanSubJob {
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
                                            database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdater(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database,
+                                                        featureFlagger: DisabledOptOutRetryErrorFeatureFlagger())
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,

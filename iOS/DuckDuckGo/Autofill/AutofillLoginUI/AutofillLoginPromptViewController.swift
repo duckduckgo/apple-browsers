@@ -1,0 +1,198 @@
+//
+//  AutofillLoginPromptViewController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import SwiftUI
+import LocalAuthentication
+import BrowserServicesKit
+import Core
+import PixelKit
+
+class AutofillLoginPromptViewController: UIViewController {
+
+    typealias AutofillLoginPromptViewControllerCompletion = (_ account: SecureVaultModels.WebsiteAccount?,
+                                                             _ showExpanded: Bool) -> Void
+    let completion: AutofillLoginPromptViewControllerCompletion?
+    let onAccountSelected: (SecureVaultModels.WebsiteAccount?) -> Void
+
+    private let accounts: AccountMatches
+    private let usageProvider: AutofillUsageProvider
+    private let domain: String
+    private let trigger: AutofillUserScript.GetTriggerType
+
+    internal init(accounts: AccountMatches,
+                  usageProvider: AutofillUsageProvider = AutofillUsageStore(),
+                  domain: String,
+                  trigger: AutofillUserScript.GetTriggerType,
+                  onAccountSelected: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
+                  completion: AutofillLoginPromptViewControllerCompletion? = nil) {
+        self.accounts = accounts
+        self.usageProvider = usageProvider
+        self.domain = domain
+        self.trigger = trigger
+        self.onAccountSelected = onAccountSelected
+        self.completion = completion
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupView()
+    }
+    
+    private func setupView() {
+        view.backgroundColor = UIColor(designSystemColor: .surface)
+        
+        let viewModel = AutofillLoginPromptViewModel(accounts: accounts, domain: domain, isExpanded: isExpanded)
+        viewModel.delegate = self
+
+        let view = AutofillLoginPromptView(viewModel: viewModel)
+        let controller = UIHostingController(rootView: view)
+        controller.view.backgroundColor = .clear
+        presentationController?.delegate = self
+        installChildViewController(controller)
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if trigger == AutofillUserScript.GetTriggerType.autoprompt {
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAutopromptDisplayed)
+        } else {
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualDisplayed)
+        }
+    }
+    
+    private var isExpanded: Bool {
+        if #available(iOS 16.0, *) {
+            return true
+        }
+        if let presentationController = presentationController as? UISheetPresentationController {
+            if presentationController.selectedDetentIdentifier == nil &&
+                presentationController.detents.contains(.medium()) {
+                return false
+            } else if presentationController.selectedDetentIdentifier == .medium {
+                return false
+            }
+        }
+        return true
+    }
+}
+
+extension AutofillLoginPromptViewController: UISheetPresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        if self.trigger == AutofillUserScript.GetTriggerType.autoprompt {
+            PixelKit.fire(Pixel.Event.autofillLoginsAutopromptDismissed)
+        } else {
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualDismissed)
+        }
+        completion?(nil, false)
+    }
+}
+
+extension AutofillLoginPromptViewController: AutofillLoginPromptViewModelDelegate {
+    func autofillLoginPromptViewModel(_ viewModel: AutofillLoginPromptViewModel, didSelectAccount account: SecureVaultModels.WebsiteAccount) {
+        let parameters = usageProvider.formattedFillDate.flatMap { [PixelParameters.lastUsed: $0] } ?? [:]
+        if trigger == AutofillUserScript.GetTriggerType.autoprompt {
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAutopromptConfirmed, options: .parameters(parameters))
+        } else {
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualConfirmed, options: .parameters(parameters))
+        }
+
+        onAccountSelected(account)
+
+        if AppDependencyProvider.shared.autofillLoginSession.isSessionValid {
+            dismiss(animated: true, completion: nil)
+            completion?(account, false)
+            return
+        }
+
+        let context = LAContext()
+        context.localizedCancelTitle = UserText.autofillLoginPromptAuthenticationCancelButton
+        let reason = UserText.autofillLoginPromptAuthenticationReason
+        context.localizedReason = reason
+        
+        var error: NSError?
+        if context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) {
+            let completion = self.completion
+            dismiss(animated: true, completion: nil)
+            let reason = reason
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceDisplayed)
+            context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason ) { success, error in
+            
+                DispatchQueue.main.async {
+                    if success {
+                        PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthAuthenticated)
+                        AppDependencyProvider.shared.autofillLoginSession.startSession()
+                        completion?(account, false)
+                    } else {
+                        if let error = error as? NSError, error.code == LAError.userCancel.rawValue {
+                            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthCancelled)
+                        } else {
+                            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthFailed)
+                        }
+                        print(error?.localizedDescription ?? "Failed to authenticate but error nil")
+                        AppDependencyProvider.shared.autofillLoginSession.endSession()
+                        completion?(nil, false)
+                    }
+                }
+            }
+        } else {
+            // When system authentication isn't available, for now just fail silently
+            // This should never happen since we check for auth avaiablity before showing anything
+            // (or rarely if the user backgrounds the app, turns auth off, then comes back) 
+            PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineAuthenticationDeviceAuthUnavailable)
+            AppDependencyProvider.shared.autofillLoginSession.endSession()
+            dismiss(animated: true) {
+                self.completion?(nil, false)
+            }
+        }
+    }
+    
+    func autofillLoginPromptViewModelDidCancel(_ viewModel: AutofillLoginPromptViewModel) {
+        dismiss(animated: true) {
+            if self.trigger == AutofillUserScript.GetTriggerType.autoprompt {
+                PixelKit.fire(Pixel.Event.autofillLoginsAutopromptDismissed)
+            } else {
+                PixelKit.fire(Pixel.Event.autofillLoginsFillLoginInlineManualDismissed)
+            }
+            
+            self.completion?(nil, false)
+        }
+    }
+    
+    func autofillLoginPromptViewModelDidRequestExpansion(_ viewModel: AutofillLoginPromptViewModel) {
+        dismiss(animated: true) {
+            self.completion?(nil, true)
+        }
+    }
+
+    func autofillLoginPromptViewModelDidResizeContent(_ viewModel: AutofillLoginPromptViewModel, contentHeight: CGFloat) {
+        if #available(iOS 16.0, *) {
+            if let sheetPresentationController = self.presentationController as? UISheetPresentationController {
+                sheetPresentationController.animateChanges {
+                    sheetPresentationController.detents = [.custom(resolver: { _ in contentHeight })]
+                }
+            }
+        }
+    }
+}

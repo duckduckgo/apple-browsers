@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PrivacyConfig
@@ -73,28 +74,30 @@ final class FullscreenControllerTests: XCTestCase {
     }
 }
 
-final class MainViewControllerDefaultBrowserPromptTests: XCTestCase, MainViewControllerFactory {
+final class MainViewControllerDefaultBrowserPromptUIHostingTests: XCTestCase, MainViewControllerFactory {
 
     @MainActor
-    func testDefaultBrowserPromptNotTriggeredInPopupWindow() {
-        let presenter = DefaultBrowserAndDockPromptPresentingMock()
-        let sut = makeMainViewController(isPopup: true, defaultBrowserPromptPresenter: presenter)
+    func testWhenInPopUpWindowThenUIHostingReportsIsInPopUpWindow() {
+        let sut: DefaultBrowserAndDockPromptUIHosting = makeMainViewController(isPopup: true, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
 
-        _ = sut.view
-        sut.windowDidBecomeKey()
-
-        XCTAssertEqual(presenter.tryToShowPromptCallCount, 0)
+        XCTAssertTrue(sut.isInPopUpWindow)
     }
 
     @MainActor
-    func testDefaultBrowserPromptShownInRegularWindow() {
-        let presenter = DefaultBrowserAndDockPromptPresentingMock()
-        let sut = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: presenter)
+    func testWhenInRegularWindowThenUIHostingDoesNotReportIsInPopUpWindow() {
+        let sut: DefaultBrowserAndDockPromptUIHosting = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
 
-        _ = sut.view
-        sut.windowDidBecomeKey()
+        XCTAssertFalse(sut.isInPopUpWindow)
+    }
 
-        XCTAssertEqual(presenter.tryToShowPromptCallCount, 1)
+    @MainActor
+    func testWhenViewIsNotInKeyWindowThenNoAnchorIsProvided() {
+        let viewController = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresentingMock())
+        _ = viewController.view
+        let sut: DefaultBrowserAndDockPromptUIHosting = viewController
+
+        XCTAssertNil(sut.providePopoverAnchor())
+        XCTAssertNil(sut.provideModalAnchor())
     }
 
 }
@@ -134,15 +137,26 @@ extension MainViewControllerFactory {
     @MainActor
     func makeFireCoordinator(windowControllersManager: WindowControllersManagerMock,
                              featureFlagger: MockFeatureFlagger) -> FireCoordinator {
-        FireCoordinator(
+
+        let fireproofDomains = MockFireproofDomains()
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
+        return FireCoordinator(
             tld: TLD(),
             featureFlagger: featureFlagger,
             historyCoordinating: HistoryCoordinatingMock(),
             visualizeFireAnimationDecider: nil,
             onboardingContextualDialogsManager: nil,
-            fireproofDomains: MockFireproofDomains(),
-            faviconManagement: FaviconManagerMock(),
+            fireproofDomains: fireproofDomains,
+            faviconManagement: faviconManager,
             windowControllersManager: windowControllersManager,
+            dataClearingPreferences: dataClearingPreferences,
             pixelFiring: nil,
             historyProvider: MockHistoryViewDataProvider()
         )

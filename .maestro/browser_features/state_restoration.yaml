@@ -38,7 +38,8 @@ tags:
 - assertVisible: "DuckDuckGo.*"
 
 # Load a new tab
-- longPressOn: "Tab Switcher"
+- tapOn: "Tab Switcher"
+- tapOn: "New Tab"
 - assertVisible:
     id: "searchEntry"
 - tapOn: 

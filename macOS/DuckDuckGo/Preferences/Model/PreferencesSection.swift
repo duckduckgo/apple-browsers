@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import Subscription
 import SubscriptionUI
@@ -32,10 +33,15 @@ struct PreferencesSection: Hashable, Identifiable {
                                 includingSync: Bool,
                                 includingAIChat: Bool,
                                 includingYouTubeAdBlocking: Bool,
+                                includingWebsitePermissions: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
-        let privacyPanes: [PreferencePaneIdentifier] = [
+        var privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
         ]
+
+        if includingYouTubeAdBlocking {
+            privacyPanes.append(.youTubeAdBlocking)
+        }
 
         let regularPanes: [PreferencePaneIdentifier] = {
             var panes: [PreferencePaneIdentifier] = [.appearance, .autofill, .accessibility, .dataClearing]
@@ -44,9 +50,7 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.sync)
             }
 
-            if includingYouTubeAdBlocking {
-                panes.append(.youTubeAdBlocking)
-            } else if includingDuckPlayer {
+            if !includingYouTubeAdBlocking, includingDuckPlayer {
                 panes.append(.duckPlayer)
             }
 
@@ -54,7 +58,17 @@ struct PreferencesSection: Hashable, Identifiable {
                 panes.append(.aiChat)
             }
 
-            return [.general] + panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
+            var sortedPanes = panes.sorted { $0.displayName.lowercased() < $1.displayName.lowercased() }
+
+            if includingWebsitePermissions {
+                if let syncIndex = sortedPanes.firstIndex(of: .sync) {
+                    sortedPanes.insert(.websitePermissions, at: syncIndex)
+                } else {
+                    sortedPanes.append(.websitePermissions)
+                }
+            }
+
+            return [.general] + sortedPanes
         }()
 
         // App Store guidelines don't allow references to other platforms, so the Mac App Store build omits the otherPlatforms section.
@@ -91,6 +105,11 @@ struct PreferencesSection: Hashable, Identifiable {
             }
             if subscriptionState.isIdentityTheftRestorationAvailable {
                 subscriptionPanes.append(.identityTheftRestoration)
+            }
+            // Last of the feature entries and above Subscription Settings, mirroring the other
+            // platforms, which put it below Identity Theft Restoration.
+            if subscriptionState.isPartnershipsHubAvailable {
+                subscriptionPanes.append(.partnershipsHub)
             }
 
             subscriptionPanes.append(.subscriptionSettings)
@@ -148,9 +167,14 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case paidAIChat
     case identityTheftRestoration
     case subscriptionSettings
+    /// Opens the Partnerships Hub in a new tab rather than selecting a pane; never becomes the
+    /// selected pane. Unlike `otherPlatforms` its URL comes from remote config, so the raw value
+    /// cannot be the URL itself — `PreferencesSidebarModel.openSubscriberOffers()` resolves it.
+    case partnershipsHub
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
+    case websitePermissions
     case otherPlatforms = "https://duckduckgo.com/app/devices?origin=funnel_app_macos"
     case aiChat = "aichat"
     case about
@@ -217,12 +241,16 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.identityTheftRestoration
         case .subscriptionSettings:
             return UserText.subscriptionSettings
+        case .partnershipsHub:
+            return UserText.subscriberOffers
         case .autofill:
             return UserText.passwordManagementTitle
         case .accessibility:
             return UserText.accessibility
         case .duckPlayer:
             return UserText.duckPlayer
+        case .websitePermissions:
+            return UserText.websitePermissions
         case .aiChat:
             return UserText.aiFeatures
         case .about:
@@ -268,12 +296,16 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:
             return settingsIconProvider.subscriptionIcon
+        case .partnershipsHub:
+            return settingsIconProvider.subscriberOffersIcon
         case .autofill:
             return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:
             return settingsIconProvider.accessibilityIcon
         case .duckPlayer:
             return settingsIconProvider.duckPlayerIcon
+        case .websitePermissions:
+            return settingsIconProvider.websitePermissionsIcon
         case .about:
             return settingsIconProvider.aboutIcon
         case .otherPlatforms:
@@ -281,5 +313,29 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .aiChat:
             return settingsIconProvider.aiGeneralIcon
         }
+    }
+}
+
+enum PreferencesScrollAnchor: Hashable {
+    case top
+    case permissions
+}
+
+struct PreferencesDestination: Hashable {
+
+    let pane: PreferencePaneIdentifier
+    let scrollAnchor: PreferencesScrollAnchor?
+    var websitePermissionCategory: WebsitePermissionCategory?
+
+    static var aiChat: PreferencesDestination {
+        PreferencesDestination(pane: .aiChat, scrollAnchor: nil)
+    }
+
+    static var generalPermissions: PreferencesDestination {
+        PreferencesDestination(pane: .general, scrollAnchor: .permissions)
+    }
+
+    static func websitePermission(_ category: WebsitePermissionCategory) -> PreferencesDestination {
+        PreferencesDestination(pane: .websitePermissions, scrollAnchor: nil, websitePermissionCategory: category)
     }
 }

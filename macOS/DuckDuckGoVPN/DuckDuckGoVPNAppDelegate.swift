@@ -16,13 +16,16 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AppLauncher
 import PrivacyConfig
 import Cocoa
 import Combine
 import Common
 import Configuration
-import FeatureFlags
+import DesignResourcesKit
+import FeatureFlags_macOS
 import LoginItems
 import Networking
 import NetworkExtension
@@ -31,9 +34,11 @@ import NetworkProtectionProxy
 import NetworkProtectionUI
 import os.log
 import PixelKit
+import WideEvent
 import ServiceManagement
 import Subscription
 import SwiftUI
+import SystemExtensionManager
 import VPNAppLauncher
 import VPNAppState
 
@@ -86,6 +91,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
         PixelKit.setUp(dryRun: PixelKitConfig.isDryRun(isProductionBuild: BuildFlags.isProductionBuild),
                        appVersion: AppVersion.shared.versionNumber,
                        source: pixelSource,
+                       session: "vpn-agent",
                        channel: channel,
                        defaultHeaders: [:],
                        defaults: UserDefaults.netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
@@ -151,6 +157,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var cancellables = Set<AnyCancellable>()
+    private var systemExtensionStateObserver: AnyObject?
     private lazy var networkExtensionController = NetworkExtensionController(sysexBundleID: Self.tunnelSysexBundleID, featureFlagger: featureFlagger)
     private let vpnAppState = VPNAppState(defaults: .netP)
     private let tunnelSettings: VPNSettings
@@ -451,6 +458,10 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             isExtensionUpdateOfferedPublisher: isExtensionUpdateOfferedPublisher,
             userDefaults: .netP,
             locationFormatter: DefaultVPNLocationFormatter(),
+            isStrictRoutingAvailable: featureFlagger.isFeatureOn(.vpnStrictRoutingToggle),
+            onWillShowPopover: { [weak self] in
+                await self?.tunnelController.refreshSystemState()
+            },
             uninstallHandler: { [weak self] _ in
                 guard let self else { return }
 
@@ -461,11 +472,28 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     // Intentional no-op: we already anonymously track VPN uninstallation failures using
                     // pixels within the vpn uninstaller.
                 }
-            }
+            },
+            buttonClickedHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNButtonClicked)
+            },
+            popoverShownHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverShown)
+            },
+            subscriptionExpiredViewAppearHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewShown)
+            },
+            subscriptionExpiredViewSubscribeButtonClickPixelHandler: {
+                PixelKit.fire(SubscriptionPixel.subscriptionMenuBarVPNPopoverExpiredViewSubscribeButtonClicked)
+            },
+            subscribeButtonOrigin: SubscriptionFunnelOrigin.vpnMenuBarRevoked.rawValue
         )
     }
 
-    @MainActor
+    private func setupAppRebrand() {
+        let isAppRebranded = true
+        DesignSystemRebrand.isAppRebranded = { [isAppRebranded] in isAppRebranded }
+    }
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
@@ -478,6 +506,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         // Load cached config (if any)
         privacyConfigurationManager.reload(etag: configurationStore.loadEtag(for: .privacyConfiguration), data: configurationStore.loadData(for: .privacyConfiguration))
 
+        // After privacy config load: `.appRebranding` is a remote flag.
+        setupAppRebrand()
+
         // It's important for this to be set-up after the privacy configuration is loaded
         // as it relies on it for the remote feature flag.
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
@@ -488,6 +519,9 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             // Initialize lazy properties
             _ = tunnelControllerIPCService
             _ = vpnProxyLauncher
+
+            setupSystemExtensionStateObserver()
+            await tunnelController.refreshSystemState()
 
             vpnAppEventsHandler.appDidFinishLaunching()
 
@@ -506,6 +540,28 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+        }
+    }
+
+    @MainActor
+    private func setupSystemExtensionStateObserver() {
+        guard #available(macOS 15.1, *),
+              systemExtensionStateObserver == nil else {
+            return
+        }
+
+        let observer = networkExtensionController.makeSystemExtensionActivationStateObserver { [weak self] in
+            Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                await self?.tunnelController.refreshSystemState()
+            }
+        }
+
+        do {
+            try observer.start()
+            systemExtensionStateObserver = observer
+        } catch {
+            Logger.networkProtection.error("Failed to observe VPN system extension state: \(error.localizedDescription, privacy: .public)")
         }
     }
 

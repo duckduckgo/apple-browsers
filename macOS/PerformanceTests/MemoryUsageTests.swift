@@ -27,7 +27,7 @@ final class MemoryUsageTests: XCTestCase {
         super.setUp()
 
         /// Avoids First-Run State
-        UITests.dismissNotificationCenterMessages()
+        XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)
 
         /// Disable Session Restoration
         UITests.setupInitialState(shouldRestoreSession: false)

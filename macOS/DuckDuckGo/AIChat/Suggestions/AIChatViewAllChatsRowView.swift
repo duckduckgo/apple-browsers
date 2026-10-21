@@ -28,13 +28,13 @@ import DesignResourcesKitIcons
 final class AIChatViewAllChatsRowView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
-        static let horizontalPadding: CGFloat = 12
+        static let rowHeight: CGFloat = 34
+        static let horizontalPadding: CGFloat = 14
         static let iconSize: CGFloat = 16
-        static let iconTitleSpacing: CGFloat = 6
+        static let iconTitleSpacing: CGFloat = 8
         static let trailingSpacing: CGFloat = 6
 
-        static let iconColor: NSColor = .suggestionIcon
+        static let iconColor: NSColor = NSColor(resource: .suggestionIcon)
         static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
 
@@ -81,7 +81,7 @@ final class AIChatViewAllChatsRowView: NSView {
         let imageView = NSImageView()
         imageView.translatesAutoresizingMaskIntoConstraints = false
         imageView.imageScaling = .scaleProportionallyDown
-        imageView.image = NSImage(named: "Arrow-Right-12")
+        imageView.image = NSImage(resource: .arrowRight12)
         imageView.contentTintColor = Constants.iconColor
         return imageView
     }()
@@ -113,8 +113,12 @@ final class AIChatViewAllChatsRowView: NSView {
 
     // MARK: - Initialization
 
-    init(themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
-        self.themeProvider = themeProvider
+    init(
+        themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+        themeProvider: SuggestionRowThemeProviding? = nil,
+        isBurner: Bool = false)
+    {
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
     }
@@ -148,7 +152,7 @@ final class AIChatViewAllChatsRowView: NSView {
             iconImageView.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             titleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.iconTitleSpacing),
-            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -Constants.trailingSpacing),
+            titleLabel.trailingAnchor.constraint(lessThanOrEqualTo: keyboardShortcutView.leadingAnchor, constant: -Constants.iconTitleSpacing),
             titleLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             arrowImageView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalPadding),
@@ -179,25 +183,33 @@ final class AIChatViewAllChatsRowView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        let isHighlighted = isSelected || isHovered
-        if isHighlighted {
-            let tintColor = themeProvider.selectedTintColor
-            backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
-            titleLabel.textColor = tintColor
-            openDuckAILabel.textColor = tintColor
-            iconImageView.contentTintColor = tintColor
-            arrowImageView.contentTintColor = tintColor
-            keyboardShortcutView.isHighlighted = true
-        } else {
-            backgroundLayer.backgroundColor = NSColor.clear.cgColor
-            titleLabel.textColor = Constants.textColor
-            openDuckAILabel.textColor = themeProvider.accentPrimaryColor
-            iconImageView.contentTintColor = Constants.iconColor
-            arrowImageView.contentTintColor = themeProvider.accentPrimaryColor
-            keyboardShortcutView.isHighlighted = false
+        // See AIChatSuggestionRowView.updateAppearance for the appearance note.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            let isHighlighted = isSelected || isHovered
+            if isHighlighted {
+                let tintColor = themeProvider.selectedTintColor
+                backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
+                titleLabel.textColor = tintColor
+                openDuckAILabel.textColor = themeProvider.suffixSelectedTextColor
+                iconImageView.contentTintColor = tintColor
+                arrowImageView.contentTintColor = themeProvider.suffixSelectedTextColor
+                keyboardShortcutView.isHighlighted = true
+            } else {
+                backgroundLayer.backgroundColor = NSColor.clear.cgColor
+                titleLabel.textColor = Constants.textColor
+                openDuckAILabel.textColor = themeProvider.suffixTextColor
+                iconImageView.contentTintColor = Constants.iconColor
+                arrowImageView.contentTintColor = themeProvider.suffixTextColor
+                keyboardShortcutView.isHighlighted = false
+            }
         }
 
         CATransaction.commit()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
     }
 
     // MARK: - Mouse Tracking
@@ -210,8 +222,9 @@ final class AIChatViewAllChatsRowView: NSView {
         }
 
         let newTrackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
+            // `.inVisibleRect` keeps this in step with a row the panel keeps resizing.
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )

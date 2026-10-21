@@ -17,30 +17,20 @@
 //
 
 import SwiftUI
-import BrowserServicesKit
 import SwiftUIExtensions
 
 struct LoginFaviconView: View {
     let domain: String
     let generatedIconLetters: String
     let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
-    let osVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion
 
-    private var displayableFaviconImage: NSImage? {
-        // Workaround for favicon rendering crashes on Ventura 13.7.8 and newer 13.x patches.
-        switch (osVersion.majorVersion, osVersion.minorVersion, osVersion.patchVersion) {
-        case let (13, minor, _) where minor > 7:
-            return nil
-        case let (13, 7, patch) where patch >= 8:
-            return nil
-        default:
-            return faviconManagement.getCachedFavicon(for: domain, sizeCategory: .small)?.image
-        }
-    }
+    @State private var image: NSImage?
+    /// Bumped from the `.faviconCacheUpdated` observer to re-run the loader while the placeholder is shown.
+    @State private var reloadCount = 0
 
     var body: some View {
         Group {
-            if let image = displayableFaviconImage {
+            if let image {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -52,10 +42,28 @@ struct LoginFaviconView: View {
                     .padding(.leading, 8)
             }
         }
+        // Favicon images are decoded lazily off-main, so await the decode on appear / domain change, and
+        // re-resolve when this row's favicon arrives later (the `.faviconCacheUpdated` observer bumps
+        // `reloadCount`). Keying the task on both cancels any in-flight load when either changes, so a
+        // stale result can't overwrite a newer one; clearing first avoids flashing a recycled row's icon.
+        .task(id: ReloadKey(domain: domain, reloadCount: reloadCount)) {
+            image = nil
+            let resolved = await faviconManagement.resolvedCachedFaviconSafeForRendering(for: domain, sizeCategory: .small)?.image
+            guard !Task.isCancelled else { return }
+            image = resolved
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .faviconCacheUpdated)) { notification in
+            // Re-resolve only while the placeholder is shown and the update's affected domains include this row's.
+            guard image == nil,
+                  let update = notification.faviconsCacheUpdate,
+                  update.hosts.contains(domain) else { return }
+            reloadCount += 1
+        }
     }
 
-    var favicon: NSImage? {
-        return displayableFaviconImage ?? .login
+    private struct ReloadKey: Equatable {
+        let domain: String
+        let reloadCount: Int
     }
 
 }

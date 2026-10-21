@@ -18,9 +18,11 @@
 
 import AppKit
 import BrowserServicesKit
+import Combine
 import Common
+import FoundationExtensions
 import Foundation
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 
 enum SecureVaultItem: Equatable, Identifiable, Comparable {
@@ -245,21 +247,24 @@ final class PasswordManagementItemListModel: ObservableObject {
         }
     }
 
-    private var shouldDisplaySyncPromoRow: Bool {
-        guard emptyState == .none && filter.isEmpty else {
+    var canShowSyncPromoRow: Bool {
+        guard emptyState == .none && filter.isEmpty && !passwordManagerCoordinator.isEnabled else {
             return false
         }
 
+        let privacyConfig = privacyConfigurationManager.privacyConfig
         switch sortDescriptor.category {
-        case .allItems:
-            return syncPromoManager.shouldPresentPromoFor(.autofill)
-        case .logins:
-            return syncPromoManager.shouldPresentPromoFor(.passwords)
+        case .allItems, .logins:
+            return true
         case .cards:
-            return syncPromoManager.shouldPresentPromoFor(.creditCards)
+            return privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards)
         case .identities:
-            return syncPromoManager.shouldPresentPromoFor(.identities)
+            return privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities)
         }
+    }
+
+    var shouldDisplaySyncPromoRow: Bool {
+        canShowSyncPromoRow && syncPromoManager.isPromoActive
     }
 
     private var shouldDisplayExternalPasswordManagerRow: Bool {
@@ -331,6 +336,8 @@ final class PasswordManagementItemListModel: ObservableObject {
             return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStatePasswordsDefaultDescription : UserText.pmEmptyStatePasswordsDefaultDescriptionAutolockOff
         case .cards:
             return UserText.pmEmptyStateCardsDefaultDescription
+        case .identities:
+            return UserText.pmEmptyStateIdentitiesDefaultDescription
         default:
             return autofillPreferences.isAutoLockEnabled ? UserText.pmEmptyStateDefaultDescription : UserText.pmEmptyStateDefaultDescriptionAutolockOff
         }
@@ -362,11 +369,11 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     var emptyStateHideLearnMoreLink: Bool {
-        sortDescriptor.category == .cards
+        sortDescriptor.category == .cards || sortDescriptor.category == .identities
     }
 
     var emptyStateHideLockIcon: Bool {
-        sortDescriptor.category == .cards
+        sortDescriptor.category == .cards || sortDescriptor.category == .identities
     }
 
     @Published private(set) var emptyState: EmptyState = .none
@@ -378,6 +385,8 @@ final class PasswordManagementItemListModel: ObservableObject {
     private let autofillPreferences: AutofillPreferencesPersistor
     private let urlMatcher: AutofillDomainNameUrlMatcher
     private let featureFlagger: FeatureFlagger?
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private var syncPromoCancellable: AnyCancellable?
     private static let randomColorsCount = 15
 
     init(passwordManagerCoordinator: PasswordManagerCoordinating,
@@ -386,6 +395,7 @@ final class PasswordManagementItemListModel: ObservableObject {
          tld: TLD = NSApp.delegateTyped.tld,
          autofillPreferences: AutofillPreferencesPersistor = AutofillPreferences(),
          featureFlagger: FeatureFlagger? = nil,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
          onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
          onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {
         self.onItemSelected = onItemSelected
@@ -396,6 +406,23 @@ final class PasswordManagementItemListModel: ObservableObject {
         self.tld = tld
         self.autofillPreferences = autofillPreferences
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
+
+        syncPromoCancellable = syncPromoManager.isPromoActivePublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.syncPromoActivityDidChange()
+            }
+    }
+
+    /// Shows or removes the sync promo row in place, keeping the user's selection unless it was the promo.
+    private func syncPromoActivityDidChange() {
+        objectWillChange.send()
+        let selectedPromoRowWasRemoved = syncPromoSelected && !shouldDisplaySyncPromoRow
+        let nothingIsSelected = selected == nil && !externalPasswordManagerSelected && !syncPromoSelected
+        if selectedPromoRowWasRemoved || nothingIsSelected {
+            selectFirst()
+        }
     }
 
     func update(items: [SecureVaultItem]) {

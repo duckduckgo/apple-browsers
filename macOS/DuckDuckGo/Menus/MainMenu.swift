@@ -16,23 +16,30 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import BrowserServicesKit
 import Cocoa
-import Common
 import Combine
-import FeatureFlags
+import Common
+import ConcurrencyExtensions
+import Configuration
+import DesignResourcesKitIcons
+import FeatureFlags_macOS
+import FoundationExtensions
 import History
 import OSLog
-import SwiftUI
-import WebKit
-import Configuration
-import VPN
+import Persistence
+import PixelKit
 import PrivacyConfig
 import Subscription
 import SubscriptionUI
+import SwiftUI
 import Utilities
-import PixelKit
+import VPN
+import WebExtensions
+import WebKit
 
 // MARK: - LazyBookmarkFolderMenuDelegate
 
@@ -84,17 +91,25 @@ final class MainMenu: NSMenu {
     // MARK: DuckDuckGo
     let servicesMenu = NSMenu(title: UserText.mainMenuAppServices)
     let preferencesMenuItem = NSMenuItem(title: UserText.mainMenuAppPreferences, action: #selector(AppDelegate.openPreferences), keyEquivalent: ",").withAccessibilityIdentifier("MainMenu.preferencesMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.settings)
 
     // MARK: File
     let newWindowMenuItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(AppDelegate.newWindow), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.windowNew)
     let newBurnerWindowMenuItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(AppDelegate.newBurnerWindow), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.fireWindow)
     let newTabMenuItem = NSMenuItem(title: UserText.mainMenuFileNewTab, action: #selector(AppDelegate.newTab), keyEquivalent: "t")
+        .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
     let openLocationMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenLocation, action: #selector(AppDelegate.openLocation), keyEquivalent: "l")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowUpRight)
     let openFileMenuItem = NSMenuItem(title: UserText.mainMenuFileOpenFile, action: #selector(AppDelegate.openFile), keyEquivalent: "o")
+        .withImage(DesignSystemImages.Glyphs.Size12.folder)
     let closeWindowMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseWindow, action: #selector(NSWindow.performClose), keyEquivalent: "W")
+        .withImage(DesignSystemImages.Glyphs.Size12.close)
     let closeAllWindowsMenuItem = NSMenuItem(title: UserText.mainMenuFileCloseAllWindows, action: #selector(AppDelegate.closeAllWindows), keyEquivalent: [.option, .command, "W"])
     let closeTabMenuItem = NSMenuItem(title: UserText.closeTab, action: #selector(MainViewController.closeTab), keyEquivalent: "w")
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
+        .withImage(DesignSystemImages.Glyphs.Size12.import)
     let newAIChatFileMenuItem = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: "")
 
     @MainActor
@@ -102,12 +117,17 @@ final class MainMenu: NSMenu {
 
     // MARK: View
     let stopMenuItem = NSMenuItem(title: UserText.mainMenuViewStop, action: #selector(MainViewController.stopLoadingPage), keyEquivalent: ".")
+        .withImage(DesignSystemImages.Glyphs.Size12.close)
     let reloadMenuItem = NSMenuItem(title: UserText.mainMenuViewReloadPage, action: #selector(MainViewController.reloadPage), keyEquivalent: "r")
+        .withImage(DesignSystemImages.Glyphs.Size12.reloadSmall)
 
     let toggleFullscreenMenuItem = NSMenuItem(title: UserText.mainMenuViewEnterFullScreen, action: #selector(NSWindow.toggleFullScreen), keyEquivalent: [.control, .command, "f"])
     let actualSizeMenuItem = NSMenuItem(title: UserText.mainMenuViewActualSize, action: #selector(MainViewController.actualSize), keyEquivalent: "0")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomActualSize)
     let zoomInMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomIn, action: #selector(MainViewController.zoomIn), keyEquivalent: "+")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomIn)
     let zoomOutMenuItem = NSMenuItem(title: UserText.mainMenuViewZoomOut, action: #selector(MainViewController.zoomOut), keyEquivalent: "-")
+        .withImage(DesignSystemImages.Glyphs.Size12.zoomOut)
 
     // MARK: History
     @MainActor
@@ -121,8 +141,10 @@ final class MainMenu: NSMenu {
     // MARK: Bookmarks
     let manageBookmarksMenuItem = NSMenuItem(title: UserText.mainMenuHistoryManageBookmarks, action: #selector(MainViewController.showManageBookmarks), keyEquivalent: [.command, .option, "b"])
         .withAccessibilityIdentifier("MainMenu.manageBookmarksMenuItem")
+        .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
     var bookmarksMenuToggleBookmarksBarMenuItem = NSMenuItem(title: "BookmarksBarMenuPlaceholder", action: #selector(MainViewController.toggleBookmarksBarFromMenu), keyEquivalent: "B")
     let importBookmarksMenuItem = NSMenuItem(title: UserText.importBookmarks, action: #selector(AppDelegate.openImportBookmarksWindow))
+        .withImage(DesignSystemImages.Glyphs.Size12.import)
     let bookmarksMenu = NSMenu(title: UserText.bookmarks)
     let favoritesMenu = NSMenu(title: UserText.favorites)
 
@@ -139,19 +161,30 @@ final class MainMenu: NSMenu {
         action: #selector(MainViewController.toggleDuckAIChromeSidebarButtonVisibility(_:)),
         keyEquivalent: "U"
     )
+    private let toggleDuckAISidebarMenuItem = NSMenuItem(
+        title: UserText.aiChatShowSidebar,
+        action: #selector(MainViewController.toggleDuckAISidebar(_:)),
+        keyEquivalent: [.option, .command, "l"]
+    )
+    private let toggleDuckAISidebarSeparatorMenuItem = NSMenuItem.separator()
 
     var homeButtonMenuItem = NSMenuItem(title: "HomeButtonPlaceholder")
     var showTabsAndBookmarksBarOnFullScreenMenuItem = NSMenuItem(title: "ShowTabsAndBookmarksBarOnFullScreenMenuItem")
     let toggleShareShortcutMenuItem = NSMenuItem(title: UserText.shareMenuItem, action: #selector(MainViewController.toggleShareShortcut), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.shareApple)
     let toggleDownloadsShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowDownloadsShortcut, action: #selector(MainViewController.toggleDownloadsShortcut), keyEquivalent: "J")
+        .withImage(DesignSystemImages.Glyphs.Size12.download)
     let toggleAutofillShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowAutofillShortcut, action: #selector(MainViewController.toggleAutofillShortcut), keyEquivalent: "A")
+        .withImage(DesignSystemImages.Glyphs.Size12.keyLogin)
     let toggleBookmarksShortcutMenuItem = NSMenuItem(title: UserText.mainMenuViewShowBookmarksShortcut, action: #selector(MainViewController.toggleBookmarksShortcut), keyEquivalent: "K")
+        .withImage(DesignSystemImages.Glyphs.Size12.bookmarks)
     private(set) lazy var aiChatMenu: NSMenuItem = MainActor.assumeMainThread {
         let container = NSMenuItem(title: "Duck.ai")
         container.submenu = makeAIChatMenu()
         return container
     }
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "")
+        .withImage(DesignSystemImages.Glyphs.Size12.vpnUnlock)
 
     // MARK: Window
     let windowsMenu = NSMenu(title: UserText.mainMenuWindow)
@@ -163,8 +196,12 @@ final class MainMenu: NSMenu {
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
     let contentScopeDebugStateMenuItem = NSMenuItem(title: "Content Scope Scripts Debug State", action: #selector(MainMenu.toggleContentScopeStateDebugSettingsAction))
+    let simulateFailureURLSchemeConnectionErrorMenuItem = NSMenuItem(
+        title: AccessibilityIdentifiers.DebugMenu.failureURLSchemeSimulateConnectionErrorMenuTitleOff,
+        action: #selector(MainMenu.toggleSimulateFailureURLSchemeConnectionErrorAction)
+    )
+    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.simulateFailureURLSchemeConnectionError)
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
-    let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
     let alwaysShowFirstTimeQuitSurvey = NSMenuItem(title: "Always Show First-Time Quit Survey", action: #selector(MainViewController.alwaysShowFirstTimeQuitSurvey))
     let shiftNextStepsDaysMenuItem = NSMenuItem(title: "Shift maximum Next Steps demonstration days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
 
@@ -172,14 +209,21 @@ final class MainMenu: NSMenu {
 
     let helpMenu = NSMenu(title: UserText.mainMenuHelp)
     let aboutMenuItem = NSMenuItem(title: UserText.about, action: #selector(AppDelegate.showAbout))
+        .withImage(DesignSystemImages.Glyphs.Size12.info)
     let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(AppDelegate.addToDock))
+        .withImage(DesignSystemImages.Glyphs.Size12.addToTaskbar)
     let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser + "…", action: #selector(AppDelegate.setAsDefault))
+        .withImage(DesignSystemImages.Glyphs.Size12.browserDefault)
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
+        .withImage(DesignSystemImages.Glyphs.Size12.note)
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
+        .withImage(DesignSystemImages.Glyphs.Size12.news)
 
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
+        .withImage(DesignSystemImages.Glyphs.Size12.feedback)
 
-    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.showAbout))
+        .withImage(DesignSystemImages.Glyphs.Size12.info)
 
     private let featureFlagger: FeatureFlagger
     private let isLazyMenuRebuild: Bool
@@ -199,6 +243,10 @@ final class MainMenu: NSMenu {
     private let subscriptionManager: any SubscriptionManager
 
     private var webExtensionsMenuItem: NSMenuItem?
+
+    private var failureURLSchemeDebugKeyedStorage: some KeyedStoring<FailureURLSchemeDebugSettingsKeys> {
+        UserDefaults.standard.keyedStoring()
+    }
 
     // MARK: - Initialization
 
@@ -268,6 +316,8 @@ final class MainMenu: NSMenu {
 
         setupAIChatMenu()
         subscribeToAIChatPreferences(aiChatMenuConfig: aiChatMenuConfig)
+
+        simulateFailureURLSchemeConnectionErrorMenuItem.target = self
     }
 
     func buildDuckDuckGoMenu() -> NSMenuItem {
@@ -324,6 +374,7 @@ final class MainMenu: NSMenu {
             closeAllWindowsMenuItem
             closeTabMenuItem
             NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), keyEquivalent: "s")
+                .withImage(DesignSystemImages.Glyphs.Size12.save)
             NSMenuItem.separator()
 
             importBrowserDataMenuItem
@@ -331,13 +382,16 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: UserText.mainMenuFileExportPasswords, action: #selector(AppDelegate.openExportLogins))
                 NSMenuItem(title: UserText.mainMenuFileExportBookmarks, action: #selector(AppDelegate.openExportBookmarks))
             }
+            .withImage(DesignSystemImages.Glyphs.Size12.export)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.shareMenuItem)
                 .submenu(sharingMenu)
+                .withImage(DesignSystemImages.Glyphs.Size12.shareApple, visibleOnMacOS27: true)
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), keyEquivalent: "p")
+                .withImage(DesignSystemImages.Glyphs.Size12.print, visibleOnMacOS27: true)
         }
     }
 
@@ -413,8 +467,11 @@ final class MainMenu: NSMenu {
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuViewHome, action: #selector(MainViewController.home), keyEquivalent: "H")
+                .withImage(DesignSystemImages.Glyphs.Size12.home)
             NSMenuItem.separator()
 
+            toggleDuckAISidebarMenuItem
+            toggleDuckAISidebarSeparatorMenuItem
             toggleDuckAIChromeButtonMenuItem
             toggleDuckAIChromeSidebarButtonMenuItem
             duckAIChromeButtonsSeparatorMenuItem
@@ -424,6 +481,7 @@ final class MainMenu: NSMenu {
             toggleBookmarksBarMenuItem
 
             NSMenuItem(title: UserText.openDownloads, action: #selector(MainViewController.toggleDownloads), keyEquivalent: "j")
+                .withImage(DesignSystemImages.Glyphs.Size12.download)
             NSMenuItem.separator()
 
             homeButtonMenuItem
@@ -465,6 +523,7 @@ final class MainMenu: NSMenu {
             .submenu(bookmarksMenu.buildItems {
                 NSMenuItem(title: UserText.bookmarkThisPage, action: #selector(MainViewController.bookmarkThisPage), keyEquivalent: "d")
                     .withAccessibilityIdentifier("MainMenu.addBookmark")
+                    .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd)
                 NSMenuItem(title: UserText.bookmarkAllTabs, action: #selector(MainViewController.bookmarkAllOpenTabs), keyEquivalent: [.command, .shift, "d"])
                 manageBookmarksMenuItem
                 bookmarksMenuToggleBookmarksBarMenuItem
@@ -472,16 +531,17 @@ final class MainMenu: NSMenu {
 
                 importBookmarksMenuItem
                 NSMenuItem(title: UserText.exportBookmarks, action: #selector(AppDelegate.openExportBookmarks))
+                    .withImage(DesignSystemImages.Glyphs.Size12.export)
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.favorites)
                     .submenu(favoritesMenu.buildItems {
                         NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage))
-                            .withImage(.favorite)
+                            .withImage(DesignSystemImages.Glyphs.Size12.favorite)
                             .withAccessibilityIdentifier("MainMenu.favoriteThisPage")
                         NSMenuItem.separator()
                     })
-                    .withImage(.favorite)
+                    .withImage(DesignSystemImages.Glyphs.Size12.favorite, visibleOnMacOS27: true)
 
                 NSMenuItem.separator()
             })
@@ -495,8 +555,11 @@ final class MainMenu: NSMenu {
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.newTabToTheRight, action: #selector(MainViewController.newTabNextToActive))
+                    .withImage(DesignSystemImages.Glyphs.Size12.tabNew)
                 NSMenuItem(title: UserText.duplicateTab, action: #selector(MainViewController.duplicateTab))
+                    .withImage(DesignSystemImages.Glyphs.Size12.windowDuplicate)
                 NSMenuItem(title: UserText.pinTab, action: #selector(MainViewController.pinOrUnpinTab))
+                    .withImage(DesignSystemImages.Glyphs.Size12.pin)
                 NSMenuItem(title: UserText.moveTabToNewWindow, action: #selector(MainViewController.moveTabToNewWindow))
                 NSMenuItem(title: UserText.mainMenuWindowMergeAllWindows, action: #selector(NSWindow.mergeAllWindows))
                 NSMenuItem.separator()
@@ -587,18 +650,22 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateContentScopeDebugStateMenuItem()
+        updateSimulateFailureURLSchemeConnectionErrorMenuItem()
         updateShiftNextStepsDaysMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
         updateWatchdogMenuItems()
         updateWebExtensionsMenuItem()
         updateAlwaysShowFirstTimeQuitSurvey()
         updateDuckAIChromeButtonMenuItems()
+
+        alignItemTextWithIconsRecursively()
     }
 
     private func updateAlwaysShowFirstTimeQuitSurvey() {
         alwaysShowFirstTimeQuitSurvey.state = quitSurveyPersistor.alwaysShowQuitSurvey ? .on : .off
     }
 
+    @MainActor
     private func updateWebExtensionsMenuItem() {
         guard let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
               let debugSubmenu = debugMenuItem.submenu else {
@@ -606,10 +673,17 @@ final class MainMenu: NSMenu {
         }
 
         if #available(macOS 15.4, *) {
-            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            if let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
+               let cpmMessagingHealthMonitor = webExtensionManager.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
                 if webExtensionsMenuItem == nil {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
-                        .submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+                        .submenu(WebExtensionsDebugMenu(
+                            webExtensionManager: webExtensionManager,
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            isBitwardenEnabled: { [featureFlagger] in
+                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                            }
+                        ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
                     debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
@@ -640,18 +714,24 @@ final class MainMenu: NSMenu {
     private var folderDelegates: [LazyBookmarkFolderMenuDelegate] = []
 
     var faviconsCancellable: AnyCancellable?
+    var faviconsCacheUpdateCancellable: AnyCancellable?
     @MainActor
     private func subscribeToFavicons(faviconManager: FaviconManagement) {
         faviconsCancellable = faviconManager.faviconsLoadedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] loaded in
                 guard let self, loaded else { return }
-                if self.isLazyMenuRebuild {
-                    self.bookmarkFaviconsNeedUpdate = true
-                } else {
-                    self.updateFavicons(in: bookmarksMenu)
-                    self.updateFavicons(in: favoritesMenu)
-                }
+                self.bookmarkFaviconsNeedUpdate = true
+            }
+
+        // `faviconsLoadedPublisher` fires when favicon metadata loads, before the
+        // images are decoded. Favicon images become available lazily and post
+        // `.faviconCacheUpdated`, so also refresh the menus on that notification.
+        faviconsCacheUpdateCancellable = NotificationCenter.default.publisher(for: .faviconCacheUpdated)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.bookmarkFaviconsNeedUpdate = true
             }
     }
 
@@ -831,13 +911,26 @@ final class MainMenu: NSMenu {
     private func updateDuckAIChromeButtonMenuItems() {
         let shouldShowDuckAIChromeItems = featureFlagger.isFeatureOn(.aiChatChromeSidebar)
             && aiChatMenuConfig.shouldDisplayAnyAIChatFeature
+        // Menu-button layout: no separate sidebar button, the Duck.ai item is reworded to "Ask Duck.ai",
+        // and "Show Duck.ai Sidebar" is dropped — its ⌘⌥L shortcut is reused by Duck.ai → Ask About Page.
+        let isMenuButtonLayout = shouldShowDuckAIChromeItems && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        toggleDuckAISidebarMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        toggleDuckAISidebarSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
+        // ⌥⌘L moves to Ask About Page in menu-button layout; drop it here so the duplicate doesn't
+        // suppress the shortcut's display / capture the key event on this hidden item.
+        toggleDuckAISidebarMenuItem.keyEquivalent = isMenuButtonLayout ? "" : "l"
+        toggleDuckAISidebarMenuItem.keyEquivalentModifierMask = isMenuButtonLayout ? [] : [.option, .command]
         toggleDuckAIChromeButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
-        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems
+        toggleDuckAIChromeSidebarButtonMenuItem.isHidden = !shouldShowDuckAIChromeItems || isMenuButtonLayout
         duckAIChromeButtonsSeparatorMenuItem.isHidden = !shouldShowDuckAIChromeItems
 
         let isDuckAIButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.duckAI)
         let isSidebarButtonHidden = duckAIChromeButtonsVisibilityManager.isHidden(.sidebar)
-        toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        if isMenuButtonLayout {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowAskDuckAIButton : UserText.aiChatChromeHideAskDuckAIButton
+        } else {
+            toggleDuckAIChromeButtonMenuItem.title = isDuckAIButtonHidden ? UserText.aiChatChromeShowDuckAIButton : UserText.aiChatChromeHideDuckAIButton
+        }
         toggleDuckAIChromeSidebarButtonMenuItem.title = isSidebarButtonHidden ? UserText.aiChatChromeShowSidebarButton : UserText.aiChatChromeHideSidebarButton
     }
 
@@ -858,7 +951,16 @@ final class MainMenu: NSMenu {
 
             // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Clear WebKit Cache", action: #selector(AppDelegate.debugClearWebViewCache)).withAccessibilityIdentifier("MainMenu.clearWebKitCache")
+            NSMenuItem(title: "Data Import")
+                .submenu(DataImportDebugMenu(title: "Data Import", pinningManager: pinningManager))
+            NSMenuItem(title: "Favicons") {
+                NSMenuItem(title: "Clear In-Memory Cache", action: #selector(AppDelegate.debugClearFaviconsCache)).withAccessibilityIdentifier("MainMenu.clearFaviconsCache")
+                NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectFavicons(_:))).withAccessibilityIdentifier("MainMenu.inspectFavicons")
+            }
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
+            NSMenuItem(title: "Permissions") {
+                NSMenuItem(title: "Inspect", action: #selector(MainViewController.inspectPermissions(_:))).withAccessibilityIdentifier("MainMenu.inspectPermissions")
+            }
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "Performance Debugging") {
                 NSMenuItem(title: "Export Allocation Stats", action: #selector(AppDelegate.exportMemoryAllocationStats), keyEquivalent: [.control, .command, .shift, .option, "m"])
@@ -867,17 +969,22 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Reset Next Steps", action: #selector(AppDelegate.debugResetContinueSetup))
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.resetNextStepsMenuItem)
-                NSMenuItem(title: "Shift top card by 10 impressions", action: #selector(MainViewController.debugShiftCardImpression))
+                NSMenuItem(title: "Shift top card by \(NewTabPageNextStepsSingleCardProvider.Constants.maxTimesCardShown) impressions", action: #selector(MainViewController.debugShiftCardImpression))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 shiftNextStepsDaysMenuItem
                     .withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.shiftMaxDaysMenuItem)
             }.withAccessibilityIdentifier(AccessibilityIdentifiers.NewTabPage.newTabPageDebugMenu)
             NSMenuItem(title: "CPM") {
-                NSMenuItem(title: "Show feature awareness dialog for NTP widget", action: #selector(AppDelegate.debugShowFeatureAwarenessDialogForNTPWidget))
-                NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
-                NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
-                NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
-                NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
+                NSMenuItem(title: "Opt-in dialog") {
+                    NSMenuItem(title: "Show opt-in dialog", action: #selector(MainViewController.debugShowCookiePopupProtectionOptInDialog))
+                    NSMenuItem(title: "Reset app launch flag", action: #selector(MainViewController.debugResetCookiePopupProtectionOptInLaunchFlag))
+                }
+                NSMenuItem(title: "NTP widget") {
+                    NSMenuItem(title: "Increment Autoconsent Stats", action: #selector(AppDelegate.debugIncrementAutoconsentStats))
+                    NSMenuItem(title: "Clear blockedCookiesPopoverSeen flag", action: #selector(AppDelegate.debugClearBlockedCookiesPopoverSeenFlag))
+                    NSMenuItem(title: "Reset widgetNewLabelFirstShownDate", action: #selector(AppDelegate.debugResetWidgetNewLabelFirstShownDateKey))
+                    NSMenuItem(title: "Set widgetNewLabelFirstShownDate to 10 days ago", action: #selector(AppDelegate.debugSetWidgetNewLabelFirstShownDateTo10DaysAgo))
+                }
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
@@ -897,7 +1004,6 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
                 NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))
-                NSMenuItem(title: "Reset MakeDuckDuckYours user settings", action: #selector(AppDelegate.resetMakeDuckDuckGoYoursUserSettings))
                 NSMenuItem(title: "Experiment Install Date more than 5 days ago", action: #selector(AppDelegate.changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_:)))
                 NSMenuItem(title: "Change Activation Date") {
                     NSMenuItem(title: "Today", action: #selector(AppDelegate.changeInstallDateToToday))
@@ -930,10 +1036,36 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "500 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 500)
                     NSMenuItem(title: "1000 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 1000)
                 }
+                NSMenuItem(title: "Show Feedback Form", action: #selector(MainViewController.showFeedbackForm))
                 NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
                 NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
                 NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
                 alwaysShowFirstTimeQuitSurvey
+            }
+            if featureFlagger.isFeatureOn(.debugURLScheme) {
+                NSMenuItem(title: "debug:// URL scheme") {
+                    simulateFailureURLSchemeConnectionErrorMenuItem
+                    NSMenuItem(
+                        title: "Open debug://failure demo page",
+                        action: #selector(AppDelegate.openFailureURLSchemeDemoDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeDemoPage)
+                    NSMenuItem(
+                        title: "Open debug://failure (alternating failures)",
+                        action: #selector(AppDelegate.openFailureURLSchemeAlternatingFailuresDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeAlternatingFailuresDemoPage)
+                    NSMenuItem(
+                        title: "Open debug://failure (notConnected query)",
+                        action: #selector(AppDelegate.openFailureURLSchemeNotConnectedQueryDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeNotConnectedQueryDemoPage)
+                    NSMenuItem(
+                        title: "Open debug://failure (hostNotFound query)",
+                        action: #selector(AppDelegate.openFailureURLSchemeHostNotFoundQueryDebugPage(_:))
+                    )
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.openFailureURLSchemeHostNotFoundQueryDemoPage)
+                }.withAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.failureURLScheme)
             }
             NSMenuItem(title: "Remote Configuration") {
                 customConfigurationUrlMenuItem
@@ -945,6 +1077,8 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "Remote Messaging Framework")
                 .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
+            NSMenuItem(title: "OS Support")
+                .submenu(OSSupportDebugMenu())
             NSMenuItem(title: "User Scripts") {
                 NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
             }
@@ -958,6 +1092,8 @@ final class MainMenu: NSMenu {
             FreemiumDebugMenu()
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
+            FireDialogDebugMenu()
+            SiteBreakageDebugMenu(networkSignalsProvider: Application.appDelegate.networkSignalsProvider)
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")
@@ -1004,7 +1140,6 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
-                toggleWatchdogCrashMenuItem
                 NSMenuItem(title: "Simulate hang") {
                     NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
                     NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
@@ -1034,49 +1169,44 @@ final class MainMenu: NSMenu {
             }
 
             // Closure to handle subscription selection via the user script handler
-            let subscriptionSelectionHandler: SubscriptionSelectionHandler? = {
-                if #available(macOS 12.0, *) {
-                    return { @MainActor (productId: String, changeType: String?) async in
-                        let subscriptionManager = Application.appDelegate.subscriptionManager
-                        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
-                        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-                        let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
-                        let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
-                        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
+            let subscriptionSelectionHandler: SubscriptionSelectionHandler = { @MainActor (productId: String, changeType: String?) async in
+                let subscriptionManager = Application.appDelegate.subscriptionManager
+                let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionManager: subscriptionManager)
+                let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+                let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+                let pixelHandler = SubscriptionPixelHandler(source: .mainApp, pixelKit: nil)
+                let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults, pixelHandler: pixelHandler)
 
-                        let flowPerformer = DefaultSubscriptionFlowsExecuter(
-                            subscriptionManager: subscriptionManager,
-                            uiHandler: Application.appDelegate.subscriptionUIHandler,
-                            wideEvent: Application.appDelegate.wideEvent,
-                            subscriptionEventReporter: DefaultSubscriptionEventReporter(),
-                            pendingTransactionHandler: pendingTransactionHandler
-                        )
+                let flowPerformer = DefaultSubscriptionFlowsExecuter(
+                    subscriptionManager: subscriptionManager,
+                    uiHandler: Application.appDelegate.subscriptionUIHandler,
+                    wideEvent: Application.appDelegate.wideEvent,
+                    subscriptionEventReporter: DefaultSubscriptionEventReporter(),
+                    pendingTransactionHandler: pendingTransactionHandler
+                )
 
-                        let feature = SubscriptionPagesUseSubscriptionFeature(
-                            subscriptionManager: subscriptionManager,
-                            stripePurchaseFlow: stripePurchaseFlow,
-                            uiHandler: Application.appDelegate.subscriptionUIHandler,
-                            aiChatURL: AIChatRemoteSettings().aiChatURL,
-                            wideEvent: Application.appDelegate.wideEvent,
-                            pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
-                        )
+                let feature = SubscriptionPagesUseSubscriptionFeature(
+                    subscriptionManager: subscriptionManager,
+                    stripePurchaseFlow: stripePurchaseFlow,
+                    uiHandler: Application.appDelegate.subscriptionUIHandler,
+                    aiChatURL: AIChatRemoteSettings().aiChatURL,
+                    wideEvent: Application.appDelegate.wideEvent,
+                    pendingTransactionHandler: pendingTransactionHandler, flowPerformer: flowPerformer, requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager)
+                )
 
-                        // Create params matching what the web would send
-                        var params: [String: Any] = ["id": productId]
-                        if let changeType = changeType {
-                            params["change"] = changeType
-                        }
-
-                        // Call the appropriate handler based on whether it's a tier change or new purchase
-                        if changeType != nil {
-                            _ = try? await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
-                        } else {
-                            _ = try? await feature.subscriptionSelected(params: params, original: WKScriptMessage())
-                        }
-                    }
+                // Create params matching what the web would send
+                var params: [String: Any] = ["id": productId]
+                if let changeType = changeType {
+                    params["change"] = changeType
                 }
-                return nil
-            }()
+
+                // Call the appropriate handler based on whether it's a tier change or new purchase
+                if changeType != nil {
+                    _ = try? await feature.subscriptionChangeSelected(params: params, original: WKScriptMessage())
+                } else {
+                    _ = try? await feature.subscriptionSelected(params: params, original: WKScriptMessage())
+                }
+            }
 
             SubscriptionDebugMenu(currentEnvironment: currentEnvironment,
                                   updateServiceEnvironment: updateServiceEnvironment,
@@ -1206,6 +1336,8 @@ final class MainMenu: NSMenu {
         menu.addItem(.separator())
         let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
         menu.addItem(exportLogsMenuItem)
+        let logMonitorMenuItem = NSMenuItem(title: "Log Monitor…", action: #selector(MainViewController.openLogMonitor))
+        menu.addItem(logMonitorMenuItem)
 
         self.loggingMenu = menu
         return menu
@@ -1213,12 +1345,21 @@ final class MainMenu: NSMenu {
 
     @MainActor private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
+            conversationSources: .mainMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: aiChatHistoryCleaner,
-            windowControllersManager: Application.appDelegate.windowControllersManager
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
         )
-        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8)
+        let featureFlagger = self.featureFlagger
+        return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, shouldShowAskAboutPage: {
+            featureFlagger.isFeatureOn(.aiChatChromeSidebar) && featureFlagger.isFeatureOn(.aiChatChromeMenuButton)
+        }, isCurrentPageAttachable: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isCurrentPageAttachableForAIChat ?? false
+        }, isChatPresented: {
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabBarViewController.isDuckAIChatPresented ?? false
+        })
     }
 
     private func setupAIChatMenu() {
@@ -1239,19 +1380,21 @@ final class MainMenu: NSMenu {
         contentScopeDebugStateMenuItem.state = contentScopePreferences.isDebugStateEnabled ? .on : .off
     }
 
+    private func updateSimulateFailureURLSchemeConnectionErrorMenuItem() {
+        let isSimulating = failureURLSchemeDebugKeyedStorage.simulateConnectionLost == true
+        simulateFailureURLSchemeConnectionErrorMenuItem.title = isSimulating
+            ? AccessibilityIdentifiers.DebugMenu.failureURLSchemeSimulateConnectionErrorMenuTitleOn
+            : AccessibilityIdentifiers.DebugMenu.failureURLSchemeSimulateConnectionErrorMenuTitleOff
+        simulateFailureURLSchemeConnectionErrorMenuItem.state = isSimulating ? .on : .off
+    }
+
     private func updateShiftNextStepsDaysMenuItem() {
         shiftNextStepsDaysMenuItem.title = "Shift \(appearancePreferences.maxNextStepsCardsDemonstrationDays) days"
     }
 
     @MainActor
     private func updateWatchdogMenuItems() {
-       Task {
-            let isRunning = await NSApp.delegateTyped.watchdog.isRunning
-            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
-
-            toggleWatchdogMenuItem.state = isRunning ? .on : .off
-            toggleWatchdogCrashMenuItem.state = crashOnTimeout ? .on : .off
-       }
+        toggleWatchdogMenuItem.state = NSApp.delegateTyped.watchdog.isRunning ? .on : .off
     }
 
     private func updateRemoteConfigurationInfo() {
@@ -1276,6 +1419,15 @@ final class MainMenu: NSMenu {
     @objc private func toggleContentScopeStateDebugSettingsAction(_ sender: NSMenuItem) {
         contentScopePreferences.isDebugStateEnabled = !contentScopePreferences.isDebugStateEnabled
         updateContentScopeDebugStateMenuItem()
+    }
+
+    @objc private func toggleSimulateFailureURLSchemeConnectionErrorAction(_ sender: NSMenuItem) {
+        let keyed = failureURLSchemeDebugKeyedStorage
+        keyed.simulateConnectionLost = !(keyed.simulateConnectionLost == true)
+        if featureFlagger.isFeatureOn(.debugURLScheme) {
+            DuckURLSchemeHandler.resetFailureSchemeAlternatingStateForUITests()
+        }
+        updateSimulateFailureURLSchemeConnectionErrorMenuItem()
     }
 
     @MainActor
@@ -1480,6 +1632,29 @@ extension MainMenu: SharingMenuDelegate {
 
         return (tabViewModel.title, [url])
     }
+}
+
+// MARK: - debug:// debug menu (UserDefaults / KeyedStoring)
+
+enum MainMenuFailureURLSchemeDebugKeys: String, StorageKeyDescribing {
+    /// When enabled, navigations to `debug://failure` fail with a network connection error from the URL scheme handler (demo HTML when off).
+    case simulateConnectionLost = "debug-url-scheme-simulate-connection-lost"
+}
+
+extension StorageKey {
+    init(
+        _ key: MainMenuFailureURLSchemeDebugKeys,
+        migrateLegacyKey: String? = nil,
+        assertionHandler: (_ message: String) -> Void = { message in
+            assertionFailure(message)
+        }
+    ) {
+        self.init(key as (any StorageKeyDescribing), migrateLegacyKey: migrateLegacyKey, assertionHandler: assertionHandler)
+    }
+}
+
+struct FailureURLSchemeDebugSettingsKeys: StoringKeys {
+    let simulateConnectionLost = StorageKey<Bool>(.simulateConnectionLost)
 }
 
 #if DEBUG

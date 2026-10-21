@@ -36,7 +36,12 @@ class DesktopAppAttributeMatcherTests: XCTestCase {
         mockStatisticsStore.searchRetentionAtb = "v105-88"
 
         let manager = MockVariantManager(isSupportedReturns: true, currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
-        matcher = DesktopAppAttributeMatcher(statisticsStore: mockStatisticsStore, variantManager: manager, isInstalledMacAppStore: false)
+        matcher = DesktopAppAttributeMatcher(
+            statisticsStore: mockStatisticsStore,
+            variantManager: manager,
+            isInstalledMacAppStore: false,
+            canUpgradeOS: true
+        )
     }
 
     override func tearDownWithError() throws {
@@ -54,6 +59,34 @@ class DesktopAppAttributeMatcherTests: XCTestCase {
 
     func testWhenWidgetAddedDoesNotMatchThenReturnFail() throws {
         XCTAssertEqual(matcher.evaluate(matchingAttribute: IsInstalledMacAppStoreMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    // MARK: - OSUpgradeCapability (canUpgradeOS)
+
+    func testWhenCanUpgradeOSMatchesThenReturnMatch() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: OSUpgradeCapabilityMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenCanUpgradeOSDoesNotMatchThenReturnFail() throws {
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: OSUpgradeCapabilityMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenCannotUpgradeOSAndAttributeIsFalseThenReturnMatch() throws {
+        let mockStatisticsStore = MockStatisticsStore()
+        let manager = MockVariantManager(isSupportedReturns: true, currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
+        let incapableMatcher = DesktopAppAttributeMatcher(
+            statisticsStore: mockStatisticsStore,
+            variantManager: manager,
+            isInstalledMacAppStore: false,
+            canUpgradeOS: false
+        )
+
+        XCTAssertEqual(incapableMatcher.evaluate(matchingAttribute: OSUpgradeCapabilityMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+        XCTAssertEqual(incapableMatcher.evaluate(matchingAttribute: OSUpgradeCapabilityMatchingAttribute(value: true, fallback: nil)),
                        .fail)
     }
 }

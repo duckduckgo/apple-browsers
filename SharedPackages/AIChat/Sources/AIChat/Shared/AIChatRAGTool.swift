@@ -25,4 +25,5 @@ public enum AIChatRAGTool: String, CaseIterable {
     case localSearch = "LocalSearch"
     case relatedSearchTerms = "RelatedSearchTerms"
     case weatherForecast = "WeatherForecast"
+    case imageGeneration = "GenerateImage"
 }

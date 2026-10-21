@@ -1,7 +1,7 @@
 //
 //  SyncWithAnotherDeviceView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,292 +16,447 @@
 //  limitations under the License.
 //
 
+import AppKit
 import SwiftUI
 import SwiftUIExtensions
+import DesignResourcesKit
+import DesignResourcesKitIcons
+#if DEBUG
+import PreviewSnapshots
+import UIComponents
+#endif
 
 struct SyncWithAnotherDeviceView: View {
 
-    @EnvironmentObject var model: ManagementDialogModel
-    @EnvironmentObject var recoveryCodeModel: RecoveryCodeViewModel
-    let codeForDisplayOrPasting: String
-    let stringForQRCode: String
+    @Environment(\.colorScheme) private var parentColorScheme
+    @EnvironmentObject private var model: ManagementDialogModel
+    @EnvironmentObject private var recoveryCodeModel: RecoveryCodeViewModel
 
-    @State private var selectedSegment = 0
-    @State private var showQRCode = true
+    private let codeForDisplayOrPasting: String
+    private let stringForQRCode: String
 
-    var body: some View {
-        SyncDialog(spacing: 20.0) {
-            VStack(spacing: 20.0) {
-                Image(.sync96)
-                SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
-            }
+    @State private var selectedTab: SyncSetupTab
+    @State private var showCopyConfirmation = false
 
-            VStack(alignment: .leading, spacing: 10) {
-                instructionStepView(number: 1, markdown: UserText.syncWithAnotherDeviceStep1, showAppIcon: true)
-                instructionStepView(number: 2, markdown: UserText.syncWithAnotherDeviceStep2)
-            }
-            .frame(minWidth: Metrics.contentMinWidth, alignment: .leading)
-            .padding(.leading, 4)
-            .padding(.bottom, 10)
-
-            VStack(spacing: 20) {
-                pickerView()
-
-                if selectedSegment == 0 {
-                    if showQRCode {
-                        scanQRCodeView()
-                    } else {
-                        showTextCodeView()
-                    }
-                } else {
-                    enterCodeView().onAppear {
-                        model.delegate?.enterCodeViewDidAppear()
-                    }
-                }
-            }
-            .padding(16)
-            .frame(minWidth: Metrics.contentMinWidth)
-            .roundedBorder()
-
-            if model.shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen {
-                singleDeviceSyncPromo()
-            }
-        }
-        buttons: {
-            Button(UserText.cancel) {
-                model.cancelPressed()
-            }
-        }
-        .frame(width: 420)
-    }
-
-    fileprivate func pickerView() -> some View {
-        return HStack(spacing: 0) {
-            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceScanThisQRCodeButton, tag: 0)
-            pickerOptionView(imageName: "Keyboard-16D", title: UserText.syncWithAnotherDeviceEnterCodeButton, tag: 1)
-        }
-        .padding(2)
-        .frame(height: 32)
-        .frame(minWidth: 348)
-        .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: Metrics.pickerOuterRadius)
-                    .stroke(Color(.blackWhite10), lineWidth: 1)
-                RoundedRectangle(cornerRadius: Metrics.pickerOuterRadius)
-                    .fill(Color.black.opacity(0.09))
-            }
+    init(codeForDisplayOrPasting: String, stringForQRCode: String) {
+        self.init(
+            codeForDisplayOrPasting: codeForDisplayOrPasting,
+            stringForQRCode: stringForQRCode,
+            initialTab: .scanCode
         )
     }
 
-    @ViewBuilder
-    fileprivate func pickerOptionView(imageName: String, title: String, tag: Int) -> some View {
-        Button {
-            selectedSegment = tag
-        } label: {
-            HStack {
-                Image(imageName)
-                Text(title)
+    fileprivate init(
+        codeForDisplayOrPasting: String,
+        stringForQRCode: String,
+        initialTab: SyncSetupTab
+    ) {
+        self.codeForDisplayOrPasting = codeForDisplayOrPasting
+        self.stringForQRCode = stringForQRCode
+        _selectedTab = State(initialValue: initialTab)
+    }
+
+    private var title: String {
+        switch selectedTab {
+        case .scanCode:
+            UserText.syncWithAnotherDeviceScanTitle
+        case .enterCode:
+            UserText.syncWithAnotherDeviceEnterTitle
+        }
+    }
+
+    private var optionsPanelHeight: CGFloat {
+        switch selectedTab {
+        case .scanCode:
+            Metrics.scanOptionsPanelHeight
+        case .enterCode:
+            Metrics.enterOptionsPanelHeight
+        }
+    }
+
+    var body: some View {
+        SyncSetupDialog(spacing: .zero) {
+            VStack(spacing: 20) {
+                headerArtwork
+                SyncUIViews.DialogTitle(text: title)
+                optionsPanel
             }
-            .frame(maxWidth: .infinity)
-            .frame(height: 28)
-            .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
-                        .stroke(selectedSegment == tag ? Color(.blackWhite10) : .clear, lineWidth: 1)
-                    RoundedRectangle(cornerRadius: Metrics.pickerInnerRadius)
-                        .fill(selectedSegment == tag ? Color(.pickerViewSelected) : .clear)
+            .padding(.bottom, 16)
+        } buttons: {
+            Spacer()
+            Button(UserText.cancel) {
+                Task {
+                    await model.cancelPressedWithConfirmation()
                 }
-            )
+            }
+            .buttonStyle(DismissActionButtonStyle())
+        }
+        .onChange(of: selectedTab) { _ in
+            showCopyConfirmation = false
+        }
+    }
+
+    @ViewBuilder
+    private var headerArtwork: some View {
+        switch selectedTab {
+        case .scanCode:
+            Image(.syncPairFeature128)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 96, height: 72)
+                .accessibilityHidden(true)
+        case .enterCode:
+            Image(.clipboardQRFeature128)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 96, height: 72)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var optionsPanel: some View {
+        VStack(spacing: 20) {
+            tabPicker
+
+            instructions
+
+            switch selectedTab {
+            case .scanCode:
+                scanCodeCard
+            case .enterCode:
+                enterCodeCard
+                    .onAppear {
+                        model.delegate?.enterCodeViewDidAppear()
+                    }
+            }
+        }
+        .padding(20)
+        .frame(width: 380, height: optionsPanelHeight)
+        .syncRoundedBorder(cornerRadius: 24)
+    }
+
+    private var tabPicker: some View {
+        HStack(spacing: .zero) {
+            tabButton(.scanCode, title: UserText.syncWithAnotherDeviceScanTab)
+            tabButton(.enterCode, title: UserText.syncWithAnotherDeviceEnterTab)
+        }
+        .padding(1)
+        .frame(maxWidth: .infinity)
+        .frame(height: 32)
+        .background {
+            Capsule()
+                .fill(Color(designSystemColor: .containerFillTertiary))
+        }
+        .overlay {
+            Capsule()
+                .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
+        }
+    }
+
+    private func tabButton(_ tab: SyncSetupTab, title: String) -> some View {
+        Button {
+            selectedTab = tab
+        } label: {
+            Text(title)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background {
+                    Capsule()
+                        .fill(selectedTab == tab
+                              ? Color(designSystemColor: .controlsRaisedFillPrimary)
+                              : .clear)
+                }
+                .overlay {
+                    Capsule()
+                        .stroke(selectedTab == tab
+                                ? Color(designSystemColor: .surfaceDecorationPrimary)
+                                : .clear,
+                                lineWidth: 1)
+                }
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
     }
 
-    fileprivate func scanQRCodeView() -> some View {
-        return VStack(spacing: 0) {
-            Spacer()
-            QRCode(string: stringForQRCode, desiredSize: 180)
-            Spacer()
-            Text(UserText.syncWithAnotherDeviceUseTextCode)
-                .fontWeight(.semibold)
-                .foregroundColor(Color(.linkBlue))
-                .onTapGesture {
-                    showQRCode = false
-                }
+    private var instructions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            InstructionStep(
+                number: 1,
+                format: UserText.syncWithAnotherDeviceScanStep1,
+                detail: UserText.syncWithAnotherDeviceScanStep1Detail,
+                showsAppIcon: true
+            )
+
+            InstructionStep(
+                number: 2,
+                format: UserText.syncWithAnotherDeviceStep2,
+                detail: UserText.syncWithAnotherDeviceStep2Detail
+            )
+
+            InstructionStep(
+                number: 3,
+                text: selectedTab == .scanCode
+                    ? UserText.syncWithAnotherDeviceScanStep3
+                    : UserText.syncWithAnotherDeviceEnterStep3
+            )
+
+            InstructionStep(
+                number: 4,
+                text: UserText.syncWithAnotherDeviceStep4
+            )
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    fileprivate func enterCodeView() -> some View {
-        Group {
-            Text(UserText.syncWithAnotherDeviceEnterCodeExplanation)
-                .foregroundColor(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private var scanCodeCard: some View {
+        VStack(spacing: 0) {
+            QRCode(string: stringForQRCode, desiredSize: 180)
+
+            Text(codeForDisplay)
+                .font(.system(size: 10, design: .monospaced))
+                .kerning(1.5)
+                .foregroundColor(Color(designSystemColor: .textTertiary))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .truncationMode(.tail)
+                .frame(width: 220)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 10)
+
+            HStack(spacing: 4) {
+                Button {
+                    shareContent(codeForDisplayOrPasting)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(nsImage: DesignSystemImages.Glyphs.Size16.shareApple)
+                        Text(UserText.share)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(DismissActionButtonStyle(showsBorder: false,
+                                                      stateColors: .themedDismissButton))
+
+                Button {
+                    model.delegate?.copyCode(codeForDisplayOrPasting)
+                    showCopyConfirmation = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(nsImage: showCopyConfirmation
+                              ? DesignSystemImages.Glyphs.Size16.check
+                              : DesignSystemImages.Glyphs.Size16.copy)
+                        Text(showCopyConfirmation ? UserText.syncWithAnotherDeviceCopied : UserText.copy)
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(DismissActionButtonStyle(showsBorder: false,
+                                                      stateColors: .themedDismissButton))
+                .popover(isPresented: $showCopyConfirmation, arrowEdge: .bottom) {
+                    copyConfirmation
+                }
+            }
+            .padding(.top, 10)
+        }
+        .padding(.top, 28)
+        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(innerCardBackground)
+        .environment(\.colorScheme, .light)
+    }
+
+    private var enterCodeCard: some View {
+        VStack(spacing: 20) {
+            VStack(spacing: 6) {
+                Text(UserText.syncWithAnotherDeviceExampleCode)
+                    .font(.system(size: 10, design: .monospaced))
+                    .kerning(-0.08)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                Text(verbatim: Metrics.exampleCode)
+                    .font(.system(size: 10, design: .monospaced))
+                    .kerning(-0.08)
+                    .foregroundColor(Color(designSystemColor: .textTertiary))
+            }
+            .lineLimit(1)
+
             Button {
                 recoveryCodeModel.paste()
                 model.delegate?.recoveryCodePasted(recoveryCodeModel.recoveryCode, fromRecoveryScreen: false)
             } label: {
-                HStack {
-                    Image(.paste)
-                    Text(UserText.paste)
+                HStack(spacing: 6) {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.paste)
+                    Text(UserText.syncWithAnotherDevicePasteCode)
                 }
+                .padding(.vertical, 2)
+                .padding(.horizontal, 6)
             }
-            .buttonStyle(CopyPasteButtonStyle(verticalPadding: 8.0))
+            .buttonStyle(DismissActionButtonStyle())
             .keyboardShortcut(KeyEquivalent("v"), modifiers: .command)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(enterCodeCardBackground)
     }
 
-    fileprivate func showTextCodeView() -> some View {
-        Group {
-            VStack(spacing: 0) {
-                Text(UserText.syncWithAnotherDeviceShowCodeToPasteExplanation)
-                Spacer()
-                Text(codeForDisplayOrPasting)
-                    .font(
-                        Font.custom("SF Mono", size: 13)
-                            .weight(.medium)
-                    )
-                    .kerning(2)
-                    .lineSpacing(5)
-                    .multilineTextAlignment(.center)
-                    .padding(.bottom, 20)
-                HStack(spacing: 10) {
-                    Button {
-                        shareContent(codeForDisplayOrPasting)
-                    } label: {
-                        HStack {
-                            Image(.share)
-                            Text(UserText.share)
-                        }
-                        .padding(.horizontal, 12)
-                        .frame(height: 28)
-                    }
-                    Button {
-                        model.delegate?.copyCode()
-                    } label: {
-                        HStack {
-                            Image(.copy)
-                            Text(UserText.copy)
-                        }
-                        .padding(.horizontal, 12)
-                        .frame(height: 28)
-                    }
-                }
-                .frame(width: 348, height: 32)
-                Spacer()
-                Text(UserText.syncWithAnotherDeviceUseQRCode)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color(.linkBlue))
-                    .onTapGesture {
-                        showQRCode = true
-                    }
+    private var innerCardBackground: some View {
+        RoundedRectangle(cornerRadius: 20)
+            .fill(Color(designSystemColor: .surfaceTertiary))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
             }
-            .padding(.top, 8)
-        }
-        .frame(width: 348)
     }
 
-    @ViewBuilder
-    fileprivate func instructionStepView(number: Int, markdown: String, showAppIcon: Bool = false) -> some View {
-        HStack(alignment: .center, spacing: 14) {
-            NumberBadge(number: number)
-
-            if #available(macOS 12.0, *) {
-                HStack(spacing: 4) {
-                    Text(parseBoldMarkdown(markdown))
-                        .fixedSize(horizontal: false, vertical: true)
-                    if showAppIcon {
-                        Image(.duckDuckGo24)
-                            .resizable()
-                            .frame(width: Metrics.appIconSize, height: Metrics.appIconSize)
-                    }
-                }
-            } else {
-                fallbackInstructionStepText(markdown, showAppIcon: showAppIcon)
+    private var enterCodeCardBackground: some View {
+        RoundedRectangle(cornerRadius: 20)
+            .fill(Color(designSystemColor: .containerFillSecondary))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
             }
-        }
     }
 
-    /// Fallback view for macOS 11.
-    ///
-    fileprivate func fallbackInstructionStepText(_ markdown: String, showAppIcon: Bool) -> some View {
-        HStack(spacing: 4) {
-            Text(markdown.replacingOccurrences(of: "**", with: ""))
-                .foregroundColor(.secondary)
+    private var copyConfirmation: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationTitle)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+            Text(UserText.syncWithAnotherDeviceCopyConfirmationMessage)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
                 .fixedSize(horizontal: false, vertical: true)
-            if showAppIcon {
-                Image(.duckDuckGo24)
-                    .resizable()
-                    .frame(width: Metrics.appIconSize, height: Metrics.appIconSize)
-            }
         }
-    }
-
-    /// Parses bold markdown text and replaces bold styling with primary color.
-    ///
-    @available(macOS 12.0, *)
-    fileprivate func parseBoldMarkdown(_ string: String) -> AttributedString {
-        guard var result = try? AttributedString(markdown: string) else {
-            var plain = AttributedString(string.replacingOccurrences(of: "**", with: ""))
-            plain.foregroundColor = .secondary
-            return plain
-        }
-        for run in result.runs {
-            let isBold = run.inlinePresentationIntent?.contains(.stronglyEmphasized) == true
-            result[run.range].foregroundColor = isBold ? .primary : .secondary
-            result[run.range].inlinePresentationIntent = nil
-        }
-        return result
-    }
-
-    fileprivate func singleDeviceSyncPromo() -> some View {
-        Button {
-            model.delegate?.turnOnSync()
-        } label: {
-            HStack {
-                Text(UserText.syncSingleDeviceSetupAction)
-                    .foregroundColor(.primary)
-                Spacer()
-                Image(.chevronMediumRight16)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 14)
-            .frame(minWidth: Metrics.contentMinWidth)
-            .roundedBorder()
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
+        .multilineTextAlignment(.leading)
+        .frame(width: 240, alignment: .leading)
+        .padding(16)
+        .environment(\.colorScheme, parentColorScheme)
     }
 
     private func shareContent(_ sharedText: String) {
         guard let contentView = NSApp.keyWindow?.contentView else {
             return
         }
-        let sharingPicker = NSSharingServicePicker(items: [sharedText])
 
+        let sharingPicker = NSSharingServicePicker(items: [sharedText])
         sharingPicker.show(relativeTo: contentView.frame, of: contentView, preferredEdge: .maxY)
+    }
+
+    private var codeForDisplay: String {
+        guard let url = URL(string: codeForDisplayOrPasting),
+              let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment,
+              let pairingCode = fragment
+                .split(separator: "&")
+                .first(where: { $0.hasPrefix("code2=") })?
+                .split(separator: "=", maxSplits: 1)
+                .last else {
+            return codeForDisplayOrPasting
+        }
+
+        return String(pairingCode).removingPercentEncoding ?? String(pairingCode)
     }
 }
 
-/// A simple badge with a number inside a circle.
-///
-private struct NumberBadge: View {
+private struct InstructionStep: View {
     let number: Int
+    let text: Text
+
+    init(number: Int, text: String) {
+        self.number = number
+        self.text = Text(text)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+    }
+
+    init(number: Int, format: String, detail: String, showsAppIcon: Bool = false) {
+        self.number = number
+
+        let parts = format.components(separatedBy: "%@")
+        let prefix = parts.first ?? ""
+        let suffix = parts.dropFirst().joined()
+
+        var detailText = Text(detail)
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+        if showsAppIcon {
+            detailText = detailText
+                + Text(verbatim: "\u{00A0}")
+                + Text(Image(nsImage: Self.appIcon))
+                    .baselineOffset(-4)
+        }
+
+        self.text = Text(prefix)
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            + detailText
+            + Text(suffix)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+    }
+
+    private static let appIcon = NSImage(size: NSSize(width: 16, height: 16), flipped: false) { rect in
+        DesignSystemImages.Color.Size24.appDuckDuckGo.draw(in: rect)
+        return true
+    }
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color.primary.opacity(0.06))
-            Text(verbatim: "\(number)")
-                .font(.system(size: 8.75, weight: .semibold))
-                .foregroundColor(.secondary)
+        HStack(alignment: .center, spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(Color(designSystemColor: .toneTintSecondary))
+                    .frame(width: 16, height: 16)
+                Text(verbatim: "\(number)")
+                    .font(.system(size: 8.75, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
+            }
+            .frame(width: 16, height: 16)
+            .frame(width: 24, alignment: .leading)
+
+            text
+                .font(.system(size: 12))
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .frame(width: 16, height: 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
+
+private enum SyncSetupTab: Hashable {
+    case scanCode
+    case enterCode
 }
 
 private enum Metrics {
-    static let pickerOuterRadius: CGFloat = 8
-    static let pickerInnerRadius: CGFloat = 6
-    static let appIconSize: CGFloat = 16
-    static let contentMinWidth: CGFloat = 380
+    static let scanOptionsPanelHeight: CGFloat = 515
+    static let enterOptionsPanelHeight: CGFloat = 419
+    static let exampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ"
 }
+
+#if DEBUG
+struct SyncWithAnotherDeviceView_Previews: PreviewProvider {
+    enum State: Equatable {
+        case scanCode
+        case enterCode
+    }
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Scan Code", state: .scanCode),
+            .init(name: "Enter Code", state: .enterCode)
+        ],
+        configure: { state in
+            let sampleCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiNjgwRDQ1QjUtNUU2RS00MzQ3LTlDNDQtQjZGQkU4MEZDNEE3IiwicHJpbWFyeV9rZXkiOiJBQkNERUZHSElKS0xNTk9QUVJTVFVWV1hZWiJ9fQ=="
+            let tab: SyncSetupTab = state == .scanCode ? .scanCode : .enterCode
+
+            return SyncWithAnotherDeviceView(
+                codeForDisplayOrPasting: sampleCode,
+                stringForQRCode: sampleCode,
+                initialTab: tab
+            )
+            .environmentObject(ManagementDialogModel())
+            .environmentObject(RecoveryCodeViewModel())
+            .padding()
+            .background(Color(nsColor: .windowBackgroundColor))
+            .applyRebranding()
+        }
+    )
+}
+#endif

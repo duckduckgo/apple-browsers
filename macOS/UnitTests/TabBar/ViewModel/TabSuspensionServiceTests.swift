@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -237,6 +237,28 @@ final class TabSuspensionServiceTests: XCTestCase {
         XCTAssertEqual(call?.frequency, .dailyAndCount)
     }
 
+    func testWhenNoWindowsOpen_ThenPixelIsNotFired() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        sut = makeSUT(tabCollectionViewModels: [])
+
+        postMemoryPressure()
+
+        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
+    }
+
+    func testWhenOnlyBurnerWindowsOpen_ThenPixelIsNotFired() {
+        featureFlagger.enabledFeatureFlags = [.tabSuspension]
+        let burnerMode = BurnerMode(isBurner: true)
+        let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, burnerMode: burnerMode, lastSelectedAt: now.addingTimeInterval(-20 * 60))
+        let tabCollection = TabCollection(tabs: [tab])
+        let vm = TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(), burnerMode: burnerMode)
+        sut = makeSUT(tabCollectionViewModels: [vm])
+
+        postMemoryPressure()
+
+        XCTAssertTrue(mockPixelFiring.fireCalls.isEmpty)
+    }
+
     func testWhenFeatureFlagDisabled_ThenPixelIsNotFired() {
         featureFlagger.enabledFeatureFlags = []
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .link), extensionsBuilder: tabExtensionsBuilder, featureFlagger: featureFlagger, lastSelectedAt: now.addingTimeInterval(-20 * 60))
@@ -338,21 +360,16 @@ final class TabSuspensionServiceTests: XCTestCase {
 
 private final class MockSuspensionPixelFiring: PixelFiring {
     struct FireCall {
-        let pixel: PixelKitEvent
+        let pixel: PixelKit.Event
         let frequency: PixelKit.Frequency
     }
 
     var fireCalls = [FireCall]()
 
-    func fire(_ event: PixelKitEvent) {
-        fire(event, frequency: .standard)
-    }
-
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency) {
-        fire(event, frequency: frequency, includeAppVersionParameter: true, withAdditionalParameters: nil, withNamePrefix: nil, onComplete: { _, _ in })
-    }
-
-    func fire(_ event: PixelKitEvent, frequency: PixelKit.Frequency, includeAppVersionParameter: Bool, withAdditionalParameters: [String: String]?, withNamePrefix: String?, onComplete: @escaping PixelKit.CompletionBlock) {
+    func fire(event: PixelKit.Event,
+              frequency: PixelKit.Frequency,
+              options: PixelKit.Options,
+              onComplete: @escaping PixelKit.CompletionBlock) {
         fireCalls.append(FireCall(pixel: event, frequency: frequency))
         onComplete(true, nil)
     }

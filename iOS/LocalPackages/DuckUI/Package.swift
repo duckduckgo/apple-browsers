@@ -32,6 +32,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
         .package(path: "../../../SharedPackages/UIComponents"),
     ],
     targets: [
@@ -39,6 +40,7 @@ let package = Package(
             name: "DuckUI",
             dependencies: [
                 "DesignResourcesKit",
+                "DesignResourcesKitIcons",
                 "UIComponents",
             ],
             swiftSettings: [

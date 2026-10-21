@@ -28,8 +28,8 @@ extension LoginItem {
 
 extension LoginItem: DBPLoginItemStatusChecker {
 
-    public func doesHaveNecessaryPermissions() -> Bool {
-        return status != .requiresApproval
+    public func doesHaveNecessaryPermissions() async -> Bool {
+        return await status() != .requiresApproval
     }
 
     public func isInCorrectDirectory() -> Bool {

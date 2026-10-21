@@ -60,6 +60,7 @@ final class MainView: NSView {
     private var bannerTopConstraint: NSLayoutConstraint!
     private var bannerHeightConstraint: NSLayoutConstraint!
     private var aiChatOmnibarContainerWidthConstraint: NSLayoutConstraint!
+    private var aiChatOmnibarContainerCenterXConstraint: NSLayoutConstraint!
     private var aiChatOmnibarContainerHeightConstraint: NSLayoutConstraint!
     private var aiChatOmnibarTextContainerBottomConstraint: NSLayoutConstraint!
 
@@ -157,9 +158,10 @@ final class MainView: NSView {
 
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         aiChatOmnibarContainerHeightConstraint = aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
+        aiChatOmnibarContainerCenterXConstraint = aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor)
         NSLayoutConstraint.activate([
             aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: Constants.aiChatOmnibarContainerTopOffset),
-            aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
+            aiChatOmnibarContainerCenterXConstraint,
             aiChatOmnibarContainerHeightConstraint,
             aiChatOmnibarContainerWidthConstraint,
         ])
@@ -303,9 +305,13 @@ final class MainView: NSView {
     func setupAIChatOmnibarTextContainerConstraints(addressBarStack: NSView) {
         aiChatOmnibarTextContainerView.translatesAutoresizingMaskIntoConstraints = false
 
+        let styleProvider = themeManager.theme.addressBarStyleProvider
+        let topPadding = styleProvider.aiChatOmnibarTextContainerTopPadding
+        let leadingPadding = styleProvider.aiChatOmnibarTextContainerLeadingPadding
+
         NSLayoutConstraint.activate([
-            aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: 5),
-            aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: 10),
+            aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: topPadding),
+            aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: leadingPadding),
             aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -78),
         ])
 
@@ -325,6 +331,8 @@ final class MainView: NSView {
 
     func setupAIChatOmnibarContainerConstraints(addressBarStack: NSView) {
         aiChatOmnibarContainerWidthConstraint.isActive = false
+        // Follow the address bar instead of forcing it to stay centered, which blocks the navigation bar overflow
+        aiChatOmnibarContainerCenterXConstraint.isActive = false
         NSLayoutConstraint.activate([
             aiChatOmnibarContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor),
             aiChatOmnibarContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor),

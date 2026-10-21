@@ -17,8 +17,8 @@
 //
 
 import BrowserServicesKit
-import PixelKit
-import PixelKitTestingUtilities
+import AIChat
+@_spi(Testing) import WideEvent
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -38,6 +38,47 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         wideEventMock = nil
         sut = nil
         super.tearDown()
+    }
+
+    // MARK: - Duck.ai clearing report
+
+    func testRecordAIChatClearing_recordsRetryFirstErrorAndTimings() {
+        let options = FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: true)
+        sut.start(options: options, path: .burnAll, isAutoClear: false)
+
+        sut.recordAIChatClearing(AIChatClearingReport(
+            attempts: 2,
+            firstAttemptError: NSError(domain: "com.duckduckgo.aiChatDataClearing", code: 2),
+            firstAttemptTimings: AIChatClearingTimings(pageLoadMilliseconds: 300, scriptReadyMilliseconds: 20, scriptReplyMilliseconds: 5000)
+        ))
+
+        let eventData = wideEventMock.started.first as? DataClearingWideEventData
+        XCTAssertEqual(eventData?.clearAIChatHistoryRetried, true)
+        XCTAssertEqual(eventData?.clearAIChatHistoryFirstAttemptError?.code, 2)
+        XCTAssertEqual(eventData?.clearAIChatHistoryScriptReplyMilliseconds, 5000)
+    }
+
+    // MARK: - Persisting Progress
+
+    func testStartAction_persistsTheStartedAction() {
+        var persistedTabsStart: Date?
+        sut.start(options: FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false), path: .burnAll, isAutoClear: false)
+        wideEventMock.onUpdate = { persistedTabsStart = ($0 as? DataClearingWideEventData)?.clearTabsDuration?.start }
+
+        sut.start(.clearTabs)
+
+        XCTAssertNotNil(persistedTabsStart, "An orphaned event must show which action was running")
+    }
+
+    func testUpdateAction_persistsTheActionResult() {
+        var persistedTabsStatus: DataClearingWideEventData.ActionStatus?
+        sut.start(options: FireDialogResult(clearingOption: .allData, includeHistory: true, includeTabsAndWindows: true, includeCookiesAndSiteData: true, includeChatHistory: false), path: .burnAll, isAutoClear: false)
+        sut.start(.clearTabs)
+        wideEventMock.onUpdate = { persistedTabsStatus = ($0 as? DataClearingWideEventData)?.clearTabsStatus }
+
+        sut.update(.clearTabs, result: .success(()))
+
+        XCTAssertEqual(persistedTabsStatus, .success)
     }
 
     // MARK: - Event Lifecycle Tests
@@ -161,6 +202,22 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         XCTAssertNil(eventData.clearTabsError)
     }
 
+    func testUpdateAction_withSkippingFailure_recordsSkippedStatusAndError() {
+        let options = FireDialogResult(clearingOption: .allData,
+                                       includeHistory: true,
+                                       includeTabsAndWindows: true,
+                                       includeCookiesAndSiteData: true,
+                                       includeChatHistory: true)
+        sut.start(options: options, path: .burnAll, isAutoClear: false)
+        sut.start(.clearAIChatHistory)
+
+        sut.update(.clearAIChatHistory, result: .failure(SkippingError()))
+
+        let eventData = wideEventMock.started.first as? DataClearingWideEventData
+        XCTAssertEqual(eventData?.clearAIChatHistoryStatus, .skipped)
+        XCTAssertNotNil(eventData?.clearAIChatHistoryError)
+    }
+
     func testUpdateAction_withFailure_recordsFailureStatusAndError() {
         // Given
         let options = FireDialogResult(
@@ -232,4 +289,8 @@ final class DataClearingWideEventServiceTests: XCTestCase {
         // Then - should not crash
         XCTAssertEqual(wideEventMock.completions.count, 0)
     }
+}
+
+private struct SkippingError: DataClearingActionSkipping {
+    var skipsAction: Bool { true }
 }

@@ -21,7 +21,9 @@ import Foundation
 public struct SyncDevice: Identifiable, Equatable {
 
     public enum Kind: Equatable {
-        case current, desktop, mobile
+        case current, desktop, mobile, thirdParty
+        /// The device's metadata could not be decrypted, so its real type is not known.
+        case unknown
     }
 
     public let kind: Kind

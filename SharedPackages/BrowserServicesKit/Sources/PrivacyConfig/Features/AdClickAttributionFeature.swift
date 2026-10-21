@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 
 public protocol AdClickAttributing {
 
@@ -44,7 +45,7 @@ public class AdClickAttributionFeature: AdClickAttributing {
             var linkFormatsMap = [String: [LinkFormat]]()
             for entry in linkFormatsJSON {
                 guard let urlString = entry["url"],
-                      let url = URL(string: URL.URLProtocol.https.scheme + urlString),
+                      let url = URL(string: URL.NavigationalScheme.https.separated() + urlString),
                       let host = url.host else { continue }
 
                 let linkFormat = LinkFormat(url: url,

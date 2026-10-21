@@ -1,0 +1,23 @@
+{
+    "cookie_popup_opt_in_shown_first_macos": {
+        "description": "Fires the first time the Cookie Pop-up Protection opt-in dialog is shown on app launch (once per install).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel", "autoconsent_enabled"]
+    },
+    "cookie_popup_opt_in_shown_repeat_macos": {
+        "description": "Fires when the Cookie Pop-up Protection opt-in dialog is shown again on app launch (any presentation after the first).",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel", "autoconsent_enabled"]
+    },
+    "cookie_popup_opt_in_option_confirmed_macos": {
+        "description": "Fires when the user confirms the Cookie Pop-up Protection opt-in dialog. cookie_popup_preference is the resulting preference; autoconsent_enabled is the feature state when the dialog was shown; time_since_shown is the bucketed time from first shown to confirmation.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "channel", "cookie_popup_preference", "autoconsent_enabled", "time_since_shown"]
+    }
+}

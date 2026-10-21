@@ -30,7 +30,6 @@ struct MockVPNLocationFormatter: VPNLocationFormatting {
         ""
     }
 
-    @available(macOS 12, *)
     func string(from location: String?, preferredLocation: VPN.VPNSettings.SelectedLocation, locationTextColor: Color, preferredLocationTextColor: Color) -> AttributedString {
         ""
     }

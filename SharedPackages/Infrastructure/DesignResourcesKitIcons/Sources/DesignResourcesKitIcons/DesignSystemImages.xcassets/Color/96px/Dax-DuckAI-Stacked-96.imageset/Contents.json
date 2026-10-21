@@ -1,0 +1,22 @@
+{
+  "images" : [
+    {
+      "filename" : "Dax-DuckAI-Stacked-96.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Dax-DuckAI-Stacked-96-Dark.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

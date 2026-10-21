@@ -18,8 +18,33 @@
 
 import AppKit
 import AppKitExtensions
-import WebExtensions
+import Combine
+import FeatureFlags_macOS
+import Persistence
 import PrivacyConfig
+import WebExtensions
+
+@available(macOS 15.4, *)
+@MainActor
+private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsProviding {
+    private let featureFlagger: FeatureFlagger
+
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+
+    var isBackgroundDelegateProxyEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
+    }
+
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
+    var updatesPublisher: AnyPublisher<Void, Never> {
+        featureFlagger.updatesPublisher
+    }
+}
 
 // MARK: - macOS-specific WebExtensionManager Extensions
 
@@ -31,10 +56,6 @@ extension WebExtensionManager {
         NSApp.delegateTyped.webExtensionManager != nil
     }
 }
-
-// MARK: - AutoconsentPreferencesProviding
-
-extension CookiePopupProtectionPreferences: AutoconsentPreferencesProviding {}
 
 // MARK: - Factory
 
@@ -48,28 +69,82 @@ enum WebExtensionManagerFactory {
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
     static func makeManager(
+        keyValueStore: any ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        buildType: ApplicationBuildType = StandardApplicationBuildType(),
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
         let internalSiteHandler = WebExtensionInternalSiteHandler()
+        let pixelFiring = MacOSWebExtensionPixelFiring()
+        let cpmMessagingHealthMonitor = CPMMessagingHealthMonitor(pixelFiring: pixelFiring)
+        let cpmDiagnosticsRecorder = Application.appDelegate.featureFlagger.isFeatureOn(.cpmDiagnosticsRecorder) ? CPMMessagingDiagnosticsRecorder(
+            tabResolver: { tabIdentifier in
+                for windowController in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                    let viewModel = windowController.mainViewController.tabCollectionViewModel
+                    if let tab = (viewModel.loadedPinnedTabs + viewModel.loadedTabs).first(where: { $0.uuid == tabIdentifier }) {
+                        return (webView: tab.webView, extensionTab: tab)
+                    }
+                }
+                return nil
+            },
+            featureFlags: MacOSCPMDiagnosticsFeatureFlags(featureFlagger: Application.appDelegate.featureFlagger),
+            appSession: Application.appDelegate.cpmAppSessionDiagnostics
+        ) : nil
 
+        let installationStore = InstalledWebExtensionStore()
+        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
+            store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
+            installationStore: installationStore,
+            prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        ) : nil
+        // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
+        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+            ? NativeMessagingHandler(installationStore: installationStore)
+            : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
+            installationStore: installationStore,
+            permissionController: permissionController,
             internalSiteHandler: internalSiteHandler,
-            pixelFiring: MacOSWebExtensionPixelFiring(),
+            pixelFiring: pixelFiring,
+            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+            cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
+            isCPMMessagingHangRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
+            isCPMNetworkProcessRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
+                cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
+            nativeMessagingHandler: nativeMessagingHandler,
+            keyValueStore: keyValueStore,
             scriptletConfiguration: scriptletConfiguration
         )
 
         internalSiteHandler.dataSource = manager
+        if buildType.isSparkleBuild {
+            manager.chromeWebStore = ChromeWebStoreService(
+                manager: manager,
+                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+            )
+        }
 
         return manager
     }

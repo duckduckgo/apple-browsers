@@ -17,11 +17,12 @@
 //
 
 import Combine
+import DesignResourcesKit
 import DesignResourcesKitIcons
-import FeatureFlags
+import FeatureFlags_macOS
 import MaliciousSiteProtection
-import Navigation
-import PersistenceTestingUtils
+import DDGNavigation
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -253,7 +254,7 @@ final class TabViewModelTests: XCTestCase {
 
         tabViewModel.$favicon.debounce(for: 0.1, scheduler: RunLoop.main).sink { favicon in
             guard favicon != nil else { return }
-            if favicon?.pngData() == NSImage.homeFavicon.pngData(),
+            if favicon?.pngData() == NSImage(resource: .homeFavicon).pngData(),
                 !fulfilled {
                 faviconExpectation.fulfill()
                 fulfilled = true
@@ -261,7 +262,7 @@ final class TabViewModelTests: XCTestCase {
         } .store(in: &cancellables)
         waitForExpectations(timeout: 5, handler: nil)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .homeFavicon))
     }
 
     // MARK: - TabContent+DisplayedFavicon Tests
@@ -276,7 +277,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = sslError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -285,7 +286,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -294,7 +295,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -303,7 +304,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = maliciousError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .redAlertCircle16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .redAlertCircle16))
     }
 
     @MainActor
@@ -312,7 +313,7 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = wkError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .alertCircleColor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .alertCircleColor16))
     }
 
     @MainActor
@@ -321,14 +322,14 @@ final class TabViewModelTests: XCTestCase {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)
         tabViewModel.tab.error = genericError
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .alertCircleColor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .alertCircleColor16))
     }
 
     @MainActor
     func testDisplayedFaviconForDataBrokerProtection() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.dataBrokerProtection)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .personalInformationRemovalMulticolor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .personalInformationRemovalMulticolor16))
     }
 
     @MainActor
@@ -345,7 +346,7 @@ final class TabViewModelTests: XCTestCase {
     func testDisplayedFaviconForNewTabNonBurner() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.newtab)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .homeFavicon))
     }
 
     @MainActor
@@ -356,7 +357,7 @@ final class TabViewModelTests: XCTestCase {
             if pane == .otherPlatforms /* this is a link */ {
                 XCTAssertNil(tabViewModel.favicon)
             } else {
-                XCTAssertImagesEqual(tabViewModel.favicon, .settingsMulticolor16, "Failed for \(pane)")
+                XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.settings, "Failed for \(pane)")
             }
         }
     }
@@ -364,36 +365,36 @@ final class TabViewModelTests: XCTestCase {
     @MainActor
     func testDisplayedFaviconForBookmarks() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.bookmarks)
-
-        XCTAssertImagesEqual(tabViewModel.favicon, .bookmarksFolder)
+        let expectedFavicon = DesignSystemImages.Color.Size16.bookmarksNew
+        XCTAssertImagesEqual(tabViewModel.favicon, expectedFavicon)
     }
 
     @MainActor
     func testDisplayedFaviconForHistory() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.history)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .historyFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.history)
     }
 
     @MainActor
     func testDisplayedFaviconForSubscription() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.baseURL.subscriptionURL(environment: .production))
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .privacyPro)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.subscription)
     }
 
     @MainActor
     func testDisplayedFaviconForIdentityTheftRestoration() {
         let tabViewModel = TabViewModel.forTabWithURL(SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production))
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .identityTheftRestorationMulticolor16)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .identityTheftRestorationMulticolor16))
     }
 
     @MainActor
     func testDisplayedFaviconForReleaseNotes() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.releaseNotes)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .homeFavicon)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .homeFavicon))
     }
 
     @MainActor
@@ -402,7 +403,7 @@ final class TabViewModelTests: XCTestCase {
         let aiChatURL = URL(string: "https://duckduckgo.com/?q=DuckDuckGo+AI+Chat&ia=chat&duckai=2")!
         let tabViewModel = TabViewModel.forTabWithURL(aiChatURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferences)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)
     }
 
     @MainActor
@@ -411,7 +412,7 @@ final class TabViewModelTests: XCTestCase {
         let duckAIURL = URL(string: "https://duck.ai/chat")!
         let tabViewModel = TabViewModel.forTabWithURL(duckAIURL, featureFlagger: mockFeatureFlagger)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .aiChatPreferences)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.duckAI)
     }
 
     @MainActor
@@ -419,14 +420,14 @@ final class TabViewModelTests: XCTestCase {
         let duckPlayerURL = URL.duckPlayer("test")
         let tabViewModel = TabViewModel.forTabWithURL(duckPlayerURL)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .duckPlayerSettings)
+        XCTAssertImagesEqual(tabViewModel.favicon, NSImage(resource: .duckPlayerSettings))
     }
 
     @MainActor
     func testDisplayedFaviconForEmailProtectionURL() {
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGoEmail)
 
-        XCTAssertImagesEqual(tabViewModel.favicon, .emailProtectionIcon)
+        XCTAssertImagesEqual(tabViewModel.favicon, DesignSystemImages.Color.Size16.emailProtection)
     }
 
     @MainActor
@@ -452,7 +453,7 @@ final class TabViewModelTests: XCTestCase {
 
     @MainActor
     func testDisplayedFaviconForOnboardingWithActualFavicon() {
-        let expectedFavicon = NSImage.onboardingDax
+        let expectedFavicon = NSImage(resource: .onboardingDax)
         let actualFavicon = NSImage(systemSymbolName: "globe", accessibilityDescription: nil)!
 
         let tabViewModel = TabViewModel.forTabWithURL(URL.duckDuckGo)

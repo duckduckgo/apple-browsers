@@ -177,7 +177,7 @@ final class MemoryUsageThresholdReporter {
         }
     }
 
-    private func fireIfNeeded(_ pixel: some PixelKitEvent, logLabel: String, logValue: Double) {
+    private func fireIfNeeded(_ pixel: some PixelKit.Event, logLabel: String, logValue: Double) {
         let shouldFire: Bool = lock.withLock {
             let now = Date()
             if !Calendar.current.isDate(now, inSameDayAs: lastCheckDate) {

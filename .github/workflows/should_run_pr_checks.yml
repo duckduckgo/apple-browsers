@@ -8,11 +8,16 @@ name: Should Run PR Checks
 # - Always runs when a PR is unmarked as draft (ready_for_review action)
 # - Always runs for PRs that are not in draft state
 # - Runs for draft PRs only if they have the specified "run checks" label
+# - If `paths` is set, PRs that pass the checks above also need to change a file matching one of the paths. This ensures the calling workflow always starts without leaving required checks pending forever.
 #
 # Usage:
 #   jobs:
 #     should-run-checks:
 #       uses: ./.github/workflows/should_run_pr_checks.yml
+#       with:
+#         paths: |
+#           iOS/**
+#           SharedPackages/**
 #     other-job:
 #       needs: [should-run-checks]
 #       if: needs.should-run-checks.outputs.should_run == 'true'
@@ -30,6 +35,11 @@ on:
         required: false
         type: string
         default: 'strict pr checks'
+      paths:
+        description: 'Newline-separated glob patterns. When set, PR checks run only if the PR changes a matching file'
+        required: false
+        type: string
+        default: ''
     outputs:
       should_run:
         description: 'Whether CI checks should run (true/false)'
@@ -42,7 +52,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
+      # The paths result wins when that step ran; otherwise fall back to the draft/label result
+      should_run: ${{ steps.paths.outputs.should_run || steps.check.outputs.should_run }}
       strict_mode: ${{ steps.check.outputs.strict_mode }}
     steps:
       - name: Evaluate run conditions
@@ -51,6 +62,9 @@ jobs:
           if [[ "${{ github.event_name }}" != "pull_request" ]]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "Non-PR event, running checks"
+          elif [[ "${{ github.event.action }}" == "edited" && "${{ github.event.sender.type }}" == "Bot" ]]; then
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            echo "PR edited by a bot (${{ github.event.sender.login }}), skipping checks"
           elif [[ "${{ github.event.action }}" == "ready_for_review" ]]; then
             echo "should_run=true" >> $GITHUB_OUTPUT
             echo "PR was unmarked as draft, running checks"
@@ -80,4 +94,45 @@ jobs:
             fi
           else
             echo "strict_mode=false" >> $GITHUB_OUTPUT
+          fi
+
+      # Checks out the PR's test merge commit and its parents, without file contents or history.
+      # Only commit and folder data is needed to see which files changed, so a single file is written to disk.
+      - name: Check out the PR merge commit
+        id: checkout
+        if: inputs.paths != '' && github.event_name == 'pull_request' && steps.check.outputs.should_run == 'true'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+          filter: blob:none
+          sparse-checkout: .xcode-version
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Check changed paths
+        id: paths
+        if: steps.checkout.outcome == 'success'
+        env:
+          PATHS: ${{ inputs.paths }}
+        run: |
+          set -euo pipefail
+
+          # One `:(glob)` pathspec per non-empty line of `paths`, so `dir/**` matches everything under `dir`
+          pathspecs=()
+          while IFS= read -r pattern; do
+            pattern="$(echo "$pattern" | xargs)"
+            [[ -n "$pattern" ]] && pathspecs+=(":(glob)$pattern")
+          done <<< "$PATHS"
+
+          # The merge commit's first parent is the base branch, so this diff is exactly the PR's changes.
+          # --no-renames lists a renamed file under both its old and new path, without needing file contents.
+          matching_files=$(git diff --name-only --no-renames HEAD^1 HEAD -- "${pathspecs[@]}")
+
+          if [[ -n "$matching_files" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "PR changes files matching the paths, running checks:"
+            echo "$matching_files"
+          else
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "PR doesn't change any file matching the paths, skipping checks"
           fi

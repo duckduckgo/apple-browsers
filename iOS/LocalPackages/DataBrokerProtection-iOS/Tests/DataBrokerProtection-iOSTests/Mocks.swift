@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import SwiftUI
 @testable import DataBrokerProtection_iOS
 import DataBrokerProtectionCore
@@ -123,6 +124,35 @@ final class MockContinuedProcessingCoordinatorDelegate: DBPContinuedProcessingDe
 
 final class MockFreemiumDBPUserStateManager: FreemiumDBPUserStateManaging {
     var didActivate: Bool = false
+    var firstProfileSavedTimestamp: Date?
+    var firstScanResult: FreemiumFirstScanResult?
+    var upgradeToSubscriptionTimestamp: Date?
+
+    // Test controls
+    var recordProfileSavedIfNeededCallCount = 0
+    var recordFirstScanResultIfNeededCalls: [Bool] = []
+    var recordSubscriptionUpgradeIfEligibleCallCount = 0
+    var resetAllStateCallCount = 0
+
+    func recordProfileSavedIfNeeded() async {
+        recordProfileSavedIfNeededCallCount += 1
+    }
+
+    func recordFirstScanResultIfNeeded(hasMatches: Bool) async {
+        recordFirstScanResultIfNeededCalls.append(hasMatches)
+    }
+
+    func recordSubscriptionUpgradeIfEligible() async {
+        recordSubscriptionUpgradeIfEligibleCallCount += 1
+    }
+
+    func resetAllState() {
+        resetAllStateCallCount += 1
+        didActivate = false
+        firstProfileSavedTimestamp = nil
+        firstScanResult = nil
+        upgradeToSubscriptionTimestamp = nil
+    }
 }
 
 final class MockBGTask: DBPIOSInterface.BGTaskHandling {

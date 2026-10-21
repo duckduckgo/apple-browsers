@@ -25,8 +25,7 @@ import Common
 import os.log
 
 public protocol BrokerProfileScanSubJobWebRunning {
-    func scan(_ profileQuery: BrokerProfileQueryData,
-              showWebView: Bool,
+    func scan(showWebView: Bool,
               shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile]
 }
 
@@ -43,10 +42,10 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public let stageCalculator: StageDurationCalculator
     public var webViewHandler: WebViewHandler?
     public var actionsHandler: ActionsHandler?
-    public var continuation: CheckedContinuation<[ExtractedProfile], Error>?
+    public let runnerContinuation = SubJobRunnerContinuationState<[ExtractedProfile]>()
     public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    public let shouldRunNextStep: () -> Bool
+    public let runnerCancellation: SubJobRunnerCancellationState
     public var retriesCountOnError: Int = 0
     public lazy var clickAwaitTime: TimeInterval = {
         executionConfig.clickAwaitTimeForScan
@@ -55,7 +54,10 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
     public let featureFlagger: DBPFeatureFlagging
-    public let applicationNameForUserAgent: String?
+    public let applicationNameForUserAgentProvider: () -> String?
+    public let contentBlocking: DBPWebViewContentBlocking?
+    public var fetchedEmail: String?
+    public var emailData: ExtractedEmailData = [:]
 
     public init(privacyConfig: PrivacyConfigurationManaging,
                 prefs: ContentScopeProperties,
@@ -63,12 +65,13 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 emailConfirmationDataService: EmailConfirmationDataServiceProvider,
                 captchaService: CaptchaServiceProtocol,
                 featureFlagger: DBPFeatureFlagging,
-                applicationNameForUserAgent: String?,
+                applicationNameForUserAgentProvider: @escaping () -> String?,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
                 stageDurationCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
+                contentBlocking: DBPWebViewContentBlocking? = nil,
                 shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
@@ -78,17 +81,17 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.captchaService = captchaService
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
-        self.shouldRunNextStep = shouldRunNextStep
+        self.runnerCancellation = SubJobRunnerCancellationState(shouldRunNextStep: shouldRunNextStep)
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig
         self.featureFlagger = featureFlagger
-        self.applicationNameForUserAgent = applicationNameForUserAgent
+        self.applicationNameForUserAgentProvider = applicationNameForUserAgentProvider
+        self.contentBlocking = contentBlocking
     }
 
     @MainActor
-    public func scan(_ profileQuery: BrokerProfileQueryData,
-                     showWebView: Bool,
+    public func scan(showWebView: Bool,
                      shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
         return try await self.run(inputValue: (), showWebView: showWebView)
     }
@@ -102,7 +105,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
 
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                self.continuation = continuation
+                self.runnerContinuation.install(continuation)
 
                 guard self.shouldRunNextStep() else {
                     failed(with: DataBrokerProtectionError.cancelled)
@@ -127,16 +130,20 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                         if self.shouldRunNextStep() {
                             await executeNextStep()
                         } else {
-                            failed(with: DataBrokerProtectionError.cancelled)
+                            await failAsCancelledAndTearDown()
                         }
                     } catch {
+                        await self.webViewHandler?.finish()
                         failed(with: DataBrokerProtectionError.unknown(error.localizedDescription))
                     }
                 }
             }
         } onCancel: {
-            Task { @MainActor in
+            Task { @MainActor [weak self] in
+                guard let self, self.runnerCancellation.markCancelled() else { return }
+
                 task?.cancel()
+                await self.failAsCancelledAndTearDown()
             }
         }
     }
@@ -150,6 +157,11 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     }
 
     public func executeNextStep() async {
+        guard !isCancelled else {
+            await failAsCancelledAndTearDown()
+            return
+        }
+
         resetRetriesCount()
         Logger.action.debug(loggerContext(), message: "Waiting \(self.operationAwaitTime) seconds...")
         recordDebugEvent(kind: .wait,

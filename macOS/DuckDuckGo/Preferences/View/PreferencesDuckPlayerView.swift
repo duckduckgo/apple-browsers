@@ -59,7 +59,7 @@ extension Preferences {
                         .frame(width: 512)
                         .onAppear {
                             if !hasFiredSettingsDisplayedPixel {
-                                PixelKit.fire(GeneralPixel.duckPlayerContingencySettingsDisplayed, doNotEnforcePrefix: true)
+                                PixelKit.fire(GeneralPixel.duckPlayerContingencySettingsDisplayed)
                                 hasFiredSettingsDisplayedPixel = true
                             }
                         }
@@ -85,6 +85,7 @@ extension Preferences {
 
                     }, label: {})
                     .pickerStyle(.radioGroup)
+                    .rebrandedControlTint()
                     .offset(x: PreferencesUI_macOS.Const.pickerHorizontalOffset)
 
                     TextMenuItemCaption(UserText.duckPlayerExplanation)

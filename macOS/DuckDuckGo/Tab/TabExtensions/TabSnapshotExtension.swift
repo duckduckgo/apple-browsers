@@ -18,10 +18,12 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import Foundation
-import Navigation
-import WebKit
+import FoundationExtensions
+import DDGNavigation
 import os.log
+import WebKit
 
 final class TabSnapshotExtension {
 

@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import MaliciousSiteProtection
 import TrackerRadarKit
@@ -65,6 +66,7 @@ public enum Screen: String, Decodable, CaseIterable {
     case primaryScreen
 
     case breakageForm
+    case breakageFormFinalStep
     case categorySelection
     case categoryTypeSelection
     case choiceBreakageForm
@@ -303,7 +305,7 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                                      "url": "\(site)"
                                  }
                              },
-                             {"id": "device"},
+                             {"id": "deviceWithMemory"},
                              {"id": "os"},
                              {"id": "appVersion"},
                              \(atbEntry)
@@ -320,6 +322,9 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                              {"id": "userRefreshCount"},
                              {"id": "locale"},
                              {"id": "detectorData"},
+                             {"id": "networkState"},
+                             {"id": "dnsResolution"},
+                             {"id": "failedResources"},
                          ]
                      });
                      """

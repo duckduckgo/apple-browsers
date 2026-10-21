@@ -19,7 +19,8 @@
 
 import XCTest
 @testable import DuckDuckGo
-@testable import Core
+import PrivacyConfig
+import FeatureFlags_iOS
 
 final class UnifiedToggleInputFeatureTests: XCTestCase {
 
@@ -29,32 +30,33 @@ final class UnifiedToggleInputFeatureTests: XCTestCase {
         static var isIphone: Bool = false
     }
 
-    // MARK: - Helpers
+    func test_isAvailable_onIphone() {
+        MockDevicePlatform.isIphone = true
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
 
-    private func makeFeature(flagEnabled: Bool, isIphone: Bool) -> UnifiedToggleInputFeature {
-        MockDevicePlatform.isIphone = isIphone
-        let flags: [FeatureFlag] = flagEnabled ? [.unifiedToggleInput] : []
-        return UnifiedToggleInputFeature(
-            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: flags),
-            devicePlatform: MockDevicePlatform.self
-        )
+        XCTAssertTrue(feature.isAvailable)
     }
 
-    // MARK: - Tests
+    func test_isNotAvailable_onIPad() {
+        MockDevicePlatform.isIphone = false
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
 
-    func test_isAvailable_whenFlagOnAndIphone() {
-        XCTAssertTrue(makeFeature(flagEnabled: true, isIphone: true).isAvailable)
+        XCTAssertFalse(feature.isAvailable)
     }
 
-    func test_isNotAvailable_whenFlagOnButNotIphone() {
-        XCTAssertFalse(makeFeature(flagEnabled: true, isIphone: false).isAvailable)
-    }
+    func test_resolve_snapshotsRemainingFlags() {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatTabHideToggle, .unifiedToggleInputAttachmentPaste])
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        let feature = UnifiedToggleInputFeature(devicePlatform: MockDevicePlatform.self)
+        XCTAssertTrue(feature.isToggleHiddenOnDuckAITab)
+        XCTAssertTrue(feature.isAttachmentPasteEnabled)
 
-    func test_isNotAvailable_whenFlagOffButIphone() {
-        XCTAssertFalse(makeFeature(flagEnabled: false, isIphone: true).isAvailable)
-    }
+        flagger.enabledFeatureFlags = []
+        XCTAssertTrue(feature.isToggleHiddenOnDuckAITab)
+        XCTAssertTrue(feature.isAttachmentPasteEnabled)
 
-    func test_isNotAvailable_whenFlagOffAndNotIphone() {
-        XCTAssertFalse(makeFeature(flagEnabled: false, isIphone: false).isAvailable)
+        UnifiedToggleInputFeature.resolve(using: flagger)
+        XCTAssertFalse(feature.isToggleHiddenOnDuckAITab)
+        XCTAssertFalse(feature.isAttachmentPasteEnabled)
     }
 }

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DDGError
 import Common
 import os.log
 
@@ -45,6 +46,8 @@ public protocol AttributedMetricDataStoring {
     var subscriptionDate: Date? { get set }
     var subscriptionFreeTrialFired: Bool { get set }
     var subscriptionMonth1Fired: Bool { get set }
+    /// Highest month value already reported
+    var subscriptionLastMonthFired: Int? { get set }
 
     // Sync
     var syncDevicesCount: Int { get set }
@@ -55,7 +58,6 @@ public protocol AttributedMetricDataStoring {
 
     /// Removes all stored metric data.
     func removeAll()
-    func removeAllExceptInstallDate()
 }
 
 public enum DataStorageError: DDGError {
@@ -130,6 +132,7 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
         case subscriptionDate
         case subscriptionFreeTrial
         case subscriptionMonth1
+        case subscriptionLastMonthFired
         case syncDevicesCount
         case debugDate
         case debugOrigin
@@ -141,13 +144,6 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public func removeAll() {
         Logger.attributedMetric.log("Removing all data")
         for key in StorageKey.allCases {
-            userDefaults.removeObject(forKey: key.rawValue)
-        }
-    }
-
-    public func removeAllExceptInstallDate() {
-        Logger.attributedMetric.log("Removing all data except Install Date")
-        for key in StorageKey.allCases where key != StorageKey.installDate {
             userDefaults.removeObject(forKey: key.rawValue)
         }
     }
@@ -243,6 +239,11 @@ public final class AttributedMetricDataStorage: AttributedMetricDataStoring {
     public var subscriptionMonth1Fired: Bool {
         get { return decode(from: userDefaults, key: .subscriptionMonth1) ?? false }
         set { encode(newValue, to: userDefaults, key: .subscriptionMonth1) }
+    }
+
+    public var subscriptionLastMonthFired: Int? {
+        get { return decode(from: userDefaults, key: .subscriptionLastMonthFired) }
+        set { encode(newValue, to: userDefaults, key: .subscriptionLastMonthFired) }
     }
 
     // MARK: - Sync

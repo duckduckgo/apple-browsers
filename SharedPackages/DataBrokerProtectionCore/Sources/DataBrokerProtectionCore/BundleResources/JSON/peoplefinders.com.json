@@ -1,9 +1,25 @@
 {
   "name": "PeopleFinders",
   "url": "peoplefinders.com",
-  "version": "0.10.0",
+  "version": "0.16.0",
   "addedDatetime": 1677132000000,
   "optOutUrl": "https://www.peoplefinders.com/opt-out",
+  "mirrorSites": [
+    {
+      "name": "PrivateEye",
+      "url": "privateeye.com",
+      "addedAt": 1791244800000,
+      "removedAt": null,
+      "optOutUrl": "https://www.peoplefinders.com/opt-out"
+    },
+    {
+      "name": "PublicRecordsNow",
+      "url": "publicrecordsnow.com",
+      "addedAt": 1791417600000,
+      "removedAt": null,
+      "optOutUrl": "https://www.peoplefinders.com/opt-out"
+    }
+  ],
   "steps": [
     {
       "stepType": "scan",
@@ -49,7 +65,7 @@
               "findElements": true
             },
             "age": {
-              "selector": ".col-lg-3 > .text-dark"
+              "selector": ".col-lg-1 > .text-dark"
             },
             "addressCityStateList": {
               "selector": ".//div[@class='col-lg-2 col-xl-3']//li[@class='text-dark']",
@@ -167,12 +183,17 @@
           ]
         },
         {
+          "_comment": "A text-only expectation is not retried, so it reads once, right after the submit click. The body entry asserts nothing; it is what switches the action onto C-S-S's 30 x 1000ms retry.",
           "actionType": "expectation",
           "expectations": [
             {
               "type": "text",
               "selector": "body",
               "expect": "Email Sent"
+            },
+            {
+              "type": "element",
+              "selector": "body"
             }
           ],
           "id": "31e2af63-840f-4040-8f35-35d8d0156201"
@@ -183,12 +204,17 @@
           "pollingTime": 30
         },
         {
+          "_comment": "Same one-read problem, here on the document the confirmation link opens. Waiting for the record-removal form enables the retry and asserts more than the text, which is on the landing view too.",
           "actionType": "expectation",
           "expectations": [
             {
               "type": "text",
               "selector": "body",
               "expect": "Record Suppression Form"
+            },
+            {
+              "type": "element",
+              "selector": ".v-out-out-record-removal-form"
             }
           ],
           "id": "c39dbadc-e398-4068-93cb-bb3c1a2b047e"
@@ -198,22 +224,6 @@
           "selector": ".v-out-out-record-removal-form",
           "dataSource": "userProfile",
           "elements": [
-            {
-              "type": "$generated_phone_number$",
-              "selector": ".//input[@type='tel']"
-            },
-            {
-              "type": "$generated_random_number$",
-              "selector": ".//select[option[1][text()='Month']]",
-              "min": "1",
-              "max": "12"
-            },
-            {
-              "type": "$generated_random_number$",
-              "selector": ".//input[@name='day']",
-              "min": "1",
-              "max": "28"
-            },
             {
               "type": "birthYear",
               "selector": ".//input[@name='year']"
@@ -231,7 +241,8 @@
               "selector": ".//select[option[1][text()='State']]"
             }
           ],
-          "id": "6ba153e8-676c-4b81-8a4b-5b6689fd978c"
+          "id": "6ba153e8-676c-4b81-8a4b-5b6689fd978c",
+          "_comment": "Phone and DOB month/day are optional on the site. Leave them empty: PeopleFinders matches on the submitted details, and the site sends dob as null unless month, day and year are all set, so fabricated values only prevent a match."
         },
         {
           "actionType": "click",
@@ -264,6 +275,7 @@
           ]
         },
         {
+          "_comment": "Same one-read problem after the second submit click. The body entry only enables the retry.",
           "actionType": "expectation",
           "id": "bc09540c-8aeb-4d9f-b515-0ebb6f4583a5",
           "expectations": [
@@ -271,6 +283,10 @@
               "type": "text",
               "selector": "body",
               "expect": "Opt-Out Request Confirmation"
+            },
+            {
+              "type": "element",
+              "selector": "body"
             }
           ]
         }

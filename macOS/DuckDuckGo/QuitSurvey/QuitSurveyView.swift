@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PrivacyConfig
@@ -110,12 +111,15 @@ private struct QuitSurveyInitialView: View {
             footer()
         }
         .frame(width: QuitSurveyViewController.Constants.initialWidth)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
         .fixedSize(horizontal: false, vertical: true)
     }
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(.daxResponse48)
+            Image(.duckDuckGoResponseQuestion96)
+                .resizable()
+                .frame(width: 48, height: 48)
 
             Text(UserText.quitSurveyInitialQuestion)
                 .systemTitle2()
@@ -123,7 +127,7 @@ private struct QuitSurveyInitialView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 20)
-        .padding([.leading, .trailing, .bottom], 24)
+        .padding([.bottom], 24)
     }
 
     private func responseOptions() -> some View {
@@ -155,7 +159,6 @@ private struct QuitSurveyInitialView: View {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(Color(.separatorColor), lineWidth: 1)
         )
-        .padding([.leading, .trailing], 24)
         .padding(.bottom, 16)
     }
 
@@ -166,9 +169,8 @@ private struct QuitSurveyInitialView: View {
             Text(UserText.quitSurveyCloseAndQuit)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true))
-        .padding([.leading, .trailing], 24)
-        .padding(.bottom, 16)
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 8, bottomPadding: 8, pillShape: true))
+        .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
     }
 }
 
@@ -225,7 +227,7 @@ private struct DomainToggleRow: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
-            Toggle("", isOn: $isSelected)
+            Toggle("" as String, isOn: $isSelected)
                 .toggleStyle(.checkbox)
                 .labelsHidden()
                 .accessibilityLabel(entry.title ?? entry.domain)
@@ -305,8 +307,8 @@ private struct QuitSurveyPositiveView: View {
             header()
 
             Text(UserText.quitSurveyAutoQuitMessage(seconds: viewModel.autoQuitCountdown))
-                .systemLabel(color: .textSecondary)
-                .padding([.leading, .trailing], 24)
+                .systemLabel(color: Color(.textSecondary))
+                .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             Button {
                 viewModel.quit()
@@ -314,9 +316,9 @@ private struct QuitSurveyPositiveView: View {
                 Text(UserText.quitSurveyQuitNow)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 8, bottomPadding: 8, pillShape: true))
+            .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
         .frame(width: QuitSurveyViewController.Constants.positiveWidth)
         .fixedSize(horizontal: false, vertical: true)
@@ -325,13 +327,15 @@ private struct QuitSurveyPositiveView: View {
     private func header() -> some View {
         HStack(spacing: 12) {
             Image(.duckDuckGoResponseHeart)
+                .resizable()
+                .frame(width: 48, height: 48)
 
             Text(UserText.quitSurveyPositiveTitle)
                 .systemTitle2()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 20)
-        .padding([.leading, .trailing], 24)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
     }
 }
 
@@ -453,11 +457,13 @@ private struct QuitSurveyNegativeView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(24)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.top, AppVersion.isLiquidGlassSupported ? 20 : 24)
+        .padding(.bottom, 24)
     }
 
     private func optionsPills() -> some View {
-        let horizontalPadding: CGFloat = 24
+        let horizontalPadding: CGFloat = AppVersion.isLiquidGlassSupported ? 20 : 24
         return FlexibleView(
             availableWidth: QuitSurveyViewController.Constants.negativeWidth - (horizontalPadding * 2),
             data: viewModel.availableOptions,
@@ -471,7 +477,7 @@ private struct QuitSurveyNegativeView: View {
                 viewModel.toggleOption(option.id)
             }
         }
-        .padding([.leading, .trailing], horizontalPadding)
+        .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 24)
         .background(
             GeometryReader { geometry in
@@ -515,7 +521,7 @@ private struct QuitSurveyNegativeView: View {
                                 VStack {
                                     HStack {
                                         Text(UserText.quitSurveyTextPlaceholder)
-                                            .systemLabel(color: .textTertiary)
+                                            .systemLabel(color: Color(.textTertiary))
                                         Spacer()
                                     }
                                     Spacer()
@@ -526,7 +532,7 @@ private struct QuitSurveyNegativeView: View {
                     }
                 )
         }
-        .padding([.leading, .trailing], 24)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 8)
     }
 
@@ -550,7 +556,7 @@ private struct QuitSurveyNegativeView: View {
             }
             OtherDomainRow(viewModel: viewModel)
         }
-        .padding([.leading, .trailing], 24)
+        .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
         .padding(.bottom, 24)
         .background(
             GeometryReader { geometry in
@@ -571,7 +577,7 @@ private struct QuitSurveyNegativeView: View {
             Text(UserText.quitSurveyDisclaimer)
                 .caption2()
                 .multilineTextAlignment(.leading)
-                .padding([.leading, .trailing], 24)
+                .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
 
             Button {
                 viewModel.submitFeedback()
@@ -587,9 +593,9 @@ private struct QuitSurveyNegativeView: View {
                 .frame(maxWidth: .infinity)
             }
             .disabled(!viewModel.shouldEnableSubmit || viewModel.isSubmitting)
-            .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit && !viewModel.isSubmitting))
-            .padding([.leading, .trailing], 24)
-            .padding(.bottom, 16)
+            .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit && !viewModel.isSubmitting, topPadding: 8, bottomPadding: 8, pillShape: true))
+            .padding(.horizontal, AppVersion.isLiquidGlassSupported ? 20 : 24)
+            .padding(.bottom, AppVersion.isLiquidGlassSupported ? 20 : 16)
         }
     }
 }

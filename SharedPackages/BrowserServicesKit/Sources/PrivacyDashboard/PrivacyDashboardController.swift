@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import MaliciousSiteProtection
 import PrivacyDashboardResources
@@ -43,6 +44,7 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
                                     didRequestSubmitBrokenSiteReportWithCategory category: String,
                                     description: String)
     func privacyDashboardControllerDidRequestShowGeneralFeedback(_ privacyDashboardController: PrivacyDashboardController)
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController)
     func privacyDashboardController(_ privacyDashboardController: PrivacyDashboardController,
                                     didRequestSubmitToggleReportWithSource source: BrokenSiteReport.Source)
     func privacyDashboardControllerDidRequestClose(_ privacyDashboardController: PrivacyDashboardController)
@@ -183,6 +185,7 @@ public protocol PrivacyDashboardControllerDelegate: AnyObject {
         switch entryPoint {
         case .report: source = .appMenu
         case .dashboard: source = .dashboard
+        case .errorPage, .webKitTerminationErrorPage: source = .errorPage
         case .prompt: source = .prompt
         case .toggleReport: source = .onProtectionsOffMenu
         }
@@ -390,6 +393,7 @@ extension PrivacyDashboardController: PrivacyDashboardUserScriptDelegate {
         eventMapping.fire(.reportBrokenSiteShown, parameters: [
             PrivacyDashboardEvents.Parameters.source: source.rawValue
         ])
+        delegate?.privacyDashboardControllerDidShowBrokenSiteReport(self)
     }
 
     func userScript(_ userScript: PrivacyDashboardUserScript, setHeight height: Int) {

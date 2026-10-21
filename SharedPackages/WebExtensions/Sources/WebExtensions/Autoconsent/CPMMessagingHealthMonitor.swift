@@ -1,0 +1,1136 @@
+//
+//  CPMMessagingHealthMonitor.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import OSLog
+import WebKit
+
+/// Bounds how long separate navigation results may be attributed to the same CPM health episode.
+private let cpmMessagingEpisodeLifetime: TimeInterval = .minutes(5)
+private let cpmMessagingExtensionLoadWait: TimeInterval = .seconds(30)
+private let cpmMessagingResponseGracePeriod: TimeInterval = .seconds(4)
+/// A navigation whose wait was interrupted by app suspension restarts with this longer window,
+/// because the web content and extension processes are still waking.
+private let cpmMessagingResumedResponseGracePeriod: TimeInterval = .seconds(8)
+/// An episode interrupted by suspension keeps observing for at least this long after resuming.
+private let cpmMessagingMinimumEpisodeRemainder: TimeInterval = .seconds(30)
+
+/// Describes the navigation context in which CPM initialization was measured.
+public enum CPMNavigationKind: String, Equatable, Sendable {
+    /// A navigation performed while restoring a tab from the previous session at browser startup.
+    case sessionRestoration = "session_restoration"
+    /// A history navigation that may restore a cached document without rerunning CPM initialization.
+    case backForward = "back_forward"
+    /// The first completed navigation after the tab's web-content process terminated.
+    case tabCrash = "tab_crash"
+    /// Any other completed main-frame navigation.
+    case other
+}
+
+/// Cause shared by a CPM initialization failure and the stuck episode that failure may begin.
+public enum CPMMessagingFailureReason: String, Sendable {
+    /// Initialization timed out on a session-restored navigation.
+    case sessionRestoration = "session_restoration"
+    /// Initialization timed out on the first navigation after a tab crash.
+    case tabCrash = "tab_crash"
+    /// Initialization timed out on the first measurement after an extension reload.
+    case extensionReload = "extension_reload"
+    /// Initialization timed out on another navigation.
+    case other
+}
+
+/// Facts supplied by tabs, the native messaging handler, and the extension manager.
+///
+/// The health monitor owns all timing and correlation. Platform tabs translate their navigation
+/// callbacks into these events, and the monitor determines health from extension responses.
+@available(macOS 15.4, iOS 18.4, *)
+public enum CPMMessagingHealthEvent: Sendable {
+    case navigationStarted(tabIdentifier: String, navigationKind: CPMNavigationKind)
+    case navigationCommitted(tabIdentifier: String, url: URL)
+    case navigationFinished(tabIdentifier: String, url: URL, extensionIsLoaded: Bool)
+    case navigationFailed(tabIdentifier: String)
+    case tabClosed(tabIdentifier: String)
+    case webContentProcessTerminated(tabIdentifier: String)
+    case dashboardResponse(extensionTabIdentifier: Int?, url: URL)
+    case extensionLifecycle(WebExtensionLifecycleEvent)
+    /// The process may stop running: iOS entered the background, or macOS is going to sleep.
+    /// Time does not count towards waits and episodes until `interruptionEnded`.
+    case interruptionBegan
+    /// The app is running again: iOS returns to the foreground, or macOS woke.
+    case interruptionEnded
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public protocol CPMMessagingHealthMonitoring: AnyObject, Sendable {
+    @MainActor
+    func handle(_ event: CPMMessagingHealthEvent)
+
+    @MainActor
+    func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool)
+
+    @MainActor
+    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool)
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension CPMMessagingHealthMonitoring {
+    @MainActor
+    func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {}
+
+    @MainActor
+    func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {}
+}
+
+/// Internal token tying a completed navigation to its eventual response or timeout.
+struct CPMMessagingMeasurement: Equatable, Sendable {
+    let identifier: UInt
+    let tabIdentifier: String
+    let navigationKind: CPMNavigationKind
+    let extensionReloadGeneration: UInt
+}
+
+/// Correlates navigation, native-message, crash, and extension-lifecycle events across all tabs.
+///
+/// The monitor owns navigation-scoped timers and the browser-wide stuck episode. A failure starts an
+/// episode; only a later navigation can confirm it, so simultaneous startup loads cannot race each
+/// other into a stuck report. Session-restoration failures can seed an episode, but other restored
+/// tabs cannot confirm it; only a later regular navigation failure proves the condition persisted
+/// beyond the expected startup race.
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
+
+    /// Called once when a failure episode is confirmed as a CPM messaging hang. The first
+    /// initialization failure only begins the episode; the next qualifying failure confirms it.
+    var onConfirmedHang: (() -> Void)?
+    var backgroundReadinessRecovery: CPMBackgroundReadinessRecovery?
+
+    public func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {
+        backgroundReadinessRecovery?.registerDocument(in: tabIdentifier, webView: webView, isGET: isGET)
+    }
+
+    public func matchReadinessRecoveryNavigation(tabIdentifier: String, matches: @escaping @MainActor (WKNavigation) -> Bool) {
+        backgroundReadinessRecovery?.matchNavigationStarted(in: tabIdentifier, matches: matches)
+    }
+
+    private enum TimeoutOutcome: Sendable {
+        case reportFailure
+        case cancelMeasurement
+    }
+
+    private struct TabNavigationState {
+        var generation: UInt = 0
+        var extensionReloadGeneration: UInt = 0
+        var committedURL: URL?
+        var didReceiveResponse = false
+        var navigationKind: CPMNavigationKind = .other
+        var measurement: CPMMessagingMeasurement?
+        var timeoutTask: Task<Void, Never>?
+        /// What the scheduled (or interruption-deferred) timeout does; only meaningful while the measurement is pending.
+        var timeoutOutcome: TimeoutOutcome?
+        var crashPending = false
+        /// Set when a response arrived that could not be tied to this navigation's document, so
+        /// neither outcome is provable for it. Survives until the next navigation starts.
+        var didReceiveUnattributableResponse = false
+    }
+
+    private enum MeasurementState: Equatable {
+        case pending
+        case failed
+    }
+
+    private struct MeasurementRecord {
+        let measurement: CPMMessagingMeasurement
+        let startedAt: Date
+        var state: MeasurementState
+        /// The wait for this measurement's response was restarted because the app was suspended.
+        var wasInterrupted = false
+    }
+
+    /// State retained from the first failure until a later, relevant CPM response closes the episode.
+    private struct Episode {
+        let failureReason: CPMMessagingFailureReason
+        let startedAt: Date
+        /// When the episode closes without a response; moved later when a suspension leaves too little time.
+        var deadline: Date
+        /// The tab whose timeout opened the episode.
+        let firstFailedTabIdentifier: String
+        /// Measurements up to this identifier were already in flight when the first failure arrived.
+        let confirmationMustBeginAfter: UInt
+        /// First-failure snapshot; later transitions do not replace it.
+        let diagnostics: CPMMessagingDiagnostics?
+        var failedTabIdentifiers: Set<String>
+        /// Timed-out measurements stay known while the episode is open, so a late response can still close it.
+        var failedMeasurementIdentifiers: Set<UInt>
+        /// Every timeout in the episode; repeats are those beyond one per tab.
+        var failureCount: Int
+        /// The first failed measurement waited across a suspension, so its timeout is weaker evidence.
+        let wasInterrupted: Bool
+        /// A later regular navigation timed out in any tab: the extension is reloaded.
+        var isHangConfirmed = false
+        /// Reported as `was_stuck`: a regular navigation timed out in a tab other than the first failed one.
+        var isStuck = false
+        /// The successful reload that a recovery must post-date to be attributed to that reload.
+        var reloadGeneration: UInt?
+        var reloadState: CPMMessagingEpisodeReport.ReloadState = .none
+    }
+
+    private let pixelFiring: WebExtensionPixelFiring
+    private let episodeLifetime: TimeInterval
+    private let extensionLoadWait: TimeInterval
+    private let responseGracePeriod: TimeInterval
+    private let clock: () -> Date
+    private let resumedResponseGracePeriod: TimeInterval
+    private let minimumEpisodeRemainder: TimeInterval
+    /// Wall-clock moment the current suspension began; waits and episodes do not run while set.
+    private var interruptionStartedAt: Date?
+    private var totalInterruptedDuration: TimeInterval = 0
+    private var episode: Episode?
+    private var episodeDeadlineTask: Task<Void, Never>?
+    private var latestMeasurementIdentifier: UInt = 0
+    private var measurements: [UInt: MeasurementRecord] = [:]
+    private(set) var extensionReloadGeneration: UInt = 0
+
+    /// Debug-only switch that makes dashboard responses invisible to the health algorithm.
+    public private(set) var isCPMMessagingBreakageSimulationEnabled = false
+
+    /// Supplies local diagnostics captured once at the first failure; the report uploads only its allowlist.
+    public weak var diagnosticsProvider: CPMMessagingDiagnosticsProviding?
+
+    /// Navigation state is keyed by the app's stable tab identifier. The extension's numeric tab
+    /// identifier is learned from the first unambiguous response and retained only for correlation.
+    private var tabs: [String: TabNavigationState] = [:]
+    private var extensionTabMappings: [Int: String] = [:]
+
+    /// The first navigation begun with this generation measures whether the latest reload restored messaging.
+    private var pendingExtensionReloadMeasurementGeneration: UInt?
+    private var postReloadMeasurementIdentifier: UInt?
+
+    /// Creates a monitor using production timeout and episode-lifetime values.
+    /// - Parameter pixelFiring: Sink used for CPM health telemetry.
+    public convenience init(pixelFiring: WebExtensionPixelFiring) {
+        self.init(
+            pixelFiring: pixelFiring,
+            episodeLifetime: cpmMessagingEpisodeLifetime,
+            extensionLoadWait: cpmMessagingExtensionLoadWait,
+            responseGracePeriod: cpmMessagingResponseGracePeriod,
+            resumedResponseGracePeriod: cpmMessagingResumedResponseGracePeriod,
+            minimumEpisodeRemainder: cpmMessagingMinimumEpisodeRemainder,
+            now: Date.init
+        )
+    }
+
+    /// Enables or disables Debug-menu simulation of missing CPM dashboard responses.
+    public func setBreakageSimulationEnabled(_ isEnabled: Bool) {
+        guard isCPMMessagingBreakageSimulationEnabled != isEnabled else { return }
+        isCPMMessagingBreakageSimulationEnabled = isEnabled
+        Logger.webExtensions.debug("[CPM Health Monitor] Breakage simulation changed: enabled=\(isEnabled)")
+    }
+
+    /// Creates a monitor with injectable timing for deterministic state-machine tests.
+    /// - Parameters:
+    ///   - pixelFiring: Sink used for CPM health telemetry.
+    ///   - episodeLifetime: Maximum interval over which failures may form one episode.
+    ///   - extensionLoadWait: Maximum wait for an extension that was not loaded at navigation finish.
+    ///   - responseGracePeriod: Wait for a dashboard response after navigation or extension load.
+    ///   - resumedResponseGracePeriod: Wait for a response restarted after a suspension.
+    ///   - minimumEpisodeRemainder: Least time an episode keeps observing after a suspension.
+    ///   - now: Wall clock; time spent suspended is excluded before it expires measurements, responses, and episodes.
+    init(
+        pixelFiring: WebExtensionPixelFiring,
+        episodeLifetime: TimeInterval,
+        extensionLoadWait: TimeInterval = cpmMessagingExtensionLoadWait,
+        responseGracePeriod: TimeInterval = cpmMessagingResponseGracePeriod,
+        resumedResponseGracePeriod: TimeInterval = cpmMessagingResumedResponseGracePeriod,
+        minimumEpisodeRemainder: TimeInterval = cpmMessagingMinimumEpisodeRemainder,
+        now: @escaping () -> Date
+    ) {
+        self.pixelFiring = pixelFiring
+        self.episodeLifetime = episodeLifetime
+        self.extensionLoadWait = extensionLoadWait
+        self.responseGracePeriod = responseGracePeriod
+        self.resumedResponseGracePeriod = resumedResponseGracePeriod
+        self.minimumEpisodeRemainder = minimumEpisodeRemainder
+        self.clock = now
+    }
+
+    /// Time as the monitor experiences it: frozen while suspended, and never counting suspended time.
+    private func now() -> Date {
+        let wallClock = clock()
+        let currentInterruption = interruptionStartedAt.map { wallClock.timeIntervalSince($0) } ?? 0
+        return wallClock.addingTimeInterval(-(totalInterruptedDuration + currentInterruption))
+    }
+
+    deinit {
+        episodeDeadlineTask?.cancel()
+    }
+
+    /// Applies one tab, native-message, or extension-lifecycle event to the shared health state.
+    public func handle(_ event: CPMMessagingHealthEvent) {
+        defer { Logger.webExtensions.debug("[CPM Health Monitor] \(event.logDescription, privacy: .public) -> \(self.logStateDescription, privacy: .public)") }
+
+        // Interruptions are handled before any expiry: a handler that runs late must not expire state
+        // against time spent suspended, and resuming must extend the episode before it can expire.
+        switch event {
+        case .interruptionBegan:
+            beginInterruption()
+            return
+        case .interruptionEnded:
+            endInterruption()
+            return
+        default:
+            break
+        }
+        discardExpiredState()
+
+        switch event {
+        case .navigationStarted(let tabIdentifier, let navigationKind):
+            startNavigation(in: tabIdentifier, navigationKind: navigationKind)
+        case .navigationCommitted(let tabIdentifier, let url):
+            commitNavigation(in: tabIdentifier, url: url)
+        case .navigationFinished(let tabIdentifier, let url, let extensionIsLoaded):
+            finishNavigation(in: tabIdentifier, url: url, extensionIsLoaded: extensionIsLoaded)
+        case .navigationFailed(let tabIdentifier):
+            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
+            cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
+        case .tabClosed(let tabIdentifier):
+            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
+            removeTab(tabIdentifier)
+        case .webContentProcessTerminated(let tabIdentifier):
+            backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
+            markWebContentProcessTerminated(in: tabIdentifier)
+        case .dashboardResponse(let extensionTabIdentifier, let url):
+            if !isCPMMessagingBreakageSimulationEnabled {
+                receiveDashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url)
+            }
+        case .extensionLifecycle(let lifecycleEvent):
+            handle(lifecycleEvent)
+        case .interruptionBegan, .interruptionEnded:
+            break
+        }
+    }
+
+    /// Stops every running wait. The processes involved cannot answer while suspended, so the silence
+    /// proves nothing; waits restart when the app runs again.
+    private func beginInterruption() {
+        guard interruptionStartedAt == nil else { return }
+        interruptionStartedAt = clock()
+        for tabIdentifier in Array(tabs.keys) {
+            tabs[tabIdentifier]?.timeoutTask?.cancel()
+            tabs[tabIdentifier]?.timeoutTask = nil
+        }
+        episodeDeadlineTask?.cancel()
+        episodeDeadlineTask = nil
+    }
+
+    /// Restarts pending waits in full and gives an open episode its remaining time, at least the minimum.
+    private func endInterruption() {
+        guard let interruptionStartedAt else { return }
+        totalInterruptedDuration += max(0, clock().timeIntervalSince(interruptionStartedAt))
+        self.interruptionStartedAt = nil
+        diagnosticsProvider?.recordInterruption()
+        for (tabIdentifier, state) in tabs {
+            guard let measurement = state.measurement,
+                  let outcome = state.timeoutOutcome,
+                  !state.didReceiveResponse,
+                  measurements[measurement.identifier]?.state == .pending else {
+                continue
+            }
+            measurements[measurement.identifier]?.wasInterrupted = true
+            scheduleTimeout(
+                tabIdentifier: tabIdentifier,
+                generation: state.generation,
+                measurement: measurement,
+                delay: outcome == .reportFailure ? resumedResponseGracePeriod : extensionLoadWait,
+                outcome: outcome
+            )
+        }
+        guard var episode else { return }
+        episode.deadline = max(episode.deadline, now().addingTimeInterval(minimumEpisodeRemainder))
+        self.episode = episode
+        scheduleEpisodeDeadline()
+    }
+
+    /// Invalidates the previous document's work and advances the tab generation.
+    /// Generation changes prevent a late timeout from affecting a replacement navigation.
+    private func startNavigation(in tabIdentifier: String, navigationKind: CPMNavigationKind) {
+        backgroundReadinessRecovery?.navigationStarted(in: tabIdentifier)
+        var state = tabs[tabIdentifier] ?? TabNavigationState()
+        cancelMeasurement(state.measurement)
+        state.timeoutTask?.cancel()
+        state.generation &+= 1
+        state.extensionReloadGeneration = extensionReloadGeneration
+        state.navigationKind = navigationKind
+        state.committedURL = nil
+        state.didReceiveResponse = false
+        state.didReceiveUnattributableResponse = false
+        state.measurement = nil
+        state.timeoutTask = nil
+        tabs[tabIdentifier] = state
+    }
+
+    /// Records the committed document and retries responses buffered before native commit arrived.
+    /// - Parameters identify the stable app tab and its committed URL.
+    private func commitNavigation(in tabIdentifier: String, url: URL) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else {
+            cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
+            return
+        }
+        var state = tabs[tabIdentifier] ?? TabNavigationState()
+        guard state.extensionReloadGeneration == extensionReloadGeneration else {
+            cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
+            return
+        }
+        backgroundReadinessRecovery?.navigationCommitted(in: tabIdentifier, url: url)
+        state.committedURL = url
+        state.didReceiveResponse = false
+        tabs[tabIdentifier] = state
+    }
+
+    /// Starts CPM measurement for an eligible completed document.
+    ///
+    /// Crash attribution overrides the supplied navigation kind. Back/forward cache restores are
+    /// excluded because WebKit does not guarantee a new content-script initialization signal.
+    private func finishNavigation(
+        in tabIdentifier: String,
+        url: URL,
+        extensionIsLoaded: Bool
+    ) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else {
+            cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
+            return
+        }
+        var state = tabs[tabIdentifier] ?? TabNavigationState()
+        // Checked before the generation sync below, so a dropped finish cannot leave the tab
+        // half-updated — it stays on its own generation until a finish this monitor accepts.
+        guard state.committedURL?.matchesCPMDiagnosticsDocument(url) ?? true else {
+            Logger.webExtensions.debug("[CPM Health Monitor] Dropped navigationFinished: URL differs from committed document, tab=\(tabIdentifier, privacy: .public)")
+            return
+        }
+        if state.extensionReloadGeneration != extensionReloadGeneration {
+            // A navigation spanning an extension reload is measured against the replacement
+            // context once it finishes. Responses received before this point remain stale.
+            state.extensionReloadGeneration = extensionReloadGeneration
+            state.didReceiveResponse = false
+        }
+        state.committedURL = url
+
+        let effectiveNavigationKind: CPMNavigationKind = state.crashPending ? .tabCrash : state.navigationKind
+        state.crashPending = false
+
+        // Back/forward cache restoration does not guarantee that content scripts rerun, so the
+        // absence of a fresh dashboard response is not a CPM health signal. A pending crash takes
+        // precedence above because the restored document then belongs to a new content process.
+        guard effectiveNavigationKind != .backForward else {
+            tabs[tabIdentifier] = state
+            return
+        }
+
+        // A response already arrived for this navigation that could not be attributed to it, so
+        // measuring it now could only produce an unprovable failure.
+        guard !state.didReceiveUnattributableResponse else {
+            tabs[tabIdentifier] = state
+            return
+        }
+
+        // `beginMeasurement` may mutate this tab's entry, so commit the local copy first and go
+        // through the dictionary afterwards.
+        let generation = state.generation
+        let didReceiveResponse = state.didReceiveResponse
+        tabs[tabIdentifier] = state
+
+        let measurement = beginMeasurement(tabIdentifier: tabIdentifier, navigationKind: effectiveNavigationKind)
+        tabs[tabIdentifier]?.measurement = measurement
+
+        if didReceiveResponse {
+            reportSuccess(measurement)
+            tabs[tabIdentifier]?.measurement = nil
+            return
+        }
+
+        scheduleTimeout(
+            tabIdentifier: tabIdentifier,
+            generation: generation,
+            measurement: measurement,
+            delay: extensionIsLoaded ? responseGracePeriod : extensionLoadWait,
+            outcome: extensionIsLoaded ? .reportFailure : .cancelMeasurement
+        )
+    }
+
+    /// Schedules the deadline for one navigation generation and measurement token.
+    ///
+    /// Both identifiers are checked when the task wakes, preventing cancelled or superseded
+    /// navigations from reporting against the current document.
+    private func scheduleTimeout(
+        tabIdentifier: String,
+        generation: UInt,
+        measurement: CPMMessagingMeasurement,
+        delay: TimeInterval,
+        outcome: TimeoutOutcome
+    ) {
+        tabs[tabIdentifier]?.timeoutTask?.cancel()
+        tabs[tabIdentifier]?.timeoutOutcome = outcome
+        guard interruptionStartedAt == nil else {
+            tabs[tabIdentifier]?.timeoutTask = nil
+            return
+        }
+        tabs[tabIdentifier]?.timeoutTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.timeoutElapsed(
+                tabIdentifier: tabIdentifier,
+                generation: generation,
+                measurement: measurement,
+                outcome: outcome
+            )
+        }
+    }
+
+    /// Test support: returns once every navigation timeout scheduled so far has fired or been cancelled,
+    /// so tests assert on settled state instead of sleeping for a guessed interval.
+    func waitForScheduledTimeouts() async {
+        let timeoutTasks = tabs.values.compactMap(\.timeoutTask)
+        for task in timeoutTasks {
+            await task.value
+        }
+    }
+
+    /// Applies a deadline only when its tab generation and measurement are still current.
+    /// - Parameters identify the scheduled navigation and whether expiry reports or cancels it.
+    private func timeoutElapsed(
+        tabIdentifier: String,
+        generation: UInt,
+        measurement: CPMMessagingMeasurement,
+        outcome: TimeoutOutcome
+    ) {
+        defer { Logger.webExtensions.debug("[CPM Health Monitor] timeoutElapsed tab=\(tabIdentifier, privacy: .public) generation=\(generation, privacy: .public) measurement=\(measurement.identifier, privacy: .public) outcome=\(String(describing: outcome), privacy: .public) -> \(self.logStateDescription, privacy: .public)") }
+
+        guard var state = tabs[tabIdentifier],
+              state.generation == generation,
+              state.measurement == measurement,
+              !state.didReceiveResponse else {
+            return
+        }
+        state.timeoutTask = nil
+        tabs[tabIdentifier] = state
+
+        switch outcome {
+        case .reportFailure:
+            reportFailure(measurement)
+        case .cancelMeasurement:
+            cancelMeasurement(measurement)
+            tabs[tabIdentifier]?.measurement = nil
+        }
+    }
+
+    /// Correlates an extension response with the app tab that owns its document.
+    ///
+    /// A known extension-tab mapping identifies the sender; otherwise a uniquely matching committed
+    /// URL establishes one. A response that cannot be tied to exactly one tab reports nothing: the
+    /// affected navigations are abandoned rather than guessed at, because neither a failure nor a
+    /// recovery is provable for them.
+    private func receiveDashboardResponse(extensionTabIdentifier: Int?, url: URL) {
+        guard url.isEligibleForCPMMessagingHealthMeasurement else { return }
+
+        if let extensionTabIdentifier,
+           let tabIdentifier = extensionTabMappings[extensionTabIdentifier] {
+            if responseMatchesCurrentNavigation(url, in: tabIdentifier) {
+                markResponseReceived(in: tabIdentifier)
+            } else if isTabOnCurrentExtensionGeneration(tabIdentifier) {
+                // Known sender on the loaded context, but not the document being measured — usually
+                // the response beat `navigationCommitted`. Neither outcome is provable.
+                abandonMeasurement(in: tabIdentifier)
+            }
+            // A response from a pre-reload generation is stale evidence, not grounds to abandon the
+            // replacement context's navigation: that one still has to prove itself.
+            return
+        }
+
+        let candidates = availableCandidateTabs(for: url)
+
+        if candidates.count == 1, let tabIdentifier = candidates.first {
+            if let extensionTabIdentifier {
+                extensionTabMappings[extensionTabIdentifier] = tabIdentifier
+            }
+            markResponseReceived(in: tabIdentifier)
+            return
+        }
+
+        Logger.webExtensions.debug("[CPM Health Monitor] Unattributable dashboard response: extensionTab=\(extensionTabIdentifier.logDescription, privacy: .public) candidates=\(candidates.count, privacy: .public)")
+        for tabIdentifier in candidates {
+            abandonMeasurement(in: tabIdentifier)
+        }
+
+        // No tab may be reported failed or recovered on this response's account, but matching some
+        // tab's committed document still proves the extension is answering — and an episode is
+        // browser-wide, so that is all closing one requires. A response matching nothing proves
+        // nothing: it may be stale, or response and navigation URLs may disagree, and crediting it
+        // would pair a recovery with the failure its own tab is still about to report.
+        guard !candidates.isEmpty else { return }
+        closeEpisodeForCurrentGeneration()
+    }
+
+    /// Records healthy CPM evidence and closes an episode without attributing the response to a tab.
+    ///
+    /// After a reload only a measurement begun against the new generation may validate it, so a
+    /// response that cannot be tied to one is not allowed to claim that recovery.
+    private func closeEpisodeForCurrentGeneration() {
+        if let episode, episode.reloadGeneration != nil {
+            return
+        }
+        finishEpisode(outcome: .unattributedResponse)
+    }
+
+    /// Whether the tab's navigation belongs to the extension context that is currently loaded.
+    private func isTabOnCurrentExtensionGeneration(_ tabIdentifier: String) -> Bool {
+        tabs[tabIdentifier]?.extensionReloadGeneration == extensionReloadGeneration
+    }
+
+    /// Returns whether a response URL belongs to the tab's current committed document.
+    private func responseMatchesCurrentNavigation(_ url: URL, in tabIdentifier: String) -> Bool {
+        guard let state = tabs[tabIdentifier],
+              state.extensionReloadGeneration == extensionReloadGeneration else {
+            return false
+        }
+        return state.committedURL?.matchesCPMDiagnosticsDocument(url) == true
+    }
+
+    /// Returns unanswered app tabs whose current committed document matches an extension response.
+    private func availableCandidateTabs(for url: URL) -> [String] {
+        tabs.compactMap { tabIdentifier, state -> String? in
+            guard state.extensionReloadGeneration == extensionReloadGeneration,
+                  !state.didReceiveResponse,
+                  state.committedURL?.matchesCPMDiagnosticsDocument(url) == true else {
+                return nil
+            }
+            return tabIdentifier
+        }
+    }
+
+    /// Cancels the tab deadline and completes its active measurement when present.
+    /// A pre-finish response remains recorded so finishing the same navigation succeeds immediately.
+    private func markResponseReceived(in tabIdentifier: String) {
+        backgroundReadinessRecovery?.responseReceived(in: tabIdentifier)
+        guard var state = tabs[tabIdentifier] else { return }
+        Logger.webExtensions.debug("[CPM Health Monitor] Dashboard response attributed to tab=\(tabIdentifier, privacy: .public)")
+        state.didReceiveResponse = true
+        // This document now has provable evidence, which supersedes any earlier response that could
+        // not be attributed to it — otherwise `finishNavigation` would still refuse to measure it.
+        state.didReceiveUnattributableResponse = false
+        state.timeoutTask?.cancel()
+        state.timeoutTask = nil
+        tabs[tabIdentifier] = state
+
+        if let measurement = state.measurement {
+            reportSuccess(measurement)
+            tabs[tabIdentifier]?.measurement = nil
+        }
+    }
+
+    /// Drops a navigation's measurement without reporting either outcome, and stops a later
+    /// `finishNavigation` starting a new one for the same navigation.
+    ///
+    /// Only ever prevents an *unreported* outcome. A measurement that already failed is a fact on
+    /// record, and its token is what a later attributed response needs to report the recovery.
+    private func abandonMeasurement(in tabIdentifier: String) {
+        guard var state = tabs[tabIdentifier] else { return }
+        // Provable evidence for this document already exists; an unattributable response must not
+        // discard it.
+        if state.didReceiveResponse {
+            return
+        }
+        if let measurement = state.measurement, measurements[measurement.identifier]?.state == .failed {
+            return
+        }
+        state.didReceiveUnattributableResponse = true
+        state.timeoutTask?.cancel()
+        state.timeoutTask = nil
+        cancelMeasurement(state.measurement)
+        state.measurement = nil
+        tabs[tabIdentifier] = state
+    }
+
+    /// Cancels work owned by the terminated process and attributes the tab's next finish to a crash.
+    /// - Parameter tabIdentifier: Stable app identifier for the crashed tab.
+    private func markWebContentProcessTerminated(in tabIdentifier: String) {
+        cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: false)
+        var state = tabs[tabIdentifier] ?? TabNavigationState()
+        state.crashPending = true
+        tabs[tabIdentifier] = state
+    }
+
+    /// Cancels navigation-scoped work while optionally retaining attribution from an earlier crash.
+    /// - Parameters identify the tab and whether an existing crash marker survives cancellation so
+    ///   a provisional failure cannot erase the crash before the eventual successful navigation.
+    private func cancelCurrentNavigation(in tabIdentifier: String, preserveCrashMarker: Bool) {
+        guard var state = tabs[tabIdentifier] else { return }
+        state.timeoutTask?.cancel()
+        cancelMeasurement(state.measurement)
+        state.timeoutTask = nil
+        state.measurement = nil
+        state.committedURL = nil
+        state.didReceiveResponse = false
+        state.didReceiveUnattributableResponse = false
+        if !preserveCrashMarker {
+            state.crashPending = false
+        }
+        tabs[tabIdentifier] = state
+    }
+
+    /// Removes all navigation work and extension-tab mappings owned by a closed tab.
+    /// - Parameter tabIdentifier: Stable app identifier for the closed tab.
+    private func removeTab(_ tabIdentifier: String) {
+        if let state = tabs.removeValue(forKey: tabIdentifier) {
+            state.timeoutTask?.cancel()
+            cancelMeasurement(state.measurement)
+        }
+        extensionTabMappings = extensionTabMappings.filter { $0.value != tabIdentifier }
+    }
+
+    /// Starts a navigation-scoped measurement and captures the current extension reload generation.
+    ///
+    /// - Important: This expires stale state and may therefore mutate `tabs`, including the entry
+    ///   for `tabIdentifier`. Callers must not hold a local `TabNavigationState` copy across it.
+    func beginMeasurement(tabIdentifier: String, navigationKind: CPMNavigationKind) -> CPMMessagingMeasurement {
+        discardExpiredState()
+        latestMeasurementIdentifier &+= 1
+        let measurement = CPMMessagingMeasurement(
+            identifier: latestMeasurementIdentifier,
+            tabIdentifier: tabIdentifier,
+            navigationKind: navigationKind,
+            extensionReloadGeneration: extensionReloadGeneration
+        )
+        measurements[measurement.identifier] = MeasurementRecord(measurement: measurement, startedAt: now(), state: .pending)
+        // Restored tabs may all fail during extension startup, so only a regular navigation can
+        // become the first post-reload health check.
+        if navigationKind != .sessionRestoration,
+           pendingExtensionReloadMeasurementGeneration == measurement.extensionReloadGeneration {
+            postReloadMeasurementIdentifier = measurement.identifier
+            pendingExtensionReloadMeasurementGeneration = nil
+        }
+        return measurement
+    }
+
+    /// Removes an unfinished measurement when its owning navigation is replaced or the tab closes.
+    /// A canceled post-reload probe returns its reservation to the next eligible navigation.
+    func cancel(_ measurement: CPMMessagingMeasurement) {
+        guard measurements[measurement.identifier]?.measurement == measurement else { return }
+        measurements[measurement.identifier] = nil
+        if postReloadMeasurementIdentifier == measurement.identifier {
+            postReloadMeasurementIdentifier = nil
+            if measurement.extensionReloadGeneration == extensionReloadGeneration {
+                pendingExtensionReloadMeasurementGeneration = measurement.extensionReloadGeneration
+            }
+        }
+    }
+
+    /// Cancels an optional measurement token without requiring callers to unwrap it.
+    private func cancelMeasurement(_ measurement: CPMMessagingMeasurement?) {
+        guard let measurement else { return }
+        cancel(measurement)
+    }
+
+    /// Records a CPM initialization timeout and advances the current health episode.
+    ///
+    /// - Parameter measurement: Token returned when the completed navigation began measurement.
+    /// - Returns: `true` only when this failure newly confirms the hang, which starts the recovery reload.
+    @discardableResult
+    func reportFailure(_ measurement: CPMMessagingMeasurement) -> Bool {
+        discardExpiredState()
+        guard var record = measurements[measurement.identifier],
+              record.measurement == measurement,
+              record.state == .pending else {
+            return false
+        }
+        record.state = .failed
+        backgroundReadinessRecovery?.initializationFailed(in: measurement.tabIdentifier)
+        measurements[measurement.identifier] = record
+        // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
+        // race to become "first" merely by returning their result sooner.
+        let isPostExtensionReload = postReloadMeasurementIdentifier == measurement.identifier
+        let failureReason: CPMMessagingFailureReason
+        if isPostExtensionReload {
+            failureReason = .extensionReload
+            postReloadMeasurementIdentifier = nil
+        } else {
+            failureReason = measurement.navigationKind.failureReason
+        }
+        // Snapshot every measurement already in flight. None of them can independently confirm this
+        // failure. Restoration failures seed an episode, but only a later non-restoration navigation
+        // can confirm it because delayed startup affects the whole restored-tab batch.
+        guard var episode else {
+            self.episode = Episode(
+                failureReason: failureReason,
+                startedAt: now(),
+                deadline: now().addingTimeInterval(episodeLifetime),
+                firstFailedTabIdentifier: measurement.tabIdentifier,
+                confirmationMustBeginAfter: latestMeasurementIdentifier,
+                diagnostics: captureDiagnostics(tabIdentifier: measurement.tabIdentifier),
+                failedTabIdentifiers: [measurement.tabIdentifier],
+                failedMeasurementIdentifiers: [measurement.identifier],
+                failureCount: 1,
+                wasInterrupted: record.wasInterrupted,
+                reloadGeneration: isPostExtensionReload ? measurement.extensionReloadGeneration : nil,
+                reloadState: isPostExtensionReload ? .responseTimedOut : .none
+            )
+            scheduleEpisodeDeadline()
+            return false
+        }
+
+        episode.failedTabIdentifiers.insert(measurement.tabIdentifier)
+        episode.failedMeasurementIdentifiers.insert(measurement.identifier)
+        episode.failureCount += 1
+        var didConfirmHang = false
+        // Require a non-restoration measurement begun after the first failure. Restored tabs may
+        // finish serially, so they cannot confirm one another even when they were not concurrent.
+        if measurement.navigationKind != .sessionRestoration,
+           measurement.identifier > episode.confirmationMustBeginAfter {
+            if !episode.isHangConfirmed {
+                episode.isHangConfirmed = true
+                didConfirmHang = true
+            }
+            // Repeated timeouts in the first failed tab justify the reload, but cannot show that the
+            // extension, not that tab, is the problem; another tab failing can.
+            if measurement.tabIdentifier != episode.firstFailedTabIdentifier {
+                episode.isStuck = true
+            }
+        }
+
+        if isPostExtensionReload {
+            episode.reloadGeneration = measurement.extensionReloadGeneration
+            episode.reloadState = .responseTimedOut
+        }
+        self.episode = episode
+        if didConfirmHang {
+            onConfirmedHang?()
+        }
+        return didConfirmHang
+    }
+
+    private func captureDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics? {
+        diagnosticsProvider?.collectDiagnostics(tabIdentifier: tabIdentifier)
+    }
+
+    /// A standalone deadline also closes quiet episodes, with no dependency on another navigation.
+    /// The task captures no episode or monitor strongly. Process termination can still lose an in-memory report.
+    private func scheduleEpisodeDeadline() {
+        episodeDeadlineTask?.cancel()
+        guard interruptionStartedAt == nil, let episode else { return }
+        let lifetime = max(0, episode.deadline.timeIntervalSince(now()))
+        episodeDeadlineTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(lifetime * 1_000_000_000))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.finishEpisode(outcome: .noResponseBeforeDeadline)
+        }
+    }
+
+    /// The only CPM health emission: either a qualifying response closes the episode, or its deadline expires.
+    /// Clear state before firing so repeated callbacks cannot emit another report for the same episode.
+    /// Response outcomes describe dashboard evidence only, never an initResp ACK or recovery of every failed tab.
+    private func finishEpisode(outcome: CPMMessagingEpisodeReport.Outcome) {
+        guard let episode else { return }
+        self.episode = nil
+        episodeDeadlineTask?.cancel()
+        episodeDeadlineTask = nil
+        pixelFiring.fire(.cpmMessagingEpisode(CPMMessagingEpisodeReport(
+            reason: episode.failureReason,
+            wasStuck: episode.isStuck,
+            outcome: outcome,
+            reloadState: episode.reloadState,
+            secondsToResponse: outcome == .noResponseBeforeDeadline ? nil : now().timeIntervalSince(episode.startedAt),
+            diagnostics: episode.diagnostics,
+            failedTabCount: episode.failedTabIdentifiers.count,
+            repeatedFailureCount: episode.failureCount - episode.failedTabIdentifiers.count,
+            wasInterrupted: episode.wasInterrupted
+        )))
+    }
+
+    /// Records a CPM dashboard response and closes any active health episode.
+    ///
+    /// Any valid page response proves that the shared extension can currently answer. Responses from a
+    /// pre-reload generation cannot validate a newer extension process and therefore leave that episode open.
+    func reportSuccess(_ measurement: CPMMessagingMeasurement) {
+        discardExpiredState()
+        guard let record = measurements[measurement.identifier], record.measurement == measurement else { return }
+        measurements[measurement.identifier] = nil
+        if postReloadMeasurementIdentifier == measurement.identifier {
+            postReloadMeasurementIdentifier = nil
+        }
+        guard let episode else { return }
+
+        // Once a reload occurs, only a measurement begun against that generation can validate it.
+        if let reloadGeneration = episode.reloadGeneration,
+           measurement.extensionReloadGeneration < reloadGeneration {
+            return
+        }
+
+        let outcome: CPMMessagingEpisodeReport.Outcome
+        if record.state == .failed {
+            outcome = .failedMeasurementResponse
+        } else if episode.failedTabIdentifiers.contains(measurement.tabIdentifier) {
+            outcome = .failedTabResponse
+        } else {
+            outcome = .otherTabResponse
+        }
+        finishEpisode(outcome: outcome)
+    }
+
+    /// Updates CPM correlation state from an extension-manager lifecycle event.
+    func handle(_ event: WebExtensionLifecycleEvent) {
+        guard event.extensionType == .embedded else { return }
+        discardExpiredState()
+
+        switch event {
+        case .loaded:
+            startGracePeriodsForFinishedNavigations()
+        case .willReload:
+            backgroundReadinessRecovery?.invalidate()
+            episode?.reloadState = .pending
+            invalidateNavigationEvidenceForReload()
+        case .reloaded:
+            // A response delivered while the old context was being unloaded is not evidence about
+            // the replacement context, even if it arrived after `willReload` was handled.
+            invalidateNavigationEvidenceForReload()
+            // Generations distinguish navigations completed before and after a successful reload.
+            extensionReloadGeneration &+= 1
+            pendingExtensionReloadMeasurementGeneration = extensionReloadGeneration
+            guard var episode else { return }
+            episode.reloadGeneration = extensionReloadGeneration
+            episode.reloadState = .loaded
+            self.episode = episode
+        case .reloadFailed:
+            episode?.reloadState = .failed
+        }
+    }
+
+    /// Converts completed navigations that were waiting for extension load into timed measurements.
+    ///
+    /// A loaded event starts the short response grace period instead of immediately declaring failure.
+    private func startGracePeriodsForFinishedNavigations() {
+        for (tabIdentifier, state) in tabs {
+            guard let measurement = state.measurement,
+                  !state.didReceiveResponse,
+                  measurements[measurement.identifier]?.state == .pending else {
+                continue
+            }
+            scheduleTimeout(
+                tabIdentifier: tabIdentifier,
+                generation: state.generation,
+                measurement: measurement,
+                delay: responseGracePeriod,
+                outcome: .reportFailure
+            )
+        }
+    }
+
+    /// Invalidates measurements and responses owned by the extension context being replaced.
+    ///
+    /// Responses are context-scoped evidence. Clearing document state at each reload boundary
+    /// prevents an old response from satisfying a new-generation measurement. Proven tab-ID
+    /// mappings remain useful, while generation checks reject their stale responses.
+    private func invalidateNavigationEvidenceForReload() {
+        for tabIdentifier in Array(tabs.keys) {
+            guard var state = tabs[tabIdentifier] else { continue }
+            state.timeoutTask?.cancel()
+            cancelMeasurement(state.measurement)
+            state.timeoutTask = nil
+            state.measurement = nil
+            state.committedURL = nil
+            state.didReceiveResponse = false
+            state.didReceiveUnattributableResponse = false
+            tabs[tabIdentifier] = state
+        }
+    }
+
+    /// Expires correlation state that can no longer safely participate in a health decision.
+    ///
+    /// Measurements have a bounded attribution window. Removing their tokens from tab state also
+    /// cancels deadlines that could otherwise report after the evidence expired.
+    private func discardExpiredState() {
+        let currentDate = now()
+        if let episode, currentDate >= episode.deadline {
+            finishEpisode(outcome: .noResponseBeforeDeadline)
+        }
+        // An episode can outlive its first measurement (its deadline starts later and can be extended
+        // after a suspension), and a late response on a failed measurement still closes it.
+        let expiredMeasurements = measurements.values.filter {
+            currentDate.timeIntervalSince($0.startedAt) >= episodeLifetime
+                && episode?.failedMeasurementIdentifiers.contains($0.measurement.identifier) != true
+        }
+        for record in expiredMeasurements {
+            cancel(record.measurement)
+        }
+        for tabIdentifier in Array(tabs.keys) {
+            guard var state = tabs[tabIdentifier],
+                  let measurement = state.measurement,
+                  measurements[measurement.identifier] == nil else {
+                continue
+            }
+            state.timeoutTask?.cancel()
+            state.timeoutTask = nil
+            state.measurement = nil
+            tabs[tabIdentifier] = state
+        }
+    }
+
+    private var logStateDescription: String {
+        let episodeDescription: String
+        if let episode {
+            episodeDescription = "reason=\(episode.failureReason.rawValue),hangConfirmed=\(episode.isHangConfirmed),stuck=\(episode.isStuck)," +
+                "confirmAfter=\(episode.confirmationMustBeginAfter),failedTabs=\(episode.failedTabIdentifiers.sorted())," +
+                "reloadGeneration=\(episode.reloadGeneration.logDescription)"
+        } else {
+            episodeDescription = "none"
+        }
+
+        return "episode={\(episodeDescription)} " +
+            "counts={tabs=\(tabs.count),measurements=\(measurements.count)," +
+            "mappings=\(extensionTabMappings.count)} " +
+            "reloadGeneration=\(extensionReloadGeneration) " +
+            "pendingReloadGeneration=\(pendingExtensionReloadMeasurementGeneration.logDescription) " +
+            "postReloadMeasurement=\(postReloadMeasurementIdentifier.logDescription)"
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public final class NoOpCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring, @unchecked Sendable {
+    /// Creates an event sink that intentionally performs no health tracking.
+    public init() {}
+
+    /// Discards a CPM health event.
+    /// - Parameter event: Event ignored by this no-op implementation.
+    @MainActor
+    public func handle(_ event: CPMMessagingHealthEvent) {}
+}
+
+private extension CPMNavigationKind {
+    var failureReason: CPMMessagingFailureReason {
+        switch self {
+        case .sessionRestoration: return .sessionRestoration
+        case .tabCrash: return .tabCrash
+        case .backForward, .other: return .other
+        }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private extension CPMMessagingHealthEvent {
+    /// Describes an incoming event without recording a browsing URL.
+    var logDescription: String {
+        switch self {
+        case .navigationStarted(let tabIdentifier, let navigationKind):
+            return "navigationStarted tab=\(tabIdentifier) kind=\(navigationKind.rawValue)"
+        case .navigationCommitted(let tabIdentifier, _):
+            return "navigationCommitted tab=\(tabIdentifier)"
+        case .navigationFinished(let tabIdentifier, _, let extensionIsLoaded):
+            return "navigationFinished tab=\(tabIdentifier) extensionLoaded=\(extensionIsLoaded)"
+        case .navigationFailed(let tabIdentifier):
+            return "navigationFailed tab=\(tabIdentifier)"
+        case .tabClosed(let tabIdentifier):
+            return "tabClosed tab=\(tabIdentifier)"
+        case .webContentProcessTerminated(let tabIdentifier):
+            return "webContentProcessTerminated tab=\(tabIdentifier)"
+        case .dashboardResponse(let extensionTabIdentifier, _):
+            return "dashboardResponse extensionTab=\(extensionTabIdentifier.logDescription)"
+        case .extensionLifecycle(let event):
+            return "extensionLifecycle \(event.logDescription)"
+        case .interruptionBegan:
+            return "interruptionBegan"
+        case .interruptionEnded:
+            return "interruptionEnded"
+        }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private extension WebExtensionLifecycleEvent {
+    /// Describes a lifecycle event and its reload trigger for CPM diagnostics.
+    var logDescription: String {
+        switch self {
+        case .loaded(let identifier, let type):
+            return "loaded identifier=\(identifier) type=\(String(describing: type))"
+        case .willReload(let identifier, let type, let trigger):
+            return "willReload identifier=\(identifier) type=\(String(describing: type)) trigger=\(trigger)"
+        case .reloaded(let identifier, let type, let trigger):
+            return "reloaded identifier=\(identifier) type=\(String(describing: type)) trigger=\(trigger)"
+        case .reloadFailed(let identifier, let type, let trigger):
+            return "reloadFailed identifier=\(identifier) type=\(String(describing: type)) trigger=\(trigger)"
+        }
+    }
+}
+
+private extension Optional where Wrapped: BinaryInteger {
+    /// Formats optional identifiers and generations consistently in diagnostic logs.
+    var logDescription: String {
+        map(String.init) ?? "none"
+    }
+}
+
+public extension URL {
+    /// Whether CPM content-script messaging is expected for this document scheme.
+    fileprivate var isEligibleForCPMMessagingHealthMeasurement: Bool {
+        guard let scheme = scheme?.lowercased() else { return false }
+        return scheme == "http" || scheme == "https"
+    }
+
+    /// Matches the looser page identity used by the CPM dashboard, whose state follows query and
+    /// fragment changes. This preserves the dashboard's pre-diagnostics matching behavior.
+    ///
+    /// Weaker than `matchesCPMDiagnosticsDocument(_:)`: ignores scheme, port and query, and compares
+    /// the host case-sensitively. For dashboard state only, never for health correlation.
+    func matchesCPMDashboardStatePage(_ other: URL) -> Bool {
+        host == other.host && normalizedCPMPath == other.normalizedCPMPath
+    }
+
+    /// Matches the document identity supplied by autoconsent while ignoring only the fragment,
+    /// which is not sent to the server and may change without a new document load.
+    ///
+    /// Stricter than `matchesCPMDashboardStatePage(_:)`; the two are not interchangeable.
+    func matchesCPMDiagnosticsDocument(_ other: URL) -> Bool {
+        scheme?.lowercased() == other.scheme?.lowercased() &&
+        host?.lowercased() == other.host?.lowercased() &&
+        port == other.port &&
+        normalizedCPMPath == other.normalizedCPMPath &&
+        query == other.query
+    }
+
+    private var normalizedCPMPath: String {
+        path.isEmpty ? "/" : path
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private extension WebExtensionLifecycleEvent {
+    var extensionType: DuckDuckGoWebExtensionType? {
+        switch self {
+        case .loaded(_, let type),
+             .willReload(_, let type, _),
+             .reloaded(_, let type, _),
+             .reloadFailed(_, let type, _):
+            return type
+        }
+    }
+}

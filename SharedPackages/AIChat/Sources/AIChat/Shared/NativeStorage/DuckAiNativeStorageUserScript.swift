@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
+import FoundationExtensions
 import DuckAiDataStore
 import Foundation
 import os.log
@@ -37,6 +39,14 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     private let pixelFiring: DuckAiNativeStoragePixelFiring
     private let storageQueue = DispatchQueue(label: "com.duckduckgo.native-storage", qos: .userInitiated)
     private var didLogUnavailableFireModeHandler = false
+    private let chatUpdatesSubject = PassthroughSubject<String, Never>()
+
+    /// Emits the `chatId` of every chat written through `putChat` / `putChats` after the
+    /// write succeeds. Consumers can use this to react to FE-driven state changes
+    /// (e.g. the active model on the current chat changing).
+    public var chatUpdatesPublisher: AnyPublisher<String, Never> {
+        chatUpdatesSubject.eraseToAnyPublisher()
+    }
 
     /// Returns the fire-mode storage state for the surrounding webview.
     /// `.notFireMode` uses the normal on-disk store, `.available` uses the isolated
@@ -44,7 +54,8 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     /// falling back to disk.
     public var fireModeStorageProvider: (() -> DuckAiFireModeStorage)?
 
-    private var handler: DuckAiNativeStorageHandling {
+    /// The store for the surrounding webview, resolved through `fireModeStorageProvider`.
+    var handler: DuckAiNativeStorageHandling {
         switch fireModeStorageProvider?() ?? .notFireMode {
         case .notFireMode:
             return diskHandler
@@ -260,6 +271,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
                 try self.handler.putChat(chatId: chatId, data: jsonData)
             }
             Logger.aiChat.debug("DuckAiNativeStorage: putChat '\(chatId)' succeeded (\(jsonData.count) bytes)")
+            chatUpdatesSubject.send(chatId)
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChat failed for \(chatId): \(error.localizedDescription)")
             pixelFiring.fire(.chatPutError(error))
@@ -287,6 +299,9 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
                 try self.handler.putChats(records)
             }
             Logger.aiChat.debug("DuckAiNativeStorage: putChats succeeded (\(records.count) chats)")
+            for record in records {
+                chatUpdatesSubject.send(record.chatId)
+            }
             return SuccessResponse(success: true)
         } catch {
             Logger.aiChat.error("DuckAiNativeStorage: putChats failed: \(error.localizedDescription)")
@@ -630,12 +645,8 @@ private struct AnyCodableValue: Encodable {
         switch value {
         case is NSNull:
             try container.encodeNil()
-        case let boolValue as Bool:
-            try container.encode(boolValue)
-        case let intValue as Int:
-            try container.encode(intValue)
-        case let doubleValue as Double:
-            try container.encode(doubleValue)
+        case let number as NSNumber:
+            try Self.encode(number, into: &container)
         case let stringValue as String:
             try container.encode(stringValue)
         case let arrayValue as [Any]:
@@ -644,6 +655,20 @@ private struct AnyCodableValue: Encodable {
             try container.encode(dictValue.mapValues { AnyCodableValue($0) })
         default:
             try container.encodeNil()
+        }
+    }
+
+    /// `JSONSerialization` returns both numbers and booleans as `NSNumber`, and `as? Bool` also matches
+    /// the numbers 0 and 1, so only a `CFBoolean` is a boolean.
+    private static func encode(_ number: NSNumber, into container: inout SingleValueEncodingContainer) throws {
+        if CFGetTypeID(number) == CFBooleanGetTypeID() {
+            try container.encode(number.boolValue)
+        } else if CFNumberIsFloatType(number) {
+            try container.encode(number.doubleValue)
+        } else if String(cString: number.objCType) == "Q" {
+            try container.encode(number.uint64Value)
+        } else {
+            try container.encode(number.int64Value)
         }
     }
 }

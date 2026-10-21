@@ -19,6 +19,7 @@
 
 import XCTest
 @testable import Core
+@testable import DuckDuckGo
 import ZIPFoundation
 
 final class ImportArchiveReaderTests: XCTestCase {
@@ -227,6 +228,23 @@ final class ImportArchiveReaderTests: XCTestCase {
         XCTAssertTrue(contents.bookmarks.isEmpty)
         XCTAssertTrue(contents.creditCards.isEmpty)
         XCTAssertEqual(contents.type, .none)
+    }
+
+    func testWhenArchiveContainsDoubleExtensionEntryThenItIsSkippedButValidFileIsRead() throws {
+        let archiveURL = try createTestArchive(
+            files: [
+                "evil.swift.html": "<html>disguised</html>",
+                "subfolder/payload.exe.csv": "user,pass",
+                "bookmarks.html": "<html>bookmark data</html>"
+            ]
+        )
+
+        let contents = try reader.readContents(from: archiveURL, featureFlagger: mockFeatureFlagger)
+
+        XCTAssertEqual(contents.bookmarks, ["<html>bookmark data</html>"])
+        XCTAssertTrue(contents.passwords.isEmpty)
+        XCTAssertTrue(contents.creditCards.isEmpty)
+        XCTAssertEqual(contents.type, .bookmarksOnly)
     }
 
     func testWhenArchiveContainsPasswordsWithInvalidContentsThenNoPasswordsRead() throws {

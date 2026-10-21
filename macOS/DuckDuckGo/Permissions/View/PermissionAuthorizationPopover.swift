@@ -17,9 +17,8 @@
 //
 
 import Cocoa
-import SwiftUI
 import PrivacyConfig
-import FeatureFlags
+import SwiftUI
 
 final class PermissionAuthorizationPopover: NSPopover {
 
@@ -31,7 +30,7 @@ final class PermissionAuthorizationPopover: NSPopover {
         super.init()
 
         behavior = .applicationDefined
-        setupContentController()
+        contentViewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
         self.delegate = self
     }
 
@@ -49,34 +48,11 @@ final class PermissionAuthorizationPopover: NSPopover {
     // swiftlint:disable force_cast
     var viewController: PermissionAuthorizationViewController {
         get {
-            // Ensure content controller is set up
             if contentViewController == nil {
-                setupContentController()
+                contentViewController = PermissionAuthorizationViewController(featureFlagger: featureFlagger)
             }
             return contentViewController as! PermissionAuthorizationViewController
         }
-    }
-    // swiftlint:enable force_cast
-
-    private func setupContentController() {
-        let controller: PermissionAuthorizationViewController
-
-        if featureFlagger.isFeatureOn(.newPermissionView) {
-            // Create programmatically
-            controller = PermissionAuthorizationViewController(newPermissionView: true)
-        } else {
-            // Load from storyboard
-            controller = setupStoryboardController()
-        }
-
-        contentViewController = controller
-    }
-
-    // swiftlint:disable force_cast
-    private func setupStoryboardController() -> PermissionAuthorizationViewController {
-        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
-        return storyboard
-            .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
     }
     // swiftlint:enable force_cast
 

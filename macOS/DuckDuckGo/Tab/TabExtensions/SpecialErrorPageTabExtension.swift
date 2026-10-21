@@ -18,10 +18,12 @@
 
 import Combine
 import Common
+import ConcurrencyExtensions
 import ContentScopeScripts
 import Foundation
+import FoundationExtensions
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import os
 import PixelKit
 import PrivacyConfig
@@ -40,6 +42,7 @@ final class SpecialErrorPageTabExtension {
     private let featureFlagger: FeatureFlagger
     private let detector: MaliciousSiteDetecting
     private let tld = TLD()
+    private let acceptsInsecureCertificates: Bool
 
     @MainActor private weak var webView: ErrorPageTabExtensionNavigationDelegate?
     @MainActor private weak var specialErrorPageUserScript: SpecialErrorPageUserScript?
@@ -57,12 +60,14 @@ final class SpecialErrorPageTabExtension {
          closeTab: @escaping () -> Void,
          urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         maliciousSiteDetector: some MaliciousSiteDetecting) {
+         maliciousSiteDetector: some MaliciousSiteDetecting,
+         acceptsInsecureCertificates: Bool = false) {
 
         self.featureFlagger = featureFlagger
         self.urlCredentialCreator = urlCredentialCreator
         self.detector = maliciousSiteDetector
         self.closeTab = closeTab
+        self.acceptsInsecureCertificates = acceptsInsecureCertificates
 
         webViewPublisher.sink { [weak self] webView in
             MainActor.assumeMainThread {
@@ -195,6 +200,10 @@ extension SpecialErrorPageTabExtension: NavigationResponder {
     @MainActor
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust else { return nil }
+        if acceptsInsecureCertificates {
+            guard let credential = urlCredentialCreator.urlCredentialFrom(trust: challenge.protectionSpace.serverTrust) else { return nil }
+            return .credential(credential)
+        }
         guard shouldBypassSSLError else { return nil }
         guard navigation?.url == webView?.url else { return nil }
         guard let credential = urlCredentialCreator.urlCredentialFrom(trust: challenge.protectionSpace.serverTrust) else { return nil }
@@ -211,7 +220,8 @@ extension SpecialErrorPageTabExtension: SpecialErrorPageUserScriptDelegate {
     func leaveSiteAction() {
         guard let errorData, let webView else { return }
         switch errorData {
-        case .maliciousSite:
+        case .maliciousSite(let threatKind, _):
+            PixelKit.fire(MaliciousSiteProtection.Event.leaveSite(category: threatKind))
             closeAndOpenNewTab()
         case .ssl:
             if webView.canGoBack {

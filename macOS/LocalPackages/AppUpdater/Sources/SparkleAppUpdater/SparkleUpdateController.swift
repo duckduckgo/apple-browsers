@@ -20,11 +20,14 @@ import AppUpdaterShared
 import BrowserServicesKit
 import Combine
 import Common
-import FeatureFlags
+import ConcurrencyExtensions
+import FeatureFlags_macOS
 import Foundation
+import FoundationExtensions
 import os.log
 import Persistence
 import PixelKit
+import WideEvent
 import PrivacyConfig
 import Sparkle
 import Subscription
@@ -131,7 +134,6 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     private let settings: any ThrowingKeyedStoring<UpdateControllerSettings>
 
     public var lastUpdateCheckDate: Date? { updater?.lastUpdateCheckDate }
-    public var lastUpdateNotificationShownDate: Date = .distantPast
 
     private var customFeedURL: String? {
         get {
@@ -170,6 +172,10 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
 
     public var isAtRestartCheckpoint: Bool { progressState.isAtRestartCheckpoint }
     public var isAtDownloadCheckpoint: Bool { progressState.isAtDownloadCheckpoint }
+
+    public var shouldAutoCheckOnReleaseNotesLoad: Bool {
+        !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck)
+    }
 
     /// Updates Sparkle auto-download settings based on current feature flags and user preference.
     private func updateAutoDownloadSettings() {
@@ -242,6 +248,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
                 pixelFiring: PixelFiring?,
                 notificationPresenter: UpdateNotificationPresenting,
                 keyValueStore: ThrowingKeyValueStoring,
+                applicationUpdateDetector: ApplicationUpdateDetector,
                 allowCustomUpdateFeed: Bool,
                 isAutoUpdatePaused: @escaping () -> Bool = { false },
                 wideEvent: WideEventManaging,
@@ -259,7 +266,7 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
         self.isOnboardingFinished = isOnboardingFinished
         self.openUpdatesPageAction = openUpdatesPage
         self.settings = keyValueStore.throwingKeyedStoring()
-        self.applicationUpdateDetector = ApplicationUpdateDetector(settings: settings)
+        self.applicationUpdateDetector = applicationUpdateDetector
         self.updateCompletionValidator = SparkleUpdateCompletionValidator(settings: settings)
 
         // Capture the current value before initializing updateWideEvent
@@ -494,7 +501,9 @@ public final class SparkleUpdateController: NSObject, SparkleUpdateControlling {
     }
 
     @objc public func runUpdateFromMenuItem() {
-        openUpdatesPage()
+        if !featureFlagger.isFeatureOn(.skipReleaseNotesUpdateCheck) {
+            openUpdatesPage()
+        }
         runUpdate()
     }
 

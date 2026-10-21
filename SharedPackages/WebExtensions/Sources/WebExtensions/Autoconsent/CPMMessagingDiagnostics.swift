@@ -1,0 +1,248 @@
+//
+//  CPMMessagingDiagnostics.swift
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+/// App-owned launch facts and an optional app-state reader; no application state is persisted here.
+public struct CPMAppSessionDiagnostics {
+    public enum VersionChange: String, Sendable {
+        case updated
+        case downgraded
+    }
+
+    public enum ApplicationState: String, Sendable {
+        case active
+        case inactive
+        case background
+    }
+
+    public let appVersionChange: VersionChange?
+    public let launchDate: Date
+    /// Read only when an attributed background-load error is recorded, never as a generic episode dimension.
+    public let applicationState: (@MainActor () -> ApplicationState)?
+
+    public init(appVersionChange: VersionChange?, launchDate: Date,
+                applicationState: (@MainActor () -> ApplicationState)? = nil) {
+        self.appVersionChange = appVersionChange
+        self.launchDate = launchDate
+        self.applicationState = applicationState
+    }
+}
+
+/// Load evidence from WebKit; readiness does not prove delivery of a particular init request or response.
+public enum CPMBackgroundReadiness: Equatable, Sendable {
+    case noBackground
+    case pending
+    case loaded(secondsAfterViewCreation: TimeInterval)
+    case failed
+}
+
+/// Best-effort state attached to Web Extension messaging failures. Unavailable facts are omitted.
+public struct CPMMessagingDiagnostics: Equatable, Sendable {
+
+    public var extensionContextLoaded: Bool?
+    public var appVersionChange: CPMAppSessionDiagnostics.VersionChange?
+    public var secondsSinceAppLaunch: TimeInterval?
+    public var secondsSinceCriticalMemoryPressure: TimeInterval?
+    public var networkProcessRestarted: Bool?
+    /// `WKWebExtensionContext.errors` domain/code pairs, including the immediate underlying error when present.
+    public var extensionContextErrors: [String]
+    public var backgroundWebViewCreateCount: Int?
+    public var backgroundWebViewAlive: Bool?
+    /// Background web views WebKit no longer references but that are still alive.
+    public var leakedBackgroundWebViewCount: Int?
+    public var backgroundWebProcessAlive: Bool?
+    /// Whether `WKWebExtensionContext.openTabs` contains the failing tab — the set WebKit resolves message senders against.
+    public var tabKnownToWebKit: Bool?
+    /// Whether the app's message router has an `autoconsent` handler for the context — without it every native
+    /// request from the background fails, and the background answers the content script with "setting disabled".
+    public var nativeMessageHandlerRegistered: Bool?
+    /// Whether the failing tab's `WKWebViewConfiguration.webExtensionController` is the controller the CPM context
+    /// is loaded into. A tab created while `WebExtensionManager` did not exist (feature flag off, or off→on mid-session,
+    /// which replaces the manager and its controller) keeps a controller with no CPM context: nothing is ever injected
+    /// into it, page reloads do not help, new tabs work.
+    public var tabControllerMatchesContext: Bool?
+    /// Whether the failing tab's `WKUserContentController.userScripts` still contains scripts in the extension's content
+    /// world. WebKit injects them once per user content controller; anything that calls `removeAllUserScripts()` on the
+    /// tab's controller afterwards (e.g. `DuckAiNativeStorageBootstrapScriptRefresher`) strips them for good.
+    public var tabHasExtensionUserScripts: Bool?
+    /// One background lifecycle event: a short token (`view`, `died_crash`, `error_<domain>:<code>`, `unresponsive`, …)
+    /// and how long before the snapshot it happened.
+    public struct BackgroundEvent: Equatable, Sendable {
+        public let token: String
+        public let secondsBeforeSnapshot: TimeInterval
+
+        public init(token: String, secondsBeforeSnapshot: TimeInterval) {
+            self.token = token
+            self.secondsBeforeSnapshot = secondsBeforeSnapshot
+        }
+    }
+
+    // Observed through `CPMBackgroundWebViewDelegateProxy` on the background web view.
+    /// `WKWebView._webProcessIsResponsive` for the background view: WebKit's hang-detection verdict at snapshot time.
+    public var backgroundWebProcessResponsive: Bool?
+    /// Error 6 observed for the latest background-load attempt; false/unknown omits both error parameters.
+    public var hasBackgroundLoadError: Bool?
+    public var backgroundLoadErrorAppState: CPMAppSessionDiagnostics.ApplicationState?
+    public var secondsFromBackgroundViewToLoadError: TimeInterval?
+    /// Age of the current view, omitted after it disappears.
+    public var secondsSinceBackgroundViewCreation: TimeInterval?
+    /// Omitted when observation is disabled or was not started for this view.
+    /// An attributed error 6 remains failed after its view disappears, until the next view/context.
+    /// The episode keeps this first-failure value; pending does not rule out a later load failure.
+    public var backgroundReadiness: CPMBackgroundReadiness?
+    /// Most recent background lifecycle events, oldest first (context load, view created/deallocated, process death with
+    /// reason, unresponsive/responsive, load errors, and proxy state). Rendered as `token@<age bucket>`.
+    public var backgroundEvents: [BackgroundEvent] = []
+
+    public init(
+        extensionContextLoaded: Bool? = nil,
+        secondsSinceCriticalMemoryPressure: TimeInterval? = nil,
+        networkProcessRestarted: Bool? = nil,
+        extensionContextErrors: [String] = [],
+        backgroundWebViewCreateCount: Int? = nil,
+        backgroundWebViewAlive: Bool? = nil,
+        leakedBackgroundWebViewCount: Int? = nil,
+        backgroundWebProcessAlive: Bool? = nil,
+        tabKnownToWebKit: Bool? = nil,
+        nativeMessageHandlerRegistered: Bool? = nil,
+        tabControllerMatchesContext: Bool? = nil,
+        tabHasExtensionUserScripts: Bool? = nil,
+        backgroundWebProcessResponsive: Bool? = nil,
+        backgroundEvents: [BackgroundEvent] = []
+    ) {
+        self.backgroundWebProcessResponsive = backgroundWebProcessResponsive
+        self.backgroundEvents = backgroundEvents
+        self.extensionContextLoaded = extensionContextLoaded
+        self.secondsSinceCriticalMemoryPressure = secondsSinceCriticalMemoryPressure
+        self.networkProcessRestarted = networkProcessRestarted
+        self.extensionContextErrors = extensionContextErrors
+        self.backgroundWebViewCreateCount = backgroundWebViewCreateCount
+        self.backgroundWebViewAlive = backgroundWebViewAlive
+        self.leakedBackgroundWebViewCount = leakedBackgroundWebViewCount
+        self.backgroundWebProcessAlive = backgroundWebProcessAlive
+        self.tabKnownToWebKit = tabKnownToWebKit
+        self.nativeMessageHandlerRegistered = nativeMessageHandlerRegistered
+        self.tabControllerMatchesContext = tabControllerMatchesContext
+        self.tabHasExtensionUserScripts = tabHasExtensionUserScripts
+    }
+
+    // MARK: - Pixel parameters
+
+    public enum ParameterName {
+        public static let extensionContextLoaded = "context_loaded"
+        public static let backgroundViewAlive = "bg_view_alive"
+        public static let backgroundWebProcessAlive = "bg_process_alive"
+        public static let tabKnownToWebKit = "tab_in_context"
+        public static let nativeMessageHandlerRegistered = "handler_registered"
+        public static let tabControllerMatchesContext = "tab_controller_match"
+        public static let tabHasExtensionUserScripts = "tab_has_ext_scripts"
+        public static let backgroundWebProcessResponsive = "bg_process_responsive"
+        public static let backgroundEvents = "bg_events"
+        public static let backgroundLoadErrorAppState = "bg_load_error_app_state"
+        public static let backgroundLoadErrorAfter = "bg_load_error_after"
+        public static let backgroundViewAge = "bg_view_age"
+        public static let backgroundReadyAfter = "bg_ready_after"
+    }
+
+    /// Longest `bg_events` value; older events are dropped first.
+    static let maximumBackgroundEventsLength = 255
+
+    /// The four allowlisted load fields shared by local diagnostics and the terminal episode report.
+    /// Error facts are conditional on an attributed error 6; absence never uploads a synthetic `none` error.
+    var backgroundLoadParameters: [String: String] {
+        var parameters: [String: String] = [:]
+        parameters[ParameterName.backgroundReadyAfter] = backgroundReadiness.map(Self.readinessValue)
+        parameters[ParameterName.backgroundViewAge] = secondsSinceBackgroundViewCreation.map(Self.backgroundViewAgeBucket)
+        if hasBackgroundLoadError == true {
+            parameters[ParameterName.backgroundLoadErrorAppState] = backgroundLoadErrorAppState?.rawValue
+            parameters[ParameterName.backgroundLoadErrorAfter] = secondsFromBackgroundViewToLoadError.map(Self.loadErrorDelayBucket)
+        }
+        return parameters
+    }
+
+    // MARK: - Bucketing
+
+    static func loadErrorDelayBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<5: return "under_5s"
+        case ..<25: return "5s_to_25s"
+        case ..<35: return "25s_to_35s"
+        default: return "over_35s"
+        }
+    }
+
+    static func backgroundViewAgeBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<4: return "under_4s"
+        case ..<8: return "4s_to_8s"
+        case ..<30: return "8s_to_30s"
+        case ..<120: return "30s_to_2m"
+        default: return "over_2m"
+        }
+    }
+
+    static func readinessValue(_ readiness: CPMBackgroundReadiness) -> String {
+        switch readiness {
+        case .noBackground: return "none"
+        case .pending: return "pending"
+        case .failed: return "failed"
+        case .loaded(let seconds):
+            switch seconds {
+            case ..<1: return "under_1s"
+            case ..<4: return "1s_to_4s"
+            case ..<10: return "4s_to_10s"
+            case ..<30: return "10s_to_30s"
+            default: return "over_30s"
+            }
+        }
+    }
+
+    private static func ageBucket(_ seconds: TimeInterval) -> String {
+        switch seconds {
+        case ..<30: return "30s"
+        case ..<60: return "1m"
+        case ..<120: return "2m"
+        case ..<300: return "5m"
+        case ..<900: return "15m"
+        default: return "over_15"
+        }
+    }
+
+    /// `token@<age bucket>` entries, oldest first, comma-separated; drops the oldest entries until the value fits the cap.
+    /// Tokens are sanitized (they may embed error domain/code pairs).
+    static func backgroundEventsValue(_ events: [BackgroundEvent]) -> String {
+        var entries = events.map { event -> String in
+            let token = sanitizedEventToken(event.token)
+            return "\(token)@\(ageBucket(event.secondsBeforeSnapshot))"
+        }
+        while entries.joined(separator: ",").count > maximumBackgroundEventsLength, entries.count > 1 {
+            entries.removeFirst()
+        }
+        return entries.joined(separator: ",")
+    }
+
+    /// Keeps the timeline's fixed alphabet while preserving `:` and `-` in error descriptors.
+    private static func sanitizedEventToken(_ value: String) -> String {
+        let allowed = value.lowercased().unicodeScalars.filter {
+            CharacterSet.alphanumerics.contains($0) || $0 == "_" || $0 == ":" || $0 == "-"
+        }
+        let token = String(String.UnicodeScalarView(allowed)).prefix(64)
+        return token.isEmpty ? "unknown" : String(token)
+    }
+}

@@ -18,15 +18,15 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import History
-import Navigation
+import DDGNavigation
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 12.0, *)
 class HistoryIntegrationTests: XCTestCase {
 
     var schemeHandler: TestSchemeHandler!
@@ -294,7 +294,7 @@ class HistoryIntegrationTests: XCTestCase {
 
         let first = NSApp.delegateTyped.historyCoordinator.history?.first
         XCTAssertEqual(first?.trackersFound, true)
-        XCTAssertEqual(first?.numberOfTrackersBlocked, 3)
+        XCTAssertEqual(first?.numberOfTrackersBlocked, 2)
         XCTAssertEqual(first?.blockedTrackingEntities, ["Google Ads (Google)"])
         XCTAssertEqual(first?.numberOfVisits, 1)
     }

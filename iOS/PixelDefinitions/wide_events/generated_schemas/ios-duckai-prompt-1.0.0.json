@@ -1,0 +1,227 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent at the end of a Duck.ai prompt submission journey on iOS, from the moment the user submits a prompt through the Unified Toggle Input until the page either delivers a response (status returns to `.ready`) or the journey is orphaned by app termination.",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-duckai-prompt" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["duckai-prompt"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Terminal reason accompanying UNKNOWN outcomes. Present when an orphaned flow from a previous app session is completed after app launch.",
+                                    "enum": ["app_terminated"]
+                                },
+                                "outcome": {
+                                    "type": "object",
+                                    "description": "Outcome-specific fields describing where and why the flow ended.",
+                                    "properties": {
+                                        "cancellation_reason": {
+                                            "type": "string",
+                                            "description": "Why the flow was cancelled. Present only on CANCELLED outcomes. `stop_button` = user tapped the stop-generating button; `tab_closed` = user closed the Duck.ai tab while the response was still in flight; `sheet_dismissed` = the contextual chat sheet's session was explicitly ended (delete-chat tap or fire-button clear) while the response was still in flight; `fire_button` = user used the Fire button to clear the Duck.ai tab while the response was still in flight; `switched_tabs` = user switched away from the Duck.ai tab while the response was still in flight, breaking the current native UI status connection; `superseded_by_new_submission` = another prompt was submitted in the same tab or contextual sheet before this flow reached a terminal outcome.",
+                                            "enum": [
+                                                "stop_button",
+                                                "tab_closed",
+                                                "sheet_dismissed",
+                                                "fire_button",
+                                                "switched_tabs",
+                                                "superseded_by_new_submission"
+                                            ]
+                                        },
+                                        "last_step": {
+                                            "type": "string",
+                                            "description": "Where in the journey the flow was when it ended. Emitted on FAILURE, CANCELLED, and UNKNOWN outcomes (absent on SUCCESS). For CANCELLED outcomes, this is the latest observed page status before the user/system cancelled the flow. For UNKNOWN orphans recovered from a previous app session, this is the last step persisted before the app was killed. Terminal failure types (`navigation_failed`, `response_state_error`, `response_state_blocked`) are themselves last steps - they appear here instead of the progression step that preceded them.",
+                                            "enum": [
+                                                "submitted",
+                                                "loading",
+                                                "start_stream_new_prompt",
+                                                "start_stream_restart_stream",
+                                                "streaming",
+                                                "unknown_status",
+                                                "navigation_failed",
+                                                "response_state_error",
+                                                "response_state_blocked"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "error": {
+                                    "type": "object",
+                                    "description": "Underlying `NSError` captured on FAILURE when navigation_failed.",
+                                    "properties": {
+                                        "domain": { "type": "string", "description": "NSError domain." },
+                                        "code": { "type": "integer", "description": "NSError code." },
+                                        "underlying_domain": {
+                                            "type": "string",
+                                            "description": "Domain of the wrapped NSError, when present."
+                                        },
+                                        "underlying_code": {
+                                            "type": "integer",
+                                            "description": "Code of the wrapped NSError, when present."
+                                        },
+                                        "error_description": {
+                                            "type": "string",
+                                            "description": "Optional human-readable description attached at capture time."
+                                        }
+                                    }
+                                },
+                                "prompt": {
+                                    "type": "object",
+                                    "description": "Prompt, composer, and submission context captured at submit time.",
+                                    "properties": {
+                                        "model_id": {
+                                            "type": "string",
+                                            "description": "Identifier of the Duck.ai model selected at submit time (e.g. 'gpt-4o', 'claude-sonnet-4-5'). Absent if the user has not selected a specific model."
+                                        },
+                                        "user_tier": {
+                                            "type": "string",
+                                            "description": "The submitting user's Duck.ai subscription tier at the moment of submission.",
+                                            "enum": ["free", "plus", "pro", "internal"]
+                                        },
+                                        "reasoning_effort": {
+                                            "type": "string",
+                                            "description": "The reasoning effort selected for this submission, derived from the user's reasoning-mode preference resolved against the model's supported efforts. Absent when the selected model does not support a reasoning picker.",
+                                            "enum": ["none", "minimal", "low", "medium", "high"]
+                                        },
+                                        "entry_point": {
+                                            "type": "string",
+                                            "description": "Where the user composed and submitted the prompt. `omnibar` = browser address bar composer; `ai_tab` = dedicated Duck.ai tab composer; `contextual_chat` = contextual chat sheet opened from a regular web tab.",
+                                            "enum": ["omnibar", "ai_tab", "contextual_chat"]
+                                        },
+                                        "input_mode": {
+                                            "type": "string",
+                                            "description": "How the user produced the prompt text. `keyboard` = typed/pasted in the composer; `voice` = voice-search transcription submitted directly. Additional values (suggestion tap, address-bar Duck.ai shortcut, URL scheme/Intent) will be added as those paths are instrumented.",
+                                            "enum": ["keyboard", "voice"]
+                                        },
+                                        "fire_mode": {
+                                            "type": "boolean",
+                                            "description": "Whether the submitting tab was a fire tab at submit time."
+                                        },
+                                        "is_first_prompt": {
+                                            "type": "boolean",
+                                            "description": "Whether this submission was the first prompt in the chat session. True for prompts that initiate a new chat (no prior submissions and no pre-existing chat bound to the tab); false for follow-up prompts within an already-active chat. Disambiguates failure modes that differ between cold-start (page load + initial chat creation) and warm-start (existing chat) paths."
+                                        },
+                                        "has_page_context": {
+                                            "type": "boolean",
+                                            "description": "Whether a page-context attachment was present at submit time (i.e. the user attached the current page's content to the prompt)."
+                                        },
+                                        "tools_selected": {
+                                            "type": "boolean",
+                                            "description": "Whether the user had any tool selected at submit time. The iOS UI currently only exposes WebSearch and GenerateImage tools."
+                                        },
+                                        "attachments_selected": {
+                                            "type": "boolean",
+                                            "description": "Whether the user had any attachment (image, file, or attachment that failed validation) in the composer at submit time."
+                                        }
+                                    }
+                                },
+                                "delivery": {
+                                    "type": "object",
+                                    "description": "Native-to-frontend delivery signals for the submitted prompt.",
+                                    "properties": {
+                                        "path": {
+                                            "type": "string",
+                                            "description": "How native attempted to deliver the prompt to Duck.ai frontend. `user_script` = native UTI pushed directly through a bound user script; `url_autosubmit` = native delegated to host URL/prompt handoff; `contextual_native_input` = contextual sheet native input handed the prompt to the contextual web view.",
+                                            "enum": ["user_script", "url_autosubmit", "contextual_native_input"]
+                                        },
+                                        "queued": {
+                                            "type": "boolean",
+                                            "description": "Whether contextual delivery had to wait for the page/content handler to become ready before native could push the prompt to frontend."
+                                        },
+                                        "did_send_bridge_message": {
+                                            "type": "boolean",
+                                            "description": "Whether native successfully sent the prompt over the user-script bridge - measured at the precondition level (web view and message broker were both available when push was attempted). True does not guarantee WebKit evaluated the JS, only that native reached the point of calling into the broker. False means native entered the bridge-push branch but the push failed (e.g. broker was missing). Absent for paths that don't involve the bridge (URL-autosubmit, or contextual deliveries that terminated while still queued). Pair with `did_receive_bridge_message` to isolate where delivery broke."
+                                        },
+                                        "did_receive_bridge_message": {
+                                            "type": "boolean",
+                                            "description": "Whether the Duck.ai frontend reported its `userDidSubmitPrompt` (or `userDidSubmitFirstPrompt`) metric back across the bridge for this submission before the flow ended. True confirms the frontend received and accepted the prompt; false means the prompt never landed on the frontend submission state machine - either WebKit dropped the JS call, the frontend rejected the message, or the flow terminated before the metric arrived."
+                                        }
+                                    }
+                                },
+                                "latency": {
+                                    "type": "object",
+                                    "description": "Latency milestones measured in milliseconds from prompt submission. All values are bucketed (round-up) into one of: 100, 500, 1000, 2000, 3000, 5000, 10000, 30000. Any duration over 10s collapses into the 30000 bucket.",
+                                    "properties": {
+                                        "start_thinking_ms": {
+                                            "type": "integer",
+                                            "description": "Milliseconds from prompt submission to the first non-`ready` chat status observed (page began processing the prompt). Absent if no non-ready status was observed before the flow ended."
+                                        },
+                                        "start_generating_ms": {
+                                            "type": "integer",
+                                            "description": "Milliseconds from prompt submission to the first `streaming` chat status (time to first token). Absent if the journey never reached a streaming state."
+                                        },
+                                        "generating_completed_ms": {
+                                            "type": "integer",
+                                            "description": "Milliseconds from prompt submission to the `ready` chat status that completed the flow (time to last token). Present only on SUCCESS outcomes."
+                                        },
+                                        "ended_ms": {
+                                            "type": "integer",
+                                            "description": "Milliseconds from prompt submission to the outcome, regardless of status. Present on SUCCESS, FAILURE, and CANCELLED outcomes; absent on UNKNOWN outcomes where the end time is not observed."
+                                        },
+                                        "frontend_submission_ack_ms": {
+                                            "type": "integer",
+                                            "description": "Milliseconds from native prompt submission to the frontend `userDidSubmitPrompt` metric. Absent if the frontend never acknowledged the submission before the flow ended."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

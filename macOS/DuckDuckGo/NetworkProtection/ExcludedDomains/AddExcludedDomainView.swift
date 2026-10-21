@@ -55,9 +55,9 @@ struct AddExcludedDomainView: ModalView {
         self.buttonsState = buttonsState
         self.cancelActionTitle = cancelActionTitle
         self.cancelAction = cancelAction
-        self.isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)
         self.defaultActionTitle = defaultActionTitle
         self.defaultAction = defaultAction
+        self.isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)
     }
 
     var body: some View {
@@ -101,12 +101,12 @@ struct AddExcludedDomainView: ModalView {
             verticalSpacing: 20.0,
             rowHeight: 22.0,
             leftColumn: {
-                Text("URL")
+                Text("URL", bundle: #bundle)
                     .foregroundColor(.primary)
                     .fontWeight(.medium)
             },
             rightColumn: {
-                TextField("", text: $domain)
+                TextField("" as String, text: $domain)
                     .focusedOnAppear()
                     .onChange(of: domain) { domain in
                         isDefaultActionDisabled = Self.isInvalidDomain(domain: domain)

@@ -97,17 +97,34 @@ struct FileWithSpaceInPathError: Error, CustomStringConvertible {
 struct FileNotInTargetSourcesFolderError: Error, CustomStringConvertible {
     var targets: Set<String>
     var filePath: String
-    //    var expectedFolder: String
+    var expectedFolders: Set<String>
 
-    init(targets: Set<String>, filePath: String/*, expectedFolder: String*/) {
+    init(targets: Set<String>, filePath: String, expectedFolders: Set<String>) {
         self.targets = targets
         self.filePath = filePath
-        //        self.expectedFolder = expectedFolder
+        self.expectedFolders = expectedFolders
     }
 
     var description: String {
-        let targets = targets.map { "'\($0)'" }.joined(separator: ", ")
-        return "File '\(filePath)' must not be shared between targets - use local packages instead. File is shared between: \(targets)"
+        let targetNames = targets.sorted().map { "'\($0)'" }.joined(separator: ", ")
+        let folders = expectedFolders.sorted().map { "macOS/\($0)/" }.joined(separator: ", ")
+        return "File '\(filePath)' is used by \(targetNames) outside the expected target directory: \(folders). Move shared files to a package."
+    }
+}
+
+struct UnknownTargetSourceFolderError: Error, CustomStringConvertible {
+    var target: String
+
+    var description: String {
+        "No source directory configured for target '\(target)' in InputFilesChecker.swift"
+    }
+}
+
+struct ObsoleteTemporaryInputFileExceptionError: Error, CustomStringConvertible {
+    var relativePath: String
+
+    var description: String {
+        "Remove '\(relativePath)' from temporarilyAllowedMisplacedFiles: it is no longer used outside its target directory"
     }
 }
 

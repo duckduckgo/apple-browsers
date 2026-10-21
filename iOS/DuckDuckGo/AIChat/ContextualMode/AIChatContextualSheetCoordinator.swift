@@ -21,19 +21,40 @@ import AIChat
 import BrowserServicesKit
 import Combine
 import Common
+import ConcurrencyExtensions
+import DesignResourcesKitIcons
+import FoundationExtensions
 import Core
 import os.log
 import PrivacyConfig
 import UIKit
 import WebKit
+import FeatureFlags_iOS
+
+/// Underlying-tab URL publishers the contextual chat needs.
+struct AIChatTabURLPublishers {
+    let originating: AnyPublisher<URL?, Never>
+    let didFinish: AnyPublisher<URL?, Never>
+}
+
+private struct ContextualUnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
+    let isAvailable: Bool
+    let isToggleHiddenOnDuckAITab: Bool
+    let isAttachmentPasteEnabled: Bool
+}
 
 /// Delegate protocol for coordinating actions that require interaction with the browser.
 protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
     /// Called when the user requests to load a URL externally.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL)
 
-    /// Called when the user taps expand to open duck.ai in a new tab with the given chat URL.
-    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestExpandWithURL url: URL)
+    /// Opens duck.ai in a new tab: the hand-off passes this chat's URL, Open Duck.ai a chat-ID-free one.
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didRequestExpandWithURL url: URL,
+                                          entrySource: AIChatEntryPointSource)
+
+    /// Called when the user taps "View all chats" to open the native chat history page.
+    func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator)
 
     /// Called when the user requests to open AI Chat settings.
     func aiChatContextualSheetCoordinatorDidRequestOpenSettings(_ coordinator: AIChatContextualSheetCoordinator)
@@ -49,6 +70,12 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     /// Called when the user confirmed deletion of the contextual chat, providing the chat ID to delete server-side.
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestDeleteChatWithID chatID: String)
+
+    /// Called when the user requests a new Duck.ai voice chat.
+    func aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(_ coordinator: AIChatContextualSheetCoordinator)
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
+                                          didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -65,16 +92,33 @@ final class AIChatContextualSheetCoordinator {
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private let featureDiscovery: FeatureDiscovery
     private let featureFlagger: FeatureFlagger
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
+    private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
+    private let usageContextProvider: UsageContextProviding
     private let debugSettings: AIChatDebugSettingsHandling
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
     private let isFireTab: Bool
+    private let tabAttachmentSource: MultiTabAttachmentSource?
+    static let contextualContextCollectionTimeout: TimeInterval = 5
 
     /// Handler for page context - single source of truth.
     let pageContextHandler: AIChatPageContextHandling
+    private let tabURLPublishers: AIChatTabURLPublishers
     private var contextUpdateCancellable: AnyCancellable?
+    private var sessionEffectCancellable: AnyCancellable?
+    private var currentPageURLCancellable: AnyCancellable?
+    private var didFinishURLCancellable: AnyCancellable?
+    private var documentReadCancellable: AnyCancellable?
+    private var currentPageURL: URL?
+    private(set) var persistentUTIHost: AIChatContextualUTIHost?
+    private var latestDidFinishURL: URL?
 
     /// Handles all pixel firing for contextual mode.
     let pixelHandler: AIChatContextualModePixelFiring
+    private let selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting
 
     /// Session state - single source of truth for frontend and chip state
     let sessionState: AIChatContextualChatSessionState
@@ -82,17 +126,117 @@ final class AIChatContextualSheetCoordinator {
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
 
+    /// The floating pre-submit input, when it is the current surface instead of the sheet.
+    private(set) var floatingInputViewController: AIChatContextualFloatingInputViewController? {
+        didSet { isFloatingInputPresented = floatingInputViewController != nil }
+    }
+
+    /// Published so the address bar can re-attach its menu when this surface comes and goes; the
+    /// sheet's own flag does not cover the floating input.
+    @Published private(set) var isFloatingInputPresented: Bool = false
+
+    private var floatingChipsCancellable: AnyCancellable?
+    private let floatingUIManager: FloatingUIManaging
+    private var areFloatingSuggestionsVisible = false
+
     /// Session timer for auto-resetting the chat after inactivity
     private var sessionTimer: AIChatSessionTimer?
 
-    /// Returns true if the sheet is currently presented.
-    var isSheetPresented: Bool {
-        sheetViewController?.presentingViewController != nil
-    }
+    /// Whether the sheet is currently presented on screen. Tracked as `@Published`
+    /// so chrome surfaces (e.g. the iPad tabs-bar Duck.ai chip) can swap their
+    /// state-aware glyph and respond to swipe-to-dismiss.
+    @Published private(set) var isSheetPresented: Bool = false
 
     /// Whether the sheet is presented and actively observing page context updates.
     private var isActivelyObservingContext: Bool {
         contextUpdateCancellable != nil
+    }
+
+    private var isWebUTIEnabled: Bool {
+        unifiedToggleInputFeature.isAvailable
+    }
+
+    private var persistedChatIDs: Set<String> = []
+
+    private static let chatLookupQueue = DispatchQueue(label: "com.duckduckgo.aichat.contextual.chatlookup")
+
+    /// `DuckAiNativeStorageHandling` is not `Sendable`. The reads taken on the lookup queue —
+    /// `isMigrationDone` and `getChat` — reach only immutable state, an `NSLock`-guarded settings blob
+    /// and GRDB's own serialized `DatabaseQueue`, so calling them from off the main thread is sound.
+    private struct UncheckedSendable<Value>: @unchecked Sendable {
+        let value: Value
+    }
+
+    private var chatStorage: DuckAiNativeStorageHandling? {
+        isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+    }
+
+    private var isNativeDataAccessEnabled: Bool {
+        AIChatFeatureFlagProvider(featureFlagger: featureFlagger).isNativeDataAccessEnabled()
+    }
+
+    private func discardActiveChatIfDeleted() async {
+        guard !isSheetPresented,
+              sessionState.hasActiveChat,
+              let chatID = sessionState.contextualChatURL?.duckAIChatID,
+              persistedChatIDs.contains(chatID) else { return }
+        guard await isChatDeleted(chatID: chatID) else { return }
+        Logger.aiChat.debug("[Contextual] Active chat was deleted, clearing it")
+        pixelHandler.fireSheetOpenedOnDeletedChat()
+        persistedChatIDs.remove(chatID)
+        clearActiveChat()
+    }
+
+    private func vettedRestoreURL(_ restoreURL: URL?) async -> URL? {
+        guard let chatID = restoreURL?.duckAIChatID else { return restoreURL }
+        guard await isChatDeleted(chatID: chatID) else {
+            persistedChatIDs.insert(chatID)
+            return restoreURL
+        }
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
+        return nil
+    }
+
+    private func isChatDeleted(chatID: String) async -> Bool {
+        guard isNativeDataAccessEnabled,
+              let storage = chatStorage,
+              storage.setupSucceeded == true else { return false }
+        let box = UncheckedSendable(value: storage)
+        return await withCheckedContinuation { continuation in
+            Self.chatLookupQueue.async {
+                let storage = box.value
+                do {
+                    guard try storage.isMigrationDone() else {
+                        continuation.resume(returning: false)
+                        return
+                    }
+                    continuation.resume(returning: try storage.getChat(chatId: chatID) == nil)
+                } catch {
+                    Logger.aiChat.error("[Contextual] Could not verify \(chatID): \(error.localizedDescription)")
+                    continuation.resume(returning: false)
+                }
+            }
+        }
+    }
+
+    private var isImmediateContextualUTIEnabled: Bool {
+        isWebUTIEnabled && featureFlagger.isFeatureOn(.aiChatContextualUnifiedToggleInput)
+    }
+
+    private var isPagePlaceholderEnabled: Bool {
+        featureFlagger.isFeatureOn(.contextualPagePlaceholder)
+    }
+
+    /// A chat about to start brings a keyboard up with it; one that already exists does not.
+    private var sheetContextualInputStart: ContextualInputStart {
+        guard sessionState.hasActiveChat else { return .expandedPreSubmit }
+        // Without the collapsed pill there is no such pose to start in.
+        return floatingInputFeature.isAvailable ? .collapsedOnExistingChat : .expandedOnExistingChat
+    }
+
+    /// Publishes the URL of the page that originated the contextual chat session, with replay of the last value.
+    var originatingURLPublisher: AnyPublisher<URL?, Never> {
+        tabURLPublishers.originating
     }
 
     // MARK: - Initialization
@@ -103,62 +247,509 @@ final class AIChatContextualSheetCoordinator {
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          featureDiscovery: FeatureDiscovery,
          featureFlagger: FeatureFlagger,
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         floatingUIManager: FloatingUIManaging? = nil,
+         floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
          pageContextHandler: AIChatPageContextHandling,
+         tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         duckAiFireModeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         usageContextProvider: UsageContextProviding,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
-         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler()) {
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
+         selectionJourneyScopeID: String = UUID().uuidString,
+         selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
+         tabAttachmentSource: MultiTabAttachmentSource? = nil) {
+        self.tabAttachmentSource = tabAttachmentSource
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.featureDiscovery = featureDiscovery
         self.featureFlagger = featureFlagger
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.floatingUIManager = floatingUIManager ?? FloatingUIManager(
+            isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
+        )
+        self.floatingInputFeature = floatingInputFeature
+        self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         self.pageContextHandler = pageContextHandler
+        self.tabURLPublishers = tabURLPublishers
         self.isFireTab = isFireTab
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.duckAiFireModeStorageHandler = duckAiFireModeStorageHandler
+        self.usageContextProvider = usageContextProvider
         self.debugSettings = debugSettings
+        self.onboardingActivationRecorder = onboardingActivationRecorder
         self.pixelHandler = pixelHandler
+        self.selectionJourneyInstrumentation = selectionJourneyInstrumentation ?? DefaultDuckAISelectionJourneyInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            localScopeID: selectionJourneyScopeID
+        )
         self.sessionState = AIChatContextualChatSessionState(
             aiChatSettings: aiChatSettings,
             pixelHandler: pixelHandler,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            isCurrentPageAttachable: { [weak pageContextHandler] in pageContextHandler?.isCurrentPageAttachable() ?? true }
         )
+        self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        self.sessionState.inputAttachmentCount = { [weak self] in self?.persistentUTIHost?.attachmentCount ?? 0 }
+        self.sessionState.inputHasAttachedTabs = { [weak self] in self?.persistentUTIHost?.hasAttachedTabs ?? false }
+        self.sessionEffectCancellable = self.sessionState.effects
+            .sink { [weak self] effect in
+                guard case .deliverPageContext(let context, let targets) = effect else { return }
+                self?.deliverPageContext(context, targets: targets)
+            }
+        self.currentPageURLCancellable = tabURLPublishers.originating
+            .sink { [weak self] url in
+                guard let self else { return }
+                self.currentPageURL = url
+                // Attachability is URL-driven. `originating` is KVO-backed on webView.url, so it fires on
+                // back/forward navigation (unlike `didFinish`), keeping the affordances in sync.
+                guard self.hasActiveSheet else { return }
+                self.sessionState.refreshForCurrentPage()
+                self.persistentUTIHost?.refreshPageContextAttachability()
+            }
+        self.didFinishURLCancellable = tabURLPublishers.didFinish
+            .dropFirst()
+            .sink { [weak self] url in
+                Task { [weak self] in
+                    self?.latestDidFinishURL = url
+                    await self?.notifyPageChanged()
+                }
+            }
+        self.documentReadCancellable = pageContextHandler.documentReadInProgressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.handleDocumentReadInProgress($0) }
+    }
+
+    private func handleDocumentReadInProgress(_ inProgress: Bool) {
+        let chip = persistentUTIHost?.chipViewModel
+        if inProgress { chip?.beginLoading() } else { chip?.endLoading() }
+        sessionState.setDocumentChipLoading(inProgress && chip != nil)
     }
 
     // MARK: - Public Methods
 
     /// Presents the contextual AI chat sheet.
+    ///
+    /// - Parameter skippingAutoAttach: `true` when the sheet opens because the user attached a text
+    ///   selection. The page is not attached on top of it; its signals are still collected.
     func presentSheet(from presentingViewController: UIViewController,
-                      restoreURL: URL? = nil) async {
+                      restoreURL: URL? = nil,
+                      skippingAutoAttach: Bool = false,
+                      attachingPage: Bool = false,
+                      opensOntoSubmittedChat: Bool = false) async {
+        let restoreURL = await vettedRestoreURL(restoreURL)
+        await discardActiveChatIfDeleted()
         sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        clearStaleManualContextIfNeeded()
+        // Before collecting: the offer needs `hasActiveChat`, which a restore is what establishes.
+        if let restoreURL {
+            sessionState.restoreChat(with: restoreURL)
+        }
 
         startObservingContextUpdates()
-
-        if sessionState.shouldAutoCollectContext {
-            pageContextHandler.triggerContextCollection()
+        let isCollectingPageContext: Bool
+        if attachingPage {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            requestManualPageContextAttach()
+            isCollectingPageContext = true
+        } else {
+            isCollectingPageContext = collectContextForNewSession(skippingAutoAttach: skippingAutoAttach,
+                                                                  isColdRestore: restoreURL != nil)
         }
 
         stopSessionTimer()
 
         if let sheetViewController {
+            presentExistingSheet(sheetViewController, from: presentingViewController,
+                                 focusingInput: isCollectingPageContext)
+        } else {
+            presentNewSheet(from: presentingViewController, opensOntoSubmittedChat: opensOntoSubmittedChat)
+        }
+    }
+
+    /// Sends `query` to a contextual chat over the results page.
+    func submitSearchQuery(_ query: String, from presentingViewController: UIViewController) async {
+        await presentSheet(from: presentingViewController,
+                           skippingAutoAttach: true,
+                           opensOntoSubmittedChat: true)
+        sheetViewController?.submitSearchQuery(query)
+    }
+
+    /// Presents the suggestion chips and the input floating over the page, with no sheet.
+    func presentFloatingInput(from presentingViewController: UIViewController) async {
+        await presentFloatingInput(from: presentingViewController, skippingAutoAttach: false)
+    }
+
+    private func presentFloatingInput(from presentingViewController: UIViewController,
+                                      skippingAutoAttach: Bool) async {
+        guard floatingInputViewController == nil, !isSheetPresented else { return }
+
+        sessionState.refreshAutoAttachSetting()
+        sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)
+        clearStaleManualContextIfNeeded()
+
+        startObservingContextUpdates()
+        if skippingAutoAttach {
+            collectContextForNewSession(skippingAutoAttach: true)
+        } else {
+            // "Ask About Page" is an explicit attach request, so the page attaches outright rather than
+            // going down the signals-only path an auto-collect would take with auto-attach off.
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            requestManualPageContextAttach()
+        }
+
+        stopSessionTimer()
+
+        guard let host = makePersistentUTIHostIfNeeded(start: .expandedPreSubmit) else { return }
+
+        host.beginPresentation()
+        let chips = makeChipsViewController()
+        chips.delegate = self
+        chips.useGlassStartActionBackgrounds()
+        let controller = AIChatContextualFloatingInputViewController(
+            utiHost: host,
+            chipsViewController: chips
+        )
+        controller.delegate = self
+        floatingInputViewController = controller
+        controller.install(in: presentingViewController)
+        host.onTabMentionVisibilityChanged = { [weak self, weak controller] isVisible in
+            guard let self, let controller else { return }
+            if !isVisible {
+                // Attachment state changes synchronously; its scheduled rendering can still be pending.
+                let content = StartActionsContent(viewState: self.sessionState.viewState)
+                if content.isLoaded && content.isEmpty {
+                    controller.clearChipsFadingOut()
+                }
+            }
+            controller.setTabMentionSuggestionsVisible(isVisible)
+        }
+        observeViewStateForFloatingChips()
+        host.activateInput()
+        controller.playEntrance()
+    }
+
+    /// The slice of the view state the floating input's chips actually render, so unrelated state
+    /// changes don't rebuild them.
+    private struct StartActionsContent: Equatable {
+        let isLoaded: Bool
+        let suggestions: [ContextualSuggestedPrompt]
+        let quickActions: [AIChatContextualQuickAction]
+        let suggestionsAreSmart: Bool
+        let suggestionsPageType: SuggestionsPageType
+        let suggestionsScope: ResolvePageSuggestionsInput.Scope
+
+        var isEmpty: Bool { suggestions.isEmpty && quickActions.isEmpty }
+
+        init(viewState: SheetViewState) {
+            isLoaded = viewState.suggestionsLoadState == .loaded
+            suggestions = viewState.suggestions
+            quickActions = viewState.quickActions
+            suggestionsAreSmart = viewState.suggestionsAreSmart
+            suggestionsPageType = viewState.suggestionsPageType
+            suggestionsScope = viewState.suggestionsScope
+        }
+    }
+
+    /// The sheet feeds its chips from `apply(viewState)`; the floating input has no sheet, so the
+    /// coordinator drives them for as long as it is the current surface.
+    private func observeViewStateForFloatingChips() {
+        floatingChipsCancellable = sessionState.$viewState
+            // Unrelated session changes don't need to reapply the floating surface's loading and visibility state.
+            .map { StartActionsContent(viewState: $0) }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] content in
+                guard let floatingInput = self?.floatingInputViewController else { return }
+                let chips = floatingInput.chipsViewController
+
+                guard content.isLoaded else {
+                    // Loader alone while suggestions resolve. Passing the actions through here would
+                    // flash the placeholder "Ask about page" chip beside it, then replace it.
+                    floatingInput.showSuggestionsLoading()
+                    self?.areFloatingSuggestionsVisible = false
+                    return
+                }
+
+                // Fade out and clear once invisible: a layout collapse would read as a slide.
+                guard !content.isEmpty else {
+                    chips.updateSuggestionsLoading(false)
+                    floatingInput.clearChipsFadingOut()
+                    return
+                }
+
+                chips.updateStartActions(suggestions: content.suggestions, quickActions: content.quickActions)
+                // Cleared on every resolve, not just the first: removing the page context starts a new
+                // loading cycle, and the one-shot entrance can't be relied on to end it.
+                chips.updateSuggestionsLoading(false)
+                floatingInput.showChipsIfNeeded()
+
+                let suggestionsAreVisible = !content.suggestions.isEmpty
+                if suggestionsAreVisible, self?.areFloatingSuggestionsVisible != true {
+                    self?.pixelHandler.fireSuggestionsViewed(
+                        isSmart: content.suggestionsAreSmart,
+                        pageType: content.suggestionsPageType,
+                        scope: content.suggestionsScope,
+                        surface: .floatingInput
+                    )
+                    if content.suggestionsScope == .selection {
+                        self?.selectionJourneyInstrumentation.selectionSuggestionsViewed()
+                    }
+                }
+                self?.areFloatingSuggestionsVisible = suggestionsAreVisible
+            }
+    }
+
+    /// Every dismissal route funnels through here, so the pixel belongs here rather than at each
+    /// call site. `promoteFloatingInputToSheet` deliberately bypasses it.
+    /// Who ended the surface: the user giving up on the input, or the app clearing the screen for something else.
+    enum FloatingInputDismissal {
+        case userInitiated
+        case systemTeardown
+    }
+
+    func dismissFloatingInput(_ dismissal: FloatingInputDismissal = .userInitiated) {
+        guard let controller = floatingInputViewController else { return }
+        persistentUTIHost?.endPresentation()
+        // Released before the animation ends: the address bar reads this, and a surface on its way out
+        // is no longer one to dismiss. `unmount(from:)` keeps a late removal off a newer surface.
+        floatingInputViewController = nil
+        floatingChipsCancellable = nil
+        areFloatingSuggestionsVisible = false
+        switch dismissal {
+        case .userInitiated:
+            pixelHandler.fireFloatingInputDismissedWithoutSubmission(
+                hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections
+            )
+            controller.dismiss { controller.remove() }
+        case .systemTeardown:
+            controller.removeWithoutAnimation()
+        }
+        selectionJourneyInstrumentation.surfaceDismissed()
+        stopObservingContextUpdates()
+        sessionState.handleSheetDismissed()
+        startSessionTimer()
+    }
+
+    /// Hands the in-flight chat off from the floating input to the sheet, keeping the same input host
+    /// so the prompt, attachments, model and user-script binding all survive.
+    func promoteFloatingInputToSheet() {
+        guard let floatingInputViewController,
+              let presentingViewController = floatingInputViewController.parent else { return }
+
+        // Every promotion route funnels through here — typed prompts and both chip taps — so the pixel
+        // belongs here. The chip taps promote before submitting, so a caller-side check reads as false.
+        pixelHandler.fireFloatingInputPromotedToSheet()
+
+        // Detached before the keyboard is touched: resigning reports a hide, which the floating input
+        // would otherwise read as losing the keyboard and dismiss itself over this handover.
+        self.floatingInputViewController = nil
+        floatingChipsCancellable = nil
+        areFloatingSuggestionsVisible = false
+        persistentUTIHost?.deactivateInput()
+        floatingInputViewController.remove()
+        // A retained sheet owns the web view this prompt goes into, so it is the one that comes back.
+        if let sheetViewController {
             presentExistingSheet(sheetViewController, from: presentingViewController)
         } else {
-            presentNewSheet(from: presentingViewController, restoreURL: restoreURL)
+            presentNewSheet(from: presentingViewController, opensOntoSubmittedChat: true)
+        }
+    }
+
+    /// Dictation opens from whichever surface shows the input; the sheet may not exist yet.
+    func presentDictation() {
+        if let floatingInputViewController {
+            floatingInputViewController.presentVoiceSearch()
+        } else {
+            sheetViewController?.presentVoiceSearch()
+        }
+    }
+
+    /// Voice chat replaces whatever is on screen, and the sheet may not be the surface showing it.
+    func requestNewVoiceChatLeavingCurrentSurface() {
+        leaveCurrentSurface { [weak self] in
+            guard let self else { return }
+            delegate?.aiChatContextualSheetCoordinatorDidRequestNewVoiceChat(self)
+        }
+    }
+
+    func openInNewTabLeavingCurrentSurface(_ url: URL) {
+        leaveCurrentSurface { [weak self] in
+            guard let self else { return }
+            delegate?.aiChatContextualSheetCoordinator(self, didRequestToLoad: url)
+        }
+    }
+
+    private func leaveCurrentSurface(perform action: @escaping () -> Void) {
+        if floatingInputViewController != nil {
+            dismissFloatingInput(.systemTeardown)
+            action()
+        } else if let sheetViewController {
+            sheetViewController.dismiss(animated: true, completion: action)
+        } else {
+            action()
+        }
+    }
+
+    /// Explicit user request to attach the current page, as opposed to a passive auto-collect.
+    private func requestManualPageContextAttach() {
+        sessionState.beginManualAttach()
+        let didTrigger = pageContextHandler.triggerContextCollection(trigger: .userRequest)
+        if !didTrigger {
+            sessionState.cancelManualAttach()
+        }
+        persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
+    }
+
+    /// Returns whether an extraction that can put a chip on the input is now under way.
+    @discardableResult
+    private func collectContextForNewSession(skippingAutoAttach: Bool = false, isColdRestore: Bool = false) -> Bool {
+        if !skippingAutoAttach {
+            sessionState.allowAutoAttachAgain()
+        }
+
+        if skippingAutoAttach {
+            sessionState.suppressAutoAttachForSelectionEntry()
+            // An already-attached page keeps its own signals, and pushing the stripped signals-only
+            // payload over it would clear the attached context on the frontend.
+            if currentPageURL != nil, sessionState.intendedAttachedContext == nil {
+                sessionState.markPendingSignalsOnlyCollection()
+                return pageContextHandler.triggerContextCollection(trigger: .tabContent)
+            }
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            return false
+        } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            sessionState.beginAutomaticAttach()
+            let didTrigger = pageContextHandler.triggerContextCollection(trigger: .auto)
+            if !didTrigger {
+                sessionState.cancelAutomaticAttach()
+            }
+            persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
+            return didTrigger
+        } else if currentPageURL != nil, shouldCollectSignalsOnly(forColdRestore: isColdRestore) {
+            sessionState.markPendingSignalsOnlyCollection()
+            return pageContextHandler.triggerContextCollection(trigger: .tabContent)
+        } else if !offerPageContextIfNeeded(trigger: .auto) {
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            return false
+        }
+        return true
+    }
+
+    @discardableResult
+    private func offerPageContextIfNeeded(trigger: PageContextExtractionTrigger) -> Bool {
+        guard isPagePlaceholderEnabled,
+              isActivelyObservingContext,
+              sessionState.shouldOfferPageContext(for: currentPageURL) else {
+            return false
+        }
+        return pageContextHandler.triggerContextCollection(trigger: trigger)
+    }
+
+    private func makeChipsViewController() -> AIChatContextualInputViewController {
+        AIChatContextualInputViewController(
+            voiceSearchHelper: voiceSearchHelper,
+            showsBasicNativeInput: false,
+            showsWelcomeMessage: false
+        )
+    }
+
+    /// Runs a Duck.ai action on text selected in the page, presenting the configured contextual surface.
+    ///
+    /// `ask` attaches the selection; at the cap it is refused with a banner and the surface still presents.
+    /// The submitting actions attach nothing and clear any selections already attached.
+    func handleSelectionAction(_ action: AIChatTextSelectionAction,
+                               selection selectedText: AIChatPageTextSelection,
+                               restoreURL: URL? = nil,
+                               from presentingViewController: UIViewController) async {
+        let selection = AIChatSelectionContextBuilder.makeSelection(
+            text: selectedText.text,
+            url: selectedText.url,
+            faviconBase64: selectedText.faviconBase64
+        )
+
+        var didHitCap = false
+        if action.attachesSelection {
+            let selectionCountBeforeAttach = sessionState.attachedSelections.count
+            didHitCap = !sessionState.attachSelection(selection)
+            if didHitCap {
+                pixelHandler.fireSelectionLimitReached()
+            } else if sessionState.attachedSelections.count > selectionCountBeforeAttach {
+                pixelHandler.fireSelectionAttached()
+                selectionJourneyInstrumentation.selectionAttached(currentCount: sessionState.unsubmittedSelectionCount)
+            }
+        } else {
+            // Submitting consumes whatever was collected, so the input is clean for the next question.
+            sessionState.clearAttachedSelections()
+        }
+
+        if floatingInputFeature.isAvailable,
+           !sessionState.hasActiveChat,
+           !isSheetPresented,
+           restoreURL == nil {
+            sheetViewController = nil
+            persistentUTIHost = nil
+            await presentFloatingInput(from: presentingViewController, skippingAutoAttach: true)
+        } else {
+            await presentSheet(from: presentingViewController, restoreURL: restoreURL, skippingAutoAttach: true)
+            if action.attachesSelection {
+                persistentUTIHost?.activateInput()
+            }
+        }
+        refreshSelectionChips()
+
+        if didHitCap {
+            persistentUTIHost?.presentRejectionBanner(
+                UserText.aiChatTextSelectionLimitReached(AIChatSelectionContextBuilder.maxAttachedSelections)
+            )
         }
     }
 
     /// Dismisses the sheet if currently presented. The sheet is retained for potential re-presentation.
+    /// State cleanup (flag + cancellables + session timer) runs from the VC's `viewDidDisappear` hook.
     func dismissSheet() {
         sheetViewController?.dismiss(animated: true)
     }
-    
-    func clearActiveChat() {
+
+    private func handleSheetDismissed() {
+        guard isSheetPresented else { return }
+        isSheetPresented = false
+        persistentUTIHost?.endPresentation()
+        selectionJourneyInstrumentation.surfaceDismissed()
+        stopObservingContextUpdates()
+        sessionState.handleSheetDismissed()
+        startSessionTimer()
+    }
+
+    // Mirrors handleSheetDismissed but deliberately skips startSessionTimer — a fire-button
+    // clear nukes the chat and doesn't want a pending timer firing afterwards. Keep aligned
+    // when adding side effects to handleSheetDismissed.
+    func clearActiveChat(reason: DuckAISelectionJourneyWideEventData.TerminalReason = .chatCleared) {
+        persistentUTIHost?.discardTabAttachments()
+        selectionJourneyInstrumentation.selectionsCleared(reason: reason)
+        sheetViewController?.notifySheetDismissed()
+        isSheetPresented = false
         sheetViewController = nil
+        persistentUTIHost = nil
         stopObservingContextUpdates()
         pageContextHandler.clear()
         sessionState.resetToNoChat()
         pixelHandler.reset()
+        // The chat is leaving this tab either way, so it must not keep a URL that would restore it.
+        delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
     }
 
     func reloadIfNeeded() {
@@ -170,16 +761,28 @@ final class AIChatContextualSheetCoordinator {
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
 
-        if sessionState.shouldAutoCollectContext {
-            let didTrigger = pageContextHandler.triggerContextCollection()
+        if sessionState.shouldTriggerAutoCollect() {
+            if sessionState.showsSuggestionsStartSurface {
+                sessionState.beginLoadingSuggestions()
+            }
+            sessionState.beginAutomaticAttach()
+            let didTrigger = pageContextHandler.triggerContextCollection(trigger: .navigation)
             if !didTrigger {
+                sessionState.cancelAutomaticAttach()
                 sessionState.clearProcessingNavigationFlag()
             }
-        } else if sessionState.supportsMultipleContexts && sessionState.hasActiveChat && isActivelyObservingContext {
+            persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
+        } else if sessionState.hasActiveChat && (isActivelyObservingContext || isImmediateContextualUTIEnabled) {
             sessionState.notifyFrontendOfMultiContextNavigation()
-            sessionState.clearProcessingNavigationFlag()
+            if !offerPageContextIfNeeded(trigger: .navigation) {
+                sessionState.clearProcessingNavigationFlag()
+                pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
+            }
+        } else if shouldCollectSignalsOnly() {
+            startSignalsOnlyCollection()
         } else {
             sessionState.clearProcessingNavigationFlag()
+            pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
         }
     }
 
@@ -187,25 +790,86 @@ final class AIChatContextualSheetCoordinator {
     var hasActiveSheet: Bool {
         sheetViewController != nil
     }
+
+    private func shouldCollectSignalsOnly(forColdRestore: Bool = false) -> Bool {
+        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
+            && (forColdRestore || !sessionState.hasActiveChat)
+            && !sessionState.shouldAutoCollectContext
+            && !sessionState.shouldSuspendSuggestionsRefresh
+    }
+
+    private func startSignalsOnlyCollection() {
+        guard shouldCollectSignalsOnly() else { return }
+        sessionState.markPendingSignalsOnlyCollection()
+        if !pageContextHandler.triggerContextCollection(trigger: .tabContent) {
+            sessionState.clearProcessingNavigationFlag()
+        }
+    }
+
+    private func removeAttachedContext() {
+        if sessionState.isPageContextAttachInProgress,
+           case .available = attachMoreTabsFeature.state {
+            sessionState.removePendingPageAttachment()
+        } else {
+            sessionState.downgradeToPlaceholder()
+        }
+        guard currentPageURL != nil, shouldCollectSignalsOnly() else {
+            pageContextHandler.clear()
+            return
+        }
+
+        stopObservingContextUpdates()
+        pageContextHandler.clear()
+        startObservingContextUpdates()
+        startSignalsOnlyCollection()
+    }
+
+    /// Attachment (and its delivery state) a freshly created persistent UTI host should start with.
+    var initialUTIAttachment: (context: AIChatPageContext?, deliveryState: PageContextAttachmentDeliveryState) {
+        if let context = sessionState.intendedAttachedContext {
+            if isImmediateContextualUTIEnabled, !sessionState.hasActiveChat {
+                return (context, .pendingSubmit)
+            }
+            return (context, .delivered)
+        }
+        if sessionState.hasActiveChat, let context = sessionState.latestContext {
+            return (context, .pendingSubmit)
+        }
+        return (nil, .delivered)
+    }
 }
 
 // MARK: - Private Methods
 
 private extension AIChatContextualSheetCoordinator {
     
-    func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController, from presentingVC: UIViewController) {
+    func presentExistingSheet(_ sheetVC: AIChatContextualSheetViewController,
+                              from presentingVC: UIViewController,
+                              focusingInput: Bool = false) {
         guard sheetVC.presentingViewController == nil else { return }
-        sheetVC.configureSheetPresentation()
+        // UIKit silently drops present() if the presenter already has a presentedViewController;
+        // bail so isSheetPresented doesn't get stuck true.
+        guard presentingVC.presentedViewController == nil else { return }
+        persistentUTIHost?.beginPresentation()
+        // A chip on reopen, or an extraction about to produce one, means the page hasn't been asked
+        // about yet — submitting is what clears it — so the input opens ready rather than as the plain pill.
+        if focusingInput || persistentUTIHost?.chipViewModel.state != nil {
+            persistentUTIHost?.activateInput()
+        }
+        sheetVC.prepareForPresentation()
         presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
     }
 
-    func presentNewSheet(from presentingVC: UIViewController, restoreURL: URL?) {
-        if let restoreURL {
-            sessionState.restoreChat(with: restoreURL)
-        }
+    func presentNewSheet(from presentingVC: UIViewController, opensOntoSubmittedChat: Bool = false) {
+        guard presentingVC.presentedViewController == nil, floatingInputViewController == nil else { return }
 
         let suggestionsReader = makeSuggestionsReaderIfEnabled()
+        let persistentUTIHost = isImmediateContextualUTIEnabled
+            ? makePersistentUTIHostIfNeeded(start: sheetContextualInputStart)
+            : nil
 
+        persistentUTIHost?.beginPresentation()
         let sheetVC = AIChatContextualSheetViewController(
             sessionState: sessionState,
             aiChatSettings: aiChatSettings,
@@ -216,16 +880,19 @@ private extension AIChatContextualSheetCoordinator {
             },
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
-            suggestionsReader: suggestionsReader
+            persistentUTIHost: persistentUTIHost,
+            suggestionsReader: suggestionsReader,
+            floatingInputFeature: floatingInputFeature,
+            opensOntoSubmittedChat: opensOntoSubmittedChat
         )
         sheetVC.delegate = self
         sheetViewController = sheetVC
 
         presentingVC.present(sheetVC, animated: true)
+        isSheetPresented = true
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
-        guard featureFlagger.isFeatureOn(.aiChatContextualSheetImprovements) else { return nil }
         let reader = SuggestionsReader(
             featureFlagger: featureFlagger,
             privacyConfig: privacyConfigurationManager,
@@ -234,6 +901,102 @@ private extension AIChatContextualSheetCoordinator {
         )
         let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
         return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
+    }
+
+    func makePersistentUTIHostIfNeeded(start: ContextualInputStart) -> AIChatContextualUTIHost? {
+        guard isWebUTIEnabled else { return nil }
+        if let persistentUTIHost { return persistentUTIHost }
+
+        let initialUTIAttachment = self.initialUTIAttachment
+        let host = AIChatContextualUTIHost(
+            originatingURLPublisher: originatingURLPublisher,
+            initialAttachedContext: initialUTIAttachment.context,
+            initialAttachmentDeliveryState: initialUTIAttachment.deliveryState,
+            hasActiveChat: { [weak self] in self?.sessionState.hasActiveChat ?? false },
+            isAutoAttachEnabled: { [weak self] in self?.sessionState.shouldAutoCollectContext ?? false },
+            isCurrentPageAttachable: { [weak self] in self?.pageContextHandler.isCurrentPageAttachable() ?? true },
+            isFireTab: isFireTab,
+            lastUsedModelProvider: duckAiLastUsedModelProvider,
+            floatingInputFeature: floatingInputFeature,
+            attachMoreTabsFeature: attachMoreTabsFeature,
+            start: start,
+            usageLimitsStore: duckAiUsageLimitsStore,
+            floatingUIManager: floatingUIManager,
+            tabAttachmentSource: tabAttachmentSource,
+            duckAIWideEventInstrumentation: DefaultDuckAIWideEventInstrumentation(wideEvent: AppDependencyProvider.shared.wideEvent,
+                                                                                  usageContextProvider: usageContextProvider),
+            isCurrentPageAttachInProgress: { [weak self] in self?.sessionState.isPageContextAttachInProgress ?? false }
+        )
+        host.onAttachRequested = { [weak self] in
+            self?.requestManualPageContextAttach()
+        }
+        host.onRemoveRequested = { [weak self] in
+            guard let self else { return }
+            self.removeAttachedContext()
+        }
+        host.onSuggestionAccepted = { [weak self] in
+            self?.sessionState.acceptSuggestedContext()
+        }
+        host.onPromptSubmitted = { [weak self] in
+            guard let self else { return }
+            self.selectionJourneyInstrumentation.promptSubmitted()
+            self.sessionState.beginChatForUTISubmission()
+            if self.isFloatingInputPresented {
+                self.promoteFloatingInputToSheet()
+            }
+            self.sheetViewController?.handleFirstUTISubmission()
+        }
+        host.onPromptSent = { [weak self] in
+            self?.sessionState.recordPromptSent()
+        }
+        host.onPromptDelivered = { [weak self] in
+            self?.sessionState.markUTIContextDelivered()
+        }
+        host.onDuckAIPromptSubmitted = { [weak self] origin in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: origin)
+        }
+        host.onAttachmentsChanged = { [weak self, weak host] in
+            guard let self, let host else { return }
+            self.sessionState.refreshForAttachmentChange()
+            guard self.featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) else { return }
+            self.updateSuggestedContext(in: host)
+        }
+        host.onAIVoiceChatRequested = { [weak self] in
+            self?.requestNewVoiceChatLeavingCurrentSurface()
+        }
+        host.setVoiceSearchAvailable(voiceSearchHelper.isVoiceSearchEnabled)
+        host.onVoiceSearchRequested = { [weak self] in
+            self?.presentDictation()
+        }
+        host.onOpenInNewTabRequested = { [weak self] url in
+            self?.openInNewTabLeavingCurrentSurface(url)
+        }
+        self.persistentUTIHost = host
+        // A host built mid-session (collapse, expand) inherits the offer already on screen.
+        updateSuggestedContext(in: host)
+        if isSheetPresented { host.beginPresentation() }
+        return host
+    }
+
+    /// Re-renders one chip per attached selection.
+    func refreshSelectionChips() {
+        guard let host = persistentUTIHost else { return }
+        let icon = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)
+        let items = sessionState.attachedSelections.map {
+            (id: $0.id,
+             title: AIChatSelectionContextBuilder.displayTitle(for: $0),
+             favicon: icon)
+        }
+        host.setSelectionChips(items) { [weak self] removedID in
+            guard let self else { return }
+            self.pixelHandler.fireSelectionRemoved()
+            self.sessionState.removeAttachedSelection(id: removedID)
+            self.selectionJourneyInstrumentation.selectionRemoved(remainingCount: self.sessionState.unsubmittedSelectionCount)
+            // Removing frees capacity, and the cap banner is transient by design — nothing else clears it.
+            self.persistentUTIHost?.clearRejectionBanner()
+            self.refreshSelectionChips()
+        }
     }
 
     func startObservingContextUpdates() {
@@ -245,6 +1008,7 @@ private extension AIChatContextualSheetCoordinator {
             .sink { [weak self] contextData in
                 self?.handleContextDataUpdate(contextData)
             }
+
     }
 
     func stopObservingContextUpdates() {
@@ -254,6 +1018,95 @@ private extension AIChatContextualSheetCoordinator {
 
     func handleContextDataUpdate(_ context: AIChatPageContext?) {
         sessionState.updateContext(context)
+        persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
+    }
+
+    func collectFreshContextAndWait(timeout: TimeInterval) async -> AIChatPageContextData? {
+        let expectedURL = latestDidFinishURL
+        let firstResult = AsyncStream<AIChatPageContextData?> { continuation in
+            let cancellable = pageContextHandler.contextPublisher
+                .dropFirst()
+                .first(where: { context in
+                    guard let expectedURL,
+                          let context,
+                          let emittedURL = URL(string: context.contextData.url) else { return true }
+                    return emittedURL.equals(expectedURL, by: .sameDocument)
+                })
+                .sink { context in
+                    continuation.yield(context?.contextData)
+                    continuation.finish()
+                }
+            continuation.onTermination = { _ in cancellable.cancel() }
+
+            if !pageContextHandler.triggerContextCollection(trigger: .userRequest) {
+                sessionState.cancelManualAttach()
+                continuation.yield(nil)
+                continuation.finish()
+            }
+        }
+
+        // Await with `timeout` so this FE bridge call never hangs if the JS collection never responds
+        // (web view torn down, navigation mid-request, JS error). On timeout the push still delivers.
+        do {
+            return try await withTimeout(timeout) {
+                for await result in firstResult {
+                    return result
+                }
+                return nil
+            }
+        } catch {
+            // Timed out (or cancelled) before JS published
+            sessionState.cancelManualAttach()
+            return nil
+        }
+    }
+
+    func clearStaleManualContextIfNeeded() {
+        guard sessionState.clearManualContextIfStale(for: currentPageURL) else { return }
+        pageContextHandler.clearAttachedContext()
+        persistentUTIHost?.clearAttachedContext()
+    }
+
+    func deliverPageContext(_ context: AIChatPageContextData?, targets: PageContextDeliveryTargets) {
+        if let host = persistentUTIHost, targets.contains(.utiChip) {
+            deliverToUTIChip(context, host: host)
+        }
+
+        if let host = persistentUTIHost, targets.contains(.utiSuggestedContext) {
+            updateSuggestedContext(in: host)
+        }
+
+        if targets.contains(.frontendBridge) {
+            sheetViewController?.pushPageContext(context)
+        }
+    }
+
+    func updateSuggestedContext(in host: AIChatContextualUTIHost) {
+        let suggestion = sessionState.visibleSuggestedContext
+        if featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs),
+           host.chipViewModel.suggestedContext == suggestion { return }
+        if let suggestion {
+            host.setSuggestedContext(suggestion)
+        } else {
+            host.clearSuggestedContext()
+        }
+    }
+
+    func deliverToUTIChip(_ context: AIChatPageContextData?, host: AIChatContextualUTIHost) {
+        guard let context else {
+            host.clearAttachedContext()
+            return
+        }
+
+        let pageContext: AIChatPageContext
+        if let attachedContext = sessionState.intendedAttachedContext, attachedContext.contextData == context {
+            pageContext = attachedContext
+        } else if let latestContext = sessionState.latestContext, latestContext.contextData == context {
+            pageContext = latestContext
+        } else {
+            pageContext = AIChatPageContext(contextData: context, favicon: nil)
+        }
+        host.setAttachedContext(pageContext, deliveryState: sessionState.utiChipDeliveryState(forDelivering: context))
     }
 
     /// Factory method for creating web view controllers, avoids prop drilling through the Sheet VC.
@@ -262,28 +1115,85 @@ private extension AIChatContextualSheetCoordinator {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
         let downloadHandler = makeDownloadHandler(downloadsPath: downloadsDirectoryHandler.downloadsDirectory)
 
+        let contextualUTIFeature = ContextualUnifiedToggleInputFeature(
+            isAvailable: isWebUTIEnabled,
+            isToggleHiddenOnDuckAITab: unifiedToggleInputFeature.isToggleHiddenOnDuckAITab,
+            isAttachmentPasteEnabled: unifiedToggleInputFeature.isAttachmentPasteEnabled
+        )
+
         let webVC = AIChatContextualWebViewController(
             aiChatSettings: aiChatSettings,
             privacyConfigurationManager: privacyConfigurationManager,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
             featureDiscovery: featureDiscovery,
             featureFlagger: featureFlagger,
+            unifiedToggleInputFeature: contextualUTIFeature,
             isFireTab: isFireTab,
+            duckAiFireModeStorageHandler: duckAiFireModeStorageHandler,
+            usageContextProvider: usageContextProvider,
             downloadHandler: downloadHandler,
             getPageContext: { [weak self] reason in
                 guard let self else { return nil }
                 guard reason == .userAction else { return nil }
-                self.sessionState.beginManualAttach(fromFrontend: true)
-                let didTrigger = self.pageContextHandler.triggerContextCollection()
-                if !didTrigger {
-                    self.sessionState.cancelManualAttach()
+
+                guard self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
+                    self.sessionState.beginManualAttach(fromFrontend: true)
+                    if !self.pageContextHandler.triggerContextCollection(trigger: .userRequest) {
+                        self.sessionState.cancelManualAttach()
+                    }
+                    return nil
                 }
-                return nil
+
+                if let cached = self.sessionState.latestContext?.contextData,
+                   cached.attached != false, cached.hasAttachedPage {
+                    return cached
+                }
+                self.sessionState.beginManualAttach(fromFrontend: true)
+                return await self.collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout)
             },
-            pixelHandler: pixelHandler
+            pixelHandler: pixelHandler,
+            onboardingActivationRecorder: onboardingActivationRecorder,
+            utiHostInstaller: { [weak self] contextualChatViewController in
+                guard let self else { return nil }
+                guard self.isWebUTIEnabled else { return nil }
+                // The legacy input lives in the web view and takes focus as the chat appears.
+                let start: ContextualInputStart = self.isImmediateContextualUTIEnabled
+                    ? self.sheetContextualInputStart
+                    : .expandedOnExistingChat
+                let host = self.makePersistentUTIHostIfNeeded(start: start)
+                host?.setContextualChatViewController(contextualChatViewController)
+                if !self.isImmediateContextualUTIEnabled {
+                    host?.installInWebView(contextualChatViewController)
+                }
+                return host
+            }
         )
 
+        webVC.setAttachedSelectionsProvider { [weak self] in
+            self?.sessionState.attachedSelections ?? []
+        }
+
+        webVC.setAttachedSelectionsConsumedHandler { [weak self] selectionIDs in
+            guard let self else { return }
+            self.sessionState.consumeAttachedSelections(ids: selectionIDs)
+            self.refreshSelectionChips()
+        }
+
         return webVC
+    }
+
+    var duckAiLastUsedModelProvider: DuckAiLastUsedModelProviding? {
+        let storageHandler = isFireTab ? duckAiFireModeStorageHandler : duckAiNativeStorageHandler
+        return storageHandler.map {
+            DuckAiLastUsedModelProvider(storage: $0, pixelFiring: DuckAiNativeStoragePixelAdapter())
+        }
+    }
+
+    /// Fire tabs run an isolated Duck.ai session with no usage worth warning about, so the feature
+    /// never even gets a store there.
+    var duckAiUsageLimitsStore: DuckAiUsageLimitsStore? {
+        guard !isFireTab else { return nil }
+        return duckAiNativeStorageHandler.map { DuckAiUsageLimitsStore(storageHandler: $0) }
     }
     
     /// Starts the session timer after the sheet is dismissed.
@@ -303,7 +1213,11 @@ private extension AIChatContextualSheetCoordinator {
 
         sessionTimer = AIChatSessionTimer(durationInSeconds: sessionDuration) { [weak self] in
             Task { @MainActor in
-                self?.resetToNativeInputState()
+                guard let self else { return }
+                // Selections survive inactivity, but the measured journey does not: it describes one
+                // in-session interaction, so it ends here rather than staying open indefinitely.
+                self.selectionJourneyInstrumentation.selectionsCleared(reason: .sessionExpired)
+                self.resetToNativeInputState(preservingSelections: true)
             }
         }
         sessionTimer?.start()
@@ -317,20 +1231,69 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     /// Resets the chat session to native input state.
-    /// Called when the session timer expires or when the user taps "New Chat".
-    func resetToNativeInputState() {
+    /// Called when the session timer expires or when the user taps "New Chat". Only the timer preserves
+    /// selections — inactivity must not throw away text the user collected across pages.
+    func resetToNativeInputState(preservingSelections: Bool = false) {
         Logger.aiChat.debug("[Contextual] Resetting to native input")
 
-        sessionState.resetToNoChat()
+        if !preservingSelections {
+            selectionJourneyInstrumentation.selectionsCleared(reason: .newChat)
+        }
+        sessionState.resetToNoChat(preservingSelections: preservingSelections)
+        persistentUTIHost?.prepareForNewChat()
+        refreshSelectionChips()
 
-        Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
-        pageContextHandler.triggerContextCollection()
+        if shouldCollectSignalsOnly() {
+            Logger.aiChat.debug("[PageContext] New chat - collecting signals-only")
+            sessionState.markPendingSignalsOnlyCollection()
+            pageContextHandler.triggerContextCollection(trigger: .tabContent)
+        } else {
+            Logger.aiChat.debug("[PageContext] New chat - collecting fresh context")
+            sessionState.beginLoadingSuggestions()
+            pageContextHandler.triggerContextCollection(trigger: .userRequest)
+        }
 
         delegate?.aiChatContextualSheetCoordinator(self, didUpdateContextualChatURL: nil)
     }
 }
 
 // MARK: - AIChatContextualSheetViewControllerDelegate
+extension AIChatContextualSheetCoordinator: AIChatContextualFloatingInputViewControllerDelegate {
+
+    func aiChatContextualFloatingInputViewControllerDidRequestDismiss(_ viewController: AIChatContextualFloatingInputViewController) {
+        dismissFloatingInput()
+    }
+}
+
+// MARK: - Floating input chip taps
+
+extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerDelegate {
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
+        switch action {
+        case .askAboutPage:
+            // Only offered before an explicit removal, so it never competes with the attachment menu.
+            requestManualPageContextAttach()
+        case .summarize, .summarizePage:
+            pixelHandler.fireQuickActionSummarizeSelected()
+            promoteFloatingInputToSheet()
+            persistentUTIHost?.submitQuickActionPrompt(action.prompt)
+        }
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
+        promoteFloatingInputToSheet()
+        sheetViewController?.submitSuggestion(suggestion)
+    }
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {}
+    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {}
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {}
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL) {}
+}
+
+// MARK: - AIChatContextualSheetViewControllerDelegate
+
 extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerDelegate {
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestToLoad url: URL) {
@@ -339,18 +1302,27 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidRequestDismiss(_ viewController: AIChatContextualSheetViewController) {
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.aiChatContextualSheetViewControllerDidDismiss(viewController)
-        }
+        viewController.dismiss(animated: true)
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didRequestExpandWithURL url: URL) {
-        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url)
-        viewController.dismiss(animated: true) { [weak self] in
-            self?.startSessionTimer()
-        }
-        stopObservingContextUpdates()
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didRequestExpandWithURL url: URL,
+                                             entrySource: AIChatEntryPointSource) {
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: url, entrySource: entrySource)
+        // Ends the attach measurement while it is still in progress, so before the reset below.
         sessionState.cancelManualAttach()
+        // The chat carries on in its own tab, leaving this one to start over on the next Duck.ai tap.
+        clearActiveChat(reason: .movedToTab)
+        viewController.dismiss(animated: true)
+    }
+
+    func aiChatContextualSheetViewControllerDidRequestViewAllChats(_ viewController: AIChatContextualSheetViewController) {
+        sessionState.cancelManualAttach()
+        // Dismiss the sheet first, then open the native history page so it isn't presented over a dismissing sheet.
+        viewController.dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate?.aiChatContextualSheetCoordinatorDidRequestViewAllChats(self)
+        }
     }
 
     func aiChatContextualSheetViewControllerDidRequestOpenSettings(_ viewController: AIChatContextualSheetViewController) {
@@ -369,14 +1341,15 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
 
     func aiChatContextualSheetViewControllerDidRequestAttachPage(_ viewController: AIChatContextualSheetViewController) {
         sessionState.beginManualAttach()
-        let didTrigger = pageContextHandler.triggerContextCollection()
+        let didTrigger = pageContextHandler.triggerContextCollection(trigger: .userRequest)
         if !didTrigger {
             sessionState.cancelManualAttach()
         }
+        persistentUTIHost?.refreshTabAttachmentMenuIfNeeded()
     }
 
     func aiChatContextualSheetViewControllerDidRequestRemoveChip(_ viewController: AIChatContextualSheetViewController) {
-        sessionState.downgradeToPlaceholder()
+        removeAttachedContext()
     }
 
     func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didUpdateContextualChatURL url: URL?) {
@@ -392,16 +1365,61 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerDidDismiss(_ viewController: AIChatContextualSheetViewController) {
-        stopObservingContextUpdates()
-        startSessionTimer()
+        handleSheetDismissed()
+    }
+
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didPersistChatWithID chatID: String) {
+        persistedChatIDs.insert(chatID)
     }
 
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController) {
         resetToNativeInputState()
+
+        // A fresh chat starts on the floating input, not the sheet's own start surface.
+        guard floatingInputFeature.isAvailable,
+              let presenter = viewController.presentingViewController else { return }
+        viewController.dismiss(animated: true) { [weak self] in
+            Task { @MainActor in
+                await self?.presentFloatingInput(from: presenter)
+            }
+        }
     }
 
-    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String) {
-        sessionState.handlePromptSubmission(prompt)
+    /// Opens Duck.ai itself, not this conversation: that is the header's hand-off. This chat is untouched.
+    func aiChatContextualSheetViewControllerDidRequestOpenDuckAI(_ viewController: AIChatContextualSheetViewController) {
+        delegate?.aiChatContextualSheetCoordinator(self, didRequestExpandWithURL: aiChatSettings.aiChatURL, entrySource: .contextualChat)
+        viewController.dismiss(animated: true)
+        sessionState.cancelManualAttach()
+    }
+
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController, didSubmitPrompt prompt: String, termsAccepted: Bool) {
+        let hasPageContext: Bool
+        if case .attached = sessionState.chipState { hasPageContext = true } else { hasPageContext = false }
+        sheetViewController?.notifyInitialNativePromptSubmitted(hasPageContext: hasPageContext)
+        selectionJourneyInstrumentation.promptSubmitted()
+        sessionState.handlePromptSubmission(prompt, termsAccepted: termsAccepted)
+        delegate?.aiChatContextualSheetCoordinator(self, didSubmitDuckAIPromptWithOrigin: .contextualChat)
+    }
+
+    func aiChatContextualSheetViewController(_ viewController: AIChatContextualSheetViewController,
+                                             didSelectSelectionSuggestion action: AIChatTextSelectionAction?) {
+        selectionJourneyInstrumentation.selectionSuggestionSelected(action)
+    }
+
+    func aiChatContextualSheetViewControllerDidViewSelectionSuggestions(_ viewController: AIChatContextualSheetViewController) {
+        selectionJourneyInstrumentation.selectionSuggestionsViewed()
+    }
+
+    func aiChatContextualSheetViewControllerSelectionSuggestionDeliveryTimedOut(_ viewController: AIChatContextualSheetViewController) {
+        selectionJourneyInstrumentation.selectionSuggestionDeliveryTimedOut()
+    }
+
+    func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async {
+        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
+        if case .attached = sessionState.chipState { return }
+        guard let context = await collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout) else { return }
+        guard isSheetPresented else { return }
+        sessionState.attachContextFromSuggestionTap(AIChatPageContext(contextData: context, favicon: nil))
     }
 
     func aiChatContextualSheetViewControllerDidConfirmDeleteChat(_ viewController: AIChatContextualSheetViewController) {

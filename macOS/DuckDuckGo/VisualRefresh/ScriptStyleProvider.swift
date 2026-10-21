@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 
 /// # Note: This component is used by HistoryView + SpecialErrorPages + PrivacyDashboardController
 ///

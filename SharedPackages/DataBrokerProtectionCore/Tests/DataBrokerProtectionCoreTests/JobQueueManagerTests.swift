@@ -62,7 +62,7 @@ final class JobQueueManagerTests: XCTestCase {
                                                         emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
                                                         captchaService: CaptchaServiceMock(),
                                                         featureFlagger: MockDBPFeatureFlagger(),
-                                                        applicationNameForUserAgent: nil)
+                                                        applicationNameForUserAgentProvider: { nil })
     }
 
     func testWhenStartImmediateScanOperations_thenCreatorIsCalledWithManualScanOperationType() async throws {
@@ -75,6 +75,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
                                                     jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
@@ -93,6 +94,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                   isAuthenticatedUser: true,
                                                    jobDependencies: mockDependencies,
                                                    errorHandler: nil,
                                                    completion: nil)
@@ -111,12 +113,108 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startScheduledScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
                                                     jobDependencies: mockDependencies,
                                                     errorHandler: nil,
                                                     completion: nil)
 
         // Then
         XCTAssertEqual(mockOperationsCreator.createdType, .scheduledScan)
+    }
+
+    func testWhenStartScheduledScanOperations_thenCreatorReceivesAuthenticationState() async throws {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+
+        // When
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: false,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+
+        // Then
+        XCTAssertEqual(mockOperationsCreator.isAuthenticatedUser, false)
+    }
+
+    func testWhenOperationsComplete_thenDelegateReceivesOneRunLifecycle() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+        mockOperationsCreator.operationCollections = [
+            MockBrokerProfileJob(id: 1, jobType: .manualScan, statusReportingDelegate: sut)
+        ]
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart])
+
+        mockQueue.completeAllOperations()
+
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart, .willEnqueue, .didFinish])
+    }
+
+    func testWhenActiveRunIsReplaced_thenDelegateFinishesOldRunBeforeStartingNewRun() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+        mockOperationsCreator.operationCollections = [
+            MockBrokerProfileJob(id: 1, jobType: .manualScan, statusReportingDelegate: sut)
+        ]
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+        mockQueue.completeNextBarrierBlock()
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+
+        XCTAssertEqual(mockQueueDelegate.events, [
+            .didStart, .willEnqueue, .didFinish, .didStart
+        ])
+
+        mockQueue.completeAllOperations()
+
+        XCTAssertEqual(mockQueueDelegate.events, [
+            .didStart, .willEnqueue, .didFinish, .didStart,
+            .willEnqueue, .didFinish
+        ])
+    }
+
+    func testWhenCreatingJobsFails_thenDelegateLifecycleRemainsBalanced() {
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        sut.delegate = mockQueueDelegate
+        mockOperationsCreator.shouldError = true
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil)
+        XCTAssertEqual(mockQueueDelegate.events, [.didStart, .didFinish])
     }
 
     func testWhenStartImmediateScan_andScanCompletesWithErrors_thenCompletionIsCalledWithErrors() async throws {
@@ -135,7 +233,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -167,7 +265,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -200,7 +298,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorHandlerCalled = false
 
         // When
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             errorHandlerCalled = true
         } completion: {
@@ -230,7 +328,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             // no-op
@@ -246,7 +344,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -273,7 +371,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             // no-op
@@ -289,7 +387,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -316,7 +414,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollectionFirst: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollectionFirst = errors
         } completion: {
             // no-op
@@ -334,7 +432,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollectionSecond = errors
         } completion: {
             // no-op
@@ -364,7 +462,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { _ in
         } completion: {
             // no-op
         }
@@ -383,7 +481,7 @@ final class JobQueueManagerTests: XCTestCase {
         var completionCalled = false
 
         // When
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
             completionCalled.toggle()
         } completion: {
@@ -414,7 +512,9 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { _ in } completion: {
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false,
+                                                    isAuthenticatedUser: true,
+                                                    jobDependencies: mockDependencies) { _ in } completion: {
             // no-op
         }
 
@@ -432,7 +532,7 @@ final class JobQueueManagerTests: XCTestCase {
         var completionCalled = false
 
         // When
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             completionCalled.toggle()
@@ -458,7 +558,7 @@ final class JobQueueManagerTests: XCTestCase {
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
         // When
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             expectation.fulfill()
@@ -481,6 +581,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         // When
         sut.startImmediateOptOutOperationsIfPermitted(showWebView: false,
+                                                      isAuthenticatedUser: true,
                                                       jobDependencies: mockDependencies,
                                                       errorHandler: nil,
                                                       completion: nil)
@@ -544,6 +645,39 @@ final class JobQueueManagerTests: XCTestCase {
         XCTAssertEqual(receivedIdentifier.stepType, .scan)
     }
 
+    func testMultipleErrorOperationsConcurrently() async throws {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        let errorCount = 50
+        let expectation = expectation(description: "Expected completion to be called")
+        var errorCollection: DataBrokerProtectionJobsErrorCollection!
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
+            errorCollection = errors
+        } completion: {
+            expectation.fulfill()
+        }
+
+        // When
+        DispatchQueue.concurrentPerform(iterations: errorCount) { _ in
+            sut.dataBrokerOperationDidError(DataBrokerProtectionError.actionFailed(actionID: "action", message: "failed"),
+                                            withBrokerURL: nil,
+                                            version: nil,
+                                            identifier: nil,
+                                            dataBrokerParent: nil,
+                                            isFreeScan: nil)
+        }
+        mockQueue.completeAllOperations()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 5)
+        XCTAssertEqual(errorCollection.operationErrors?.count, errorCount)
+    }
+
     func testWhenStartImmediateOptOut_andCurrentModeIsScheduled_thenCurrentOperationsAreInterrupted() {
         sut = JobQueueManager(jobQueue: mockQueue,
                               jobProvider: mockOperationsCreator,
@@ -555,7 +689,7 @@ final class JobQueueManagerTests: XCTestCase {
         }
         var interruptedErrors: DataBrokerProtectionJobsErrorCollection?
 
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             interruptedErrors = errors
         } completion: {
             // no-op
@@ -566,6 +700,7 @@ final class JobQueueManagerTests: XCTestCase {
         }
 
         sut.startImmediateOptOutOperationsIfPermitted(showWebView: false,
+                                                      isAuthenticatedUser: true,
                                                       jobDependencies: mockDependencies,
                                                       errorHandler: nil,
                                                       completion: nil)
@@ -601,7 +736,7 @@ final class JobQueueManagerTests: XCTestCase {
             return XCTFail("Expected pixel to be fired")
         }
 
-        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent, _) = lastEvent {
+        if case let .actionFailedError(_, actionId, message, dataBroker, version, stepType, parent, _, _) = lastEvent {
             XCTAssertEqual(actionId, "action-id")
             XCTAssertEqual(message, "something happened")
             XCTAssertEqual(dataBroker, "broker.com")
@@ -640,7 +775,7 @@ final class JobQueueManagerTests: XCTestCase {
             return XCTFail("Expected pixel to be fired")
         }
 
-        if case let .actionFailedError(_, _, _, _, _, stepType, parent, _) = lastEvent {
+        if case let .actionFailedError(_, _, _, _, _, stepType, parent, _, _) = lastEvent {
             XCTAssertNil(stepType)
             XCTAssertNil(parent)
         } else {
@@ -791,7 +926,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
-        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             XCTFail("Completion should not be called")
@@ -807,7 +942,7 @@ final class JobQueueManagerTests: XCTestCase {
         var completionCalled = false
 
         // This shouldn't be allowed to be proceed, and the completion handlers should be called
-        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             completionCalled.toggle()
@@ -831,7 +966,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         let expectation = XCTestExpectation(description: "completion called")
 
-        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, isAuthenticatedUser: true, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
             expectation.fulfill()
@@ -850,11 +985,27 @@ final class JobQueueManagerTests: XCTestCase {
 }
 
 private final class MockJobQueueManagerDelegate: JobQueueManagerDelegate {
+    enum Event: Equatable {
+        case willEnqueue
+        case didStart
+        case didFinish
+    }
+
     var didEnqueueOperations = false
     var completedIdentifiers: [CompletedJobIdentifier?] = []
+    var events: [Event] = []
 
     func queueManagerWillEnqueueOperations(_ queueManager: any JobQueueManaging) {
         didEnqueueOperations = true
+        events.append(.willEnqueue)
+    }
+
+    func queueManagerDidStartOperations(_ queueManager: any JobQueueManaging) {
+        events.append(.didStart)
+    }
+
+    func queueManagerDidFinishOperations(_ queueManager: any JobQueueManaging) {
+        events.append(.didFinish)
     }
 
     func queueManagerDidCompleteIndividualJob(_ queueManager: any JobQueueManaging, identifier: CompletedJobIdentifier?) {

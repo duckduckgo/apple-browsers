@@ -27,6 +27,7 @@ public protocol ManagementViewModel: ObservableObject {
     var isAccountRecoveryAvailable: Bool { get }
     var isAppVersionNotSupported: Bool { get }
     var isAIChatSyncEnabled: Bool { get }
+    var isImprovedPairingFlowEnabled: Bool { get }
 
     var isSyncEnabled: Bool { get }
     var isSyncPaused: Bool { get }
@@ -64,8 +65,8 @@ public protocol ManagementViewModel: ObservableObject {
     var isFaviconsFetchingEnabled: Bool { get set }
     var isUnifiedFavoritesEnabled: Bool { get set }
 
-    func presentDeleteAccount()
-    func presentDeviceDetails(_ device: SyncDevice)
+    func presentDeleteAccount() async
+    func presentDeviceDetails(_ device: SyncDevice) async
     func presentRemoveDevice(_ device: SyncDevice)
 
     func saveRecoveryPDF()
@@ -76,6 +77,7 @@ public protocol ManagementViewModel: ObservableObject {
     func manageCreditCards()
     func manageIdentities()
 
+    func settingsScreenDidAppear()
     func syncWithAnotherDevicePressed() async
     func syncWithServerPressed() async
     func recoverDataPressed() async
@@ -94,22 +96,39 @@ public enum SyncErrorType {
     case unableCreateRecoveryPDF
     case unableToAuthenticateOnDevice
     case unableToRecognizeCode
+    case updateRequired
+    case unsupportedThirdPartyRecoveryCode
+    case thirdPartyAccountAlreadyUpgraded
+    case alreadyPairedWithAccount
+    case syncCancelledFromOtherDevice
 
     var title: String {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertTitle
+        case .unableToSyncToOtherDevice:
+            return UserText.syncFailedTitle
+        case .updateRequired:
+            return UserText.syncUpdateRequiredTitle
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountTitle
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeTitle
+        case .invalidCode, .unableToRecognizeCode:
+            return UserText.unableToRecognizeCodeTitle
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceTitle
         default:
             return UserText.syncErrorAlertTitle
         }
     }
 
-    var description: String {
+    var description: String? {
         switch self {
         case .unableToSyncToServer:
             return UserText.unableToSyncToServerDescription
         case .unableToSyncToOtherDevice:
-            return UserText.unableToSyncWithAnotherDeviceDescription
+            return UserText.syncFailedDescription
         case .unableToMergeTwoAccounts:
             return UserText.unableToMergeTwoAccountsDescription
         case .unableToUpdateDeviceName:
@@ -128,6 +147,16 @@ public enum SyncErrorType {
             return UserText.unableToAuthenticateDevice
         case .unableToRecognizeCode:
             return UserText.unableToRecognizeCode
+        case .updateRequired:
+            return nil
+        case .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncUnsupportedThirdPartyRecoveryCodeDescription
+        case .thirdPartyAccountAlreadyUpgraded:
+            return UserText.syncThirdPartyAccountAlreadyUpgradedDescription
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountDescription
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceDescription
         }
     }
 
@@ -135,6 +164,12 @@ public enum SyncErrorType {
         switch self {
         case .unableToAuthenticateOnDevice:
             return UserText.syncDeviceAuthenticationErrorAlertButton
+        case .unableToSyncToOtherDevice, .invalidCode, .unableToRecognizeCode, .updateRequired, .unsupportedThirdPartyRecoveryCode:
+            return UserText.syncSetupErrorGotItButton
+        case .alreadyPairedWithAccount:
+            return UserText.syncAlreadyPairedWithAccountButton
+        case .syncCancelledFromOtherDevice:
+            return UserText.syncCancelledFromOtherDeviceButton
         default:
             return UserText.ok
         }
@@ -153,7 +188,7 @@ public enum SyncErrorType {
 
 public struct SyncErrorMessage {
     var type: SyncErrorType
-    var errorDescription: String
+    var errorDescription: String?
 
     public init(type: SyncErrorType, description: String? = nil) {
         self.type = type

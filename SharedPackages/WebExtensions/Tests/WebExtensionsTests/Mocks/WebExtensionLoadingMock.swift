@@ -28,12 +28,15 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     var loadWebExtensionCalled = false
     var loadWebExtensionsCalled = false
     var unloadExtensionCalled = false
+    var reloadWebExtensionCalled = false
     var loadedIdentifiers: [String] = []
     var unloadedIdentifier: String?
     var mockLoadResult: WebExtensionLoadResult?
     var mockLoadResults: [Result<WebExtensionLoadResult, Error>] = []
     var mockError: Error?
     var mockUnloadError: Error?
+    /// Runs while `loadWebExtensions` or `reloadWebExtension` is in progress, before it returns.
+    var loadHandler: (@MainActor (String, WKWebExtensionController) async throws -> Void)?
 
     private var createdTestExtensions: [URL] = []
 
@@ -75,6 +78,9 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
     func loadWebExtensions(identifiers: [String], into controller: WKWebExtensionController) async -> [Result<WebExtensionLoadResult, Error>] {
         loadWebExtensionsCalled = true
         loadedIdentifiers = identifiers
+        for identifier in identifiers {
+            try? await loadHandler?(identifier, controller)
+        }
         return mockLoadResults
     }
 
@@ -85,6 +91,16 @@ final class WebExtensionLoadingMock: WebExtensionLoading {
         if let mockUnloadError = mockUnloadError {
             throw mockUnloadError
         }
+    }
+
+    func reloadWebExtension(_ webExtension: WKWebExtension, identifier: String, into controller: WKWebExtensionController) async throws {
+        reloadWebExtensionCalled = true
+        loadedIdentifiers.append(identifier)
+
+        if let mockError = mockError {
+            throw mockError
+        }
+        try await loadHandler?(identifier, controller)
     }
 
     // MARK: - Test Helper

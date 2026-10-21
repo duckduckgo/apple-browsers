@@ -23,7 +23,7 @@ import PixelKit
 ///
 let vpnPixelModulePrefix = "vpn"
 
-public protocol VPNPixel: PixelKitEvent {
+public protocol VPNPixel: PixelKit.Event {
 
     /// The name of the pixel without the module prefix.
     ///

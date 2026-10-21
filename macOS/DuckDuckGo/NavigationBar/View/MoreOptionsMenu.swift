@@ -16,12 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DesignResourcesKitIcons
@@ -107,6 +110,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     private weak var updateMenuItem: NSMenuItem?
 
+    private var subscriptionAppMenuStatus: SubscriptionAppMenuEntryStatus?
+
     required init(coder: NSCoder) {
         fatalError("MoreOptionsMenu: Bad initializer")
     }
@@ -181,7 +186,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         setupMenuItems()
     }
 
-    let zoomMenuItem = NSMenuItem(title: UserText.zoom, action: nil, keyEquivalent: "").withImage(.zoomIn)
+    let zoomMenuItem = NSMenuItem(title: UserText.zoom, action: nil, keyEquivalent: "").withImage(DesignSystemImages.Glyphs.Size12.zoomIn, visibleOnMacOS27: true)
 
     @MainActor
     private func setupMenuItems() {
@@ -194,7 +199,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return "\(UserText.sendFeedback) (version: \(AppVersionModel().versionLabelShort))"
         }()
         let feedbackMenuItem = NSMenuItem(title: feedbackString, action: nil, keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon)
+            .withImage(moreOptionsMenuIconsProvider.sendFeedbackIcon, visibleOnMacOS27: true)
 
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    authenticationStateProvider: subscriptionManager,
@@ -221,14 +226,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             } else {
                 let addToDockMenuItem = NSMenuItem(title: UserText.addDuckDuckGoToDock, action: #selector(addToDock(_:)))
                     .targetting(self)
-                    .withImage(moreOptionsMenuIconsProvider.addToDockIcon)
+                    .withImage(moreOptionsMenuIconsProvider.addToDockIcon, visibleOnMacOS27: true)
                 addItem(addToDockMenuItem)
             }
         }
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.setAsDefaultBrowserIcon)
+                .withImage(moreOptionsMenuIconsProvider.setAsDefaultBrowserIcon, visibleOnMacOS27: true)
             addItem(setAsDefaultMenuItem)
         }
 
@@ -247,9 +252,10 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addUtilityItems()
 
         addItem(withTitle: UserText.emailOptionsMenuItem, action: nil, keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.emailProtectionIcon)
+            .withImage(moreOptionsMenuIconsProvider.emailProtectionIcon, visibleOnMacOS27: true)
             .withSubmenu(EmailOptionsButtonSubMenu(tabCollectionViewModel: tabCollectionViewModel,
                                                    emailManager: emailManager,
+                                                   subscriptionManager: subscriptionManager,
                                                    moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider))
 
         addItem(NSMenuItem.separator())
@@ -259,22 +265,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         addPageItems()
 
         let helpItem = NSMenuItem(title: UserText.mainMenuHelp, action: nil, keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.helpIcon)
+            .withImage(moreOptionsMenuIconsProvider.helpIcon, visibleOnMacOS27: true)
         helpItem.submenu = HelpSubMenu(targetting: self, featureFlagger: featureFlagger)
         addItem(helpItem)
 
-        if StandardApplicationBuildType().isAppStoreBuild && !featureFlagger.isFeatureOn(.appStoreUpdateFlow) {
-            let checkForAppStoreUpdates = NSMenuItem(title: UserText.mainMenuAppCheckforUpdates.replacingOccurrences(of: "…", with: ""),
-                                                     action: #selector(checkForUpdates(_:)),
-                                                     keyEquivalent: "")
-                .withImage(DesignSystemImages.Glyphs.Size16.update)
-                .targetting(self)
-            addItem(checkForAppStoreUpdates)
-        }
-
         let preferencesItem = NSMenuItem(title: UserText.settings, action: #selector(openPreferences(_:)), keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.settingsIcon)
+            .withImage(moreOptionsMenuIconsProvider.settingsIcon, visibleOnMacOS27: true)
         addItem(preferencesItem)
     }
 
@@ -282,7 +279,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let menuItem = MenuItemWithNotificationDot(leftImage: image, title: title, onTapMenuItem: onTap)
 
         let hostingView = NSHostingView(rootView: menuItem)
-        hostingView.frame = NSRect(x: 0, y: 0, width: size.width, height: 22)
+        hostingView.frame = NSRect(x: 0, y: 0, width: size.width, height: AppVersion.isLiquidGlassSupported ? 24 : 22)
         hostingView.autoresizingMask = [.width, .height]
 
         return hostingView
@@ -328,6 +325,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func newAiChat(_ sender: NSMenuItem) {
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.moreOptionsMenuNewDuckAIChat)
         NSApp.delegateTyped.aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
         PixelKit.fire(AIChatPixel.aichatApplicationMenuAppClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
@@ -341,11 +339,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         PixelKit.fire(MoreOptionsMenuPixel.fireproofSiteActionClicked, frequency: .daily)
         selectedTabViewModel.tab.requestFireproofToggle()
-    }
-
-    @objc func checkForUpdates(_ sender: NSMenuItem) {
-        PixelKit.fire(UpdateFlowPixels.checkForUpdate(source: .moreOptionsMenu))
-        NSWorkspace.shared.open(.appStore)
     }
 
     @objc func bookmarkPage(_ sender: NSMenuItem) {
@@ -429,11 +422,17 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @objc func openSubscriptionPurchasePage(_ sender: NSMenuItem) {
         PixelKit.fire(MoreOptionsMenuPixel.subscriptionActionClicked, frequency: .daily)
+        if let status = subscriptionAppMenuStatus {
+            PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuSubscriptionClick(status: status))
+        }
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPurchasePage(self)
     }
 
     @objc func openWinBackOfferPurchasePage(_ sender: NSMenuItem) {
         PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuClicked)
+        if let status = subscriptionAppMenuStatus {
+            PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuSubscriptionClick(status: status))
+        }
         actionDelegate?.optionsButtonMenuRequestedWinBackOfferPurchasePage(self)
     }
 
@@ -451,15 +450,21 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func openFreemiumDBP(_ sender: NSMenuItem) {
-        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .daily)
+        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .dailyAndStandard)
 
+        let entryPoint: FreemiumDBPEntryPoint
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
+            entryPoint = .appMenuPostScan
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResults)
         } else {
+            entryPoint = .appMenuPreScan
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanCount)
             dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScan)
         }
 
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllersManager: Application.appDelegate.windowControllersManager)
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(entryPoint: entryPoint,
+                                                            windowControllersManager: Application.appDelegate.windowControllersManager)
         notificationCenter.post(name: .freemiumDBPEntryPointActivated, object: nil)
     }
 
@@ -505,6 +510,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         if StandardApplicationBuildType().isSparkleBuild,
            let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem {
+            releaseNotes.withImage(DesignSystemImages.Glyphs.Size12.note, visibleOnMacOS27: true)
             addItem(releaseNotes)
         }
 
@@ -515,15 +521,15 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         // New Tab
         addItem(withTitle: UserText.plusButtonNewTabMenuItem, action: #selector(newTab(_:)), keyEquivalent: "t")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.newTabIcon)
+            .withImage(moreOptionsMenuIconsProvider.newTabIcon, visibleOnMacOS27: true)
 
         let newWindowItem = NSMenuItem(title: UserText.newWindowMenuItem, action: #selector(newWindow(_:)), keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.newWindowIcon)
+            .withImage(moreOptionsMenuIconsProvider.newWindowIcon, visibleOnMacOS27: true)
 
         let burnerWindowItem = NSMenuItem(title: UserText.newBurnerWindowMenuItem, action: #selector(newBurnerWindow(_:)), keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.newFireWindowIcon)
+            .withImage(moreOptionsMenuIconsProvider.newFireWindowIcon, visibleOnMacOS27: true)
 
         if isFireWindowDefault {
             newWindowItem.keyEquivalent = "n"
@@ -551,7 +557,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                         target: self)
             aiChatItem.keyEquivalent = "n"
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = moreOptionsMenuIconsProvider.newAIChatIcon
+            aiChatItem.withImage(moreOptionsMenuIconsProvider.newAIChatIcon, visibleOnMacOS27: true)
             addItem(aiChatItem)
         }
 
@@ -561,10 +567,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     private func makeAIChatMenu() -> AIChatMenu {
         let actions = AIChatMenu.Actions.makeDefault(
+            conversationSources: .moreOptionsMenu,
             remoteSettings: AIChatRemoteSettings(),
             tabOpener: NSApp.delegateTyped.aiChatTabOpener,
             historyCleaner: NSApp.delegateTyped.aiChatHistoryCleaner,
-            windowControllersManager: Application.appDelegate.windowControllersManager
+            windowControllersManager: Application.appDelegate.windowControllersManager,
+            aiChatSyncCleaner: { Application.appDelegate.aiChatSyncCleaner }
         )
         return AIChatMenu(suggestionsReader: aiChatSuggestionsReader, actions: actions, maxChatItems: 8, origin: .moreOptionsMenu)
     }
@@ -574,7 +582,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         if aiChatMenuConfiguration.shouldDisplayMoreOptionsMenuShortcut {
             let aiChatItem = NSMenuItem(title: "Duck.ai", action: #selector(newAiChat), keyEquivalent: "n")
             aiChatItem.keyEquivalentModifierMask = [.command, .option]
-            aiChatItem.image = DesignSystemImages.Glyphs.Size16.duckAi
+            aiChatItem.withImage(DesignSystemImages.Glyphs.Size12.duckAi, visibleOnMacOS27: true)
             aiChatItem.target = self
             aiChatItem.submenu = makeAIChatMenu()
             addItem(aiChatItem)
@@ -588,15 +596,15 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.bookmarks, action: #selector(openBookmarks), keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.bookmarksIcon)
+            .withImage(moreOptionsMenuIconsProvider.bookmarksIcon, visibleOnMacOS27: true)
             .withSubmenu(bookmarksSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.openBookmarks")
         addItem(withTitle: UserText.downloads, action: #selector(openDownloads), keyEquivalent: "j")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.downloadsIcon)
+            .withImage(moreOptionsMenuIconsProvider.downloadsIcon, visibleOnMacOS27: true)
 
         addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.historyIcon)
+            .withImage(moreOptionsMenuIconsProvider.historyIcon, visibleOnMacOS27: true)
             .withSubmenu(
                 HistoryMenu(
                     location: .moreOptionsMenu,
@@ -613,14 +621,14 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.passwordManagementTitle, action: #selector(openAutofillWithAllItems), keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.passwordsIcon)
+            .withImage(moreOptionsMenuIconsProvider.passwordsIcon, visibleOnMacOS27: true)
             .withSubmenu(loginsSubMenu)
             .withAccessibilityIdentifier("MoreOptionsMenu.autofill")
 
         if syncDeviceButtonModel.shouldShowSyncButton {
             addItem(withTitle: UserText.sync, action: #selector(startSync), keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.syncIcon)
+                .withImage(moreOptionsMenuIconsProvider.syncIcon, visibleOnMacOS27: true)
         }
 
         addItem(NSMenuItem.separator())
@@ -643,13 +651,18 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         // Check if user is eligible for Win-back Offer
         if winBackOfferVisibilityManager.isOfferAvailable {
             addItem(makeWinBackOfferMenuItem())
+            subscriptionAppMenuStatus = .churned
+            PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
+            if let status = subscriptionAppMenuStatus {
+                PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+            }
             return
         }
 
         if !subscriptionManager.isUserAuthenticated {
 
             var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
-                .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
+                .withImage(moreOptionsMenuIconsProvider.subscriptionIcon, visibleOnMacOS27: true)
 
             if subscriptionManager.isUserEligibleForFreeTrial() &&
                !freeTrialBadgePersistor.hasReachedViewLimit {
@@ -661,18 +674,23 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                     image: moreOptionsMenuIconsProvider.subscriptionIcon,
                     menu: self
                 )
+                subscriptionAppMenuStatus = .freeEligible
             } else {
                 subscriptionItem.target = self
                 subscriptionItem.action = #selector(openSubscriptionPurchasePage(_:))
+                subscriptionAppMenuStatus = .freeIneligible
             }
 
             // Do not add for App Store when purchase not available in the region
             if !shouldHideDueToNoProduct() {
                 addItem(subscriptionItem)
+                if let status = subscriptionAppMenuStatus {
+                    PixelKit.fire(SubscriptionPixel.subscriptionEntryAppMenuImpression(status: status))
+                }
             }
         } else {
             let subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
-                .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
+                .withImage(moreOptionsMenuIconsProvider.subscriptionIcon, visibleOnMacOS27: true)
 
             subscriptionItem.submenu = SubscriptionSubMenu(targeting: self,
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
@@ -687,8 +705,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     private func makeWinBackOfferMenuItem() -> NSMenuItem {
-        PixelKit.fire(SubscriptionPixel.subscriptionWinBackOfferMainMenuShown)
-
         return NSMenuItem.createMenuItemWithBadge(
             title: UserText.subscriptionOptionsMenuItem,
             badgeText: UserText.winBackCampaignMenuBadgeText,
@@ -704,10 +720,18 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         guard freemiumDBPFeature.isAvailable else { return }
 
         let freemiumDBPItem = NSMenuItem(title: UserText.freemiumDBPOptionsMenuItem)
-            .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
+            .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon, visibleOnMacOS27: true)
 
         freemiumDBPItem.target = self
         freemiumDBPItem.action = #selector(openFreemiumDBP(_:))
+
+        if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsImpressionCount)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowResultsImpression)
+        } else {
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanImpressionCount)
+            dataBrokerProtectionFreemiumPixelHandler.fire(DataBrokerProtectionFreemiumPixels.overFlowScanImpression)
+        }
 
         addItem(freemiumDBPItem)
     }
@@ -725,32 +749,32 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
             addItem(withTitle: title, action: #selector(toggleFireproofing(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(image)
+                .withImage(image, visibleOnMacOS27: true)
         } else {
             addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
-                .withImage(moreOptionsMenuIconsProvider.fireproofSiteIcon)
+                .withImage(moreOptionsMenuIconsProvider.fireproofSiteIcon, visibleOnMacOS27: true)
         }
 
         addItem(withTitle: UserText.deleteBrowsingDataMenuItem, action: #selector(deleteBrowsingData(_:)), keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.deleteBrowsingDataIcon)
+            .withImage(moreOptionsMenuIconsProvider.deleteBrowsingDataIcon, visibleOnMacOS27: true)
 
         addItem(NSMenuItem.separator())
 
         addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.findInPageIcon)
+            .withImage(moreOptionsMenuIconsProvider.findInPageIcon, visibleOnMacOS27: true)
             .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
         let shareItem = addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.shareIcon)
+            .withImage(moreOptionsMenuIconsProvider.shareIcon, visibleOnMacOS27: true)
             .withSubmenu(sharingMenu)
         shareItem.isEnabled = tabViewModel.canShare
 
         addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
             .targetting(self)
-            .withImage(moreOptionsMenuIconsProvider.printIcon)
+            .withImage(moreOptionsMenuIconsProvider.printIcon, visibleOnMacOS27: true)
 
         if items.count > oldItemsCount {
             addItem(NSMenuItem.separator())
@@ -760,7 +784,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private func makeNetworkProtectionItem() -> NSMenuItem {
         let networkProtectionItem = NSMenuItem(title: "", action: #selector(showNetworkProtectionStatus(_:)), keyEquivalent: "")
             .targetting(self)
-            .withImage(.image(for: .vpnIcon))
+            .withImage(.image(for: .vpnIcon), visibleOnMacOS27: true)
 
         networkProtectionItem.title = UserText.networkProtection
 
@@ -800,13 +824,16 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let emailManager: EmailManager
+    private let subscriptionManager: any SubscriptionManager
     private var emailProtectionDidChangeCancellable: AnyCancellable?
 
     init(tabCollectionViewModel: TabCollectionViewModel,
          emailManager: EmailManager,
+         subscriptionManager: any SubscriptionManager,
          moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
+        self.subscriptionManager = subscriptionManager
         super.init(title: UserText.emailOptionsMenuItem)
 
         updateMenuItems(moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
@@ -831,27 +858,31 @@ final class EmailOptionsButtonSubMenu: NSMenu {
         if emailManager.isSignedIn {
             addItem(withTitle: UserText.emailOptionsMenuCreateAddressSubItem, action: #selector(createAddressAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.emailGenerateAddressIcon)
+                .withImage(moreOptionsMenuIconsProvider.emailGenerateAddressIcon, visibleOnMacOS27: true)
 
             addItem(withTitle: UserText.emailOptionsMenuManageAccountSubItem, action: #selector(manageAccountAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.emailManageAccount)
+                .withImage(moreOptionsMenuIconsProvider.emailManageAccount, visibleOnMacOS27: true)
 
             addItem(.separator())
 
             addItem(withTitle: UserText.emailOptionsMenuTurnOffSubItem, action: #selector(turnOffEmailAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOffIcon)
+                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOffIcon, visibleOnMacOS27: true)
 
         } else {
             addItem(withTitle: UserText.emailOptionsMenuTurnOnSubItem, action: #selector(turnOnEmailAction(_:)), keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOnIcon)
+                .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOnIcon, visibleOnMacOS27: true)
         }
     }
 
     override func performActionForItem(at index: Int) {
-        PixelKit.fire(MoreOptionsMenuPixel.emailProtectionActionClicked, frequency: .daily)
+        PixelKit.fire(
+            MoreOptionsMenuPixel.emailProtectionActionClicked,
+            frequency: .dailyAndStandard,
+            withAdditionalParameters: ["subscribed": String(subscriptionManager.isUserAuthenticated)]
+        )
         super.performActionForItem(at: index)
     }
 
@@ -875,8 +906,7 @@ final class EmailOptionsButtonSubMenu: NSMenu {
             self.emailManager.updateLastUseDate()
 
             PixelKit.fire(NonStandardPixel.emailUserCreatedAlias,
-                          withAdditionalParameters: pixelParameters,
-                          doNotEnforcePrefix: true)
+                          withAdditionalParameters: pixelParameters)
 
             NSPasteboard.general.copy(address)
             NotificationCenter.default.post(name: NSNotification.Name.privateEmailCopiedToClipboard, object: nil)
@@ -955,7 +985,7 @@ final class FeedbackSubMenu: NSMenu, NSMenuDelegate {
                                                   action: #selector(sendSubscriptionFeedback(_:)),
                                                   keyEquivalent: "")
                 .targetting(self)
-                .withImage(moreOptionsMenuIconsProvider.sendSubscriptionFeedbackIcon)
+                .withImage(moreOptionsMenuIconsProvider.sendSubscriptionFeedbackIcon, visibleOnMacOS27: true)
             addItem(sendPProFeedbackItem)
         }
 
@@ -969,7 +999,7 @@ final class FeedbackSubMenu: NSMenu, NSMenuDelegate {
         let reportBrokenSiteItem = NSMenuItem(title: UserText.reportBrokenSite,
                                               action: #selector(AppDelegate.openReportBrokenSite(_:)),
                                               keyEquivalent: "")
-            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon)
+            .withImage(moreOptionsMenuIconsProvider.reportBrokenSiteIcon, visibleOnMacOS27: true)
         addItem(reportBrokenSiteItem)
 
         addItem(.separator())
@@ -977,13 +1007,13 @@ final class FeedbackSubMenu: NSMenu, NSMenuDelegate {
         let reportABrowserProblemItem = NSMenuItem(title: UserText.reportBrowserProblem,
                                                    action: #selector(AppDelegate.openReportABrowserProblem(_:)),
                                                    keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.feedbackAlert)
+            .withImage(DesignSystemImages.Glyphs.Size12.feedbackAlert, visibleOnMacOS27: true)
         addItem(reportABrowserProblemItem)
 
         let requestANewFeatureItem = NSMenuItem(title: UserText.requestNewFeature,
                                                 action: #selector(AppDelegate.openRequestANewFeature(_:)),
                                                 keyEquivalent: "")
-            .withImage(DesignSystemImages.Glyphs.Size16.windowNew)
+            .withImage(DesignSystemImages.Glyphs.Size12.windowNew, visibleOnMacOS27: true)
         addItem(requestANewFeatureItem)
     }
 
@@ -1050,21 +1080,21 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         zoomItems.removeAll()
 
         let fullScreenItem = (NSApp.mainMenuTyped.toggleFullscreenMenuItem.copy() as? NSMenuItem)!
-            .withImage(moreOptionsMenuIconsProvider.enterFullscreenIcon)
+            .withImage(moreOptionsMenuIconsProvider.enterFullscreenIcon, visibleOnMacOS27: true)
         addItem(fullScreenItem)
 
         addItem(.separator())
 
         let zoomInItem = (NSApp.mainMenuTyped.zoomInMenuItem.copy() as? NSMenuItem)!
-            .withImage(moreOptionsMenuIconsProvider.zoomInIcon)
+            .withImage(moreOptionsMenuIconsProvider.zoomInIcon, visibleOnMacOS27: true)
         addItem(zoomInItem)
 
         let zoomOutItem = (NSApp.mainMenuTyped.zoomOutMenuItem.copy() as? NSMenuItem)!
-            .withImage(moreOptionsMenuIconsProvider.zoomOutIcon)
+            .withImage(moreOptionsMenuIconsProvider.zoomOutIcon, visibleOnMacOS27: true)
         addItem(zoomOutItem)
 
         let actualSizeItem = (NSApp.mainMenuTyped.actualSizeMenuItem.copy() as? NSMenuItem)!
-            .withImage(NSImage()) // add left padding for the Actual Size item
+            .withImage(NSImage(), visibleOnMacOS27: true) // add left padding for the Actual Size item
         addItem(actualSizeItem)
 
         addItem(.separator())
@@ -1072,17 +1102,10 @@ final class ZoomSubMenu: NSMenu, NSMenuDelegate {
         let globalZoomSettingItem = NSMenuItem(title: UserText.defaultZoomPageMoreOptionsItem,
                                                action: #selector(MoreOptionsMenu.openAccessibilityPreferences(_:)),
                                                target: target)
-            .withImage(moreOptionsMenuIconsProvider.changeDefaultZoomIcon)
+            .withImage(moreOptionsMenuIconsProvider.changeDefaultZoomIcon, visibleOnMacOS27: true)
         addItem(globalZoomSettingItem)
 
         zoomItems = [zoomInItem, zoomOutItem, actualSizeItem]
-    }
-
-    override func performActionForItem(at index: Int) {
-        if let item = item(at: index), zoomItems.contains(item) {
-            PixelKit.fire(MoreOptionsMenuPixel.zoomActionClicked, frequency: .daily)
-        }
-        super.performActionForItem(at: index)
     }
 
     private var zoomItems: [NSMenuItem] = []
@@ -1148,6 +1171,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
             .withModifierMask([.command])
             .targetting(target)
             .withAccessibilityIdentifier("MoreOptionsMenu.bookmarkPage")
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarkAdd, visibleOnMacOS27: true)
 
         bookmarkPageItem.isEnabled = tabCollectionViewModel.selectedTabViewModel?.canBeBookmarked == true
 
@@ -1167,6 +1191,7 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
         addItem(withTitle: UserText.bookmarksManageBookmarks, action: #selector(MoreOptionsMenu.openBookmarksManagementInterface), keyEquivalent: "b")
             .withModifierMask([.command, .option])
             .targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.bookmarks, visibleOnMacOS27: true)
 
         addItem(NSMenuItem.separator())
 
@@ -1177,11 +1202,11 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
             let favoritesItem = addItem(withTitle: UserText.favorites, action: nil, keyEquivalent: "")
             favoritesItem.submenu = NSMenu().buildItems {
                 NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage), keyEquivalent: "")
-                    .withImage(moreOptionsMenuIconsProvider.favoritesIcon)
+                    .withImage(moreOptionsMenuIconsProvider.favoritesIcon, visibleOnMacOS27: true)
                 NSMenuItem.separator()
                 potentialItems
             }
-            favoritesItem.image = moreOptionsMenuIconsProvider.favoritesIcon
+            favoritesItem.withImage(moreOptionsMenuIconsProvider.favoritesIcon, visibleOnMacOS27: true)
 
             addItem(NSMenuItem.separator())
         }
@@ -1199,11 +1224,14 @@ final class BookmarksSubMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: UserText.importBookmarks, action: #selector(MoreOptionsMenu.openBookmarkImportInterface(_:)), keyEquivalent: "")
             .targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.import, visibleOnMacOS27: true)
 
         let exportBookmarItem = NSMenuItem(title: UserText.exportBookmarks, action: #selector(MoreOptionsMenu.openBookmarkExportInterface(_:)), keyEquivalent: "").targetting(target)
+            .withImage(DesignSystemImages.Glyphs.Size12.export, visibleOnMacOS27: true)
         exportBookmarItem.isEnabled = bookmarkManager.list?.totalBookmarks != 0
         addItem(exportBookmarItem)
 
+        alignItemTextWithIcons()
     }
 
     @MainActor
@@ -1302,17 +1330,17 @@ final class LoginsSubMenu: NSMenu, NSMenuDelegate {
 
         addItem(withTitle: autofillTitle, action: autofillSelector, keyEquivalent: "")
             .targetting(target)
-            .withImage(moreOptionsMenuIconsProvider.passwordsSubMenuIcon)
+            .withImage(moreOptionsMenuIconsProvider.passwordsSubMenuIcon, visibleOnMacOS27: true)
             .withAccessibilityIdentifier("LoginsSubMenu.passwords")
 
         addItem(withTitle: UserText.passwordManagementIdentities, action: #selector(MoreOptionsMenu.openAutofillWithIdentities), keyEquivalent: "")
             .targetting(target)
-            .withImage(moreOptionsMenuIconsProvider.identitiesIcon)
+            .withImage(moreOptionsMenuIconsProvider.identitiesIcon, visibleOnMacOS27: true)
             .withAccessibilityIdentifier("LoginsSubMenu.identities")
 
         addItem(withTitle: UserText.passwordManagementCreditCards, action: #selector(MoreOptionsMenu.openAutofillWithCreditCards), keyEquivalent: "")
             .targetting(target)
-            .withImage(moreOptionsMenuIconsProvider.creditCardsIcon)
+            .withImage(moreOptionsMenuIconsProvider.creditCardsIcon, visibleOnMacOS27: true)
             .withAccessibilityIdentifier("LoginsSubMenu.creditCards")
     }
 
@@ -1356,16 +1384,20 @@ final class HelpSubMenu: NSMenu, NSMenuDelegate {
         removeAllItems()
 
         let about = (NSApp.mainMenuTyped.aboutMenuItem.copy() as? NSMenuItem)!
+            .withImage(DesignSystemImages.Glyphs.Size12.info, visibleOnMacOS27: true)
         addItem(about)
 
         if StandardApplicationBuildType().isSparkleBuild,
            let releaseNotes = NSApp.mainMenuTyped.releaseNotesMenuItem.copy() as? NSMenuItem,
            let whatIsNew = (NSApp.mainMenuTyped.whatIsNewMenuItem.copy() as? NSMenuItem) {
+            releaseNotes.withImage(DesignSystemImages.Glyphs.Size12.note, visibleOnMacOS27: true)
+            whatIsNew.withImage(DesignSystemImages.Glyphs.Size12.news, visibleOnMacOS27: true)
             addItem(releaseNotes)
             addItem(whatIsNew)
         }
 
         let feedback = (NSApp.mainMenuTyped.sendFeedbackMenuItem.copy() as? NSMenuItem)!
+            .withImage(DesignSystemImages.Glyphs.Size12.feedback, visibleOnMacOS27: true)
         addItem(feedback)
     }
 
@@ -1425,7 +1457,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     private func addMenuItems() async {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217
-        let features = (try? await subscriptionManager.currentSubscriptionFeatures()) ?? []
+        let features = (try? await subscriptionManager.currentSubscriptionFeatures(forceRefresh: false)) ?? []
 
         if features.contains(.networkProtection) {
             addItem(networkProtectionItem)
@@ -1448,7 +1480,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.showNetworkProtectionStatus(_:)),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(moreOptionsMenuIconsProvider.vpnIcon)
+        .withImage(moreOptionsMenuIconsProvider.vpnIcon, visibleOnMacOS27: true)
     }
 
     private func makeDataBrokerProtectionItem(target: AnyObject) -> NSMenuItem {
@@ -1456,7 +1488,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.openDataBrokerProtection),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon)
+        .withImage(moreOptionsMenuIconsProvider.personalInformationRemovalIcon, visibleOnMacOS27: true)
     }
 
     private func makePaidAIChatItem(target: AnyObject) -> NSMenuItem {
@@ -1464,7 +1496,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                           action: #selector(MoreOptionsMenu.openPaidAIChat),
                           keyEquivalent: "")
         .targetting(target)
-        .withImage(moreOptionsMenuIconsProvider.paidAIChat)
+        .withImage(moreOptionsMenuIconsProvider.paidAIChat, visibleOnMacOS27: true)
     }
 
     private func makeIdentityTheftRestorationItem(target: AnyObject) -> NSMenuItem {
@@ -1472,7 +1504,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
                    action: #selector(MoreOptionsMenu.openIdentityTheftRestoration),
                    keyEquivalent: "")
         .targetting(target)
-        .withImage(moreOptionsMenuIconsProvider.identityTheftRestorationIcon)
+        .withImage(moreOptionsMenuIconsProvider.identityTheftRestorationIcon, visibleOnMacOS27: true)
     }
 
     private func makeSubscriptionSettingsItem(target: AnyObject) -> NSMenuItem {

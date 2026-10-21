@@ -35,42 +35,9 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         super.tearDown()
     }
 
-    func testWhenIPhoneAndSearchInputEnabledThenUsesExperimentalEditingState() {
+    func testWhenIPhoneThenDuckAIAddressBarButtonIsShown() {
         MockUIDevice.mockUserInterfaceIdiom = .phone
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatSearchInputUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertTrue(testee.shouldUseExperimentalEditingState)
-    }
-
-    func testWhenIPadAndIPadAIToggleEnabledThenDoesNotUseExperimentalEditingState() {
-        MockUIDevice.mockUserInterfaceIdiom = .pad
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatSearchInputUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertFalse(testee.shouldUseExperimentalEditingState)
-    }
-
-    func testWhenIPadAndIPadAIToggleDisabledThenUsesExperimentalEditingState() {
-        MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatSearchInputUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertTrue(testee.shouldUseExperimentalEditingState)
-    }
-
-    func testWhenIPhoneAndIPadAIToggleEnabledThenDuckAIAddressBarButtonIsShown() {
-        MockUIDevice.mockUserInterfaceIdiom = .phone
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
                                                 aiChatSettings: aiChatSettings)
@@ -78,17 +45,7 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
     }
 
-    func testWhenIPadAndIPadAIToggleEnabledThenDuckAIAddressBarButtonIsShown() {
-        MockUIDevice.mockUserInterfaceIdiom = .pad
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
-    }
-
-    func testWhenIPadAndIPadAIToggleDisabledThenDuckAIAddressBarButtonIsShown() {
+    func testWhenIPadThenDuckAIAddressBarButtonIsShown() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true)
@@ -98,9 +55,9 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
     }
 
-    func testWhenIPhoneAndIPadAIToggleEnabledAndSearchInputEnabledThenModeToggleIsHidden() {
+    func testWhenIPhoneAndSearchInputEnabledThenModeToggleIsHidden() {
         MockUIDevice.mockUserInterfaceIdiom = .phone
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
                                                         isAIChatSearchInputUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
@@ -109,9 +66,9 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertFalse(testee.shouldShowModeToggle)
     }
 
-    func testWhenIPadAndIPadAIToggleEnabledAndSearchInputEnabledThenModeToggleIsShown() {
+    func testWhenIPadAndSearchInputEnabledThenModeToggleIsShown() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
                                                         isAIChatSearchInputUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
@@ -120,9 +77,9 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowModeToggle)
     }
 
-    func testWhenIPadAndIPadAIToggleEnabledAndAddressBarDisabledAndSearchInputEnabledThenModeToggleIsShown() {
+    func testWhenIPadAndAddressBarDisabledAndSearchInputEnabledThenModeToggleIsShown() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: false,
                                                         isAIChatSearchInputUserSettingsEnabled: true)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
@@ -131,20 +88,9 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
         XCTAssertTrue(testee.shouldShowModeToggle)
     }
 
-    func testWhenIPadAndIPadAIToggleDisabledAndSearchInputEnabledThenModeToggleIsHidden() {
+    func testWhenIPadAndSearchInputDisabledThenModeToggleIsHidden() {
         MockUIDevice.mockUserInterfaceIdiom = .pad
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
-        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
-                                                        isAIChatSearchInputUserSettingsEnabled: true)
-        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
-                                                aiChatSettings: aiChatSettings)
-
-        XCTAssertFalse(testee.shouldShowModeToggle)
-    }
-
-    func testWhenIPadAndIPadAIToggleEnabledAndSearchInputDisabledThenModeToggleIsHidden() {
-        MockUIDevice.mockUserInterfaceIdiom = .pad
-        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.iPadAIToggle])
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
                                                         isAIChatSearchInputUserSettingsEnabled: false)
         let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
@@ -152,4 +98,86 @@ final class AIChatAddressBarExperienceTests: XCTestCase {
 
         XCTAssertFalse(testee.shouldShowModeToggle)
     }
+
+    // MARK: - iPad chrome shortcut consolidation
+
+    func testWhenIPadAndChromeShortcutOnAndLargeWidthThenAddressBarButtonHidden() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: true))
+
+        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndChromeShortcutOnAndNarrowWidthThenAddressBarButtonShown() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndChromeShortcutOnAndTabBarOffThenAddressBarButtonHiddenAtAnyWidth() {
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: false)
+
+        let large = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                               aiChatSettings: aiChatSettings,
+                                               largeWidthProvider: MockLargeWidthProvider(isLargeWidth: true))
+        let narrow = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertFalse(large.shouldShowDuckAIAddressBarButton)
+        XCTAssertFalse(narrow.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndChromeShortcutOnThenIgnoresLegacyAddressBarSetting() {
+        // Legacy Address Bar value should not affect address-bar button visibility under the new flag.
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: true,
+                                                        isAIChatTabBarUserSettingsEnabled: false)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPhoneAndChromeShortcutFlagOnThenStillReadsLegacyAddressBarSetting() {
+        MockUIDevice.mockUserInterfaceIdiom = .phone
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatAddressBarUserSettingsEnabled: false,
+                                                        isAIChatTabBarUserSettingsEnabled: true)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings)
+
+        XCTAssertFalse(testee.shouldShowDuckAIAddressBarButton)
+    }
+
+    func testWhenIPadAndShortcutOnButDuckAIButtonHiddenThenAddressBarButtonStillShownAtNarrowWidth() {
+        // The omnibar button mirrors the master Tab Bar toggle: with the shortcut on it shows at
+        // narrow width even if one half (here the Duck.ai-open button) was hidden from the menu.
+        MockUIDevice.mockUserInterfaceIdiom = .pad
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatChromeShortcutIPad])
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatTabBarUserSettingsEnabled: true,
+                                                        isAIChatTabBarDuckAIButtonVisible: false)
+        let testee = AIChatAddressBarExperience(featureFlagger: featureFlagger,
+                                                aiChatSettings: aiChatSettings,
+                                                largeWidthProvider: MockLargeWidthProvider(isLargeWidth: false))
+
+        XCTAssertTrue(testee.shouldShowDuckAIAddressBarButton)
+    }
+}
+
+private struct MockLargeWidthProvider: LargeWidthProviding {
+    let isLargeWidth: Bool
 }

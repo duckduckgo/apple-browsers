@@ -19,7 +19,7 @@
 import Foundation
 import os.signpost
 
-final class TabInstrumentation: TabInstrumentationProtocol {
+final class TabInstrumentation {
 
     static let tabsLog = OSLog(subsystem: "com.duckduckgo.instrumentation",
                                category: "TabInstrumentation")
@@ -27,7 +27,6 @@ final class TabInstrumentation: TabInstrumentationProtocol {
     static var tabMaxIdentifier: UInt64 = 0
 
     private var siteLoadingSPID: Any?
-    private var currentURL: String?
     private(set) var currentTabIdentifier: UInt64
 
     init() {
@@ -46,8 +45,6 @@ final class TabInstrumentation: TabInstrumentationProtocol {
     }
 
     func willLoad(url: URL) {
-        currentURL = url.absoluteString
-
         let id = OSSignpostID(log: type(of: self).tabsLog)
         siteLoadingSPID = id
         os_signpost(.begin,
@@ -68,46 +65,4 @@ final class TabInstrumentation: TabInstrumentationProtocol {
                         "Loading Finished: %{private}@", "T")
         }
     }
-
-    // MARK: - JS events
-
-    func request(url: String, allowedIn timeInMs: Double) {
-        request(url: url, isTracker: false, blocked: false, in: timeInMs)
-    }
-
-    func tracker(url: String, allowedIn timeInMs: Double, reason: String?) {
-        request(url: url, isTracker: true, blocked: false, reason: reason ?? "?", in: timeInMs)
-    }
-
-    func tracker(url: String, blockedIn timeInMs: Double) {
-        request(url: url, isTracker: true, blocked: true, in: timeInMs)
-    }
-
-    private func request(url: String, isTracker: Bool, blocked: Bool, reason: String = "", in timeInMs: Double) {
-        let currentURL = self.currentURL ?? "unknown"
-        let requestType = isTracker ? "Tracker" : "Regular"
-        let status = blocked ? "Blocked" : "Allowed"
-
-        // 0 is treated as 1ms
-        let timeInNS: UInt64 = timeInMs.asNanos
-
-        Logger.general.debug("[\(currentURL)] Request: \(url) - \(requestType) - \(status) (\(reason)) in \(timeInNS)")
-    }
-
-    func jsEvent(name: String, executedIn timeInMs: Double) {
-
-        let currentURL = self.currentURL ?? "unknown"
-        // 0 is treated as 1ms
-        let timeInNS: UInt64 = timeInMs.asNanos
-
-        Logger.general.debug("[\(currentURL)] JSEvent: \(name) executedIn: \(timeInNS)")
-    }
-}
-
-extension Double {
-
-    var asNanos: UInt64 {
-        return self > 0 ? UInt64(self * 1000 * 1000) : 1000000
-    }
-
 }

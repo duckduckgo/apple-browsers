@@ -18,20 +18,14 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import SubscriptionTestingUtilities
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
+@_spi(Testing) import SubscriptionTestingUtilities
 import Common
 
 final class SubscriptionEndpointServiceTests: XCTestCase {
     private var apiService: MockAPIService!
     private var endpointService: DefaultSubscriptionEndpointService!
     private let baseURL = SubscriptionEnvironment.ServiceEnvironment.staging.url
-    private let disposableCache = UserDefaultsCache<DuckDuckGoSubscription>(key: UserDefaultsCacheKeyKest.subscriptionTest,
-                                                                            settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
-    private enum UserDefaultsCacheKeyKest: String, UserDefaultsCacheKeyStore {
-        case subscriptionTest = "com.duckduckgo.bsk.subscription.info.testing"
-    }
     private var encoder: JSONEncoder!
 
     override func setUp() {
@@ -40,12 +34,10 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         encoder.dateEncodingStrategy = .millisecondsSince1970
         apiService = MockAPIService()
         endpointService = DefaultSubscriptionEndpointService(apiService: apiService,
-                                                               baseURL: baseURL,
-                                                               subscriptionCache: disposableCache)
+                                                               baseURL: baseURL)
     }
 
     override func tearDown() {
-        disposableCache.reset()
         apiService = nil
         endpointService = nil
         super.tearDown()
@@ -83,28 +75,7 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
 
     // MARK: - getSubscription Tests
 
-    func testGetSubscriptionReturnsCachedSubscription() async throws {
-        let date = Date(timeIntervalSince1970: 123456789)
-        let cachedSubscription = DuckDuckGoSubscription(
-            productId: "prod123",
-            name: "Pro Plan",
-            billingPeriod: .monthly,
-            startedAt: date,
-            expiresOrRenewsAt: date.addingTimeInterval(30 * 24 * 60 * 60),
-            platform: .google,
-            status: .autoRenewable,
-            activeOffers: [],
-            tier: .pro,
-            availableChanges: nil,
-            pendingPlans: nil
-        )
-        endpointService.updateCache(with: cachedSubscription)
-
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
-        XCTAssertEqual(subscription, cachedSubscription)
-    }
-
-    func testGetSubscriptionFetchesRemoteSubscriptionWhenNoCache() async throws {
+    func testGetSubscriptionFetchesRemoteSubscription() async throws {
         // mock subscription response
         let subscriptionData = try createSubscriptionResponseData()
         let apiResponse = createAPIResponse(statusCode: 200, data: subscriptionData)
@@ -115,7 +86,7 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let subscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
+        let subscription = try await endpointService.getSubscription(accessToken: "token")
         XCTAssertEqual(subscription.productId, "prod123")
         XCTAssertEqual(subscription.name, "Pro Plan")
         XCTAssertEqual(subscription.billingPeriod, .yearly)
@@ -159,72 +130,66 @@ final class SubscriptionEndpointServiceTests: XCTestCase {
         )
         let confirmData = try encoder.encode(confirmResponse)
         let apiResponse = createAPIResponse(statusCode: 200, data: confirmData)
-        let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL, accessToken: "token", signature: "signature", additionalParams: nil)!.apiRequest
+        let request = SubscriptionRequest.confirmPurchase(baseURL: baseURL,
+                                                          accessToken: "token",
+                                                          signature: "signature",
+                                                          experimentAttribution: nil)!.apiRequest
 
         apiService.set(response: apiResponse, forRequest: request)
 
-        let purchaseResponse = try await endpointService.confirmPurchase(accessToken: "token", signature: "signature", additionalParams: nil)
+        let purchaseResponse = try await endpointService.confirmPurchase(accessToken: "token",
+                                                                         signature: "signature",
+                                                                         experimentAttribution: nil)
         XCTAssertEqual(purchaseResponse.email, confirmResponse.email)
         XCTAssertEqual(purchaseResponse.subscription, confirmResponse.subscription)
     }
 
-    // MARK: - Cache Tests
+    func testWhenConfirmPurchaseHasMultipleExperimentsThenRequestContainsExperimentsArrayAndNoLegacyFields() throws {
+        let experiments = [
+            SubscriptionExperiment(experimentName: "first", experimentCohort: "control"),
+            SubscriptionExperiment(experimentName: "second", experimentCohort: "treatment")
+        ]
 
-    func testUpdateCacheStoresSubscription() async throws {
-        let date = Date(timeIntervalSince1970: 123456789)
-        let subscription = DuckDuckGoSubscription(
-            productId: "prod123",
-            name: "Pro Plan",
-            billingPeriod: .monthly,
-            startedAt: date,
-            expiresOrRenewsAt: date.addingTimeInterval(30 * 24 * 60 * 60),
-            platform: .google,
-            status: .autoRenewable,
-            activeOffers: [],
-            tier: nil,
-            availableChanges: nil,
-            pendingPlans: nil
-        )
-        endpointService.updateCache(with: subscription)
+        let body = try confirmationRequestBody(experimentAttribution: .multiple(experiments))
+        let encodedExperiments = try XCTUnwrap(body["experiments"] as? [[String: String]])
 
-        let cachedSubscription = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
-        XCTAssertEqual(cachedSubscription, subscription)
+        XCTAssertEqual(encodedExperiments.count, 2)
+        XCTAssertEqual(encodedExperiments[0]["experimentName"], "first")
+        XCTAssertEqual(encodedExperiments[0]["experimentCohort"], "control")
+        XCTAssertEqual(encodedExperiments[1]["experimentName"], "second")
+        XCTAssertEqual(encodedExperiments[1]["experimentCohort"], "treatment")
+        XCTAssertNil(body["experimentName"])
+        XCTAssertNil(body["experimentCohort"])
     }
 
-    func testClearSubscriptionRemovesCachedSubscription_AndGetSubscriptionReFetchesIt() async throws {
-        // mock subscription response
-        let subscriptionData = try createSubscriptionResponseData()
-        let apiResponse = createAPIResponse(statusCode: 200, data: subscriptionData)
-        let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: "token")!.apiRequest
+    func testWhenConfirmPurchaseHasLegacyExperimentThenRequestContainsLegacyFieldsAndNoExperimentsArray() throws {
+        let experiment = SubscriptionExperiment(experimentName: "legacy", experimentCohort: "treatment")
 
-        // mock features
-        SubscriptionAPIMockResponseFactory.mockGetTierFeatures(destinationMockAPIService: apiService, success: true, subscriptionIDs: ["prod123"])
+        let body = try confirmationRequestBody(experimentAttribution: .legacy(experiment))
 
-        apiService.set(response: apiResponse, forRequest: request)
+        XCTAssertEqual(body["experimentName"] as? String, "legacy")
+        XCTAssertEqual(body["experimentCohort"] as? String, "treatment")
+        XCTAssertNil(body["experiments"])
+    }
 
-        let date = Date(timeIntervalSince1970: 123456789)
-        let subscription = DuckDuckGoSubscription(
-            productId: "prod123",
-            name: "Pro Plan",
-            billingPeriod: .monthly,
-            startedAt: date,
-            expiresOrRenewsAt: date.addingTimeInterval(30 * 24 * 60 * 60),
-            platform: .apple,
-            status: .autoRenewable,
-            activeOffers: [],
-            tier: nil,
-            availableChanges: nil,
-            pendingPlans: nil
-        )
-        endpointService.updateCache(with: subscription)
+    func testWhenConfirmPurchaseHasNoExperimentsThenRequestOmitsAllExperimentFields() throws {
+        let bodyWithoutAttribution = try confirmationRequestBody(experimentAttribution: nil)
+        let bodyWithEmptyMultipleAttribution = try confirmationRequestBody(experimentAttribution: .multiple([]))
 
-        endpointService.clearSubscription()
-        do {
-            _ = try await endpointService.getSubscription(accessToken: "token", cachePolicy: .cacheFirst)
-            // Success
-        } catch {
-            XCTFail("Wrong error: \(error)")
+        for body in [bodyWithoutAttribution, bodyWithEmptyMultipleAttribution] {
+            XCTAssertNil(body["experiments"])
+            XCTAssertNil(body["experimentName"])
+            XCTAssertNil(body["experimentCohort"])
         }
+    }
+
+    private func confirmationRequestBody(experimentAttribution: PurchaseExperimentAttribution?) throws -> [String: Any] {
+        let request = try XCTUnwrap(SubscriptionRequest.confirmPurchase(baseURL: baseURL,
+                                                                       accessToken: "token",
+                                                                       signature: "signature",
+                                                                       experimentAttribution: experimentAttribution))
+        let bodyData = try XCTUnwrap(request.apiRequest.urlRequest.httpBody)
+        return try XCTUnwrap(JSONSerialization.jsonObject(with: bodyData) as? [String: Any])
     }
 
     // MARK: - getTierProducts Tests

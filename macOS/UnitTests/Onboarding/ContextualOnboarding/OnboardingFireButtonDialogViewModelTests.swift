@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import History
 import HistoryView
 import PrivacyConfig
@@ -52,16 +53,28 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         reporter = CapturingOnboardingPixelReporter()
 
         windowControllersManager = WindowControllersManagerMock()
+
+        let fireproofDomains = MockFireproofDomains()
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.contextualOnboarding]
+
+        let faviconManager = FaviconManagerMock()
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor(),
+                                                              fireproofDomains: fireproofDomains,
+                                                              faviconManager: faviconManager,
+                                                              windowControllersManager: windowControllersManager,
+                                                              featureFlagger: featureFlagger,
+                                                              aiChatHistoryCleaner: MockAIChatHistoryCleaner())
+
         fireCoordinator = FireCoordinator(tld: TLD(),
                                           featureFlagger: featureFlagger,
                                           historyCoordinating: HistoryCoordinatingMock(),
                                           visualizeFireAnimationDecider: nil,
                                           onboardingContextualDialogsManager: nil,
-                                          fireproofDomains: MockFireproofDomains(),
-                                          faviconManagement: FaviconManagerMock(),
+                                          fireproofDomains: fireproofDomains,
+                                          faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
+                                          dataClearingPreferences: dataClearingPreferences,
                                           pixelFiring: nil,
                                           historyProvider: MockHistoryViewDataProvider())
         viewModel = OnboardingFireButtonDialogViewModel(
@@ -79,6 +92,9 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         viewModel = nil
         windowControllersManager = nil
         fireCoordinator = nil
+        onGotItPressed = nil
+        onDismiss = nil
+        onFireButtonPressed = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -89,7 +105,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
+    func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() async throws {
         let mainViewController = MainViewController(
             tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection()),
             autofillPopoverPresenter: DefaultAutofillPopoverPresenter(pinningManager: MockPinningManager()),
@@ -97,6 +113,8 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
             fireCoordinator: fireCoordinator
         )
         let window = MockWindow(isVisible: false)
+        let sheetPresented = expectation(description: "Fire dialog presentation completed")
+        window.onBeginSheet = { sheetPresented.fulfill() }
         let mainWindowController = MainWindowController(
             window: window,
             mainViewController: mainViewController,
@@ -109,6 +127,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         window.isVisible = true
 
         viewModel.tryFireButton()
+        await fulfillment(of: [sheetPresented], timeout: 5)
 
         XCTAssertTrue(onFireButtonPressedCalled)
         XCTAssertTrue(reporter.measureFireButtonTryItCalled)

@@ -27,23 +27,20 @@ import DesignResourcesKit
 class ToolbarHandlerTests: XCTestCase {
 
     var toolbarHandler: ToolbarHandler!
-    var mockToolbar: UIToolbar!
+    var mockToolbar: BrowserToolbarView!
     var mockNavigatable: MockNavigatable!
-    var mockThemeManager: MockThemeManager!
 
     override func setUp() {
         super.setUp()
-        mockToolbar = UIToolbar()
+        mockToolbar = BrowserToolbarView()
         mockNavigatable = MockNavigatable(canGoBack: true, canGoForward: false)
-        mockThemeManager = MockThemeManager()
-        toolbarHandler = ToolbarHandler(toolbar: mockToolbar, themeManager: mockThemeManager)
+        toolbarHandler = ToolbarHandler(toolbar: mockToolbar)
     }
 
     override func tearDown() {
         toolbarHandler = nil
         mockToolbar = nil
         mockNavigatable = nil
-        mockThemeManager = nil
         super.tearDown()
     }
     
@@ -51,24 +48,26 @@ class ToolbarHandlerTests: XCTestCase {
         // To prevent assertion for using experimental colors with the default theme
         toolbarHandler.updateToolbarWithState(.newTab)
 
-        XCTAssertEqual(mockToolbar.items?.count, 9)
-        XCTAssertEqual(mockToolbar.items?[0].title, UserText.actionOpenBookmarks)
-        XCTAssertEqual(mockToolbar.items?[2].title, UserText.actionOpenPasswords)
-        XCTAssertEqual(mockToolbar.items?[4].title, UserText.actionForgetAll)
-        XCTAssertEqual(mockToolbar.items?[6].title, UserText.tabSwitcherAccessibilityLabel)
-        XCTAssertEqual(mockToolbar.items?[8].title, UserText.menuButtonHint)
+        let items = mockToolbar.arrangedToolbarButtonViews.compactMap { $0 as? BrowserChromeButton }
+        XCTAssertEqual(items.count, 5)
+        XCTAssertEqual(items[0].accessibilityLabel, UserText.actionOpenBookmarks)
+        XCTAssertEqual(items[1].accessibilityLabel, UserText.actionOpenPasswords)
+        XCTAssertEqual(items[2].accessibilityLabel, UserText.actionForgetAll)
+        XCTAssertEqual(items[3].accessibilityLabel, UserText.tabSwitcherAccessibilityLabel)
+        XCTAssertEqual(items[4].accessibilityLabel, UserText.menuButtonHint)
     }
 
     func testUpdateToolbarWithStatePageLoaded() {
         // To prevent assertion for using experimental colors with the default theme
         toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
 
-        XCTAssertEqual(mockToolbar.items?.count, 9)
-        XCTAssertEqual(mockToolbar.items?[0].title, UserText.keyCommandBrowserBack)
-        XCTAssertEqual(mockToolbar.items?[2].title, UserText.keyCommandBrowserForward)
-        XCTAssertEqual(mockToolbar.items?[4].title, UserText.actionForgetAll)
-        XCTAssertEqual(mockToolbar.items?[6].title, UserText.tabSwitcherAccessibilityLabel)
-        XCTAssertEqual(mockToolbar.items?[8].title, UserText.menuButtonHint)
+        let items = mockToolbar.arrangedToolbarButtonViews.compactMap { $0 as? BrowserChromeButton }
+        XCTAssertEqual(items.count, 5)
+        XCTAssertEqual(items[0].accessibilityLabel, UserText.keyCommandBrowserBack)
+        XCTAssertEqual(items[1].accessibilityLabel, UserText.keyCommandBrowserForward)
+        XCTAssertEqual(items[2].accessibilityLabel, UserText.actionForgetAll)
+        XCTAssertEqual(items[3].accessibilityLabel, UserText.tabSwitcherAccessibilityLabel)
+        XCTAssertEqual(items[4].accessibilityLabel, UserText.menuButtonHint)
 
         XCTAssertTrue(toolbarHandler.backButton.isEnabled)
         XCTAssertFalse(toolbarHandler.forwardButton.isEnabled)
@@ -76,11 +75,33 @@ class ToolbarHandlerTests: XCTestCase {
 
     func testUpdateToolbarWithStateNoChange() {
         toolbarHandler.updateToolbarWithState(.newTab)
-        let initialItems = mockToolbar.items
+        let initialItems = mockToolbar.arrangedToolbarButtonViews
 
         toolbarHandler.updateToolbarWithState(.newTab)
 
-        XCTAssertEqual(mockToolbar.items, initialItems)
+        XCTAssertEqual(mockToolbar.arrangedToolbarButtonViews, initialItems)
+    }
+
+    func testToolbarButtonsHaveSquareTouchTargets() {
+        toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
+
+        for button in mockToolbar.arrangedToolbarButtonViews {
+            XCTAssertTrue(button.constraints.contains { $0.firstAttribute == .width && $0.constant == BrowserChromeButton.toolbarButtonSize })
+            XCTAssertTrue(button.constraints.contains { $0.firstAttribute == .height && $0.constant == BrowserChromeButton.toolbarButtonSize })
+        }
+    }
+
+    func testReplacementTabSwitcherHasSquareTouchTarget() {
+        let tabSwitcherButton = TabSwitcherStaticButton(showMenuOnLongPress: false)
+
+        toolbarHandler.setTabSwitcherView(tabSwitcherButton)
+
+        XCTAssertTrue(tabSwitcherButton.constraints.contains {
+            $0.firstAttribute == .width && $0.constant == BrowserChromeButton.toolbarButtonSize
+        })
+        XCTAssertTrue(tabSwitcherButton.constraints.contains {
+            $0.firstAttribute == .height && $0.constant == BrowserChromeButton.toolbarButtonSize
+        })
     }
 
     func testBackButtonEnabledState() {
@@ -113,5 +134,19 @@ final class MockNavigatable: Navigatable {
     init(canGoBack: Bool, canGoForward: Bool) {
         self.canGoBack = canGoBack
         self.canGoForward = canGoForward
+    }
+}
+
+// MARK: - FloatingToolbarRevealMetricsTests
+
+final class FloatingToolbarRevealMetricsTests: XCTestCase {
+
+    func testWhenReturningFromTabSwitcherThenLiveToolbarRevealIsShorterThanTheMorph() {
+        XCTAssertGreaterThan(TabSwitcherTransition.Constants.floatingToolbarRevealDuration, 0)
+        XCTAssertLessThan(
+            TabSwitcherTransition.Constants.floatingToolbarRevealDuration,
+            TabSwitcherTransition.Constants.floatingDuration)
+        XCTAssertGreaterThan(TabSwitcherTransition.Constants.floatingToolbarRevealScale, 0)
+        XCTAssertLessThan(TabSwitcherTransition.Constants.floatingToolbarRevealScale, 1)
     }
 }

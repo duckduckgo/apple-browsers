@@ -23,18 +23,37 @@ from typing import Dict, FrozenSet, List, Optional, Set
 
 _base_branch_cache: Optional[str] = None
 
+
+def get_merge_base(base_ref: str) -> Optional[str]:
+    """Get the merge base for HEAD and the base branch."""
+    try:
+        result = subprocess.run(
+            ['git', 'merge-base', base_ref, 'HEAD'],
+            capture_output=True, text=True, check=False
+        )
+    except Exception:
+        return None
+
+    if result.returncode != 0:
+        return None
+
+    merge_base = result.stdout.strip()
+    return merge_base if merge_base else None
+
+
 def get_base_branch() -> str:
-    """Get the base branch for comparison (usually main or the PR base)."""
+    """Get the merge-base revision for comparison."""
     global _base_branch_cache
     if _base_branch_cache is not None:
         return _base_branch_cache
 
     base_ref = os.environ.get('GITHUB_BASE_REF')
     if base_ref:
-        _base_branch_cache = f"origin/{base_ref}"
+        base = f"origin/{base_ref}"
     else:
-        _base_branch_cache = "origin/main"
+        base = "origin/main"
 
+    _base_branch_cache = get_merge_base(base) or base
     return _base_branch_cache
 
 def get_files_content_at_base(file_paths: List[str]) -> Dict[str, str]:
@@ -202,4 +221,3 @@ def get_search_paths(platform: str) -> List[str]:
         return ["macOS", "SharedPackages"]
     else:
         return [platform]
-

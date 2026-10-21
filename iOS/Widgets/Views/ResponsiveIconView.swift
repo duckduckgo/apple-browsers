@@ -36,6 +36,7 @@ struct ResponsiveIconView: View {
         ZStack {
             RoundedRectangle(cornerRadius: 16)
                 .renderAwareBackgroundFill()
+                .iOS26TileShadow()
 
             image
                 .resizable()

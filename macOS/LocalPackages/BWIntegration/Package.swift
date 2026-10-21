@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "BWIntegration",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "BWIntegration", targets: ["BWIntegration"]),
@@ -14,7 +14,9 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../AppKitExtensions"),
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Common"),
+        .package(path: "../../../SharedPackages/PixelKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(url: "https://github.com/duckduckgo/OpenSSL-XCFramework", exact: "3.3.2000")
     ],
     targets: [
@@ -43,15 +45,25 @@ let package = Package(
                 "BWManagementShared",
                 "BWIntegration",
                 "AppKitExtensions",
-                .product(name: "Common", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit")
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "PixelKit", package: "PixelKit")
+            ]
+        ),
+        .testTarget(
+            name: "BWManagementTests",
+            dependencies: [
+                "BWManagement"
             ]
         ),
         .testTarget(
             name: "BWManagementSharedTests",
             dependencies: [
                 "BWManagementShared",
-                .product(name: "Common", package: "BrowserServicesKit")
+                .product(name: "Common", package: "Common"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions")
             ]
         ),
         .testTarget(

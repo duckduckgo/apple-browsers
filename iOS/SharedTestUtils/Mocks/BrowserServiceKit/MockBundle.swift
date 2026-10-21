@@ -22,6 +22,7 @@ import Foundation
 @testable import Core
 @testable import BrowserServicesKit
 import Common
+import FoundationExtensions
 
 class MockBundle: InfoBundle {
 

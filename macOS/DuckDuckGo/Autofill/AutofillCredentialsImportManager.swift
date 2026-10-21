@@ -22,12 +22,16 @@ import BrowserServicesKit
 
 public protocol AutofillCredentialsImportPresentationDelegate: AnyObject {
     func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void)
+    func autofillDidPermanentlyDismissCredentialsImportPrompt()
 }
 
 public protocol AutofillLoginImportStateProvider {
     var isEligibleDDGUser: Bool { get }
     var hasImportedLogins: Bool { get }
+    /// Whether DuckDuckGo autofills passwords: the user wants it, and no extension manages autofill.
     var isAutofillEnabled: Bool { get }
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo.
+    var isAutofillManagedByExtension: Bool { get }
     var isCredentialsImportPromoInBrowserPermanentlyDismissed: Bool { get }
     func hasNeverPromptWebsitesFor(_ domain: String) -> Bool
 }
@@ -52,34 +56,40 @@ extension AutofillCredentialsImportManager: AutofillPasswordImportDelegate {
     }
 
     public func autofillUserScriptDidRequestPasswordImportFlow(_ completion: @escaping () -> Void) {
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowStarted, doNotEnforcePrefix: true)
+        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowStarted)
         presentationDelegate?.autofillDidRequestCredentialsImportFlow(
             onFinished: {
-                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowEnded, doNotEnforcePrefix: true)
+                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowEnded)
                 completion()
             },
             onCancelled: {
-                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowCancelled, doNotEnforcePrefix: true)
+                PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowCancelled)
                 completion()
             }
         )
     }
 
     public func autofillUserScriptDidFinishImportWithImportedCredentialForCurrentDomain() {
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowHadCredentials, doNotEnforcePrefix: true)
+        PixelKit.fire(AutofillPixelKitEvent.importCredentialsFlowHadCredentials)
     }
 
     public func autofillUserScriptDidRequestPermanentCredentialsImportPromptDismissal() {
         loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed = true
-        PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked, doNotEnforcePrefix: true)
+        PixelKit.fire(AutofillPixelKitEvent.importCredentialsPromptNeverAgainClicked)
+        presentationDelegate?.autofillDidPermanentlyDismissCredentialsImportPrompt()
     }
 
     public func autofillUserScriptShouldDisplayOverlay(_ serializedInputContext: String, for domain: String) -> Bool {
-        if let data = serializedInputContext.data(using: .utf8),
-           let decoded = try? JSONDecoder().decode(CredentialsImportInputContext.self, from: data) {
-            if decoded.credentialsImport {
-                return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
-            }
+        let decoded = serializedInputContext.data(using: .utf8).flatMap {
+            try? JSONDecoder().decode(CredentialsImportInputContext.self, from: $0)
+        }
+        // While an extension manages autofill, DuckDuckGo's menu only opens on email fields, for Email
+        // Protection's Duck Address. A page that loaded before the extension took over still asks for it.
+        if loginImportStateProvider.isAutofillManagedByExtension {
+            return decoded?.inputType.hasSuffix(".emailAddress") == true
+        }
+        if let decoded, decoded.credentialsImport {
+            return !loginImportStateProvider.isCredentialsImportPromoInBrowserPermanentlyDismissed
         }
         return true
     }

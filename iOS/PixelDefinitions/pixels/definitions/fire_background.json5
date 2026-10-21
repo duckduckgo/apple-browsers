@@ -1,0 +1,16 @@
+{
+    "fire_burn_backgrounded": {
+        "description": "Fires when a Fire (data clearing burn) is running while the app is in the background, i.e. when the burn relies on the background time it requests.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "fire_background-time_expired": {
+        "description": "Fires when iOS ends the background time requested for a Fire before the burn finished, so the burn was likely cut short.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

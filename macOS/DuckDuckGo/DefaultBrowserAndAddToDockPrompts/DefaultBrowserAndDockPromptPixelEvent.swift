@@ -23,7 +23,7 @@ import PixelKit
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
+enum DefaultBrowserAndDockPromptPixelEvent: PixelKit.Event, Hashable {
     private enum ParameterKey {
         static let contentType = "contentType"
         static let numberOfBannersShown = "numberOfBannersShown"
@@ -136,7 +136,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEvent {
+enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKit.Event {
     /// Trigger Event: The popover seen date fails to save.
     case failedToSavePopoverSeenDate
     /// Trigger Event: The popover seen date fails to retrieve.

@@ -764,6 +764,268 @@ struct WhatsNewDisplayModelMapperImageLoadingTests {
     }
 }
 
+@Suite("What's New - Display Model Mapper Per-Item Image Loading Tests")
+struct WhatsNewDisplayModelMapperPerItemImageLoadingTests {
+
+    // MARK: - TwoLines Card
+
+    @available(iOS 16, *)
+    @Test("When twoLines item has imageUrl and image is cached then cachedImage closure returns the cached image", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemHasImageUrlAndCachedThenCachedImageClosureReturnsImage() throws {
+        let imageUrl = URL(string: "https://example.com/two-lines.png")!
+        let expectedImage = UIImage()
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.cachedImageToReturn = expectedImage
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: nil)
+
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        #expect(card.cachedImage?() === expectedImage)
+        #expect(card.imageUrl == imageUrl)
+    }
+
+    @available(iOS 16, *)
+    @Test("When twoLines item image is cached then no pixel fires until the View reports the image is shown", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemImageIsCachedThenSuccessPixelFiresOnDisplayOnce() throws {
+        let imageUrl = URL(string: "https://example.com/two-lines.png")!
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.cachedImageToReturn = UIImage()
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "feature-card", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        // Cached images report on display - not eagerly at model-build time - so the
+        // pixel matches the non-cached path's lifecycle.
+        #expect(!pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
+
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        card.onImageLoadSuccess?()
+
+        #expect(pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
+        #expect(pixelReporter.capturedCardImageLoadSuccessMessage?.id == message.id)
+        #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "feature-card")
+
+        // LazyVStack recycling re-renders the card; the pixel must not fire again.
+        card.onImageLoadSuccess?()
+        #expect(pixelReporter.measureRemoteMessageCardImageLoadSuccessCount == 1)
+    }
+
+    @available(iOS 16, *)
+    @Test("When twoLines item loadImage succeeds then card success pixel is fired with card id", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemLoadImageSucceedsThenCardSuccessPixelFired() async throws {
+        let imageUrl = URL(string: "https://example.com/two-lines.png")!
+        let expectedImage = UIImage()
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.imageToReturn = expectedImage
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "feature-card", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        let loadedImage = try await card.loadImage?(imageUrl)
+
+        #expect(loadedImage === expectedImage)
+        card.onImageLoadSuccess?()
+        #expect(pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
+        #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "feature-card")
+    }
+
+    @available(iOS 16, *)
+    @Test("When twoLines item loadImage fails then card failure pixel is fired with card id", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemLoadImageFailsThenCardFailurePixelFired() async throws {
+        let imageUrl = URL(string: "https://example.com/two-lines.png")!
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.errorToThrow = RemoteMessagingImageLoadingError.invalidImageData
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "feature-card", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        let loadedImage = try? await card.loadImage?(imageUrl)
+
+        #expect(loadedImage == nil)
+        card.onImageLoadFailed?()
+        #expect(pixelReporter.didCallMeasureRemoteMessageCardImageLoadFailed)
+        #expect(pixelReporter.capturedCardImageLoadFailedCardId == "feature-card")
+    }
+
+    @available(iOS 16, *)
+    @Test("When twoLines item has no imageUrl then loadImage is nil and no pixel fires", .timeLimit(.minutes(1)))
+    func whenTwoLinesItemHasNoImageUrlThenLoadImageIsNilAndNoPixel() throws {
+        let imageLoader = MockRemoteMessagingImageLoader()
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let item = RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item-1", imageUrl: nil)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.twoLinesCard)
+        #expect(card.cachedImage == nil)
+        #expect(card.imageUrl == nil)
+        #expect(card.loadImage == nil)
+        #expect(!pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
+        #expect(!pixelReporter.didCallMeasureRemoteMessageCardImageLoadFailed)
+    }
+
+    // MARK: - Featured Card
+
+    @available(iOS 16, *)
+    @Test("When featured item has imageUrl and image is cached then cachedImage closure returns the cached image", .timeLimit(.minutes(1)))
+    func whenFeaturedItemHasImageUrlAndCachedThenCachedImageClosureReturnsImage() throws {
+        let imageUrl = URL(string: "https://example.com/featured.png")!
+        let expectedImage = UIImage()
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.cachedImageToReturn = expectedImage
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: nil)
+
+        let item = RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured-1", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
+        #expect(card.cachedImage?() === expectedImage)
+        #expect(card.imageUrl == imageUrl)
+    }
+
+    @available(iOS 16, *)
+    @Test("When featured item loadImage succeeds then card success pixel is fired with card id", .timeLimit(.minutes(1)))
+    func whenFeaturedItemLoadImageSucceedsThenCardSuccessPixelFired() async throws {
+        let imageUrl = URL(string: "https://example.com/featured.png")!
+        let expectedImage = UIImage()
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.imageToReturn = expectedImage
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let item = RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured-card", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
+        let loadedImage = try await card.loadImage?(imageUrl)
+
+        #expect(loadedImage === expectedImage)
+        card.onImageLoadSuccess?()
+        #expect(pixelReporter.didCallMeasureRemoteMessageCardImageLoadSuccess)
+        #expect(pixelReporter.capturedCardImageLoadSuccessCardId == "featured-card")
+    }
+
+    @available(iOS 16, *)
+    @Test("When featured item loadImage fails then card failure pixel is fired with card id", .timeLimit(.minutes(1)))
+    func whenFeaturedItemLoadImageFailsThenCardFailurePixelFired() async throws {
+        let imageUrl = URL(string: "https://example.com/featured.png")!
+        let imageLoader = MockRemoteMessagingImageLoader()
+        imageLoader.errorToThrow = RemoteMessagingImageLoadingError.invalidImageData
+        let pixelReporter = MockRemoteMessagingPixelReporter()
+        let sut = WhatsNewDisplayModelMapper(imageLoader: imageLoader, pixelReporter: pixelReporter)
+
+        let item = RemoteMessageModelType.ListItem.makeFeaturedItem(id: "featured-card", imageUrl: imageUrl)
+        let message = RemoteMessageModel.makeCardsListMessage(items: [item])
+
+        let displayModel = try #require(
+            sut.makeDisplayModel(
+                from: message,
+                onMessageAppear: { },
+                onItemAppear: { _ in },
+                onItemAction: { _, _ in },
+                onPrimaryAction: { _ in },
+                onDismiss: { }
+            )
+        )
+
+        let card = try #require(displayModel.items.first?.featuredTwoLinesCard)
+        let loadedImage = try? await card.loadImage?(imageUrl)
+
+        #expect(loadedImage == nil)
+        card.onImageLoadFailed?()
+        #expect(pixelReporter.didCallMeasureRemoteMessageCardImageLoadFailed)
+        #expect(pixelReporter.capturedCardImageLoadFailedCardId == "featured-card")
+    }
+}
+
 private extension RemoteMessagingUI.CardsListDisplayModel.Item {
 
     var twoLinesCard: RemoteMessagingUI.CardsListDisplayModel.Item.TwoLinesCard? {

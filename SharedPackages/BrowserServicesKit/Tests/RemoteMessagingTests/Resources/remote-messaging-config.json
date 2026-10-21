@@ -163,7 +163,7 @@
                 "type": "survey",
                 "value": "https://duckduckgo.com/survey",
                 "additionalParameters": {
-                    "queryParams": "atb;var;delta;osv;ddgv"
+                    "queryParams": "atb;var;delta;osv;ddgv;last_duck_ai_usage"
                 }
             }
         },
@@ -295,6 +295,9 @@
         "pproSubscriptionStatus": {
           "value": ["active", "expiring"]
         },
+        "pproSubscriptionTier": {
+          "value": ["pro", "plus"]
+        },
         "pproDaysSinceSubscribed": {
             "min": 5,
             "max": 8
@@ -333,6 +336,23 @@
       "attributes": {
           "syncEnabled": {
               "value": true
+          }
+      }
+    },
+    {
+      "id": 12,
+      "attributes": {
+          "isReturningUser": {
+              "value": true
+          },
+          "isDuckAiEnabled": {
+              "value": true
+          },
+          "triedDuckAiDuringOnboarding": {
+              "value": false
+          },
+          "isDuckAiBoostActive": {
+              "value": false
           }
       }
     }

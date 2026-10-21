@@ -44,7 +44,9 @@ final class SessionRestorePromptPopover: NSPopover {
     private func setupContentController() {
         /// Popover frame used for positioning is 26px wider than `contentSize.width`.
         /// Adjust the width to get the expected positioning.
-        contentSize = NSSize(width: SessionRestorePromptView.Const.width - 26, height: 256)
+        let metrics = SessionRestorePromptView.Metrics.current
+
+        contentSize = metrics.popoverSize
         contentViewController = SessionRestorePromptViewController(ctaCallback: ctaCallback) { [weak self] in
             self?.close()
         }
@@ -55,8 +57,7 @@ final class SessionRestorePromptViewController: NSHostingController<SessionResto
     private let viewModel: SessionRestorePromptViewModel
     private let dismiss: () -> Void
 
-    init(ctaCallback: @escaping (Bool) -> Void,
-         dismiss: @escaping () -> Void) {
+    init(ctaCallback: @escaping (Bool) -> Void, dismiss: @escaping () -> Void) {
         self.viewModel = SessionRestorePromptViewModel(ctaCallback: ctaCallback)
         self.dismiss = dismiss
         let view = SessionRestorePromptView(model: viewModel, dismiss: dismiss)

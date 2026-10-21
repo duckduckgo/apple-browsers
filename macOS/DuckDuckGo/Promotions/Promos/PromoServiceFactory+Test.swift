@@ -26,10 +26,10 @@ extension PromoServiceFactory {
     static var testPromos: [Promo] = {
         guard includeTestPromos else { return [] }
 
-        var testPromoA = Promo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
-        var testPromoB = Promo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .webPage)
-        var testPromoC = Promo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
-        var testPromoD = Promo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
+        var testPromoA = InternalPromo(id: "test-promo-a", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
+        var testPromoB = InternalPromo(id: "test-promo-b", triggers: [.testTriggered], initiated: .user, promoType: PromoType(.appModal), context: .newTabPage)
+        var testPromoC = InternalPromo(id: "test-promo-c", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal), context: .global)
+        var testPromoD = InternalPromo(id: "test-promo-d", triggers: [.testTriggered], initiated: .app, promoType: PromoType(.appModal, customTimeoutInterval: .seconds(3), customTimeoutResult: .ignored()), context: .global)
 
         testPromoA.delegate = TestPromoDelegate(for: testPromoA)
         testPromoB.delegate = TestPromoDelegate(for: testPromoB)
@@ -42,7 +42,9 @@ extension PromoServiceFactory {
 
 /// Test promo delegate that shows an NSAlert with metadata, history, and result buttons.
 /// Used to exercise promo persistence across app restarts.
-final class TestPromoDelegate: PromoDelegate {
+final class TestPromoDelegate: InternalPromoDelegate {
+    private typealias Identifiers = AccessibilityIdentifiers.PromoQueue
+
     private let promo: Promo
     private var alert: NSAlert?
     private let isEligibleSubject = CurrentValueSubject<Bool, Never>(true)
@@ -96,14 +98,13 @@ final class TestPromoDelegate: PromoDelegate {
         alert.informativeText = metadataBlock
         alert.alertStyle = .informational
 
-        _ = alert.addButton(withTitle: "Action")
-        _ = alert.addButton(withTitle: "Dismiss Permanently")
-        _ = alert.addButton(withTitle: "Dismiss (1 day cooldown)")
-        _ = alert.addButton(withTitle: "None")
-        _ = alert.addButton(withTitle: "Set Ineligible")
+        alert.addButton(withTitle: "Action").setAccessibilityIdentifier(Identifiers.actionButton)
+        alert.addButton(withTitle: "Dismiss Permanently").setAccessibilityIdentifier(Identifiers.dismissPermanentlyButton)
+        alert.addButton(withTitle: "Dismiss (1 day cooldown)").setAccessibilityIdentifier(Identifiers.dismissWithCooldownButton)
+        alert.addButton(withTitle: "None").setAccessibilityIdentifier(Identifiers.noneButton)
+        alert.addButton(withTitle: "Set Ineligible").setAccessibilityIdentifier(Identifiers.setIneligibleButton)
 
-        let alertId = AccessibilityIdentifiers.PromoQueue.testPromoAlert(promo.id)
-        alert.window.setAccessibilityIdentifier(alertId)
+        alert.window.setAccessibilityIdentifier(Identifiers.testPromoAlert(promo.id))
         self.alert = alert
 
         guard let window = NSApp.delegateTyped.windowControllersManager.mainWindowController?.window ?? NSApp.delegateTyped.windowControllersManager.openNewWindow() else { return .noChange }
@@ -111,7 +112,7 @@ final class TestPromoDelegate: PromoDelegate {
 
         switch response.rawValue {
         case NSApplication.ModalResponse.alertFirstButtonReturn.rawValue:
-            return .actioned
+            return .actioned()
         case NSApplication.ModalResponse.alertSecondButtonReturn.rawValue:
             return .ignored(cooldown: nil)
         case NSApplication.ModalResponse.alertThirdButtonReturn.rawValue:

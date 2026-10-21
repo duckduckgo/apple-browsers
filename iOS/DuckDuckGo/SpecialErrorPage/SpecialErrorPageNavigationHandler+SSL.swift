@@ -19,9 +19,11 @@
 
 import Foundation
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import SpecialErrorPages
 import Core
+import PixelKit
 
 protocol SSLSpecialErrorPageNavigationHandling {
     func handleServerTrustChallenge(_ challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
@@ -77,7 +79,7 @@ extension SSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHandling {
     }
 
     func errorPageVisited(errorType: SSLErrorType) {
-        Pixel.fire(pixel: .certificateWarningDisplayed(errorType.pixelParameter))
+        PixelKit.fire(Pixel.Event.certificateWarningDisplayed(errorType.pixelParameter))
     }
 
 }
@@ -87,7 +89,7 @@ extension SSLErrorPageNavigationHandler: SSLSpecialErrorPageNavigationHandling {
 extension SSLErrorPageNavigationHandler: SpecialErrorPageActionHandler {
 
     func leaveSite() {
-        Pixel.fire(pixel: .certificateWarningLeaveClicked)
+        PixelKit.fire(Pixel.Event.certificateWarningLeaveClicked)
     }
 
     func visitSite() {
@@ -95,7 +97,7 @@ extension SSLErrorPageNavigationHandler: SpecialErrorPageActionHandler {
     }
 
     func advancedInfoPresented() {
-        Pixel.fire(pixel: .certificateWarningAdvancedClicked)
+        PixelKit.fire(Pixel.Event.certificateWarningAdvancedClicked)
     }
     
 }

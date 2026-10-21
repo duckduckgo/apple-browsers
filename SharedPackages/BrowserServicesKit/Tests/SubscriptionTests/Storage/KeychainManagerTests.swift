@@ -55,6 +55,13 @@ final class KeychainManagerTests: XCTestCase {
         return KeychainManager(keychainOperations: mockKeychainOperations, attributes: attributes, pixelHandler: MockPixelHandler())
     }
 
+    private func makeManagerWithFastBacklogRetry(pixelHandler: SubscriptionPixelHandling) -> KeychainManager {
+        KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: pixelHandler, initialBacklogRetryDelay: 0.01)
+    }
+
     private func createTestData() -> Data {
         return "test-data".data(using: .utf8)!
     }
@@ -395,6 +402,85 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertNoThrow(try customManager.store(data: testData, forKey: "new-key"))
     }
 
+    func testScheduledBacklogRetryKeepsItemQueuedSilentlyWhileUnavailableThenWritesIt() throws {
+        // Given: a write is queued because the keychain is unavailable, with no app lifecycle notifications posted
+        // (as in an app extension), so only the scheduled retry can drain it.
+        let testKey = "test-key"
+        let testData = createTestData()
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = makeManagerWithFastBacklogRetry(pixelHandler: recordingPixelHandler)
+
+        let drainResult = expectation(description: "No drain result while the keychain is unavailable")
+        drainResult.isInverted = true
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if pixel == .dataWroteFromBacklog || pixel == .failedToWriteDataFromBacklog { drainResult.fulfill() }
+        }
+        makeKeychainNotAvailable()
+        try manager.store(data: testData, forKey: testKey)
+
+        // When: several scheduled retries run while the keychain is still unavailable.
+        wait(for: [drainResult], timeout: 0.2)
+
+        // Then: re-queuing is neither a success, a failure, nor a new addition, and the item is still in the backlog.
+        XCTAssertEqual(recordingPixelHandler.keychainPixels, [.dataAddedToTheBacklog])
+        XCTAssertNil(mockKeychainOperations.getStoredData(for: testKey))
+        XCTAssertEqual(try manager.retrieveData(forKey: testKey), testData)
+
+        // When: the keychain becomes available.
+        let wroteFromBacklog = expectation(description: "Backlog written")
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
+        }
+        makeKeychainAvailable()
+
+        // Then: a later scheduled retry writes it, and only then is success reported.
+        wait(for: [wroteFromBacklog], timeout: 2.0)
+        XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
+        withExtendedLifetime(manager) {}
+    }
+
+    func testScheduledBacklogRetryWritesItemOnceKeychainBecomesAvailable() throws {
+        // Given: a write is queued because the keychain is unavailable.
+        let testKey = "test-key"
+        let testData = createTestData()
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = makeManagerWithFastBacklogRetry(pixelHandler: recordingPixelHandler)
+
+        let wroteFromBacklog = expectation(description: "Backlog written")
+        recordingPixelHandler.onKeychainPixel = { pixel in
+            if pixel == .dataWroteFromBacklog { wroteFromBacklog.fulfill() }
+        }
+        makeKeychainNotAvailable()
+        try manager.store(data: testData, forKey: testKey)
+
+        // When: the keychain becomes available, with no notification or read to trigger a drain.
+        makeKeychainAvailable()
+
+        // Then: the scheduled retry writes it.
+        wait(for: [wroteFromBacklog], timeout: 1.0)
+        XCTAssertEqual(mockKeychainOperations.getStoredData(for: testKey), testData)
+        withExtendedLifetime(manager) {}
+    }
+
+    func testEveryFailedStoreIsCountedAsAddedToBacklogEvenForAnAlreadyQueuedKey() throws {
+        // Given: the keychain is unavailable.
+        let testKey = "test-key"
+        let recordingPixelHandler = RecordingPixelHandler()
+        let manager = KeychainManager(keychainOperations: mockKeychainOperations, attributes: [
+            kSecClass: kSecClassGenericPassword,
+            kSecAttrSynchronizable: false
+        ], pixelHandler: recordingPixelHandler)
+        makeKeychainNotAvailable()
+
+        // When: two separate writes for the same key both fail.
+        try manager.store(data: "first".data(using: .utf8)!, forKey: testKey)
+        try manager.store(data: "second".data(using: .utf8)!, forKey: testKey)
+
+        // Then: both failed writes are counted, and the backlog holds the latest data.
+        XCTAssertEqual(recordingPixelHandler.keychainPixels.filter { $0 == .dataAddedToTheBacklog }.count, 2)
+        XCTAssertEqual(try manager.retrieveData(forKey: testKey), "second".data(using: .utf8)!)
+    }
+
     // MARK: - Edge Cases Tests
 
     func testMultipleOperationsConcurrently() throws {
@@ -475,5 +561,51 @@ final class KeychainManagerTests: XCTestCase {
 
         // Then - Manager should be deallocated
         XCTAssertNil(weakManager)
+    }
+}
+
+/// Records fired `KeychainManager.Pixel`s for assertions. `MockPixelHandler` is shared across
+/// several test targets and only logs, so this stays local to this file rather than widening that
+/// shared type's behavior for one test.
+/// `KeychainManager` fires pixels from its private background queue, so recorded pixels are lock-protected.
+private final class RecordingPixelHandler: SubscriptionPixelHandling {
+    private let lock = NSLock()
+    private var recordedKeychainPixels: [KeychainManager.Pixel] = []
+
+    private var keychainPixelCallback: ((KeychainManager.Pixel) -> Void)?
+
+    /// Called on `KeychainManager`'s queue after each keychain pixel is recorded.
+    var onKeychainPixel: ((KeychainManager.Pixel) -> Void)? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return keychainPixelCallback
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            keychainPixelCallback = newValue
+        }
+    }
+
+    var keychainPixels: [KeychainManager.Pixel] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedKeychainPixels
+    }
+
+    func removeAllKeychainPixels() {
+        lock.lock()
+        defer { lock.unlock() }
+        recordedKeychainPixels.removeAll()
+    }
+
+    func handle(pixel: SubscriptionPixelType) {}
+
+    func handle(pixel: KeychainManager.Pixel) {
+        lock.lock()
+        recordedKeychainPixels.append(pixel)
+        lock.unlock()
+        onKeychainPixel?(pixel)
     }
 }

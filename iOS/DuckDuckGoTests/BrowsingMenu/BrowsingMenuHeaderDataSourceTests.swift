@@ -87,20 +87,26 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
     // MARK: - AI Tab Update
 
     func testWhenUpdateForAITabThenIconTypeIsAIChat() {
-        sut.update(forAITab: "Duck.ai")
+        sut.update(forAITab: "Duck.ai", usesDuckAILogo: false)
 
         XCTAssertEqual(sut.iconType, .aiChat)
     }
 
+    func testWhenUpdateForAITabWithDuckAILogoThenIconTypeIsDuckAILogo() {
+        sut.update(forAITab: "Duck.ai", usesDuckAILogo: true)
+
+        XCTAssertEqual(sut.iconType, .duckAILogo)
+    }
+
     func testWhenUpdateForAITabThenHeaderIsVisible() {
-        sut.update(forAITab: "Duck.ai")
+        sut.update(forAITab: "Duck.ai", usesDuckAILogo: false)
 
         XCTAssertTrue(sut.isHeaderVisible)
         XCTAssertEqual(sut.title, "Duck.ai")
     }
 
     func testWhenUpdateForAITabThenDisplayURLIsNil() {
-        sut.update(forAITab: "Duck.ai")
+        sut.update(forAITab: "Duck.ai", usesDuckAILogo: false)
 
         XCTAssertNil(sut.displayURL)
     }
@@ -121,7 +127,7 @@ final class BrowsingMenuHeaderDataSourceTests: XCTestCase {
     }
 
     func testWhenResetAfterAITabThenAllPropertiesCleared() {
-        sut.update(forAITab: "Duck.ai")
+        sut.update(forAITab: "Duck.ai", usesDuckAILogo: false)
 
         sut.reset()
 

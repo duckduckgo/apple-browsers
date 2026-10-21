@@ -16,28 +16,54 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Common
 import ContentScopeScripts
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import MaliciousSiteProtection
+import Persistence
 import PrivacyConfig
+import WebExtensions
 import WebKit
 
 final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
 
     let featureFlagger: FeatureFlagger
     let faviconManager: FaviconManagement
+    let permissionManager: PermissionManagerProtocol
     let isNTPSpecialPageSupported: Bool
     let userBackgroundImagesManager: UserBackgroundImagesManaging?
+
+    private var failureURLSchemeDebugKeyedStorage: some KeyedStoring<FailureURLSchemeDebugSettingsKeys> {
+        UserDefaults.standard.keyedStoring()
+    }
+
+    /// Identifiers of in-flight favicon scheme tasks that complete asynchronously (after awaiting the
+    /// image decode). Used to skip messaging a task that WebKit has already stopped.
+    private var runningFaviconTasks = Set<ObjectIdentifier>()
+
+    /// Debug-only Favicons inspector served at `duck://favicons` (Debug ▸ Inspect Favicons).
+    private lazy var faviconsDebugInspector = FaviconsDebugInspector(faviconManager: faviconManager)
+
+    /// Debug-only Permissions inspector served at `duck://permissions` (Debug ▸ Permissions ▸ Inspect).
+    private lazy var permissionsDebugInspector = PermissionsDebugInspector(permissionManager: permissionManager)
+
+    /// Read on each request, because the manager is released and recreated when web extensions are turned off and on.
+    private let webExtensionManagerProvider: () -> WebExtensionManaging?
 
     init(
         featureFlagger: FeatureFlagger,
         faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
+        permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
         isNTPSpecialPageSupported: Bool = false,
-        userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager
+        userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager,
+        webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager }
     ) {
         self.featureFlagger = featureFlagger
+        self.webExtensionManagerProvider = webExtensionManagerProvider
         self.faviconManager = faviconManager
+        self.permissionManager = permissionManager
         self.isNTPSpecialPageSupported = isNTPSpecialPageSupported
         self.userBackgroundImagesManager = userBackgroundImagesManager
     }
@@ -47,6 +73,12 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             assertionFailure("No URL for Duck scheme handler")
             return
         }
+
+        if requestURL.isDebugURLScheme {
+            handleDebugSchemeURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+            return
+        }
+
         let webViewURL = webView.url ?? requestURL
 
         switch webViewURL.type {
@@ -74,20 +106,182 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             default:
                 handleSpecialPages(urlSchemeTask: urlSchemeTask)
             }
+        // Matched only for internal users; for everyone else no case matches and `duck://permissions`
+        // falls to `default:`, the same empty native UI page any unknown duck:// host gets.
+        case .permissions where featureFlagger.internalUserDecider.isInternalUser:
+            permissionsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case .favicons:
+            guard featureFlagger.internalUserDecider.isInternalUser else {
+                fallthrough
+            }
+            faviconsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case .webExtensions where featureFlagger.internalUserDecider.isInternalUser:
+            guard #available(macOS 15.4, *) else { fallthrough }
+            WebExtensionsInspector(manager: webExtensionManagerProvider() as? WebExtensionManager)
+                .handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         default:
             handleNativeUIPages(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         }
     }
 
-    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+    func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {
+        // A favicon task may still be awaiting its image decode; drop it so the pending completion is
+        // skipped instead of messaging a stopped task (which would crash).
+        runningFaviconTasks.remove(ObjectIdentifier(urlSchemeTask))
+        faviconsDebugInspector.webViewDidStop(urlSchemeTask)
+    }
 
-    private lazy var faviconsFetcherOnboarding: FaviconsFetcherOnboarding? = {
-        guard let syncService = NSApp.delegateTyped.syncService, let syncBookmarksAdapter = NSApp.delegateTyped.syncDataProviders?.bookmarksAdapter else {
-            assertionFailure("SyncService and/or SyncBookmarksAdapter is nil")
-            return nil
+    private static let failureSchemeDemoHtml = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <title>debug://failure</title>
+      <style>
+        body { font: -apple-system-body; margin: 2rem; line-height: 1.4; }
+        code { font: -apple-system-monospaced; }
+      </style>
+    </head>
+    <body>
+      <h1><code>debug://failure</code></h1>
+      <p>This page is served by the app URL scheme handler.</p>
+      <p>Turn on <strong>Debug → debug:// URL scheme → Simulate debug://failure connection error</strong> to produce a
+      connection-lost navigation failure instead of this page.</p>
+    </body>
+    </html>
+    """
+
+    /// UI tests only: `debug://failure?alternatingFailures=1` alternates simulated `URLError` on successive handler invocations (tab reactivation / reload), matching the former `ErrorPageTests` connection-lost vs not-connected style updates without the tests server.
+    ///
+    /// `debug://failure?simulatedError=notConnected` always uses `URLError.notConnectedToInternet`; `simulatedError=hostNotFound` always uses `URLError.cannotFindHost` (no auto-reload on tab reactivation). Simulated failures append ` · attempt N` to `NSLocalizedDescriptionKey` (counter resets with the alternating pass index when the Debug simulate toggle changes).
+    static func resetFailureSchemeAlternatingStateForUITests() {
+        alternatingFailuresLock.lock()
+        alternatingFailuresPassIndex = 0
+        alternatingFailuresLock.unlock()
+        failureSimulateAttemptLock.lock()
+        failureSimulateAttemptIndex = 0
+        failureSimulateAttemptLock.unlock()
+    }
+
+    private static let alternatingFailuresLock = NSLock()
+    private static var alternatingFailuresPassIndex = 0
+
+    private static let failureSimulateAttemptLock = NSLock()
+    private static var failureSimulateAttemptIndex = 0
+
+    private static func nextSimulatedFailureAttemptNumber() -> Int {
+        failureSimulateAttemptLock.lock()
+        failureSimulateAttemptIndex += 1
+        let n = failureSimulateAttemptIndex
+        failureSimulateAttemptLock.unlock()
+        return n
+    }
+
+    private func shouldUseAlternatingSimulatedFailures(requestURL: URL) -> Bool {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        return requestURL.hasDebugURLAlternatingFailures
+    }
+
+    /// UI tests: `debug://failure?simulatedError=notConnected` always fails with `URLError.notConnectedToInternet` (when simulate is on).
+    private func failureSchemeForcesNotConnectedToInternetError(requestURL: URL) -> Bool {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        switch requestURL.debugURLSimulatedError {
+        case .notConnected, .notConnectedToInternet:
+            return true
+        case .hostNotFound, .cannotFindHost, nil:
+            return false
         }
-        return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
-    }()
+    }
+
+    /// UI tests: `debug://failure?simulatedError=hostNotFound` always fails with `URLError.cannotFindHost` (when simulate is on).
+    /// Unlike the connection-style errors above, this error kind must NOT trigger the tab-reactivation auto-reload
+    /// (`Tab.shouldReload` reloads only for `.notConnectedToInternet` / `.networkConnectionLost`), which the attempt counter makes observable.
+    private func failureSchemeForcesHostNotFoundError(requestURL: URL) -> Bool {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else { return false }
+        switch requestURL.debugURLSimulatedError {
+        case .hostNotFound, .cannotFindHost:
+            return true
+        case .notConnected, .notConnectedToInternet, nil:
+            return false
+        }
+    }
+
+    private func handleDebugSchemeURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
+        guard featureFlagger.isFeatureOn(.debugURLScheme) else {
+            urlSchemeTask.didFailWithError(URLError(.unsupportedURL))
+            return
+        }
+
+        switch requestURL.debugURLIdentifier {
+        case .failure:
+            handleDebugFailureURL(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case nil:
+            urlSchemeTask.didFailWithError(URLError(.unsupportedURL))
+        }
+    }
+
+    private func handleDebugFailureURL(requestURL: URL, urlSchemeTask: WKURLSchemeTask) {
+        if failureURLSchemeDebugKeyedStorage.simulateConnectionLost == true {
+            if failureSchemeForcesHostNotFoundError(requestURL: requestURL) {
+                let attempt = Self.nextSimulatedFailureAttemptNumber()
+                let error = URLError(.cannotFindHost, userInfo: [
+                    NSURLErrorFailingURLErrorKey: requestURL,
+                    NSLocalizedDescriptionKey: "Debug simulated host not found (debug://failure) · attempt \(attempt)"
+                ])
+                urlSchemeTask.didFailWithError(error)
+                return
+            }
+            if failureSchemeForcesNotConnectedToInternetError(requestURL: requestURL) {
+                let attempt = Self.nextSimulatedFailureAttemptNumber()
+                let error = URLError(.notConnectedToInternet, userInfo: [
+                    NSURLErrorFailingURLErrorKey: requestURL,
+                    NSLocalizedDescriptionKey: "Debug simulated not connected to internet (debug://failure) · attempt \(attempt)"
+                ])
+                urlSchemeTask.didFailWithError(error)
+                return
+            }
+            if shouldUseAlternatingSimulatedFailures(requestURL: requestURL) {
+                Self.alternatingFailuresLock.lock()
+                let pass = Self.alternatingFailuresPassIndex
+                Self.alternatingFailuresPassIndex += 1
+                Self.alternatingFailuresLock.unlock()
+
+                let attempt = Self.nextSimulatedFailureAttemptNumber()
+                let error: URLError
+                if pass % 2 == 0 {
+                    error = URLError(.networkConnectionLost, userInfo: [
+                        NSURLErrorFailingURLErrorKey: requestURL,
+                        NSLocalizedDescriptionKey: "Debug simulated connection lost (debug://failure) · attempt \(attempt)"
+                    ])
+                } else {
+                    error = URLError(.notConnectedToInternet, userInfo: [
+                        NSURLErrorFailingURLErrorKey: requestURL,
+                        NSLocalizedDescriptionKey: "Debug simulated not connected to internet (debug://failure) · attempt \(attempt)"
+                    ])
+                }
+                urlSchemeTask.didFailWithError(error)
+                return
+            }
+
+            let attempt = Self.nextSimulatedFailureAttemptNumber()
+            let error = URLError(.networkConnectionLost, userInfo: [
+                NSURLErrorFailingURLErrorKey: requestURL,
+                NSLocalizedDescriptionKey: "Debug simulated connection lost (debug://failure) · attempt \(attempt)"
+            ])
+            urlSchemeTask.didFailWithError(error)
+            return
+        }
+
+        let data = Self.failureSchemeDemoHtml.utf8data
+        let response = URLResponse(url: requestURL,
+                                   mimeType: "text/html",
+                                   expectedContentLength: data.count,
+                                   textEncodingName: "utf-8")
+        urlSchemeTask.didReceive(response)
+        urlSchemeTask.didReceive(data)
+        urlSchemeTask.didFinish()
+    }
+
 }
 
 // MARK: - Native UI Paged
@@ -133,41 +327,30 @@ private extension DuckURLSchemeHandler {
         let youtubeHandler = YoutubePlayerNavigationHandler()
         let html = youtubeHandler.makeHTMLFromTemplate()
 
-        if #available(macOS 12.0, *) {
-            // For macOS 12+, apply the fast redirection workaround from PR #1331
-            webView.stopLoading()
-            let newRequest = youtubeHandler.makeDuckPlayerRequest(from: URLRequest(url: requestURL))
-            // Workaround for https://app.asana.com/1/137249556945/project/1204099484721401/task/1209931387442142
-            // On fast redirections, the webview maybe still loading the old page, when simulated request is sent
-            // A more robust KVO fix did not work as observation misses events in fast redirections
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                webView.loadSimulatedRequest(newRequest, responseHTML: html)
-            }
-        } else {
-            // For macOS 11 and earlier, use the original method without stopLoading or delay
-            let data = html.utf8data
-
-            let response = URLResponse(url: requestURL,
-                                       mimeType: "text/html",
-                                       expectedContentLength: data.count,
-                                       textEncodingName: nil)
-
-            urlSchemeTask.didReceive(response)
-            urlSchemeTask.didReceive(data)
-            urlSchemeTask.didFinish()
+        // Apply the fast redirection workaround from PR #1331
+        webView.stopLoading()
+        let newRequest = youtubeHandler.makeDuckPlayerRequest(from: URLRequest(url: requestURL))
+        // Workaround for https://app.asana.com/1/137249556945/project/1204099484721401/task/1209931387442142
+        // On fast redirections, the webview maybe still loading the old page, when simulated request is sent
+        // A more robust KVO fix did not work as observation misses events in fast redirections
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            webView.loadSimulatedRequest(newRequest, responseHTML: html)
         }
     }
 }
 
 // MARK: - Favicons
 
-private extension DuckURLSchemeHandler {
+extension DuckURLSchemeHandler {
     /**
      * This handler supports special Duck favicon URLs and uses `FaviconManager`
      * to return a favicon in response, based on the actual favicon URL that's
      * encoded in the URL path.
      *
-     * If favicon is not found, an `HTTP 404` response is returned.
+     * Favicon images are decoded lazily, so this awaits the decode (via the async
+     * `getCachedFavicon`) and completes the scheme task once the image is ready —
+     * rather than returning a cache-missed `HTTP 404` that the web layer would cache.
+     * If no favicon exists, an `HTTP 404` response is returned.
      */
     func handleFavicon(urlSchemeTask: WKURLSchemeTask) {
         guard let requestURL = urlSchemeTask.request.url else {
@@ -185,17 +368,28 @@ private extension DuckURLSchemeHandler {
             return
         }
 
-        guard let (response, data) = response(for: requestURL, withFaviconURL: faviconURL) else { return }
-        urlSchemeTask.didReceive(response)
-        urlSchemeTask.didReceive(data)
-        urlSchemeTask.didFinish()
+        let taskID = ObjectIdentifier(urlSchemeTask)
+        runningFaviconTasks.insert(taskID)
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let favicon = await self.faviconManager.resolvedCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true)
+
+            // The task may have been stopped while we awaited the decode; `remove` returns nil if so.
+            guard self.runningFaviconTasks.remove(taskID) != nil else { return }
+
+            guard let (response, data) = self.response(for: requestURL, favicon: favicon) else {
+                urlSchemeTask.didFailWithError(URLError(.badServerResponse))
+                return
+            }
+            urlSchemeTask.didReceive(response)
+            urlSchemeTask.didReceive(data)
+            urlSchemeTask.didFinish()
+        }
     }
 
-    func response(for requestURL: URL, withFaviconURL faviconURL: URL) -> (URLResponse, Data)? {
-        guard faviconManager.isCacheLoaded,
-              let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true),
-              let imagePNGData = favicon.image?.pngData()
-        else {
+    private func response(for requestURL: URL, favicon: Favicon?) -> (URLResponse, Data)? {
+        guard let imagePNGData = favicon?.image?.pngData() else {
             guard let response = HTTPURLResponse(url: requestURL, statusCode: 404, httpVersion: "HTTP/1.1", headerFields: nil) else {
                 return nil
             }
@@ -207,7 +401,7 @@ private extension DuckURLSchemeHandler {
     }
 
     private func onFaviconMissing() {
-        faviconsFetcherOnboarding?.presentOnboardingIfNeeded()
+        NotificationCenter.default.post(name: .missingBookmarkFaviconEncountered, object: nil)
     }
 }
 
@@ -325,6 +519,7 @@ private extension DuckURLSchemeHandler {
         case "riv": return "application/octet-stream"
         case "json", "map": return "application/json"
         case "mp4": return "video/mp4"
+        case "otf": return "font/otf"
         default:
             assertionFailure("Unknown MIME type for \"\(fileExtension)\" file extension")
             return "application/octet-stream"
@@ -370,6 +565,9 @@ private extension URL {
         case newTab
         case history
         case favicon
+        case favicons
+        case permissions
+        case webExtensions
         case customBackgroundImage
         case customBackgroundImageThumbnail
         case onboarding
@@ -397,6 +595,12 @@ private extension URL {
             return .newTab
         } else if self.isFavicon {
             return .favicon
+        } else if self.isFavicons {
+            return .favicons
+        } else if self.isPermissions {
+            return .permissions
+        } else if self.isWebExtensions {
+            return .webExtensions
         } else if self.isHistory {
             return .history
         } else {

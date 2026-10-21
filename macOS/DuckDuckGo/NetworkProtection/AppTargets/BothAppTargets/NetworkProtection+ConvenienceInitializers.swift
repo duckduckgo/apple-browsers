@@ -20,15 +20,25 @@ import Foundation
 import VPN
 import NetworkProtectionIPC
 import Common
+import FoundationExtensions
 import Subscription
 import BrowserServicesKit
 import Networking
+import PrivacyDashboard
+
+extension ConnectivityIssueObserverThroughDistributedNotifications: @retroactive VPNConnectivityIssuesProviding {
+    public func isExperiencingVPNConnectivityIssues() async -> Bool {
+        recentValue
+    }
+}
+
+extension HostnamePinger: @retroactive PingQualityProviding {}
 
 extension NetworkProtectionLocationListCompositeRepository {
     convenience init() {
         let settings = Application.appDelegate.vpnSettings
         // swiftlint:disable:next force_cast
-        var tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManager as! DefaultSubscriptionManager
+        let tokenHandler: any SubscriptionTokenHandling = Application.appDelegate.subscriptionManager as! DefaultSubscriptionManager
         self.init(
             environment: settings.selectedEnvironment,
             tokenHandler: tokenHandler,

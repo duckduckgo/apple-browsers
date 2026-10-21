@@ -17,6 +17,7 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
 import AppKit
 import PixelKit
@@ -58,7 +59,7 @@ final class URLEventHandler {
         }
     }
     func applicationDidFinishLaunching() -> AppDidFinishLaunchingResult {
-        var result = AppDidFinishLaunchingResult(urlsToOpen: urlsToOpen.count)
+        let result = AppDidFinishLaunchingResult(urlsToOpen: urlsToOpen.count)
         for url in urlsToOpen {
             DispatchQueue.main.async {
                 self.handler(url)
@@ -160,7 +161,7 @@ final class URLEventHandler {
         case DataBrokerProtectionNotificationCommand.showDashboard.url:
             NotificationCenter.default.post(name: DataBrokerProtectionNotifications.shouldReloadUI, object: nil)
             DispatchQueue.main.async {
-                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
+                Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection(.subscribed))
             }
         default:
             return

@@ -20,60 +20,13 @@ import Combine
 import Persistence
 import AppKit
 import DDGSync
-import FeatureFlags
 import PixelKit
-import PrivacyConfig
 
 @MainActor
 public final class DismissableSyncDeviceButtonModel: ObservableObject {
     enum DismissableSyncDevicePromoSource: CaseIterable {
         case bookmarksBar
         case bookmarkAdded
-
-        var wasDismissedKey: String {
-            switch self {
-            case .bookmarksBar:
-                return "com.duckduckgo.bookmarksBarSyncPromoDismissed"
-            case .bookmarkAdded:
-                return "com.duckduckgo.bookmarkAddedSyncPromoDismissed"
-            }
-        }
-
-        var promoWasPresentedCountKey: String? {
-            switch self {
-            case .bookmarksBar:
-                return nil
-            case .bookmarkAdded:
-                return "com.duckduckgo.bookmarkAddedSyncPromoPresentedCount"
-            }
-        }
-
-        var promoFirstPresentedDateKey: String? {
-            switch self {
-            case .bookmarksBar:
-                return "com.duckduckgo.bookmarkFirstPresentedCount"
-            case .bookmarkAdded:
-                return nil
-            }
-        }
-
-        var promoMaxPresentationCount: Int {
-            switch self {
-            case .bookmarksBar:
-                return .max
-            case .bookmarkAdded:
-                return 5
-            }
-        }
-
-        var promoMaxPresentationDays: Int {
-            switch self {
-            case .bookmarksBar:
-                return 7
-            case .bookmarkAdded:
-                return .max
-            }
-        }
 
         var pixelSource: SyncDeviceButtonTouchpoint {
             switch self {
@@ -83,162 +36,97 @@ public final class DismissableSyncDeviceButtonModel: ObservableObject {
                 return SyncDeviceButtonTouchpoint.bookmarkAdded
             }
         }
+
+        @MainActor
+        var promo: SyncDeviceButtonPromoPresenting {
+            switch self {
+            case .bookmarksBar:
+                return NSApp.delegateTyped.bookmarksBarSyncPromoDelegate
+            case .bookmarkAdded:
+                return NSApp.delegateTyped.bookmarkAddedSyncPromoDelegate
+            }
+        }
     }
 
     @Published var shouldShowSyncButton: Bool = false
 
-    private var authState: SyncAuthState = .initializing {
-        didSet {
-            guard
-                featureFlagger.isNewSyncEntryPointsFeatureOn,
-                case .inactive = authState,
-                !wasDimissed,
-                !wasPresentationCountLimitReached,
-                !hasPromoDateExpired else {
-                shouldShowSyncButton = false
-                return
-            }
-            shouldShowSyncButton = true
-        }
-    }
-
     private let source: DismissableSyncDevicePromoSource
-    private let keyValueStore: KeyValueStoring
     private let syncLauncher: SyncDeviceFlowLaunching?
-    private let featureFlagger: FeatureFlagger
+    private let pixelFiring: PixelFiring?
+    private let notificationCenter: NotificationCenter
+    private let promo: SyncDeviceButtonPromoPresenting
 
     private var cancellables: Set<AnyCancellable> = []
     private var hasFiredImpressionPixel = false
 
-    private var wasDimissed: Bool {
-        guard let wasDismissed = keyValueStore.object(forKey: source.wasDismissedKey) as? Bool else {
-            return false
-        }
-        return wasDismissed
-    }
-
-    private var wasPresentationCountLimitReached: Bool {
-        guard let key = source.promoWasPresentedCountKey else {
-            return false
-        }
-        let count = keyValueStore.object(forKey: key) as? Int ?? 0
-        guard count < source.promoMaxPresentationCount else {
-            return true
-        }
-        return false
-    }
-
-    private var hasPromoDateExpired: Bool {
-        guard let key = source.promoFirstPresentedDateKey else {
-            return false
-        }
-        guard let firstSeenDate = keyValueStore.object(forKey: key) as? Date else {
-            return false
-        }
-
-        return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
-    }
-
     init(
         source: DismissableSyncDevicePromoSource,
-        keyValueStore: KeyValueStoring,
-        authStatePublisher: AnyPublisher<SyncAuthState, Never>,
-        initialAuthState: SyncAuthState,
         syncLauncher: SyncDeviceFlowLaunching?,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+        pixelFiring: PixelFiring? = PixelKit.shared,
+        notificationCenter: NotificationCenter = .default,
+        promo: SyncDeviceButtonPromoPresenting? = nil
     ) {
         self.source = source
-        self.keyValueStore = keyValueStore
         self.syncLauncher = syncLauncher
-        self.featureFlagger = featureFlagger
-        self.authState = initialAuthState
-        authStatePublisher
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.authState, onWeaklyHeld: self)
-            .store(in: &cancellables)
+        self.pixelFiring = pixelFiring
+        self.notificationCenter = notificationCenter
+        self.promo = promo ?? source.promo
+
+        self.promo.isPromoActivePublisher
+            .assign(to: &$shouldShowSyncButton)
     }
 
-    func viewDidLoad() {
-        guard
-            featureFlagger.isNewSyncEntryPointsFeatureOn,
-            syncLauncher != nil,
-            case .inactive = authState,
-            !wasDimissed,
-            !incrementPresentationCountLimitReturningLimitReached(),
-            !setFirstSeenDateReturningHasExpired()
-        else {
-            shouldShowSyncButton = false
-            return
-        }
-        if !hasFiredImpressionPixel {
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, withAdditionalParameters: ["source": source.pixelSource.rawValue], doNotEnforcePrefix: true)
-            hasFiredImpressionPixel = true
-        }
-        shouldShowSyncButton = true
+    func bookmarkPanelDidAppear() {
+        $shouldShowSyncButton
+            .first { $0 }
+            .sink { [weak self] _ in
+                self?.syncButtonDidAppear()
+            }
+            .store(in: &cancellables)
+        notificationCenter.post(name: .bookmarkPanelShown, object: nil)
+    }
+
+    func viewDidDisappear() {
+        promo.syncButtonSurfaceClosed()
+    }
+
+    func syncButtonDidAppear() {
+        guard !hasFiredImpressionPixel else { return }
+        hasFiredImpressionPixel = true
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDisplayed, options: .parameters(["source": source.pixelSource.rawValue]))
     }
 
     func syncButtonAction() {
+        promo.syncSetupStarted()
         syncLauncher?.startDeviceSyncFlow(source: source.pixelSource, completion: nil)
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.pixelSource.rawValue], doNotEnforcePrefix: true)
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.pixelSource.rawValue]))
     }
 
     func dismissSyncButtonAction() {
         shouldShowSyncButton = false
-        keyValueStore.set(true, forKey: source.wasDismissedKey)
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed, withAdditionalParameters: ["source": source.pixelSource.rawValue], doNotEnforcePrefix: true)
+        promo.syncButtonDismissed()
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoDismissed, options: .parameters(["source": source.pixelSource.rawValue]))
     }
 
     static func resetAllState(from keyValueStore: KeyValueStoring) {
-        for source in DismissableSyncDevicePromoSource.allCases {
-            keyValueStore.removeObject(forKey: source.wasDismissedKey)
-            if let dateKey = source.promoFirstPresentedDateKey {
-                keyValueStore.removeObject(forKey: dateKey)
-            }
-            if let countKey = source.promoWasPresentedCountKey {
-                keyValueStore.removeObject(forKey: countKey)
-            }
-        }
-    }
-
-    private func incrementPresentationCountLimitReturningLimitReached() -> Bool {
-        guard let key = source.promoWasPresentedCountKey else {
-            return false
-        }
-        let count = keyValueStore.object(forKey: key) as? Int ?? 0
-        guard count < source.promoMaxPresentationCount else {
-            return true
-        }
-        keyValueStore.set(count + 1, forKey: key)
-        return false
-    }
-
-    private func setFirstSeenDateReturningHasExpired() -> Bool {
-        guard let key = source.promoFirstPresentedDateKey else {
-            return false
-        }
-        guard let firstSeenDate = keyValueStore.object(forKey: key) as? Date else {
-            keyValueStore.set(Date(), forKey: key)
-            return false
-        }
-
-        return !firstSeenDate.isLessThan(daysAgo: source.promoMaxPresentationDays)
+        let legacyKeys: [UserDefaultsKeys] = [
+            .bookmarksBarSyncPromoDismissed,
+            .bookmarksBarSyncPromoFirstPresentedDate,
+            .bookmarkAddedSyncPromoDismissed,
+            .bookmarkAddedSyncPromoPresentedCount
+        ]
+        legacyKeys.forEach { keyValueStore.removeObject(forKey: $0.rawValue) }
     }
 }
 
 extension DismissableSyncDeviceButtonModel {
-    convenience init(source: DismissableSyncDevicePromoSource, keyValueStore: KeyValueStoring) {
-        let authStatePublisher: AnyPublisher<SyncAuthState, Never>
+    convenience init(source: DismissableSyncDevicePromoSource) {
         let syncLauncher: SyncDeviceFlowLaunching?
-        let initialAuthState: SyncAuthState
         if let syncService = NSApp.delegateTyped.syncService, let syncPausedStateManager = NSApp.delegateTyped.syncDataProviders?.syncErrorHandler {
-            authStatePublisher = syncService.authStatePublisher
             syncLauncher = DeviceSyncCoordinator(syncService: syncService, syncPausedStateManager: syncPausedStateManager)
-            initialAuthState = syncService.authState
         } else {
-            authStatePublisher = Just<SyncAuthState>(.initializing).eraseToAnyPublisher()
             syncLauncher = nil
-            initialAuthState = .initializing
         }
-        self.init(source: source, keyValueStore: keyValueStore, authStatePublisher: authStatePublisher, initialAuthState: initialAuthState, syncLauncher: syncLauncher)
+        self.init(source: source, syncLauncher: syncLauncher)
     }
 }

@@ -1,0 +1,824 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>aiChat.history.download.complete.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d chat descărcat</string>
+			<key>few</key>
+			<string>%1$d chaturi descărcate</string>
+			<key>other</key>
+			<string>%1$d de chaturi descărcate</string>
+		</dict>
+	</dict>
+	<key>aiChat.history.deleteAll.confirmation.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@chats@</string>
+		<key>chats</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Șterge %1$d chat?</string>
+			<key>few</key>
+			<string>Șterge %1$d chaturi?</string>
+			<key>other</key>
+			<string>Șterge %1$d de chaturi?</string>
+		</dict>
+	</dict>
+	<key>scoped.fire.confirmation.tabs.deleted.toast</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d filă și datele aferente au fost șterse</string>
+			<key>few</key>
+			<string>%1$d file și datele aferente au fost șterse</string>
+			<key>other</key>
+			<string>%1$d file și datele aferente au fost șterse</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Șterge de pe un site. S-ar putea să fii deconectat de la conturi.</string>
+			<key>few</key>
+			<string>Șterge de pe %1$d site-uri. S-ar putea să fii deconectat de la conturi.</string>
+			<key>other</key>
+			<string>Șterge de pe %1$d de site-uri. S-ar putea să fii deconectat de la conturi.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide fila</string>
+			<key>few</key>
+			<string>Închide toate cele %1$d file</string>
+			<key>other</key>
+			<string>Închide toate cele %1$d de file</string>
+		</dict>
+	</dict>
+	<key>bookmark.deleteFolderAlert.message</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sigur vrei să ștergi acest folder și %1$d element?</string>
+			<key>few</key>
+			<string>Sigur vrei să ștergi acest folder și %1$d elemente?</string>
+			<key>other</key>
+			<string>Sigur vrei să ștergi acest folder și %1$d elemente?</string>
+		</dict>
+	</dict>
+	<key>dax.onboarding.browsing.multiple.trackers</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>*%2$@, %3$@* și *încă 1* încercau să te urmărească aici.
+
+I-am blocat!
+
+☝️ Poți verifica bara de adrese pentru a vedea cine încearcă să te urmărească atunci când vizitezi un nou site.</string>
+			<key>few</key>
+			<string>*%2$@, %3$@* și *încă %1$d* încercau să te urmărească aici.
+
+I-am blocat!
+
+☝️ Poți verifica bara de adrese pentru a vedea cine încearcă să te urmărească atunci când vizitezi un nou site.</string>
+			<key>other</key>
+			<string>*%2$@, %3$@* și *încă %1$d* încercau să te urmărească aici.
+
+I-am blocat!
+
+☝️ Poți verifica bara de adrese pentru a vedea cine încearcă să te urmărească atunci când vizitezi un nou site.</string>
+		</dict>
+	</dict>
+	<key>contextual.onboarding.browsing.multiple.trackers</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1#@count@</string>
+		<key>count</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>*%2$@, %3$@* și *încă 1* încercau să te urmărească aici. I-am blocat!
+
+☝️ Atinge scutul pentru mai multe informații.</string>
+			<key>few</key>
+			<string>*%2$@, %3$@* și *încă %1$d* încercau să te urmărească aici. I-am blocat!
+
+☝️ Atinge scutul pentru mai multe informații.</string>
+			<key>other</key>
+			<string>*%2$@, %3$@* și *încă %1$d* încercau să te urmărească aici. I-am blocat!
+
+☝️ Atinge scutul pentru mai multe informații.</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.major.trackers.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d instrument de urmărire important găsit</string>
+			<key>few</key>
+			<string>%1$d instrumente de urmărire importante găsite</string>
+			<key>other</key>
+			<string>%1$d de instrumente de urmărire importante găsite</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.major.trackers.blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d instrument de urmărire important blocat</string>
+			<key>few</key>
+			<string>%1$d instrumente de urmărire importante blocate</string>
+			<key>other</key>
+			<string>%1$d de instrumente de urmărire importante blocate</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.trackers.found</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Urmăritor Găsit</string>
+			<key>few</key>
+			<string>%1$d Urmăritori Găsiți</string>
+			<key>other</key>
+			<string>%1$d Urmăritori Găsiți</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.trackers.blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d instrument de urmărire a cărui încărcare este blocată</string>
+			<key>few</key>
+			<string>%1$d %%d instrumente de urmărire a căror încărcare a fost blocată</string>
+			<key>other</key>
+			<string>%1$d %%d instrumente de urmărire a căror încărcare a fost blocată</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracker</string>
+			<key>few</key>
+			<string>%1$d Trackere</string>
+			<key>other</key>
+			<string>%1$d Trackere</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d alt domeniu încărcat</string>
+			<key>few</key>
+			<string>%1$d alte domenii încărcate</string>
+			<key>other</key>
+			<string>%1$d de alte domenii încărcate</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d instrument de urmărire deținut de acest site (încărcat)</string>
+			<key>few</key>
+			<string>%1$d instrumente de urmărire deținute de acest site (încărcate)</string>
+			<key>other</key>
+			<string>%1$d de instrumente de urmărire deținute de acest site (încărcate)</string>
+		</dict>
+	</dict>
+	<key>number.of.tabs</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d filă privată</string>
+			<key>few</key>
+			<string>%1$d file private</string>
+			<key>other</key>
+			<string>%1$d de file private</string>
+		</dict>
+	</dict>
+	<key>autofill.number.of.passwords</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d parolă</string>
+			<key>few</key>
+			<string>%1$d parole</string>
+			<key>other</key>
+			<string>%1$d de parole</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.confirmation.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sigur dorești să ștergi %1$d parolă?</string>
+			<key>few</key>
+			<string>Sigur dorești să ștergi %1$d parole?</string>
+			<key>other</key>
+			<string>Sigur dorești să ștergi această %1$d de parole?</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.confirmation.body</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Parola ta va fi ștearsă de pe acest dispozitiv. Asigură-te că ai în continuare o modalitate de a-ți accesa %2$#@accounts@.</string>
+			<key>few</key>
+			<string>Parolele tale vor fi șterse de pe acest dispozitiv. Asigură-te că ai în continuare o modalitate de a-ți accesa %2$#@accounts@.</string>
+			<key>other</key>
+			<string>Parolele tale vor fi șterse de pe acest dispozitiv. Asigură-te că ai în continuare o modalitate de a-ți accesa %2$#@accounts@.</string>
+		</dict>
+		<key>accounts</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>account</string>
+			<key>few</key>
+			<string>conturi</string>
+			<key>other</key>
+			<string>de conturi</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.sync.confirmation.body</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%1$#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Parola ta va fi ștearsă de pe toate dispozitivele sincronizate. Asigură-te că ai în continuare o modalitate de a-ți accesa %2$#@accounts@.</string>
+			<key>few</key>
+			<string>Parolele tale vor fi șterse de pe toate dispozitivele sincronizate. Asigură-te că ai în continuare o modalitate de a-ți accesa %2$#@accounts@.</string>
+			<key>other</key>
+			<string>Parolele dvs. vor fi șterse de pe toate dispozitivele sincronizate. Asigură-te că ai în continuare o modalitate de a-ți accesa %2$#@accounts@.</string>
+		</dict>
+		<key>accounts</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>account</string>
+			<key>few</key>
+			<string>conturi</string>
+			<key>other</key>
+			<string>de conturi</string>
+		</dict>
+	</dict>
+	<key>autofill.delete.all.passwords.completion</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@passwords@</string>
+		<key>passwords</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d parolă ștearsă</string>
+			<key>few</key>
+			<string>%1$d parole șterse</string>
+			<key>other</key>
+			<string>%1$d de parole șterse</string>
+		</dict>
+	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide fila</string>
+			<key>few</key>
+			<string>Închide filele</string>
+			<key>other</key>
+			<string>Închide filele</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-tabs.button.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide %1$d filă</string>
+			<key>few</key>
+			<string>Închide %1$d file</string>
+			<key>other</key>
+			<string>Închide %1$d de file</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide fila</string>
+			<key>few</key>
+			<string>Închide toate cele %1$d file</string>
+			<key>other</key>
+			<string>Închide toate cele %1$d de file</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închizi fila?</string>
+			<key>few</key>
+			<string>Închizi %1$d file?</string>
+			<key>other</key>
+			<string>Închizi %1$d de file?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închizi altă filă?</string>
+			<key>few</key>
+			<string>Închizi alte %1$d file?</string>
+			<key>other</key>
+			<string>Închizi alte %1$d de file?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sigur dorești să închizi fila?</string>
+			<key>few</key>
+			<string>Sigur dorești să închizi aceste file?</string>
+			<key>other</key>
+			<string>Sigur dorești să închizi aceste file?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închizi fila?</string>
+			<key>few</key>
+			<string>Închizi %1$d file?</string>
+			<key>other</key>
+			<string>Închizi %1$d de file?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sigur dorești să închizi această filă?</string>
+			<key>few</key>
+			<string>Sigur dorești să închizi aceste file?</string>
+			<key>other</key>
+			<string>Sigur dorești să închizi aceste file?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închizi fila?</string>
+			<key>few</key>
+			<string>Dorești să închizi toate cele %1$d file?</string>
+			<key>other</key>
+			<string>Dorești să închizi toate cele %1$d de file?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Sigur dorești să închizi această filă?</string>
+			<key>few</key>
+			<string>Sigur dorești să închizi toate filele?</string>
+			<key>other</key>
+			<string>Sigur dorești să închizi toate filele?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Selectează fila</string>
+			<key>few</key>
+			<string>Selectează filele</string>
+			<key>other</key>
+			<string>Selectează filele</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Închide altă filă</string>
+			<key>few</key>
+			<string>Închide alte file</string>
+			<key>other</key>
+			<string>Închide alte file</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Distribuie linkul</string>
+			<key>few</key>
+			<string>Distribuie %1$d linkuri</string>
+			<key>other</key>
+			<string>Distribuie %1$d de linkuri</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Distribuie fila selectată</string>
+			<key>few</key>
+			<string>Distribuie filele selectate</string>
+			<key>other</key>
+			<string>Distribuie filele selectate</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Marchează fila</string>
+			<key>few</key>
+			<string>Marchează %1$d file</string>
+			<key>other</key>
+			<string>Marchează %1$d de file</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Marcaj adăugat</string>
+			<key>few</key>
+			<string>%1$d marcaje adăugate</string>
+			<key>other</key>
+			<string>%1$d de marcaje adăugate</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Marchezi fila selectată?</string>
+			<key>few</key>
+			<string>Dorești să marchezi %1$d file?</string>
+			<key>other</key>
+			<string>Dorești să marchezi %1$d de file?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dorești să marchezi fila selectată?</string>
+			<key>few</key>
+			<string>Dorești să marchezi %1$d file?</string>
+			<key>other</key>
+			<string>Dorești să marchezi %1$d de file?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d selectat</string>
+			<key>few</key>
+			<string>%1$d selectate</string>
+			<key>other</key>
+			<string>%1$d selectate</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d filă selectată</string>
+			<key>few</key>
+			<string>%1$d file selectate</string>
+			<key>other</key>
+			<string>%1$d de file selectate</string>
+		</dict>
+	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d site exclus de la ștergere</string>
+			<key>few</key>
+			<string>%1$d site-uri excluse de la ștergere</string>
+			<key>other</key>
+			<string>%1$d site-uri excluse de la ștergere</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.tracker.count.title</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>lld</string>
+			<key>one</key>
+			<string>%2$@ Tracker</string>
+			<key>few</key>
+			<string>%2$@ Trackere</string>
+			<key>other</key>
+			<string>%2$@ Trackere</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

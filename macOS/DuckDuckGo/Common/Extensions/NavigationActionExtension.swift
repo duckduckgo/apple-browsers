@@ -16,13 +16,12 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 
 extension NavigationAction {
 
     var isUserEnteredUrl: Bool {
-        if #available(macOS 12.0, *),
-           case .other = navigationType,
+        if case .other = navigationType,
            case .user = request.attribution {
             return true
         } else if case .custom(.userEnteredUrl) = navigationType {

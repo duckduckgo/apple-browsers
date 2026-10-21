@@ -238,11 +238,44 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
     var moveObjectUUIDCalled = false
     var capturedObjectUUIDs: [String]?
+    var capturedToIndex: Int?
+    struct MoveArgs: Equatable {
+        let objectUUIDs: [String]
+        let toIndex: Int?
+        let withinParentFolder: ParentFolderType
+    }
+    private(set) var moveObjectsCalls: [MoveArgs] = []
+    var moveObjectsError: Error?
+    var completesMoveCompletions = false
+    var defersMoveCompletions = false
+    private var deferredMoveCompletions: [() -> Void] = []
+    var deferredMoveCompletionCount: Int { deferredMoveCompletions.count }
+
     func move(objectUUIDs: [String], toIndex: Int?, withinParentFolder: ParentFolderType, completion: @escaping (Error?) -> Void) {
         moveObjectUUIDCalled = true
         capturedObjectUUIDs = objectUUIDs
+        capturedToIndex = toIndex
         capturedParentFolderType = withinParentFolder
-        store?.move(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder, completion: completion)
+        moveObjectsCalls.append(.init(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder))
+
+        if let store {
+            store.move(objectUUIDs: objectUUIDs, toIndex: toIndex, withinParentFolder: withinParentFolder, completion: completion)
+        } else if defersMoveCompletions {
+            let error = moveObjectsError
+            deferredMoveCompletions.append {
+                completion(error)
+            }
+        } else if completesMoveCompletions {
+            completion(moveObjectsError)
+        }
+    }
+
+    func completeNextMove() {
+        guard !deferredMoveCompletions.isEmpty else {
+            assertionFailure("No deferred bookmark move completion is available")
+            return
+        }
+        deferredMoveCompletions.removeFirst()()
     }
 
     var updateFavoriteIndexCalled = false
@@ -260,6 +293,21 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
         store?.handleFavoritesAfterDisablingSync()
     }
 
+    func bookmarksCount() -> Int {
+        store?.bookmarksCount() ?? (bookmarks ?? []).reduce(0) { $0 + Self.bookmarksCount(in: $1) }
+    }
+
+    func hasTopLevelEntities() -> Bool {
+        store?.hasTopLevelEntities() ?? !(bookmarks ?? []).isEmpty
+    }
+
+    private static func bookmarksCount(in entity: BaseBookmarkEntity) -> Int {
+        if let folder = entity as? BookmarkFolder {
+            return folder.children.reduce(0) { $0 + bookmarksCount(in: $1) }
+        }
+        return entity is Bookmark ? 1 : 0
+    }
+
     struct MockBookmarkEntity: BookmarkEntityProtocol {
         var uuid: String?
         var parent: () -> BookmarkEntityProtocol?
@@ -270,6 +318,31 @@ final class BookmarkStoreMock: BookmarkStore, CustomDebugStringConvertible {
 
     var debugDescription: String {
         return "<\(type(of: self)) \(Unmanaged.passUnretained(self).toOpaque()): \(store.map { "\($0)" } ?? "<nil>")>"
+    }
+}
+
+@MainActor
+enum ReorderBookmarkManagerTestFactory {
+    static func makeManager(
+        sortMode: BookmarksSortMode,
+        bookmarks: [BaseBookmarkEntity] = []
+    ) -> (manager: LocalBookmarkManager, store: BookmarkStoreMock) {
+        let bookmarkStore = BookmarkStoreMock(bookmarks: bookmarks)
+        bookmarkStore.completesMoveCompletions = true
+        let bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: bookmarkStore,
+            sortRepository: SortRepository(storedSortMode: sortMode),
+            appearancePreferences: .mock)
+        bookmarkManager.loadBookmarks()
+        return (bookmarkManager, bookmarkStore)
+    }
+
+    private final class SortRepository: SortBookmarksRepository {
+        var storedSortMode: BookmarksSortMode
+
+        init(storedSortMode: BookmarksSortMode) {
+            self.storedSortMode = storedSortMode
+        }
     }
 }
 

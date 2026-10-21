@@ -26,9 +26,9 @@ public struct EnterRecoveryCodeView: View {
 
     public var body: some View {
         SyncDialog(spacing: 20.0) {
-            Image(.lockSucces96)
-            SyncUIViews.TextHeader(text: UserText.enterRecoveryCodeDialogTitle)
-            SyncUIViews.TextDetailMultiline(text: UserText.enterRecoveryCodeDialogSubtitle)
+            Image(.lockUnlockCompleteAlt96)
+            SyncUIViews.DialogTitle(text: UserText.enterRecoveryCodeDialogTitle)
+            SyncUIViews.DialogMessage(text: UserText.enterRecoveryCodeDialogSubtitle)
             VStack(spacing: 16) {
                 Text(UserText.enterRecoveryCodeDialogAction1)
                     .foregroundColor(.secondary)
@@ -63,7 +63,7 @@ public struct EnterRecoveryCodeView: View {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
         }
         .frame(width: 420)
     }

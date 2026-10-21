@@ -22,10 +22,13 @@ import ContentScopeScripts
 import WebKit
 import Core
 import Common
+import FoundationExtensions
 import PrivacyConfig
 import DuckPlayer
 import os.log
 import Combine
+import FeatureFlags_iOS
+import PixelKit
 
 /// Handles navigation and interactions related to Duck Player within the app.
 final class WebDuckPlayerNavigationHandler: NSObject {
@@ -46,8 +49,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     var appSettings: AppSettings
 
     /// Pixel firing utility for analytics.
-    var pixelFiring: PixelFiring.Type
-    let dailyPixelFiring: DailyPixelFiring.Type
+    var pixelFiring: (any PixelKitFiring)?
 
     /// Keeps track of the last YouTube video watched.
     var lastWatchInYoutubeVideo: String?
@@ -82,7 +84,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     /// Cancellable for observing DuckPlayer Navigation Request
     private var duckPlayerNavigationRequestCancellable: AnyCancellable?
 
-    private struct Constants {
+    struct Constants {
         static let SERPURL =  "duckduckgo.com/"
         static let refererHeader = "Referer"
         static let templateDirectory = "pages/duckplayer"
@@ -116,20 +118,17 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     ///   - featureFlagger: The feature flag manager.
     ///   - appSettings: The application settings.
     ///   - pixelFiring: The pixel firing utility for analytics.
-    ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
     init(duckPlayer: DuckPlayerControlling,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
-         pixelFiring: PixelFiring.Type = Pixel.self,
-         dailyPixelFiring: DailyPixelFiring.Type = DailyPixel.self,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,
          duckPlayerOverlayUsagePixels: DuckPlayerOverlayPixelFiring? = DuckPlayerOverlayUsagePixels()) {
         self.duckPlayer = duckPlayer
         self.featureFlagger = featureFlagger
         self.appSettings = appSettings
         self.pixelFiring = pixelFiring
-        self.dailyPixelFiring = dailyPixelFiring
         self.tabNavigationHandler = tabNavigationHandler
         self.duckPlayerOverlayUsagePixels = duckPlayerOverlayUsagePixels
 
@@ -239,14 +238,6 @@ final class WebDuckPlayerNavigationHandler: NSObject {
         return isEnabled ? duckPlayer.settings.mode : .disabled
     }
 
-    /// Checks if the YouTube app is installed on the device.
-    private var isYouTubeAppInstalled: Bool {
-        if let youtubeURL = URL(string: Constants.youtubeScheme) {
-            return UIApplication.shared.canOpenURL(youtubeURL)
-        }
-        return false
-    }
-
     /// Extracts a YouTube URL from a Duck Player "Open in YouTube" link.
     ///
     /// - Parameter url: The URL to parse.
@@ -324,28 +315,28 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     private func fireDuckPlayerPixels(webView: WKWebView) {
 
         // First daily unique user Duck Player view
-        dailyPixelFiring.fireDaily(.duckPlayerDailyUniqueView, withAdditionalParameters: ["settings": duckPlayerMode.stringValue])
+        pixelFiring?.fire(Pixel.Event.duckPlayerDailyUniqueView, frequency: .legacyDailyNoSuffix, options: .parameters(["settings": duckPlayerMode.stringValue]))
 
         // Duck Player viewed with Always setting, referred from YouTube (automatic)
         if (referrer == .youtube) && duckPlayerMode == .enabled {
-            pixelFiring.fire(.duckPlayerViewFromYoutubeAutomatic, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.duckPlayerViewFromYoutubeAutomatic)
         }
 
         // Duck Player viewed from SERP
         if referrer == .serp {
-            pixelFiring.fire(.duckPlayerViewFromSERP, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.duckPlayerViewFromSERP)
         }
 
         // Other referrers
         if referrer == .other || referrer == .undefined {
-            pixelFiring.fire(.duckPlayerViewFromOther, withAdditionalParameters: [:])
+            pixelFiring?.fire(Pixel.Event.duckPlayerViewFromOther)
         }
 
     }
 
     /// Fires an analytics pixel when the user opts to watch a video on YouTube instead.
     private func fireOpenInYoutubePixel() {
-        pixelFiring.fire(.duckPlayerWatchOnYoutube, withAdditionalParameters: [:])
+        pixelFiring?.fire(Pixel.Event.duckPlayerWatchOnYoutube)
     }
 
     /// Cancels JavaScript-triggered navigation by stopping the load and going back if possible.
@@ -449,7 +440,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
             webView.load(URLRequest(url: newURL))
         }
 
-        Logger.duckPlayer.debug("DP: loadWithDuckPlayerParameters: \(newURL.absoluteString)")
+        Logger.duckPlayer.debug("DP: loadWithDuckPlayerParameters: \(newURL.shortDescription)")
 
     }
 
@@ -614,21 +605,15 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     private func handleOpenInYoutubeLink(url: URL, webView: WKWebView) {
 
         // Handle "open in YouTube" links (duck://player/openInYoutube)
-        guard let (videoID, _) = url.youtubeVideoParams else {
+        guard url.youtubeVideoParams != nil else {
             return
         }
 
         // Fire a Pixel for Open in YouTube
         self.fireOpenInYoutubePixel()
 
-        // Attempt to open in YouTube app or load in webView
-        if appSettings.allowUniversalLinks, isYouTubeAppInstalled,
-        let youtubeAppURL = URL(string: "\(Constants.youtubeScheme)\(videoID)") {
-            UIApplication.shared.open(youtubeAppURL)
-        } else {
-            // Watch in YT videos always open in new tab
-            redirectToYouTubeVideo(url: url, webView: webView, forceNewTab: true)
-        }
+        // Watch in YT videos always open in new tab
+        redirectToYouTubeVideo(url: url, webView: webView, forceNewTab: true)
     }
 
     /// Checks if a URL contains a hash
@@ -799,7 +784,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
                 self.redirectToDuckPlayerVideo(url: url, webView: webView)
             })
             lastURLChangeHandling = Date()
-            Logger.duckPlayer.debug("Handling URL change for \(webView.url?.absoluteString ?? "")")
+            Logger.duckPlayer.debug("Handling URL change for \(webView.url?.shortDescription ?? "")")
             return .handled(.duckPlayerEnabled)
         } else {
 
@@ -854,34 +839,29 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
     /// Handles reload actions, ensuring Duck Player settings are respected during the reload.
     ///
-    /// - Parameter webView: The `WKWebView` to reload.
+    /// - Parameter webView: The `WKWebView` about to be reloaded.
+    /// - Returns: `.handled` when Duck Player redirected instead of reloading, `.reload` otherwise.
     @MainActor
-    func handleReload(webView: WKWebView) {
+    func handleReload(webView: WKWebView) -> DuckPlayerNavigationHandlerReloadResult {
 
         // Reset DuckPlayer status
         duckPlayer.settings.allowFirstVideo = false
 
-        guard let url = webView.url else {
-            return
-        }
-
-        guard isDuckPlayerFeatureEnabled else {
-            webView.reload()
-            return
+        guard let url = webView.url, isDuckPlayerFeatureEnabled else {
+            return .reload
         }
 
         if url.isDuckPlayer, duckPlayerMode != .disabled {
             redirectToDuckPlayerVideo(url: url, webView: webView, disableNewTab: true)
-            return
+            return .handled
         }
 
         if url.isYoutubeWatch, duckPlayerMode == .alwaysAsk {
             redirectToYouTubeVideo(url: url, webView: webView, allowFirstVideo: false, disableNewTab: true)
-            return
+            return .handled
         }
 
-        webView.reload()
-
+        return .reload
     }
 
     /// Initializes settings and potentially redirects when the handler is attached to a web view.
@@ -975,7 +955,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Only account for MainFrame navigation
-        guard navigationAction.isTargetingMainFrame() else {
+        guard navigationAction.isTargetingMainFrame else {
             return false
         }
 
@@ -1034,10 +1014,7 @@ extension WebDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///  - hostViewController: The `TabViewController` to set as the host.
     @MainActor
     func setHostViewController(_ hostViewController: TabViewController) {
-        guard let controller = hostViewController as? TabViewController else {
-            return
-        }
-        duckPlayer.setHostViewController(controller)
+        duckPlayer.setHostViewController(hostViewController)
 
         // Ensure the tab is not muted
         if let webview = hostViewController.webView {

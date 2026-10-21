@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
@@ -115,9 +116,9 @@ extension Preferences {
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: .alertYellow))
+                .background(Color(designSystemColor: .statusYellowTertiary))
                 .foregroundColor(.black)
-                .cornerRadius(4)
+                .cornerRadius(9)
         }
     }
 
@@ -127,9 +128,9 @@ extension Preferences {
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
-                .background(Color(designSystemColor: .alertYellow))
+                .background(Color(designSystemColor: .statusYellowTertiary))
                 .foregroundColor(.black)
-                .cornerRadius(4)
+                .cornerRadius(9)
         }
     }
 
@@ -179,6 +180,7 @@ extension Preferences {
                         }
                     }.padding(.bottom, 16)
                 }
+                .accessibilityIdentifier("PreferencesSidebar.scrollView")
 
             }
             .padding(.top, 18)
@@ -201,7 +203,11 @@ extension Preferences {
                                 themeManager: themeManager,
                                 shouldShowWinBackCampaignBadge: model.shouldShowWinBackCampaignBadge(pane: pane),
                                 action: {
-                                    model.selectPane(pane)
+                                    if pane == .partnershipsHub {
+                                        model.openSubscriberOffers()
+                                    } else {
+                                        model.selectPane(pane)
+                                    }
                                 })
             }
             if section != model.sections.last {

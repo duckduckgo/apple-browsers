@@ -1,0 +1,75 @@
+{
+    "name": "DDG Fake Broker With Token-Gated Condition Action",
+    "url": "fakebroker-token-gated-condition.com",
+    "steps": [
+    {
+        "stepType": "scan",
+        "scanType": "templatedUrl",
+        "actions": [
+        {
+            "actionType": "navigate",
+            "url": "http://localhost:3000/profiles/search?fname=${firstName}&lname=${lastName}",
+            "id": "tgc-nav"
+        },
+        {
+            "actionType": "condition",
+            "expectations": [
+                {
+                    "type": "element",
+                    "selector": "//div[contains(@class, 'captcha')]"
+                }
+            ],
+            "actions": [
+                {
+                    "actionType": "getCaptchaInfo",
+                    "id": "tgc-gci"
+                },
+                {
+                    "actionType": "solveCaptcha",
+                    "id": "tgc-sc"
+                },
+                {
+                    "actionType": "click",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "selector": "//button[@class='captcha-submit']"
+                        }
+                    ],
+                    "id": "tgc-click"
+                }
+            ],
+            "id": "tgc-condition"
+        },
+        {
+            "actionType": "extract",
+            "selector": ".profile-card",
+            "profile": {
+                "name": { "selector": ".profile-card__name" }
+            },
+            "id": "tgc-extract"
+        }
+        ]
+    },
+    {
+        "stepType": "optOut",
+        "optOutType": "formOptOut",
+        "actions": [
+        {
+            "actionType": "navigate",
+            "url": "http://localhost:3000/opt-out",
+            "id": "tgc-opt-nav"
+        }
+        ]
+    }
+    ],
+    "schedulingConfig": {
+        "retryError": 48,
+        "confirmOptOutScan": 0,
+        "maintenanceScan": 120,
+        "maxAttempts": -1
+    },
+    "addedDatetime": 1725632531153,
+    "removedAt": null,
+    "version": "0.1.0"
+}

@@ -20,44 +20,76 @@
 import Foundation
 import Core
 import AIChat
+import PixelKit
+
+protocol AIChatDeepLinkPresenting: UIViewController {
+    func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource)
+    func openAIChat(
+        source: AIChatEntryPointSource,
+        _ query: String?,
+        autoSend: Bool,
+        payload: Any?,
+        flowType: AIChatOnboardingFlowType,
+        tools: [AIChatRAGTool]?,
+        modelId: String?,
+        reasoningEffort: AIChatReasoningEffort?,
+        attachments: AIChatPromptAttachments,
+        reportsNewTab: Bool?,
+        forcesNewTab: Bool,
+        fromDeepLink: Bool,
+        termsAccepted: Bool,
+        nativePromptFlow: DuckAIPromptFlowStart?
+    )
+}
+
+extension AIChatDeepLinkPresenting {
+
+    func openAIChat(fromDeepLink: Bool, source: AIChatEntryPointSource = .deepLinkOther) {
+        openAIChat(
+            source: source,
+            nil,
+            autoSend: false,
+            payload: nil,
+            flowType: .default,
+            tools: nil,
+            modelId: nil,
+            reasoningEffort: nil,
+            attachments: .none,
+            reportsNewTab: nil,
+            forcesNewTab: false,
+            fromDeepLink: fromDeepLink,
+            termsAccepted: false,
+            nativePromptFlow: nil
+        )
+    }
+    
+}
 
 struct AIChatDeepLinkHandler {
 
     /// Handles AI Chat deep links (text and voice), dismissing any presented modal first.
-    func handleDeepLink(_ url: URL, on mainViewController: MainViewController, voiceMode: Bool = false) {
+    func handleDeepLink(_ url: URL, on mainViewController: AIChatDeepLinkPresenting, voiceMode: Bool = false) {
         if voiceMode {
             fireAIVoiceChatPixel(url)
         } else {
             firePixel(url)
         }
 
-        if !voiceMode {
-            guard !isAIChatAlreadyPresented(on: mainViewController) else {
-                return
-            }
-        }
-
+        // Widget, Control Center and lock-screen entries carry their own source, so they land on
+        // `m_aichat_entry_point` as themselves rather than collapsing into `deep_link_other`.
+        let source = AIChatEntryPointSource.forDeepLink(url)
         mainViewController.dismiss(animated: true) {
             if voiceMode {
-                mainViewController.openAIVoiceChatFromDeepLink()
+                mainViewController.openAIVoiceChatFromDeepLink(source: source)
             } else {
-                mainViewController.openAIChat(fromDeepLink: true)
+                mainViewController.openAIChat(fromDeepLink: true, source: source)
             }
         }
-    }
-
-    /// Checks if the AIChatViewController is already presented
-    private func isAIChatAlreadyPresented(on mainViewController: MainViewController) -> Bool {
-        if let presentedVC = mainViewController.presentedViewController as? RoundedPageSheetContainerViewController,
-           presentedVC.contentViewController is AIChatViewController {
-            return true
-        }
-        return false
     }
 
     private func fireAIVoiceChatPixel(_ url: URL) {
         if let source = url.getParameter(named: WidgetSourceType.sourceKey) {
-            Pixel.fire(pixel: .voiceEntryPointTapped, withAdditionalParameters: [PixelParameters.source: source])
+            PixelKit.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source]))
         }
     }
 
@@ -70,13 +102,13 @@ struct AIChatDeepLinkHandler {
         if let sourceItem = queryItems?.first(where: { $0.name == WidgetSourceType.sourceKey }) {
             switch sourceItem.value {
             case WidgetSourceType.quickActions.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetQuickAction)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetQuickAction, frequency: .dailyAndCount)
             case WidgetSourceType.favorite.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetFavorite)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetFavorite, frequency: .dailyAndCount)
             case WidgetSourceType.lockscreenComplication.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetLockScreenComplication)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetLockScreenComplication, frequency: .dailyAndCount)
             case WidgetSourceType.controlCenter.rawValue:
-                DailyPixel.fireDailyAndCount(pixel: .openAIChatFromWidgetControlCenter)
+                PixelKit.fire(Pixel.Event.openAIChatFromWidgetControlCenter, frequency: .dailyAndCount)
             default:
                 break
             }

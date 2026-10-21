@@ -30,14 +30,18 @@ struct StoreSubscriptionConfigurationTests {
         let expectedUSAProducts: Set<String> = [
             // Production
             "ddg.privacy.pro.monthly.renews.us.freetrial",
+            "ddg.privacy.pro.monthly.renews.us",
             "ddg.privacy.pro.yearly.renews.us.freetrial",
             "ddg.subscription.monthly.renews.us.freetrial.pro",
+            "ddg.subscription.monthly.renews.us.pro",
             "ddg.subscription.yearly.renews.us.freetrial.pro",
 
             // iOS Alpha
             "ios.subscription.1month.freetrial.dev",
             "ios.subscription.1year.freetrial.dev",
             "ios.subscription.1month.freetrial.dev.pro",
+            "ios.subscription.1month.dev.pro",
+            "ios.subscription.1month",
             "ios.subscription.1year.freetrial.dev.pro",
 
             // macOS Debug
@@ -73,14 +77,18 @@ struct StoreSubscriptionConfigurationTests {
         let expectedROWProducts: Set<String> = [
             // Production
             "ddg.privacy.pro.monthly.renews.row.freetrial",
+            "ddg.privacy.pro.monthly.renews.row",
             "ddg.privacy.pro.yearly.renews.row.freetrial",
             "ddg.subscription.monthly.renews.row.freetrial.pro",
+            "ddg.subscription.monthly.renews.row.pro",
             "ddg.subscription.yearly.renews.row.freetrial.pro",
 
             // iOS Alpha
             "ios.subscription.1month.row.freetrial.dev",
             "ios.subscription.1year.row.freetrial.dev",
             "ios.subscription.1month.row.freetrial.dev.pro",
+            "ios.subscription.1month.row.dev.pro",
+            "ios.subscription.1month.row",
             "ios.subscription.1year.row.freetrial.dev.pro",
 
             // macOS Debug

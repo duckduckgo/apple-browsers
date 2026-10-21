@@ -53,10 +53,6 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "-ff.onboardingRebranding true"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
             argument = "-isOnboardingCompleted false"
             isEnabled = "NO">
          </CommandLineArgument>

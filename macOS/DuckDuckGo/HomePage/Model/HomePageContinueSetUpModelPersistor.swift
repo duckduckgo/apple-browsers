@@ -25,7 +25,7 @@ protocol HomePageContinueSetUpModelPersisting {
     var shouldShowImportSetting: Bool { get set }
     var shouldShowDuckPlayerSetting: Bool { get set }
     var shouldShowEmailProtectionSetting: Bool { get set }
-    var isFirstSession: Bool { get set }
+    var shouldShowYouTubeAdBlockingSetting: Bool { get set }
     func clear()
 }
 
@@ -38,7 +38,7 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         case homePageShowImport = "home.page.show.import"
         case homePageShowDuckPlayer = "home.page.show.duck.player"
         case homePageShowEmailProtection = "home.page.show.email.protection"
-        case homePageIsFirstSession = "home.page.is.first.session"
+        case homePageShowYouTubeAdBlocking = "home.page.show.youtube.ad.blocking"
     }
 
     init(keyValueStore: KeyValueStoring) {
@@ -70,9 +70,9 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         set { keyValueStore.set(newValue, forKey: Key.homePageShowEmailProtection.rawValue) }
     }
 
-    var isFirstSession: Bool {
-        get { keyValueStore.object(forKey: Key.homePageIsFirstSession.rawValue) as? Bool ?? true }
-        set { keyValueStore.set(newValue, forKey: Key.homePageIsFirstSession.rawValue) }
+    var shouldShowYouTubeAdBlockingSetting: Bool {
+        get { keyValueStore.object(forKey: Key.homePageShowYouTubeAdBlocking.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageShowYouTubeAdBlocking.rawValue) }
     }
 
     func clear() {
@@ -81,6 +81,6 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         keyValueStore.removeObject(forKey: Key.homePageShowImport.rawValue)
         keyValueStore.removeObject(forKey: Key.homePageShowDuckPlayer.rawValue)
         keyValueStore.removeObject(forKey: Key.homePageShowEmailProtection.rawValue)
-        keyValueStore.removeObject(forKey: Key.homePageIsFirstSession.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageShowYouTubeAdBlocking.rawValue)
     }
 }

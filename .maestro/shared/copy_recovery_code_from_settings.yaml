@@ -11,7 +11,12 @@ appId: com.duckduckgo.mobile.ios
     element: Sync
     direction: DOWN
     centerElement: true
+    waitToSettleTimeoutMs: 500
+- waitForAnimationToEnd
 - tapOn: Sync
+- extendedWaitUntil:
+    visible: Paste and Copy Recovery Code
+    timeout: 10000
 - tapOn: Paste and Copy Recovery Code
 - inputText: ${CODE}
 - tapOn: Copy

@@ -35,6 +35,7 @@ final class AddBookmarkPopover: NSPopover {
     }
 
     private weak var addressBar: NSView?
+    private var syncButtonModel: DismissableSyncDeviceButtonModel?
 
     /// prefferred bounding box for the popover positioning
     override var boundingFrame: NSRect {
@@ -72,8 +73,10 @@ final class AddBookmarkPopover: NSPopover {
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
         let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
-        let syncButtonViewModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded, keyValueStore: UserDefaults.standard)
-        let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonViewModel))
+        let syncButtonModel = DismissableSyncDeviceButtonModel(source: .bookmarkAdded)
+        self.syncButtonModel = syncButtonModel
+        syncButtonModel.bookmarkPanelDidAppear()
+        let contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel, syncButtonModel: syncButtonModel))
         // It's important to set the frame at least once here. If we don't, the popover
         // can miscalculate position, especially in macOS 26 (Sequoia)
         contentViewController.view.frame = CGRect(origin: .zero, size: contentViewController.view.intrinsicContentSize)
@@ -94,6 +97,8 @@ final class AddBookmarkPopover: NSPopover {
     }
 
     func popoverWillClose() {
+        syncButtonModel?.viewDidDisappear()
+        syncButtonModel = nil
         contentViewController = nil
         bookmark = nil
     }

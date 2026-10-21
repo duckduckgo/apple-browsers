@@ -175,7 +175,7 @@ struct AIChatNativePromptTests {
     }
 
     @Test
-    func encodingQueryWithPageContext() throws {
+    func encodingQueryWithSinglePageContext() throws {
         let pageContext = AIChatPageContextData(
             title: "Example Page",
             favicon: [AIChatPageContextData.PageContextFavicon(href: "data:image/png;base64,abc", rel: "icon")],
@@ -184,7 +184,7 @@ struct AIChatNativePromptTests {
             truncated: false,
             fullContentLength: 100
         )
-        let prompt = AIChatNativePrompt.queryPrompt("Summarize this", autoSubmit: true, pageContext: pageContext)
+        let prompt = AIChatNativePrompt.queryPrompt("Summarize this", autoSubmit: true, pageContext: .single(pageContext))
         let jsonDict = try encodePrompt(prompt)
 
         #expect(jsonDict["platform"] as? String == Platform.name)
@@ -194,6 +194,7 @@ struct AIChatNativePromptTests {
         #expect(queryDict["prompt"] as? String == "Summarize this")
         #expect(queryDict["autoSubmit"] as? Bool == true)
 
+        // .single → top-level `pageContext` serializes as a JSON object (sidebar's current-page shape)
         let pageContextDict = try #require(jsonDict["pageContext"] as? [String: Any])
         #expect(pageContextDict["title"] as? String == "Example Page")
         #expect(pageContextDict["url"] as? String == "https://example.com")
@@ -208,7 +209,7 @@ struct AIChatNativePromptTests {
     }
 
     @Test
-    func decodingQueryWithPageContext() throws {
+    func decodingQueryWithSinglePageContext() throws {
         let json = """
             {
                 "platform": "\(Platform.name)",
@@ -238,9 +239,112 @@ struct AIChatNativePromptTests {
             truncated: false,
             fullContentLength: 100
         )
-        let expectedPrompt = AIChatNativePrompt.queryPrompt("Summarize this", autoSubmit: true, pageContext: expectedPageContext)
+        let expectedPrompt = AIChatNativePrompt.queryPrompt("Summarize this", autoSubmit: true, pageContext: .single(expectedPageContext))
 
         #expect(prompt == expectedPrompt)
+    }
+
+    @Test
+    func encodingQueryWithMultiplePageContexts() throws {
+        // Omnibar case: array of contexts. The first entry has no `tabId` (the active tab's
+        // page — discriminator says "current page"); the rest carry `tabId`.
+        let activePage = AIChatPageContextData(
+            title: "Active",
+            favicon: [],
+            url: "https://active.example",
+            content: "active content",
+            truncated: false,
+            fullContentLength: 14
+        )
+        let pickerTabA = AIChatPageContextData(
+            title: "Tab A",
+            favicon: [],
+            url: "https://a.example",
+            content: "A content",
+            truncated: false,
+            fullContentLength: 9,
+            tabId: "uuid-A"
+        )
+        let pickerTabB = AIChatPageContextData(
+            title: "Tab B",
+            favicon: [],
+            url: "https://b.example",
+            content: "B content",
+            truncated: false,
+            fullContentLength: 9,
+            tabId: "uuid-B"
+        )
+        let prompt = AIChatNativePrompt.queryPrompt(
+            "Summarize these",
+            autoSubmit: true,
+            pageContext: .multiple([activePage, pickerTabA, pickerTabB])
+        )
+        let jsonDict = try encodePrompt(prompt)
+
+        // .multiple → top-level `pageContext` serializes as a JSON array (omnibar's multi shape)
+        let arr = try #require(jsonDict["pageContext"] as? [[String: Any]])
+        #expect(arr.count == 3)
+        #expect(arr[0]["title"] as? String == "Active")
+        // The discriminator: NSNull means key present but null; for an omitted key
+        // `arr[0]["tabId"]` would be nil. Both are acceptable to the frontend; assert the
+        // value is treated as "absence" (nil or NSNull, never a string).
+        let activeTabIdValue = arr[0]["tabId"]
+        let activeIsAbsent = activeTabIdValue == nil || activeTabIdValue is NSNull
+        #expect(activeIsAbsent, "Active page entry must NOT carry a non-null tabId (discriminator: no tabId = current page)")
+        #expect(arr[1]["tabId"] as? String == "uuid-A")
+        #expect(arr[2]["tabId"] as? String == "uuid-B")
+    }
+
+    @Test
+    func decodingQueryWithMultiplePageContexts() throws {
+        // The decoder must round-trip the array form back into `.multiple([...])`.
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Summarize these",
+                    "autoSubmit": true
+                },
+                "pageContext": [
+                    {
+                        "title": "Tab A",
+                        "favicon": [],
+                        "url": "https://a.example",
+                        "content": "A content",
+                        "truncated": false,
+                        "fullContentLength": 9,
+                        "tabId": "uuid-A"
+                    },
+                    {
+                        "title": "Tab B",
+                        "favicon": [],
+                        "url": "https://b.example",
+                        "content": "B content",
+                        "truncated": false,
+                        "fullContentLength": 9,
+                        "tabId": "uuid-B"
+                    }
+                ]
+            }
+            """
+        let prompt = try decodePrompt(from: json)
+        guard case .multiple(let contexts) = try #require(prompt.pageContext) else {
+            Issue.record("Expected `.multiple` payload variant")
+            return
+        }
+        #expect(contexts.count == 2)
+        #expect(contexts[0].tabId == "uuid-A")
+        #expect(contexts[1].tabId == "uuid-B")
+    }
+
+    @Test
+    func encodingPageContextOmittedWhenNil() throws {
+        // No `pageContext` → key must be absent from the JSON (the duck.ai web app sees a
+        // payload identical to the pre-M8 prompt shape, so existing flows are untouched).
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true)
+        let jsonDict = try encodePrompt(prompt)
+        #expect(jsonDict["pageContext"] == nil)
     }
 
     // MARK: - Query with Images and Model
@@ -250,7 +354,7 @@ struct AIChatNativePromptTests {
         let images = [
             AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")
         ]
-        let prompt = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        let prompt = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, attachments: AIChatPromptAttachments(images: images), modelId: "gpt-4o")
         let jsonDict = try encodePrompt(prompt)
 
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
@@ -294,9 +398,13 @@ struct AIChatNativePromptTests {
         #expect(queryDict["autoSubmit"] as? Bool == true)
         #expect(queryDict["modelId"] == nil)
         #expect(queryDict["images"] == nil)
+        #expect(queryDict["files"] == nil)
         #expect(queryDict["toolChoice"] == nil)
         #expect(queryDict["mode"] == nil)
         #expect(queryDict["reasoningEffort"] == nil)
+        // M8 — `query.attachedTabIds` no longer exists; multi-tab attachments live at the
+        // top-level `pageContext: PageContext[]` per the duck.ai tech design.
+        #expect(queryDict["attachedTabIds"] == nil)
     }
 
     @Test
@@ -319,7 +427,7 @@ struct AIChatNativePromptTests {
         let prompt = try decodePrompt(from: json)
 
         let images = [AIChatNativePrompt.NativePromptImage(data: "base64data", format: "png")]
-        let expected = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, images: images, modelId: "gpt-4o")
+        let expected = AIChatNativePrompt.queryPrompt("Describe this", autoSubmit: true, attachments: AIChatPromptAttachments(images: images), modelId: "gpt-4o")
         #expect(prompt == expected)
     }
 
@@ -387,7 +495,7 @@ struct AIChatNativePromptTests {
             AIChatNativePrompt.NativePromptImage(data: "img1", format: "png"),
             AIChatNativePrompt.NativePromptImage(data: "img2", format: "png"),
         ]
-        let prompt = AIChatNativePrompt.queryPrompt("Compare these", autoSubmit: true, images: images)
+        let prompt = AIChatNativePrompt.queryPrompt("Compare these", autoSubmit: true, attachments: AIChatPromptAttachments(images: images))
         let jsonDict = try encodePrompt(prompt)
 
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
@@ -398,6 +506,68 @@ struct AIChatNativePromptTests {
     }
 
     @Test
+    func encodingQueryWithFiles() throws {
+        let files = [
+            AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")
+        ]
+        let prompt = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, attachments: AIChatPromptAttachments(files: files), modelId: "gpt-4o")
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let filesArray = try #require(queryDict["files"] as? [[String: String]])
+        #expect(filesArray.count == 1)
+        #expect(filesArray[0]["data"] == "base64pdf")
+        #expect(filesArray[0]["fileName"] == "test.pdf")
+        #expect(filesArray[0]["mimeType"] == "application/pdf")
+    }
+
+    @Test
+    func encodingQueryWithImagesAndFiles() throws {
+        let images = [
+            AIChatNativePrompt.NativePromptImage(data: "base64image", format: "png")
+        ]
+        let files = [
+            AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")
+        ]
+        let prompt = AIChatNativePrompt.queryPrompt("Compare these attachments", autoSubmit: true, attachments: AIChatPromptAttachments(images: images, files: files), modelId: "gpt-5-mini")
+        let jsonDict = try encodePrompt(prompt)
+
+        let queryDict = try #require(jsonDict["query"] as? [String: Any])
+        let imagesArray = try #require(queryDict["images"] as? [[String: String]])
+        let filesArray = try #require(queryDict["files"] as? [[String: String]])
+        #expect(imagesArray.count == 1)
+        #expect(filesArray.count == 1)
+        #expect(imagesArray[0]["data"] == "base64image")
+        #expect(filesArray[0]["data"] == "base64pdf")
+    }
+
+    @Test
+    func decodingQueryWithFiles() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "Summarize this file",
+                    "autoSubmit": true,
+                    "files": [
+                        {
+                            "data": "base64pdf",
+                            "fileName": "test.pdf",
+                            "mimeType": "application/pdf"
+                        }
+                    ]
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        let files = [AIChatNativePrompt.NativePromptFile(data: "base64pdf", fileName: "test.pdf", mimeType: "application/pdf")]
+        let expected = AIChatNativePrompt.queryPrompt("Summarize this file", autoSubmit: true, attachments: AIChatPromptAttachments(files: files))
+        #expect(prompt == expected)
+    }
+
+    @Test
     func encodingQueryWithToolChoice() throws {
         let prompt = AIChatNativePrompt.queryPrompt("Search for this", autoSubmit: true, toolChoice: ["WebSearch"])
         let jsonDict = try encodePrompt(prompt)
@@ -405,6 +575,63 @@ struct AIChatNativePromptTests {
         let queryDict = try #require(jsonDict["query"] as? [String: Any])
         let toolChoice = try #require(queryDict["toolChoice"] as? [String])
         #expect(toolChoice == ["WebSearch"])
+    }
+
+    // MARK: - Terms of Service
+
+    /// Builds without native Terms of Service support must look exactly as they do today.
+    @Test
+    func encodingWithoutTermsAcceptedOmitsTheKey() throws {
+        let jsonDict = try encodePrompt(AIChatNativePrompt.queryPrompt("hello", autoSubmit: true))
+
+        #expect(jsonDict["termsAccepted"] == nil)
+    }
+
+    @Test(arguments: [true, false])
+    func encodingWithTermsAcceptedIncludesTheValue(_ termsAccepted: Bool) throws {
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true).withTermsAccepted(termsAccepted)
+
+        let jsonDict = try encodePrompt(prompt)
+
+        #expect(jsonDict["termsAccepted"] as? Bool == termsAccepted)
+    }
+
+    @Test
+    func withTermsAcceptedKeepsTheRestOfThePrompt() throws {
+        let selection = AIChatSelectionContextData(id: "selection-1",
+                                                   title: "Example",
+                                                   url: "https://example.com",
+                                                   content: "quoted",
+                                                   truncated: false,
+                                                   fullContentLength: 6,
+                                                   wordCount: 1)
+        let prompt = AIChatNativePrompt.queryPrompt("hello", autoSubmit: true, modelId: "gpt-5.4-mini", selections: [selection])
+
+        let stamped = prompt.withTermsAccepted(true)
+
+        #expect(stamped.tool == prompt.tool)
+        #expect(stamped.selections == prompt.selections)
+        #expect(stamped.platform == prompt.platform)
+        #expect(stamped.termsAccepted == true)
+    }
+
+    @Test
+    func decodingTermsAccepted() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "query",
+                "query": {
+                    "prompt": "hello",
+                    "autoSubmit": true
+                },
+                "termsAccepted": true
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+
+        #expect(prompt == AIChatNativePrompt.queryPrompt("hello", autoSubmit: true).withTermsAccepted(true))
     }
 
     // MARK: - Helpers

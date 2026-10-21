@@ -20,7 +20,6 @@ import Foundation
 import StoreKit
 import Subscription
 
-@available(macOS 12.0, *)
 public final class DebugPurchaseModelV2: ObservableObject {
 
     private var purchaseManager: any StorePurchaseManager
@@ -46,7 +45,6 @@ public final class DebugPurchaseModelV2: ObservableObject {
     }
 }
 
-@available(macOS 12.0, *)
 public struct SubscriptionRowModel: Identifiable {
     public var id: String { product.id + String(isPurchased) + String(isBeingPurchased) }
 

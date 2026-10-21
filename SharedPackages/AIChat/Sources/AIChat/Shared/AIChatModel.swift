@@ -31,6 +31,7 @@ public struct AIChatModel {
     public let shortName: String
     public let provider: ModelProvider
     public let supportsImageUpload: Bool
+    public let supportedFileTypes: [String]
     /// Image formats supported by this model (e.g. ["png", "webp"]). Empty when image upload is not supported.
     public let supportedImageFormats: [String]
     /// Tools supported by this model for prompt-time augmentation.
@@ -41,6 +42,10 @@ public struct AIChatModel {
     public let accessTier: [String]
     /// Supported reasoning effort levels. Empty when reasoning is not supported.
     public let supportedReasoningEffort: [AIChatReasoningEffort]
+    /// Per-effort access metadata from the `/models` API. `nil` when the backend omits the field.
+    public let reasoningEffortAccess: [AIChatReasoningEffortAccess]?
+    /// Suggested usage label returned by the `/models` API.
+    public let label: AIChatModelLabel?
 
     public enum ModelProvider {
         case openAI
@@ -51,28 +56,59 @@ public struct AIChatModel {
         case unknown
     }
 
+    public var supportsFileUpload: Bool {
+        !supportedFileTypes.isEmpty
+    }
+
+    public var isSuggestedForImageCreation: Bool {
+        switch label {
+        case .everydayUse:
+            return true
+        case .usesLimitsFaster, .unknown, .none:
+            return false
+        }
+    }
+
+    /// Picks the preferred accessible model that supports Create Image across native surfaces.
+    public static func preferredImageGenerationModel(in models: [AIChatModel]) -> AIChatModel? {
+        let candidates = models.filter { $0.entityHasAccess && $0.supportsTool(.imageGeneration) }
+        return candidates.first(where: \.isSuggestedForImageCreation) ?? candidates.first
+    }
+
+    /// Whether this is an advanced (paid-tier) model — i.e. not available on the free tier. Single source
+    /// of truth for the basic/advanced split in the model picker and the "PLUS" marker in onboarding.
+    public var isAdvanced: Bool {
+        !accessTier.contains(AIChatUserTier.free.rawValue)
+    }
+
     public init(
         id: String,
         name: String,
         shortName: String? = nil,
         provider: ModelProvider,
         supportsImageUpload: Bool,
+        supportedFileTypes: [String] = [],
         supportedImageFormats: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
         entityHasAccess: Bool,
         accessTier: [String] = [],
-        supportedReasoningEffort: [AIChatReasoningEffort] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        reasoningEffortAccess: [AIChatReasoningEffortAccess]? = nil,
+        label: AIChatModelLabel? = nil
     ) {
         self.id = id
         self.name = name
         self.shortName = shortName ?? name
         self.provider = provider
         self.supportsImageUpload = supportsImageUpload
+        self.supportedFileTypes = supportedFileTypes
         self.supportedImageFormats = supportedImageFormats
         self.supportedTools = supportedTools
         self.entityHasAccess = entityHasAccess
         self.accessTier = accessTier
         self.supportedReasoningEffort = supportedReasoningEffort
+        self.reasoningEffortAccess = reasoningEffortAccess
+        self.label = label
     }
 
     public func supportsTool(_ tool: AIChatRAGTool) -> Bool {

@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Configuration
 import Foundation
 import GRDB
@@ -214,6 +215,17 @@ final class MockIPCServer: DataBrokerProtectionIPCServer {
         Task {
             await serverDelegate?.profileSaved()
         }
+    }
+
+    func startDebugServer(completion: @escaping (Bool) -> Void) {
+        Task {
+            let didStart = await serverDelegate?.startDebugServer() ?? false
+            completion(didStart)
+        }
+    }
+
+    func stopDebugServer() {
+        serverDelegate?.stopDebugServer()
     }
 
     func checkForEmailConfirmationData() {

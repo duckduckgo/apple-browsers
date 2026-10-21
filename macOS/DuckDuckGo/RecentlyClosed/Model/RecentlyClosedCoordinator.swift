@@ -19,6 +19,7 @@
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 
 @MainActor
 protocol RecentlyClosedCoordinating: AnyObject {
@@ -220,11 +221,13 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         } else {
             // There is no window available, create a new one
             let tab = Tab(content: recentlyClosedTab.tabContent.loadedFromCache(), interactionStateData: recentlyClosedTab.interactionData, shouldLoadInBackground: true)
+            tab.aiChat?.noteRecreated(as: .reopenedTab)
             WindowsManager.openNewWindow(with: tab)
             return
         }
 
         let tab = Tab(content: recentlyClosedTab.tabContent.loadedFromCache(), interactionStateData: recentlyClosedTab.interactionData, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        tab.aiChat?.noteRecreated(as: .reopenedTab)
         tabCollectionViewModel.insert(tab, at: .unpinned(tabIndex), selected: true)
     }
 
@@ -241,6 +244,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         }
 
         let tab = Tab(content: recentlyClosedTab.tabContent.loadedFromCache(), interactionStateData: recentlyClosedTab.interactionData, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        tab.aiChat?.noteRecreated(as: .reopenedTab)
         let tabIndex = min(recentlyClosedTab.index.item, Application.appDelegate.pinnedTabsManager.tabCollection.tabs.count)
 
         tabCollectionViewModel.insert(tab, at: .pinned(tabIndex), selected: true)
@@ -256,6 +260,7 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
                 interactionStateData: recentlyClosedTab.interactionData,
                 shouldLoadInBackground: false
             )
+            tab.aiChat?.noteRecreated(as: .reopenedTab)
             tabCollection.append(tab: tab)
         }
         WindowsManager.openNewWindow(with: tabCollection,
@@ -296,7 +301,9 @@ extension Tab.TabContent {
         switch self {
         case .url(let url, credential: let credential, source: _):
             .url(url, credential: credential, source: .pendingStateRestoration)
-        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
+        case .aiChat:
+            resettingAIChatSource
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl:
             self
         }
     }
@@ -306,7 +313,9 @@ extension Tab.TabContent {
         case .url(let url, credential: let credential, source: let source):
             let newSource: URLSource = source == .pendingStateRestoration ? .loadedByStateRestoration : .reload
             return .url(url, credential: credential, source: newSource)
-        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
+        case .aiChat:
+            return resettingAIChatSource
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .none, .dataBrokerProtection, .subscription, .identityTheftRestoration, .webExtensionUrl:
             return self
         }
     }

@@ -17,8 +17,7 @@
 //
 
 import XCTest
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import WebExtensions
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -85,6 +84,24 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
     }
 
     // MARK: - Remove Tests
+
+    func testStoreIdentityFindsBothUpdateVersionsAndSurvivesOldVersionRemoval() {
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: "test-extension")
+        let old = InstalledWebExtension(uniqueIdentifier: "old", filename: "old.zip", name: nil, version: "1.0", storeIdentity: identity)
+        let replacement = InstalledWebExtension(uniqueIdentifier: "new", filename: "new.zip", name: nil, version: "2.0", storeIdentity: identity)
+        let other = InstalledWebExtension(uniqueIdentifier: "other", filename: "other.zip", name: nil, version: "1.0",
+                                           storeIdentity: .init(store: .chromeWebStore, id: "other-extension"))
+        store.add(old)
+        store.add(replacement)
+        store.add(other)
+        store.add(makeExtension(uniqueIdentifier: "manual"))
+
+        XCTAssertEqual(store.installedExtensions(withStoreIdentity: identity), [old, replacement])
+        store.remove(uniqueIdentifier: old.uniqueIdentifier)
+
+        let restored = InstalledWebExtensionStore(storage: storage)
+        XCTAssertEqual(restored.installedExtensions(withStoreIdentity: identity), [replacement])
+    }
 
     func testWhenExtensionIsRemoved_ThenInstalledWebExtensionsDoesNotContainIt() {
         let ext = makeExtension()
@@ -161,5 +178,47 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
         let customStore = InstalledWebExtensionStore(storage: customStorage)
 
         XCTAssertEqual(customStore.installedExtensions, [ext])
+    }
+
+    // MARK: - Update Tests
+
+    func testWhenExtensionIsUpdated_ThenStoredRecordIsReplaced() {
+        let ext = makeExtension()
+        storage.extensions = [ext, makeExtension(uniqueIdentifier: "other")]
+        var disabled = ext
+        disabled.isDisabled = true
+
+        store.update(disabled)
+
+        XCTAssertEqual(InstalledWebExtensionStore(storage: storage).installedExtensions, [disabled, makeExtension(uniqueIdentifier: "other")])
+    }
+
+    func testWhenUnknownExtensionIsUpdated_ThenStorageIsUnchanged() {
+        let ext = makeExtension()
+        storage.extensions = [ext]
+
+        store.update(makeExtension(uniqueIdentifier: "unknown"))
+
+        XCTAssertEqual(storage.extensions, [ext])
+    }
+
+    // MARK: - Decoding Tests
+
+    func testWhenRecordWithoutDisabledStateIsDecoded_ThenExtensionIsLoaded() throws {
+        let json = #"{"uniqueIdentifier":"test-extension","filename":"extension.zip","name":"Test Extension","version":"1.0.0"}"#
+
+        let ext = try JSONDecoder().decode(InstalledWebExtension.self, from: Data(json.utf8))
+
+        XCTAssertEqual(ext, makeExtension())
+        XCTAssertFalse(ext.isDisabled)
+    }
+
+    func testWhenDisabledRecordIsEncoded_ThenDecodedRecordIsDisabled() throws {
+        var ext = makeExtension()
+        ext.isDisabled = true
+
+        let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(ext))
+
+        XCTAssertEqual(decoded, ext)
     }
 }

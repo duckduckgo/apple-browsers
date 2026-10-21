@@ -44,6 +44,7 @@ struct JsonToRemoteMessageModelMapperPlaceholdersTests {
         (.pir, .pir),
         (.subscription, .subscription),
         (.veryCriticalUpdate, .veryCriticalUpdate),
+        (.youtubeNew, .youtubeNew),
     ]
 
     @Test("Check Placeholder Mapping Coverage")

@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import Freemium
@@ -116,7 +117,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         await viewModel.proceedAction()
 
         await fulfillment(of: [expectation], timeout: 2.0)
-        XCTAssertEqual(receivedResult, .actioned)
+        XCTAssertEqual(receivedResult, .actioned())
     }
 
     @MainActor
@@ -152,6 +153,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .freeScanBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabScanClick)
     }
 
@@ -189,6 +191,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .viewResultsBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabResultsClick)
     }
 
@@ -223,6 +226,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockPresenter.didCallShowFreemium)
+        XCTAssertEqual(mockPresenter.lastEntryPoint, .viewResultsBanner)
         XCTAssertEqual(mockPixelHandler.lastFiredEvent, DataBrokerProtectionFreemiumPixels.newTabNoResultsClick)
     }
 

@@ -32,7 +32,9 @@ public final class VPNSettings {
         case setConnectOnLogin(_ connectOnLogin: Bool)
         case setIncludeAllNetworks(_ includeAllNetworks: Bool)
         case setEnforceRoutes(_ enforceRoutes: Bool)
+        case setSessionHealthTelemetryEnabled(_ sessionHealthTelemetryEnabled: Bool)
         case setExcludeLocalNetworks(_ excludeLocalNetworks: Bool)
+        case setExcludeCGNAT(_ excludeCGNAT: Bool)
         case setExcludeAPNs(_ excludeAPNs: Bool)
         case setExcludeCellularServices(_ excludeCellularServices: Bool)
         case setExcludeDeviceCommunication(_ excludeDeviceCommunication: Bool)
@@ -130,6 +132,13 @@ public final class VPNSettings {
                 Change.setExcludeLocalNetworks(excludeLocalNetworks)
             }.eraseToAnyPublisher()
 
+        let excludeCGNATPublisher = excludeCGNATPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { excludeCGNAT in
+                Change.setExcludeCGNAT(excludeCGNAT)
+            }.eraseToAnyPublisher()
+
         let excludeAPNsPublisher = excludeAPNsPublisher
             .dropFirst()
             .removeDuplicates()
@@ -200,6 +209,13 @@ public final class VPNSettings {
                 Change.setShowInMenuBar(showInMenuBar)
             }.eraseToAnyPublisher()
 
+        let sessionHealthTelemetryEnabledPublisher = sessionHealthTelemetryEnabledPublisher
+            .dropFirst()
+            .removeDuplicates()
+            .map { enabled in
+                Change.setSessionHealthTelemetryEnabled(enabled)
+            }.eraseToAnyPublisher()
+
         let disableRekeyingPublisher = disableRekeyingPublisher
             .dropFirst()
             .removeDuplicates()
@@ -212,6 +228,7 @@ public final class VPNSettings {
             includeAllNetworksPublisher,
             enforceRoutesPublisher,
             excludeLocalNetworksPublisher,
+            excludeCGNATPublisher,
             excludeAPNsPublisher,
             excludeCellularServicesPublisher,
             excludeDeviceCommunicationPublisher,
@@ -221,6 +238,7 @@ public final class VPNSettings {
             environmentChangePublisher,
             dnsSettingsChangePublisher,
             showInMenuBarPublisher,
+            sessionHealthTelemetryEnabledPublisher,
             disableRekeyingPublisher).eraseToAnyPublisher()
     }()
 
@@ -232,8 +250,8 @@ public final class VPNSettings {
 
     public func resetToDefaults() {
         defaults.resetNetworkProtectionSettingConnectOnLogin()
-        defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeCGNAT()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
@@ -243,15 +261,18 @@ public final class VPNSettings {
         defaults.resetNetworkProtectionSettingSelectedServer()
         defaults.resetDNSSettings()
         defaults.resetNetworkProtectionSettingShowInMenuBar()
+        defaults.resetVPNSettingSessionHealthTelemetryEnabled()
+        defaults.resetVPNSettingEnforceRoutes()
     }
 
     public func resetTunnelFlagsToDefaults() {
-        defaults.resetNetworkProtectionSettingEnforceRoutes()
         defaults.resetNetworkProtectionSettingIncludeAllNetworks()
         defaults.resetNetworkProtectionSettingExcludeLocalNetworks()
+        defaults.resetNetworkProtectionSettingExcludeCGNAT()
         defaults.resetNetworkProtectionSettingExcludeAPNs()
         defaults.resetNetworkProtectionSettingExcludeCellularServices()
         defaults.resetNetworkProtectionSettingExcludeDeviceCommunication()
+        defaults.resetVPNSettingEnforceRoutes()
     }
 
     // MARK: - Applying Changes
@@ -264,6 +285,8 @@ public final class VPNSettings {
             self.enforceRoutes = enforceRoutes
         case .setExcludeLocalNetworks(let excludeLocalNetworks):
             self.excludeLocalNetworks = excludeLocalNetworks
+        case .setExcludeCGNAT(let excludeCGNAT):
+            self.excludeCGNAT = excludeCGNAT
         case .setExcludeAPNs(let excludeAPNs):
             self.excludeAPNs = excludeAPNs
         case .setExcludeCellularServices(let excludeCellularServices):
@@ -286,6 +309,8 @@ public final class VPNSettings {
             self.dnsSettings = dnsSettings
         case .setShowInMenuBar(let showInMenuBar):
             self.showInMenuBar = showInMenuBar
+        case .setSessionHealthTelemetryEnabled(let enabled):
+            self.sessionHealthTelemetryEnabled = enabled
         case .setDisableRekeying(let disableRekeying):
             self.disableRekeying = disableRekeying
         }
@@ -326,16 +351,45 @@ public final class VPNSettings {
     // MARK: - Enforce Routes
 
     public var enforceRoutesPublisher: AnyPublisher<Bool, Never> {
-        defaults.networkProtectionSettingEnforceRoutesPublisher
+        defaults.vpnSettingEnforceRoutesPublisher
     }
 
     public var enforceRoutes: Bool {
         get {
-            defaults.networkProtectionSettingEnforceRoutes
+            defaults.vpnSettingEnforceRoutes
         }
 
         set {
-            defaults.networkProtectionSettingEnforceRoutes = newValue
+            defaults.vpnSettingEnforceRoutes = newValue
+        }
+    }
+
+    /// Forces `enforceRoutes` back to its safe default when Strict routing isn't available to this
+    /// user, so a value relaxed while the feature was available can't persist after it's withdrawn.
+    ///
+    /// Callers pass the resolved availability (not a feature flagger) so this stays free of the
+    /// app-side flag system — keeping it usable from contexts that can't evaluate flags.
+    public func resetEnforceRoutesIfUnavailable(strictRoutingAvailable: Bool) {
+        guard strictRoutingAvailable else {
+            defaults.resetVPNSettingEnforceRoutes()
+            return
+        }
+    }
+
+    // MARK: - Session Health Telemetry
+
+    public var sessionHealthTelemetryEnabledPublisher: AnyPublisher<Bool, Never> {
+        defaults.vpnSettingSessionHealthTelemetryEnabledPublisher
+    }
+
+    /// Resolved by the host app and retained for system-initiated tunnel starts.
+    public var sessionHealthTelemetryEnabled: Bool {
+        get {
+            defaults.vpnSettingSessionHealthTelemetryEnabled
+        }
+
+        set {
+            defaults.vpnSettingSessionHealthTelemetryEnabled = newValue
         }
     }
 
@@ -352,6 +406,22 @@ public final class VPNSettings {
 
         set {
             defaults.networkProtectionSettingExcludeLocalNetworks = newValue
+        }
+    }
+
+    // MARK: - Exclude CGNAT
+
+    public var excludeCGNATPublisher: AnyPublisher<Bool, Never> {
+        defaults.networkProtectionSettingExcludeCGNATPublisher
+    }
+
+    public var excludeCGNAT: Bool {
+        get {
+            defaults.networkProtectionSettingExcludeCGNAT
+        }
+
+        set {
+            defaults.networkProtectionSettingExcludeCGNAT = newValue
         }
     }
 

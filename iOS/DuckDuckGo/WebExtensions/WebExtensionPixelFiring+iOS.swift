@@ -17,9 +17,30 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Core
+import Foundation
+import PixelKit
 import WebExtensions
+
+private struct CPMWebExtensionPixel: PixelKit.Event {
+    let metadata: CPMWebExtensionPixelMetadata
+
+    var name: String { metadata.name }
+
+    var parameters: [String: String]? { metadata.parameters }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+}
+
+@available(iOS 18.4, *)
+private struct WebExtensionReloadErrorPixel: PixelKit.Event {
+    let metadata: WebExtensionReloadErrorPixelMetadata
+
+    var name: String { WebExtensionReloadErrorPixelMetadata.name }
+    var parameters: [String: String]? { metadata.parameters }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+    var namePrefix: PixelKitNamePrefix { .none }
+}
 
 @available(iOS 18.4, *)
 private extension DuckDuckGoWebExtensionType {
@@ -29,6 +50,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedInstalled
         case .darkReader: return .webExtensionDarkReaderInstalled
         case .adBlockingExtension: return .webExtensionAdBlockingInstalled
+        case .searchToken: return .webExtensionSearchTokenInstalled
         }
     }
 
@@ -37,6 +59,7 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedUpgraded
         case .darkReader: return .webExtensionDarkReaderUpgraded
         case .adBlockingExtension: return .webExtensionAdBlockingUpgraded
+        case .searchToken: return .webExtensionSearchTokenUpgraded
         }
     }
 
@@ -45,6 +68,16 @@ private extension DuckDuckGoWebExtensionType {
         case .embedded: return .webExtensionEmbeddedInstallError
         case .darkReader: return .webExtensionDarkReaderInstallError
         case .adBlockingExtension: return .webExtensionAdBlockingInstallError
+        case .searchToken: return .webExtensionSearchTokenInstallError
+        }
+    }
+
+    var notLoadedPixel: Pixel.Event {
+        switch self {
+        case .embedded: return .webExtensionEmbeddedNotLoaded
+        case .darkReader: return .webExtensionDarkReaderNotLoaded
+        case .adBlockingExtension: return .webExtensionAdBlockingNotLoaded
+        case .searchToken: return .webExtensionSearchTokenNotLoaded
         }
     }
 }
@@ -52,57 +85,49 @@ private extension DuckDuckGoWebExtensionType {
 @available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .installed:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionInstalled,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
-        case .installError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionInstallError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionInstalled,
+                          frequency: .dailyAndStandard)
+        case .installError(_, let error):
+            pixelFiring?.fire(Pixel.Event.webExtensionInstallError.withError(error),
+                          frequency: .dailyAndStandard)
         case .uninstalled:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstalled,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstalled,
+                          frequency: .dailyAndStandard)
         case .uninstallError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstallError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstallError.withError(error),
+                          frequency: .dailyAndStandard)
         case .uninstalledAll:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstalledAll,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstalledAll,
+                          frequency: .dailyAndStandard)
         case .uninstallAllError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionUninstallAllError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstallAllError.withError(error),
+                          frequency: .dailyAndStandard)
         case .loaded:
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionLoaded,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionLoaded,
+                          frequency: .dailyAndStandard)
         case .loadError(let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionLoadError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
+            pixelFiring?.fire(Pixel.Event.webExtensionLoadError.withError(error),
+                          frequency: .dailyAndStandard)
+        case .reloadError(let type, let trigger, let phase, let error):
+            let metadata = WebExtensionReloadErrorPixelMetadata(
+                type: type,
+                trigger: trigger,
+                phase: phase,
                 error: error
             )
+            pixelFiring?.fire(WebExtensionReloadErrorPixel(metadata: metadata), frequency: .dailyAndCount)
         case .embeddedInstalled(let type):
-            DailyPixel.fireDailyAndCount(
-                pixel: type.installedPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes
-            )
+            pixelFiring?.fire(type.installedPixel,
+                          frequency: .dailyAndStandard)
         case .embeddedUpgraded(let type, let fromVersion, let toVersion):
             var params: [String: String] = [:]
             if let fromVersion {
@@ -111,50 +136,61 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             if let toVersion {
                 params["to_version"] = toVersion
             }
-            DailyPixel.fireDailyAndCount(
-                pixel: type.upgradedPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: params
-            )
+            pixelFiring?.fire(type.upgradedPixel,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(params))
         case .embeddedInstallError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: type.installErrorPixel,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error
-            )
+            pixelFiring?.fire(type.installErrorPixel.withError(error),
+                          frequency: .dailyAndStandard)
         case .scriptletFetchSuccess(let type, let version, let count):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletFetchSuccess,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: ["extension_type": type.rawValue, "version": version, "count": "\(count)"]
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletFetchSuccess,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue, "version": version, "count": "\(count)"]))
         case .scriptletFetchError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletFetchError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error,
-                withAdditionalParameters: ["extension_type": type.rawValue]
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletFetchError.withError(error),
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue]))
         case .scriptletValidationError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletValidationError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error,
-                withAdditionalParameters: ["extension_type": type.rawValue]
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletValidationError.withError(error),
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue]))
         case .scriptletInstalled(let type, let version):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletInstalled,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                withAdditionalParameters: ["extension_type": type.rawValue, "version": version]
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletInstalled,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue, "version": version]))
         case .scriptletInstallError(let type, let error):
-            DailyPixel.fireDailyAndCount(
-                pixel: .webExtensionScriptletInstallError,
-                pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
-                error: error,
-                withAdditionalParameters: ["extension_type": type.rawValue]
-            )
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletInstallError.withError(error),
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_type": type.rawValue]))
+        case .stateChecked:
+            pixelFiring?.fire(Pixel.Event.webExtensionStateChecked,
+                          frequency: .dailyAndStandard)
+        case .expectedExtensionNotLoaded(let type):
+            pixelFiring?.fire(type.notLoadedPixel,
+                          frequency: .dailyAndStandard)
+        case .adBlockingScriptletsNotFetched(let extensionLoaded):
+            pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
+                          frequency: .dailyAndStandard,
+                          options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
+        case .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
+            fireCPMPixel(event)
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+            // Chrome extensions, and so password manager extensions, are only supported on macOS, so
+            // these are only sent there.
+            assertionFailure("\(event) is only sent on macOS")
+        }
+    }
+
+    private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
+        guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
+        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
+    }
+}
+
+private extension CPMWebExtensionPixelFrequency {
+    var pixelKitFrequency: PixelKit.Frequency {
+        switch self {
+        case .dailyAndCount: return .dailyAndCount
         }
     }
 }

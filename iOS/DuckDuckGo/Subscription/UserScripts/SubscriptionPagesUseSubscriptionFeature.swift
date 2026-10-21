@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Foundation
 import WebKit
 import UserScript
@@ -28,7 +29,11 @@ import Core
 import os.log
 import Networking
 import PixelKit
+import WideEvent
 import PrivacyConfig
+import DataBrokerProtectionCore
+import DataBrokerProtection_iOS
+import UserNotifications
 
 struct SubscriptionPagesUseSubscriptionFeatureConstants {
     static let featureName = "useSubscription"
@@ -57,6 +62,9 @@ private struct Handlers {
     static let subscriptionChangeSelected = "subscriptionChangeSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
+    // Notification permission & scheduling (expiration reminder experiment)
+    static let getUserSettings = "getUserSettings"
+    static let requestNotificationsPermission = "requestNotificationsPermission"
     // Pixels related events
     static let subscriptionsMonthlyPriceClicked = "subscriptionsMonthlyPriceClicked"
     static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
@@ -110,6 +118,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onBackToSettings: (() -> Void)? { get set }
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
+    var onPurchaseCompleted: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -134,6 +143,9 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable?
 
+    func getUserSettings(params: Any, original: WKScriptMessage) async -> Encodable?
+    func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable?
+
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
     func restoreAccountFromAppStorePurchase() async throws
     func cleanup()
@@ -152,11 +164,16 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let tierEventReporter: SubscriptionTierEventReporting
     private let pendingTransactionHandler: PendingTransactionHandling
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
+    private let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     private var purchaseWideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
     private var planChangeWideEventData: SubscriptionPlanChangeWideEventData?
     private var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
     private let requestValidator: any ScriptRequestValidator
+    private let userNotificationCenter: UNUserNotificationCenterRepresentable
+    private let expirationReminderScheduler: SubscriptionExpirationReminderScheduling?
+    private let isExpirationReminderFeatureEnabled: () -> Bool
+    private let subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -169,7 +186,16 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter(),
          pendingTransactionHandler: PendingTransactionHandling,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting,
-         requestValidator: any ScriptRequestValidator) {
+         requestValidator: any ScriptRequestValidator,
+         freemiumDBPUserStateManager: FreemiumDBPUserStateManaging = DefaultFreemiumDBPUserStateManager(
+            userDefaults: .dbp,
+            isUserAuthenticated: { false },
+            isFreemiumEnabled: { true }
+         ),
+         userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
+         expirationReminderScheduler: SubscriptionExpirationReminderScheduling? = nil,
+         isExpirationReminderFeatureEnabled: @escaping () -> Bool = { false },
+         subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviding) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -182,6 +208,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.pendingTransactionHandler = pendingTransactionHandler
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter
         self.requestValidator = requestValidator
+        self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
+        self.userNotificationCenter = userNotificationCenter
+        self.expirationReminderScheduler = expirationReminderScheduler
+        self.isExpirationReminderFeatureEnabled = isExpirationReminderFeatureEnabled
+        self.subscriptionExperimentAttributionProvider = subscriptionExperimentAttributionProvider
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -195,9 +226,26 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onBackToSettings: (() -> Void)?
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
+    var onPurchaseCompleted: (() -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
+    }
+
+    struct SubscriptionSelection: Decodable {
+        struct Experiment: Decodable {
+            let name: String
+            let cohort: String
+
+            var subscriptionExperiment: SubscriptionExperiment {
+                SubscriptionExperiment(experimentName: name, experimentCohort: cohort)
+            }
+        }
+
+        let id: String
+        let experiment: Experiment?
+        let experiments: [Experiment]?
+        let scheduleNotification: ScheduleNotificationPreference?
     }
 
     weak var broker: UserScriptMessageBroker?
@@ -237,6 +285,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
+        case Handlers.getUserSettings: return getUserSettings
+        case Handlers.requestNotificationsPermission: return requestNotificationsPermission
         default:
             Logger.subscription.error("Unhandled web message: \(methodName)")
             return nil
@@ -322,8 +372,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         do {
             try await subscriptionManager.adopt(accessToken: subscriptionValues.accessToken, refreshToken: subscriptionValues.refreshToken)
-            try await subscriptionManager.getSubscription(cachePolicy: .remoteFirst)
-            Logger.subscription.log("Subscription retrieved")
+            guard let subscription = try await subscriptionManager.getSubscription(forceRefresh: true) else {
+                Logger.subscription.error("No subscription found after token adoption")
+                setTransactionError(.failedToSetSubscription)
+                markEmailAddressRestoreWideEventFlowAsFailed(with: UseSubscriptionError.failedToSetSubscription)
+                return nil
+            }
+            Logger.subscription.log("Subscription retrieved: \(subscription.isActive ? "active" : "inactive", privacy: .public)")
             markEmailAddressRestoreWideEventFlowAsSuccess()
         } catch {
             Logger.subscription.error("Failed to adopt V2 tokens: \(error, privacy: .public)")
@@ -394,28 +449,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     // swiftlint:disable:next cyclomatic_complexity
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 
-        DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseAttempt,
-                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        PixelKit.fire(Pixel.Event.subscriptionPurchaseAttempt,
+                      frequency: .legacyDailyAndCount,
+                      options: .parameters(subscriptionAttributionOrigin.map { [AttributionParameter.origin: $0] } ?? [:]))
         setTransactionError(nil)
         setTransactionStatus(.purchasing)
         resetSubscriptionFlow()
-
-        struct SubscriptionSelection: Decodable {
-            struct Experiment: Codable {
-                let name: String
-                let cohort: String
-
-                func asParameters() -> [String: String] {
-                    [
-                        "experimentName": name,
-                        "experimentCohort": cohort,
-                    ]
-                }
-            }
-
-            let id: String
-            let experiment: Experiment?
-        }
 
         // 1: Parse subscription selection from message object
         let message = original
@@ -426,24 +465,25 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             return nil
         }
 
+        let pendingScheduleNotification = subscriptionSelection.scheduleNotification
+
         // 2: Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.log("Subscription already active")
             setTransactionError(.activeSubscriptionAlreadyPresent)
-            Pixel.fire(pixel: .subscriptionRestoreAfterPurchaseAttempt)
+            PixelKit.fire(Pixel.Event.subscriptionRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
         }
 
         // 3: Configure wide event and start the flow
-        let experiment = subscriptionSelection.experiment?.name
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
 
         let data = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
-            funnelName: subscriptionAttributionOrigin)
+            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: subscriptionAttributionOrigin))
 
         self.purchaseWideEventData = data
         wideEvent.startFlow(data)
@@ -528,10 +568,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             return nil
         }
 
-        var subscriptionParameters: [String: String]?
-        if let frontEndExperiment = subscriptionSelection.experiment {
-            subscriptionParameters = frontEndExperiment.asParameters()
-        }
+        let experimentAttribution = subscriptionExperimentAttributionProvider.attribution(from: subscriptionSelection)
 
         if let purchaseWideEventData {
             purchaseWideEventData.activateAccountDuration = WideEvent.MeasuredInterval.startingNow()
@@ -539,13 +576,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         }
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
-                                                                       additionalParams: subscriptionParameters) {
+                                                                       experimentAttribution: experimentAttribution) {
         case .success:
             Logger.subscription.log("Subscription purchase completed successfully")
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionPurchaseSuccess,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .subscriptionActivated)
-            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, subscriptionDataReporter: subscriptionDataReporter)
+            PixelKit.fire(Pixel.Event.subscriptionPurchaseSuccess,
+                          frequency: .legacyDailyAndCount)
+            PixelKit.fire(Pixel.Event.subscriptionActivated, frequency: .uniqueByName)
+            Pixel.fireAttribution(pixel: .subscriptionSuccessfulSubscriptionAttribution, origin: subscriptionAttributionOrigin, freeTrial: freeTrialEligible, subscriptionDataReporter: subscriptionDataReporter)
+            fireFreemiumUpsellPixel()
             setTransactionStatus(.idle)
             NotificationCenter.default.post(name: .subscriptionDidChange, object: self)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
@@ -555,6 +593,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                 wideEvent.updateFlow(purchaseWideEventData)
                 wideEvent.completeFlow(purchaseWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
             }
+
+            if let preference = pendingScheduleNotification, let scheduler = expirationReminderScheduler {
+                await scheduler.scheduleReminder(daysBeforeCancel: preference.daysBeforeCancel)
+            }
+            onPurchaseCompleted?()
 
         case .failure(let error):
             Logger.subscription.error("App store complete subscription purchase error: \(error, privacy: .public)")
@@ -595,7 +638,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         Logger.subscription.log("[TierChange] Starting \(subscriptionSelection.change ?? "change", privacy: .public) for: \(subscriptionSelection.id, privacy: .public)")
 
-        let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+        let currentSubscription = try? await subscriptionManager.getSubscription()
         let effectivePlatform: DuckDuckGoSubscription.Platform = currentSubscription?.platform ?? (subscriptionPlatform == .stripe ? .stripe : .apple)
 
         Logger.subscription.log("[TierChange] Starting from subscription: \(currentSubscription?.productId ?? "unknown", privacy: .public)")
@@ -671,7 +714,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Activating Subscription")
-        Pixel.fire(pixel: .subscriptionRestorePurchaseOfferPageEntry, debounce: 2)
+        PixelKit.fire(Pixel.Event.subscriptionRestorePurchaseOfferPageEntry, frequency: .debounce(seconds: 2))
         onActivateSubscription?()
         return nil
     }
@@ -754,13 +797,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .subscriptionOfferMonthlyPriceClick)
+        PixelKit.fire(Pixel.Event.subscriptionOfferMonthlyPriceClick)
         return nil
     }
 
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        Pixel.fire(pixel: .subscriptionOfferYearlyPriceClick)
+        PixelKit.fire(Pixel.Event.subscriptionOfferYearlyPriceClick)
         return nil
     }
 
@@ -772,19 +815,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .subscriptionAddEmailSuccess)
+        PixelKit.fire(Pixel.Event.subscriptionAddEmailSuccess, frequency: .uniqueByName)
         return nil
     }
 
     func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .subscriptionWelcomeAddDevice)
+        PixelKit.fire(Pixel.Event.subscriptionWelcomeAddDevice, frequency: .uniqueByName)
         return nil
     }
 
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
-        UniquePixel.fire(pixel: .subscriptionWelcomeFAQClick)
+        PixelKit.fire(Pixel.Event.subscriptionWelcomeFAQClick, frequency: .uniqueByName)
         return nil
     }
 
@@ -796,7 +839,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     @MainActor
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async {
-        guard let webView = originalMessage.webView else { return }
+        guard let webView = originalMessage.webView else {
+            return
+        }
 
         pushAction(method: .onPurchaseUpdate, webView: webView, params: purchaseUpdate)
     }
@@ -845,6 +890,70 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
+        onPurchaseCompleted = nil
+    }
+
+    private func fireFreemiumUpsellPixel() {
+        guard freemiumDBPUserStateManager.didActivate, let pixelKit = PixelKit.shared else { return }
+        DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS).fire(.freemiumUpsell)
+    }
+}
+
+// MARK: - Notification permission (expiration reminder experiment)
+
+extension DefaultSubscriptionPagesUseSubscriptionFeature {
+
+    enum NotificationsPermissionStatus: String, Encodable {
+        case granted, denied, notDetermined
+    }
+
+    struct UserSettingsResponse: Encodable {
+        let notificationsPermission: NotificationsPermissionStatus
+    }
+
+    struct NotificationsPermissionResponse: Encodable {
+        let granted: Bool
+    }
+
+    struct ScheduleNotificationPreference: Decodable, Equatable {
+        let daysBeforeCancel: Int
+    }
+
+    func getUserSettings(params: Any, original: WKScriptMessage) async -> Encodable? {
+        let status = await userNotificationCenter.authorizationStatus()
+        return UserSettingsResponse(notificationsPermission: Self.permissionStatus(from: status))
+    }
+
+    func requestNotificationsPermission(params: Any, original: WKScriptMessage) async -> Encodable? {
+        guard isExpirationReminderFeatureEnabled() else {
+            return NotificationsPermissionResponse(granted: false)
+        }
+        let status = await userNotificationCenter.authorizationStatus()
+        switch status {
+        case .authorized, .ephemeral:
+            return NotificationsPermissionResponse(granted: true)
+        case .denied, .provisional:
+            // OS won't show a prompt in either state — `.denied` is blocked, and `.provisional` has
+            // no programmatic upgrade path (only Settings can raise it to `.authorized`).
+            return NotificationsPermissionResponse(granted: false)
+        case .notDetermined:
+            let granted = (try? await userNotificationCenter.requestAuthorization(options: [.alert, .sound])) ?? false
+            return NotificationsPermissionResponse(granted: granted)
+        @unknown default:
+            return NotificationsPermissionResponse(granted: false)
+        }
+    }
+
+    /// Any status that requires a Settings change to become `.authorized` is reported as `.denied`.
+    /// `.provisional` is bucketed with `.denied` because there's no programmatic upgrade path.
+    /// iOS won't show a prompt from `requestAuthorization` when state is `.provisional`.
+    private static func permissionStatus(from status: UNAuthorizationStatus) -> NotificationsPermissionStatus {
+        switch status {
+        case .authorized, .ephemeral: return .granted
+        case .notDetermined: return .notDetermined
+        case .denied, .provisional: return .denied
+        @unknown default: return .denied
+        }
     }
 }
 
@@ -875,17 +984,21 @@ extension Pixel {
     enum AttributionParameters {
         static let origin = "origin"
         static let locale = "locale"
+        static let freeTrial = "free_trial"
     }
 
-    static func fireAttribution(pixel: Pixel.Event, origin: String?, locale: Locale = .current, subscriptionDataReporter: SubscriptionDataReporting?) {
+    static func fireAttribution(pixel: Pixel.Event, origin: String?, freeTrial: Bool? = nil, locale: Locale = .current, subscriptionDataReporter: SubscriptionDataReporting?) {
         var parameters: [String: String] = [:]
         parameters[AttributionParameters.locale] = locale.identifier
         if let origin {
             parameters[AttributionParameters.origin] = origin
         }
-        Self.fire(
-            pixel: pixel,
-            withAdditionalParameters: subscriptionDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters
+        if let freeTrial {
+            parameters[AttributionParameters.freeTrial] = String(freeTrial)
+        }
+        PixelKit.fire(
+            pixel,
+            options: .parameters(subscriptionDataReporter?.mergeRandomizedParameters(for: .origin(origin), with: parameters) ?? parameters)
         )
     }
 

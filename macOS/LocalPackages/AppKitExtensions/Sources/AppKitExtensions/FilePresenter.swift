@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import os.log
 
@@ -28,7 +29,7 @@ private protocol FilePresenterDelegate: AnyObject {
     func accommodatePresentedItemEviction() throws
 }
 
-public class FilePresenter {
+public class FilePresenter: @unchecked Sendable {
 
     private static let dispatchSourceQueue = DispatchQueue(label: "CoordinatedFile.dispatchSourceQueue")
     private static let presentedItemOperationQueue: OperationQueue = {
@@ -252,9 +253,12 @@ public class FilePresenter {
             self.dispatchSourceCancellable = nil
         }
 
+        dispatchSource.setCancelHandler {
+            close(fileDescriptor)
+        }
+
         self.dispatchSourceCancellable = AnyCancellable {
             dispatchSource.cancel()
-            close(fileDescriptor)
         }
         dispatchSource.resume()
     }

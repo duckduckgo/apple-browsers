@@ -19,6 +19,7 @@
 
 import XCTest
 import SwiftUI
+import Onboarding
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterTests: XCTestCase {
@@ -26,7 +27,7 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
 
     override func setUpWithError() throws {
         throw XCTSkip("Tests involving controllers. Sometimes they fail on CI. Disabling them for now")
-        contextualDaxDialogsFactory = DefaultContextualDaxDialogsFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
+        contextualDaxDialogsFactory = ContextualDaxDialogFactory(contextualOnboardingLogic: ContextualOnboardingLogicMock(), contextualOnboardingPixelReporter: OnboardingPixelReporterMock())
         try super.setUpWithError()
     }
 
@@ -71,10 +72,10 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
 
         // WHEN
         sut.presentContextualOnboarding(for: .withOneTracker, in: parent)
-        let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: parent))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialog.self, in: parent))
 
         // THEN
-        XCTAssertTrue(view.message.string.contains("☝️"))
+        XCTAssertTrue(view.message.characters.contains("☝️"))
     }
 
     func testWhenPresentContextualOnboardingForFireEducational_andBarAtTheBottom_TheMessageHandPointsInTheRightDirection() throws {
@@ -86,10 +87,10 @@ final class ContextualOnboardingPresenterTests: XCTestCase {
 
         // WHEN
         sut.presentContextualOnboarding(for: .withOneTracker, in: parent)
-        let view = try XCTUnwrap(find(OnboardingTrackersDoneDialog.self, in: parent))
+        let view = try XCTUnwrap(find(OnboardingRebranding.OnboardingTrackersBlockedDialog.self, in: parent))
 
         // THEN
-        XCTAssertTrue(view.message.string.contains("👇"))
+        XCTAssertTrue(view.message.characters.contains("👇"))
     }
 
     func testWhenDismissContextualOnboardingThenContextualOnboardingIsDismissed() {
@@ -195,7 +196,11 @@ final class TabViewControllerMock: UIViewController, TabViewOnboardingDelegate {
     }
 
     func didAcknowledgeContextualOnboardingSearch() {
-        
+
+    }
+
+    func didNavigateAwayFromContextualOnboardingDialog() {
+
     }
 
 }

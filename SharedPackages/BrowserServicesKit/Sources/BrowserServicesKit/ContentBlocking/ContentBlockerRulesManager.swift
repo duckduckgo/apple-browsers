@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import FoundationExtensions
 import ContentBlocking
 import Foundation
 import os.log

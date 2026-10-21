@@ -17,8 +17,9 @@
 //
 
 import AppKit
-import SwiftUI
+import ConcurrencyExtensions
 import DesignResourcesKit
+import SwiftUI
 
 /// SwiftUI view for the "Warn Before Quit/Close" confirmation overlay.
 /// Displays a balloon notification with animated progress indicator for quit/close pinned tab actions.

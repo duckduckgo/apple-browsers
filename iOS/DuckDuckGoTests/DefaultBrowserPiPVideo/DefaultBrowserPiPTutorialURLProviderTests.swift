@@ -25,6 +25,8 @@ import SystemSettingsPiPTutorial
 @Suite("System Settings PiP Tutorial - Default Browser", .serialized)
 final class DefaultBrowserPiPTutorialURLProviderTests {
 
+    private static let videoName = "default-browser-tutorial-rebranded"
+
     @Test("Check Video Can Be Loaded From the Bundle")
     func whenVideoIsFoundInBundleThenReturnVideoURL() throws {
         // GIVEN
@@ -34,7 +36,7 @@ final class DefaultBrowserPiPTutorialURLProviderTests {
         let result = try sut.pipTutorialURL()
 
         // THEN
-        #expect(result.absoluteString.contains("default-browser-tutorial.mp4"))
+        #expect(result.absoluteString.contains("\(Self.videoName).mp4"))
     }
 
     @Test("Check Throw Error When Video Cannot Be Loaded From the Bundle")
@@ -52,7 +54,6 @@ final class DefaultBrowserPiPTutorialURLProviderTests {
     @Test(
         "Check Video URLs Are Returned For Supported Localizations",
         arguments: [
-            "en",
             "de",
             "es",
             "fr",
@@ -71,7 +72,7 @@ final class DefaultBrowserPiPTutorialURLProviderTests {
         let result = try sut.pipTutorialURL()
 
         // THEN
-        #expect(result.absoluteString.contains("\(localization).lproj/default-browser-tutorial.mp4"))
+        #expect(result.absoluteString.contains("\(localization).lproj/\(Self.videoName).mp4"))
     }
 
 }

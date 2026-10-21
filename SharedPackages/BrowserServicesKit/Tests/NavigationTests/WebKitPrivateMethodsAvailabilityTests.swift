@@ -16,18 +16,77 @@
 //  limitations under the License.
 //
 
-#if _SESSION_STATE_WITH_FILTER_ENABLED
-
 import Combine
 import Foundation
 import WebKit
 import XCTest
 
-@testable import Navigation
+@testable import DDGNavigation
+@testable import Common
 
-@available(macOS 12.0, iOS 15.0, *)
+@available(iOS 15.0, *)
 class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsBase {
 
+    private enum Selector {
+        static let networkProcessIdentifier = NSSelectorFromString("_networkProcessIdentifier")
+        static let backgroundWebView = NSSelectorFromString("_backgroundWebView")
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
+        static let webProcessIdentifier = NSSelectorFromString("_webProcessIdentifier")
+        static let webProcessIsResponsive = NSSelectorFromString("_webProcessIsResponsive")
+        static let contentWorld = NSSelectorFromString("_contentWorld")
+        static let resourceLoadDelegate = NSSelectorFromString("_resourceLoadDelegate")
+        static let setResourceLoadDelegate = NSSelectorFromString("_setResourceLoadDelegate:")
+        static let originalURL = NSSelectorFromString("originalURL")
+        static let blockedLoad = NSSelectorFromString("blockedLoad")
+        static let webContentProcessInfo = NSSelectorFromString("_webContentProcessInfo")
+        static let pid = NSSelectorFromString("pid")
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
+        static let originalDataAsString = NSSelectorFromString(URL.Selector.originalDataAsString)
+#endif
+    }
+
+    func testWebsiteDataStoreRespondsTo_networkProcessIdentifier() {
+        XCTAssertTrue(WKWebsiteDataStore.instancesRespond(to: Selector.networkProcessIdentifier))
+    }
+
+    @available(macOS 15.4, iOS 18.4, *)
+    func testWebExtensionContextRespondsTo_backgroundWebView() {
+        XCTAssertTrue(WKWebExtensionContext.instancesRespond(to: Selector.backgroundWebView))
+    }
+
+    @available(macOS 15.4, iOS 18.4, *)
+    func testWebViewRespondsTo_killWebContentProcessAndResetState() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.killWebContentProcessAndResetState))
+    }
+
+    func testWebViewRespondsTo_webProcessIdentifier() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.webProcessIdentifier))
+    }
+
+    func testWebViewRespondsTo_webProcessIsResponsive() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.webProcessIsResponsive))
+    }
+
+    func testUserScriptRespondsTo_contentWorld() {
+        XCTAssertTrue(WKUserScript.instancesRespond(to: Selector.contentWorld))
+    }
+
+#if PRIVATE_PAGE_SIGNALS_ENABLED
+    func testWebViewRespondsTo_resourceLoadDelegate() {
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.resourceLoadDelegate))
+        XCTAssertTrue(WKWebView.instancesRespond(to: Selector.setResourceLoadDelegate))
+    }
+
+    func testResourceLoadInfoRespondsTo_originalURL() {
+        XCTAssertEqual(NSClassFromString("_WKResourceLoadInfo")?.instancesRespond(to: Selector.originalURL), true)
+    }
+
+    func testContentRuleListActionRespondsTo_blockedLoad() {
+        XCTAssertEqual(NSClassFromString("_WKContentRuleListAction")?.instancesRespond(to: Selector.blockedLoad), true)
+    }
+#endif
+
+#if _SESSION_STATE_WITH_FILTER_ENABLED
     func testSessionStateDataAvailability() throws {
         XCTAssertTrue(WKWebView.instancesRespond(to: WKWebView.Selector.sessionStateData))
     }
@@ -45,30 +104,23 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
     }
 
     func testWebContentProcessInfoAvailability() throws {
-        let selector = Selector(("_webContentProcessInfo"))
+        let selector = Selector.webContentProcessInfo
         XCTAssertTrue(WKProcessPool.responds(to: selector))
     }
 
     func testWebContentProcessInfoReturnsPidProperty() throws {
-        let selector = Selector(("_webContentProcessInfo"))
+        let selector = Selector.webContentProcessInfo
         guard let processInfoList = WKProcessPool.perform(selector)?
             .takeUnretainedValue() as? [NSObject] else {
             return
         }
 
-        let pidSelector = Selector(("pid"))
+        let pidSelector = Selector.pid
         for processInfo in processInfoList {
             XCTAssertTrue(processInfo.responds(to: pidSelector),
                           "WebContent process info object should respond to 'pid'")
         }
     }
-
-#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
-    func testWKWebpagePreferencesRespondsTo_autoplayPolicy() {
-        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.autoplayPolicy))
-        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.setAutoplayPolicy))
-    }
-#endif
 
     // MARK: - Functional Tests
 
@@ -296,6 +348,19 @@ class WebKitPrivateMethodsAvailabilityTests: DistributedNavigationDelegateTestsB
         }
     }
 
-}
-
 #endif
+
+#if _WEBPAGE_PREFS_AUTOPLAY_POLICY_ENABLED
+    func testWKWebpagePreferencesRespondsTo_autoplayPolicy() {
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.autoplayPolicy))
+        XCTAssertTrue(WKWebpagePreferences.instancesRespond(to: WKWebpagePreferences.AutoplayPolicySelector.setAutoplayPolicy))
+    }
+#endif
+
+#if _ORIGINAL_DATA_AS_STRING_ENABLED
+    func testOriginalWebKitStringAvailability() throws {
+        XCTAssertTrue(NSURL.instancesRespond(to: Selector.originalDataAsString))
+    }
+#endif
+
+}

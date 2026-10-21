@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
 import DuckPlayer
 import Foundation
@@ -53,6 +54,12 @@ struct DuckPlayerPreferencesUserDefaultsPersistor: DuckPlayerPreferencesPersisto
 }
 
 final class DuckPlayerPreferences: ObservableObject {
+
+    /// Posted when `duckPlayerMode` is mutated outside the normal Settings path (e.g. the debug
+    /// menu writing directly to UserDefaults). Subscribers re-read from the persistor so any open
+    /// Settings pane bound to this `@Published` property refreshes.
+    static let duckPlayerModeDidChangeNotification = Notification.Name("duckPlayerModeDidChange")
+
     private let internalUserDecider: InternalUserDecider
     private let duckPlayerContingencyHandler: DuckPlayerContingencyHandler
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -60,18 +67,21 @@ final class DuckPlayerPreferences: ObservableObject {
     @Published
     var duckPlayerMode: DuckPlayerMode {
         didSet {
+            guard !isHandlingExternalChange else { return }
             persistor.duckPlayerModeBool = duckPlayerMode.boolValue
         }
     }
+
+    private var isHandlingExternalChange = false
 
     @Published
     var duckPlayerAutoplay: Bool {
         didSet {
             persistor.duckPlayerAutoplay = duckPlayerAutoplay
             if duckPlayerAutoplay {
-                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOn, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOn)
             } else {
-                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOff, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerAutoplaySettingsOff)
             }
         }
     }
@@ -81,9 +91,9 @@ final class DuckPlayerPreferences: ObservableObject {
         didSet {
             persistor.duckPlayerOpenInNewTab = duckPlayerOpenInNewTab
             if duckPlayerOpenInNewTab {
-                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOn, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOn)
             } else {
-                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOff, doNotEnforcePrefix: true)
+                PixelKit.fire(GeneralPixel.duckPlayerNewTabSettingsOff)
             }
         }
     }
@@ -100,7 +110,9 @@ final class DuckPlayerPreferences: ObservableObject {
         duckPlayerMode != .disabled
     }
 
-    var youtubeOverlayInteracted: Bool {
+    /// Published so the Duck Player overlay promo can re-derive its visibility the moment the user
+    /// picks "Watch here" + Remember my choice, which suppresses the overlay from then on.
+    @Published var youtubeOverlayInteracted: Bool {
         didSet {
             persistor.youtubeOverlayInteracted = youtubeOverlayInteracted
         }
@@ -127,7 +139,7 @@ final class DuckPlayerPreferences: ObservableObject {
     @MainActor
     func openLearnMoreContingencyURL() {
         guard let url = duckPlayerContingencyHandler.learnMoreURL else { return }
-        PixelKit.fire(GeneralPixel.duckPlayerContingencyLearnMoreClicked, doNotEnforcePrefix: true)
+        PixelKit.fire(GeneralPixel.duckPlayerContingencyLearnMoreClicked)
         Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
@@ -143,6 +155,22 @@ final class DuckPlayerPreferences: ObservableObject {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.internalUserDecider = internalUserDecider
         self.duckPlayerContingencyHandler = DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
+
+        NotificationCenter.default
+            .publisher(for: Self.duckPlayerModeDidChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDuckPlayerModeFromStore()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshDuckPlayerModeFromStore() {
+        let resolved = DuckPlayerMode(persistor.duckPlayerModeBool)
+        guard resolved != duckPlayerMode else { return }
+        isHandlingExternalChange = true
+        duckPlayerMode = resolved
+        isHandlingExternalChange = false
     }
 
     private var persistor: DuckPlayerPreferencesPersistor

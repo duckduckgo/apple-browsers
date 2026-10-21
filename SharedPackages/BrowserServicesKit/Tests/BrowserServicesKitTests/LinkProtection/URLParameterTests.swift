@@ -44,8 +44,8 @@ struct URLParamRefTests: Decodable {
 final class URLParameterTests: XCTestCase {
 
     private enum Resource {
-        static let config = "Resources/privacy-reference-tests/url-parameters/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/url-parameters/tests.json"
+        static let config = "Res/privacy-reference-tests/url-parameters/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/url-parameters/tests.json"
     }
 
     private static let data = JsonTestDataLoader()
@@ -72,29 +72,131 @@ final class URLParameterTests: XCTestCase {
     func testURLParamStripping() throws {
         let tests = urlParamTestSuite.trackingParameters.tests
 
-        let linkCleaner = LinkCleaner(privacyManager: privacyManager)
+        for isFastFilterEnabled in [false, true] {
+            let linkCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { isFastFilterEnabled })
 
-        for test in tests {
-            let skip = test.exceptPlatforms?.contains("ios-browser")
-            if skip == true {
-                os_log("!!SKIPPING TEST: %s", test.name)
-                continue
+            for test in tests {
+                let skip = test.exceptPlatforms?.contains("ios-browser")
+                if skip == true {
+                    os_log("!!SKIPPING TEST: %s", test.name)
+                    continue
+                }
+
+                os_log("TEST: %s", test.name)
+
+                let testUrl = URL(string: test.testURL)
+                let initiator = test.initiatorURL != nil ? URL(string: test.initiatorURL!) : nil
+                var resultUrl = linkCleaner.cleanTrackingParameters(initiator: initiator, url: testUrl)
+
+                if resultUrl == nil {
+                    // Tests expect unchanged URLs to match testURL
+                    resultUrl = testUrl
+                }
+
+                XCTAssertEqual(resultUrl?.absoluteString, test.expectURL,
+                               "\(resultUrl?.absoluteString ?? "(nil)") not equal to expected: \(test.expectURL) (fast filter: \(isFastFilterEnabled))")
             }
-
-            os_log("TEST: %s", test.name)
-
-            let testUrl = URL(string: test.testURL)
-            let initiator = test.initiatorURL != nil ? URL(string: test.initiatorURL!) : nil
-            var resultUrl = linkCleaner.cleanTrackingParameters(initiator: initiator, url: testUrl)
-
-            if resultUrl == nil {
-                // Tests expect unchanged URLs to match testURL
-                resultUrl = testUrl
-            }
-
-            XCTAssertEqual(resultUrl?.absoluteString, test.expectURL,
-                           "\(resultUrl?.absoluteString ?? "(nil)") not equal to expected: \(test.expectURL)")
         }
+    }
+
+    func testFastFilterMatchesURLComponentsFilter() {
+        let prefixes = ["https://www.example.com/", "https://www.example.com:8080/a/b;c", "https://www.example.com:443/x",
+                        "https://user:pass@www.example.com/", "https://[::1]/p", "HTTPS://WWW.EXAMPLE.COM/P"]
+        let items = ["", "a=1", "utm_source=1", "utm_source", "utm_medium=b=c", "utm_sourcex=1", "UTM_SOURCE=1", "utm%5Fsource=%7C", "=x"]
+        let fragments = ["", "#", "#f?utm_source=1&a", "#f#g"]
+        var queries = ["", "?"]
+        var itemLists: [[String]] = [[]]
+        for _ in 1...3 {
+            itemLists = itemLists.flatMap { list in items.map { list + [$0] } }
+            queries += itemLists.map { "?" + $0.joined(separator: "&") }
+        }
+
+        var urls: [URL] = []
+        for prefix in prefixes {
+            for query in queries {
+                for fragment in fragments {
+                    let string = prefix + query + fragment
+                    urls += [URL(string: string), Self.webKitStyleURL(string)].compactMap { $0 }
+                }
+            }
+        }
+        let mismatches = filterMismatches(in: urls)
+        XCTAssertEqual(mismatches.count, 0, mismatches.prefix(5).joined(separator: "\n"))
+    }
+
+    func testFastFilterMatchesURLComponentsFilterOnRelativeAndUnusualURLs() throws {
+        let base = try XCTUnwrap(URL(string: "https://base.example/a/b"))
+        let strings = ["https://www.example.com:foo/?utm_source=x", "https://bücher.example/ü?utm_source=x&ü=1",
+                       "?utm_source=x&a=1", "?utm_source=x", "/p?utm_source=x#f", "p?a=1&utm_medium=y", "//www.example.com/p?a=1&utm_source=x"]
+        let urls = strings.flatMap { [URL(string: $0), URL(string: $0, relativeTo: base), Self.webKitStyleURL($0)] }.compactMap { $0 }
+
+        let mismatches = filterMismatches(in: urls)
+        XCTAssertEqual(mismatches.count, 0, mismatches.joined(separator: "\n"))
+    }
+
+    func testFastFilterKeepsPortsAsWritten() throws {
+        // `URLComponents` rewrites these ports (`:00080` to `:80`, and drops an empty `:`). WebKit's URLs never contain them.
+        let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
+        let base = try XCTUnwrap(URL(string: "https://base.example/a/b"))
+        let cases = [(URL(string: "https://www.example.com:00080/?utm_source=x&a=1"), "https://www.example.com:00080/?a=1"),
+                     (Self.webKitStyleURL("https://www.example.com:00080/?utm_source=x&a=1"), "https://www.example.com:00080/?a=1"),
+                     (URL(string: "https://www.example.com:/?utm_source=x"), "https://www.example.com:/"),
+                     (URL(string: "//www.example.com:/?utm_source=x", relativeTo: base), "//www.example.com:/")]
+
+        for (url, expected) in cases {
+            XCTAssertEqual(fastCleaner.cleanTrackingParameters(initiator: nil, url: try XCTUnwrap(url))?.absoluteString, expected)
+            XCTAssertTrue(fastCleaner.urlParametersRemoved)
+        }
+    }
+
+    func testFastFilterMatchesURLComponentsFilterOnLargeURLs() throws {
+        let foundationCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { false })
+        let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
+        let query = String(repeating: "p=" + String(repeating: "a", count: 30) + "&", count: 30_000)
+        let trackingQuery = String(repeating: "utm_source=" + String(repeating: "a", count: 30) + "&", count: 30_000)
+
+        for string in ["https://www.example.com/?" + query + "q=1#f", "https://www.example.com/?utm_source=x&" + query + "utm_medium=y#f",
+                       "https://www.example.com/?" + trackingQuery + "q=1#f", "https://www.example.com/?" + trackingQuery + "utm_medium=y#f"] {
+            let url = try XCTUnwrap(Self.webKitStyleURL(string))
+            let expected = foundationCleaner.cleanTrackingParameters(initiator: nil, url: url)
+            XCTAssertEqual(fastCleaner.cleanTrackingParameters(initiator: nil, url: url)?.absoluteString, expected?.absoluteString)
+            XCTAssertEqual(fastCleaner.urlParametersRemoved, foundationCleaner.urlParametersRemoved)
+        }
+    }
+
+    func testFastFilterFlagIsReadOnEveryCall() throws {
+        var flagReads = 0
+        let linkCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: {
+            flagReads += 1
+            return flagReads.isMultiple(of: 2)
+        })
+        let url = try XCTUnwrap(URL(string: "https://www.example.com/?utm_source=x&q=1"))
+
+        for _ in 0..<2 {
+            XCTAssertEqual(linkCleaner.cleanTrackingParameters(initiator: nil, url: url)?.absoluteString, "https://www.example.com/?q=1")
+        }
+        XCTAssertEqual(flagReads, 2)
+    }
+
+    /// Returns a description of each URL that the fast filter cleans differently from the `URLComponents` path.
+    private func filterMismatches(in urls: [URL]) -> [String] {
+        let foundationCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { false })
+        let fastCleaner = LinkCleaner(privacyManager: privacyManager, isFastTrackingParameterFilterEnabled: { true })
+
+        return urls.compactMap { url in
+            let expected = foundationCleaner.cleanTrackingParameters(initiator: nil, url: url)
+            let actual = fastCleaner.cleanTrackingParameters(initiator: nil, url: url)
+            guard actual?.absoluteString != expected?.absoluteString
+                    || fastCleaner.urlParametersRemoved != foundationCleaner.urlParametersRemoved else { return nil }
+            return "\(url.absoluteString): \(actual?.absoluteString ?? "nil") (removed: \(fastCleaner.urlParametersRemoved))"
+                + " != \(expected?.absoluteString ?? "nil") (removed: \(foundationCleaner.urlParametersRemoved))"
+        }
+    }
+
+    /// WebKit creates request URLs this way, and their strings are read without copying.
+    private static func webKitStyleURL(_ string: String) -> URL? {
+        let bytes = Array(string.utf8)
+        return CFURLCreateAbsoluteURLWithBytes(nil, bytes, bytes.count, CFStringBuiltInEncodings.UTF8.rawValue, nil, true) as URL?
     }
 
 }

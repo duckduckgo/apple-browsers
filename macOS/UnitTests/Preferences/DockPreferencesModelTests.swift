@@ -17,29 +17,25 @@
 //
 
 import Combine
-import FeatureFlags
-import PixelKitTestingUtilities
-import PrivacyConfig
+@_spi(Testing) import PixelKit
+@_spi(Testing) import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
 final class DockPreferencesModelTests: XCTestCase {
 
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockDockCustomizer: MockDockCustomization!
     private var mockPixelFiring: PixelKitMock!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockDockCustomizer = MockDockCustomization()
         mockDockCustomizer.supportsAddingToDock = true
         mockPixelFiring = PixelKitMock()
     }
 
     override func tearDown() {
-        mockFeatureFlagger = nil
         mockDockCustomizer = nil
         mockPixelFiring = nil
         super.tearDown()
@@ -50,7 +46,6 @@ final class DockPreferencesModelTests: XCTestCase {
     func testWhenSupportsAddingToDockIsTrueThenCanAddToDockIsTrue() {
         mockDockCustomizer.supportsAddingToDock = true
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -60,34 +55,13 @@ final class DockPreferencesModelTests: XCTestCase {
     func testWhenSupportsAddingToDockIsFalseThenCanAddToDockIsFalse() {
         mockDockCustomizer.supportsAddingToDock = false
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
         XCTAssertFalse(model.canAddToDock)
     }
 
-    // MARK: - canShowDockInstructions
-
-    func testWhenAddToDockAppStoreFeatureIsOnThenCanShowDockInstructionsIsTrue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.addToDockAppStore]
-        let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
-            dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil
-        )
-        XCTAssertTrue(model.canShowDockInstructions)
-    }
-
-    func testWhenAddToDockAppStoreFeatureIsOffThenCanShowDockInstructionsIsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
-            dockCustomizer: mockDockCustomizer,
-            pixelFiring: nil
-        )
-        XCTAssertFalse(model.canShowDockInstructions)
-    }
+    // MARK: - Add to Dock Instructions
 
     func testDockInstructionsVideoAssetIsNotNil() {
         XCTAssertNotNil(DockPreferencesModel.demoVideoURL)
@@ -98,7 +72,6 @@ final class DockPreferencesModelTests: XCTestCase {
     func testWhenNotAddedToDockAndCustomizerReportsFalseThenIsAddedToDockIsFalse() {
         mockDockCustomizer.isAddedToDock = false
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -108,7 +81,6 @@ final class DockPreferencesModelTests: XCTestCase {
     func testWhenCustomizerReportsTrueThenIsAddedToDockIsTrue() {
         mockDockCustomizer.isAddedToDock = true
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -117,7 +89,6 @@ final class DockPreferencesModelTests: XCTestCase {
 
     func testWhenAddToDockCalledThenIsAddedToDockIsTrue() {
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -130,7 +101,6 @@ final class DockPreferencesModelTests: XCTestCase {
 
     func testWhenAddToDockCalledFromDefaultBrowserThenDockCustomizerAddToDockIsCalled() {
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -141,7 +111,6 @@ final class DockPreferencesModelTests: XCTestCase {
 
     func testWhenAddToDockCalledFromGeneralThenDockCustomizerAddToDockIsCalled() {
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -153,7 +122,6 @@ final class DockPreferencesModelTests: XCTestCase {
     func testWhenSupportsAddingToDockIsFalseThenAddToDockDoesNothing() {
         mockDockCustomizer.supportsAddingToDock = false
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: nil
         )
@@ -171,7 +139,6 @@ final class DockPreferencesModelTests: XCTestCase {
                              includeAppVersionParameter: false)
         ]
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: mockPixelFiring
         )
@@ -186,7 +153,6 @@ final class DockPreferencesModelTests: XCTestCase {
                              includeAppVersionParameter: false)
         ]
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: mockPixelFiring
         )
@@ -197,7 +163,6 @@ final class DockPreferencesModelTests: XCTestCase {
     func testWhenShowMeHowClickedThenExpectedPixelIsFiredAndSheetFlagIsSet() {
         mockPixelFiring.expectedFireCalls = [ExpectedFireCall(pixel: GeneralPixel.settingsAddToDockShowMeHowClicked, frequency: .dailyAndCount)]
         let model = DockPreferencesModel(
-            featureFlagger: mockFeatureFlagger,
             dockCustomizer: mockDockCustomizer,
             pixelFiring: mockPixelFiring
         )

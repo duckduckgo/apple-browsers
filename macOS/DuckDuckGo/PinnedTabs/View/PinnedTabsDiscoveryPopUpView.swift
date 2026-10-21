@@ -43,12 +43,12 @@ struct PinnedTabsDiscoveryPopUpView: View {
 
             HStack {
                 createButton(title: UserText.pinnedTabsDiscoveryPopoverShared,
-                             style: StandardButtonStyle()) {
+                             style: StandardButtonStyle(pillShape: true)) {
                     callback?(false)
                 }
 
                 createButton(title: UserText.pinnedTabsDiscoveryPopoverSeparate,
-                             style: StandardButtonStyle()) {
+                             style: StandardButtonStyle(pillShape: true)) {
                     setPerWindowPinnedTabs()
                     callback?(true)
                 }

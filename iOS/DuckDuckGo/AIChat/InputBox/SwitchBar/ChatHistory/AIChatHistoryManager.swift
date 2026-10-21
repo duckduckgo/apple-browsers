@@ -18,16 +18,7 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Combine
-import Core
-import PrivacyConfig
-import UIKit
-
-/// Protocol for handling AI chat history events
-protocol AIChatHistoryManagerDelegate: AnyObject {
-    func aiChatHistoryManager(_ manager: AIChatHistoryManager, didSelectChatURL url: URL)
-}
 
 /// Manages the AI Chat history list installation and interaction
 @MainActor
@@ -41,7 +32,6 @@ final class AIChatHistoryManager {
 
     // MARK: - Properties
 
-    weak var delegate: AIChatHistoryManagerDelegate?
     var onFetchCompleted: (@MainActor (String, Bool) -> Void)?
 
     var hasSuggestions: Bool {
@@ -55,101 +45,77 @@ final class AIChatHistoryManager {
             .eraseToAnyPublisher()
     }
 
-    private var historyViewController: AIChatHistoryListViewController?
-    private let suggestionsReader: AIChatSuggestionsReading
-    private let aiChatSettings: AIChatSettingsProvider
-    private let viewModel: AIChatSuggestionsViewModel
-    private let isIPadExperience: Bool
+    func hasSettled(forQuery query: String) -> Bool {
+        lastCompletedFetchQuery.map { $0 == query } ?? false
+    }
 
-    var titleLayoutConfiguration: AIChatHistoryListViewController.TitleLayoutConfiguration?
+    private let suggestionsReader: AIChatSuggestionsReading
+    private let aiChatDeleter: AIChatDeleting
+    private let viewModel: AIChatSuggestionsViewModel
+    private let isFireTab: Bool
     private(set) var hasCompletedInitialFetch = false
+    /// Query string of the most recently completed (non-cancelled) fetch. Callers compare
+    /// this against the current text to detect "fetcher hasn't caught up yet" and treat
+    /// derived state (e.g. `hasSuggestions`) as still-pending.
+    private(set) var lastCompletedFetchQuery: String?
     private var cancellables = Set<AnyCancellable>()
     private var currentFetchTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
     init(suggestionsReader: AIChatSuggestionsReading,
-         aiChatSettings: AIChatSettingsProvider,
+         aiChatDeleter: AIChatDeleting,
          viewModel: AIChatSuggestionsViewModel,
-         isIPadExperience: Bool = false) {
+         isFireTab: Bool) {
         self.suggestionsReader = suggestionsReader
-        self.aiChatSettings = aiChatSettings
+        self.aiChatDeleter = aiChatDeleter
         self.viewModel = viewModel
-        self.isIPadExperience = isIPadExperience
+        self.isFireTab = isFireTab
     }
 
     // MARK: - Public Methods
-
-    /// Installs the chat history list in the provided container view
-    /// - Parameters:
-    ///   - containerView: The view to install the chat history list into
-    ///   - parentViewController: The parent view controller for the hosting controller
-    func installInContainerView(_ containerView: UIView, parentViewController: UIViewController) {
-        guard historyViewController == nil else { return }
-
-        let viewController = AIChatHistoryListViewController(
-            viewModel: viewModel,
-            isIPadExperience: isIPadExperience,
-            onChatSelected: { [weak self] chat in
-                guard let self else { return }
-                let url = self.aiChatSettings.aiChatURL.withChatID(chat.chatId)
-                self.delegate?.aiChatHistoryManager(self, didSelectChatURL: url)
-            }
-        )
-
-        if let titleLayoutConfiguration {
-            viewController.titleLayoutConfiguration = titleLayoutConfiguration
-        }
-
-        parentViewController.addChild(viewController)
-        containerView.addSubview(viewController.view)
-
-        viewController.view.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            viewController.view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            viewController.view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            viewController.view.topAnchor.constraint(equalTo: containerView.topAnchor),
-            viewController.view.bottomAnchor.constraint(lessThanOrEqualTo: containerView.safeAreaLayoutGuide.bottomAnchor)
-        ])
-
-        viewController.didMove(toParent: parentViewController)
-        self.historyViewController = viewController
-
-        if let pendingSectionTitle {
-            viewController.setScrollableTitle(pendingSectionTitle)
-        }
-
-        if !isIPadExperience {
-            fetchSuggestionsIfNeeded(query: "")
-        }
-    }
-
-    func setEscapeHatch(_ model: EscapeHatchModel?, onTapped: (() -> Void)?) {
-        historyViewController?.setEscapeHatch(model, onTapped: onTapped)
-    }
-
-    func setAdditionalTopInset(_ inset: CGFloat) {
-        historyViewController?.additionalTopInset = inset
-    }
-
-    func setSectionTitle(_ title: String?) {
-        pendingSectionTitle = title
-        historyViewController?.setScrollableTitle(title)
-    }
-
-    private var pendingSectionTitle: String?
 
     /// Subscribes to text changes from a publisher with debounce and fetches filtered suggestions
     /// - Parameter textPublisher: A publisher that emits text changes
     func subscribeToTextChanges<P: Publisher>(_ textPublisher: P) where P.Output == String, P.Failure == Never {
         textPublisher
             .debounce(for: .milliseconds(Constants.debounceMilliseconds), scheduler: DispatchQueue.main)
+            .removeDuplicates()
             .sink { [weak self] text in
                 guard let self else { return }
                 self.fetchSuggestionsIfNeeded(query: text)
             }
             .store(in: &cancellables)
+    }
+
+    /// Removes an AIChatSuggestion and refreshes the Suggestions List
+    ///
+    func deleteChatSuggestion(suggestion: AIChatSuggestion) {
+        viewModel.removeSuggestion(suggestion)
+
+        Task { @MainActor in
+            await self.deleteChatSuggestionFromHistory(suggestion: suggestion)
+            self.refreshSuggestions()
+        }
+    }
+
+    private func deleteChatSuggestionFromHistory(suggestion: AIChatSuggestion) async {
+        let result = await aiChatDeleter.deleteChat(chatID: suggestion.chatId, isFireMode: isFireTab)
+        if case .failure = result {
+            viewModel.cancelPendingRemoval(suggestion)
+            return
+        }
+
+        aiChatDeleter.scheduleSync()
+    }
+
+    private func refreshSuggestions() {
+        let query = lastCompletedFetchQuery ?? ""
+        fetchSuggestionsIfNeeded(query: query)
+    }
+
+    func refreshSuggestions(query: String) {
+        fetchSuggestionsIfNeeded(query: query)
     }
 
     /// Fetches suggestions from the API with cancellation support
@@ -165,9 +131,10 @@ final class AIChatHistoryManager {
         currentFetchTask = Task {
             let suggestions = await reader.fetchSuggestions(query: effectiveQuery, maxChats: maxChats)
             guard !Task.isCancelled else { return }
+            let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
             viewModel.setChats(pinned: suggestions.pinned, recent: suggestions.recent)
             hasCompletedInitialFetch = true
-            let hasSuggestions = !(suggestions.pinned.isEmpty && suggestions.recent.isEmpty)
+            lastCompletedFetchQuery = query
             onFetchCompleted?(query, hasSuggestions)
         }
     }
@@ -176,14 +143,8 @@ final class AIChatHistoryManager {
     func tearDown() {
         currentFetchTask?.cancel()
         currentFetchTask = nil
+        lastCompletedFetchQuery = nil
         cancellables.removeAll()
-
-        if let historyVC = historyViewController {
-            historyVC.willMove(toParent: nil)
-            historyVC.view.removeFromSuperview()
-            historyVC.removeFromParent()
-            historyViewController = nil
-        }
 
         suggestionsReader.tearDown()
         viewModel.clearAllChats()

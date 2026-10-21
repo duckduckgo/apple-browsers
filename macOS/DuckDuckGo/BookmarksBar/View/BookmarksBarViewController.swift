@@ -19,30 +19,63 @@
 import AppKit
 import Combine
 import Common
-import Foundation
-import os.log
+import ConcurrencyExtensions
 import DesignResourcesKitIcons
+import FeatureFlags_macOS
+import Foundation
+import FoundationExtensions
+import os.log
+import PrivacyConfig
 
 final class BookmarksBarViewController: NSViewController {
 
-    @IBOutlet weak var importBookmarksButton: NSView!
-    @IBOutlet weak var importBookmarksMouseOverView: MouseOverView!
-    @IBOutlet weak var importBookmarksLabel: NSTextField!
-    @IBOutlet weak var importBookmarksIcon: NSImageView!
-    @IBOutlet private var bookmarksBarCollectionView: NSCollectionView!
-    @IBOutlet private var clippedItemsIndicator: MouseOverButton!
-    @IBOutlet private var promptAnchor: NSView!
-    @IBOutlet var backgroundColorView: ColorView!
+    private enum Constants {
+        static let contentSize = CGSize(width: 676, height: 28)
+        static let barHeight: CGFloat = 24
+        static let separatorHeight: CGFloat = 1
+        static let horizontalInset: CGFloat = 8
+        static let importBookmarksLeadingSpacing: CGFloat = 2
+        static let iconSize: CGFloat = 16
+        static let iconLeadingInset: CGFloat = 4
+        static let syncIconLeadingInset: CGFloat = 6
+        static let labelSpacing: CGFloat = 4
+        static let labelTrailingInset: CGFloat = 8
+        static let clippedItemsIndicatorSize = CGSize(width: 28, height: 24)
+        static let promptAnchorSize: CGFloat = 20
+        static let mouseOverCornerRadius: CGFloat = 4
+        static let syncDismissButtonSize: CGFloat = 24
+        static let syncDividerHeight: CGFloat = 16
+        static let syncDividerWidth: CGFloat = 5    /// 1pt line plus AppKit's 2pt separator insets on each side
+    }
 
-    @IBOutlet var backseparatorColorView: ColorView!
-    @IBOutlet var separatorColorView: ColorView!
+    private(set) var importBookmarksButton: NSView!
+    private(set) var importBookmarksMouseOverView: MouseOverView!
+    private(set) var importBookmarksLabel: NSTextField!
+    private(set) var importBookmarksIcon: NSImageView!
+    private var bookmarksBarCollectionView: BookmarksBarCollectionView!
+    private var clippedItemsIndicator: MouseOverButton!
+    private var promptAnchor: NSView!
+    private(set) var backgroundColorView: ColorView!
 
-    @IBOutlet weak var syncButton: NSView!
-    @IBOutlet weak var syncMouseOverView: MouseOverView!
-    @IBOutlet weak var syncButtonIcon: NSImageView!
-    @IBOutlet weak var syncButtonLabel: NSTextField!
+    private(set) var backseparatorColorView: ColorView!
+    private(set) var separatorColorView: ColorView!
 
-    private var bookmarkMenuPopover: BookmarksBarMenuPopover?
+    private(set) var syncButton: NSView!
+    private(set) var syncMouseOverView: MouseOverView!
+    private(set) var syncButtonIcon: NSImageView!
+    private(set) var syncButtonLabel: NSTextField!
+    private(set) var syncButtonDivider: NSBox!
+    private(set) var syncDismissButton: MouseOverButton!
+    private(set) var bookmarksBarScrollView: NSScrollView!
+
+    private var bookmarkMenuPopover: (any BookmarksBarMenuPopoverPresenting)?
+
+    /// Monitor + saved state used while a bookmarks bar menu is open so cursor moves
+    /// over the bar (now the parent of a key NSPanel popover) still trigger menu
+    /// switching. The hover tracking areas in the bar items use `.activeInKeyWindow`,
+    /// which stops firing when our popover takes key focus.
+    private var bookmarksBarHoverMonitor: Any?
+    private var savedAcceptsMouseMovedEvents: Bool?
 
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
@@ -50,11 +83,12 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
+    private let featureFlagger: FeatureFlagger
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
 
-    let syncButtonModel: DismissableSyncDeviceButtonModel = .init(source: .bookmarksBar, keyValueStore: UserDefaults.standard)
+    let syncButtonModel: DismissableSyncDeviceButtonModel
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -67,28 +101,38 @@ final class BookmarksBarViewController: NSViewController {
         return indicatorFrameInCollectionView.minX - 3
     }
 
-    @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
-    var bookmarksBarPromptShown: Bool
-
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager, pinningManager: PinningManager) -> BookmarksBarViewController {
-        NSStoryboard(name: "BookmarksBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, pinningManager: pinningManager)
-        }!
+    static func create(
+        tabCollectionViewModel: TabCollectionViewModel,
+        bookmarkManager: BookmarkManager,
+        dragDropManager: BookmarkDragDropManager,
+        pinningManager: PinningManager,
+        featureFlagger: FeatureFlagger
+    ) -> BookmarksBarViewController {
+        self.init(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            dragDropManager: dragDropManager,
+            pinningManager: pinningManager,
+            featureFlagger: featureFlagger
+        )
     }
 
-    init?(coder: NSCoder,
-          tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager,
-          dragDropManager: BookmarkDragDropManager,
-          pinningManager: PinningManager,
-          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
+         pinningManager: PinningManager,
+         featureFlagger: FeatureFlagger,
+         appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         syncButtonModel: DismissableSyncDeviceButtonModel? = nil,
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.pinningManager = pinningManager
         self.appereancePreferences = appereancePreferences
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
+        self.syncButtonModel = syncButtonModel ?? DismissableSyncDeviceButtonModel(source: .bookmarksBar)
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
@@ -96,11 +140,241 @@ final class BookmarksBarViewController: NSViewController {
                                                tabCollectionViewModel: tabCollectionViewModel,
                                                themeManager: themeManager)
 
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) {
         fatalError("BookmarksBarViewController: Bad initializer")
+    }
+
+    // MARK: - View setup
+
+    /// Icon + label laid out side by side with a `MouseOverView` on top: the overlay draws the hover
+    /// and pressed fills and is the click target, so the whole pill reacts, not just the label.
+    private func makeBarButton(action: Selector,
+                               iconLeadingInset: CGFloat,
+                               priority: NSLayoutConstraint.Priority,
+                               trailingAccessory: NSView? = nil) -> (container: NSView, icon: NSImageView, label: NSTextField, mouseOverView: MouseOverView) {
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.setContentHuggingPriority(.init(750), for: .vertical)
+
+        let icon = NSImageView()
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        icon.imageScaling = .scaleProportionallyDown
+        icon.imageAlignment = .alignLeft
+        icon.refusesFirstResponder = true
+
+        let label = NSTextField(labelWithString: "")
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.lineBreakMode = .byClipping
+        label.setContentHuggingPriority(.init(251), for: .horizontal)
+        label.setContentHuggingPriority(.init(750), for: .vertical)
+
+        let mouseOverView = MouseOverView(frame: .zero)
+        mouseOverView.translatesAutoresizingMaskIntoConstraints = false
+        mouseOverView.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        mouseOverView.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        mouseOverView.cornerRadius = Constants.mouseOverCornerRadius
+        mouseOverView.target = self
+        mouseOverView.action = action
+
+        container.addSubview(icon)
+        container.addSubview(label)
+        container.addSubview(mouseOverView)
+
+        var constraints = [
+            container.heightAnchor.constraint(equalToConstant: Constants.barHeight),
+
+            icon.widthAnchor.constraint(equalToConstant: Constants.iconSize),
+            icon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
+            icon.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: iconLeadingInset),
+            icon.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+
+            label.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: Constants.labelSpacing),
+            label.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+
+            mouseOverView.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: mouseOverView.trailingAnchor),
+            mouseOverView.topAnchor.constraint(equalTo: container.topAnchor),
+            container.bottomAnchor.constraint(equalTo: mouseOverView.bottomAnchor),
+        ]
+
+        // Added above the overlay so it receives its own clicks.
+        if let trailingAccessory {
+            trailingAccessory.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(trailingAccessory)
+            constraints += [
+                trailingAccessory.leadingAnchor.constraint(equalTo: label.trailingAnchor, constant: Constants.labelSpacing),
+                trailingAccessory.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            ]
+        }
+
+        constraints.forEach { $0.priority = priority }
+
+        // Required, unlike the rest: the last view must never run into the container's trailing edge,
+        // even when the caller lets the surrounding constraints break to collapse the button.
+        let lastView = trailingAccessory ?? label
+        let lastViewInset = trailingAccessory == nil ? Constants.labelTrailingInset : 0
+        let lastViewTrailing = container.trailingAnchor.constraint(equalTo: lastView.trailingAnchor, constant: lastViewInset)
+
+        NSLayoutConstraint.activate(constraints + [lastViewTrailing])
+
+        return (container, icon, label, mouseOverView)
+    }
+
+    override func loadView() {
+        backgroundColorView = ColorView(frame: NSRect(origin: .zero, size: Constants.contentSize),
+                                        backgroundColor: NSColor(resource: .bookmarkBarBackground))
+        backgroundColorView.wantsLayer = true
+
+        backseparatorColorView = ColorView(frame: .zero)
+        backseparatorColorView.translatesAutoresizingMaskIntoConstraints = false
+
+        separatorColorView = ColorView(frame: .zero)
+        separatorColorView.translatesAutoresizingMaskIntoConstraints = false
+
+        promptAnchor = NSView()
+        promptAnchor.translatesAutoresizingMaskIntoConstraints = false
+
+        bookmarksBarCollectionView = BookmarksBarCollectionView(frame: .zero)
+        bookmarksBarCollectionView.isSelectable = true
+        bookmarksBarCollectionView.collectionViewLayout = NSCollectionViewLayout()
+        bookmarksBarCollectionView.backgroundColors = [NSColor(resource: .navigationBarBackground)]
+        bookmarksBarCollectionView.autoresizingMask = [.width]
+
+        let clipView = NSClipView()
+        clipView.documentView = bookmarksBarCollectionView
+        clipView.autoresizingMask = [.width, .height]
+        clipView.drawsBackground = false
+        clipView.backgroundColor = .clear
+
+        bookmarksBarScrollView = NSScrollView()
+        bookmarksBarScrollView.translatesAutoresizingMaskIntoConstraints = false
+        bookmarksBarScrollView.wantsLayer = true
+        bookmarksBarScrollView.borderType = .noBorder
+        bookmarksBarScrollView.autohidesScrollers = true
+        bookmarksBarScrollView.hasHorizontalScroller = false
+        bookmarksBarScrollView.hasVerticalScroller = false
+        bookmarksBarScrollView.usesPredominantAxisScrolling = false
+        bookmarksBarScrollView.horizontalScrollElasticity = .none
+        bookmarksBarScrollView.verticalScrollElasticity = .none
+        bookmarksBarScrollView.contentView = clipView
+
+        clippedItemsIndicator = MouseOverButton(frame: .zero)
+        clippedItemsIndicator.translatesAutoresizingMaskIntoConstraints = false
+        clippedItemsIndicator.setButtonType(.momentaryPushIn)
+        clippedItemsIndicator.bezelStyle = .rounded
+        clippedItemsIndicator.isBordered = false
+        clippedItemsIndicator.image = NSImage(resource: .chevronDoubleRight16)
+        clippedItemsIndicator.imagePosition = .imageOverlaps
+        clippedItemsIndicator.title = ""
+        clippedItemsIndicator.imageScaling = .scaleProportionallyDown
+        clippedItemsIndicator.alignment = .center
+        clippedItemsIndicator.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        clippedItemsIndicator.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        clippedItemsIndicator.cornerRadius = Constants.mouseOverCornerRadius
+        clippedItemsIndicator.target = self
+        clippedItemsIndicator.action = #selector(clippedItemsIndicatorClicked(_:))
+        clippedItemsIndicator.setContentHuggingPriority(.init(750), for: .vertical)
+
+        let importBookmarks = makeBarButton(action: #selector(importBookmarksClicked(_:)),
+                                            iconLeadingInset: Constants.iconLeadingInset,
+                                            priority: .required)
+        importBookmarksButton = importBookmarks.container
+        importBookmarksIcon = importBookmarks.icon
+        importBookmarksLabel = importBookmarks.label
+        importBookmarksMouseOverView = importBookmarks.mouseOverView
+
+        // Taller than wide so AppKit treats it as a vertical separator.
+        syncButtonDivider = NSBox(frame: NSRect(x: 0, y: 0, width: Constants.syncDividerWidth, height: Constants.syncDividerHeight))
+        syncButtonDivider.boxType = .separator
+        syncButtonDivider.setContentHuggingPriority(.init(750), for: .horizontal)
+
+        syncDismissButton = MouseOverButton(frame: .zero)
+        syncDismissButton.setButtonType(.momentaryPushIn)
+        syncDismissButton.bezelStyle = .rounded
+        syncDismissButton.isBordered = false
+        syncDismissButton.imagePosition = .imageOverlaps
+        syncDismissButton.title = ""
+        syncDismissButton.imageScaling = .scaleProportionallyDown
+        syncDismissButton.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        syncDismissButton.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        syncDismissButton.target = self
+        syncDismissButton.action = #selector(dismissSyncClicked(_:))
+        syncDismissButton.setAccessibilityLabel(UserText.close)
+
+        let syncDismissAccessory = NSStackView(views: [syncButtonDivider, syncDismissButton])
+        syncDismissAccessory.spacing = 0
+
+        let sync = makeBarButton(action: #selector(syncClicked(_:)),
+                                 iconLeadingInset: Constants.syncIconLeadingInset,
+                                 priority: .init(750),
+                                 trailingAccessory: syncDismissAccessory)
+        syncButton = sync.container
+        syncButtonIcon = sync.icon
+        syncButtonLabel = sync.label
+        syncMouseOverView = sync.mouseOverView
+
+        backgroundColorView.addSubview(backseparatorColorView)
+        backgroundColorView.addSubview(separatorColorView)
+        backgroundColorView.addSubview(promptAnchor)
+        backgroundColorView.addSubview(bookmarksBarScrollView)
+        backgroundColorView.addSubview(clippedItemsIndicator)
+        backgroundColorView.addSubview(importBookmarksButton)
+        backgroundColorView.addSubview(syncButton)
+
+        syncButtonZeroWidthConstraint = syncButton.widthAnchor.constraint(equalToConstant: 0)
+        syncButtonZeroWidthConstraint.priority = .init(250)
+
+        NSLayoutConstraint.activate([
+            backseparatorColorView.heightAnchor.constraint(equalToConstant: Constants.separatorHeight),
+            backseparatorColorView.leadingAnchor.constraint(equalTo: backgroundColorView.leadingAnchor),
+            backgroundColorView.trailingAnchor.constraint(equalTo: backseparatorColorView.trailingAnchor),
+            backgroundColorView.bottomAnchor.constraint(equalTo: backseparatorColorView.bottomAnchor),
+
+            separatorColorView.leadingAnchor.constraint(equalTo: backseparatorColorView.leadingAnchor),
+            separatorColorView.trailingAnchor.constraint(equalTo: backseparatorColorView.trailingAnchor),
+            separatorColorView.topAnchor.constraint(equalTo: backseparatorColorView.topAnchor),
+            separatorColorView.bottomAnchor.constraint(equalTo: backseparatorColorView.bottomAnchor),
+
+            promptAnchor.widthAnchor.constraint(equalToConstant: Constants.promptAnchorSize),
+            promptAnchor.heightAnchor.constraint(equalToConstant: Constants.promptAnchorSize),
+            promptAnchor.centerXAnchor.constraint(equalTo: backgroundColorView.centerXAnchor),
+            promptAnchor.centerYAnchor.constraint(equalTo: backgroundColorView.centerYAnchor),
+
+            bookmarksBarScrollView.heightAnchor.constraint(equalToConstant: Constants.barHeight),
+            bookmarksBarScrollView.topAnchor.constraint(equalTo: backgroundColorView.topAnchor),
+            backgroundColorView.trailingAnchor.constraint(equalTo: bookmarksBarScrollView.trailingAnchor),
+            bookmarksBarScrollView.leadingAnchor.constraint(equalTo: syncButton.trailingAnchor),
+
+            clippedItemsIndicator.widthAnchor.constraint(equalToConstant: Constants.clippedItemsIndicatorSize.width),
+            clippedItemsIndicator.heightAnchor.constraint(equalToConstant: Constants.clippedItemsIndicatorSize.height),
+            clippedItemsIndicator.topAnchor.constraint(equalTo: backgroundColorView.topAnchor),
+            backgroundColorView.trailingAnchor.constraint(equalTo: clippedItemsIndicator.trailingAnchor,
+                                                          constant: Constants.horizontalInset),
+
+            importBookmarksButton.topAnchor.constraint(equalTo: bookmarksBarCollectionView.topAnchor),
+            importBookmarksButton.leadingAnchor.constraint(equalTo: syncButton.trailingAnchor,
+                                                           constant: Constants.importBookmarksLeadingSpacing),
+
+            syncButton.leadingAnchor.constraint(equalTo: backgroundColorView.leadingAnchor,
+                                                constant: Constants.horizontalInset),
+            syncButton.centerYAnchor.constraint(equalTo: bookmarksBarScrollView.centerYAnchor),
+            syncButtonZeroWidthConstraint,
+
+            syncButtonDivider.widthAnchor.constraint(equalToConstant: Constants.syncDividerWidth),
+            syncButtonDivider.heightAnchor.constraint(equalToConstant: Constants.syncDividerHeight),
+            syncDismissButton.widthAnchor.constraint(equalToConstant: Constants.syncDismissButtonSize),
+            syncDismissButton.heightAnchor.constraint(equalToConstant: Constants.syncDismissButtonSize),
+        ])
+
+        // Resolve the layout right away. Clipping decides how many bar items fit by comparing the
+        // clipped-items indicator's frame against the collection view, so those frames have to be
+        // real before the first `bookmarksBarItems` update — otherwise everything reads as clipped.
+        backgroundColorView.layoutSubtreeIfNeeded()
+
+        self.view = backgroundColorView
     }
 
     // MARK: - View Lifecycle
@@ -114,9 +388,8 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
-        let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
-        bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
+        bookmarksBarCollectionView.register(BookmarksBarCollectionViewItem.self, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
         bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
@@ -140,21 +413,28 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     private func setUpSyncButton() {
-        if appereancePreferences.showBookmarksBar {
-            syncButtonModel.viewDidLoad()
-        }
         syncButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         syncMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
+        syncDismissButton.cornerRadius = theme.toolbarButtonsCornerRadius
         syncButton.isHidden = !syncButtonModel.shouldShowSyncButton
         syncButtonIcon.image = DesignSystemImages.Glyphs.Size16.sync
-        syncButtonIcon.contentTintColor = .textPrimary
+        syncButtonIcon.contentTintColor = NSColor(resource: .textPrimary)
         syncButtonLabel.stringValue = UserText.bookmarksEmptyStateSyncButtonTitle
         syncButtonLabel.font = .systemFont(ofSize: 11, weight: .regular)
+        syncDismissButton.image = DesignSystemImages.Glyphs.Size16.close
+        syncDismissButton.normalTintColor = NSColor(resource: .textPrimary)
+        setSyncDismissButtonHidden(true)
+    }
+
+    /// Hides the arranged views rather than the stack: the stack then detaches them and collapses.
+    private func setSyncDismissButtonHidden(_ hidden: Bool) {
+        syncButtonDivider.isHidden = hidden
+        syncDismissButton.isHidden = hidden
     }
 
     private func setUpImportBookmarksButton() {
-        importBookmarksIcon.image = NSImage(named: "Import-16D")
-        importBookmarksIcon.contentTintColor = .textPrimary
+        importBookmarksIcon.image = NSImage(resource: .import16D)
+        importBookmarksIcon.contentTintColor = NSColor(resource: .textPrimary)
         importBookmarksButton.isHidden = true
         importBookmarksButton.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
         importBookmarksMouseOverView.cornerRadius = theme.toolbarButtonsCornerRadius
@@ -180,9 +460,21 @@ final class BookmarksBarViewController: NSViewController {
         frameDidChangeNotification()
     }
 
-    func showBookmarksBarPrompt() {
-        BookmarksBarPromptPopover().show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
-        self.bookmarksBarPromptShown = true
+    private var bookmarksBarPrompt: BookmarksBarPromptPopover?
+
+    func showBookmarksBarPrompt(onDismiss: @escaping (PromoResult) -> Void) {
+        let popover = BookmarksBarPromptPopover()
+        popover.viewController.rootView.model.onDismiss = { [weak self] result in
+            self?.bookmarksBarPrompt = nil
+            onDismiss(result)
+        }
+        bookmarksBarPrompt = popover
+        popover.show(relativeTo: promptAnchor.bounds, of: promptAnchor, preferredEdge: .minY)
+    }
+
+    func retractBookmarksBarPromptIfNeeded() {
+        bookmarksBarPrompt?.retract()
+        bookmarksBarPrompt = nil
     }
 
     func userInteraction(prevented: Bool) {
@@ -200,11 +492,15 @@ final class BookmarksBarViewController: NSViewController {
     override func removeFromParent() {
         super.removeFromParent()
         unsubscribeFromEvents()
+        stopBookmarksBarHoverTracking()
     }
 
     deinit {
+        if let monitor = bookmarksBarHoverMonitor {
+            NSEvent.removeMonitor(monitor)
+        }
 #if DEBUG
-        bookmarkMenuPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        (bookmarkMenuPopover as? NSObject)?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
 #endif
     }
 
@@ -219,9 +515,18 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
+        // Favicon images are decoded lazily and `.faviconCacheUpdated` fires for every favicon that
+        // becomes available anywhere in the app. Reloading the bar on each post rebuilds every item and
+        // makes the bar's favicons flicker during the decode cascade. Reload only when an updated host
+        // belongs to a bookmark, using the notification payload (matches `BookmarksBarMenuViewController`).
         NotificationCenter.default.publisher(for: .faviconCacheUpdated)
-            .sink { [weak self] _ in
-                self?.refreshFavicons()
+            .sink { [weak self] notification in
+                guard let self else { return }
+                if let update = notification.faviconsCacheUpdate,
+                   update.hosts.isDisjoint(with: self.bookmarkManager.allHosts()) {
+                    return
+                }
+                self.refreshFavicons()
             }
             .store(in: &cancellables)
 
@@ -245,6 +550,7 @@ final class BookmarksBarViewController: NSViewController {
                 if self?.bookmarkManager.list != nil {
                     self?.importBookmarksButton.isHidden = !items.isEmpty
                 }
+                self?.setSyncDismissButtonHidden(items.isEmpty)
             }
             .store(in: &cancellables)
 
@@ -255,9 +561,13 @@ final class BookmarksBarViewController: NSViewController {
             }
             .store(in: &cancellables)
 
-        syncButtonModel.$shouldShowSyncButton.sink { [weak self] in
-            self?.syncButton.isHidden = !$0
-            self?.syncButtonZeroWidthConstraint.priority = $0 ? .defaultLow : .required
+        syncButtonModel.$shouldShowSyncButton.sink { [weak self] shouldShow in
+            guard let self else { return }
+            syncButton.isHidden = !shouldShow
+            syncButtonZeroWidthConstraint.priority = shouldShow ? .defaultLow : .required
+            if shouldShow {
+                syncButtonModel.syncButtonDidAppear()
+            }
         }
         .store(in: &cancellables)
     }
@@ -273,7 +583,7 @@ final class BookmarksBarViewController: NSViewController {
         guard let view, let folder, let cursorPosition = info?.draggingLocation else {
             dragDestination = nil
             // close all Bookmarks popovers including the Bookmarks Button popover
-            BookmarksBarMenuPopover.closeBookmarkListPopovers(shownIn: self.view.window)
+            BookmarksBarMenuCustomPopover.closeBookmarkListPopovers(shownIn: self.view.window)
             return false
         }
         if let bookmarkMenuPopover, bookmarkMenuPopover.isShown,
@@ -316,20 +626,29 @@ final class BookmarksBarViewController: NSViewController {
 
     private func refreshFavicons() {
         dispatchPrecondition(condition: .onQueue(.main))
-        bookmarksBarCollectionView.reloadData()
+        // Update favicons in place on the existing cells rather than `reloadData()`. Rebuilding every
+        // cell on each favicon-cache update would cause favicons flickering. In-place refresh only
+        // upgrades placeholder → image and never "downgrades" to a placeholder image.
+        for case let item as BookmarksBarCollectionViewItem in bookmarksBarCollectionView.visibleItems() {
+            item.refreshDisplayedFavicon()
+        }
     }
 
-    @IBAction func importBookmarksClicked(_ sender: Any) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(isDataTypePickerExpanded: true, in: view.window)
+    @objc func importBookmarksClicked(_ sender: Any) {
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(in: view.window)
     }
 
-    @IBOutlet weak var syncButtonZeroWidthConstraint: NSLayoutConstraint!
+    private(set) var syncButtonZeroWidthConstraint: NSLayoutConstraint!
 
-    @IBAction func syncClicked(_ sender: Any) {
+    @objc func syncClicked(_ sender: Any) {
         syncButtonModel.syncButtonAction()
     }
 
-    @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {
+    @objc private func dismissSyncClicked(_ sender: Any) {
+        syncButtonModel.dismissSyncButtonAction()
+    }
+
+    @objc private func clippedItemsIndicatorClicked(_ sender: NSButton) {
         showSubmenu(for: clippedItemsBookmarkFolder(), from: sender)
     }
 
@@ -439,7 +758,7 @@ extension BookmarksBarViewController: ThemeUpdateListening {
 
         backgroundColorView.backgroundColor = navigationBackgroundColor
         bookmarksBarCollectionView.backgroundColors = [navigationBackgroundColor]
-        separatorColorView.backgroundColor = theme.palette.surfaceDecorationPrimary
+        separatorColorView.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
         backseparatorColorView.backgroundColor = theme.palette.surfaceBackdrop
     }
 }
@@ -493,7 +812,7 @@ private extension BookmarksBarViewController {
     }
 
     func showSubmenu(for folder: BookmarkFolder, from view: NSView) {
-        let bookmarkMenuPopover: BookmarksBarMenuPopover
+        let bookmarkMenuPopover: any BookmarksBarMenuPopoverPresenting
         if let popover = self.bookmarkMenuPopover {
             bookmarkMenuPopover = popover
             if bookmarkMenuPopover.isShown {
@@ -504,18 +823,19 @@ private extension BookmarksBarViewController {
             }
             bookmarkMenuPopover.reloadData(withRootFolder: folder)
         } else {
-            bookmarkMenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
-            bookmarkMenuPopover.delegate = self
+            bookmarkMenuPopover = BookmarksBarMenuCustomPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
+            bookmarkMenuPopover.bookmarksBarMenuDelegate = self
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
 
         view.window?.makeKeyAndOrderFront(nil)
         bookmarkMenuPopover.show(positionedBelow: view)
+        startBookmarksBarHoverTracking()
 
         if view === clippedItemsIndicator {
             // display pressed state
-            clippedItemsIndicator.backgroundColor = .buttonMouseDown
-            clippedItemsIndicator.mouseOverColor = .buttonMouseDown
+            clippedItemsIndicator.backgroundColor = NSColor(resource: .buttonMouseDown)
+            clippedItemsIndicator.mouseOverColor = NSColor(resource: .buttonMouseDown)
         } else if let collectionViewItem = view.nextResponder as? BookmarksBarCollectionViewItem {
             collectionViewItem.isDisplayingMouseDownState = true
         }
@@ -529,6 +849,14 @@ private extension BookmarksBarViewController {
         showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager))
     }
 
+    @objc func reorderBookmarksBarByName(_ sender: NSMenuItem) {
+        bookmarkManager.reorderByName(
+            bookmarkManager.list?.topLevelEntities ?? [],
+            withinParentFolder: .root,
+            undoManager: undoManager
+        )
+    }
+
 }
 // MARK: - NSMenuDelegate
 extension BookmarksBarViewController: NSMenuDelegate {
@@ -539,16 +867,17 @@ extension BookmarksBarViewController: NSMenuDelegate {
             menu,
             target: self,
             addFolderSelector: #selector(addFolder(sender:)),
+            reorderByNameSelector: featureFlagger.isFeatureOn(.bookmarksReorderByName) ? #selector(reorderBookmarksBarByName(_:)) : nil,
             manageBookmarksSelector: #selector(manageBookmarks),
             prefs: NSApp.delegateTyped.appearancePreferences
         )
     }
 
 }
-// MARK: - BookmarkListPopoverDelegate
+// MARK: - BookmarksBarMenuPopoverDelegate
 extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
 
-    func popoverShouldClose(_ popover: NSPopover) -> Bool {
+    func bookmarksBarMenuPopoverShouldClose(_ popover: any BookmarksBarMenuPopoverPresenting) -> Bool {
         if NSApp.currentEvent?.type == .leftMouseUp {
            if let point = bookmarksBarCollectionView.mouseLocationInsideBounds(),
               let indexPath = bookmarksBarCollectionView.indexPathForItem(at: point),
@@ -563,19 +892,75 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         return true
     }
 
-    func popoverDidClose(_ notification: Notification) {
-        guard let bookmarkMenuPopover = notification.object as? BookmarksBarMenuPopover,
-              let positioningView = bookmarkMenuPopover.positioningView else { return }
+    func bookmarksBarMenuPopoverDidClose(_ popover: any BookmarksBarMenuPopoverPresenting) {
+        stopBookmarksBarHoverTracking()
+
+        guard let positioningView = popover.positioningView else { return }
 
         if positioningView === clippedItemsIndicator {
             clippedItemsIndicator.backgroundColor = .clear
-            clippedItemsIndicator.mouseOverColor = .buttonMouseOver
+            clippedItemsIndicator.mouseOverColor = NSColor(resource: .buttonMouseOver)
         } else if let collectionViewItem = positioningView.nextResponder as? BookmarksBarCollectionViewItem {
             collectionViewItem.isDisplayingMouseDownState = false
         }
     }
 
-    func openNextBookmarksMenu(_ sender: BookmarksBarMenuPopover) {
+    private func startBookmarksBarHoverTracking() {
+        if savedAcceptsMouseMovedEvents == nil, let mainWindow = view.window {
+            savedAcceptsMouseMovedEvents = mainWindow.acceptsMouseMovedEvents
+            mainWindow.acceptsMouseMovedEvents = true
+        }
+        if bookmarksBarHoverMonitor == nil {
+            bookmarksBarHoverMonitor = NSEvent.addLocalMonitorForEvents(matching: .mouseMoved) { [weak self] event in
+                self?.dispatchBookmarksBarHover()
+                return event
+            }
+        }
+    }
+
+    private func stopBookmarksBarHoverTracking() {
+        if let monitor = bookmarksBarHoverMonitor {
+            NSEvent.removeMonitor(monitor)
+            bookmarksBarHoverMonitor = nil
+        }
+        if let saved = savedAcceptsMouseMovedEvents, let mainWindow = view.window {
+            mainWindow.acceptsMouseMovedEvents = saved
+        }
+        savedAcceptsMouseMovedEvents = nil
+    }
+
+    private func dispatchBookmarksBarHover() {
+        guard let mainWindow = view.window else { return }
+        let mouseLocation = NSEvent.mouseLocation
+        // In a short window a folder menu can cover the Bookmarks Bar. The local
+        // mouse-moved monitor also receives events sent to the menu window, so ignore
+        // the hover when a menu is displayed above the point: without this the
+        // Bookmarks Bar selection changes and the menu closes while the user moves
+        // the cursor over the menu items.
+        guard !isBookmarksBarMenuDisplayed(at: mouseLocation) else { return }
+        let windowPoint = mainWindow.convertPoint(fromScreen: mouseLocation)
+        let cvPoint = bookmarksBarCollectionView.convert(windowPoint, from: nil)
+        if bookmarksBarCollectionView.bounds.contains(cvPoint),
+           let indexPath = bookmarksBarCollectionView.indexPathForItem(at: cvPoint),
+           let item = bookmarksBarCollectionView.item(at: indexPath) as? BookmarksBarCollectionViewItem {
+            mouseDidHover(over: item)
+            return
+        }
+        if let indicatorSuper = clippedItemsIndicator.superview {
+            let indicatorPoint = indicatorSuper.convert(windowPoint, from: nil)
+            if clippedItemsIndicator.frame.contains(indicatorPoint), !clippedItemsIndicator.isHidden {
+                mouseDidHover(over: clippedItemsIndicator as Any)
+            }
+        }
+    }
+
+    /// Is a bookmarks menu window the frontmost window at the given screen point?
+    private func isBookmarksBarMenuDisplayed(at screenPoint: NSPoint) -> Bool {
+        let windowNumber = NSWindow.windowNumber(at: screenPoint, belowWindowWithWindowNumber: 0)
+        return NSApp.window(withWindowNumber: windowNumber) is BookmarksBarMenuWindow
+    }
+
+    func openNextBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
         guard let folder = sender.rootFolder else {
             assertionFailure("No root folder set in BookmarkListPopover")
             return
@@ -612,7 +997,7 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
         }
     }
 
-    func openPreviousBookmarksMenu(_ sender: BookmarksBarMenuPopover) {
+    func openPreviousBookmarksMenu(_ sender: any BookmarksBarMenuPopoverPresenting) {
         guard let folder = sender.rootFolder else {
             assertionFailure("No root folder set in BookmarkListPopover")
             return
@@ -649,11 +1034,5 @@ extension BookmarksBarViewController: BookmarksBarMenuPopoverDelegate {
             return
         }
     }
-
-}
-
-extension Notification.Name {
-
-    static let bookmarkPromptShouldShow = Notification.Name(rawValue: "bookmarkPromptShouldShow")
 
 }

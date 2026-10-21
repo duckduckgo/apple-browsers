@@ -26,14 +26,14 @@ import DesignResourcesKit
 final class AIChatSuggestionsView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
+        static let rowHeight: CGFloat = 34
         static let separatorHeight: CGFloat = 1
         static let separatorTopPadding: CGFloat = 0
         static let separatorBottomPadding: CGFloat = 8
-        static let separatorHorizontalInset: CGFloat = 12
-        static let rowsHorizontalPadding: CGFloat = 4
-        static let bottomPadding: CGFloat = 4
-        static let viewAllChatsSeparatorBottomPadding: CGFloat = 8
+        static let separatorHorizontalInset: CGFloat = 1
+        static let rowsHorizontalPadding: CGFloat = 6
+        /// Space under the last row. Belongs here because this height is what panels are sized from.
+        static let bottomPadding: CGFloat = 8
     }
 
     // MARK: - UI Components
@@ -64,8 +64,8 @@ final class AIChatSuggestionsView: NSView {
     private var viewTrackingArea: NSTrackingArea?
 
     private var viewAllChatsRowView: AIChatViewAllChatsRowView?
-    private var viewAllChatsSeparatorView: NSView?
 
+    var isBurner: Bool = false
     var canDeleteSuggestions: Bool = false
     var onSuggestionClicked: ((AIChatSuggestion) -> Void)?
     var onSuggestionDeleted: ((AIChatSuggestion) -> Void)?
@@ -107,7 +107,7 @@ final class AIChatSuggestionsView: NSView {
     }
 
     private func updateSeparatorColor() {
-        NSAppearance.withAppAppearance {
+        NSAppearance.withAppearance(appearance) {
             separatorView.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
         }
     }
@@ -122,13 +122,16 @@ final class AIChatSuggestionsView: NSView {
         }
 
         let trackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .activeInActiveApp],
+            // The panel resizes constantly, and a rect captured once goes stale and drops exits.
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInActiveApp, .inVisibleRect],
             owner: self,
             userInfo: nil
         )
         addTrackingArea(trackingArea)
         viewTrackingArea = trackingArea
+
+        reconcileSelectionWithPointer()
     }
 
     override func mouseExited(with event: NSEvent) {
@@ -137,16 +140,44 @@ final class AIChatSuggestionsView: NSView {
         boundViewModel?.clearSelection()
     }
 
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        reconcileSelectionWithPointer()
+    }
+
+    /// Exits go missing when the pointer crosses a boundary quickly, leaving a row lit. Where an
+    /// event does reach us, trust the pointer's real position over the last transition we saw.
+    private func reconcileSelectionWithPointer() {
+        guard let viewModel = boundViewModel,
+              viewModel.selectedIndex != nil,
+              !viewModel.isKeyboardNavigating,
+              let window else { return }
+
+        let pointerInWindow = window.mouseLocationOutsideOfEventStream
+        let isOverRow = rowViews.contains { $0.bounds.contains($0.convert(pointerInWindow, from: nil)) }
+        let isOverViewAll = viewAllChatsRowView.map { $0.bounds.contains($0.convert(pointerInWindow, from: nil)) } ?? false
+
+        guard !isOverRow, !isOverViewAll else { return }
+        viewModel.clearSelection()
+    }
+
     // MARK: - Static Height Calculation
 
     /// Calculates the required height for a given number of suggestions.
     /// This is a static calculation that doesn't depend on view state.
     static func calculateHeight(forSuggestionCount count: Int, showViewAllChats: Bool = false) -> CGFloat {
-        guard count > 0 else { return 0 }
+        guard count > 0 else {
+            return 0
+        }
+
+        let rowHeight = Constants.rowHeight
+        let bottomPadding = Constants.bottomPadding
         let separatorTotalHeight = Constants.separatorHeight + Constants.separatorTopPadding + Constants.separatorBottomPadding
-        let rowsHeight = CGFloat(count) * Constants.rowHeight
-        let viewAllChatsHeight = showViewAllChats ? Constants.separatorHeight + Constants.viewAllChatsSeparatorBottomPadding + Constants.rowHeight : 0
-        return separatorTotalHeight + rowsHeight + viewAllChatsHeight + Constants.bottomPadding
+
+        let rowsHeight = CGFloat(count) * rowHeight
+        let viewAllChatsHeight = showViewAllChats ? rowHeight : 0
+
+        return separatorTotalHeight + rowsHeight + viewAllChatsHeight + bottomPadding
     }
 
     // MARK: - Public Methods
@@ -161,12 +192,10 @@ final class AIChatSuggestionsView: NSView {
         // Remove existing view-all-chats views
         viewAllChatsRowView?.removeFromSuperview()
         viewAllChatsRowView = nil
-        viewAllChatsSeparatorView?.removeFromSuperview()
-        viewAllChatsSeparatorView = nil
 
         // Create new row views
         for (index, suggestion) in suggestions.enumerated() {
-            let rowView = AIChatSuggestionRowView(suggestion: suggestion)
+            let rowView = AIChatSuggestionRowView(suggestion: suggestion, isBurner: isBurner)
             rowView.translatesAutoresizingMaskIntoConstraints = false
 
             rowView.onClick = { [weak self] in
@@ -183,8 +212,13 @@ final class AIChatSuggestionsView: NSView {
             }
 
             rowView.onHoverChanged = { [weak self] isHovered in
+                guard let viewModel = self?.boundViewModel else { return }
                 if isHovered {
-                    self?.boundViewModel?.select(at: index)
+                    viewModel.select(at: index)
+                } else if !viewModel.isKeyboardNavigating, viewModel.selectedIndex == index {
+                    // Selecting on hover-in alone left the first and last rows lit, with no next
+                    // row to overwrite them. AppKit can deliver this exit after the next enter.
+                    viewModel.clearSelection()
                 }
             }
 
@@ -207,24 +241,10 @@ final class AIChatSuggestionsView: NSView {
     private func updateViewAllChatsFooter(show: Bool) {
         viewAllChatsRowView?.removeFromSuperview()
         viewAllChatsRowView = nil
-        viewAllChatsSeparatorView?.removeFromSuperview()
-        viewAllChatsSeparatorView = nil
 
         guard show else { return }
 
-        let separator = NSView()
-        separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.wantsLayer = true
-        NSAppearance.withAppAppearance {
-            separator.layer?.backgroundColor = NSColor(designSystemColor: .lines).cgColor
-        }
-        stackView.addArrangedSubview(separator)
-        separator.widthAnchor.constraint(equalTo: stackView.widthAnchor).isActive = true
-        separator.heightAnchor.constraint(equalToConstant: Constants.separatorHeight).isActive = true
-        stackView.setCustomSpacing(Constants.viewAllChatsSeparatorBottomPadding, after: separator)
-        viewAllChatsSeparatorView = separator
-
-        let viewAllRow = AIChatViewAllChatsRowView()
+        let viewAllRow = AIChatViewAllChatsRowView(isBurner: isBurner)
         viewAllRow.translatesAutoresizingMaskIntoConstraints = false
 
         viewAllRow.onClick = { [weak self] in
@@ -257,8 +277,9 @@ final class AIChatSuggestionsView: NSView {
         for (index, rowView) in rowViews.enumerated() {
             rowView.isSelected = (index == selectedIndex)
             rowView.isKeyboardNavigating = isKeyboardNavigating
-            // Clear hover state when keyboard navigating
-            if isKeyboardNavigating {
+            // A row is lit by `isSelected || isHovered`, and a missed exit leaves hover set.
+            // Hovering always selects, so a row that isn't selected can't legitimately be hovered.
+            if isKeyboardNavigating || index != selectedIndex {
                 rowView.isHovered = false
             }
         }
@@ -267,6 +288,9 @@ final class AIChatSuggestionsView: NSView {
         let isViewAllSelected = selectedIndex == rowViews.count
         viewAllChatsRowView?.isSelected = isViewAllSelected
         viewAllChatsRowView?.isKeyboardNavigating = isKeyboardNavigating
+        if isKeyboardNavigating || !isViewAllSelected {
+            viewAllChatsRowView?.isHovered = false
+        }
     }
 
     /// Binds the view to a view model for automatic updates.

@@ -20,6 +20,8 @@ import AIChat
 import AIChatDebugServer
 import DebugServer
 import AppKit
+import ConcurrencyExtensions
+import os.log
 import Persistence
 
 final class AIChatDebugMenu: NSMenu {
@@ -28,6 +30,28 @@ final class AIChatDebugMenu: NSMenu {
     private let debugStorage: any KeyedStoring<AIChatDebugURLSettings>
 
     private var storageDebugServer: DuckAiStorageDebugServer?
+    @MainActor
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure {
+        AttachmentPrivacyDisclosure(
+            store: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+            webKeySource: NSApp.delegateTyped.duckAiNativeStorageHandler,
+            featureFlagger: NSApp.delegateTyped.featureFlagger
+        )
+    }
+
+    private lazy var attachmentPrivacyMenuItem = NSMenuItem(
+        title: "",
+        action: #selector(resetAttachmentPrivacyDisclosure),
+        target: self
+    )
+
+    /// Stands in for the web app until the front end writes this itself.
+    private lazy var attachmentPrivacyWebFlagMenuItem = NSMenuItem(
+        title: "Set Duck.ai's Attachment Privacy Flag",
+        action: #selector(setAttachmentPrivacyWebFlag),
+        target: self
+    )
+
     private lazy var storageServerMenuItem = NSMenuItem(
         title: "Start Storage Server",
         action: #selector(toggleStorageServer),
@@ -54,8 +78,217 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            usageWarningsMenuItem
+
+            NSMenuItem.separator()
+
+            attachmentPrivacyMenuItem
+
+            attachmentPrivacyWebFlagMenuItem
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Terms of Service") {
+                NSMenuItem(title: "Reset Native Acceptance", action: #selector(resetNativeTermsOfServiceAcceptance))
+                    .targetting(self)
+                NSMenuItem(title: "Clear Web Acceptance (reload Duck.ai)", action: #selector(clearWebTermsOfServiceAcceptance))
+                    .targetting(self)
+            }
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Reset Launcher Promo", action: #selector(resetLauncherPromo))
+                .targetting(self)
+
+            NSMenuItem.separator()
+
             storageServerMenuItem
+
+#if DEBUG || REVIEW
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Browser Tools Panel", action: #selector(showBrowserToolsPanel))
+                .targetting(self)
+#endif
         }
+    }
+
+#if DEBUG || REVIEW
+
+    // MARK: - Browser Tools
+
+    /// Opens the sidebar on the current tab with the browser tools panel in place of the chat.
+    /// Closing the sidebar brings the chat back next time; there is no persisted mode.
+    @MainActor
+    @objc private func showBrowserToolsPanel() {
+        let coordinator = NSApp.delegateTyped.windowControllersManager
+            .lastKeyMainWindowController?.mainViewController.aiChatCoordinator as? AIChatCoordinator
+        coordinator?.showBrowserToolsDebugPanel()
+    }
+
+#endif
+
+    // MARK: - Duck.ai Usage Warnings
+
+    /// Seeds the same entry the web app writes, so the real read path drives the message.
+    private var usageWarningsMenuItem: NSMenuItem {
+        let item = NSMenuItem(title: "Duck.ai Usage Warnings")
+        let submenu = NSMenu()
+
+        submenu.addItem(sectionHeader("Free"))
+        addSeeds(DuckAiUsageSnapshotSeed.freeSeeds, to: submenu)
+        submenu.addItem(.separator())
+        submenu.addItem(sectionHeader("Paid"))
+        addSeeds(DuckAiUsageSnapshotSeed.paidSeeds, to: submenu)
+        submenu.addItem(.separator())
+
+        submenu.addItem(menuItem(title: "Clear usage snapshot", action: #selector(clearUsageSnapshot)))
+        submenu.addItem(menuItem(title: "Clear dismissals", action: #selector(clearUsageDismissals)))
+
+        item.submenu = submenu
+        return item
+    }
+
+    private func addSeeds(_ seeds: [DuckAiUsageSnapshotSeed], to menu: NSMenu) {
+        for seed in seeds {
+            let item = menuItem(title: seed.displayName, action: #selector(seedUsageSnapshot(_:)))
+            item.representedObject = seed.rawValue
+            item.toolTip = seed.expectation
+            menu.addItem(item)
+        }
+    }
+
+    @objc private func resetLauncherPromo() {
+        DuckAiLauncherPromo.resetOutcome(in: NSApp.delegateTyped.keyValueStore)
+    }
+
+    // MARK: - Terms of Service
+
+    /// While any chat exists, both acceptances come back on the next launch: delete all chats first.
+    @objc private func resetNativeTermsOfServiceAcceptance() {
+        DuckAiTermsOfServiceStore().resetForDebugging()
+    }
+
+    @MainActor
+    @objc private func clearWebTermsOfServiceAcceptance() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.deleteEntry(key: DuckAiNativeStorageConsent.termsOfServiceEntryKey)
+    }
+
+    // MARK: - Attachment privacy disclosure
+
+    @MainActor
+    @objc private func resetAttachmentPrivacyDisclosure() {
+        attachmentPrivacyDisclosure.reset()
+        updateAttachmentPrivacyMenuItemTitle()
+    }
+
+    @MainActor
+    @objc private func setAttachmentPrivacyWebFlag() {
+        try? NSApp.delegateTyped.duckAiNativeStorageHandler?.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey,
+                                                                      value: true)
+    }
+
+    @MainActor
+    private func updateAttachmentPrivacyMenuItemTitle() {
+        attachmentPrivacyMenuItem.title = "Reset Attachment Privacy Disclosure "
+            + (attachmentPrivacyDisclosure.hasShown ? "(shown)" : "(not shown)")
+    }
+
+    private func sectionHeader(_ title: String) -> NSMenuItem {
+        let item = NSMenuItem(title: title)
+        item.isEnabled = false
+        return item
+    }
+
+    private func menuItem(title: String, action: Selector) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        item.target = self
+        return item
+    }
+
+    @objc private func seedUsageSnapshot(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let seed = DuckAiUsageSnapshotSeed(rawValue: rawValue) else { return }
+
+        writeUsageSnapshot(seed)
+    }
+
+    @objc private func clearUsageSnapshot() {
+        guard let handler = storageHandlerOrAlert() else { return }
+        try? handler.deleteEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue)
+    }
+
+    /// Brings back a message dismissed with its close button, and one whose CTA has been run.
+    @objc private func clearUsageDismissals() {
+        let store = DuckAiUsageWarningDismissalStore()
+        DuckAiUsageWindow.allCases.forEach { store.setDismissal(nil, for: $0) }
+        store.setActedSnapshot(nil)
+    }
+
+    private func writeUsageSnapshot(_ seed: DuckAiUsageSnapshotSeed) {
+        guard let handler = storageHandlerOrAlert() else { return }
+
+        guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.aiChatUsageWarnings) else {
+            showAlert("The usage-warnings flag is off",
+                      "Turn on aiChatUsageWarnings in Debug → Feature Flags. The snapshot was not written.")
+            return
+        }
+
+        // From the live model list, so the switch CTAs offer something the picker can select.
+        Task { @MainActor in
+            let models = await accessibleModelIds()
+            let selectedModelId = NSApp.delegateTyped.aiChatPreferencesPersistor.selectedModelId
+            let targets = models.filter { $0 != selectedModelId }
+
+            do {
+                try handler.putEntry(key: DuckAiNativeStorageReservedEntryKeys.usageLimits.rawValue,
+                                     value: seed.entryValue(switchTargets: targets, selectedModelId: selectedModelId))
+            } catch {
+                showAlert("Failed to seed the usage snapshot", error.localizedDescription)
+                return
+            }
+
+            if targets.isEmpty {
+                showAlert("Seeded without model targets",
+                          "The models list could not be fetched, so any switch button will be hidden — "
+                          + "which is the \"already on the cheapest model\" case. Everything else in the "
+                          + "message renders normally.")
+            }
+        }
+    }
+
+    /// Resolved against the free tier: every account can select those, so a seeded switch never
+    /// offers a model the picker would refuse.
+    private func accessibleModelIds() async -> [String] {
+        do {
+            let service = AIChatModelsService(accessTokenProvider: NSApp.delegateTyped.subscriptionManager)
+            let response = try await service.fetchModels()
+            return response.models
+                .map { AIChatModel(remoteModel: $0, userTier: .free) }
+                .filter(\.entityHasAccess)
+                .map(\.id)
+        } catch {
+            Logger.aiChat.error("Usage-warning seed: models fetch failed: \(error.localizedDescription, privacy: .public)")
+            return []
+        }
+    }
+
+    /// Same alert as the storage server, the other item needing the bridge.
+    private func storageHandlerOrAlert() -> DuckAiNativeStorageHandling? {
+        guard let handler = NSApp.delegateTyped.duckAiNativeStorageHandler else {
+            showAlert("Native storage is not available",
+                      "The duckAiNativeStorage feature flag may be disabled.")
+            return nil
+        }
+        return handler
+    }
+
+    private func showAlert(_ messageText: String, _ informativeText: String) {
+        let alert = NSAlert()
+        alert.messageText = messageText
+        alert.informativeText = informativeText
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     required init(coder: NSCoder) {
@@ -66,6 +299,10 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        // Main thread only, and the title must be right before the menu draws, so not a Task.
+        MainActor.assumeMainThread {
+            updateAttachmentPrivacyMenuItemTitle()
+        }
     }
 
     @objc func setCustomURL() {

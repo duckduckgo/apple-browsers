@@ -47,6 +47,9 @@ public struct BrokerJobExecutionConfig {
         public static let defaultClickAwaitTimeForOptOut: TimeInterval = .seconds(3)
         /// Click await time for scan step actions
         public static let defaultClickAwaitTimeForScan: TimeInterval = .seconds(0)
+
+        /// Wall-clock ceiling for the native `getEmailData` action's polling loop
+        public static let defaultGetEmailDataTotalTimeout: TimeInterval = .seconds(60)
     }
 
     let intervalBetweenSameBrokerJobs: TimeInterval
@@ -56,6 +59,7 @@ public struct BrokerJobExecutionConfig {
     public let cssActionCancellationCheckInterval: TimeInterval
     public let clickAwaitTimeForOptOut: TimeInterval
     public let clickAwaitTimeForScan: TimeInterval
+    public let getEmailDataTotalTimeout: TimeInterval
 
     private let concurrentJobsDifferentBrokers: Int
     // https://app.asana.com/0/481882893211075/1206981742767469/f
@@ -77,7 +81,8 @@ public struct BrokerJobExecutionConfig {
                 concurrentJobsDifferentBrokers: Int = Constants.defaultConcurrentJobsDifferentBrokers,
                 concurrentJobsOnManualScans: Int = Constants.defaultConcurrentJobsOnManualScans,
                 clickAwaitTimeForOptOut: TimeInterval = Constants.defaultClickAwaitTimeForOptOut,
-                clickAwaitTimeForScan: TimeInterval = Constants.defaultClickAwaitTimeForScan) {
+                clickAwaitTimeForScan: TimeInterval = Constants.defaultClickAwaitTimeForScan,
+                getEmailDataTotalTimeout: TimeInterval = Constants.defaultGetEmailDataTotalTimeout) {
         self.intervalBetweenSameBrokerJobs = intervalBetweenSameBrokerJobs
         self.scanJobTimeout = scanJobTimeout
         self.optOutJobTimeout = optOutJobTimeout
@@ -87,5 +92,6 @@ public struct BrokerJobExecutionConfig {
         self.concurrentJobsOnManualScans = concurrentJobsOnManualScans
         self.clickAwaitTimeForOptOut = clickAwaitTimeForOptOut
         self.clickAwaitTimeForScan = clickAwaitTimeForScan
+        self.getEmailDataTotalTimeout = getEmailDataTotalTimeout
     }
 }

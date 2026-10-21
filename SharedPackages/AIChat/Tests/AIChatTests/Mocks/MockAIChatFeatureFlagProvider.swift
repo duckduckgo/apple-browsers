@@ -21,8 +21,10 @@
 final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
     var isAIChatSyncEnabledResult = true
     var supportsSyncChatsDeletionResult = true
+    var supportsSyncChatsUpdateResult = true
     var isNativeDataAccessEnabledResult = false
     var isNativeDataStorageEnabledResult = false
+    var isHomepageChatSuggestionsEnabledResult = false
 
     func isAIChatSyncEnabled() -> Bool {
         return isAIChatSyncEnabledResult
@@ -32,11 +34,19 @@ final class MockAIChatFeatureFlagProvider: AIChatFeatureFlagProviding {
         supportsSyncChatsDeletionResult
     }
 
+    func supportsSyncChatsUpdate() -> Bool {
+        supportsSyncChatsUpdateResult
+    }
+
     func isNativeDataAccessEnabled() -> Bool {
         isNativeDataAccessEnabledResult
     }
 
     func isNativeDataStorageEnabled() -> Bool {
         isNativeDataStorageEnabledResult
+    }
+
+    func isHomepageChatSuggestionsEnabled() -> Bool {
+        isHomepageChatSuggestionsEnabledResult
     }
 }

@@ -16,9 +16,12 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Foundation
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import Persistence
 

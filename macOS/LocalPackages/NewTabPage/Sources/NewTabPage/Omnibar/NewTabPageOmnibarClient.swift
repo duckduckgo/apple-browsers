@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import WebKit
+import AIChat
 import Combine
 import Common
+import FoundationExtensions
+import WebKit
 
 public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
@@ -33,6 +35,24 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         case getAiChats = "omnibar_getAiChats"
         case openAiChat = "omnibar_openAiChat"
         case viewAllAIChats = "omnibar_viewAllAIChats"
+        case openCustomizeResponses = "omnibar_openCustomizeResponses"
+        case openPrivacyTerms = "omnibar_openPrivacyTerms"
+        case setCustomizeResponsesActive = "omnibar_setCustomizeResponsesActive"
+        case getOpenTabs = "omnibar_getOpenTabs"
+        case getTabContent = "omnibar_getTabContent"
+        case showSubscriptionUpsell = "omnibar_showSubscriptionUpsell"
+        case showSubscriptionUpgrade = "omnibar_showSubscriptionUpgrade"
+        case confirmDeleteAiChat = "omnibar_confirmDeleteAiChat"
+        case removeSuggestion = "omnibar_removeSuggestion"
+        case setImageGenerationActive = "omnibar_setImageGenerationActive"
+        case dismissCreateImageModelSwitch = "omnibar_dismissCreateImageModelSwitch"
+        case dismissUsageLimits = "omnibar_dismissUsageLimits"
+        case attachmentPrivacyDisclaimerShown = "omnibar_attachmentPrivacyDisclaimerShown"
+        case openAttachmentPrivacyLearnMore = "omnibar_openAttachmentPrivacyLearnMore"
+        case selectUsageLimitsCta = "omnibar_selectUsageLimitsCta"
+        case launcherPromoShown = "omnibar_launcherPromoShown"
+        case selectLauncherPromoCta = "omnibar_selectLauncherPromoCta"
+        case dismissLauncherPromo = "omnibar_dismissLauncherPromo"
     }
 
     private let configProvider: NewTabPageOmnibarConfigProviding
@@ -40,18 +60,26 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     private let aiChatsProvider: NewTabPageOmnibarAiChatsProviding
     private let modelsProvider: NewTabPageOmnibarModelsProviding?
     private let actionHandler: NewTabPageOmnibarActionsHandling
+    private let tabsProvider: NewTabPageOmnibarTabsProviding
+    private let subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting?
+    private var createImageModelSwitch: NewTabPageDataModel.OmnibarCreateImageModelSwitch?
     private var cancellables = Set<AnyCancellable>()
 
+    @MainActor
     public init(configProvider: NewTabPageOmnibarConfigProviding,
                 suggestionsProvider: NewTabPageOmnibarSuggestionsProviding,
                 aiChatsProvider: NewTabPageOmnibarAiChatsProviding,
                 modelsProvider: NewTabPageOmnibarModelsProviding? = nil,
-                actionHandler: NewTabPageOmnibarActionsHandling) {
+                actionHandler: NewTabPageOmnibarActionsHandling,
+                tabsProvider: NewTabPageOmnibarTabsProviding,
+                subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenting? = nil) {
         self.configProvider = configProvider
         self.suggestionsProvider = suggestionsProvider
         self.aiChatsProvider = aiChatsProvider
         self.modelsProvider = modelsProvider
         self.actionHandler = actionHandler
+        self.tabsProvider = tabsProvider
+        self.subscriptionDialogPresenter = subscriptionDialogPresenter
         super.init()
 
         Publishers.MergeMany(
@@ -60,7 +88,17 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.modePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.showViewAllAiChatsPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.selectedModelIdPublisher.map { _ in () }.eraseToAnyPublisher(),
-            configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher()
+            configProvider.selectedReasoningEffortPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isVoiceChatAccessEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.showAskAiSuggestionPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isAttachTabsEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isAIChatDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.isSearchSuggestionDeletionEnabledPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.customizeResponsesStatePublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.requiresAiTermsAcceptancePublisher.map { _ in () }.eraseToAnyPublisher(),
+            configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher(),
+            configProvider.launcherPromoPublisher.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -71,6 +109,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
         configProvider.modePublisher
             .filter { $0 == .ai }
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    await self?.refreshModelsAndNotify()
+                }
+            }
+            .store(in: &cancellables)
+
+        modelsProvider?.modelsDidChangePublisher
             .sink { [weak self] _ in
                 Task { @MainActor in
                     await self?.refreshModelsAndNotify()
@@ -89,13 +135,36 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             MessageName.submitChat.rawValue: { [weak self] in try await self?.submitChat(params: $0, original: $1) },
             MessageName.getAiChats.rawValue: { [weak self] in try await self?.getAiChats(params: $0, original: $1) },
             MessageName.openAiChat.rawValue: { [weak self] in try await self?.openAiChat(params: $0, original: $1) },
-            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) }
+            MessageName.viewAllAIChats.rawValue: { [weak self] in try await self?.viewAllAIChats(params: $0, original: $1) },
+            MessageName.openCustomizeResponses.rawValue: { [weak self] in try await self?.openCustomizeResponses(params: $0, original: $1) },
+            MessageName.openPrivacyTerms.rawValue: { [weak self] in try await self?.openPrivacyTerms(params: $0, original: $1) },
+            MessageName.setCustomizeResponsesActive.rawValue: { [weak self] in try await self?.setCustomizeResponsesActive(params: $0, original: $1) },
+            MessageName.getOpenTabs.rawValue: { [weak self] in try await self?.getOpenTabs(params: $0, original: $1) },
+            MessageName.getTabContent.rawValue: { [weak self] in try await self?.getTabContent(params: $0, original: $1) },
+            MessageName.showSubscriptionUpsell.rawValue: { [weak self] in try await self?.showSubscriptionUpsell(params: $0, original: $1) },
+            MessageName.showSubscriptionUpgrade.rawValue: { [weak self] in try await self?.showSubscriptionUpgrade(params: $0, original: $1) },
+            MessageName.confirmDeleteAiChat.rawValue: { [weak self] in try await self?.confirmDeleteAiChat(params: $0, original: $1) },
+            MessageName.removeSuggestion.rawValue: { [weak self] in try await self?.removeSuggestion(params: $0, original: $1) },
+            MessageName.setImageGenerationActive.rawValue: { [weak self] in try await self?.setImageGenerationActive(params: $0, original: $1) },
+            MessageName.dismissCreateImageModelSwitch.rawValue: { [weak self] in try await self?.dismissCreateImageModelSwitch(params: $0, original: $1) },
+            MessageName.dismissUsageLimits.rawValue: { [weak self] in try await self?.dismissUsageLimits(params: $0, original: $1) },
+            MessageName.attachmentPrivacyDisclaimerShown.rawValue: { [weak self] in try await self?.attachmentPrivacyDisclaimerShown(params: $0, original: $1) },
+            MessageName.openAttachmentPrivacyLearnMore.rawValue: { [weak self] in try await self?.openAttachmentPrivacyLearnMore(params: $0, original: $1) },
+            MessageName.selectUsageLimitsCta.rawValue: { [weak self] in try await self?.selectUsageLimitsCta(params: $0, original: $1) },
+            MessageName.launcherPromoShown.rawValue: { [weak self] in try await self?.launcherPromoShown(params: $0, original: $1) },
+            MessageName.selectLauncherPromoCta.rawValue: { [weak self] in try await self?.selectLauncherPromoCta(params: $0, original: $1) },
+            MessageName.dismissLauncherPromo.rawValue: { [weak self] in try await self?.dismissLauncherPromo(params: $0, original: $1) }
         ])
     }
 
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let aiModelSections = await modelsProvider?.fetchAIModelSections()
+        let customize = configProvider.customizeResponsesState(requestingWebView: original.webView)
+        // An NTP that loads already in Duck.ai mode never sends `setConfig`, so it needs its own read.
+        if configProvider.mode == .ai {
+            configProvider.refreshUsageLimits(requestingWebView: original.webView)
+        }
         return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
@@ -106,9 +175,26 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableCustomizeResponses: configProvider.isCustomizeResponsesEnabled,
+            customizeSubLabel: customize.hasCustomization ? customize.subLabel : nil,
+            hasCustomization: customize.hasCustomization,
+            customizationActive: customize.active,
+            enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
+            enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(aiModelSections),
-            selectedReasoningEffort: configProvider.selectedReasoningEffort
+            selectedReasoningEffort: configProvider.selectedReasoningEffort,
+            enableAttachTabs: configProvider.isAttachTabsEnabled,
+            attachmentLimits: modelsProvider?.attachmentLimits,
+            isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
+            enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
+            enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
+            showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer,
+            enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
+            createImageModelSwitch: createImageModelSwitch,
+            usageLimits: configProvider.usageLimits(),
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
+            launcherPromo: configProvider.launcherPromo()
         )
     }
 
@@ -118,30 +204,32 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         configProvider.mode = config.mode
+        if config.mode == .ai {
+            configProvider.refreshUsageLimits(requestingWebView: original.webView)
+        }
         configProvider.isAIChatShortcutEnabled = config.enableAi
         if let showCustomizePopover = config.showCustomizePopover {
             configProvider.showCustomizePopover = showCustomizePopover
         }
         if let selectedModelId = config.selectedModelId {
-            // Only refresh the cached short name when the id actually changes. Echoing back the
-            // same id (e.g. on web launch) must not overwrite a valid cache with `nil` just
-            // because `lastFetchedSections` hasn't been populated yet on this side.
-            let didChangeModelId = configProvider.selectedModelId != selectedModelId
-            configProvider.selectedModelId = selectedModelId
-            if didChangeModelId {
-                configProvider.selectedModelShortName = modelsProvider?.lastFetchedSections?
-                    .flatMap(\.items)
-                    .first(where: { $0.id == selectedModelId })?
-                    .shortName
+            let item = matchedItem(forModelId: selectedModelId)
+            // Reject a model we know is gated; an unmatched id (sections not fetched yet) passes through.
+            if item?.isAvailable != false {
+                // Only refresh the cached short name when the id changes, so echoing back the same
+                // id doesn't null out a valid cache before `lastFetchedSections` is populated.
+                let didChangeModelId = configProvider.selectedModelId != selectedModelId
+                configProvider.selectedModelId = selectedModelId
+                if didChangeModelId {
+                    configProvider.selectedModelShortName = item?.shortName
+                }
             }
         }
         persistReasoningEffort(from: config)
         return nil
     }
 
-    /// Persists the incoming reasoning effort only when the feature is enabled and the value is
-    /// supported by the currently selected model. This prevents a stale or unsupported value
-    /// (e.g. from a web state that predates a model switch or a tier change) from being stored.
+    /// Only persists when the feature is on, the selected model isn't gated, and the value is
+    /// supported by that model — guards against a stale value surviving a model/tier change.
     @MainActor
     private func persistReasoningEffort(from config: NewTabPageDataModel.OmnibarConfig) {
         guard configProvider.isReasoningEffortEnabled else { return }
@@ -150,12 +238,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.selectedReasoningEffort = nil
             return
         }
-        let selectedModelId = configProvider.selectedModelId
-        let supportedForCurrentModel = modelsProvider?.lastFetchedSections?
-            .flatMap(\.items)
-            .first(where: { $0.id == selectedModelId })?
-            .supportedReasoningEffort ?? []
-        guard supportedForCurrentModel.contains(incoming) else { return }
+        let item = matchedItem(forModelId: configProvider.selectedModelId)
+        guard item?.isAvailable != false,
+              item?.reasoningEfforts.filter(\.isAvailable).map(\.id).contains(incoming) == true
+        else { return }
         configProvider.selectedReasoningEffort = incoming
     }
 
@@ -167,6 +253,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func notifyConfigUpdated() {
+        let customize = configProvider.customizeResponsesState(requestingWebView: nil)
         let config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
@@ -177,16 +264,32 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             enableAiChatTools: configProvider.isAIChatToolsEnabled,
             enableImageGeneration: configProvider.isImageGenerationEnabled,
             enableWebSearch: configProvider.isWebSearchEnabled,
+            enableCustomizeResponses: configProvider.isCustomizeResponsesEnabled,
+            customizeSubLabel: customize.hasCustomization ? customize.subLabel : nil,
+            hasCustomization: customize.hasCustomization,
+            customizationActive: customize.active,
+            enableVoiceChatAccess: configProvider.isVoiceChatAccessEnabled,
+            enableAskAiSuggestion: configProvider.showAskAiSuggestion,
             selectedModelId: configProvider.selectedModelId,
             aiModelSections: sectionsForWeb(modelsProvider?.lastFetchedSections),
-            selectedReasoningEffort: configProvider.selectedReasoningEffort
+            selectedReasoningEffort: configProvider.selectedReasoningEffort,
+            enableAttachTabs: configProvider.isAttachTabsEnabled,
+            attachmentLimits: modelsProvider?.attachmentLimits,
+            isEligibleForFreeTrial: modelsProvider?.isEligibleForFreeTrial,
+            enableAiChatDeletion: configProvider.isAIChatDeletionEnabled,
+            enableSearchSuggestionDeletion: configProvider.isSearchSuggestionDeletionEnabled,
+            showAttachmentPrivacyDisclaimer: configProvider.showAttachmentPrivacyDisclaimer,
+            enableUpdatedCreateImage: configProvider.isUpdatedCreateImageEnabled,
+            createImageModelSwitch: createImageModelSwitch,
+            usageLimits: configProvider.usageLimits(),
+            requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
+            launcherPromo: configProvider.launcherPromo()
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
 
-    /// Native is the single point of control for rollout: strip `supportedReasoningEffort` from
-    /// every item when the feature is disabled, so the web app never sees a non-empty list and
-    /// the picker stays hidden without any flag check on the web side.
+    /// Strips `reasoningEfforts` when the feature is off, so the web hides the picker with no
+    /// flag check of its own.
     @MainActor
     private func sectionsForWeb(_ sections: [NewTabPageDataModel.AIModelSection]?) -> [NewTabPageDataModel.AIModelSection]? {
         guard let sections else { return nil }
@@ -195,15 +298,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             NewTabPageDataModel.AIModelSection(
                 header: section.header,
                 items: section.items.map { item in
-                    NewTabPageDataModel.AIModelItem(
-                        id: item.id,
-                        name: item.name,
-                        shortName: item.shortName,
-                        isEnabled: item.isEnabled,
-                        supportsImageUpload: item.supportsImageUpload,
-                        supportedTools: item.supportedTools,
-                        supportedReasoningEffort: []
-                    )
+                    var copy = item
+                    copy.reasoningEfforts = []
+                    return copy
                 }
             )
         }
@@ -232,36 +329,154 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         return nil
     }
 
+    @MainActor
     private func submitChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let action: NewTabPageDataModel.SubmitChatAction = DecodableHelper.decode(from: params) else {
             return nil
         }
+        let isUpdatedImageGenerationSubmission = configProvider.isUpdatedCreateImageEnabled && action.mode == AIChatNativePrompt.imageGenerationMode
+        let imageGenerationModelId = isUpdatedImageGenerationSubmission ? configProvider.imageGenerationModelId : nil
+        let modelId = isUpdatedImageGenerationSubmission ? imageGenerationModelId : modelIdForSubmission(action: action)
+        let toolChoice: [String]? = if isUpdatedImageGenerationSubmission {
+            imageGenerationModelId == nil ? nil : [AIChatRAGTool.imageGeneration.rawValue]
+        } else {
+            action.toolChoice
+        }
         await actionHandler.submitChat(
             action.chat,
             target: action.target,
-            modelId: action.modelId,
+            modelId: modelId,
             images: action.images,
-            mode: action.mode,
-            toolChoice: action.toolChoice,
-            reasoningEffort: reasoningEffortForSubmission(action: action)
+            mode: imageGenerationModelId == nil ? action.mode : nil,
+            toolChoice: toolChoice,
+            reasoningEffort: isUpdatedImageGenerationSubmission ? nil : reasoningEffortForSubmission(action: action),
+            pageContexts: action.pageContext,
+            files: action.files,
+            aiTermsAccepted: action.aiTermsAccepted == true
         )
+        if action.launcherPromoVisible == true {
+            configProvider.launcherPromoIgnored()
+        }
         return nil
     }
 
-    /// Returns the reasoning effort to attach to this submission, or `nil` if the feature is
-    /// disabled, the web didn't send a value, or the value isn't supported by the submission's
-    /// model. Enforcing support at submit time catches stale web state where the models list
-    /// changed between a selection and a submission.
+    /// Single shared lookup for the gating checks below — avoids re-flattening
+    /// `lastFetchedSections` at every call site.
+    @MainActor
+    private func matchedItem(forModelId modelId: String?) -> NewTabPageDataModel.AIModelItem? {
+        modelsProvider?.lastFetchedSections?
+            .flatMap(\.items)
+            .first(where: { $0.id == modelId })
+    }
+
+    /// `nil` if the model is gated — guards a stale or forged `modelId` from reaching a model the
+    /// user's tier doesn't grant.
+    @MainActor
+    private func modelIdForSubmission(action: NewTabPageDataModel.SubmitChatAction) -> String? {
+        guard let modelId = action.modelId else { return nil }
+        return matchedItem(forModelId: modelId)?.isAvailable == false ? nil : modelId
+    }
+
+    @MainActor
+    private func setImageGenerationActive(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard configProvider.isUpdatedCreateImageEnabled,
+              let request: NewTabPageDataModel.OmnibarSetImageGenerationActive = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        createImageModelSwitch = request.active ? configProvider.activateImageGeneration() : nil
+        notifyConfigUpdated()
+        return nil
+    }
+
+    @MainActor
+    private func dismissCreateImageModelSwitch(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        createImageModelSwitch = nil
+        notifyConfigUpdated()
+        return nil
+    }
+
+    @MainActor
+    private func dismissUsageLimits(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.dismissUsageLimits()
+        notifyConfigUpdated()
+        return nil
+    }
+
+    /// The provider spends the display, which moves the count and re-pushes the config through
+    /// `attachmentPrivacyDisclaimerPublisher`.
+    @MainActor
+    private func attachmentPrivacyDisclaimerShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OmnibarAttachmentPrivacyDisclaimerShown = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        configProvider.attachmentPrivacyDisclaimerShown(kind: action.kind)
+        return nil
+    }
+
+    @MainActor
+    private func openAttachmentPrivacyLearnMore(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.OmnibarOpenAttachmentPrivacyLearnMore = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        actionHandler.openAttachmentPrivacyLearnMore(kind: action.kind)
+        return nil
+    }
+
+    /// An absent `modelId` is valid — the upsell and the weekly hand-off send none — so a failed
+    /// decode means no model rather than nothing to do.
+    @MainActor
+    private func selectUsageLimitsCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let action: NewTabPageDataModel.OmnibarSelectUsageLimitsCtaAction? = DecodableHelper.decode(from: params)
+        let outcome = configProvider.selectUsageLimitsCta(modelId: action?.modelId)
+        notifyConfigUpdated()
+        if outcome == .requiresSubscriptionUpsell {
+            await subscriptionDialogPresenter?.showSubscriptionUpsellDialog(source: .usageLimit)
+        }
+        return nil
+    }
+
+    @MainActor
+    private func launcherPromoShown(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.launcherPromoShown()
+        return nil
+    }
+
+    @MainActor
+    private func selectLauncherPromoCta(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.selectLauncherPromoCta()
+        return nil
+    }
+
+    @MainActor
+    private func dismissLauncherPromo(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        configProvider.dismissLauncherPromo()
+        return nil
+    }
+
+    @MainActor
+    private func getOpenTabs(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        return NewTabPageDataModel.OmnibarGetOpenTabsResponse(tabs: await tabsProvider.openTabs(requestingWebView: original.webView))
+    }
+
+    @MainActor
+    private func getTabContent(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let request: NewTabPageDataModel.OmnibarGetTabContentRequest = DecodableHelper.decode(from: params) else {
+            return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: nil)
+        }
+        return NewTabPageDataModel.OmnibarGetTabContentResponse(pageContext: await tabsProvider.tabContent(tabId: request.tabId, requestingWebView: original.webView))
+    }
+
+    /// `nil` if the feature is off, no value was sent, the model is gated, or the value isn't
+    /// supported by that model — catches stale web state from between a selection and a submission.
     @MainActor
     private func reasoningEffortForSubmission(action: NewTabPageDataModel.SubmitChatAction) -> String? {
         guard configProvider.isReasoningEffortEnabled else { return nil }
         guard let incoming = action.reasoningEffort else { return nil }
         let modelId = action.modelId ?? configProvider.selectedModelId
-        let supported = modelsProvider?.lastFetchedSections?
-            .flatMap(\.items)
-            .first(where: { $0.id == modelId })?
-            .supportedReasoningEffort ?? []
-        return supported.contains(incoming) ? incoming : nil
+        let item = matchedItem(forModelId: modelId)
+        guard item?.isAvailable != false else { return nil }
+        let available = item?.reasoningEfforts.filter(\.isAvailable).map(\.id) ?? []
+        return available.contains(incoming) ? incoming : nil
     }
 
     private func getAiChats(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -284,6 +499,61 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             return nil
         }
         await actionHandler.viewAllAiChats(target: action.target)
+        return nil
+    }
+
+    @MainActor
+    private func showSubscriptionUpsell(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let action: NewTabPageDataModel.ShowSubscriptionUpsellAction? = DecodableHelper.decode(from: params)
+        await subscriptionDialogPresenter?.showSubscriptionUpsellDialog(source: action?.source ?? .model)
+        return nil
+    }
+
+    @MainActor
+    private func showSubscriptionUpgrade(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let action: NewTabPageDataModel.ShowSubscriptionUpgradeAction? = DecodableHelper.decode(from: params)
+        subscriptionDialogPresenter?.showSubscriptionUpgradeDialog(source: action?.source ?? .model)
+        return nil
+    }
+
+    @MainActor
+    private func confirmDeleteAiChat(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard configProvider.isAIChatDeletionEnabled,
+              let action: NewTabPageDataModel.ConfirmDeleteAiChatAction = DecodableHelper.decode(from: params) else {
+            return NewTabPageDataModel.ConfirmDeleteAiChatResponse(action: .none)
+        }
+        let confirmed = await actionHandler.confirmDeleteAiChat(chatId: action.chatId, title: action.title, sourceWindow: original.webView?.window)
+        return NewTabPageDataModel.ConfirmDeleteAiChatResponse(action: confirmed ? .delete : .none)
+    }
+
+    @MainActor
+    private func removeSuggestion(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard configProvider.isSearchSuggestionDeletionEnabled,
+              let action: NewTabPageDataModel.RemoveSuggestionAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        actionHandler.removeSuggestion(action.url)
+        return nil
+    }
+
+    @MainActor
+    private func openCustomizeResponses(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openCustomizeResponses()
+        return nil
+    }
+
+    @MainActor
+    private func openPrivacyTerms(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        actionHandler.openPrivacyTerms()
+        return nil
+    }
+
+    @MainActor
+    private func setCustomizeResponsesActive(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let action: NewTabPageDataModel.SetCustomizeResponsesActiveAction = DecodableHelper.decode(from: params) else {
+            return nil
+        }
+        actionHandler.setCustomizeResponsesActive(action.active)
         return nil
     }
 

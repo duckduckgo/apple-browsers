@@ -22,11 +22,6 @@ if ! command -v npm > /dev/null 2>&1; then
     exit 1
 fi
 
-# Check if the required iOS platform is already downloaded
-if ! xcodebuild -showsdks | grep -q 18.2; then
-    xcodebuild -downloadPlatform iOS -buildVersion 18.2
-fi
-
 # Check for --clean flag
 if [ "$1" = "--clean" ]; then
     echo "Clearing tmp directory"

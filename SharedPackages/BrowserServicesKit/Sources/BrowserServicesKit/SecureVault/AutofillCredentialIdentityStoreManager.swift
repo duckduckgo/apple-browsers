@@ -19,6 +19,7 @@
 import Foundation
 import AuthenticationServices
 import Common
+import FoundationExtensions
 import SecureStorage
 import os.log
 

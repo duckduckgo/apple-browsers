@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 import DuckAiDataStore
 import Persistence
@@ -26,15 +27,15 @@ import Persistence
 /// delegated to a `DuckAiNativeDataStoring` (GRDB + filesystem). Construct via
 /// `DuckAiNativeStorageHandler(.disk(path:...))`, which handles key derivation
 /// and SQLCipher setup.
-public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
+public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving {
 
     private let settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>
-    private let dataStore: DuckAiNativeDataStoring
+    private let dataStore: any DuckAiNativeDataStoring & DuckAiNativeChatsRecordObserving
     private let settingsLock = NSLock()
 
     public init(
         settingsStore: any ThrowingKeyedStoring<DuckAiNativeStorageSettings>,
-        dataStore: DuckAiNativeDataStoring
+        dataStore: any DuckAiNativeDataStoring & DuckAiNativeChatsRecordObserving
     ) {
         self.settingsStore = settingsStore
         self.dataStore = dataStore
@@ -80,6 +81,13 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
     public func replaceAllEntries(_ entries: [String: Any]) throws {
         settingsLock.lock()
         defer { settingsLock.unlock() }
+        var entries = entries
+        // The web's one-time entries migration replaces everything with its localStorage, which can predate
+        // a Terms of Service acceptance native recorded, e.g. for chats synced from another device.
+        let termsKey = DuckAiNativeStorageConsent.termsOfServiceEntryKey
+        if entries[termsKey] == nil, let acceptance = (try? loadSettingsBlob())?[termsKey] {
+            entries[termsKey] = acceptance
+        }
         try saveSettingsBlob(entries)
     }
 
@@ -101,12 +109,28 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
         try dataStore.getAllChats()
     }
 
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        dataStore.chatsPublisher()
+    }
+
     public func deleteChat(chatId: String) throws {
         try dataStore.deleteChat(chatId: chatId)
+        try markChatLocallyDeleted(chatId: chatId)
     }
 
     public func deleteAllChats() throws {
         try dataStore.deleteAllChats()
+    }
+
+    // MARK: - Private Helpers
+
+    /// Atomically inserts `chatId` into the reserved `locallyDeletedChatIds` entry so the Duck.ai web app can read it via `getEntry`
+    private func markChatLocallyDeleted(chatId: String) throws {
+        try updateEntry(key: .locallyDeletedChatIds) { settings in
+            var deletedIDs = Set(settings as? [String] ?? [])
+            deletedIDs.insert(chatId)
+            return Array(deletedIDs)
+        }
     }
 
     // MARK: - Files (delegation)
@@ -165,6 +189,24 @@ public final class DuckAiNativeDiskStorageHandler: DuckAiNativeStorageHandling {
         dict[key] = true
         let data = try JSONSerialization.data(withJSONObject: dict)
         try settingsStore.set(data, for: \.migrationStatus)
+    }
+
+    // MARK: - Lifecycle
+
+    public var setupSucceeded: Bool? { dataStore.setupSucceeded }
+
+    // MARK: - Settings Helpers
+
+    private func updateEntry(key: DuckAiNativeStorageReservedEntryKeys, work: (Any?) -> Any?) throws {
+        try updateEntry(key: key.rawValue, work: work)
+    }
+
+    private func updateEntry(key: String, work: (_ oldValue: Any?) -> Any?) throws {
+        try settingsLock.withLock {
+            var settings = try loadSettingsBlob()
+            settings[key] = work(settings[key])
+            try saveSettingsBlob(settings)
+        }
     }
 
     // MARK: - Private helpers

@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Bookmarks
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
-import FeatureFlags
+import FeatureFlags_macOS
 import Foundation
 import Freemium
 import Persistence
@@ -44,7 +46,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
-        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        triedAIChatDuringOnboarding: Bool = false,
+        isAIChatBoostActive: Bool? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -59,7 +65,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
             themeManager: themeManager,
-            dbpDataManagerProvider: dbpDataManagerProvider
+            dbpDataManagerProvider: dbpDataManagerProvider,
+            isReturningUser: isReturningUser,
+            aiChatPreferencesStorage: aiChatPreferencesStorage,
+            triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+            isAIChatBoostActive: isAIChatBoostActive
         )
     }
 
@@ -76,7 +86,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         subscriptionManager: any SubscriptionManager,
         featureFlagger: FeatureFlagger,
         themeManager: ThemeManaging,
-        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil
+        dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
+        isReturningUser: @escaping () -> Bool?,
+        aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+        triedAIChatDuringOnboarding: Bool = false, // macOS onboarding has no Duck.ai step yet
+        isAIChatBoostActive: Bool? = nil  // `nil` by default until macOS provides it, so rules using it fail.
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -91,6 +105,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
         self.dbpDataManagerProvider = dbpDataManagerProvider
+        self.isReturningUser = isReturningUser
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
+        self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
+        self.isAIChatBoostActive = isAIChatBoostActive
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -106,6 +124,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     let dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)?
+    let isReturningUser: () -> Bool?
+    let aiChatPreferencesStorage: AIChatPreferencesStorage
+    let triedAIChatDuringOnboarding: Bool
+    let isAIChatBoostActive: Bool?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -131,6 +153,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         var isSubscriptionExpiring = false
         var isSubscriptionExpired = false
         var subscriptionPurchasePlatform: String?
+        var subscriptionTier: String?
         var subscriptionFreeTrialActive = false
         let surveyActionMapper: RemoteMessagingSurveyActionMapping
 
@@ -138,36 +161,48 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let featureDiscovery = self.featureDiscovery()
 
         do {
-            let subscription = try await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-            subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            subscriptionPurchasePlatform = subscription.platform.rawValue
-            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
+            if let subscription = try await subscriptionManager.getSubscription() {
+                subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+                subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+                subscriptionPurchasePlatform = subscription.platform.rawValue
+                subscriptionTier = subscription.tier?.rawValue
+                subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
-            switch subscription.status {
-            case .autoRenewable, .gracePeriod:
-                isSubscriptionActive = true
-            case .notAutoRenewable:
-                isSubscriptionActive = true
-                isSubscriptionExpiring = true
-            case .expired, .inactive:
-                isSubscriptionExpired = true
-            case .unknown:
-                break // Not supported in RMF
+                switch subscription.status {
+                case .autoRenewable, .gracePeriod:
+                    isSubscriptionActive = true
+                case .notAutoRenewable:
+                    isSubscriptionActive = true
+                    isSubscriptionExpiring = true
+                case .expired, .inactive:
+                    isSubscriptionExpired = true
+                case .unknown:
+                    break // Not supported in RMF
+                }
+
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: subscription,
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
+                )
+            } else {
+                surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
+                    statisticsStore: statisticsStore,
+                    vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
+                    subscriptionDataProvider: nil,
+                    autofillUsageStore: autofillUsageStore,
+                    featureDiscovery: featureDiscovery
+                )
             }
-
-            surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
-                statisticsStore: statisticsStore,
-                vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
-                subscriptionDataProvider: subscription,
-                autofillUsageStore: autofillUsageStore
-            )
         } catch {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(
                 statisticsStore: statisticsStore,
                 vpnActivationDateStore: DefaultWaitlistActivationDateStore(source: .netP),
                 subscriptionDataProvider: nil,
-                autofillUsageStore: autofillUsageStore
+                autofillUsageStore: autofillUsageStore,
+                featureDiscovery: featureDiscovery
             )
         }
 
@@ -200,11 +235,17 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
         }.map(\.rawValue)
 
+        let hardwareCanUpgradeOS = SupportedOSChecker(featureFlagger: featureFlagger).osUpgradeCapability.canUpgradeOS
+        let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
+
+        let isAIChatEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager(),
                                                      isInternalUser: internalUserDecider.isInternalUser,
-                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild),
+                                                     isInstalledMacAppStore: AppVersion.isAppStoreBuild,
+                                                     canUpgradeOS: canUpgradeOS),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
                                                        featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager(),
@@ -217,6 +258,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
                                                        subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
                                                        subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       subscriptionTier: subscriptionTier,
                                                        isSubscriptionActive: isSubscriptionActive,
                                                        isSubscriptionExpiring: isSubscriptionExpiring,
                                                        isSubscriptionExpired: isSubscriptionExpired,
@@ -230,7 +272,11 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
                                                        isCurrentPIRUser: isCurrentPIRUser,
                                                        dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
-                                                       enabledFeatureFlags: enabledFeatureFlags),
+                                                       enabledFeatureFlags: enabledFeatureFlags,
+                                                       isReturningUser: isReturningUser(),
+                                                       isAIChatEnabled: isAIChatEnabled,
+                                                       triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
+                                                       isAIChatBoostActive: isAIChatBoostActive),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
@@ -249,6 +295,10 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionBilling: String? {
         return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionTier: String? {
+        return tier?.rawValue
     }
 
     public var subscriptionStartDate: Date? {

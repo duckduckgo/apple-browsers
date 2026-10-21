@@ -48,13 +48,14 @@ final class MockCustomURLProvider: CustomConfigurationURLProviding {
 final class MockConfigurationURLProvider: ConfigurationURLProviding {
 
     var url: URL = URL(string: "duckduckgo.com")!
+    var urlsByConfiguration = [Configuration: URL]()
     var capturedConfiguration: Configuration?
     var capturedConfigurations: [Configuration] = []
 
     func url(for configuration: Configuration) -> URL {
         capturedConfiguration = configuration
         capturedConfigurations.append(configuration)
-        return url
+        return urlsByConfiguration[configuration] ?? url
     }
 }
 #endif

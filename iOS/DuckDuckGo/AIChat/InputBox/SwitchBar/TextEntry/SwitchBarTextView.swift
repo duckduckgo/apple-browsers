@@ -26,6 +26,29 @@ import DesignResourcesKitIcons
 final class SwitchBarTextView: UITextView {
 
     var onTouchesBeganHandler: (() -> Void)?
+    var isInputFrozen = false
+
+    /// When set, a native image/file paste is routed into the attachment strip; `nil` keeps default paste.
+    weak var attachmentPasteHandler: AttachmentPasteHandling?
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        if isInputFrozen && action == #selector(paste(_:)) { return false }
+        if action == #selector(paste(_:)), AttachmentPasteRouting.canPaste(with: attachmentPasteHandler) {
+            return true
+        }
+        return super.canPerformAction(action, withSender: sender)
+    }
+
+    override func paste(_ sender: Any?) {
+        guard !isInputFrozen else { return }
+        guard AttachmentPasteRouting.routePaste(with: attachmentPasteHandler) else {
+            super.paste(sender)
+            return
+        }
+        if let text = UIPasteboard.general.string, !text.isEmpty {
+            insertText(text)
+        }
+    }
 
     /// You'd think a gesture would be useful here, but it stops the menu from appearing, even if you tell it not to cancel touches, or if you tell it to delay touch begin/end.
     ///   So this is a little work around that does the job.
@@ -34,4 +57,24 @@ final class SwitchBarTextView: UITextView {
         onTouchesBeganHandler?()
     }
 
+    override var canBecomeFirstResponder: Bool {
+        !hasHiddenAncestor && super.canBecomeFirstResponder
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        guard !hasHiddenAncestor else { return false }
+        return super.becomeFirstResponder()
+    }
+
+}
+
+extension UIView {
+    var hasHiddenAncestor: Bool {
+        var view: UIView? = self
+        while let current = view {
+            if current.isHidden { return true }
+            view = current.superview
+        }
+        return false
+    }
 }

@@ -74,7 +74,6 @@ public struct SectionView: View {
                 HStack(alignment: .center, spacing: 8) {
                     Image(iconName, bundle: .module)
                         .padding(4)
-                        .background(Color(.badgeBackground))
                         .cornerRadius(4)
 
                     VStack (alignment: .leading) {

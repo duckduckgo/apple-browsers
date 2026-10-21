@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import DataBrokerProtection_macOS
 import Foundation
 import Freemium

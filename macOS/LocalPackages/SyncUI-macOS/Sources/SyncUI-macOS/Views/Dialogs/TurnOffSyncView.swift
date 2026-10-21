@@ -27,18 +27,18 @@ struct TurnOffSyncView: View {
         SyncDialog {
             VStack(spacing: 20.0) {
                 Image(.syncRemoveDeviceDesktop)
-                SyncUIViews.TextHeader(text: UserText.turnOffSyncConfirmTitle)
-                SyncUIViews.TextDetailMultiline(text: UserText.turnOffSyncConfirmMessage)
+                SyncUIViews.DialogTitle(text: UserText.turnOffSyncConfirmTitle)
+                SyncUIViews.DialogMessage(text: UserText.turnOffSyncConfirmMessage)
             }
         } buttons: {
             Button(UserText.cancel) {
                 model.cancelPressed()
             }
-            .buttonStyle(DismissActionButtonStyle())
+            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
             Button(UserText.turnOff) {
                 model.delegate?.turnOffSync()
             }
-            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+            .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
         }
     }
 

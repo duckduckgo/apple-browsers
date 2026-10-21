@@ -16,15 +16,20 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import AutoconsentStats
 import BrowserServicesKit
 import Combine
+import CombineExtensions
 import Common
-import FeatureFlags
+import ConcurrencyExtensions
+import EventHub
+import FeatureFlags_macOS
 import Foundation
+import FoundationExtensions
 import History
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import Onboarding
 import os.log
 import PageRefreshMonitor
@@ -33,6 +38,7 @@ import PrivacyConfig
 import SERPSettings
 import SpecialErrorPages
 import UserScript
+import WebExtensions
 import WebKit
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
@@ -69,6 +75,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         var autoplayPreferences: AutoplayPreferences
         var permissionManager: PermissionManagerProtocol
         var webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+        let eventHub: EventHubManaging
+        let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+        let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -86,6 +95,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
+
+    /// Per-tab Duck.ai omnibar state (prompt text, selection, mode, tool, attachments).
+    /// Owned by Tab so it survives TabViewModel recreation when the tab moves to a new window.
+    let addressBarSharedTextState = AddressBarSharedTextState()
 
     private let webViewConfiguration: WKWebViewConfiguration
 
@@ -106,6 +119,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     private(set) var userContentController: UserContentController?
     private(set) var specialPagesUserScript: SpecialPagesUserScript?
+    private(set) var onboardingActionsManager: OnboardingActionsManager?
 
     @MainActor
     convenience init(id: String? = nil,
@@ -153,7 +167,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable? = nil,
                      aiChatSessionStore: AIChatSessionStoring? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
-                     themeManager: ThemeManaging? = nil
+                     themeManager: ThemeManaging? = nil,
+                     eventHub: EventHubManaging? = nil,
+                     webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager },
+                     webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = {
+                         guard #available(macOS 15.4, *) else { return nil }
+                         return NSApp.delegateTyped.webExtensionLifecycleCoordinator?.initialLoadWaiter
+                     }
     ) {
 
         let duckPlayer = duckPlayer
@@ -170,7 +190,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 cacheType: .inMemory,
                 bookmarkManager: NSApp.delegateTyped.bookmarkManager,
                 fireproofDomains: fireproofDomains,
-                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager)
+                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+                featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger)
         }
 
         self.init(id: id,
@@ -219,7 +240,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatMenuConfiguration: aiChatMenuConfiguration ?? NSApp.delegateTyped.aiChatMenuConfiguration,
                   aiChatSessionStore: aiChatSessionStore ?? NSApp.delegateTyped.aiChatSessionStore,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
-                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager
+                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager,
+                  eventHub: eventHub ?? NSApp.delegateTyped.eventHubIntegration.eventHub,
+                  webExtensionManagerProvider: webExtensionManagerProvider,
+                  webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider
         )
     }
 
@@ -270,7 +294,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable,
          aiChatSessionStore: AIChatSessionStoring,
          tabCrashAggregator: TabCrashAggregator,
-         themeManager: ThemeManaging
+         themeManager: ThemeManaging,
+         eventHub: EventHubManaging,
+         webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -296,10 +323,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.themeManager = themeManager
 
         self.specialPagesUserScript = SpecialPagesUserScript()
-        specialPagesUserScript?
-            .withAllSubfeatures()
+        self.onboardingActionsManager = specialPagesUserScript?.withAllSubfeatures()
         let configuration = webViewConfiguration ?? WKWebViewConfiguration()
-        configuration.applyStandardConfiguration(contentBlocking: privacyFeatures.contentBlocking,
+        configuration.applyStandardConfiguration(featureFlagger: featureFlagger,
+                                                 contentBlocking: privacyFeatures.contentBlocking,
                                                  burnerMode: burnerMode,
                                                  earlyAccessHandlers: specialPagesUserScript.map { [$0] } ?? [])
         self.webViewConfiguration = configuration
@@ -355,7 +382,10 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                           tabsPreferences: tabsPreferences,
                                                           autoplayPreferences: autoplayPreferences,
                                                           permissionManager: permissionManager,
-                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences)
+                                                          webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                                          eventHub: eventHub,
+                                                          webExtensionManagerProvider: webExtensionManagerProvider,
+                                                          webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider)
         let tabExtensionsBuilderArguments: TabExtensionsBuilderArguments = (tabIdentifier: instrumentation.currentTabIdentifier,
                                                                             tabID: self.uuid,
                                                                             isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
@@ -365,6 +395,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                                                                             contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                                                                             setContent: { tabGetter()?.setContent($0) },
                                                                             closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
+                                                                            reportBrokenSite: { sourceWindow in
+                                                                                Application.appDelegate.openReportBrokenSite(entryPoint: .webKitTerminationErrorPage, in: sourceWindow)
+                                                                            },
                                                                             titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
                                                                             errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                                                                             userScriptsPublisher: userScriptsPublisher,
@@ -426,11 +459,14 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
             }
 
-        videoPlaybackCancellable = extensions.autoplayPolicy?.videoPlaybackDetectedPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] isVideoPlaying in
-                self?.refreshDisplaysAutoplayPolicy(isVideoPlaying: isVideoPlaying)
-            }
+        if let autoplayPolicy = extensions.autoplayPolicy {
+            autoplayCancellable = Publishers.CombineLatest(autoplayPolicy.videoPlaybackDetectedPublisher, autoplayPolicy.videoAutoplayDetectedPublisher)
+                .removeDuplicates { $0 == $1 }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] videoPlaybackDetected, videoAutoplayDetected in
+                    self?.refreshAutoplayState(videoPlaybackDetected: videoPlaybackDetected, videoAutoplayDetected: videoAutoplayDetected)
+                }
+        }
     }
 
 #if DEBUG
@@ -500,7 +536,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
 #if DEBUG
     /// set this to true when Navigation-related decision making is expected to take significant time to avoid assertions
-    /// used by BSK: Navigation.DistributedNavigationDelegate
+    /// used by BSK: DDGNavigation.DistributedNavigationDelegate
     var shouldDisableLongDecisionMakingChecks: Bool = false
     func disableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = true }
     func enableLongDecisionMakingChecks() { shouldDisableLongDecisionMakingChecks = false }
@@ -558,10 +594,17 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let webViewDidReceiveRedirectPublisher = PassthroughSubject<Void, Never>()
     let webViewDidFailNavigationPublisher = PassthroughSubject<Void, Never>()
     let webViewRenderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
+    /// Fires on same-document (SPA) navigations, which `webViewDidFinishNavigationPublisher` filters out.
+    let webViewDidPerformSameDocumentNavigationPublisher = PassthroughSubject<Void, Never>()
 
     // MARK: - Properties
 
     let webView: WebView
+
+    /// The web view showing the tab's `webkit-extension:` page. The page needs its extension's
+    /// configuration, so it can't load in `webView`. WebKit finds the page's tab through this web
+    /// view, which extensions read as `sender.tab`.
+    var webExtensionPageWebView: WebView?
 
     var audioState: WebView.AudioState {
         webView.audioState
@@ -569,6 +612,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     @Published private(set) var audioStateTest: WebView.AudioState = .unmuted(isPlayingAudio: false)
     @Published private(set) var mustDisplayAutoplayPolicy: Bool = false
+    @Published private(set) var detectedVideoAutoplay: Bool = false
 
     // MARK: - Tab Suspension
 
@@ -578,6 +622,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     var contentChangeEnabled = true
 
+    /// Called before an actual tab close, never for moves or internal replacement.
+    var onClose: (@MainActor () -> Void)?
+
     var isLazyLoadingInProgress = false
 
     let burnerMode: BurnerMode
@@ -586,6 +633,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         didSet {
             if !content.displaysContentInWebView && oldValue.displaysContentInWebView {
                 webView.stopAllMedia(shouldStopLoading: false)
+            }
+            if content != oldValue {
+                webExtensionPageWebView = nil
             }
             Task { @MainActor in
                 extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
@@ -626,6 +676,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             }
             return newContent
         }()
+
+        // The same chat differs only by the source of the navigation that opened it; reopening it must not reload.
+        if case .aiChat(let newURL, source: _) = newContent, case .aiChat(let oldURL, source: _) = self.content, newURL == oldURL {
+            return nil
+        }
 
         // reload if content differs or user-entered
         guard newContent != self.content || newContent.isUserEnteredUrl else { return nil }
@@ -690,7 +745,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.title = webView.title?.trimmingWhitespace()
 
         if let wkBackForwardListItem = webView.backForwardList.currentItem,
-           content.urlForWebView == wkBackForwardListItem.url,
+           let itemURL = wkBackForwardListItem.safeURL,
+           content.urlForWebView == itemURL,
            !webView.isLoading,
            title?.isEmpty == false {
             wkBackForwardListItem.tabTitle = title
@@ -772,11 +828,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         guard webView.url != nil else { return nil }
 
-        if #available(macOS 12.0, *) {
-            self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
-        } else {
-            self.interactionState = webView.sessionStateData().map { .webViewProvided($0) } ?? .none
-        }
+        self.interactionState = (webView.interactionState as? Data).map { .webViewProvided($0) } ?? .none
 
         return self.interactionState.data
     }
@@ -939,7 +991,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         guard let backForwardNavigation else {
-            Logger.navigation.error("item `\(item.title ?? "") – \(item.url?.absoluteString ?? "")` is not in the backForwardList")
+            Logger.navigation.error("item `\(item.title ?? "") – \(item.url?.shortDescription ?? "")` is not in the backForwardList")
             return nil
         }
 
@@ -974,8 +1026,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             setContent(.onboarding)
             return
         }
-        if #available(macOS 12.0, *) {
-            Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+
+        let onboarding = NonBlockingOnboarding(featureFlagger: Application.appDelegate.featureFlagger)
+        let updater = Application.appDelegate.onboardingContextualDialogsManager
+        if onboarding.isNonBlocking {
+            onboarding.initializeContextualOnboarding(updater)
+        } else {
+            updater.state = .notStarted
         }
         setContent(.onboarding)
     }
@@ -994,14 +1051,25 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         // In the case of an error only reload web URLs to prevent uxss attacks via redirecting to javascript://
         if let error = error,
            let failingUrl = error.failingUrl ?? content.urlForWebView,
-           failingUrl.isHttp || failingUrl.isHttps,
-           // navigate in-place to preserve back-forward history
-           // launch navigation using javascript: URL navigation to prevent WebView from
-            // interpreting the action as user-initiated link navigation causing a new tab opening when Cmd is pressed
-            let redirectUrl = URL(string: "javascript:location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')") {
+           // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
+           failingUrl.isHttp || failingUrl.isHttps || (featureFlagger.isFeatureOn(.debugURLScheme) && failingUrl.isDebugURLScheme) {
 
+            // Use location.replace to retry the failed URL in-place without adding a back/forward
+            // entry. Invoke without user gesture so the resulting navigation arrives at the policy
+            // chain as user-initiated=false .other — PopupHandlingTabExtension would otherwise
+            // classify a user-initiated .other as a link activation and (for pinned, cross-origin
+            // navigations) cancel it.
+            let script = "location.replace('\(failingUrl.absoluteString.escapedJavaScriptString())')"
             self.content = .url(failingUrl, credential: nil, source: .reload)
-            webView.load(URLRequest(url: redirectUrl))
+            if featureFlagger.isFeatureOn(.newErrorPageReload),
+               webView.evaluateJavaScriptWithoutUserGesture(script) {
+                return nil
+            }
+            // Kill-switch fallback: legacy `javascript:` URL trampoline. Reintroduces the
+            // transient address-bar flash but preserves all the navigation semantics.
+            if let redirectUrl = URL(string: "javascript:\(script)") {
+                webView.load(URLRequest(url: redirectUrl))
+            }
             return nil
         }
 
@@ -1056,8 +1124,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 .loadFileURL(url, allowingReadAccessTo: readAccessScopeURL, withExpectedNavigationType: source.navigationType)
         }
 
-        var request = URLRequest(url: url, cachePolicy: source.cachePolicy)
-        if #available(macOS 12.0, *), content.isUserEnteredUrl {
+        var request = URLRequest(url: url, cachePolicy: content.cachePolicy)
+        if content.isUserEnteredUrl {
             request.attribution = .user
         }
 
@@ -1068,7 +1136,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @MainActor
     private func shouldReload(_ url: URL, source: ReloadIfNeededSource) -> Bool {
         /// Use unified logic if enabled to decide if URL is valid
-        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else { return false }
+        guard url.isValid(usingUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor))
+                // treat debug:// URLs as valid hypertext URLs for reloading (used in UI tests to simulate connection errors)
+                || (featureFlagger.isFeatureOn(.debugURLScheme) && url.isDebugURLScheme) else { return false }
 
         switch source {
         // should load when Web View is displayed?
@@ -1081,6 +1151,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             switch error {
             case .some(URLError.notConnectedToInternet),
                  .some(URLError.networkConnectionLost):
+                guard !webView.isLoading else { return false }
                 // reload when showing error due to connection failure
                 return true
             default:
@@ -1090,12 +1161,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         // should load on Web View instantiation?
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
+#if DEBUG
+            // Prevent background auto-loading when running unit tests, as this can stress out the CI runner.
+            guard AppVersion.runType.requiresEnvironment else { return false }
+#endif
             switch content {
             case .newtab, .bookmarks, .settings:
-#if DEBUG
-                // prevent auto loading when running Unit Tests
-                guard AppVersion.runType.requiresEnvironment else { return false }
-#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground
@@ -1139,10 +1210,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
 
     private func restoreInteractionState(with interactionStateData: Data) {
-        guard #available(macOS 12.0, *) else {
-            webView.restoreSessionState(from: interactionStateData)
-            return
-        }
         webView.interactionState = interactionStateData
     }
 
@@ -1172,7 +1239,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private var emailDidSignOutCancellable: AnyCancellable?
     private var faviconCancellable: AnyCancellable?
     private var tabCrashRecoveryCancellable: AnyCancellable?
-    private var videoPlaybackCancellable: AnyCancellable?
+    private var autoplayCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1285,16 +1352,14 @@ extension Tab {
 
 private extension Tab {
 
-    func refreshDisplaysAutoplayPolicy(isVideoPlaying: Bool) {
-        let isFeatureEnabled = featureFlagger.isFeatureOn(.autoplayPolicy)
-        let isHttpOrHttps = content.urlForWebView?.isHttpOrHttps == true
-        let displaysAutoplayPolicy = isFeatureEnabled && isHttpOrHttps && isVideoPlaying
+    func refreshAutoplayState(videoPlaybackDetected: Bool, videoAutoplayDetected: Bool) {
+        let isEligible = content.urlForWebView?.isHttpOrHttps == true
 
-        guard displaysAutoplayPolicy != mustDisplayAutoplayPolicy else {
-            return
-        }
-
-        mustDisplayAutoplayPolicy = displaysAutoplayPolicy
+        // Please do note that both conditions (`PlaybackDetected` + `AutoplayDetected`) may not necessarily be both true simultaneously
+        // Our Autoplay Policy may prevent Playback, but we might detect Videos with Autoplay.
+        //
+        mustDisplayAutoplayPolicy = isEligible && (videoPlaybackDetected || videoAutoplayDetected)
+        detectedVideoAutoplay = isEligible && videoAutoplayDetected
     }
 }
 
@@ -1307,7 +1372,6 @@ extension Tab: UserContentControllerDelegate {
         Logger.contentBlocking.info("didInstallContentRuleLists")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
-        userScripts.debugScript.instrumentation = instrumentation
         userScripts.pageObserverScript.delegate = self
         userScripts.serpSettingsUserScript?.delegate = self
         userScripts.serpSettingsUserScript?.webView = self.webView
@@ -1468,6 +1532,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func didStart(_ navigation: Navigation) {
+        if navigation.url.isHttpOrHttps, navigation.navigationAction.navigationType != .alternateHtmlLoad {
+            Application.appDelegate.windowControllersManager.recordBrowsingBeforeOnboardingCompletion()
+        }
         delegate?.tabDidStartNavigation(self)
         permissions.tabDidStartNavigation()
         userInteractionDialog = nil
@@ -1497,6 +1564,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         guard navigation.isCurrent else { return }
 
         invalidateInteractionStateData()
+        webViewDidPerformSameDocumentNavigationPublisher.send()
     }
 
     @MainActor
@@ -1509,7 +1577,12 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         invalidateInteractionStateData()
 
         guard !error.isNavigationCancelled, /* user stopped loading */
-              !error.isFrameLoadInterrupted /* navigation cancelled by a Navigation Responder */ else { return }
+              !error.isFrameLoadInterrupted /* navigation cancelled by a Navigation Responder or Content Blocker */ else {
+            // Update tab content to the current URL to avoid race conditions with
+            // WebView.url publisher that may cause `reloadIfNeeded` to reload the same URL again.
+            handleUrlDidChange()
+            return
+        }
 
         // don‘t show an error page if the error was already handled
         // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`.
@@ -1606,7 +1679,7 @@ extension Tab {
     /// no web content process is spawned. The old Tab (and its WKWebView) is released
     /// when replaceTab assigns the new one, letting the OS reclaim the process memory.
     func makeSuspendedTab() -> UnloadedTab {
-        let unloadedTab = UnloadedTab(from: self.makeRestorationData())
+        let unloadedTab = UnloadedTab(from: self.makeRestorationData(), isFromSessionRestore: false)
         unloadedTab.isSuspended = true
 
         if let snapshotsExtension = self.tabSnapshots {

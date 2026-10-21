@@ -18,12 +18,13 @@
 
 import Cocoa
 import Common
+import FoundationExtensions
 
 final class NetworkProtectionButton: MouseOverButton, NotificationDotProviding {
 
     var notificationLayer: CALayer?
 
-    var notificationColor: NSColor = .updateIndicator {
+    var notificationColor: NSColor = NSColor(designSystemColor: .accentPrimary) {
         didSet {
             updateNotificationLayer()
         }

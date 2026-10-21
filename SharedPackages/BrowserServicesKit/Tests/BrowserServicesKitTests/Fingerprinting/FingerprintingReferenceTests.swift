@@ -38,9 +38,9 @@ final class FingerprintingReferenceTests: XCTestCase {
     private var mockWebsite: MockWebsite!
 
     private enum Resource {
-        static let script = "Resources/privacy-reference-tests/fingerprinting-protections/init.js"
-        static let config = "Resources/privacy-reference-tests/fingerprinting-protections/config_reference.json"
-        static let tests = "Resources/privacy-reference-tests/fingerprinting-protections/tests.json"
+        static let script = "Res/privacy-reference-tests/fingerprinting-protections/init.js"
+        static let config = "Res/privacy-reference-tests/fingerprinting-protections/config_reference.json"
+        static let tests = "Res/privacy-reference-tests/fingerprinting-protections/tests.json"
     }
 
     private lazy var testData: TestData = {

@@ -7,11 +7,19 @@ appId: com.duckduckgo.mobile.ios
 - runFlow:
     file: ./open_debug_menu.yaml
 
+# Center the row and let the list settle before tapping: a tap while the list is still
+# scrolling stops the scroll instead of opening the Sync debug screen.
 - scrollUntilVisible:
     element: Sync
     direction: DOWN
     centerElement: true
+    waitToSettleTimeoutMs: 500
+- waitForAnimationToEnd
 - tapOn: Sync
+- extendedWaitUntil:
+    visible: Sync now
+    timeout: 10000
+- scroll
 - scrollUntilVisible:
     element: Production
     direction: DOWN

@@ -22,33 +22,81 @@ import Combine
 import os.log
 import SystemExtensions
 
-public enum SystemExtensionRequestError: Error {
+protocol SystemExtensionRequestManaging: AnyObject {
+    func submitRequest(_ request: OSSystemExtensionRequest)
+}
+
+extension OSSystemExtensionManager: SystemExtensionRequestManaging {}
+
+public enum SystemExtensionRequestError: Error, Equatable {
     case unknownRequestResult
     case willActivateAfterReboot
+    case requestTimedOut
+}
+
+public enum SystemExtensionActivationState: Equatable {
+    case enabled
+    case awaitingUserApproval
+    case disabled
+    case uninstalling
+    case notInstalled
+    case unknown
+}
+
+public struct SystemExtensionPropertiesSnapshot: Equatable {
+    let isEnabled: Bool
+    let isAwaitingUserApproval: Bool
+    let isUninstalling: Bool
+
+    public init(isEnabled: Bool, isAwaitingUserApproval: Bool, isUninstalling: Bool) {
+        self.isEnabled = isEnabled
+        self.isAwaitingUserApproval = isAwaitingUserApproval
+        self.isUninstalling = isUninstalling
+    }
 }
 
 public struct SystemExtensionManager {
 
-    private static var systemSettingsSecurityURL: String {
+    private static let defaultRequestTimeout: TimeInterval = 120
+    private static let networkExtensionSettingsExtensionPointIdentifier = "com.apple.system_extension.network_extension.extension-point"
+
+    static func systemSettingsURLString(forExtensionWithIdentifier extensionBundleID: String) -> String {
         if #available(macOS 15, *) {
-            return "x-apple.systempreferences:com.apple.LoginItems-Settings.extension?ExtensionItems"
+            let extensionPointIdentifier = percentEncodedQueryValue(networkExtensionSettingsExtensionPointIdentifier)
+            let extensionIdentifier = percentEncodedQueryValue(extensionBundleID)
+            return "x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=\(extensionPointIdentifier)&extensionIdentifier=\(extensionIdentifier)"
         } else {
             return "x-apple.systempreferences:com.apple.preference.security?Security"
         }
     }
 
     private let extensionBundleID: String
-    private let manager: OSSystemExtensionManager
+    private let manager: any SystemExtensionRequestManaging
     private let workspace: NSWorkspace
+    private let requestTimeout: TimeInterval
 
     public init(
         extensionBundleID: String,
         manager: OSSystemExtensionManager = .shared,
         workspace: NSWorkspace = .shared) {
 
+        self.init(
+            extensionBundleID: extensionBundleID,
+            manager: manager as any SystemExtensionRequestManaging,
+            workspace: workspace,
+            requestTimeout: Self.defaultRequestTimeout)
+    }
+
+    init(
+        extensionBundleID: String,
+        manager: any SystemExtensionRequestManaging,
+        workspace: NSWorkspace = .shared,
+        requestTimeout: TimeInterval = Self.defaultRequestTimeout) {
+
         self.extensionBundleID = extensionBundleID
         self.manager = manager
         self.workspace = workspace
+        self.requestTimeout = requestTimeout
     }
 
     /// - Returns: The system extension version when it's updated, otherwise `nil`.
@@ -60,7 +108,8 @@ public struct SystemExtensionManager {
         let activationRequest = SystemExtensionRequest.activationRequest(
             forExtensionWithIdentifier: extensionBundleID,
             manager: manager,
-            waitingForUserApproval: waitingForUserApproval)
+            waitingForUserApproval: waitingForUserApproval,
+            requestTimeout: requestTimeout)
 
         try await activationRequest.submit()
 
@@ -100,8 +149,65 @@ public struct SystemExtensionManager {
     public func deactivate() async throws {
         try await SystemExtensionRequest.deactivationRequest(
             forExtensionWithIdentifier: extensionBundleID,
-            manager: manager)
+            manager: manager,
+            requestTimeout: requestTimeout)
         .submit()
+    }
+
+    public func openSystemExtensionSettings() {
+        openSystemSettingsSecurity()
+    }
+
+    public func activationState() async -> SystemExtensionActivationState {
+        do {
+            let properties = try await SystemExtensionPropertiesRequest.properties(
+                forExtensionWithIdentifier: extensionBundleID,
+                manager: manager,
+                requestTimeout: requestTimeout
+            )
+            let snapshots = properties.map {
+                SystemExtensionPropertiesSnapshot(
+                    isEnabled: $0.isEnabled,
+                    isAwaitingUserApproval: $0.isAwaitingUserApproval,
+                    isUninstalling: $0.isUninstalling
+                )
+            }
+            return Self.activationState(from: snapshots)
+        } catch is CancellationError {
+            return .unknown
+        } catch {
+            Logger.systemExtensionManager.error("""
+            Failed to query system extension state
+              bundleID:    \(extensionBundleID, privacy: .public)
+              description: \(error.localizedDescription, privacy: .public)
+            """)
+            return .unknown
+        }
+    }
+
+    static func activationState(from properties: [SystemExtensionPropertiesSnapshot]) -> SystemExtensionActivationState {
+        guard !properties.isEmpty else {
+            return .notInstalled
+        }
+
+        if properties.contains(where: \.isEnabled) {
+            return .enabled
+        }
+
+        if properties.contains(where: \.isUninstalling) {
+            return .uninstalling
+        }
+
+        if properties.contains(where: \.isAwaitingUserApproval) {
+            return .awaitingUserApproval
+        }
+
+        return .disabled
+    }
+
+    @available(macOS 15.1, *)
+    public func makeActivationStateObserver(onStateChange: @escaping () -> Void) -> SystemExtensionActivationStateObserver {
+        SystemExtensionActivationStateObserver(extensionBundleID: extensionBundleID, onStateChange: onStateChange)
     }
 
     // MARK: - Activation: Checking if there are pending requests
@@ -131,47 +237,312 @@ public struct SystemExtensionManager {
     }
 
     private func openSystemSettingsSecurity() {
-        let url = URL(string: Self.systemSettingsSecurityURL)!
+        let url = URL(string: Self.systemSettingsURLString(forExtensionWithIdentifier: extensionBundleID))!
         workspace.open(url)
+    }
+
+    private static func percentEncodedQueryValue(_ value: String) -> String {
+        var allowedCharacters = CharacterSet.urlQueryAllowed
+        allowedCharacters.remove(charactersIn: "&=?")
+        return value.addingPercentEncoding(withAllowedCharacters: allowedCharacters) ?? value
+    }
+}
+
+private final class SystemExtensionPropertiesRequest: NSObject {
+
+    private let request: OSSystemExtensionRequest
+    private let manager: any SystemExtensionRequestManaging
+    private let requestTimeout: TimeInterval
+    private let lock = NSLock()
+    private var continuation: CheckedContinuation<[OSSystemExtensionProperties], Error>?
+    private var timeoutTask: Task<Void, Never>?
+    private var cancellationWasRequested = false
+
+    private init(request: OSSystemExtensionRequest,
+                 manager: any SystemExtensionRequestManaging,
+                 requestTimeout: TimeInterval) {
+        self.request = request
+        self.manager = manager
+        self.requestTimeout = requestTimeout
+        super.init()
+    }
+
+    static func properties(forExtensionWithIdentifier bundleId: String,
+                           manager: any SystemExtensionRequestManaging,
+                           requestTimeout: TimeInterval) async throws -> [OSSystemExtensionProperties] {
+        let query = SystemExtensionPropertiesRequest(
+            request: .propertiesRequest(forExtensionWithIdentifier: bundleId, queue: .global()),
+            manager: manager,
+            requestTimeout: requestTimeout
+        )
+        // OSSystemExtensionRequest.delegate is weak. Without an explicit lifetime extension,
+        // the compiler may release `query` during the await, niling the delegate before the
+        // callback fires and leaving the continuation suspended forever.
+        let result = try await query.submit()
+        return withExtendedLifetime(query) { result }
+    }
+
+    private func submit() async throws -> [OSSystemExtensionProperties] {
+        try Task.checkCancellation()
+
+        return try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                submit(with: continuation)
+            }
+        } onCancel: {
+            complete(with: .failure(CancellationError()))
+        }
+    }
+
+    private func submit(with continuation: CheckedContinuation<[OSSystemExtensionProperties], Error>) {
+        lock.lock()
+        assert(self.continuation == nil, "Request can only be submitted once")
+        guard !cancellationWasRequested else {
+            lock.unlock()
+            continuation.resume(throwing: CancellationError())
+            return
+        }
+
+        self.continuation = continuation
+        timeoutTask = makeTimeoutTask()
+        lock.unlock()
+
+        request.delegate = self
+
+        guard !Task.isCancelled else {
+            complete(with: .failure(CancellationError()))
+            return
+        }
+
+        manager.submitRequest(request)
+    }
+
+    private func makeTimeoutTask() -> Task<Void, Never> {
+        let requestTimeout = max(0, requestTimeout)
+
+        return Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(requestTimeout * Double(NSEC_PER_SEC)))
+            guard !Task.isCancelled else {
+                return
+            }
+
+            self?.complete(with: .failure(SystemExtensionRequestError.requestTimedOut))
+        }
+    }
+
+    private func complete(with result: Result<[OSSystemExtensionProperties], Error>) {
+        lock.lock()
+        let pendingContinuation = continuation
+        continuation = nil
+        let pendingTimeoutTask = timeoutTask
+        timeoutTask = nil
+        if case .failure(let error) = result, error is CancellationError {
+            cancellationWasRequested = true
+        }
+        lock.unlock()
+
+        pendingTimeoutTask?.cancel()
+        pendingContinuation?.resume(with: result)
+    }
+}
+
+extension SystemExtensionPropertiesRequest: OSSystemExtensionRequestDelegate {
+    func request(_ request: OSSystemExtensionRequest,
+                 actionForReplacingExtension existing: OSSystemExtensionProperties,
+                 withExtension ext: OSSystemExtensionProperties) -> OSSystemExtensionRequest.ReplacementAction {
+        .replace
+    }
+
+    func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
+        // Properties requests do not need user approval.
+    }
+
+    func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
+        complete(with: .success([]))
+    }
+
+    func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
+        complete(with: .failure(error))
+    }
+
+    func request(_ request: OSSystemExtensionRequest, foundProperties properties: [OSSystemExtensionProperties]) {
+        complete(with: .success(properties))
+    }
+}
+
+@available(macOS 15.1, *)
+public final class SystemExtensionActivationStateObserver: NSObject {
+
+    private let extensionBundleID: String
+    private let workspace: OSSystemExtensionsWorkspace
+    private let onStateChange: () -> Void
+    private var isObserving = false
+
+    init(extensionBundleID: String,
+         workspace: OSSystemExtensionsWorkspace = .shared,
+         onStateChange: @escaping () -> Void) {
+
+        self.extensionBundleID = extensionBundleID
+        self.workspace = workspace
+        self.onStateChange = onStateChange
+
+        super.init()
+    }
+
+    deinit {
+        stop()
+    }
+
+    public func start() throws {
+        guard !isObserving else {
+            return
+        }
+
+        try workspace.addObserver(self)
+        isObserving = true
+    }
+
+    public func stop() {
+        guard isObserving else {
+            return
+        }
+
+        workspace.removeObserver(self)
+        isObserving = false
+    }
+
+    private func handleStateChange(for systemExtensionInfo: OSSystemExtensionInfo) {
+        guard systemExtensionInfo.bundleIdentifier == extensionBundleID else {
+            return
+        }
+
+        onStateChange()
+    }
+}
+
+@available(macOS 15.1, *)
+extension SystemExtensionActivationStateObserver: OSSystemExtensionsWorkspaceObserver {
+    public func systemExtensionWillBecomeEnabled(_ systemExtensionInfo: OSSystemExtensionInfo) {
+        handleStateChange(for: systemExtensionInfo)
+    }
+
+    public func systemExtensionWillBecomeDisabled(_ systemExtensionInfo: OSSystemExtensionInfo) {
+        handleStateChange(for: systemExtensionInfo)
+    }
+
+    public func systemExtensionWillBecomeInactive(_ systemExtensionInfo: OSSystemExtensionInfo) {
+        handleStateChange(for: systemExtensionInfo)
     }
 }
 
 final class SystemExtensionRequest: NSObject {
 
     private let request: OSSystemExtensionRequest
-    private let manager: OSSystemExtensionManager
+    private let manager: any SystemExtensionRequestManaging
     private let waitingForUserApproval: (() -> Void)?
+    private let requestTimeout: TimeInterval
     private(set) var version: String?
 
+    private let lock = NSLock()
     private var continuation: CheckedContinuation<Void, Error>?
+    private var timeoutTask: Task<Void, Never>?
+    private var cancellationWasRequested = false
 
-    private init(request: OSSystemExtensionRequest, manager: OSSystemExtensionManager, waitingForUserApproval: (() -> Void)? = nil) {
+    private init(request: OSSystemExtensionRequest,
+                 manager: any SystemExtensionRequestManaging,
+                 waitingForUserApproval: (() -> Void)? = nil,
+                 requestTimeout: TimeInterval) {
         self.manager = manager
         self.request = request
         self.waitingForUserApproval = waitingForUserApproval
+        self.requestTimeout = requestTimeout
 
         super.init()
     }
 
-    static func activationRequest(forExtensionWithIdentifier bundleId: String, manager: OSSystemExtensionManager, waitingForUserApproval: (() -> Void)?) -> Self {
-        self.init(request: .activationRequest(forExtensionWithIdentifier: bundleId, queue: .global()), manager: manager, waitingForUserApproval: waitingForUserApproval)
+    static func activationRequest(forExtensionWithIdentifier bundleId: String,
+                                  manager: any SystemExtensionRequestManaging,
+                                  waitingForUserApproval: (() -> Void)?,
+                                  requestTimeout: TimeInterval) -> Self {
+        self.init(
+            request: .activationRequest(forExtensionWithIdentifier: bundleId, queue: .global()),
+            manager: manager,
+            waitingForUserApproval: waitingForUserApproval,
+            requestTimeout: requestTimeout)
     }
 
-    static func deactivationRequest(forExtensionWithIdentifier bundleId: String, manager: OSSystemExtensionManager) -> Self {
-        self.init(request: .deactivationRequest(forExtensionWithIdentifier: bundleId, queue: .global()), manager: manager)
+    static func deactivationRequest(forExtensionWithIdentifier bundleId: String,
+                                    manager: any SystemExtensionRequestManaging,
+                                    requestTimeout: TimeInterval) -> Self {
+        self.init(
+            request: .deactivationRequest(forExtensionWithIdentifier: bundleId, queue: .global()),
+            manager: manager,
+            requestTimeout: requestTimeout)
     }
 
     /// Submit the request
     ///
     func submit() async throws {
-        assert(continuation == nil, "Request can only be submitted once")
+        try Task.checkCancellation()
 
-        try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-
-            request.delegate = self
-            manager.submitRequest(request)
+        try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation { continuation in
+                submit(with: continuation)
+            }
+        } onCancel: {
+            complete(with: .failure(CancellationError()))
         }
+    }
+
+    private func submit(with continuation: CheckedContinuation<Void, Error>) {
+        lock.lock()
+        assert(self.continuation == nil, "Request can only be submitted once")
+        guard !cancellationWasRequested else {
+            lock.unlock()
+            continuation.resume(throwing: CancellationError())
+            return
+        }
+
+        self.continuation = continuation
+        timeoutTask = makeTimeoutTask()
+        lock.unlock()
+
+        request.delegate = self
+
+        guard !Task.isCancelled else {
+            complete(with: .failure(CancellationError()))
+            return
+        }
+
+        manager.submitRequest(request)
+    }
+
+    private func makeTimeoutTask() -> Task<Void, Never> {
+        let requestTimeout = max(0, requestTimeout)
+
+        return Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(requestTimeout * Double(NSEC_PER_SEC)))
+            guard !Task.isCancelled else {
+                return
+            }
+
+            self?.complete(with: .failure(SystemExtensionRequestError.requestTimedOut))
+        }
+    }
+
+    private func complete(with result: Result<Void, Error>) {
+        lock.lock()
+        let pendingContinuation = continuation
+        continuation = nil
+        let pendingTimeoutTask = timeoutTask
+        timeoutTask = nil
+        if case .failure(let error) = result, error is CancellationError {
+            cancellationWasRequested = true
+        }
+        lock.unlock()
+
+        pendingTimeoutTask?.cancel()
+        pendingContinuation?.resume(with: result)
     }
 
     private func updateVersion(to version: String) {
@@ -208,27 +579,23 @@ extension SystemExtensionRequest: OSSystemExtensionRequestDelegate {
         switch result {
         case .completed:
             updateVersionNumberIfMissing()
-            continuation?.resume()
-            continuation = nil
+            complete(with: .success(()))
         case .willCompleteAfterReboot:
             Logger.systemExtensionManager.notice("System extension request will complete after reboot: \(request.identifier, privacy: .public)")
-            continuation?.resume(throwing: SystemExtensionRequestError.willActivateAfterReboot)
-            continuation = nil
+            complete(with: .failure(SystemExtensionRequestError.willActivateAfterReboot))
             return
         @unknown default:
             // Not much we can do about this, so we just let the owning app decide
             // what to do about this.
             Logger.systemExtensionManager.error("System extension request returned unknown result \(result.rawValue, privacy: .public) for \(request.identifier, privacy: .public)")
-            continuation?.resume(throwing: SystemExtensionRequestError.unknownRequestResult)
-            continuation = nil
+            complete(with: .failure(SystemExtensionRequestError.unknownRequestResult))
             return
         }
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
         Self.logRequestFailure(error: error, request: request)
-        continuation?.resume(throwing: error)
-        continuation = nil
+        complete(with: .failure(error))
     }
 
     private static func logRequestFailure(error: Error, request: OSSystemExtensionRequest) {

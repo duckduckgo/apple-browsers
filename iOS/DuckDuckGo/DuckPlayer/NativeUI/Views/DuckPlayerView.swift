@@ -196,7 +196,7 @@ struct DuckPlayerView: View {
                     Spacer()
                     Toggle(isOn: $autoOpenOnYoutube) {}
                         .labelsHidden()
-                        .tint(.init(designSystemColor: .accent))
+                        .tint(.init(designSystemColor: .accentPrimary))
                         .onChange(of: autoOpenOnYoutube) { newValue in
                             viewModel.autoOpenOnYoutube = newValue
                         }
@@ -322,7 +322,7 @@ struct DuckPlayerView: View {
                 Spacer()
                 Toggle(isOn: $autoOpenOnYoutube) {}
                     .labelsHidden()
-                    .tint(.init(designSystemColor: .accent))
+                    .tint(.init(designSystemColor: .accentPrimary))
                     .onChange(of: autoOpenOnYoutube) { newValue in
                         viewModel.autoOpenOnYoutube = newValue
                     }

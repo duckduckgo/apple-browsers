@@ -37,6 +37,17 @@ public protocol DuckAiNativeDataStoring {
     func deleteFile(uuid: String) throws
     func deleteFiles(chatId: String) throws
     func deleteAllFiles() throws
+
+    // MARK: - Lifecycle
+
+    /// Non-blocking probe of any deferred initialization. `nil` means setup is still
+    /// in flight, `true` means it succeeded, `false` means it failed permanently.
+    /// Implementations without deferred init may return `true` from the default.
+    var setupSucceeded: Bool? { get }
+}
+
+public extension DuckAiNativeDataStoring {
+    var setupSucceeded: Bool? { true }
 }
 
 public struct DuckAiChatRecord: Equatable {

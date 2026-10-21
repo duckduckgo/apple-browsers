@@ -27,6 +27,8 @@ public protocol AIChatInputBoxHandling {
     var didSubmitQuery: PassthroughSubject<String, Never> { get }
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
     var didPressCustomizeResponsesButton: PassthroughSubject<Void, Never> { get }
+    /// Sends `true` when the native input gains focus and `false` when it loses it.
+    var didChangeInputFocus: PassthroughSubject<Bool, Never> { get }
 
     var persistedModelId: String? { get }
     var persistedReasoningEffort: AIChatReasoningEffort? { get }
@@ -36,8 +38,20 @@ public protocol AIChatInputBoxHandling {
     var aiChatStatus: AIChatStatusValue { get set }
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
 
+    /// Set by the FE's `disableChatInput` (cleared by `enableChatInput`) while the subscription
+    /// recovery card is active for the current chat.
+    var isSubmitBlockedByRecoveryCard: Bool { get set }
+
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { get }
     var attachmentUsage: AIChatAttachmentUsage? { get set }
+
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply
+    func cancelEdit()
+}
+
+public extension AIChatInputBoxHandling {
+    func editPrompt(_ request: EditPromptRequest) async -> EditPromptReply { .cancelled }
+    func cancelEdit() {}
 }
 
 public enum AIChatStatusValue: String, Codable {

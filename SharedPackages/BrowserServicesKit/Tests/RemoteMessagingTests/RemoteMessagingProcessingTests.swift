@@ -84,6 +84,7 @@ class RemoteMessagingProcessingTests: XCTestCase {
                     subscriptionDaysSinceSubscribed: -1,
                     subscriptionDaysUntilExpiry: -1,
                     subscriptionPurchasePlatform: nil,
+                    subscriptionTier: nil,
                     isSubscriptionActive: false,
                     isSubscriptionExpiring: false,
                     isSubscriptionExpired: false,
@@ -94,7 +95,11 @@ class RemoteMessagingProcessingTests: XCTestCase {
                     shownMessageIds: [],
                     enabledFeatureFlags: [],
                     isSyncEnabled: false,
-                    shouldShowWinBackOfferUrgencyMessage: false
+                    shouldShowWinBackOfferUrgencyMessage: false,
+                    isReturningUser: nil,
+                    isAIChatEnabled: false,
+                    triedAIChatDuringOnboarding: false,
+                    isAIChatBoostActive: nil
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

@@ -26,33 +26,86 @@ import Foundation
 /// that can be subscribed to by the PromoService.
 enum PromoTrigger {
     case appLaunched
+    case appBecameActive
     case windowBecameKey
     case newTabPageAppeared
+    case autoplayDiscoverability
+    case bookmarkAdded
+    case bookmarksImported
+    case missingBookmarkFaviconEncountered
+    case firstPasswordSaved
+    case updateAvailable
+    case browserUpdated
+    case vpnUpsellBecameEligible
+    case bookmarksPanelOpened
+    case bookmarksManagerOpened
+    case passwordsPanelOpened
+    case autofillSettingsOpened
+    /// Posted when a window's bookmarks bar goes from hidden, or not yet shown, to shown.
+    case bookmarksBarShown
+    /// Posted when the Add Bookmark popover or the Add/Edit Bookmark dialog opens.
+    case bookmarkPanelShown
+    case bookmarksBecameEmpty
+    case passwordsPanelEmptyStateShown
     case testTriggered
 
     /// Triggers for promotions, mapped to `PromoTrigger` values.
     static let triggerPublisher: AnyPublisher<PromoTrigger, Never> = {
-        let triggers = Publishers.Merge3(
-            NotificationCenter.default.publisher(for: .promoServiceAppLaunched)
-                .map { _ in PromoTrigger.appLaunched },
-            NotificationCenter.default.publisher(for: .newTabPageWebViewDidAppear)
-                .map { _ in PromoTrigger.newTabPageAppeared },
-            NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
-                .map { _ in PromoTrigger.windowBecameKey }
-        ).eraseToAnyPublisher()
+            var triggers: [AnyPublisher<PromoTrigger, Never>] = [
+                publisher(for: .promoServiceAppLaunched, trigger: .appLaunched),
+                publisher(for: .newTabPageWebViewDidAppear, trigger: .newTabPageAppeared),
+                publisher(for: NSWindow.didBecomeKeyNotification, trigger: .windowBecameKey),
+                publisher(for: .autoplayPolicyDisplayed, trigger: .autoplayDiscoverability),
+                publisher(for: .bookmarkAdded, trigger: .bookmarkAdded),
+                publisher(for: .bookmarksImported, trigger: .bookmarksImported),
+                publisher(for: .missingBookmarkFaviconEncountered, trigger: .missingBookmarkFaviconEncountered),
+                publisher(for: .firstPasswordSaved, trigger: .firstPasswordSaved),
+                publisher(for: NSApplication.didBecomeActiveNotification, trigger: .appBecameActive),
+                publisher(for: .updateAvailable, trigger: .updateAvailable),
+                publisher(for: .browserUpdated, trigger: .browserUpdated),
+                publisher(for: .vpnUpsellBecameEligible, trigger: .vpnUpsellBecameEligible),
+                publisher(for: .bookmarksPanelOpened, trigger: .bookmarksPanelOpened),
+                publisher(for: .bookmarksManagerOpened, trigger: .bookmarksManagerOpened),
+                publisher(for: .passwordsPanelOpened, trigger: .passwordsPanelOpened),
+                publisher(for: .autofillSettingsOpened, trigger: .autofillSettingsOpened),
+                publisher(for: .bookmarksBarShown, trigger: .bookmarksBarShown),
+                publisher(for: .bookmarkPanelShown, trigger: .bookmarkPanelShown),
+                publisher(for: .bookmarksBecameEmpty, trigger: .bookmarksBecameEmpty),
+                publisher(for: .passwordsPanelEmptyStateShown, trigger: .passwordsPanelEmptyStateShown)
+            ]
 
-        if PromoServiceFactory.includeTestPromos{
-            return Publishers.Merge(triggers,
-                                    NotificationCenter.default.publisher(for: .promoDebugTestTrigger)
-                .map { _ in PromoTrigger.testTriggered }
-            ).eraseToAnyPublisher()
-        } else {
-            return triggers
-        }
-    }()
+            if PromoServiceFactory.includeTestPromos {
+                triggers.append(publisher(for: .promoDebugTestTrigger, trigger: .testTriggered))
+            }
+
+            return Publishers.MergeMany(triggers).eraseToAnyPublisher()
+        }()
+
+    private static func publisher(for name: Notification.Name,
+                                  trigger: PromoTrigger) -> AnyPublisher<PromoTrigger, Never> {
+        NotificationCenter.default.publisher(for: name)
+            .map { _ in trigger }
+            .eraseToAnyPublisher()
+    }
 }
 
 extension Notification.Name {
     static let promoServiceAppLaunched = Notification.Name("com.duckduckgo.app.promoService.appLaunched")
     static let promoDebugTestTrigger = Notification.Name("com.duckduckgo.app.promoService.debugTestTrigger")
+    static let autoplayPolicyDisplayed = Notification.Name("com.duckduckgo.app.autoplayPolicyDisplayed")
+    static let bookmarkAdded = Notification.Name("com.duckduckgo.app.bookmarkAdded")
+    static let bookmarksImported = Notification.Name("com.duckduckgo.app.bookmarksImported")
+    static let missingBookmarkFaviconEncountered = Notification.Name("com.duckduckgo.app.missingBookmarkFaviconEncountered")
+    static let firstPasswordSaved = Notification.Name("com.duckduckgo.app.firstPasswordSaved")
+    static let updateAvailable = Notification.Name("com.duckduckgo.app.updateAvailable")
+    static let browserUpdated = Notification.Name("com.duckduckgo.app.browserUpdated")
+    static let vpnUpsellBecameEligible = Notification.Name("com.duckduckgo.app.vpnUpsellBecameEligible")
+    static let bookmarksPanelOpened = Notification.Name("com.duckduckgo.app.bookmarksPanelOpened")
+    static let bookmarksManagerOpened = Notification.Name("com.duckduckgo.app.bookmarksManagerOpened")
+    static let passwordsPanelOpened = Notification.Name("com.duckduckgo.app.passwordsPanelOpened")
+    static let autofillSettingsOpened = Notification.Name("com.duckduckgo.app.autofillSettingsOpened")
+    static let bookmarksBarShown = Notification.Name("com.duckduckgo.app.bookmarksBarShown")
+    static let bookmarkPanelShown = Notification.Name("com.duckduckgo.app.bookmarkPanelShown")
+    static let bookmarksBecameEmpty = Notification.Name("com.duckduckgo.app.bookmarksBecameEmpty")
+    static let passwordsPanelEmptyStateShown = Notification.Name("com.duckduckgo.app.passwordsPanelEmptyStateShown")
 }

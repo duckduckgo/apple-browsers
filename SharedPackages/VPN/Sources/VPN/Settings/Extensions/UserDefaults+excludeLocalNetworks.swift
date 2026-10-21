@@ -24,11 +24,7 @@ extension UserDefaults {
         "networkProtectionSettingExcludeLocalNetworks"
     }
 
-    #if os(macOS)
-    static let excludeLocalNetworksDefaultValue = false
-    #else
     static let excludeLocalNetworksDefaultValue = true
-    #endif
 
     @objc
     dynamic var networkProtectionSettingExcludeLocalNetworks: Bool {

@@ -48,10 +48,23 @@ static const void *AutoreleaseTrackersKey = &AutoreleaseTrackersKey;
 @implementation NSObject (AutoreleaseTracking)
 
 static IMP originalAutoreleaseIMP = NULL;
+static Class trackedWebViewClass;
+static Class trackedWindowClass;
+static Class trackedWindowControllerClass;
+static Class trackedViewControllerClass;
+static Class trackedTabBarItemCellViewClass;
 
 + (void)enableAutoreleaseTracking {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        // Resolve classes without sending +class, which can trigger UI class initialization on a background thread.
+        // Cache them before installing the hook to avoid a class-initialization/dyld lock inversion during +load.
+        trackedWebViewClass = objc_lookUpClass("WKWebView");
+        trackedWindowClass = objc_lookUpClass("NSWindow");
+        trackedWindowControllerClass = objc_lookUpClass("NSWindowController");
+        trackedViewControllerClass = objc_lookUpClass("NSViewController");
+        trackedTabBarItemCellViewClass = NSClassFromString(@"TabBarItemCellView");
+
         Method originalMethod = class_getInstanceMethod([NSObject class], @selector(autorelease));
         Method swizzledMethod = class_getInstanceMethod([NSObject class], @selector(swizzled_autorelease));
         
@@ -65,11 +78,11 @@ static IMP originalAutoreleaseIMP = NULL;
     id result = ((id (*)(id, SEL))originalAutoreleaseIMP)(self, @selector(autorelease));
     
     // Only track NSWindow and NSView objects to avoid excessive tracking
-    if (!([self isKindOfClass:[WKWebView class]]
-          || [self isKindOfClass:[NSWindow class]]
-          || [self isKindOfClass:[NSWindowController class]]
-          || [self isKindOfClass:[NSViewController class]]
-          || [self isKindOfClass:NSClassFromString(@"TabBarItemCellView")])) {
+    if (!([self isKindOfClass:trackedWebViewClass]
+          || [self isKindOfClass:trackedWindowClass]
+          || [self isKindOfClass:trackedWindowControllerClass]
+          || [self isKindOfClass:trackedViewControllerClass]
+          || [self isKindOfClass:trackedTabBarItemCellViewClass])) {
         return result;
     }
     

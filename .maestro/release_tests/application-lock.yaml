@@ -11,6 +11,9 @@ tags:
     file: ../shared/setup.yaml
 
 - tapOn: "Browsing Menu"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
 - tapOn: "Settings"
 - scrollUntilVisible:
     element: "General"
@@ -26,6 +29,7 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Unlock DuckDuckGo."
 - inputText: "password"
@@ -41,6 +45,9 @@ tags:
 - assertVisible: ".*Privacy Test Pages.*"
 
 - tapOn: "Browsing Menu"
+- extendedWaitUntil:
+    visible: "Settings"
+    timeout: 10000
 - tapOn: "Settings"
 - scrollUntilVisible:
     element: "General"
@@ -57,5 +64,6 @@ tags:
 - launchApp:
     arguments:
         isRunningUITests: true
+        isInternalUser: ${INTERNAL_USER_MODE}
 
 - assertVisible: "Privacy Test Pages"

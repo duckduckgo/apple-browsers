@@ -16,19 +16,23 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Combine
 import Common
-import PersistenceTestingUtils
-import PixelKitTestingUtilities
+import ConcurrencyExtensions
+import FeatureFlags_macOS
+import FoundationExtensions
+@_spi(Testing) import Networking
+@_spi(Testing) import Persistence
+@_spi(Testing) import PixelKit
+import PreferencesUI_macOS
 import PrivacyConfig
 import PrivacyConfigTestsUtils
-import SubscriptionUI
+@_spi(Testing) import SharedTestUtilities
 import SubscriptionTestingUtilities
-import PreferencesUI_macOS
+import SubscriptionUI
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
-import NetworkingTestingUtils
 
 @MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
@@ -102,7 +106,16 @@ final class PreferencesSidebarModelTests: XCTestCase {
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
-            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, includingYouTubeAdBlocking: false, subscriptionState: PreferencesSidebarSubscriptionState()) },
+            loadSections: { _ in
+                loadSections ?? PreferencesSection.defaultSections(
+                    includingDuckPlayer: false,
+                    includingSync: false,
+                    includingAIChat: false,
+                    includingYouTubeAdBlocking: false,
+                    includingWebsitePermissions: false,
+                    subscriptionState: PreferencesSidebarSubscriptionState()
+                )
+            },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
@@ -117,8 +130,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -160,8 +172,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -192,6 +203,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 includingSync: false,
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: false,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -214,8 +226,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
             cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             aiChatPreferences: mockAIChatPreferences,
             aboutPreferences: AboutPreferences(internalUserDecider: mockFeatureFlagger.internalUserDecider, featureFlagger: mockFeatureFlagger, windowControllersManager: windowControllersManager, keyValueStore: InMemoryThrowingKeyValueStore()),
-            dockPreferences: DockPreferencesModel(featureFlagger: mockFeatureFlagger,
-                                                  dockCustomizer: DockCustomizerMock(),
+            dockPreferences: DockPreferencesModel(dockCustomizer: DockCustomizerMock(),
                                                   pixelFiring: nil),
             accessibilityPreferences: AccessibilityPreferences(),
             duckPlayerPreferences: {
@@ -298,6 +309,82 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertEqual(selectedPaneUpdates, [.appearance])
     }
 
+    func testWhenVPNPaneIsSelectedBeforeSectionsIncludeItThenItIsRememberedNotDropped() throws {
+        // Regression: opening `.vpn` from the VPN status view before entitlement state has loaded
+        // must still land on the VPN pane. Sections are built from subscription state, so before it
+        // loads they don't contain `.vpn` — previously `selectPane(.vpn)` no-opped because the pane
+        // wasn't visible yet and the request was silently dropped, leaving Settings on the default
+        // pane. Whether it worked depended on whether the async entitlement load won the race.
+        let sectionsWithoutVPN: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill])]
+        let model = PreferencesSidebarModel(loadSections: sectionsWithoutVPN)
+        XCTAssertNotEqual(model.selectedPane, .vpn)
+
+        model.selectPane(.vpn)
+
+        XCTAssertEqual(model.selectedPane, .vpn, "VPN request must be remembered even though the VPN pane isn't visible yet")
+
+        // A sections refresh occurring before entitlements load must not drop the pending pane.
+        model.adjustSelectedPaneIfNeeded()
+        XCTAssertEqual(model.selectedPane, .vpn, "VPN pane must survive a refresh until entitlement state loads")
+    }
+
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsWithEntitlementThenItStaysSelected() async throws {
+        // Completes the race: with the NetP entitlement, the VPN pane becomes visible once state
+        // loads, so a `.vpn` request made before the load must remain selected through the async
+        // refresh — the actual scenario when a subscriber taps the VPN status pill.
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertEqual(model.selectedPane, .vpn, "VPN pane must stay selected once entitlements load")
+    }
+
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsWithoutEntitlementThenItDoesNotStickOnVPN() async throws {
+        // Completes the race for the no-entitlement case: the VPN pane never becomes visible, so
+        // once state loads the pre-load `.vpn` request must be corrected away from the inaccessible
+        // pane rather than sticking on it.
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.resultFeatures = []
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertNotEqual(model.selectedPane, .vpn, "Without the entitlement, selection must not stay on the inaccessible VPN pane")
+    }
+
+    func testWhenVPNPaneIsSelectedBeforeStateLoadsAndResolvedStateEqualsDefaultThenItDoesNotStickOnVPN() async throws {
+        // Regression: a signed-out user on an App Store build with no products available resolves to
+        // a subscription state that equals the default `currentSubscriptionState`. The equality guard
+        // in the refresh handler used to return before setting `hasLoadedInitialSubscriptionState`,
+        // so `adjustSelectedPaneIfNeeded()` stayed suppressed forever and a pre-load `.vpn` request
+        // parked on the inaccessible pane was never corrected. The first settled load must correct it.
+        mockSubscriptionManager.resultTokenContainer = nil
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+        mockSubscriptionManager.hasAppStoreProductsAvailable = false
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.selectPane(.vpn)
+        XCTAssertEqual(model.selectedPane, .vpn)
+
+        model.onAppear() // triggers the async subscription-state load
+        try await Task.sleep(interval: 0.1)
+
+        XCTAssertFalse(model.currentSubscriptionState.isNetworkProtectionRemovalEnabled)
+        XCTAssertNotEqual(model.selectedPane, .vpn, "A pane parked on the gated VPN pane must be corrected on the first settled load even when the resolved state equals the default")
+    }
+
     // MARK: Tests for `currentSubscriptionState`
 
     func testCurrentSubscriptionStateWhenNoSubscriptionPresent() async throws {
@@ -315,6 +402,34 @@ final class PreferencesSidebarModelTests: XCTestCase {
         // Then
         XCTAssertFalse(model.currentSubscriptionState.hasSubscription)
         XCTAssertFalse(model.currentSubscriptionState.hasAnyEntitlement)
+    }
+
+    func testExpiredSubscriptionCacheDoesNotSkipRemoteFetch() async throws {
+        // Regression: the outer gate in refreshSubscriptionStateAndSectionsIfNeeded must use
+        // isUserAuthenticated, not isSubscriptionPresent(). isSubscriptionPresent() is backed by
+        // a TTL cache — when the cache expires, isPresent returns false even for active
+        // subscribers. The old code treated an expired cache as "no subscription" and returned
+        // immediately without ever calling currentSubscriptionFeatures / hitting the backend.
+        // The fix: gate on isUserAuthenticated (token-based, TTL-independent) so an expired cache
+        // triggers a remote fetch rather than an immediate signed-out state.
+
+        // Given: authenticated user whose subscription cache has expired (isSubscriptionPresent = false)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+        // resultSubscription = nil → isSubscriptionPresent() returns false (simulates expired TTL)
+        mockSubscriptionManager.resultSubscription = nil
+        XCTAssertFalse(mockSubscriptionManager.isSubscriptionPresent())
+        mockSubscriptionManager.resultFeatures = [.networkProtection]
+
+        // When
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then: currentSubscriptionFeatures must have been called — the backend fetch was attempted.
+        // (With the old isSubscriptionPresent gate it would have been skipped entirely.)
+        XCTAssertEqual(mockSubscriptionManager.currentSubscriptionFeaturesCallCount, 1,
+                       "Backend fetch must be attempted even when the subscription cache is expired")
     }
 
     func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
@@ -403,7 +518,111 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isSidebarItemEnabled(for: .paidAIChat))
     }
 
+    func testCurrentSubscriptionStateIsUnchangedOnTransientFeaturesError() async throws {
+        // Regression test: a transient currentSubscriptionFeatures error must not flip feature
+        // flags to false. The sidebar would otherwise show "Subscription Settings visible,
+        // sub-items hidden" until the next successful refresh.
+
+        // Given — model starts with a fully-featured subscription state
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        mockSubscriptionManager.resultFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+
+        let model = createPreferencesSidebarModelWithDefaults()
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Capture the known-good state
+        let stateBeforeError = model.currentSubscriptionState
+        XCTAssertTrue(stateBeforeError.hasSubscription)
+        XCTAssertTrue(stateBeforeError.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(stateBeforeError.isIdentityTheftRestorationAvailable)
+
+        // When — next refresh hits a transient 500
+        mockSubscriptionManager.resultFeaturesError = URLError(.badServerResponse)
+        model.onAppear()
+        try await Task.sleep(interval: 0.1)
+
+        // Then — state must be unchanged
+        XCTAssertEqual(model.currentSubscriptionState, stateBeforeError,
+                       "Transient error must not overwrite subscription state")
+        XCTAssertTrue(model.currentSubscriptionState.isNetworkProtectionRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isPersonalInformationRemovalAvailable)
+        XCTAssertTrue(model.currentSubscriptionState.isIdentityTheftRestorationAvailable)
+    }
+
     // MARK: Tests for subscribed refresh notification triggers
+
+    func testWhenNavigatingBetweenPanesThenPermissionRequestsAreUpdatedAndCleared() {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = true
+        let model = makeWebsitePermissionsSidebarModel()
+        model.navigate(to: .websitePermission(.camera))
+        model.resetWebsitePermissionRequest()
+
+        model.navigate(to: .websitePermission(.autoplay))
+
+        XCTAssertEqual(model.selectedPane, .websitePermissions)
+        XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+        XCTAssertNil(model.scrollTarget)
+
+        model.resetWebsitePermissionRequest()
+        XCTAssertNil(model.websitePermissionTarget)
+        model.navigate(to: .websitePermission(.autoplay))
+        XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+
+        model.selectPane(.general)
+
+        XCTAssertEqual(model.selectedPane, .general)
+        XCTAssertNil(model.websitePermissionTarget)
+    }
+
+    func testWhenWebsitePermissionsFlagChangesThenAvailabilityAndNavigationUpdateWithoutReopeningSettings() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = false
+        let model = makeWebsitePermissionsSidebarModel()
+        XCTAssertFalse(model.sections.flatMap(\.panes).contains(.websitePermissions))
+        model.selectPane(.general)
+
+        model.navigate(to: .websitePermission(.autoplay))
+
+        XCTAssertEqual(model.selectedPane, .general)
+        XCTAssertNil(model.websitePermissionTarget)
+
+        for isEnabled in [true, false, true] {
+            let updated = expectation(description: "Website Permissions availability becomes \(isEnabled)")
+            let cancellable = model.$sections
+                .dropFirst()
+                .filter { $0.flatMap(\.panes).contains(.websitePermissions) == isEnabled }
+                .prefix(1)
+                .sink { _ in updated.fulfill() }
+
+            mockFeatureFlagger.featuresStub[FeatureFlag.websitePermissionsSettings.rawValue] = isEnabled
+            mockFeatureFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 1)
+            withExtendedLifetime(cancellable) {}
+
+            if isEnabled {
+                model.navigate(to: .websitePermission(.autoplay))
+                XCTAssertEqual(model.selectedPane, .websitePermissions)
+                XCTAssertEqual(model.websitePermissionTarget, .autoplay)
+            } else {
+                XCTAssertNotEqual(model.selectedPane, .websitePermissions)
+            }
+        }
+    }
+
+    private func makeWebsitePermissionsSidebarModel() -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        let featureFlagger: MockFeatureFlagger = mockFeatureFlagger
+        return PreferencesSidebarModel(loadSections: { state in
+            PreferencesSection.defaultSections(
+                includingDuckPlayer: false,
+                includingSync: false,
+                includingAIChat: false,
+                includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
+                subscriptionState: state
+            )
+        })
+    }
 
     func testModelReloadsSectionsWhenRefreshSectionsCalled() async throws {
         // Given

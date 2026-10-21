@@ -17,6 +17,7 @@
 //
 
 import Combine
+import DesignResourcesKitIcons
 import Foundation
 import QuickLookUI
 
@@ -30,7 +31,7 @@ final class QRSharingService: NSSharingService {
     fileprivate var imageUrl: URL?
 
     fileprivate init() {
-        super.init(title: UserText.shareViaQRCodeMenuItem, image: .qrIcon, alternateImage: nil) {}
+        super.init(title: UserText.shareViaQRCodeMenuItem, image: DesignSystemImages.Glyphs.Size12.qr, alternateImage: nil) {}
     }
 
     /// Get ASCII `Data` for an array of items to share that can be represented as strings (e.g., URLs or Strings).

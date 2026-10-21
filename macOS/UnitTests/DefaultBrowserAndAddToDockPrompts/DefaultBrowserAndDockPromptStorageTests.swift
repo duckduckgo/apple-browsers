@@ -17,8 +17,9 @@
 //
 
 import Common
+import FoundationExtensions
 import Foundation
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser

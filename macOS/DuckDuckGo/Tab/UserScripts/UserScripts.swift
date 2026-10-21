@@ -16,18 +16,23 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import AppUpdaterShared
 import BrowserServicesKit
 import os.log
 import Foundation
+import PrivacyConfig
 import HistoryView
 import Persistence
 import PixelKit
+import SERPInstallOrigin
 import SERPSettings
 import SpecialErrorPages
 import Subscription
 import UserScript
+import WebExtensions
 import WebKit
 
 @MainActor
@@ -35,14 +40,11 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
 
     let pageObserverScript = PageObserverUserScript()
     let contextMenuSubfeature = ContextMenuSubfeature()
+    let chromeWebStoreUserScript: Subfeature?
     let hoverUserScript = HoverUserScript()
-    let debugScript = DebugUserScript()
     let subscriptionPagesUserScript = SubscriptionPagesUserScript()
     let identityTheftRestorationPagesUserScript = IdentityTheftRestorationPagesUserScript()
-    let clickToLoadScript: ClickToLoadUserScript
 
-    let contentBlockerRulesScript: ContentBlockerRulesUserScript
-    let surrogatesScript: SurrogatesUserScript
     let contentScopeUserScript: ContentScopeUserScript
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autofillScript: WebsiteAutofillUserScript
@@ -56,12 +58,18 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
+    let internalFeedbackUserScript: InternalFeedbackUserScript
     let historyViewUserScript: HistoryViewUserScript
     let serpSettingsUserScript: SERPSettingsUserScript?
+    let serpUserScript: SERPInstallOriginUserScript
+    let trackerProtectionSubfeature = TrackerProtectionSubfeature()
     let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
+    /// `nil` when web extensions are unavailable or the user is not an internal user.
+    let webExtensionPageStubUserScript: UserScript?
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -69,20 +77,41 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     init(with sourceProvider: ScriptSourceProviding,
          contentScopePreferences: ContentScopePreferences,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = NSApp.delegateTyped.duckAiNativeStorageHandler,
+         buildType: ApplicationBuildType = StandardApplicationBuildType(),
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
-        clickToLoadScript = ClickToLoadUserScript()
-        contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
-        surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
+        if #available(macOS 15.4, *) {
+            chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
+                NSApp.delegateTyped.webExtensionManager?.chromeWebStore
+            }, buildType: buildType)
+        } else {
+            chromeWebStoreUserScript = nil
+        }
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
+        let homepageAiChatsProvider = HomepageAiChatsProvider(
+            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: sourceProvider.featureFlagger)
+        )
+        let aiChatMessageHandler = AIChatMessageHandler(
+            featureFlagger: sourceProvider.featureFlagger,
+            isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            homepageAiChatsProvider: homepageAiChatsProvider
+        )
         let aiChatHandler = AIChatUserScriptHandler(
             storage: DefaultAIChatPreferencesStorage(),
+            messageHandling: aiChatMessageHandler,
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
             statisticsLoader: StatisticsLoader.shared,
             syncServiceProvider: sourceProvider.syncServiceProvider,
             syncErrorHandler: sourceProvider.syncErrorHandler,
-            featureFlagger: sourceProvider.featureFlagger
+            featureFlagger: sourceProvider.featureFlagger,
+            homepageAiChatsProvider: homepageAiChatsProvider
         )
         let aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings> = if let aiChatDebugURLSettings { aiChatDebugURLSettings } else { UserDefaults.standard.keyedStoring() }
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
@@ -94,9 +123,20 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
+        let installOriginEnabled = StandardApplicationBuildType().isSparkleBuild
+        serpUserScript = SERPInstallOriginUserScript(
+            serpBaseURL: URL.duckDuckGo,
+            installOriginEnabled: installOriginEnabled,
+            installOriginVariantProvider: installOriginEnabled ? DefaultInstallOriginVariantProvider() : nil
+        )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        if sourceProvider.featureFlagger.isFeatureOn(.aiChatNativeStorage),
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: NSApp.delegateTyped.internalFeedbackDeviceInfoProvider,
+            attachmentsProvider: NSApp.delegateTyped.internalFeedbackAttachmentsProvider
+        )
+
+        if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
                 .exactOrSubdomain(hostname: "duck.ai"),
@@ -112,6 +152,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         } else {
             duckAiNativeStorageUserScript = nil
         }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
 
         let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
@@ -128,8 +169,19 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
                                            currentCohorts: currentCohorts,
                                            themeVariant: themeVariant)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
-            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            // Native-only — Duck.ai gates on `supportsBrowserTools` and never reads this key.
+            // Windows found injecting it broke the aiChat message bridge, which is shared code.
+            let nativeOnlyFeatures = [PrivacyFeature.aiChatBrowserTools.rawValue]
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: [PrivacyFeature.autoconsent.rawValue] + nativeOnlyFeatures)
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(
+                featureFlagger: sourceProvider.featureFlagger,
+                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures + nativeOnlyFeatures)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData), allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat", TrackerProtectionSubfeature.featureNameValue], privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, scriptContext: .contentScopeIsolated, privacyConfigurationJSONGenerator: isolatedConfigGenerator)
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -186,8 +238,22 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             releaseNotesUserScript = nil
         }
 
+        // A tab opened from an extension's web view configuration (the pop-out of a popup, for
+        // instance) gets the standard user content controller, which replaces the extension
+        // controller's, so its extension pages get the API stubs from here.
+        if #available(macOS 15.4, *), WebExtensionManager.areExtensionsEnabled {
+            webExtensionPageStubUserScript = WebExtensionPageStubUserScript.make(
+                isInternalUser: sourceProvider.featureFlagger.internalUserDecider.isInternalUser)
+        } else {
+            webExtensionPageStubUserScript = nil
+        }
+
         if sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable != true {
             userScripts.append(autoconsentUserScript)
+        }
+
+        if let webExtensionPageStubUserScript {
+            userScripts.append(webExtensionPageStubUserScript)
         }
 
         contentScopeUserScriptIsolated.registerSubfeature(delegate: webTelemetryScript)
@@ -196,7 +262,9 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
-        contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
+        if let chromeWebStoreUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
+        }
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
@@ -206,9 +274,13 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         }
 
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
+
         if let subscriptionUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
 
         if let youtubeOverlayScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: youtubeOverlayScript)
@@ -217,6 +289,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if let serpSettingsUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         }
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpUserScript)
 
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
@@ -270,12 +344,19 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionManager)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
+
+        let homepageSeedPersistor = HomepageSearchModeSeedUserDefaultsPersistor()
+        if sourceProvider.featureFlagger.isFeatureOn(.aiChatOnboardingToggleAffectsNtpAndDdg),
+           let pendingShowSearchModeToggle = homepageSeedPersistor.pendingShowSearchModeToggle {
+            userScripts.append(HomepageSearchModeToggleSeedUserScript(showSearchModeToggle: pendingShowSearchModeToggle, onApplied: { applied in
+                if homepageSeedPersistor.pendingShowSearchModeToggle == applied {
+                    homepageSeedPersistor.pendingShowSearchModeToggle = nil
+                }
+            }))
+        }
     }
 
     lazy var userScripts: [UserScript] = [
-        debugScript,
-        surrogatesScript,
-        contentBlockerRulesScript,
         contentScopeUserScript,
         contentScopeUserScriptIsolated,
         autofillScript
@@ -298,4 +379,76 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         }
     }
 
+}
+
+/// Document-start, page-content-world script that mirrors the onboarding search-mode choice onto the
+/// duckduckgo.com homepage by writing `homepageSettings.showSearchModeToggle` in its localStorage,
+/// then reports the applied value so the one-shot marker is cleared and later web changes are kept.
+final class HomepageSearchModeToggleSeedUserScript: NSObject, UserScript {
+    private static let messageName = "homepageSearchModeSeedApplied"
+
+    var messageNames: [String] { [Self.messageName] }
+    let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
+    let forMainFrameOnly: Bool = true
+    let requiresRunInPageContentWorld: Bool = true
+
+    private let showSearchModeToggle: Bool
+    private let onApplied: (Bool?) -> Void
+
+    var source: String {
+        """
+        const host = (window.location && window.location.hostname) || "";
+        if (host !== "duckduckgo.com" && !host.endsWith(".duckduckgo.com")) { return; }
+        const desired = \(showSearchModeToggle);
+        try {
+            const appliedKey = "__ddgSearchModeSeedApplied";
+            if (window.localStorage.getItem(appliedKey) !== String(desired)) {
+                let settings = {};
+                try { settings = JSON.parse(window.localStorage.getItem("homepageSettings") || "{}") || {}; } catch (e) {}
+                settings.showSearchModeToggle = desired;
+                window.localStorage.setItem("homepageSettings", JSON.stringify(settings));
+                window.localStorage.setItem(appliedKey, String(desired));
+            }
+        } catch (e) {}
+        try { window.webkit.messageHandlers.\(Self.messageName).postMessage({ showSearchModeToggle: desired }); } catch (e) {}
+        """
+    }
+
+    init(showSearchModeToggle: Bool, onApplied: @escaping (Bool?) -> Void) {
+        self.showSearchModeToggle = showSearchModeToggle
+        self.onApplied = onApplied
+        super.init()
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        let value = (message.body as? [String: Any])?["showSearchModeToggle"]
+        onApplied((value as? Bool) ?? (value as? NSNumber)?.boolValue)
+    }
+}
+
+protocol HomepageSearchModeSeedPersistor {
+    var pendingShowSearchModeToggle: Bool? { get nonmutating set }
+}
+
+struct HomepageSearchModeSeedUserDefaultsPersistor: HomepageSearchModeSeedPersistor {
+    enum Key: String {
+        case pendingShowSearchModeToggle = "aichat.homepage-search-mode-seed.pending"
+    }
+
+    private let keyValueStore: KeyValueStoring
+
+    init(keyValueStore: KeyValueStoring = UserDefaults.standard) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var pendingShowSearchModeToggle: Bool? {
+        get { try? keyValueStore.object(forKey: Key.pendingShowSearchModeToggle.rawValue) as? Bool }
+        nonmutating set {
+            if let newValue {
+                try? keyValueStore.set(newValue, forKey: Key.pendingShowSearchModeToggle.rawValue)
+            } else {
+                try? keyValueStore.removeObject(forKey: Key.pendingShowSearchModeToggle.rawValue)
+            }
+        }
+    }
 }

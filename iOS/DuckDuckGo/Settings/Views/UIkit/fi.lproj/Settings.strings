@@ -1,0 +1,42 @@
+/* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
+"2pp-PM-6rW.title" = "Näppäimistö";
+
+/* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
+"13n-KI-KLq.text" = "Sovelluksen käynnistys";
+
+/* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
+"bIg-0T-UWq.text" = "Kysy, tehdäänkö sivustoista palonkestäviä sisäänkirjautumisen yhteydessä";
+
+/* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
+"cW7-OM-2oW.text" = "Global Privacy Control (GPC)";
+
+/* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
+"dud-qo-Ces.text" = "Label";
+
+/* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
+"fV3-86-QQj.title" = "Global Privacy Control (GPC)";
+
+/* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
+"OfP-Kw-IOk.text" = "Ei vielä palonkestäviä sivustoja";
+
+/* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
+"tGh-di-rfq.headerTitle" = "Näytä näppäimistö kun";
+
+/* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
+"tWw-Lh-ZT1.title" = "Global Privacy Control (GPC)";
+
+/* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
+"UZx-52-aer.text" = "Poista kaikki palonkestävät sivustot";
+
+/* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
+"xUX-nF-HOl.title" = "Tee sivustoista palonkestäviä";
+
+/* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
+"Zpg-h0-rYv.text" = "Uusi välilehti";
+
+/* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
+"zWP-d3-nVc.title" = "Koti-valikko";
+
+/* Class = "UINavigationItem"; title = "Add Widget to Home Screen"; ObjectID = "zZa-pF-SHk"; */
+"zZa-pF-SHk.title" = "Lisää widget aloitusnäyttöön";
+

@@ -39,7 +39,7 @@ final class VisitViewModel {
     }
 
     var titleTruncated: String {
-        title.truncated(length: MainMenu.Constants.maxTitleLength)
+        title.truncated(to: MainMenu.Constants.maxTitleLength, position: .tail)
     }
 
     @MainActor
@@ -50,7 +50,7 @@ final class VisitViewModel {
         }
 
         if historyEntry.url.isDuckPlayer {
-            return .duckPlayer
+            return NSImage(resource: .duckPlayer)
         }
 
         return faviconManager.getCachedFavicon(for: historyEntry.url, sizeCategory: .small)?.image

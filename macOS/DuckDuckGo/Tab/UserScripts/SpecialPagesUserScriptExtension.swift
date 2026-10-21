@@ -23,10 +23,12 @@ import SpecialErrorPages
 
 extension SpecialPagesUserScript {
     @MainActor
-    func withOnboarding() {
+    @discardableResult
+    func withOnboarding() -> OnboardingActionsManager {
         let onboardingManager = buildOnboardingActionsManager()
         let onboardingScript = OnboardingUserScript(onboardingActionsManager: onboardingManager)
         self.registerSubfeature(delegate: onboardingScript)
+        return onboardingManager
     }
 
     func withDuckPlayerIfAvailable() {
@@ -47,14 +49,16 @@ extension SpecialPagesUserScript {
     }
 
     @MainActor
-    func withAllSubfeatures() {
-        withOnboarding()
+    @discardableResult
+    func withAllSubfeatures() -> OnboardingActionsManager {
+        let manager = withOnboarding()
         withErrorPages()
         withDuckPlayerIfAvailable()
+        return manager
     }
 
     @MainActor
-    private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager() -> OnboardingActionsManager {
         return OnboardingActionsManager(
             navigationDelegate: Application.appDelegate.windowControllersManager,
             dockCustomization: Application.appDelegate.dockCustomization,
@@ -65,7 +69,8 @@ extension SpecialPagesUserScript {
             pinningManager: NSApp.delegateTyped.pinningManager,
             featureFlagger: NSApp.delegateTyped.featureFlagger,
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: NSApp.delegateTyped.keyValueStore),
-            installDateProvider: { AppDelegate.firstLaunchDate }
+            installDateProvider: { AppDelegate.firstLaunchDate },
+            contextualOnboardingStateUpdater: Application.appDelegate.onboardingContextualDialogsManager
         )
     }
 }

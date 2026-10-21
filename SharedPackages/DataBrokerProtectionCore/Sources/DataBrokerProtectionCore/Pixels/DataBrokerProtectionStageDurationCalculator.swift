@@ -33,6 +33,7 @@ public enum Stage: String {
     case emailConfirm = "email-confirm"
     case emailConfirmHalted = "email-confirm-halted"
     case emailConfirmDecoupled = "email-confirm-decoupled"
+    case emailGetData = "email-get-data"
     case validate
     case other
     case fillForm = "fill-form"
@@ -48,6 +49,7 @@ public protocol StageDurationCalculator {
 
     func durationSinceLastStage() -> Double
     func durationSinceStartTime() -> Double
+    func awakeDurationSinceStartTime() -> Double
     func fireOptOutStart()
     func fireOptOutEmailGenerate()
     func fireOptOutCaptchaParse()
@@ -57,6 +59,7 @@ public protocol StageDurationCalculator {
     func fireOptOutFillForm()
     func fireOptOutEmailReceive()
     func fireOptOutEmailConfirm()
+    func fireOptOutEmailGetData()
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int, error: Error)
@@ -88,6 +91,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let dataBrokerURL: String
     let dataBrokerVersion: String
     let startTime: Date
+    let startUptimeNanos: UInt64
     let parentURL: String?
     let isAuthenticated: Bool
     let isFreeScan: Bool?
@@ -102,6 +106,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
+         startUptimeNanos: UInt64 = DispatchTime.now().uptimeNanoseconds,
          dataBrokerURL: String,
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
@@ -113,6 +118,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          vpnBypassStatus: String) {
         self.attemptId = attemptId
         self.startTime = startTime
+        self.startUptimeNanos = startUptimeNanos
         self.lastStateTime = startTime
         self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
@@ -138,6 +144,16 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func durationSinceStartTime() -> Double {
         let now = Date()
         return (now.timeIntervalSince(startTime) * 1000).rounded(.towardZero)
+    }
+
+    /// Returned in milliseconds
+    func awakeDurationSinceStartTime() -> Double {
+        let nowUptimeNanos = DispatchTime.now().uptimeNanoseconds
+        guard nowUptimeNanos >= startUptimeNanos else {
+            return 0
+        }
+
+        return (Double(nowUptimeNanos - startUptimeNanos) / 1_000_000).rounded(.towardZero)
     }
 
     func fireOptOutStart() {
@@ -225,6 +241,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                          actionId: actionID ?? ""))
     }
 
+    func fireOptOutEmailGetData() {
+        let duration = (durationSinceLastStage() / 10.0).rounded() * 10.0
+        handler.fire(.optOutEmailGetData(dataBroker: dataBrokerURL,
+                                         attemptId: attemptId,
+                                         duration: duration,
+                                         dataBrokerVersion: dataBrokerVersion,
+                                         tries: tries,
+                                         parent: parentURL ?? "",
+                                         actionId: actionID ?? ""))
+    }
+
     func fireOptOutValidate() {
         setStage(.validate)
         let duration = durationSinceLastStage()
@@ -253,6 +280,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,
                                           duration: totalDuration,
+                                          awakeDuration: awakeDurationSinceStartTime(),
                                           tries: tries,
                                           parent: parentURL ?? "",
                                           emailPattern: emailPattern,
@@ -267,6 +295,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
+                                    awakeDuration: awakeDurationSinceStartTime(),
                                     parent: parentURL ?? "",
                                     errorCategory: errorCategory.toString,
                                     errorDetails: error.localizedDescription,
@@ -311,6 +340,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.scanSuccess(dataBroker: dataBrokerURL,
                                   matchesFound: matchesFound,
                                   duration: durationSinceStartTime(),
+                                  awakeDuration: awakeDurationSinceStartTime(),
                                   tries: 1,
                                   isImmediateOperation: isImmediateOperation,
                                   vpnConnectionState: vpnConnectionState,
@@ -324,6 +354,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         handler.fire(.scanNoResults(dataBroker: dataBrokerURL,
                                     dataBrokerVersion: dataBrokerVersion,
                                     duration: durationSinceStartTime(),
+                                    awakeDuration: awakeDurationSinceStartTime(),
                                     tries: 1,
                                     isImmediateOperation: isImmediateOperation,
                                     vpnConnectionState: vpnConnectionState,
@@ -347,6 +378,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                 dataBroker: dataBrokerURL,
                 dataBrokerVersion: dataBrokerVersion,
                 duration: durationSinceStartTime(),
+                awakeDuration: awakeDurationSinceStartTime(),
                 category: errorCategory.toString,
                 details: error.localizedDescription,
                 isImmediateOperation: isImmediateOperation,

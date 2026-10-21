@@ -24,7 +24,7 @@ import Foundation
 let package = Package(
     name: "CommonObjCExtensions",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.

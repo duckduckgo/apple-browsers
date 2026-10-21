@@ -24,8 +24,8 @@ final class NextStepsListUITests: UITestCase {
     private var webView: XCUIElement!
 
     override func setUpWithError() throws {
-        continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["nextStepsListWidget": true])
+        try super.setUpWithError()
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         resetNextSteps()
         webView = app.webViews.firstMatch
@@ -40,11 +40,11 @@ final class NextStepsListUITests: UITestCase {
     func testNextStepsListWidgetAppearsOnNewTabPage() throws {
         app.openNewTab()
 
-        // Confirm Next Steps widget is visible (same section label is used for legacy and list widget)
+        // Confirm Next Steps widget is visible
         XCTAssertTrue(nextStepsSection.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Next Steps content should be visible on New Tab Page")
 
-        // Confirm card for Next Steps List widget is visible, using its "No Thanks" button
+        // Confirm Next Steps card is visible, using its "No Thanks" button
         XCTAssertTrue(nextStepsCardDismissButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Dismiss button should be visible in the Next Steps content")
     }
@@ -52,15 +52,18 @@ final class NextStepsListUITests: UITestCase {
     func testNextStepsCardDisappearsAfterDismissal() throws {
         app.openNewTab()
 
-        // Confirm first Next Steps card is visible, using its CTA button
-        XCTAssertTrue(nextStepsFirstCardCTAButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "First card in Next Steps List should be visible on New Tab Page")
+        XCTAssertTrue(nextStepsCardDismissButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "A Next Steps card should be visible on the New Tab Page")
 
-        nextStepsCardDismissButton.tap()
+        let buttonsBeforeDismissal = visibleWebViewButtonTitles()
+        nextStepsCardDismissButton.click()
 
-        // Confirm first Next Steps card is dismissed
-        XCTAssertTrue(nextStepsFirstCardCTAButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
-                      "First card in Next Steps List should be dismissed after tapping dismiss button")
+        let dismissedCardCycledAway = webView.wait(for: NSPredicate { _, _ in
+            !buttonsBeforeDismissal.subtracting(self.visibleWebViewButtonTitles()).isEmpty
+        })
+
+        XCTAssertTrue(dismissedCardCycledAway,
+                      "The dismissed card should no longer be visible after tapping dismiss")
     }
 
     func testNextStepsListWidgetDisappearsAfterMaxDemonstrationDays() throws {
@@ -90,15 +93,18 @@ private extension NextStepsListUITests {
     }
 
     var nextStepsSection: XCUIElement {
-        webView.staticTexts["Next Steps"]
-    }
-
-    var nextStepsFirstCardCTAButton: XCUIElement {
-        webView.buttons["Try Duck Player"]
+        webView.staticTexts.containing(\.value, containing: "NEXT STEPS").firstMatch
     }
 
     var nextStepsCardDismissButton: XCUIElement {
         webView.buttons["No Thanks"]
+    }
+
+    func visibleWebViewButtonTitles() -> Set<String> {
+        Set(webView.buttons.allElementsBoundByIndex.compactMap { button in
+            let title = button.title.isEmpty ? button.label : button.title
+            return title.isEmpty ? nil : title
+        })
     }
 
     func resetNextSteps() {

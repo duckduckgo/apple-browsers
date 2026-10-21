@@ -19,9 +19,8 @@
 import AIChat
 import BrowserServicesKit
 import Combine
-import PixelKit
-import PixelKitTestingUtilities
-import FeatureFlags
+@_spi(Testing) import PixelKit
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
 import XCTest
@@ -679,6 +678,162 @@ final class AIChatCoordinatorTests: XCTestCase {
         }
     }
 
+    // MARK: - Entry Point Pixel
+
+    /// Replaces the shared coordinator, so only this one handles the handoff notification.
+    private func useCoordinator(with sourceHandler: AIChatConversationSourceHandler) {
+        coordinator = AIChatCoordinator(
+            sidebarHost: mockSidebarHost,
+            sessionStore: mockSessionStore,
+            aiChatMenuConfig: mockAIChatMenuConfig,
+            aiChatTabOpener: mockAIChatTabOpener,
+            windowControllersManager: mockWindowControllersManager,
+            pixelFiring: mockPixelFiring,
+            featureFlagger: mockFeatureFlagger,
+            aiChatConversationSourceHandler: sourceHandler
+        )
+    }
+
+    private var firedEntryPoints: [[String: String]?] {
+        mockPixelFiring.actualFireCalls
+            .filter { $0.pixel.name == "aichat_entry_point_macos" }
+            .map { $0.pixel.parameters }
+    }
+
+    func testEntryPoint_showingTheSidebarReportsSidebar() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        mockSidebarHost.currentTabID = "test-tab"
+        sourceHandler.setData(.tabBarSidebar)
+
+        coordinator.toggleSidebar()
+
+        XCTAssertEqual(firedEntryPoints, [["source": "tab-bar-sidebar", "target": "sidebar"]])
+    }
+
+    func testEntryPoint_hidingTheSidebarReportsNothing() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+        _ = mockSessionStore.getOrCreateSession(for: tabID, burnerMode: .regular).makeChatViewController(tabID: tabID)
+        sourceHandler.setData(.tabBarSidebar)
+
+        coordinator.toggleSidebar()
+
+        XCTAssertEqual(firedEntryPoints, [])
+    }
+
+    func testEntryPoint_switchingTabsReportsNothing() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        mockSidebarHost.currentTabID = "other-tab"
+        sourceHandler.setData(.tabBarSidebar)
+
+        coordinator.sidebarHostDidSelectTab(with: "other-tab")
+
+        XCTAssertEqual(firedEntryPoints, [])
+    }
+
+    func testEntryPoint_revealingTheSidebarReportsSidebar() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        mockSidebarHost.currentTabID = "test-tab"
+        sourceHandler.setData(.askAboutPage)
+
+        coordinator.revealChat()
+
+        XCTAssertEqual(firedEntryPoints, [["source": "ask-about-page", "target": "sidebar"]])
+    }
+
+    func testEntryPoint_revealingAnOpenSidebarReportsNothingAndDropsTheEntry() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+        coordinator.toggleSidebar()
+        XCTAssertTrue(coordinator.isSidebarOpen(for: tabID))
+        sourceHandler.setData(.askAboutPage)
+
+        coordinator.revealChat()
+
+        XCTAssertEqual(firedEntryPoints, [])
+        XCTAssertNil(sourceHandler.takeUnreportedEntry())
+    }
+
+    func testEntryPoint_summarizingIntoAnOpenSidebarReportsNothingAndDropsTheEntry() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+        coordinator.toggleSidebar()
+        sourceHandler.setData(.contextualSummarize)
+
+        coordinator.revealChat(for: .summaryPrompt("Some text", url: nil, title: nil))
+
+        XCTAssertEqual(firedEntryPoints, [])
+        XCTAssertNil(sourceHandler.takeUnreportedEntry())
+    }
+
+    func testEntryPoint_aGuardDropsTheEntryButLeavesTheChatsSource() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        mockSidebarHost.currentTabID = nil
+        sourceHandler.setData(.mainMenuSidebar)
+
+        coordinator.toggleSidebar()
+
+        XCTAssertEqual(firedEntryPoints, [])
+        XCTAssertNil(sourceHandler.takeUnreportedEntry())
+        XCTAssertEqual(sourceHandler.consumeData(), .mainMenuSidebar)
+    }
+
+    func testEntryPoint_floatingChatGuardDropsTheEntry() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        let tabID = "floating-tab"
+        mockSidebarHost.currentTabID = tabID
+        let session = mockSessionStore.getOrCreateSession(for: tabID, burnerMode: .regular)
+        _ = session.makeChatViewController(tabID: tabID)
+        session.state.setFloating()
+        sourceHandler.setData(.mainMenuSidebar)
+
+        coordinator.toggleSidebar()
+
+        XCTAssertEqual(firedEntryPoints, [])
+        XCTAssertNil(sourceHandler.takeUnreportedEntry())
+    }
+
+    func testEntryPoint_serpHandoffWithoutAChatReportsSidebar() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        mockSidebarHost.currentTabID = "test-tab"
+        let presenceChange = expectation(description: "Sidebar shown")
+        coordinator.sidebarPresenceDidChangePublisher
+            .sink { _ in presenceChange.fulfill() }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.post(name: .aiChatNativeHandoffData, object: AIChatPayload())
+
+        waitForExpectations(timeout: 3)
+        XCTAssertEqual(firedEntryPoints, [["source": "serp", "target": "sidebar"]])
+    }
+
+    func testEntryPoint_serpHandoffWithAPresentedChatLeavesTheEntryToTheTabOpener() {
+        let sourceHandler = AIChatConversationSourceHandler()
+        useCoordinator(with: sourceHandler)
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+        _ = mockSessionStore.getOrCreateSession(for: tabID, burnerMode: .regular).makeChatViewController(tabID: tabID)
+        mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
+
+        NotificationCenter.default.post(name: .aiChatNativeHandoffData, object: AIChatPayload())
+
+        waitForExpectations(timeout: 3)
+        XCTAssertEqual(firedEntryPoints, [])
+        XCTAssertEqual(sourceHandler.takeUnreportedEntry(), .serp)
+    }
+
     // MARK: - Integration Tests
 
     func testCompleteWorkflow() {
@@ -1064,7 +1219,11 @@ class MockAIChatSessionStore: AIChatSessionStoring {
 
     func restoreState(_ statesByTab: AIChatStatesByTab) {
         removeOrphanedSessions(currentTabIDs: [])
-        self.sessions = statesByTab.mapValues { AIChatSession(state: $0, burnerMode: .regular) }
+        self.sessions = statesByTab.mapValues { state in
+            let session = AIChatSession(state: state, burnerMode: .regular)
+            session.isRestoredFromPreviousSession = state.presentationMode != .hidden
+            return session
+        }
     }
 
     func removeSession(for tabID: TabIdentifier) {
@@ -1107,6 +1266,25 @@ class MockAIChatTabOpener: AIChatTabOpening {
         openMethodCalledExpectation = expectation
     }
 
+    var lastTargetedQuery: String?
+    var lastTargetWindowController: MainWindowController?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewTabOf windowController: MainWindowController) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastTargetWindowController = windowController
+    }
+
+    var lastNewWindowDroppingPoint: NSPoint?
+
+    @MainActor
+    func openAIChatTab(withQuery query: String, inNewWindowAt droppingPoint: NSPoint) {
+        openAIChatTabCalled = true
+        lastTargetedQuery = query
+        lastNewWindowDroppingPoint = droppingPoint
+    }
+
     @MainActor
     func openAIChatTab(with trigger: AIChatOpenTrigger, behavior: LinkOpenBehavior) {
         openAIChatTabCalled = true
@@ -1116,6 +1294,8 @@ class MockAIChatTabOpener: AIChatTabOpening {
         // Extract specific data based on content type
         switch trigger {
         case .newChat:
+            break
+        case .chatHistory:
             break
         case .query(let query, let shouldAutoSubmit):
             lastQuery = query
@@ -1128,6 +1308,10 @@ class MockAIChatTabOpener: AIChatTabOpening {
             lastRestorationData = data
         case .existingChat:
             break
+        case .mode:
+            break
+        case .openSettings:
+            break
         }
 
         openMethodCalledExpectation?.fulfill()
@@ -1138,6 +1322,20 @@ class MockAIChatTabOpener: AIChatTabOpening {
     func openNewAIChat(in linkOpenBehavior: LinkOpenBehavior) {
         openNewAIChatCalled = true
         lastNewAIChatBehavior = linkOpenBehavior
+
+        openMethodCalledExpectation?.fulfill()
+        openMethodCalledExpectation = nil
+    }
+
+    var openVoiceSessionCalled = false
+    var lastVoiceSessionSourceCollection: TabCollectionViewModel?
+    var lastVoiceSessionBehavior: LinkOpenBehavior?
+
+    @MainActor
+    func openVoiceSession(inSourceCollection sourceCollection: TabCollectionViewModel?, behavior: LinkOpenBehavior) {
+        openVoiceSessionCalled = true
+        lastVoiceSessionSourceCollection = sourceCollection
+        lastVoiceSessionBehavior = behavior
 
         openMethodCalledExpectation?.fulfill()
         openMethodCalledExpectation = nil

@@ -26,10 +26,14 @@ protocol ContextualDaxDialogsFactory {
 
 struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     private let onboardingPixelReporter: OnboardingPixelReporting
+    private let subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting
     private let fireCoordinator: FireCoordinator
 
-    init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(), fireCoordinator: FireCoordinator) {
+    init(onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+         subscriptionUpsellMetrics: OnboardingSubscriptionUpsellMetricsReporting = OnboardingSubscriptionUpsellMetricsReporter(),
+         fireCoordinator: FireCoordinator) {
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.subscriptionUpsellMetrics = subscriptionUpsellMetrics
         self.fireCoordinator = fireCoordinator
     }
 
@@ -49,6 +53,9 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
         case .highFive:
             dialogView = AnyView(highFiveDialog(onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
             onboardingPixelReporter.measureLastDialogShown()
+        case .subscriptionUpsell:
+            dialogView = AnyView(Self.subscriptionUpsellDialog(delegate: delegate, metrics: subscriptionUpsellMetrics, onDismiss: onDismiss, onManualDismiss: onManualDismiss, onGotItPressed: onGotItPressed))
+            subscriptionUpsellMetrics.report(.upsellShown)
         }
         onboardingPixelReporter.measureDialogShown(dialogType: type)
         let adjustedView = {
@@ -101,6 +108,31 @@ struct DefaultContextualDaxDialogViewFactory: ContextualDaxDialogsFactory {
     private func tryFireButtonDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void, onFireButtonPressed: @escaping () -> Void) -> some View {
         let viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: onboardingPixelReporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
         return OnboardingFireDialog(viewModel: viewModel, onManualDismiss: onManualDismiss)
+    }
+
+    static func subscriptionUpsellDialog(delegate: any OnboardingNavigationDelegate,
+                                         metrics: OnboardingSubscriptionUpsellMetricsReporting,
+                                         onDismiss: @escaping () -> Void,
+                                         onManualDismiss: @escaping () -> Void,
+                                         onGotItPressed: @escaping () -> Void) -> OnboardingSubscriptionUpsellDialog {
+        OnboardingSubscriptionUpsellDialog(
+            acceptAction: {
+                metrics.report(.tryForFreeClick)
+                onGotItPressed()
+                onDismiss()
+                delegate.navigateToSubscriptionUpsellPurchasePage()
+            },
+            declineAction: {
+                metrics.report(.noThanksClick)
+                onGotItPressed()
+                onDismiss()
+            },
+            onManualDismiss: {
+                metrics.report(.upsellDismissed)
+                onGotItPressed()
+                onManualDismiss()
+            }
+        )
     }
 
     private func highFiveDialog(onDismiss: @escaping () -> Void, onManualDismiss: @escaping () -> Void, onGotItPressed: @escaping () -> Void) -> some View {

@@ -18,6 +18,7 @@
 
 import AppUpdaterShared
 import Common
+import FoundationExtensions
 import Foundation
 import Persistence
 import PixelKit

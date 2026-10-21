@@ -35,14 +35,11 @@ public extension OnboardingTheme {
             lhs.contentInnerSpacing == rhs.contentInnerSpacing &&
             lhs.buttonSpacing == rhs.buttonSpacing &&
             lhs.bubbleMaxWidth == rhs.bubbleMaxWidth &&
-            lhs.bubbleTailOffset == rhs.bubbleTailOffset &&
             lhs.topMarginRatio == rhs.topMarginRatio &&
             lhs.minTopMargin == rhs.minTopMargin &&
             lhs.maxTopMargin == rhs.maxTopMargin &&
             lhs.progressBarTrailingPadding == rhs.progressBarTrailingPadding &&
             lhs.progressBarTopPadding == rhs.progressBarTopPadding &&
-            lhs.rebrandingBadgeLeadingPadding == rhs.rebrandingBadgeLeadingPadding &&
-            lhs.rebrandingBadgeTopPadding == rhs.rebrandingBadgeTopPadding &&
             lhs.actionsSpacing == rhs.actionsSpacing
         }
 
@@ -56,8 +53,6 @@ public extension OnboardingTheme {
         public let actionsSpacing: CGFloat
         /// Maximum width for linear onboarding bubbles.
         public let bubbleMaxWidth: CGFloat
-        /// Horizontal offset for the bubble tail position (0.0–1.0).
-        public let bubbleTailOffset: CGFloat
         /// Ratio used to compute the top margin from the available height.
         public let topMarginRatio: CGFloat
         /// Minimum top margin.
@@ -68,10 +63,6 @@ public extension OnboardingTheme {
         public let progressBarTrailingPadding: CGFloat
         /// Top padding for the progress bar.
         public let progressBarTopPadding: CGFloat
-        /// Leading padding for the rebranding badge.
-        public let rebrandingBadgeLeadingPadding: CGFloat
-        /// Top padding for the rebranding badge.
-        public let rebrandingBadgeTopPadding: CGFloat
 
         #if os(iOS)
         /// Vertical offset percentage for the dialog, resolved at runtime based on device size class.
@@ -84,14 +75,11 @@ public extension OnboardingTheme {
             contentInnerSpacing: CGFloat,
             buttonSpacing: CGFloat,
             bubbleMaxWidth: CGFloat,
-            bubbleTailOffset: CGFloat,
             topMarginRatio: CGFloat,
             minTopMargin: CGFloat,
             maxTopMargin: CGFloat,
             progressBarTrailingPadding: CGFloat,
             progressBarTopPadding: CGFloat,
-            rebrandingBadgeLeadingPadding: CGFloat,
-            rebrandingBadgeTopPadding: CGFloat,
             dialogVerticalOffsetPercentage: MetricBuilder<CGFloat>,
             actionsSpacing: CGFloat,
         ) {
@@ -99,14 +87,11 @@ public extension OnboardingTheme {
             self.contentInnerSpacing = contentInnerSpacing
             self.buttonSpacing = buttonSpacing
             self.bubbleMaxWidth = bubbleMaxWidth
-            self.bubbleTailOffset = bubbleTailOffset
             self.topMarginRatio = topMarginRatio
             self.minTopMargin = minTopMargin
             self.maxTopMargin = maxTopMargin
             self.progressBarTrailingPadding = progressBarTrailingPadding
             self.progressBarTopPadding = progressBarTopPadding
-            self.rebrandingBadgeLeadingPadding = rebrandingBadgeLeadingPadding
-            self.rebrandingBadgeTopPadding = rebrandingBadgeTopPadding
             self.dialogVerticalOffsetPercentage = dialogVerticalOffsetPercentage
             self.actionsSpacing = actionsSpacing
         }
@@ -116,28 +101,22 @@ public extension OnboardingTheme {
             contentInnerSpacing: CGFloat,
             buttonSpacing: CGFloat,
             bubbleMaxWidth: CGFloat,
-            bubbleTailOffset: CGFloat,
             topMarginRatio: CGFloat,
             minTopMargin: CGFloat,
             maxTopMargin: CGFloat,
             progressBarTrailingPadding: CGFloat,
             progressBarTopPadding: CGFloat,
-            rebrandingBadgeLeadingPadding: CGFloat,
-            rebrandingBadgeTopPadding: CGFloat,
             actionsSpacing: CGFloat = 20
         ) {
             self.contentOuterSpacing = contentOuterSpacing
             self.contentInnerSpacing = contentInnerSpacing
             self.buttonSpacing = buttonSpacing
             self.bubbleMaxWidth = bubbleMaxWidth
-            self.bubbleTailOffset = bubbleTailOffset
             self.topMarginRatio = topMarginRatio
             self.minTopMargin = minTopMargin
             self.maxTopMargin = maxTopMargin
             self.progressBarTrailingPadding = progressBarTrailingPadding
             self.progressBarTopPadding = progressBarTopPadding
-            self.rebrandingBadgeLeadingPadding = rebrandingBadgeLeadingPadding
-            self.rebrandingBadgeTopPadding = rebrandingBadgeTopPadding
             self.actionsSpacing = actionsSpacing
         }
         #endif

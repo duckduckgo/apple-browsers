@@ -42,6 +42,7 @@ struct VPNLocationView: View {
                 .padding(.bottom, 20)
             }
             VPNLocationViewButtons(
+                isDoneEnabled: model.isSubmitEnabled,
                 onDone: {
                     model.onSubmit()
                     isPresented = false
@@ -208,7 +209,7 @@ private struct CountryItem: View {
 
     @ViewBuilder
     private var picker: some View {
-        Picker("", selection: selectedCityItemBinding) {
+        Picker("" as String, selection: selectedCityItemBinding) {
             Text(itemModel.nearestCityPickerItem.name)
                 .tag(itemModel.nearestCityPickerItem)
             Divider()
@@ -251,6 +252,7 @@ private struct ChecklistItem<Content>: View where Content: View {
 }
 
 private struct VPNLocationViewButtons: View {
+    let isDoneEnabled: Bool
     let onDone: () -> Void
     let onCancel: () -> Void
 
@@ -267,11 +269,12 @@ private struct VPNLocationViewButtons: View {
 
                 button(text: UserText.vpnLocationSubmitButtonTitle, action: onDone)
                     .keyboardShortcut(.defaultAction)
-                    .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                    .buttonStyle(DefaultActionButtonStyle(enabled: isDoneEnabled))
+                    .disabled(!isDoneEnabled)
             }
             .padding(.vertical, 16)
             .padding(.horizontal, 20)
-            .background(Color.blackWhite1)
+            .background(Color(.blackWhite1))
         }
     }
 

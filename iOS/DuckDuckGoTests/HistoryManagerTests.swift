@@ -24,6 +24,7 @@ import Persistence
 import History
 @testable import Core
 import Common
+import FoundationExtensions
 
 final class HistoryManagerTests: XCTestCase {
 

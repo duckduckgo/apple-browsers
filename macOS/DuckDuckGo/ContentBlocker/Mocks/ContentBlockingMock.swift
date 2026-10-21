@@ -22,6 +22,7 @@ import BloomFilterWrapper
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import Foundation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -79,11 +80,11 @@ final class HTTPSUpgradeStoreMock: NSObject, HTTPSUpgradeStore {
         excludedDomains.contains(domain)
     }
 
-    func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws {
+    func persistBloomFilter(specification: BrowserServicesKit.HTTPSBloomFilterSpecification, data: Data) throws -> Bool {
         fatalError("Not implemented")
     }
 
-    func persistExcludedDomains(_ domains: [String]) throws {
+    func persistExcludedDomains(_ domains: [String]) throws -> Bool {
         fatalError("Not implemented")
     }
 

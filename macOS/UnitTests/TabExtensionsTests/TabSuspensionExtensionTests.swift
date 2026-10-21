@@ -18,7 +18,8 @@
 
 import Combine
 import Common
-@testable import Navigation
+import FoundationExtensions
+@testable import DDGNavigation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit

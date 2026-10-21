@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
-import XCTest
 import Bookmarks
 import Common
+import CoreData
 import DDGSync
 import Persistence
+import XCTest
+
 @testable import BrowserServicesKit
 @testable import SyncDataProviders
 

@@ -22,17 +22,26 @@ import WebKit
 /// Protocol defining the interface for managing web extensions.
 public protocol WebExtensionManaging: AnyObject {
 
+    /// Shared Chrome Web Store service, available only when installation is supported.
+    @available(macOS 15.4, iOS 18.4, *)
+    var chromeWebStore: ChromeWebStoreManaging? { get }
+
     /// The set of currently loaded extension contexts.
     @available(macOS 15.4, iOS 18.4, *)
     var loadedExtensions: Set<WKWebExtensionContext> { get }
+
+    /// The set of embedded extension types currently loaded into the controller.
+    @available(macOS 15.4, iOS 18.4, *)
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> { get }
 
     /// The identifiers of installed web extensions.
     @available(macOS 15.4, iOS 18.4, *)
     var webExtensionIdentifiers: [String] { get }
 
-    /// The web extension controller.
+    /// Lets web views created with `configuration` run the loaded web
+    /// extensions.
     @available(macOS 15.4, iOS 18.4, *)
-    var controller: WKWebExtensionController { get }
+    func attachExtensions(to configuration: WKWebViewConfiguration)
 
     /// The events listener for web extension events.
     @available(macOS 15.4, iOS 18.4, *)
@@ -46,17 +55,62 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     var extensionUpdates: AsyncStream<Void> { get }
 
+    /// An async stream describing extension load and reload lifecycle changes.
+    ///
+    /// Backed by a single continuation created on first access, so it supports **one** consumer:
+    /// two iterators would split the events between them rather than each receiving all of them.
+    /// Events emitted before the first access are dropped, so subscribe before loading extensions
+    /// if the initial `loaded` events matter. `WebExtensionManager` delivers the same events to
+    /// `cpmMessagingHealthMonitor` directly and does not depend on this stream.
+    @available(macOS 15.4, iOS 18.4, *)
+    var lifecycleEvents: AsyncStream<WebExtensionLifecycleEvent> { get }
+
+    /// Shared CPM health monitor receiving events from every browser tab and the embedded extension.
+    @available(macOS 15.4, iOS 18.4, *)
+    var cpmMessagingHealthMonitor: CPMMessagingHealthMonitoring { get }
+
     /// Loads all installed extensions.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func loadInstalledExtensions() async
+
+    /// Forces the embedded extension's background content to load and waits for completion.
+    /// Returns immediately when the embedded extension is not loaded or has no background content.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func loadEmbeddedExtensionBackgroundContent() async
+
+    /// Repairs a background whose service worker belonged to a replaced Network process.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+
+    /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
+    /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
+    /// orphaned-file cleanup performed by `loadInstalledExtensions()`. Falls back to
+    /// `loadInstalledExtensions()` when nothing is cached. Intended for the data-clearing (fire)
+    /// flow, where the installed set is unchanged.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func reloadInstalledExtensions() async
 
     /// Installs an extension from a source URL, copying it to platform storage.
     /// - Parameter sourceURL: The source URL of the extension (e.g., from document picker).
     @available(macOS 15.4, iOS 18.4, *)
     func installExtension(from sourceURL: URL) async throws
 
+    /// Installs a store extension, optionally preparing a replacement for an existing installation.
+    /// The caller must verify that the downloaded package belongs to the supplied store identity.
+    /// A replacement requires the same stored identity and copies consent before loading, leaving
+    /// the old installation intact on failure. After success, the updater can uninstall the old UUID.
+    /// Newly requested permissions are not automatically granted by copying existing consent.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installExtension(from sourceURL: URL, storeIdentity: WebExtensionStoreIdentity?, replacing oldIdentifier: String?) async throws
+
     /// Uninstalls an extension with the given identifier.
+    /// Removes its saved consent when the permission controller is enabled. During an update, use
+    /// `installExtension(from:storeIdentity:replacing:)` first, then uninstall the old identifier
+    /// only after the replacement succeeds. The replacement retains its own copy of consent.
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func uninstallExtension(identifier: String) throws
@@ -97,6 +151,21 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func reloadExtension(identifier: String) async throws
 
+    /// Disables an installed extension: unloads it and remembers it, so it stays disabled after relaunch.
+    /// The extension keeps its files and permissions. Embedded extensions cannot be disabled.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func disableExtension(identifier: String) async throws
+
+    /// Enables a disabled extension and loads it with its saved permissions.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func enableExtension(identifier: String) async throws
+
+    /// Returns the installed extension record for the given identifier, loaded or not.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installedExtension(identifier: String) -> InstalledWebExtension?
+
     /// Returns the extension name for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionName(for identifier: String) -> String?
@@ -122,6 +191,37 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func scriptletDebugInfo() -> [ScriptletDebugInfo]
+
+    /// Wakes the search-token extension's background worker so it re-pulls the live token
+    /// and refreshes its DNR session rule. No-op when the extension isn't loaded.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func performSearchTokenRefresh()
+
+    /// Returns the shared startup task before a main-frame navigation, including idle wakes.
+    /// Its identity stays stable while the same WebKit operation is pending.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>?
+
+    /// The already running startup, without waking background content or recording a navigation.
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { get }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension WebExtensionManaging {
+    // Preserve lightweight test and platform-specific conformers that do not own embedded content.
+    @MainActor
+    func loadEmbeddedExtensionBackgroundContent() async {}
+
+    @MainActor
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() {}
+
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? { nil }
+
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -136,6 +236,19 @@ public struct ScriptletDebugInfo: Identifiable {
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension WebExtensionManaging {
+
+    var chromeWebStore: ChromeWebStoreManaging? { nil }
+
+    /// Whether the embedded autoconsent web extension is loaded and active.
+    var isAutoconsentExtensionLoaded: Bool {
+        loadedExtensions.contains { $0.duckDuckGoWebExtensionType == .embedded }
+    }
+
+    /// Default: derive the loaded embedded types from the loaded contexts.
+    @available(macOS 15.4, iOS 18.4, *)
+    var loadedEmbeddedExtensionTypes: Set<DuckDuckGoWebExtensionType> {
+        Set(loadedExtensions.compactMap(\.duckDuckGoWebExtensionType))
+    }
 
     /// Returns a comma-separated string of short labels for all currently installed embedded extensions,
     /// or `nil` if none are installed.
@@ -153,4 +266,28 @@ public extension WebExtensionManaging {
             .first { $0.extensionType == .adBlockingExtension }?
             .cachedVersion
     }
+
+    @MainActor
+    func performSearchTokenRefresh() {
+        guard let context = loadedExtensions.first(where: { $0.duckDuckGoWebExtensionType == .searchToken }),
+              let command = context.commands.first(where: { $0.id == "refresh-token" }) else { return }
+        context.performCommand(command)
+    }
 }
+
+#if os(macOS)
+@available(macOS 15.4, *)
+public extension WebExtensionManaging {
+    /// Performs the command of a third-party extension whose keyboard shortcut matches `event`.
+    @MainActor
+    func performCommand(for event: NSEvent) -> Bool {
+        let contexts = loadedExtensions
+            .filter(\.needsChromeCompatibility)
+            .sorted(by: { $0.uniqueIdentifier < $1.uniqueIdentifier })
+        for context in contexts where context.performCommand(for: event) {
+            return true
+        }
+        return false
+    }
+}
+#endif

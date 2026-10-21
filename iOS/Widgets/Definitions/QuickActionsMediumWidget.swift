@@ -24,42 +24,72 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 @available(iOS 17.0, *)
+struct MediumConfigurationIntent: WidgetConfigurationIntent {
+    static var title = LocalizedStringResource("widget.gallery.customshortcuts.edit.title")
+    static var description = IntentDescription(LocalizedStringResource("widget.gallery.customshortcuts.edit.description"))
+
+    @Parameter(title: LocalizedStringResource("widget.gallery.medium.customshortcuts.edit.shortcut1"), default: .voiceSearch)
+    var shortcut1: ShortcutOption
+
+    @Parameter(title: LocalizedStringResource("widget.gallery.medium.customshortcuts.edit.shortcut2"), default: .passwords)
+    var shortcut2: ShortcutOption
+
+    @Parameter(title: LocalizedStringResource("widget.gallery.medium.customshortcuts.edit.shortcut3"), default: .bookmarks)
+    var shortcut3: ShortcutOption
+
+    @Parameter(title: LocalizedStringResource("widget.gallery.medium.customshortcuts.edit.shortcut4"), default: .duckAI)
+    var shortcut4: ShortcutOption
+
+    init(shortcut1: ShortcutOption, shortcut2: ShortcutOption, shortcut3: ShortcutOption, shortcut4: ShortcutOption) {
+        self.shortcut1 = shortcut1
+        self.shortcut2 = shortcut2
+        self.shortcut3 = shortcut3
+        self.shortcut4 = shortcut4
+    }
+
+    init() { }
+}
+
+@available(iOS 17.0, *)
 struct QuickActionsMediumWidget: Widget {
     let kind: String = "QuickActionsMediumWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(
+        AppIntentConfiguration(
             kind: kind,
+            intent: MediumConfigurationIntent.self,
             provider: QuickActionsMediumProvider()
         ) { entry in
             QuickActionsMediumWidgetView(entry: entry)
         }
-        .configurationDisplayName(UserText.quickActionsMediumWidgetGalleryDisplayName)
-        .description(UserText.quickActionsMediumWidgetGalleryDescription)
+        .configurationDisplayName(UserText.quickActionsWidgetGalleryDisplayName)
+        .description(UserText.quickActionsWidgetGalleryDescription)
         .supportedFamilies([.systemMedium])
         .contentMarginsDisabled()
     }
 }
 
 @available(iOS 17.0, *)
-struct QuickActionsMediumProvider: TimelineProvider {
+struct QuickActionsMediumProvider: AppIntentTimelineProvider {
+    typealias Entry = QuickActionsMediumEntry
+    typealias Intent = MediumConfigurationIntent
+
     func placeholder(in context: Context) -> QuickActionsMediumEntry {
-        QuickActionsMediumEntry(date: Date())
+        QuickActionsMediumEntry(date: Date(), configuration: MediumConfigurationIntent())
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (QuickActionsMediumEntry) -> Void) {
-        let entry = QuickActionsMediumEntry(date: Date())
-        completion(entry)
+    func snapshot(for configuration: MediumConfigurationIntent, in context: Context) async -> QuickActionsMediumEntry {
+        QuickActionsMediumEntry(date: Date(), configuration: configuration)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<QuickActionsMediumEntry>) -> Void) {
-        let entry = QuickActionsMediumEntry(date: Date())
-        let timeline = Timeline(entries: [entry], policy: .never)
-        completion(timeline)
+    func timeline(for configuration: MediumConfigurationIntent, in context: Context) async -> Timeline<QuickActionsMediumEntry> {
+        let entry = QuickActionsMediumEntry(date: Date(), configuration: configuration)
+        return Timeline(entries: [entry], policy: .never)
     }
 }
 
 @available(iOS 17.0, *)
 struct QuickActionsMediumEntry: TimelineEntry {
     let date: Date
+    let configuration: MediumConfigurationIntent
 }

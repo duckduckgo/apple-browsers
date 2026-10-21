@@ -19,9 +19,9 @@
 
 import XCTest
 import Common
-import PixelKit
+import FoundationExtensions
+@_spi(Testing) import WideEvent
 import Subscription
-import PixelKitTestingUtilities
 import SubscriptionTestingUtilities
 import BrowserServicesKit
 @testable import DuckDuckGo
@@ -180,11 +180,52 @@ final class WideEventServiceTests: XCTestCase {
         }
     }
 
+    // MARK: - Launch-only events (AuthV2 token refresh)
+
+    func testForegroundResume_skipsAuthV2RefreshFlow_butCompletesOtherEvents() async {
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        refreshFlow.recoveryDuration = .startingNow()
+        let purchaseFlow = createMockWideEventData()
+        wideEventMock.started = [refreshFlow, purchaseFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch, includingLaunchOnlyEvents: false)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+        XCTAssertTrue(wideEventMock.completions.contains { $0.0 is SubscriptionPurchaseWideEventData })
+    }
+
+    func testColdLaunch_recentAuthV2RefreshFlowStaysPending() async {
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken)
+        refreshFlow.recoveryDuration = .startingNow()
+        wideEventMock.started = [refreshFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        XCTAssertFalse(wideEventMock.completions.contains { $0.0 is AuthV2TokenRefreshWideEventData })
+    }
+
+    func testColdLaunch_completesAuthV2RefreshFlowAsUnknown() async {
+        let staleStart = Date().addingTimeInterval(-AuthV2TokenRefreshWideEventData.launchCleanupTimeout - 1)
+        let refreshFlow = AuthV2TokenRefreshWideEventData(failingStep: .recoverInvalidToken,
+                                                          startedAt: staleStart)
+        refreshFlow.recoveryDuration = .startingNow()
+        wideEventMock.started = [refreshFlow]
+
+        await service.sendPendingEvents(trigger: .appLaunch)
+
+        let completion = wideEventMock.completions.first { $0.0 is AuthV2TokenRefreshWideEventData }
+        XCTAssertNotNil(completion, "A stalled refresh must be reconciled on cold launch")
+        guard case .unknown = completion?.1 else {
+            return XCTFail("Expected the stalled refresh to complete as UNKNOWN")
+        }
+    }
+
     private func createMockWideEventData(activateAccountDuration: WideEvent.MeasuredInterval? = nil) -> SubscriptionPurchaseWideEventData {
         return SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "test",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             activateAccountDuration: activateAccountDuration,
             contextData: WideEventContextData(),
             appData: WideEventAppData(),

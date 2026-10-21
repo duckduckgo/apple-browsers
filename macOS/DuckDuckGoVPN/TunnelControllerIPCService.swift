@@ -51,7 +51,7 @@ final class TunnelControllerIPCService {
         }
     }
 
-    enum UDSError: PixelKitEvent {
+    enum UDSError: PixelKit.Event {
         case udsServerStartFailure(_ error: Error)
 
         var name: String {
@@ -225,6 +225,13 @@ extension TunnelControllerIPCService: XPCServerInterface {
             }
 
             connection.fetchLastDisconnectError(completionHandler: completion)
+        }
+    }
+
+    func refreshSystemState(completion: @escaping (Error?) -> Void) {
+        Task { @MainActor in
+            await tunnelController.refreshSystemState()
+            completion(nil)
         }
     }
 

@@ -16,7 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import Common
+import FoundationExtensions
 import Foundation
 import Subscription
 

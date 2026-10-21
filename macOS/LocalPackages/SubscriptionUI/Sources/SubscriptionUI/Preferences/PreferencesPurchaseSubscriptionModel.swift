@@ -20,7 +20,7 @@ import AppKit
 import Subscription
 import struct Combine.AnyPublisher
 import enum Combine.Publishers
-import FeatureFlags
+import FeatureFlags_macOS
 import PrivacyConfig
 import os.log
 
@@ -90,7 +90,9 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     public enum UserEvent {
         case didClickIHaveASubscription,
              openURL(SubscriptionURL),
-             openWinBackOfferLandingPage
+             openWinBackOfferLandingPage,
+             didOpenSubscriptionPurchase,
+             didClickPurchase
     }
 
     public init(subscriptionManager: SubscriptionManager,
@@ -114,10 +116,12 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     func didAppear() {
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
         updateFreeTrialEligibility()
+        userEventHandler(.didOpenSubscriptionPurchase)
     }
 
     @MainActor
     func purchaseAction() {
+        userEventHandler(.didClickPurchase)
         if winBackOfferVisibilityManager.isOfferAvailable {
             userEventHandler(.openWinBackOfferLandingPage)
         } else {

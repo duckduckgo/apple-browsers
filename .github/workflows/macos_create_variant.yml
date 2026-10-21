@@ -73,11 +73,14 @@ jobs:
           .github
           macOS/scripts
 
+    - name: Print macOS version
+      run: sw_vers
+
     - name: Download DMG artifact
       id: download-dmg-artifact
       if: ${{ !env.DMG_URL }}
       continue-on-error: true
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v7
       with:
         name: duckduckgo-dmg
         path: ${{ github.workspace }}/macOS
@@ -170,14 +173,14 @@ jobs:
 
     - name: Upload variant DMG as artifact
       if: ${{ env.DRY_RUN == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: variant-dmg-${{ steps.set-variant-name.outputs.variant-name }}
         path: ${{ github.workspace }}/macOS/duckduckgo.dmg
         retention-days: 5
 
     - name: Upload variant DMG to S3
-      if: ${{ env.DRY_RUN != 'true' && !env.DMG_URL }}
+      if: ${{ env.DRY_RUN != 'true' }}
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}

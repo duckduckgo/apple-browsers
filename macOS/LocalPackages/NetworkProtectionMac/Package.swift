@@ -24,7 +24,7 @@ let package = Package(
     name: "NetworkProtectionMac",
     defaultLocalization: "en",
     platforms: [
-        .macOS("11.4")
+        .macOS("12.3")
     ],
     products: [
         .library(name: "NetworkProtectionIPC", targets: ["NetworkProtectionIPC"]),
@@ -35,14 +35,18 @@ let package = Package(
         .library(name: "VPNNotifications", targets: ["VPNNotifications"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.2"),
-        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.6.1"),
+        .package(path: "../../../SharedPackages/PixelKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../../../SharedPackages/Infrastructure/SystemFrameworksExtensions"),
         .package(path: "../AppInfoRetriever"),
         .package(path: "../AppLauncher"),
         .package(path: "../UDSHelper"),
         .package(path: "../XPCHelper"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../LoginItems"),
+        .package(path: "../SystemExtensionManager"),
         .package(path: "../../../SharedPackages/VPN"),
     ],
     targets: [
@@ -61,7 +65,8 @@ let package = Package(
                 .product(name: "VPN", package: "VPN"),
                 .product(name: "XPCHelper", package: "XPCHelper"),
                 .product(name: "UDSHelper", package: "UDSHelper"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -76,7 +81,8 @@ let package = Package(
                 "AppInfoRetriever",
                 "VPNAppState",
                 .product(name: "VPN", package: "VPN"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -91,7 +97,7 @@ let package = Package(
                 "NetworkProtectionUI",
                 .product(name: "AppLauncher", package: "AppLauncher"),
                 .product(name: "VPN", package: "VPN"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -115,7 +121,7 @@ let package = Package(
         .target(
             name: "VPNPixels",
             dependencies: [
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -131,10 +137,15 @@ let package = Package(
                 "VPNAppState",
                 "VPNPixels",
                 .product(name: "VPN", package: "VPN"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
+                .product(name: "DesignResourcesKit", package: "DesignResourcesKit"),
+                .product(name: "DesignResourcesKitIcons", package: "DesignResourcesKitIcons"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 .product(name: "LoginItems", package: "LoginItems"),
-                .product(name: "Lottie", package: "lottie-spm")
+                .product(name: "SystemExtensionManager", package: "SystemExtensionManager"),
+                .product(name: "Lottie", package: "lottie-spm"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
             ],
             resources: [
                 .process("Resources")
@@ -150,7 +161,7 @@ let package = Package(
                 "NetworkProtectionUI",
                 .product(name: "VPNTestUtils", package: "VPN"),
                 .product(name: "LoginItems", package: "LoginItems"),
-                .product(name: "PixelKitTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "PixelKit", package: "PixelKit"),
             ]
         ),
     ]

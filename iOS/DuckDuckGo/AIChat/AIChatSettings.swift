@@ -22,6 +22,8 @@ import AIChat
 import Foundation
 import Core
 import Persistence
+import FeatureFlags_iOS
+import PixelKit
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
@@ -31,6 +33,15 @@ final class AIChatSettings: AIChatSettingsProvider {
     struct KeepSessionSettings: Codable {
         let sessionTimeoutMinutes: Int
         static let defaultSessionTimeoutInMinutes: Int = 60
+    }
+
+    struct AttachMoreTabsSettings: Decodable {
+        let aiChatAttachMoreTabsLimit: Int
+        static let defaultLimit: Int = 3
+    }
+
+    struct AttachMoreTabsPromotionSettings: Decodable {
+        let promotionStartDate: Date
     }
 
     enum SettingsValue: String {
@@ -52,20 +63,31 @@ final class AIChatSettings: AIChatSettingsProvider {
     private let keyValueStore: KeyValueStoring
     private let notificationCenter: NotificationCenter
     private let featureFlagger: FeatureFlagger
-    private let switchBarFunnel: SwitchBarFunnelProviding
     
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          notificationCenter: NotificationCenter = .default,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         switchBarFunnel: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard)) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.debugSettings = debugSettings
         self.keyValueStore = keyValueStore
         self.notificationCenter = notificationCenter
         self.featureFlagger = featureFlagger
-        self.switchBarFunnel = switchBarFunnel
+
+        migrateAddressBarSettingIfNeeded()
+    }
+
+    /// One-shot: if a user had the legacy Address Bar toggle off, carry that into the
+    /// Tab Bar toggle so the iPad chrome shortcut doesn't silently re-enable the
+    /// surface under a new name.
+    private func migrateAddressBarSettingIfNeeded() {
+        guard keyValueStore.object(forKey: .showAIChatTabBarKey) == nil,
+              let legacyAddressBarValue = keyValueStore.object(forKey: .showAIChatAddressBarKey) as? Bool,
+              legacyAddressBarValue == false else {
+            return
+        }
+        keyValueStore.set(false, forKey: .showAIChatTabBarKey)
     }
 
     // MARK: - Public
@@ -103,6 +125,25 @@ final class AIChatSettings: AIChatSettingsProvider {
         keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
     }
 
+    var aiChatAttachMoreTabsLimit: Int {
+        guard let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.contextualAttachMoreTabs),
+              let jsonData = settingsJSON.data(using: .utf8),
+              let limit = try? JSONDecoder().decode(AttachMoreTabsSettings.self, from: jsonData).aiChatAttachMoreTabsLimit,
+              limit > 0 else {
+            return AttachMoreTabsSettings.defaultLimit
+        }
+
+        return limit
+    }
+
+    var aiChatAttachMoreTabsPromotionStartDate: Date? {
+        guard let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.contextualAttachMoreTabs),
+              let jsonData = settingsJSON.data(using: .utf8) else { return nil }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try? decoder.decode(AttachMoreTabsPromotionSettings.self, from: jsonData).promotionStartDate
+    }
+
     var isAIChatEnabled: Bool {
         keyValueStore.bool(.isAIChatEnabledKey, defaultValue: .isAIChatEnabledDefaultValue)
     }
@@ -122,6 +163,21 @@ final class AIChatSettings: AIChatSettingsProvider {
             && isAIChatEnabled
     }
 
+    /// Master on/off for the iPad tabs-bar Duck.ai shortcut (the single "Tab Bar" Settings toggle).
+    var isAIChatTabBarUserSettingsEnabled: Bool {
+        keyValueStore.bool(.showAIChatTabBarKey, defaultValue: .showAIChatTabBarDefaultValue)
+            && isAIChatEnabled
+    }
+
+    /// Per-half visibility, toggled from the chip's long-press menu (not Settings).
+    var isAIChatTabBarDuckAIButtonVisible: Bool {
+        keyValueStore.bool(.showAIChatTabBarDuckAIButtonKey, defaultValue: .showAIChatTabBarDuckAIButtonDefaultValue)
+    }
+
+    var isAIChatTabBarContextualSheetButtonVisible: Bool {
+        keyValueStore.bool(.showAIChatTabBarContextualSheetKey, defaultValue: .showAIChatTabBarContextualSheetDefaultValue)
+    }
+
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatVoiceSearchKey, defaultValue: .showAIChatVoiceSearchDefaultValue)
             && isAIChatEnabled
@@ -129,7 +185,11 @@ final class AIChatSettings: AIChatSettingsProvider {
 
     var isAIChatSearchInputUserSettingsEnabled: Bool {
         keyValueStore.bool(.showAIChatExperimentalSearchInputKey, defaultValue: .showAIChatExperimentalSearchInputDefaultValue)
-                            && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
+            && isAIChatEnabled
+    }
+
+    var isAIChatSearchInputUserSettingsDisabledByUser: Bool {
+        keyValueStore.bool(.showAIChatExperimentalSearchInputKey) == false
     }
 
     var isChatSuggestionsEnabled: Bool {
@@ -158,9 +218,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsEnabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsEnabled, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsDisabled, frequency: .dailyAndCount)
         }
     }
 
@@ -169,9 +229,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsBrowserMenuTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsBrowserMenuTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsBrowserMenuTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsBrowserMenuTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -180,9 +240,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAddressBarTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAddressBarTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAddressBarTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -191,17 +251,17 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOn)
-            
-            
-            // Process feature enabled funnel step
-            switchBarFunnel.processStep(.featureEnabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsSearchInputTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsSearchInputTurnedOff)
-            
-            // Reset funnel when feature is disabled
-            resetFunnelStorage()
+            PixelKit.fire(Pixel.Event.aiChatSettingsSearchInputTurnedOff, frequency: .dailyAndCount)
         }
+    }
+
+    /// Removes the user's selection for the AI Chat experimental search input toggle,
+    /// returning it to its un-set state (subsequent reads fall back to the default).
+    func resetAIChatSearchInputUserSettings() {
+        keyValueStore.removeObject(forKey: .showAIChatExperimentalSearchInputKey)
+        triggerSettingsChangedNotification()
     }
 
     func enableAIChatVoiceSearchUserSettings(enable: Bool) {
@@ -209,9 +269,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsVoiceTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsVoiceTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsVoiceTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsVoiceTurnedOff, frequency: .dailyAndCount)
         }
     }
 
@@ -219,9 +279,41 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.set(enable, forKey: .showAIChatTabSwitcherKey)
         triggerSettingsChangedNotification()
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsTabManagerTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsTabManagerTurnedOff, frequency: .dailyAndCount)
+        }
+    }
+
+    func enableAIChatTabBarUserSettings(enable: Bool) {
+        keyValueStore.set(enable, forKey: .showAIChatTabBarKey)
+        // Re-enabling restores both halves — the only way back if the user hid both from the menu.
+        if enable {
+            keyValueStore.set(true, forKey: .showAIChatTabBarDuckAIButtonKey)
+            keyValueStore.set(true, forKey: .showAIChatTabBarContextualSheetKey)
+        }
+        triggerSettingsChangedNotification()
+    }
+
+    func setAIChatTabBarDuckAIButtonVisible(_ visible: Bool) {
+        keyValueStore.set(visible, forKey: .showAIChatTabBarDuckAIButtonKey)
+        disableTabBarShortcutIfBothHalvesHidden()
+        triggerSettingsChangedNotification()
+    }
+
+    func setAIChatTabBarContextualSheetButtonVisible(_ visible: Bool) {
+        keyValueStore.set(visible, forKey: .showAIChatTabBarContextualSheetKey)
+        disableTabBarShortcutIfBothHalvesHidden()
+        triggerSettingsChangedNotification()
+    }
+
+    /// When the user hides both halves from the chip's menu, the shortcut shows nothing — turn the
+    /// master Tab Bar toggle off so it reflects reality. Re-enabling it restores both halves.
+    private func disableTabBarShortcutIfBothHalvesHidden() {
+        let duckAIVisible = keyValueStore.bool(.showAIChatTabBarDuckAIButtonKey, defaultValue: .showAIChatTabBarDuckAIButtonDefaultValue)
+        let bottomSheetVisible = keyValueStore.bool(.showAIChatTabBarContextualSheetKey, defaultValue: .showAIChatTabBarContextualSheetDefaultValue)
+        if !duckAIVisible && !bottomSheetVisible {
+            keyValueStore.set(false, forKey: .showAIChatTabBarKey)
         }
     }
 
@@ -230,9 +322,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsChatSuggestionsTurnedOn)
+            PixelKit.fire(Pixel.Event.aiChatSettingsChatSuggestionsTurnedOn, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsChatSuggestionsTurnedOff)
+            PixelKit.fire(Pixel.Event.aiChatSettingsChatSuggestionsTurnedOff, frequency: .dailyAndCount)
         }
     }
     
@@ -241,9 +333,9 @@ final class AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextEnabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAutoContextEnabled, frequency: .dailyAndCount)
         } else {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsAutoContextDisabled)
+            PixelKit.fire(Pixel.Event.aiChatSettingsAutoContextDisabled, frequency: .dailyAndCount)
         }
     }
 
@@ -254,15 +346,9 @@ final class AIChatSettings: AIChatSettingsProvider {
 
         keyValueStore.set(mode.rawValue, forKey: .defaultOmnibarModeKey)
         triggerSettingsChangedNotification()
-        DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDefaultTogglePositionChanged,
-                                      withAdditionalParameters: ["value": mode.rawValue])
-    }
-
-    /// Process the settings view funnels step
-    func processSettingsViewedFunnelStep() {
-        if !isAIChatSearchInputUserSettingsEnabled {
-            switchBarFunnel.processStep(.settingsViewed)
-        }
+        PixelKit.fire(Pixel.Event.aiChatSettingsDefaultTogglePositionChanged,
+                      frequency: .dailyAndCount,
+                      options: .parameters(["value": mode.rawValue]))
     }
 
     // MARK: - Private
@@ -275,15 +361,11 @@ final class AIChatSettings: AIChatSettingsProvider {
         if let value = remoteSettings[value.rawValue] as? String {
             return value
         } else {
-            Pixel.fire(pixel: .aiChatNoRemoteSettingsFound(settings: value.rawValue))
+            PixelKit.fire(Pixel.Event.aiChatNoRemoteSettingsFound(settings: value.rawValue))
             return value.defaultValue
         }
     }
     
-    /// Reset all funnel storage when the new input feature is disabled
-    private func resetFunnelStorage() {
-        switchBarFunnel.resetAllFunnelState()
-    }
 }
 
 // MARK: - Keys for storage
@@ -294,6 +376,9 @@ private extension String {
     static let showAIChatAddressBarKey = "aichat.settings.showAIChatAddressBar"
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
+    static let showAIChatTabBarKey = "aichat.settings.showAIChatTabBar"
+    static let showAIChatTabBarDuckAIButtonKey = "aichat.settings.showAIChatTabBarDuckAIButton"
+    static let showAIChatTabBarContextualSheetKey = "aichat.settings.showAIChatTabBarContextualSheet"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
     static let showChatSuggestionsKey = "aichat.settings.showChatSuggestions"
     static let isAIChatAutomaticContextAttachmentEnabledKey = "aichat.settings.isAIChatAutomaticContextAttachmentEnabled"
@@ -307,6 +392,9 @@ enum LegacyAiChatUserDefaultsKeys {
     static let showAIChatAddressBarKey: String = .showAIChatAddressBarKey
     static let showAIChatVoiceSearchKey: String = .showAIChatVoiceSearchKey
     static let showAIChatTabSwitcherKey: String = .showAIChatTabSwitcherKey
+    static let showAIChatTabBarKey: String = .showAIChatTabBarKey
+    static let showAIChatTabBarDuckAIButtonKey: String = .showAIChatTabBarDuckAIButtonKey
+    static let showAIChatTabBarContextualSheetKey: String = .showAIChatTabBarContextualSheetKey
     static let showAIChatExperimentalSearchInputKey: String = .showAIChatExperimentalSearchInputKey
     static let defaultOmnibarModeKey: String = .defaultOmnibarModeKey
 
@@ -321,6 +409,9 @@ private extension Bool {
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
+    static let showAIChatTabBarDefaultValue = true
+    static let showAIChatTabBarDuckAIButtonDefaultValue = true
+    static let showAIChatTabBarContextualSheetDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
     static let showChatSuggestionsDefaultValue = true
 
@@ -336,6 +427,9 @@ private extension KeyValueStoring {
         return (object(forKey: key) as? Bool) ?? defaultValue
     }
 
+    func bool(_ key: String) -> Bool? {
+        return object(forKey: key) as? Bool
+    }
 }
 
 extension DefaultOmnibarMode {

@@ -49,8 +49,7 @@ class AIChatTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
-        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true])
+        app = XCUIApplication.setUp(featureFlags: ["aiChatChromeSidebar": true, "aiChatSidebarFloating": true, "aiChatChromeMenuButton": false])
 
         addressBarTextField = app.addressBar
         app.enforceSingleWindow()
@@ -155,7 +154,6 @@ class AIChatTests: UITestCase {
 
         // Open tab B and navigate to a website
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
         XCTAssertTrue(sidebarButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
@@ -435,7 +433,6 @@ class AIChatTests: UITestCase {
 
         // Open tab B before detaching (avoids keyboard shortcuts going to floating window)
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Switch back to tab A and detach sidebar
@@ -477,7 +474,6 @@ class AIChatTests: UITestCase {
 
         // Open tab B before detaching (avoids keyboard shortcuts going to floating window)
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Switch back to tab A and detach sidebar
@@ -545,7 +541,6 @@ class AIChatTests: UITestCase {
 
         // Open a second tab so closing tab A doesn't close the window
         app.openNewTab()
-        addressBarTextField = app.addressBar
         addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
 
         // Switch back to tab A and detach sidebar
@@ -586,6 +581,10 @@ class AIChatTests: UITestCase {
         let closeTabButton = app.buttons.matching(NSPredicate(format: "label == 'Close Tab' AND identifier != %@", Identifiers.tabCloseButton)).firstMatch
         XCTAssertTrue(closeTabButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Close Tab button should appear in the warning popover")
+        // The warning window ignores mouse events until hovered, even when its button exists in the accessibility tree.
+        closeTabButton.hover()
+        XCTAssertTrue(closeTabButton.wait(for: \.isHittable, equals: true, timeout: UITests.Timeouts.elementExistence),
+                      "Close Tab button should be hittable after hovering")
         closeTabButton.click()
 
         // Both tab and floating sidebar should be gone

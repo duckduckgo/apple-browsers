@@ -18,9 +18,10 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import History
 import HistoryView
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
@@ -74,6 +75,7 @@ final class ScriptSourceProviderTests: XCTestCase {
                                               fireproofDomains: MockFireproofDomains(),
                                               faviconManagement: FaviconManagerMock(),
                                               windowControllersManager: windowControllersManager,
+                                              dataClearingPreferences: Application.appDelegate.dataClearingPreferences,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
         let sourceProvider = ScriptSourceProvider(
@@ -102,7 +104,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             syncErrorHandler: SyncErrorHandler(),
             webExtensionAvailability: nil,
             dockCustomization: DockCustomizerMock(),
-            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),
+            reinstallUserDetection: MockReinstallingUserDetecting(),
             installDateProvider: { Date() }
         )
 

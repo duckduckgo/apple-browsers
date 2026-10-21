@@ -20,6 +20,7 @@ import Foundation
 import BrowserServicesKit
 import Combine
 import Common
+import FoundationExtensions
 import VPN
 import NetworkProtectionUI
 import LoginItems
@@ -27,7 +28,7 @@ import PixelKit
 import Subscription
 
 protocol VPNFeatureGatekeeper {
-    var isInstalled: Bool { get }
+    var isInstalled: Bool { get async }
 
     func canStartVPN() async throws -> Bool
     func isVPNVisible() -> Bool
@@ -50,7 +51,9 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     }
 
     var isInstalled: Bool {
-        LoginItem.vpnMenu.status.isInstalled
+        get async {
+            await LoginItem.vpnMenu.status().isInstalled
+        }
     }
 
     /// Whether the user can start the VPN.

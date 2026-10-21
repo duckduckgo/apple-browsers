@@ -18,9 +18,10 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Combine
 import DDGSync
-import FeatureFlags
+import FeatureFlags_macOS
 import SwiftUI
 import Networking
 import Subscription
@@ -45,15 +46,26 @@ final class PreferencesSidebarModel: ObservableObject {
     let tabSwitcherTabs: [Tab.TabContent]
 
     @Published private(set) var sections: [PreferencesSection] = []
+
+    @Published private(set) var scrollTarget: PreferencesScrollAnchor?
+    @Published private(set) var websitePermissionTarget: WebsitePermissionCategory?
+
     @Published var selectedTabIndex: Int = 0
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser {
         didSet {
             isInitialSelectedPanePixelFired = true
+
             switch selectedPane {
             case .aiChat:
                 pixelFiring?.fire(AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount)
             case .subscription where winBackOfferVisibilityManager.isOfferAvailable:
                 pixelFiring?.fire(SubscriptionPixel.subscriptionWinBackOfferSettingsPageShown)
+            case .emailProtection:
+                pixelFiring?.fire(
+                    SettingsPixel.settingsPaneOpened(selectedPane),
+                    frequency: .dailyAndStandard,
+                    options: .parameters(["subscribed": String(subscriptionManager.isUserAuthenticated)])
+                )
             default:
                 pixelFiring?.fire(SettingsPixel.settingsPaneOpened(selectedPane), frequency: .daily)
             }
@@ -96,6 +108,7 @@ final class PreferencesSidebarModel: ObservableObject {
     private var isInitialSelectedPanePixelFired = false
     private let featureFlagger: FeatureFlagger
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let partnershipsHubProvider: any PartnershipsHubProviding
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -126,7 +139,8 @@ final class PreferencesSidebarModel: ObservableObject {
         accessibilityPreferences: AccessibilityPreferences,
         duckPlayerPreferences: DuckPlayerPreferences,
         youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
-        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+        partnershipsHubProvider: (any PartnershipsHubProviding)? = nil
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
@@ -149,6 +163,13 @@ final class PreferencesSidebarModel: ObservableObject {
         self.duckPlayerPreferences = duckPlayerPreferences
         self.youTubeAdBlockingPreferences = youTubeAdBlockingPreferences
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        // Built here rather than taken from every call site: it composes dependencies this
+        // initializer already has. Tests inject their own.
+        self.partnershipsHubProvider = partnershipsHubProvider ?? DefaultPartnershipsHubProvider(
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: featureFlagger,
+            fallbackURL: { subscriptionManager.url(for: .partnershipsHub) }
+        )
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
@@ -160,6 +181,7 @@ final class PreferencesSidebarModel: ObservableObject {
 
         subscribeToFeatureFlagChanges(syncService: syncService,
                                       privacyConfigurationManager: privacyConfigurationManager)
+        subscribeToPartnershipsHubChanges(privacyConfigurationManager: privacyConfigurationManager)
         subscribeToSubscriptionChanges()
         subscribeToAIChatFeaturesChanges()
 
@@ -197,7 +219,8 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingAIChat: includeAIChat,
-                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureAvailable,
+                includingYouTubeAdBlocking: adBlockingAvailability.isFeatureSupported,
+                includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -242,6 +265,12 @@ final class PreferencesSidebarModel: ObservableObject {
         let duckPlayerFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .duckPlayer)
         let aiChatFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .aiChat)
         let youTubeAdBlockingFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .adBlockingExtension)
+        let websitePermissionsFeatureFlagDidChange = featureFlagger.updatesPublisher
+            .map { [weak featureFlagger] in featureFlagger?.isFeatureOn(.websitePermissionsSettings) == true }
+            .prepend(featureFlagger.isFeatureOn(.websitePermissionsSettings))
+            .removeDuplicates()
+            .dropFirst()
+            .asVoid()
 
         let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
             .removeDuplicates()
@@ -250,6 +279,7 @@ final class PreferencesSidebarModel: ObservableObject {
         Publishers.Merge(duckPlayerFeatureFlagDidChange, syncFeatureFlagsDidChange)
             .merge(with: aiChatFeatureFlagDidChange)
             .merge(with: youTubeAdBlockingFeatureFlagDidChange)
+            .merge(with: websitePermissionsFeatureFlagDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.refreshSections()
@@ -268,7 +298,31 @@ final class PreferencesSidebarModel: ObservableObject {
                     self?.refreshSections()
                 }
                 .store(in: &cancellables)
+
+            // Goes through the subscription-state refresh rather than `refreshSections()`, because
+            // the Subscriber Offers entry point's visibility is carried in the subscription state.
+            overridesHandler.flagDidChangePublisher
+                .filter { flag, _ in flag == .partnershipsHub }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.refreshSubscriptionStateAndSectionsIfNeeded()
+                }
+                .store(in: &cancellables)
         }
+    }
+
+    /// `featureFlagDidChange(with:on:)` watches a parent feature's enabled state, which does not move
+    /// when a subfeature is rolled out, so this watches the resolved entry-point state instead.
+    private func subscribeToPartnershipsHubChanges(privacyConfigurationManager: PrivacyConfigurationManaging) {
+        let partnershipsHubProvider = self.partnershipsHubProvider
+        privacyConfigurationManager.updatesPublisher
+            .map { partnershipsHubProvider.isEntryPointEnabled }
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshSubscriptionStateAndSectionsIfNeeded()
+            }
+            .store(in: &cancellables)
     }
 
     private func subscribeToSubscriptionChanges() {
@@ -326,8 +380,8 @@ final class PreferencesSidebarModel: ObservableObject {
         case .threatProtection:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .cookiePopupProtection:
-            return  PrivacyProtectionStatus(statusPublisher: cookiePopupProtectionPreferences.$isAutoconsentEnabled) { isAutoconsentEnabled in
-                isAutoconsentEnabled ? .on : .off
+            return  PrivacyProtectionStatus(statusPublisher: cookiePopupProtectionPreferences.$cookiePopupPreference) { preference in
+                preference.isBlockingEnabled ? .on : .off
             }
         case .emailProtection:
             let publisher = Publishers.Merge(
@@ -337,6 +391,8 @@ final class PreferencesSidebarModel: ObservableObject {
             return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
                 EmailManager().isSignedIn ? .on : .off
             }
+        case .youTubeAdBlocking:
+            return PrivacyProtectionStatus(statusIndicator: .on)
         case .vpn:
             return vpnProtectionStatus()
         case .personalInformationRemoval:
@@ -409,61 +465,83 @@ final class PreferencesSidebarModel: ObservableObject {
 
     private func refreshSubscriptionStateAndSectionsIfNeeded() {
         Task { @MainActor in
-            do {
-                let updatedState = try await makeSubscriptionState()
+            let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
 
-                if self.currentSubscriptionState != updatedState {
-                    hasLoadedInitialSubscriptionState = true
+            var updatedState: PreferencesSidebarSubscriptionState
+            if subscriptionManager.isUserAuthenticated {
+                do {
+                    let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
+                    let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures(forceRefresh: true)
 
-                    if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
-                        personalInformationRemovalSubject.send(personalInformationRemovalStatus().status ?? .off)
+                    // Re-check after the async fetch: forceRefresh: true may have discovered no
+                    // subscription on the backend, cleared the cache, and returned [] without
+                    // throwing. isSubscriptionPresent() now reflects the post-fetch cache state.
+                    if subscriptionManager.isSubscriptionPresent() {
+                        // Subscriber Offers goes to active subscribers only, which unlike
+                        // `isSubscriptionPresent()` excludes expired ones. Free trials are active
+                        // subscriptions, so this already covers "subscribers, full and trial".
+                        // Reads the cache the fetch above just populated, and is `false` rather than
+                        // throwing if that read fails, so it cannot disturb the states below.
+                        let isSubscriptionActive = await subscriptionManager.isActiveSubscription()
+
+                        updatedState = PreferencesSidebarSubscriptionState(
+                            hasSubscription: true,
+                            shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                            isNetworkProtectionRemovalEnabled: entitlementStatus.networkProtection,
+                            isPersonalInformationRemovalEnabled: entitlementStatus.dataBrokerProtection,
+                            isIdentityTheftRestorationEnabled: entitlementStatus.identityTheftRestoration || entitlementStatus.identityTheftRestorationGlobal,
+                            isPaidAIChatEnabled: entitlementStatus.paidAIChat,
+                            isNetworkProtectionRemovalAvailable: subscriptionFeatures.contains(.networkProtection),
+                            isPersonalInformationRemovalAvailable: subscriptionFeatures.contains(.dataBrokerProtection),
+                            isIdentityTheftRestorationAvailable: subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal),
+                            isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && subscriptionFeatures.contains(.paidAIChat),
+                            isPartnershipsHubAvailable: isSubscriptionActive && partnershipsHubProvider.isEntryPointEnabled)
+                    } else {
+                        updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
                     }
+                } catch SubscriptionManagerError.noTokenAvailable {
+                    // Token gone — treat as signed out
+                    updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
+                } catch {
+                    // Transient error (network failure, 500, etc.) — keep current state so feature
+                    // flags don't flip to false while the subscription is still valid in the cache.
+                    Logger.general.error("Failed to refresh subscription state, keeping current: \(error, privacy: .public)")
+                    return
+                }
+            } else {
+                updatedState = PreferencesSidebarSubscriptionState(shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
+            }
 
-                    if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
-                        paidAIChatSubject.send(updatedState.isPaidAIChatEnabled && aiChatPreferences.isAIFeaturesEnabled ? .on : .off)
-                    }
+            let isInitialLoad = !hasLoadedInitialSubscriptionState
+            hasLoadedInitialSubscriptionState = true
 
-                    if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {
-                        identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnabled ? .on : .off)
-                    }
-
-                    self.currentSubscriptionState = updatedState
-
+            guard self.currentSubscriptionState != updatedState else {
+                // On the first settled load, correct any pane parked on a subscription-gated pane
+                // even when the resolved state equals the default (e.g. signed-out App Store build
+                // with no products). `adjustSelectedPaneIfNeeded()` was suppressed until now because
+                // the initial state hadn't loaded; without this it would never run for the
+                // equal-to-default case. Later equal refreshes short-circuit here and churn nothing.
+                if isInitialLoad {
                     self.refreshSections()
                 }
-            } catch {
-                Logger.general.error("Failed to refresh subscription state: \(error, privacy: .public)")
+                return
             }
+
+            if self.currentSubscriptionState.isPersonalInformationRemovalEnabled != updatedState.isPersonalInformationRemovalEnabled {
+                personalInformationRemovalSubject.send(personalInformationRemovalStatus().status ?? .off)
+            }
+
+            if self.currentSubscriptionState.isPaidAIChatEnabled != updatedState.isPaidAIChatEnabled {
+                paidAIChatSubject.send(updatedState.isPaidAIChatEnabled && aiChatPreferences.isAIFeaturesEnabled ? .on : .off)
+            }
+
+            if self.currentSubscriptionState.isIdentityTheftRestorationEnabled != updatedState.isIdentityTheftRestorationEnabled {
+                identityTheftRestorationSubject.send(updatedState.isIdentityTheftRestorationEnabled ? .on : .off)
+            }
+
+            self.currentSubscriptionState = updatedState
+            self.refreshSections()
         }
-    }
-
-    private func makeSubscriptionState() async throws -> PreferencesSidebarSubscriptionState {
-        let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
-
-        // Enabled: Is the entitlement in the token?
-        let entitlementStatus = await subscriptionManager.getAllEntitlementStatus()
-
-        // Availability: Is included in the purchased subscription?
-        let subscriptionFeatures = try await subscriptionManager.currentSubscriptionFeatures()
-        let isIdentityTheftRestorationAvailable = subscriptionFeatures.contains(.identityTheftRestoration)
-        let isIdentityTheftRestorationGlobalAvailable = subscriptionFeatures.contains(.identityTheftRestorationGlobal)
-        let isPaidAIChatAvailable = subscriptionFeatures.contains(.paidAIChat)
-        let isNetworkProtectionAvailable = subscriptionFeatures.contains(.networkProtection)
-        let isDataBrokerProtectionAvailable = subscriptionFeatures.contains(.dataBrokerProtection)
-
-        return PreferencesSidebarSubscriptionState(
-            hasSubscription: subscriptionManager.isSubscriptionPresent(),
-            shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-
-            isNetworkProtectionRemovalEnabled: entitlementStatus.networkProtection,
-            isPersonalInformationRemovalEnabled: entitlementStatus.dataBrokerProtection,
-            isIdentityTheftRestorationEnabled: entitlementStatus.identityTheftRestoration || entitlementStatus.identityTheftRestorationGlobal,
-            isPaidAIChatEnabled: entitlementStatus.paidAIChat,
-
-            isNetworkProtectionRemovalAvailable: isNetworkProtectionAvailable,
-            isPersonalInformationRemovalAvailable: isDataBrokerProtectionAvailable,
-            isIdentityTheftRestorationAvailable: isIdentityTheftRestorationAvailable || isIdentityTheftRestorationGlobalAvailable,
-            isPaidAIChatAvailable: featureFlagger.isFeatureOn(.paidAIChat) && isPaidAIChatAvailable)
     }
 
     func refreshSections() {
@@ -471,15 +549,24 @@ final class PreferencesSidebarModel: ObservableObject {
         adjustSelectedPaneIfNeeded()
     }
 
+    /// Panes whose visibility and correct target depend on subscription entitlement state, which
+    /// loads asynchronously.
+    private static let subscriptionGatedPanes: Set<PreferencePaneIdentifier> = [
+        .vpn, .personalInformationRemoval, .identityTheftRestoration, .paidAIChat, .subscription, .subscriptionSettings
+    ]
+
     func adjustSelectedPaneIfNeeded() {
         let allPanes = sections.flatMap(\.panes)
 
-        if !allPanes.contains(selectedPane) {
+        // Keep the requested pane as-is until entitlement state has loaded. Adjusting against the
+        // initial (empty) state can bounce a deep link to a subscription-gated pane (e.g. `.vpn`)
+        // onto the subscription pane, depending on whether the entitlements happened to load first.
+        // `refreshSections()` calls this again once the state arrives.
+        if !hasLoadedInitialSubscriptionState, Self.subscriptionGatedPanes.contains(selectedPane) {
+            return
+        }
 
-            // Required to keep selection since subscription settings need to load its initial state
-            if selectedPane == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
-                return
-            }
+        if !allPanes.contains(selectedPane) {
 
             // Adjust Subscription selection when subscribed/unsubscribed state changes
             if selectedPane == .subscriptionSettings, allPanes.contains(.subscription) {
@@ -499,8 +586,35 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
+    /// Opens the Partnerships Hub in a new tab and records the interaction.
+    ///
+    /// Subscriber Offers is a link dressed as a sidebar item, so it gets its own intent method
+    /// rather than going through `selectPane(_:)`: that keeps the pixel on the click, where the
+    /// subscription panes fire theirs too, instead of on every route to the identifier.
+    ///
+    /// `otherPlatforms`, the other link in this sidebar, predates this and works differently — its
+    /// URL is its raw value, opened by `selectPane(_:)`, which then also selects it and leaves the
+    /// pane blank. Deliberately not copied: that shape fires its pixel from pane selection, so a
+    /// deep link counts as a click. Unifying the two would move an existing pixel's trigger, so it
+    /// belongs in its own change.
+    @MainActor
+    func openSubscriberOffers() {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionPartnerBenefitsSettings, frequency: .dailyAndCount)
+        Application.appDelegate.windowControllersManager.show(url: partnershipsHubProvider.hubURL,
+                                                              source: .ui,
+                                                              newTab: true)
+    }
+
     @MainActor
     func selectPane(_ identifier: PreferencePaneIdentifier) {
+        // Not a pane, so there is nothing to select: `openSubscriberOffers()` is the way in. A
+        // `duck://settings/partnershipsHub` deep link therefore does nothing rather than selecting
+        // an empty pane.
+        guard identifier != .partnershipsHub else { return }
+
+        resetScrollRequest()
+        resetWebsitePermissionRequest()
+
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
            let url = URL(string: identifier.rawValue) {
@@ -509,15 +623,55 @@ final class PreferencesSidebarModel: ObservableObject {
                                                                   newTab: true)
         }
 
-        // Required to keep selection since subscription settings need to load its initial state
-        if identifier == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
+        // Subscription-gated panes are absent from `sections` until entitlement state loads, so a
+        // deep link to one (e.g. `.vpn` from the VPN status view) would otherwise no-op and leave
+        // Settings on the default pane. Remember the requested pane so it survives the async load;
+        // `adjustSelectedPaneIfNeeded()` preserves it until the sections include it.
+        if !hasLoadedInitialSubscriptionState, Self.subscriptionGatedPanes.contains(identifier) {
             selectedPane = identifier
             return
         }
 
-        if sections.flatMap(\.panes).contains(identifier), identifier != selectedPane {
-            selectedPane = identifier
+        let visiblePanes = sections.flatMap(\.panes)
+        let resolvedIdentifier = Self.resolveTargetPane(identifier, visiblePanes: visiblePanes)
+
+        if visiblePanes.contains(resolvedIdentifier), resolvedIdentifier != selectedPane {
+            selectedPane = resolvedIdentifier
         }
+    }
+
+    @MainActor
+    func navigate(to destination: PreferencesDestination) {
+        selectPane(destination.pane)
+        guard destination.pane == selectedPane else { return }
+
+        websitePermissionTarget = destination.websitePermissionCategory
+        scrollTarget = destination.scrollAnchor
+    }
+
+    @MainActor
+    func resetWebsitePermissionRequest() {
+        websitePermissionTarget = nil
+    }
+
+    @MainActor
+    func resetScrollRequest() {
+        scrollTarget = nil
+    }
+
+    /// Redirect navigations targeting panes that have been folded into a parent surface.
+    /// Currently: `.duckPlayer` → `.youTubeAdBlocking` when ad blocking is available, since
+    /// Duck Player settings live as a sub-section of YouTube Ad Blocking in that build.
+    /// Without this, deep links from Duck Player's web UI (e.g. `duck://settings/duckplayer`)
+    /// silently no-op because the standalone `.duckPlayer` pane is hidden from the sidebar.
+    private static func resolveTargetPane(_ identifier: PreferencePaneIdentifier,
+                                          visiblePanes: [PreferencePaneIdentifier]) -> PreferencePaneIdentifier {
+        if identifier == .duckPlayer,
+           !visiblePanes.contains(.duckPlayer),
+           visiblePanes.contains(.youTubeAdBlocking) {
+            return .youTubeAdBlocking
+        }
+        return identifier
     }
 
     func resetTabSelectionIfNeeded() {
@@ -538,6 +692,10 @@ final class PreferencesSidebarModel: ObservableObject {
     ///   longer considered new (typically 1-2 app releases after launch)
     func isPaneNew(pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
+        case .youTubeAdBlocking:
+            true
+        case .partnershipsHub:
+            partnershipsHubProvider.showsNewBadge
         default:
             false
         }

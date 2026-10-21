@@ -99,3 +99,85 @@ public struct SyncFeatureFlags: OptionSet {
         }
     }
 }
+
+/// Supplies externally-owned rollout gates used by Sync internals.
+public protocol SyncFeatureFlagProviding {
+    /// Allows creation and recovery of scoped access credentials for third-party clients.
+    func isScopedAccessCredentialsEnabled() -> Bool
+    /// Allows this client to scan and consume Pairing V2 codes.
+    func isPairingV2ScanningEnabled() -> Bool
+    /// Allows this client to present Pairing V2 codes to peers.
+    func isPairingV2CodeEnabled() -> Bool
+    /// Allows this client to negotiate and use Exchange protocol v2.1.
+    func canUseExchangeV2Point1() -> Bool
+    /// Allows this client to authenticate Pairing V2 Exchange channel requests with a per-channel secret.
+    func canSendExchangeChannelSecret() -> Bool
+    /// Allows this client to create and register account_info keys for the unified device list.
+    func canWriteUnifiedDeviceList() -> Bool
+    /// Allows legacy-only device renames to use PATCH so stale unified device info is cleared.
+    func canUsePatchEndpointForLegacyDeviceRename() -> Bool
+    /// Allows this client to read decrypted metadata from the unified device list.
+    func canReadUnifiedDeviceList() -> Bool
+}
+
+public struct SyncFeatureFlagProvider: SyncFeatureFlagProviding {
+
+    private let isScopedAccessCredentialsEnabledCallback: () -> Bool
+    private let isPairingV2ScanningEnabledCallback: () -> Bool
+    private let isPairingV2CodeEnabledCallback: () -> Bool
+    private let canUseExchangeV2Point1Callback: () -> Bool
+    private let canSendExchangeChannelSecretCallback: () -> Bool
+    private let canWriteUnifiedDeviceListCallback: () -> Bool
+    private let canUsePatchEndpointForLegacyDeviceRenameCallback: () -> Bool
+    private let canReadUnifiedDeviceListCallback: () -> Bool
+
+    public init(isScopedAccessCredentialsEnabled: @escaping () -> Bool,
+                isPairingV2ScanningEnabled: @escaping () -> Bool,
+                isPairingV2CodeEnabled: @escaping () -> Bool,
+                canUseExchangeV2Point1: @escaping () -> Bool,
+                canSendExchangeChannelSecret: @escaping () -> Bool,
+                canWriteUnifiedDeviceList: @escaping () -> Bool,
+                canUsePatchEndpointForLegacyDeviceRename: @escaping () -> Bool,
+                canReadUnifiedDeviceList: @escaping () -> Bool) {
+        self.isScopedAccessCredentialsEnabledCallback = isScopedAccessCredentialsEnabled
+        self.isPairingV2ScanningEnabledCallback = isPairingV2ScanningEnabled
+        self.isPairingV2CodeEnabledCallback = isPairingV2CodeEnabled
+        self.canUseExchangeV2Point1Callback = canUseExchangeV2Point1
+        self.canSendExchangeChannelSecretCallback = canSendExchangeChannelSecret
+        self.canWriteUnifiedDeviceListCallback = canWriteUnifiedDeviceList
+        self.canUsePatchEndpointForLegacyDeviceRenameCallback = canUsePatchEndpointForLegacyDeviceRename
+        self.canReadUnifiedDeviceListCallback = canReadUnifiedDeviceList
+    }
+
+    public func isScopedAccessCredentialsEnabled() -> Bool {
+        isScopedAccessCredentialsEnabledCallback()
+    }
+
+    public func isPairingV2ScanningEnabled() -> Bool {
+        isPairingV2ScanningEnabledCallback()
+    }
+
+    public func isPairingV2CodeEnabled() -> Bool {
+        isPairingV2CodeEnabledCallback()
+    }
+
+    public func canUseExchangeV2Point1() -> Bool {
+        canUseExchangeV2Point1Callback()
+    }
+
+    public func canSendExchangeChannelSecret() -> Bool {
+        canSendExchangeChannelSecretCallback()
+    }
+
+    public func canWriteUnifiedDeviceList() -> Bool {
+        canWriteUnifiedDeviceListCallback()
+    }
+
+    public func canUsePatchEndpointForLegacyDeviceRename() -> Bool {
+        canUsePatchEndpointForLegacyDeviceRenameCallback()
+    }
+
+    public func canReadUnifiedDeviceList() -> Bool {
+        canReadUnifiedDeviceListCallback()
+    }
+}

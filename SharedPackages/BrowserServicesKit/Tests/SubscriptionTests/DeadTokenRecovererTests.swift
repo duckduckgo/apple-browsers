@@ -18,8 +18,7 @@
 
 import XCTest
 @testable import Subscription
-@testable import Networking
-import NetworkingTestingUtils
+@_spi(Testing) @testable import Networking
 import SubscriptionTestingUtilities
 
 final class DeadTokenRecovererTests: XCTestCase {
@@ -50,7 +49,7 @@ final class DeadTokenRecovererTests: XCTestCase {
             _ = try await recoverer.attemptRecoveryFromPastPurchase(purchasePlatform: manager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
             XCTFail("Expected error was not thrown")
         } catch let error as SubscriptionManagerError {
-            XCTAssertEqual(error, .noTokenAvailable)
+            XCTAssertEqual(error, .tokenRecoveryNotAttempted)
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

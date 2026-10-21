@@ -18,26 +18,51 @@
 //
 
 import Foundation
-import PrivacyConfig
 import Common
-import UIKit
+import Core
+import PrivacyConfig
+import FeatureFlags_iOS
 
 protocol UnifiedToggleInputFeatureProviding {
     var isAvailable: Bool { get }
+    /// When true, the UTI hides the Search↔Duck.ai toggle on Duck.ai tabs regardless of the
+    /// user's toggle-enabled setting. Backed by `FeatureFlag.aiChatTabHideToggle`.
+    ///
+    /// No protocol-extension default: every conformer (including test mocks) must declare an
+    /// explicit value so test coverage isn't silently masked by a convenient fallback.
+    var isToggleHiddenOnDuckAITab: Bool { get }
+
+    /// When true, a native image/file paste is routed into the attachment strip. Backed by `FeatureFlag.unifiedToggleInputAttachmentPaste`.
+    var isAttachmentPasteEnabled: Bool { get }
 }
 
 struct UnifiedToggleInputFeature: UnifiedToggleInputFeatureProviding {
 
-    private let featureFlagger: any FeatureFlagger
+    private static let isToggleHiddenOnDuckAITabKey = "com.duckduckgo.unifiedToggleInput.aiChatTabHideToggle.session.enabled"
+    private static let isAttachmentPasteEnabledKey = "com.duckduckgo.unifiedToggleInput.attachmentPaste.session.enabled"
+
+    /// Snapshot the feature flags once per session. Call early at launch, before any consumer reads them.
+    static func resolve(using featureFlagger: FeatureFlagger) {
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.aiChatTabHideToggle), forKey: isToggleHiddenOnDuckAITabKey)
+        UserDefaults.app.set(featureFlagger.isFeatureOn(.unifiedToggleInputAttachmentPaste), forKey: isAttachmentPasteEnabledKey)
+    }
+
     private let devicePlatform: DevicePlatformProviding.Type
 
-    init(featureFlagger: any FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
-        self.featureFlagger = featureFlagger
+    init(devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.devicePlatform = devicePlatform
     }
 
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.unifiedToggleInput) && devicePlatform.isIphone
+        devicePlatform.isIphone
     }
+
+    var isToggleHiddenOnDuckAITab: Bool {
+        UserDefaults.app.bool(forKey: Self.isToggleHiddenOnDuckAITabKey)
+    }
+
+    var isAttachmentPasteEnabled: Bool {
+        UserDefaults.app.bool(forKey: Self.isAttachmentPasteEnabledKey)
+    }
+
 }

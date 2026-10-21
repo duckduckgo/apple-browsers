@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
+import ConcurrencyExtensions
+import Foundation
+import FoundationExtensions
 import os.log
 
 public enum FailureRecoveryStep {
@@ -35,6 +37,7 @@ public protocol FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async
@@ -84,6 +87,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     func attemptRecovery(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool = false,
         dnsSettings: NetworkProtectionDNSSettings,
         updateConfig: @escaping (NetworkProtectionDeviceManagement.GenerateTunnelConfigurationResult) async throws -> Void
     ) async {
@@ -99,7 +103,9 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                 let result = try await makeRecoveryAttempt(
                     to: lastConnectedServer,
                     excludeLocalNetworks: excludeLocalNetworks,
+                    excludeCGNAT: excludeCGNAT,
                     dnsSettings: dnsSettings)
+                try Task.checkCancellation()
                 switch result {
                 case .noRecoveryNecessary:
                     eventHandler(.completed(.healthy))
@@ -107,6 +113,8 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                     try await updateConfig(generateConfigResult)
                     eventHandler(.completed(.unhealthy))
                 }
+            } catch is CancellationError {
+                throw CancellationError()
             } catch let error as NetworkProtectionErrorConvertible {
                 eventHandler(.failed(error.networkProtectionError))
                 throw error.networkProtectionError
@@ -124,6 +132,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
     private func makeRecoveryAttempt(
         to lastConnectedServer: NetworkProtectionServer,
         excludeLocalNetworks: Bool,
+        excludeCGNAT: Bool,
         dnsSettings: NetworkProtectionDNSSettings) async throws -> FailureRecoveryResult {
 
         let serverSelectionMethod: NetworkProtectionServerSelectionMethod = .failureRecovery(serverName: lastConnectedServer.serverName)
@@ -132,6 +141,7 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
         configurationResult = try await deviceManager.generateTunnelConfiguration(
             resolvedSelectionMethod: serverSelectionMethod,
             excludeLocalNetworks: excludeLocalNetworks,
+            excludeCGNAT: excludeCGNAT,
             dnsSettings: dnsSettings,
             regenerateKey: false
         )
@@ -171,6 +181,9 @@ actor FailureRecoveryHandler: FailureRecoveryHandling {
                 do {
                     try await action()
                     Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery success!")
+                    return
+                } catch is CancellationError {
+                    Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery cancelled.")
                     return
                 } catch {
                     Logger.networkProtectionTunnelFailureMonitor.log("🟢 Failure recovery failed. Retrying...")

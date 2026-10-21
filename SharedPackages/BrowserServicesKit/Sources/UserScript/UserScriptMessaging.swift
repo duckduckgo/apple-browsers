@@ -20,6 +20,7 @@ import Foundation
 import WebKit
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 
 /// A protocol to implement if you want to opt-in to centralised messaging.

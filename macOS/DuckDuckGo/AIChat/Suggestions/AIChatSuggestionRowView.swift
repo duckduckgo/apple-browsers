@@ -29,28 +29,33 @@ protocol SuggestionRowThemeProviding {
     var accentPrimaryColor: NSColor { get }
     var selectedTintColor: NSColor { get }
     var suggestionHighlightCornerRadius: CGFloat { get }
+    var suffixTextColor: NSColor { get }
+    var suffixSelectedTextColor: NSColor { get }
 }
 
 /// Default implementation that uses the app's theme manager.
 struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
+    let themeManager: ThemeManaging
+    let isBurner: Bool
+
     var accentPrimaryColor: NSColor {
-        var color: NSColor = .controlAccentColor
-        NSAppearance.withAppAppearance {
-            color = NSApp.delegateTyped.themeManager.theme.palette.accentPrimary
-        }
-        return color
+        themeManager.theme.colorsProvider.suggestionsHighlightBackgroundColor
     }
 
     var selectedTintColor: NSColor {
-        var color: NSColor = NSColor(designSystemColor: .accentContentPrimary)
-        NSAppearance.withAppAppearance {
-            color = NSApp.delegateTyped.themeManager.theme.palette.accentContentPrimary
-        }
-        return color
+        themeManager.theme.colorsProvider.suggestionsHighlightTextColor
     }
 
     var suggestionHighlightCornerRadius: CGFloat {
-        NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
+        themeManager.theme.addressBarStyleProvider.suggestionHighlightCornerRadius
+    }
+
+    var suffixTextColor: NSColor {
+        themeManager.theme.colorsProvider.suggestionsSuffixColor(isBurner: isBurner)
+    }
+
+    var suffixSelectedTextColor: NSColor {
+        themeManager.theme.colorsProvider.suggestionsHighlightSuffixColor(isBurner: isBurner)
     }
 }
 
@@ -62,13 +67,13 @@ struct DefaultSuggestionRowThemeProvider: SuggestionRowThemeProviding {
 final class AIChatSuggestionRowView: NSView {
 
     private enum Constants {
-        static let rowHeight: CGFloat = 32
-        static let horizontalPadding: CGFloat = 12
+        static let rowHeight: CGFloat = 34
+        static let horizontalPadding: CGFloat = 14
         static let iconSize: CGFloat = 16
-        static let iconTitleSpacing: CGFloat = 6
+        static let iconTitleSpacing: CGFloat = 8
 
         // Colors matching SuggestionTableCellView
-        static let iconColor: NSColor = .suggestionIcon
+        static let iconColor: NSColor = NSColor(resource: .suggestionIcon)
         static let textColor: NSColor = NSColor(designSystemColor: .textPrimary)
     }
 
@@ -137,9 +142,9 @@ final class AIChatSuggestionRowView: NSView {
 
     // MARK: - Initialization
 
-    init(suggestion: AIChatSuggestion, themeProvider: SuggestionRowThemeProviding = DefaultSuggestionRowThemeProvider()) {
+    init(suggestion: AIChatSuggestion, isBurner: Bool = false, themeManager: ThemeManaging = NSApp.delegateTyped.themeManager, themeProvider: SuggestionRowThemeProviding? = nil) {
         self.suggestion = suggestion
-        self.themeProvider = themeProvider
+        self.themeProvider = themeProvider ?? DefaultSuggestionRowThemeProvider(themeManager: themeManager, isBurner: isBurner)
         super.init(frame: .zero)
         setupView()
         configure(with: suggestion)
@@ -190,9 +195,22 @@ final class AIChatSuggestionRowView: NSView {
     private func configure(with suggestion: AIChatSuggestion) {
         titleLabel.stringValue = suggestion.title
 
-        let icon = suggestion.isPinned
-            ? DesignSystemImages.Glyphs.Size16.pin
-            : DesignSystemImages.Glyphs.Size16.chat
+        // Pinned chats override the kind-based icon. For non-pinned chats, the icon reflects
+        // the chat's kind — voice and image chats get their own glyphs (derived from the
+        // persisted model on the Duck.ai stored record), everything else uses the chat bubble.
+        let icon: NSImage
+        if suggestion.isPinned {
+            icon = DesignSystemImages.Glyphs.Size16.chatPinned
+        } else {
+            switch suggestion.kind {
+            case .voice:
+                icon = DesignSystemImages.Glyphs.Size16.voice
+            case .image:
+                icon = DesignSystemImages.Glyphs.Size16.image
+            case .text:
+                icon = DesignSystemImages.Glyphs.Size16.chat
+            }
+        }
         iconImageView.image = icon
         iconImageView.contentTintColor = Constants.iconColor
     }
@@ -211,23 +229,34 @@ final class AIChatSuggestionRowView: NSView {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
 
-        let isHighlighted = isSelected || isHovered
-        if isHighlighted {
-            let tintColor = themeProvider.selectedTintColor
-            backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
-            titleLabel.textColor = tintColor
-            iconImageView.contentTintColor = tintColor
-            deleteButton.contentTintColor = tintColor
-        } else {
-            backgroundLayer.backgroundColor = NSColor.clear.cgColor
-            titleLabel.textColor = Constants.textColor
-            iconImageView.contentTintColor = Constants.iconColor
-            deleteButton.contentTintColor = Constants.iconColor
+        // Resolve dynamic colors under the view's effective appearance so the
+        // accent CGColor matches the active dark/light variant. Without this,
+        // `.cgColor` resolves against NSAppearance.current (defaults to .aqua),
+        // producing the light-mode accent on dark-mode windows.
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            let isHighlighted = isSelected || isHovered
+            if isHighlighted {
+                let tintColor = themeProvider.selectedTintColor
+                backgroundLayer.backgroundColor = themeProvider.accentPrimaryColor.cgColor
+                titleLabel.textColor = tintColor
+                iconImageView.contentTintColor = tintColor
+                deleteButton.contentTintColor = tintColor
+            } else {
+                backgroundLayer.backgroundColor = NSColor.clear.cgColor
+                titleLabel.textColor = Constants.textColor
+                iconImageView.contentTintColor = Constants.iconColor
+                deleteButton.contentTintColor = Constants.iconColor
+            }
+
+            deleteButton.isHidden = !canDelete || !isHighlighted
         }
 
-        deleteButton.isHidden = !canDelete || !isHighlighted
-
         CATransaction.commit()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        updateAppearance()
     }
 
     @objc private func deleteButtonClicked() {
@@ -244,8 +273,9 @@ final class AIChatSuggestionRowView: NSView {
         }
 
         let newTrackingArea = NSTrackingArea(
-            rect: bounds,
-            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow],
+            // `.inVisibleRect` keeps this in step with a row the panel keeps resizing.
+            rect: .zero,
+            options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect],
             owner: self,
             userInfo: nil
         )

@@ -23,6 +23,7 @@ import WebKit
 import UIKit
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import os.log
 import DataBrokerProtectionCore
 import PrivacyConfig
@@ -44,6 +45,7 @@ public final class DBPUIViewModel {
     private var communicationLayer: DBPUICommunicationLayer?
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let freeScanEntryPoint: FreemiumDBPEntryPoint?
 
     private var editablePartialProfile: DBPUIEditablePartialProfile
 
@@ -54,7 +56,8 @@ public final class DBPUIViewModel {
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 privacyConfigManager: PrivacyConfigurationManaging,
-                contentScopeProperties: ContentScopeProperties) {
+                contentScopeProperties: ContentScopeProperties,
+                freeScanEntryPoint: FreemiumDBPEntryPoint? = nil) {
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
         self.feedbackFormDelegate = feedbackFormDelegate
@@ -63,12 +66,9 @@ public final class DBPUIViewModel {
         self.pixelHandler = pixelHandler
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
+        self.freeScanEntryPoint = freeScanEntryPoint
 
         self.editablePartialProfile = .init()
-        let profile = try? databaseDelegate.getUserProfile()
-        if let profile = profile {
-            self.editablePartialProfile = .init(from: profile)
-        }
     }
 
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration {
@@ -77,6 +77,7 @@ public final class DBPUIViewModel {
             try configuration.applyDBPUIConfiguration(privacyConfig: privacyConfigManager,
                                                       prefs: contentScopeProperties,
                                                       delegate: self,
+                                                      handshakeDelegate: self,
                                                       webUISettings: webUISettings,
                                                       vpnBypassService: nil)
             configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
@@ -110,10 +111,13 @@ public final class DBPUIViewModel {
     }
 }
 
-extension DBPUIViewModel: DBPUICommunicationDelegate {
+extension DBPUIViewModel: DBPUICommunicationDelegate, DBPUIHandshakeDelegate {
     public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
-        let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? false
-        return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated)
+        let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? true
+        let isUserEligibleForFreeTrial = authenticationDelegate?.isUserEligibleForFreeTrial() ?? false
+        return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated,
+                                      isUserEligibleForFreeTrial: isUserEligibleForFreeTrial,
+                                      freeScanEntryPoint: freeScanEntryPoint?.rawValue)
     }
     
     public func saveProfile() async throws {
@@ -126,13 +130,16 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     
     public func getUserProfile() -> DBPUIUserProfile? {
         do {
-            let profile = try databaseDelegate?.getUserProfile()
-
-            guard let profile = profile else { return nil }
+            guard let profile = try databaseDelegate?.getUserProfile() else { return nil }
             return DBPUIUserProfile(from: profile)
         } catch {
             return nil
         }
+    }
+
+    func updatePartialProfile() {
+        guard let profile = try? databaseDelegate?.getUserProfile() else { return }
+        editablePartialProfile = .init(from: profile)
     }
     
     public func deleteProfileData() throws {
@@ -180,7 +187,9 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getInitialScanState() async -> DBPUIInitialScanState {
         do {
             let allQueryData = try databaseDelegate?.getAllBrokerProfileQueryData() ?? []
-            return DBPUIInitialScanState(from: allQueryData)
+            let isAuthenticatedUser = (await authenticationDelegate?.isUserAuthenticated()) ?? true
+            let eligibleQueryData = allQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+            return DBPUIInitialScanState(from: eligibleQueryData)
         } catch {
             assertionFailure("Failed to fetch broker profile query data")
             return DBPUIInitialScanState.emptyInitialScanState()
@@ -190,7 +199,9 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
     public func getMaintenanceScanState() async -> DBPUIScanAndOptOutMaintenanceState {
         do {
             let allQueryData = try databaseDelegate?.getAllBrokerProfileQueryData() ?? []
-            return DBPUIScanAndOptOutMaintenanceState(from: allQueryData)
+            let isAuthenticatedUser = (await authenticationDelegate?.isUserAuthenticated()) ?? true
+            let eligibleQueryData = allQueryData.excludingIneligibleBrokers(isAuthenticatedUser: isAuthenticatedUser)
+            return DBPUIScanAndOptOutMaintenanceState(from: eligibleQueryData)
         } catch {
             assertionFailure("Failed to fetch broker profile query data")
             return DBPUIScanAndOptOutMaintenanceState.emptyMaintenanceState()

@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Common
 import SwiftUI
 import DesignResourcesKit
 
@@ -48,13 +49,13 @@ struct MenuItemWithBadgeConstants {
     // MARK: - Menu Item Layout Constants
 
     /// Corner radius for the menu item hover background
-    static let menuItemCornerRadius: CGFloat = 4
+    static let menuItemCornerRadius: CGFloat = AppVersion.isLiquidGlassSupported ? 7 : 4
 
     /// Horizontal padding for the menu item hover background
     static let menuItemHorizontalPadding: CGFloat = 5
 
     /// Size of the menu item icon
-    static let iconSize: CGFloat = 16
+    static let iconSize: CGFloat = 12
 
     /// Spacing between icon and title text
     static let iconTitleSpacing: CGFloat = 6
@@ -63,7 +64,7 @@ struct MenuItemWithBadgeConstants {
     static let titleBadgeSpacing: CGFloat = 16
 
     /// Left padding for the icon
-    static let iconLeftPadding: CGFloat = 14
+    static let iconLeftPadding: CGFloat = 16
 
     /// Right padding for the badge
     static let badgeRightPadding: CGFloat = 14
@@ -71,7 +72,14 @@ struct MenuItemWithBadgeConstants {
     // MARK: - Menu Item Hosting View Constants
 
     /// Default height for the menu item hosting view
-    static let hostingViewHeight: CGFloat = 22
+    static let hostingViewHeight: CGFloat = AppVersion.isLiquidGlassSupported ? 24 : 22
+
+    static let hoverColor: Color = {
+        if #available(macOS 12.0, *) {
+            return Color(nsColor: .selectedContentBackgroundColor)
+        }
+        return Color(.menuItemHover)
+    }()
 }
 
 // MARK: - Custom Badge Shape
@@ -145,6 +153,16 @@ struct BadgeView: View {
     /// The text content to display in the badge
     let text: String
 
+    /// `true` rounds all four corners equally (e.g. the omnibar's "Try for free"/"Upgrade" tags);
+    /// `false` (default) keeps the asymmetric shape used by the PLUS/PRO/BETA/free-trial tags
+    /// elsewhere in the app.
+    var hasUniformCorners: Bool = false
+    /// `true` once the omnibar's shared impression cap is reached — keeps the badge (and its tap
+    /// action) in place but swaps the attention-grabbing yellow for a neutral fill, per the Ship
+    /// Review decision to reduce long-term annoyance without removing the entry point. Only
+    /// applies to the uniform-corner style; other badges using this view aren't subject to the cap.
+    var isMuted: Bool = false
+
     // Cache commonly used styling values to avoid repeated calculations
     private static let badgeFont = Font.system(size: 11, weight: .bold)
     private static let badgeShape = BadgeShape()
@@ -152,14 +170,28 @@ struct BadgeView: View {
     var body: some View {
         Text(text)
             .font(Self.badgeFont)
-            .foregroundColor(.black)
+            .foregroundColor(isMuted ? Color(designSystemColor: .textPrimary) : .black)
             .padding(.top, MenuItemWithBadgeConstants.paddingTop)
             .padding(.bottom, MenuItemWithBadgeConstants.paddingBottom)
             .padding(.leading, MenuItemWithBadgeConstants.paddingLeft)
             .padding(.trailing, MenuItemWithBadgeConstants.paddingRight)
             .frame(height: MenuItemWithBadgeConstants.height)
-            .background(Self.badgeShape.fill(Color(baseColor: .yellow60)))
+            .background(badgeBackground)
     }
+
+    @ViewBuilder
+    private var badgeBackground: some View {
+        if hasUniformCorners {
+            RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.cornerRadius)
+                .fill(isMuted ? Color(designSystemColor: .controlsFillSecondary) : Self.tryForFreeBadgeColor)
+        } else {
+            Self.badgeShape.fill(Color(baseColor: .yellow60))
+        }
+    }
+
+    /// Figma's "Pollen 300" — `RebrandingColor.Pollen.pollen30` on this palette's 0-100 (rather
+    /// than Figma's 50-900) step convention.
+    private static let tryForFreeBadgeColor = RebrandingColor.Pollen.pollen30
 }
 
 // MARK: - Menu Item with Badge
@@ -195,7 +227,7 @@ struct MenuItemWithBadge: View {
         ZStack {
             // Background highlight that appears on hover
             RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.menuItemCornerRadius)
-                .fill(isHovered ? .menuItemHover : Color.clear)
+                .fill(isHovered ? MenuItemWithBadgeConstants.hoverColor : Color.clear)
                 .padding([.leading, .trailing], MenuItemWithBadgeConstants.menuItemHorizontalPadding)
                 .frame(maxWidth: .infinity)
 
@@ -283,7 +315,7 @@ extension NSMenuItem {
         let menuItem = NSMenuItem(action: action)
         menuItem.target = target
 
-        weak var weakTarget = target
+        weak let weakTarget = target
         let menuAction = action
 
         let badgeView = MenuItemWithBadge(leftImage: image, title: title, badgeText: badgeText) {
@@ -313,4 +345,19 @@ extension NSMenuItem {
 
         return menuItem
     }
+}
+
+extension NSMenuItem {
+
+    /// Creates a non-interactive, muted section title (no CTA) — `NSMenuItem.sectionHeader` is macOS 14+.
+    static func createMutedSectionHeader(title: String) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = false
+        item.attributedTitle = NSAttributedString(string: title, attributes: [
+            .font: NSFont.systemFont(ofSize: 12),
+            .foregroundColor: NSColor(designSystemColor: .textTertiary)
+        ])
+        return item
+    }
+
 }

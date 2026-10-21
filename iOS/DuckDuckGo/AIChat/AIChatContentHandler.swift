@@ -20,8 +20,11 @@
 import AIChat
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Core
 import os.log
+import PixelExperimentKit
+import PixelKit
 import PrivacyConfig
 import Foundation
 import Subscription
@@ -31,18 +34,61 @@ import WebKit
 protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
+    var canDispatchBridgeMessages: Bool { get }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
-    func setPageContextProvider(_ provider: ((PageContextRequestReason) -> AIChatPageContextData?)?)
+    func setOpenLinkHandler(_ openLinkHandler: ((URL) -> Void)?)
+    func setPageContextProvider(_ provider: PageContextAsyncProvider?)
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?)
+    func setChatStatusHandler(_ handler: (@MainActor (AIChatStatusValue) -> Void)?)
     func setContextualModePixelHandler(_ pixelHandler: AIChatContextualModePixelFiring)
     func setDisplayMode(_ displayMode: AIChatDisplayMode)
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+    @MainActor
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool)
+    @MainActor
+    func submitPrompt(_ prompt: String,
+                      attachments: AIChatPromptAttachments,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      termsAccepted: Bool,
+                      onPromptDispatched: (() -> Void)?)
+    @MainActor
     func submitStartChatAction()
+    @MainActor
+    func cancelPendingTabContextSubmission()
+    @MainActor func cleanUpForReplacement()
+    @MainActor
     func submitOpenSettingsAction()
     func submitPageContext(_ context: AIChatPageContextData?)
+    @MainActor
     func submitToggleSidebarAction()
+    @MainActor
+    func submitOpenChatProtectionAction()
 }
 
 extension AIChatUserScriptProviding {
+    @MainActor
+    func submitPrompt(_ prompt: String,
+                      attachments: AIChatPromptAttachments,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+        submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
+    }
+
+    @MainActor
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+        submitPrompt(prompt, pageContext: pageContext, termsAccepted: false)
+    }
+
+    @MainActor
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
@@ -64,8 +110,18 @@ protocol AIChatContentHandlingDelegate: AnyObject {
     /// Called when the user submits a prompt.
     func aiChatContentHandlerDidReceivePromptSubmission(_ handler: AIChatContentHandling)
 
+    /// Called when the frontend signals that a new chat was created (via the `userDidCreateNewChat` metric).
+    /// Fires for both the native new-chat button and the in-webview sidebar's "New Chat" — the FE is the
+    /// single source of truth so the host can reset UTI state once, on the actual transition.
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling)
+
     /// Called when the frontend requests page context (`getAIChatPageContext`), signaling it has initialized and registered its JS message handlers.
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling)
+
+    /// Called when the frontend reports the current chat response state.
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue)
+
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -74,6 +130,7 @@ protocol AIChatContentHandling: AnyObject {
     var delegate: AIChatContentHandlingDelegate? { get set }
 
     /// Configures the user script, WebView and display mode for AIChat interaction.
+    @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode)
 
     /// Sets the initial payload data for the AIChat session.
@@ -85,27 +142,79 @@ protocol AIChatContentHandling: AnyObject {
     /// Builds a URL for voice mode (appends `?mode=voice`).
     func buildVoiceModeURL() -> URL
 
-    /// Submits a prompt to the AI Chat with optional page context.
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?)
+    /// Submits a prompt to the AI Chat with optional page context. `termsAccepted` is `true` only for a prompt sent with Ask.
+    @MainActor
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool)
 
+    /// Submits a rich native prompt to the AI Chat.
+    @MainActor
+    func submitPrompt(_ prompt: String,
+                      attachments: AIChatPromptAttachments,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      termsAccepted: Bool,
+                      onPromptDispatched: (() -> Void)?)
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
-    func submitStartChatAction()
+    @MainActor
+    func submitStartChatAction() async
+
+    @MainActor
+    func cancelPendingTabContextSubmission()
 
     /// Submits an open settings action to open the AI Chat settings.
+    @MainActor
     func submitOpenSettingsAction()
 
     /// Submits a toggle sidebar action to open/close the sidebar.
+    @MainActor
     func submitToggleSidebarAction()
+
+    /// Submits a chat-protection action, opening the "All chats are private" page.
+    @MainActor
+    func submitOpenChatProtectionAction()
 
     /// Pushes page context to the frontend (for context updates during navigation).
     func submitPageContext(_ context: AIChatPageContextData?)
 
+    /// Text selections sent on the prompt's `selections` key, alongside page context rather than in place of it.
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?)
+
+    /// Called with the IDs of selections that have been dispatched.
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?)
+
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
     func fireAIChatTelemetry()
+
+    /// True when the underlying user script is bound to both a web view and a broker. Read
+    /// immediately before a `submitPrompt` call to capture whether the bridge dispatch will
+    /// actually reach the frontend.
+    var canDispatchBridgeMessages: Bool { get }
 }
 
 extension AIChatContentHandling {
+    @MainActor
+    func submitPrompt(_ prompt: String,
+                      attachments: AIChatPromptAttachments,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+        submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
+                     pageContext: pageContext, reasoningEffort: reasoningEffort,
+                     tabAttachmentRequest: tabAttachmentRequest, termsAccepted: false, onPromptDispatched: nil)
+    }
+
+    @MainActor
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?) {
+        submitPrompt(prompt, pageContext: pageContext, termsAccepted: false)
+    }
+
+    @MainActor
     func submitPrompt(_ prompt: String) {
         submitPrompt(prompt, pageContext: nil)
     }
@@ -113,6 +222,9 @@ extension AIChatContentHandling {
 
 extension AIChatContentHandlingDelegate {
     func aiChatContentHandlerDidReceivePageContextRequest(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandlerDidReceiveNewChatCreated(_ handler: AIChatContentHandling) {}
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didUpdateChatStatus status: AIChatStatusValue) {}
+    func aiChatContentHandler(_ handler: AIChatContentHandling, didRequestToOpen url: URL) {}
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -124,13 +236,23 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let featureDiscovery: FeatureDiscovery
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let freeTrialConversionService: FreeTrialConversionInstrumentationService
+    private let onboardingActivationRecorder: SubscriptionOnboardingActivationRecording
+    private let subscriptionManager: any SubscriptionManager
     private let statisticsLoader: StatisticsLoader
+    private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
+    private let debugSettings: AIChatDebugSettingsHandling
+    private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
+    private let fireNewAIChatExperimentPixels: () -> Void
 
     private var userScript: AIChatUserScriptProviding?
 
     /// Closure to get page context for contextual mode. Nil in full mode.
     /// Parameter is the request reason (e.g., `.userAction` for manual attach).
-    private let getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)?
+    private let getPageContext: PageContextAsyncProvider?
+
+    /// Retained so they survive a `setup` that happens after the owner installed them.
+    private var getAttachedSelections: (() -> [AIChatSelectionContextData])?
+    private var onAttachedSelectionsConsumed: (([String]) -> Void)?
 
     weak var delegate: AIChatContentHandlingDelegate?
 
@@ -140,25 +262,49 @@ final class AIChatContentHandler: AIChatContentHandling {
          featureDiscovery: FeatureDiscovery,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          freeTrialConversionService: FreeTrialConversionInstrumentationService = AppDependencyProvider.shared.freeTrialConversionService,
+         onboardingActivationRecorder: SubscriptionOnboardingActivationRecording,
+         subscriptionManager: any SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          statisticsLoader: StatisticsLoader = .shared,
-         getPageContext: ((PageContextRequestReason) -> AIChatPageContextData?)? = nil) {
+         unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
+         debugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding = IPadDuckAIControlsFeature(),
+         fireNewAIChatExperimentPixels: @escaping () -> Void = PixelKit.fireNewAIChatExperimentPixels,
+         getPageContext: PageContextAsyncProvider? = nil) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
         self.featureDiscovery = featureDiscovery
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.freeTrialConversionService = freeTrialConversionService
+        self.onboardingActivationRecorder = onboardingActivationRecorder
+        self.subscriptionManager = subscriptionManager
         self.statisticsLoader = statisticsLoader
+        self.unifiedToggleInputFeature = unifiedToggleInputFeature
+        self.debugSettings = debugSettings
+        self.iPadDuckAIControlsFeature = iPadDuckAIControlsFeature
+        self.fireNewAIChatExperimentPixels = fireNewAIChatExperimentPixels
         self.getPageContext = getPageContext
     }
 
+    @MainActor
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView, displayMode: AIChatDisplayMode) {
+        self.userScript?.cleanUpForReplacement()
         self.userScript = userScript
         self.userScript?.delegate = self
         self.userScript?.setDisplayMode(displayMode)
         self.userScript?.setPayloadHandler(payloadHandler)
+        self.userScript?.setOpenLinkHandler { [weak self] url in
+            guard let self else { return }
+            self.delegate?.aiChatContentHandler(self, didRequestToOpen: url)
+        }
+        self.userScript?.setChatStatusHandler { [weak self] status in
+            guard let self else { return }
+            self.delegate?.aiChatContentHandler(self, didUpdateChatStatus: status)
+        }
         self.userScript?.webView = webView
         self.userScript?.setPageContextProvider(getPageContext)
+        self.userScript?.setAttachedSelectionsProvider(getAttachedSelections)
+        self.userScript?.setAttachedSelectionsConsumedHandler(onAttachedSelectionsConsumed)
     }
     
     /// Sets the initial payload data for the AIChat session.
@@ -169,74 +315,135 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     /// Builds a query URL with optional prompt, auto-submit, onboarding flow and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, flowType: AIChatOnboardingFlowType = .default, tools: [AIChatRAGTool]?) -> URL {
-        guard let query, var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
-            return aiChatSettings.aiChatURL
+        guard var components = URLComponents(url: aiChatSettings.aiChatURL, resolvingAgainstBaseURL: false) else {
+            return updatingNativeInputParameterIfNeeded(in: aiChatSettings.aiChatURL)
         }
 
         var queryItems = components.queryItems ?? []
 
-        if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            queryItems.removeAll { $0.name == AIChatURLParameters.promptQueryName }
-            queryItems.append(URLQueryItem(name: AIChatURLParameters.promptQueryName, value: query))
-        }
+        if let query {
+            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                queryItems.removeAll { $0.name == AIChatURLParameters.promptQueryName }
+                queryItems.append(URLQueryItem(name: AIChatURLParameters.promptQueryName, value: query))
+            }
 
-        if autoSend {
-            queryItems.removeAll { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }
-            queryItems.append(URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue))
-        }
+            if autoSend {
+                queryItems.removeAll { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }
+                queryItems.append(URLQueryItem(
+                    name: AIChatURLParameters.autoSubmitPromptQueryName,
+                    value: AIChatURLParameters.autoSubmitPromptQueryValue
+                ))
+            }
 
-        if let flowValue = flowType.flowQueryValue {
-            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
-            queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
-        } else {
-            queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
-        }
+            if let flowValue = flowType.flowQueryValue {
+                queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+                queryItems.append(URLQueryItem(name: AIChatURLParameters.flowQueryName, value: flowValue))
+            } else {
+                queryItems.removeAll { $0.name == AIChatURLParameters.flowQueryName }
+            }
 
-        if let tools = tools, !tools.isEmpty {
-            queryItems.removeAll { $0.name == AIChatURLParameters.toolChoiceName }
-            for tool in tools {
-                queryItems.append(URLQueryItem(name: AIChatURLParameters.toolChoiceName, value: tool.rawValue))
+            if let tools = tools, !tools.isEmpty {
+                queryItems.removeAll { $0.name == AIChatURLParameters.toolChoiceName }
+                for tool in tools {
+                    queryItems.append(URLQueryItem(name: AIChatURLParameters.toolChoiceName, value: tool.rawValue))
+                }
             }
         }
 
-        components.queryItems = queryItems
-        return components.url ?? aiChatSettings.aiChatURL
+        if isNativeInputParameterSupported(for: aiChatSettings.aiChatURL) {
+            queryItems.removeAll { $0.name == AIChatURLParameters.nativeInputName }
+            if unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable {
+                queryItems.append(URLQueryItem(name: AIChatURLParameters.nativeInputName, value: AIChatURLParameters.nativeInputValue))
+            }
+        }
+
+        components.queryItems = queryItems.isEmpty ? nil : queryItems
+        return components.url ?? updatingNativeInputParameterIfNeeded(in: aiChatSettings.aiChatURL)
     }
     
     func buildVoiceModeURL() -> URL {
-        AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL)
+        updatingNativeInputParameterIfNeeded(in: AIChatURLParameters.voiceModeURL(from: aiChatSettings.aiChatURL))
     }
 
-    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData? = nil) {
+    var canDispatchBridgeMessages: Bool {
+        userScript?.canDispatchBridgeMessages ?? false
+    }
+
+    @MainActor
+    func submitPrompt(_ prompt: String, pageContext: AIChatPageContextData?, termsAccepted: Bool) {
         if let context = pageContext {
             Logger.aiChat.debug("[PageContext] Prompt submitted with context - title: \(context.title.prefix(50))")
         } else {
             Logger.aiChat.debug("[PageContext] Prompt submitted without context")
         }
-        userScript?.submitPrompt(prompt, pageContext: pageContext)
+        userScript?.submitPrompt(prompt, pageContext: pageContext, termsAccepted: termsAccepted)
+    }
+
+    @MainActor
+    func submitPrompt(_ prompt: String,
+                      attachments: AIChatPromptAttachments,
+                      modelId: String?,
+                      tools: [AIChatRAGTool]?,
+                      pageContext: AIChatPageContextData?,
+                      reasoningEffort: AIChatReasoningEffort?,
+                      tabAttachmentRequest: MultiTabAttachmentRequest?,
+                      termsAccepted: Bool,
+                      onPromptDispatched: (() -> Void)?) {
+        guard let userScript else {
+            tabAttachmentRequest?.cancel()
+            return
+        }
+        userScript.submitPrompt(prompt, attachments: attachments, modelId: modelId, tools: tools,
+                                pageContext: pageContext, reasoningEffort: reasoningEffort,
+                                tabAttachmentRequest: tabAttachmentRequest, termsAccepted: termsAccepted,
+                                onPromptDispatched: onPromptDispatched)
     }
 
     /// Submits a start chat action to initiate a new AI Chat conversation.
     /// Only pushes page context if auto-attach is enabled; manual attach goes through explicit pushPageContext calls.
-    func submitStartChatAction() {
-        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = getPageContext?(.other) {
+    @MainActor
+    func submitStartChatAction() async {
+        cancelPendingTabContextSubmission()
+        if aiChatSettings.isAutomaticContextAttachmentEnabled, let context = await getPageContext?(.other) {
             userScript?.submitPageContext(context)
         }
         userScript?.submitStartChatAction()
     }
 
+    @MainActor
+    func cancelPendingTabContextSubmission() {
+        userScript?.cancelPendingTabContextSubmission()
+    }
+
     /// Submits an open settings action to open the AI Chat settings.
+    @MainActor
     func submitOpenSettingsAction() {
         userScript?.submitOpenSettingsAction()
     }
 
     /// Submits a toggle sidebar action to open/close the sidebar.
+    @MainActor
     func submitToggleSidebarAction() {
         userScript?.submitToggleSidebarAction()
     }
 
+    @MainActor
+    func submitOpenChatProtectionAction() {
+        userScript?.submitOpenChatProtectionAction()
+    }
+
     func submitPageContext(_ context: AIChatPageContextData?) {
         userScript?.submitPageContext(context)
+    }
+
+    func setAttachedSelectionsProvider(_ provider: (() -> [AIChatSelectionContextData])?) {
+        getAttachedSelections = provider
+        userScript?.setAttachedSelectionsProvider(provider)
+    }
+
+    func setAttachedSelectionsConsumedHandler(_ handler: (([String]) -> Void)?) {
+        onAttachedSelectionsConsumed = handler
+        userScript?.setAttachedSelectionsConsumedHandler(handler)
     }
 
     /// Fires AI Chat telemetry: product surface telemetry, 'chat open' pixel, and sets the AI Chat feature as 'used before'
@@ -244,6 +451,18 @@ final class AIChatContentHandler: AIChatContentHandling {
         productSurfaceTelemetry.duckAIUsed()
         pixelMetricHandler?.fireOpenAIChat()
         featureDiscovery.setWasUsedBefore(.aiChat)
+    }
+
+    private func updatingNativeInputParameterIfNeeded(in url: URL) -> URL {
+        AIChatURLParameters.updatingNativeInputURL(
+            from: url,
+            isNativeInputAvailable: unifiedToggleInputFeature.isAvailable || iPadDuckAIControlsFeature.isAvailable,
+            isSupportedURL: isNativeInputParameterSupported(for: url)
+        )
+    }
+
+    private func isNativeInputParameterSupported(for url: URL) -> Bool {
+        url.isDuckAIURL || debugSettings.matchesCustomURL(url)
     }
 }
 
@@ -262,6 +481,8 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             delegate?.aiChatContentHandlerDidReceiveCloseChatRequest(self)
         case .sendToSyncSettings, .sendToSetupSync:
             delegate?.aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(self)
+        case .newChatStarted:
+            delegate?.aiChatContentHandlerDidReceiveNewChatCreated(self)
         default:
             break
         }
@@ -275,6 +496,19 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
 
             if let tier = metric.modelTier, case .plus = tier {
                 freeTrialConversionService.markDuckAIActivated()
+                // Also completes the subscription onboarding checklist's Duck.ai step
+                let wasAlreadyActivated = onboardingActivationRecorder.recordDuckAIActivatedIfNeeded()
+                Task {
+                    SubscriptionOnboardingExperiment.fireDuckAIPaidUsedMetricIfNeeded(
+                        isSubscriptionActive: await subscriptionManager.isActiveSubscription(),
+                        isAlreadyActivated: wasAlreadyActivated)
+                }
+            }
+
+            // The first prompt is what actually starts a chat, so `duck_ai_new_chat` hangs off it
+            // rather than off the new-chat page being opened.
+            if metric.metricName == .userDidSubmitFirstPrompt {
+                fireNewAIChatExperimentPixels()
             }
 
             DispatchQueue.main.async {

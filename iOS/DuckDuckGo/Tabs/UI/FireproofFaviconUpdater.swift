@@ -1,0 +1,184 @@
+//
+//  FireproofFaviconUpdater.swift
+//  DuckDuckGo
+//
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Bookmarks
+import BrowserServicesKit
+import Core
+import CoreData
+import os.log
+import Persistence
+import UserScript
+import WebKit
+import FeatureFlags_iOS
+
+protocol TabNotifying {
+    func didUpdateFavicon()
+}
+
+extension Tab: TabNotifying {}
+
+protocol FaviconProviding {
+
+    func loadFavicon(forDomain domain: String, fromURL url: URL?, intoCache cacheType: FaviconsCacheType, completion: ((UIImage?) -> Void)?)
+    func replaceFireproofFavicon(forDomain domain: String?, withImage: UIImage)
+
+}
+
+// Favicons conforms to FaviconProviding via FaviconManaging.
+// The loadFavicon(forDomain:fromURL:intoCache:completion:) requirement is satisfied
+// by the default implementation in the FaviconManaging protocol extension.
+
+class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
+
+    public static let deleteFireproofFaviconNotification = Notification.Name("com.duckduckgo.app.FireproofFaviconUpdaterDeleteBookmarkFavicon")
+
+    struct UserInfoKeys {
+        static let faviconDomain = "com.duckduckgo.com.userInfoKey.faviconDomain"
+    }
+
+    let context: NSManagedObjectContext
+    var secureVault: (any AutofillSecureVault)?
+    let tab: TabNotifying
+    let favicons: FaviconManaging
+
+    private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+
+    init(bookmarksDatabase: CoreDataDatabase,
+         tab: TabNotifying,
+         favicons: FaviconManaging,
+         sharedSecureVault: (any AutofillSecureVault)? = nil) {
+        self.context = bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        self.tab = tab
+        self.favicons = favicons
+        self.secureVault = sharedSecureVault
+
+        super.init()
+        registerForNotifications()
+    }
+
+    private func registerForNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(deleteFireproofFavicon(_:)),
+                                               name: FireproofFaviconUpdater.deleteFireproofFaviconNotification,
+                                               object: nil)
+    }
+
+    @MainActor
+    func faviconUserScript(_ faviconUserScript: FaviconUserScript,
+                           didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
+                           for documentUrl: URL,
+                           in webView: WKWebView?) {
+        guard let host = documentUrl.host else { return }
+
+        // Note: Unlike macOS, we don't validate documentUrl matches the tab's current URL.
+        // This is safe because favicons are cached by domain, not associated with the tab directly.
+
+        // SVG favicons are filtered in C-S-S before reaching native code (iOS only)
+        let faviconURL: URL? = faviconLinks
+            .first { $0.rel.contains("icon") && !$0.rel.contains("apple-touch") }
+            .map { $0.href }
+            ?? faviconLinks.first.map { $0.href }
+
+        favicons.loadFavicon(forDomain: host, fromURL: faviconURL, intoCache: .tabs) { [weak self] image in
+            guard let self = self else { return }
+            self.tab.didUpdateFavicon()
+            replaceFireproofFaviconIfNecessary(image, forHost: host)
+        }
+    }
+
+    // MARK: - Favicon replacement logic
+
+    private func replaceFireproofFaviconIfNecessary(_ image: UIImage?, forHost host: String) {
+        guard let image = image else { return }
+        if self.bookmarkExists(for: host) {
+            self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+            return
+        }
+
+        Task { @MainActor in
+            let autofillExists = await self.autofillLoginExists(for: host)
+            if autofillExists {
+                self.favicons.replaceFireproofFavicon(forDomain: host, withImage: image)
+            }
+        }
+    }
+
+    private func bookmarkExists(for domain: String) -> Bool {
+        let domainPredicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "%K BEGINSWITH[c] %@", #keyPath(BookmarkEntity.url), "http://\(domain)"),
+            NSPredicate(format: "%K BEGINSWITH[c] %@", #keyPath(BookmarkEntity.url), "https://\(domain)"),
+            NSPredicate(format: "%K BEGINSWITH[c] %@", #keyPath(BookmarkEntity.url), "http://www.\(domain)"),
+            NSPredicate(format: "%K BEGINSWITH[c] %@", #keyPath(BookmarkEntity.url), "https://www.\(domain)")
+        ])
+
+        let notFolderPredicate = NSPredicate(format: "%K = NO", #keyPath(BookmarkEntity.isFolder))
+        let notDeletedPredicate = NSPredicate(format: "%K = NO", #keyPath(BookmarkEntity.isPendingDeletion))
+        let notStubsPredicate = NSPredicate(format: "%K == NO OR %K == nil", #keyPath(BookmarkEntity.isStub), #keyPath(BookmarkEntity.isStub))
+
+        let request = BookmarkEntity.fetchRequest()
+        request.fetchLimit = 1
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [
+            notFolderPredicate,
+            notDeletedPredicate,
+            notStubsPredicate,
+            domainPredicate
+        ])
+        let result = (try? context.count(for: request)) ?? 0 > 0
+        return result
+    }
+
+    private func initSecureVault() async -> (any AutofillSecureVault)? {
+        if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
+            if secureVault == nil {
+                // Fallback: Create new instance if shared one was not injected
+                Logger.general.info("FireproofFaviconUpdater creating fallback SecureVault instance")
+                // Move heavy PBKDF2 crypto operations to background thread to avoid blocking main thread
+                secureVault = await Task.detached(priority: .userInitiated) {
+                    return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                }.value
+            }
+            return secureVault
+        }
+        return nil
+    }
+
+    private func autofillLoginExists(for domain: String) async -> Bool {
+        guard let secureVault = await initSecureVault() else {
+            return false
+        }
+
+        do {
+            let accounts = try secureVault.accounts()
+            return accounts.contains(where: { $0.domain == domain })
+        } catch {
+            return false
+        }
+    }
+
+    @objc private func deleteFireproofFavicon(_ notification: Notification) {
+        guard let domain = notification.userInfo?[UserInfoKeys.faviconDomain] as? String,
+              !bookmarkExists(for: domain) else { return }
+        Task { @MainActor in
+            let autofillLoginExists = await autofillLoginExists(for: domain)
+            guard !autofillLoginExists else { return }
+            favicons.removeBookmarkFavicon(forDomain: domain)
+        }
+    }
+
+}

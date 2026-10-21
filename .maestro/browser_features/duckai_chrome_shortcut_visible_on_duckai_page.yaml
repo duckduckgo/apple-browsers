@@ -1,0 +1,30 @@
+# duckai_chrome_shortcut_visible_on_duckai_page.yaml
+#
+# Scenario 3: The chrome shortcut stays visible regardless of the current page —
+# on the New Tab Page and on a Duck.ai page (it is not hidden by page type).
+appId: com.duckduckgo.mobile.ios
+tags:
+    - ipad
+    - duckai_chrome_shortcut
+
+---
+
+- runFlow: ../shared/duckai_chrome_shortcut_setup.yaml
+
+# On the New Tab Page the shortcut is shown.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatMenuButton"
+
+# Navigate to a Duck.ai page.
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://duck.ai"
+- pressKey: Enter
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# The shortcut remains visible on a Duck.ai page.
+- assertVisible:
+    id: "Browser.TabsBar.AIChatMenuButton"

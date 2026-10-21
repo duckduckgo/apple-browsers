@@ -18,6 +18,7 @@
 
 import XCTest
 import PixelKit
+import WideEvent
 @testable import Subscription
 
 final class SubscriptionWideEventTests: XCTestCase {
@@ -60,6 +61,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             dryRun: false, // We set a mock `fireRequest` value to ensure no network requests are actually sent
             appVersion: "1.0.0",
             source: "test",
+            session: "test",
             defaultHeaders: [:],
             dateGenerator: Date.init,
             defaults: testDefaults,
@@ -87,11 +89,13 @@ final class SubscriptionWideEventTests: XCTestCase {
     // MARK: - Successful Subscription Flow Tests
 
     func testSuccessfulAppStoreSubscriptionFlow() throws {
+        XCTAssertEqual(SubscriptionPurchaseWideEventData.metadata.version, "1.2.0")
+
         let subscriptionData = SubscriptionPurchaseWideEventData(
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
-            funnelName: "funnel_onboarding_ios"
+            entryPoint: .settings
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -144,7 +148,8 @@ final class SubscriptionWideEventTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_activation_latency_ms_bucketed"], "10000")
-        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_onboarding_ios")
+        XCTAssertEqual(params["feature.data.ext.entry_point"], "settings")
+        XCTAssertNil(params["feature.data.ext.funnel_name"])
         XCTAssertNil(params["context.name"])
 
         XCTAssertNotNil(params["app.name"])
@@ -161,7 +166,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
-            funnelName: "funnel_onboarding_ios"
+            entryPoint: .duckAI
         )
 
         wideEvent.startFlow(subscriptionData)
@@ -190,7 +195,8 @@ final class SubscriptionWideEventTests: XCTestCase {
         let params = firedPixels[0].parameters
         XCTAssertEqual(params["feature.data.ext.purchase_platform"], "stripe")
         XCTAssertEqual(params["feature.data.ext.free_trial_eligible"], "false")
-        XCTAssertEqual(params["feature.data.ext.funnel_name"], "funnel_onboarding_ios")
+        XCTAssertEqual(params["feature.data.ext.entry_point"], "duck_ai")
+        XCTAssertNil(params["feature.data.ext.funnel_name"])
         XCTAssertNil(params["context.name"])
     }
 
@@ -201,6 +207,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -233,10 +240,14 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_CREATE")
-        XCTAssertEqual(params["feature.data.error.domain"], "Error")
-        XCTAssertEqual(params["feature.data.error.code"], "123")
-        XCTAssertEqual(params["feature.data.error.underlying_domain"], "UnderlyingError")
-        XCTAssertEqual(params["feature.data.error.underlying_code"], "456")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "Error")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "123")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_domain"], "UnderlyingError")
+        XCTAssertEqual(params["feature.data.ext.error.underlying_code"], "456")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
+        XCTAssertNil(params["feature.data.error.underlying_domain"])
+        XCTAssertNil(params["feature.data.error.underlying_code"])
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "10000") // Bucketed from 8000
     }
 
@@ -245,6 +256,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: true,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -276,8 +288,10 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         XCTAssertEqual(params["feature.status"], "FAILURE")
         XCTAssertEqual(params["feature.data.ext.failing_step"], "ACCOUNT_PAYMENT")
-        XCTAssertEqual(params["feature.data.error.domain"], "SKErrorDomain")
-        XCTAssertEqual(params["feature.data.error.code"], "2")
+        XCTAssertEqual(params["feature.data.ext.error.domain"], "SKErrorDomain")
+        XCTAssertEqual(params["feature.data.ext.error.code"], "2")
+        XCTAssertNil(params["feature.data.error.domain"])
+        XCTAssertNil(params["feature.data.error.code"])
         XCTAssertEqual(params["feature.data.ext.account_creation_latency_ms_bucketed"], "5000")
         XCTAssertEqual(params["feature.data.ext.account_payment_latency_ms_bucketed"], "30000")
     }
@@ -289,6 +303,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -320,6 +335,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         wideEvent.startFlow(subscriptionData)
@@ -351,6 +367,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -369,6 +386,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -390,6 +408,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
         let start = Date().addingTimeInterval(-SubscriptionPurchaseWideEventData.activationTimeout - 10)
@@ -410,6 +429,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .stripe,
             subscriptionIdentifier: "ddg.privacy.pro.yearly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -431,6 +451,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 
@@ -453,6 +474,7 @@ final class SubscriptionWideEventTests: XCTestCase {
             purchasePlatform: .appStore,
             subscriptionIdentifier: "ddg.privacy.pro.monthly.renews.us",
             freeTrialEligible: false,
+            entryPoint: .unknown,
             contextData: WideEventContextData()
         )
 

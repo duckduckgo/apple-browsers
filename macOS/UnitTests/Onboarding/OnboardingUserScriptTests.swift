@@ -104,6 +104,15 @@ final class OnboardingUserScriptTests: XCTestCase {
     }
 
     @MainActor
+    func testRequestChromeExtensionInstall_CallsInstallChromeExtension() async throws {
+        let handler = try XCTUnwrap(script.handler(forMethodNamed: "requestChromeExtensionInstall"))
+
+        let result = try await handler([""], WKScriptMessage.mock())
+        XCTAssertTrue(mockManager.installChromeExtensionCalled)
+        XCTAssertNil(result)
+    }
+
+    @MainActor
     func testSetBookmarksBar_CallsSetBookmarkBar() async throws {
         let randomBool = Bool.random()
         let params = ["enabled": randomBool]

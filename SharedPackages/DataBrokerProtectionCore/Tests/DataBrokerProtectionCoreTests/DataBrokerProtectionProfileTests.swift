@@ -19,7 +19,9 @@
 import XCTest
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import BrowserServicesKit
 import SecureStorage
+import SecureStorageTestsUtils
 
 final class DataBrokerProtectionProfileTests: XCTestCase {
     func testProfileQueriesWithSingleAddressMultipleNames() {
@@ -274,6 +276,74 @@ final class DataBrokerProtectionProfileTests: XCTestCase {
         XCTAssertTrue(vault.wasSaveProfileQueryCalled)
         XCTAssertFalse(vault.wasUpdateProfileQueryCalled)
         XCTAssertTrue(vault.wasDeleteProfileQueryCalled)
+    }
+
+    func testChangingProfileThenChangingItBackReactivatesOriginalQuery() async throws {
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("DBPProfileTests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: temporaryDirectory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temporaryDirectory) }
+
+        let databaseProvider = try DefaultDataBrokerProtectionDatabaseProvider(
+            file: temporaryDirectory.appendingPathComponent("Vault.db"),
+            key: Data("key".utf8),
+            registerMigrationsHandler: DefaultDataBrokerProtectionDatabaseMigrationsProvider.v10Migrations
+        )
+        let keyStoreProvider = MockKeystoreProvider()
+        keyStoreProvider._encryptedL2Key = Data("encryptedL2".utf8)
+        keyStoreProvider._generatedPassword = Data("generatedPassword".utf8)
+        let vault = DefaultDataBrokerProtectionSecureVault(providers: SecureStorageProviders(
+            crypto: NoOpCryptoProvider(),
+            database: databaseProvider,
+            keystore: keyStoreProvider
+        ))
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                    pixelHandler: MockDataBrokerProtectionPixelsHandler(),
+                                                    vault: vault,
+                                                    localBrokerService: MockLocalBrokerJSONService())
+
+        let brokerURL = try XCTUnwrap(Bundle.module.url(forResource: "valid-broker",
+                                                        withExtension: "json",
+                                                        subdirectory: "BundleResources"))
+        let brokerID = try database.saveBroker(brokerResource: DataBroker.initFromResource(brokerURL))
+        let originalProfile = DataBrokerProtectionProfile(names: [.init(firstName: "Alice", lastName: "Example")],
+                                                          addresses: [.init(city: "Testville", state: "CA")],
+                                                          phones: [],
+                                                          birthYear: 1980)
+        let changedProfile = DataBrokerProtectionProfile(names: originalProfile.names,
+                                                         addresses: originalProfile.addresses,
+                                                         phones: originalProfile.phones,
+                                                         birthYear: 1981)
+
+        try await database.save(originalProfile)
+        let originalQuery = try XCTUnwrap(vault.fetchAllProfileQueries(for: 1).first)
+        let originalQueryID = try XCTUnwrap(originalQuery.id)
+        try database.saveOptOutJob(
+            optOut: .mock(with: ExtractedProfile(),
+                          brokerId: brokerID,
+                          profileQueryId: originalQueryID,
+                          preferredRunDate: Date()),
+            extractedProfile: ExtractedProfile()
+        )
+
+        try await database.save(changedProfile)
+
+        let changedQueries = try vault.fetchAllProfileQueries(for: 1)
+        XCTAssertTrue(try XCTUnwrap(changedQueries.first { $0.birthYear == 1980 }).deprecated)
+        XCTAssertFalse(try XCTUnwrap(changedQueries.first { $0.birthYear == 1981 }).deprecated)
+
+        let beforeRevert = Date()
+        try await database.save(originalProfile)
+
+        let finalQueries = try vault.fetchAllProfileQueries(for: 1)
+        let reactivatedQuery = try XCTUnwrap(finalQueries.first { $0.birthYear == 1980 })
+        XCTAssertEqual(reactivatedQuery.id, originalQueryID)
+        XCTAssertFalse(reactivatedQuery.deprecated)
+        XCTAssertNil(finalQueries.first { $0.birthYear == 1981 })
+
+        let scan = try XCTUnwrap(vault.fetchScan(brokerId: brokerID, profileQueryId: originalQueryID))
+        XCTAssertGreaterThanOrEqual(try XCTUnwrap(scan.preferredRunDate), beforeRevert)
+        XCTAssertEqual(try vault.fetchOptOuts(brokerId: brokerID, profileQueryId: originalQueryID).count, 1)
     }
 }
 

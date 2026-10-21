@@ -40,13 +40,17 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
 
     func makeNewTabEntry() -> BrowsingMenuEntry
     func makeChatEntry() -> BrowsingMenuEntry?
+    func makeDuckAiChatsEntry() -> BrowsingMenuEntry?
+    func makeDuckAIMenuItems() -> [BrowsingMenuEntry]
     func makeSettingsEntry() -> BrowsingMenuEntry
     func makeShareEntry() -> BrowsingMenuEntry
+    func makeCopyLinkEntry() -> BrowsingMenuEntry?
     func makePrintEntry() -> BrowsingMenuEntry
     func makeDownloadsEntry() -> BrowsingMenuEntry
     func makeAutoFillEntry() -> BrowsingMenuEntry?
     func makeVPNEntry() -> BrowsingMenuEntry?
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry
+    func makeSitePermissionsEntry() -> BrowsingMenuEntry?
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)?
     func makeFindInPageEntry() -> BrowsingMenuEntry?
     func makeZoomEntry() -> BrowsingMenuEntry?
@@ -57,7 +61,8 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeClearDataEntry(mobileCustomization: MobileCustomization, clearTabsAndData: @escaping () -> Void) -> BrowsingMenuEntry?
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry?
     func makeKeepSignInEntry() -> BrowsingMenuEntry?
-    func makeFireModePromotionEntry() -> BrowsingMenuEntry?
+    func makeYouTubeAdBlockToggleEntry() -> BrowsingMenuEntry?
+    func makeSendInternalFeedbackEntry() -> BrowsingMenuEntry?
 }
 
 protocol BrowsingMenuBuilding: AnyObject {

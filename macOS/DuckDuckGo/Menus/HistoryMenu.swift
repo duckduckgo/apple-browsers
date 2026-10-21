@@ -19,7 +19,9 @@
 import Cocoa
 import Combine
 import Common
-import FeatureFlags
+import DesignResourcesKitIcons
+import FoundationExtensions
+import FeatureFlags_macOS
 import History
 import os.log
 import PrivacyConfig
@@ -30,8 +32,15 @@ final class HistoryMenu: NSMenu {
         case mainMenu, moreOptionsMenu
     }
 
+    private enum Constants {
+        static let maxRecentlyVisitedItems = 12
+        static let itemNotFoundIndex = -1
+    }
+
     let backMenuItem = NSMenuItem(title: UserText.navigateBack, action: #selector(MainViewController.back), keyEquivalent: "[")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowLeft)
     let forwardMenuItem = NSMenuItem(title: UserText.navigateForward, action: #selector(MainViewController.forward), keyEquivalent: "]")
+        .withImage(DesignSystemImages.Glyphs.Size12.arrowRight)
 
     private let recentlyClosedMenuItem = NSMenuItem(title: UserText.mainMenuHistoryRecentlyClosed)
     private let reopenLastClosedMenuItem = NSMenuItem(title: UserText.reopenLastClosedTab, action: #selector(AppDelegate.reopenLastClosedTab))
@@ -43,11 +52,13 @@ final class HistoryMenu: NSMenu {
         keyEquivalent: "y",
         representedObject: location
     )
+        .withImage(DesignSystemImages.Glyphs.Size12.history, visibleOnMacOS27: true)
     private let showHistorySeparator = NSMenuItem.separator()
-    private let clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
-                                                     action: #selector(AppDelegate.clearAllHistory),
-                                                     keyEquivalent: [.command, .shift, .backspace])
+    private lazy var clearAllHistoryMenuItem = NSMenuItem(title: UserText.mainMenuHistoryDeleteAllHistory,
+                                                         action: #selector(AppDelegate.clearAllHistory),
+                                                         keyEquivalent: [.command, .shift, .backspace])
         .withAccessibilityIdentifier("HistoryMenu.clearAllHistory")
+        .withImage(DesignSystemImages.Glyphs.Size12.trash, visibleOnMacOS27: location == .moreOptionsMenu)
     private let clearAllHistorySeparator = NSMenuItem.separator()
 
     private let historyGroupingProvider: HistoryGroupingProvider
@@ -116,17 +127,9 @@ final class HistoryMenu: NSMenu {
         updateRecentlyClosedMenu()
         updateReopenLastClosedMenuItem()
 
-        clearOldVariableMenuItems()
-        addRecentlyVisited()
-        addClearAllAndShowHistoryOnTheBottom()
-    }
+        updateRecentlyVisited()
 
-    private func clearOldVariableMenuItems() {
-        items.removeAll { menuItem in
-            recentlyVisitedMenuItems.contains(menuItem) ||
-            menuItem == clearAllHistoryMenuItem ||
-            (menuItem == showHistoryMenuItem && location == .mainMenu)
-        }
+        alignItemTextWithIcons()
     }
 
     // MARK: - Last Closed & Recently Closed
@@ -163,36 +166,43 @@ final class HistoryMenu: NSMenu {
     private var recentlyVisitedMenuItems = [NSMenuItem]()
 
     @MainActor
-    private func addRecentlyVisited() {
-        recentlyVisitedMenuItems = [recentlyVisitedHeaderMenuItem]
-        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: 12)
-        for (index, visit) in zip(
-            recentVisits.indices, recentVisits
-        ) {
+    private func updateRecentlyVisited() {
+        let oldMenuItems = recentlyVisitedMenuItems
+        recentlyVisitedMenuItems = makeRecentlyVisitedMenuItems()
+        insert(recentlyVisitedMenuItems, before: anchorSeparator)
+        removeMenuItems(oldItems: oldMenuItems)
+    }
+
+    private var anchorSeparator: NSMenuItem {
+        location == .mainMenu ? showHistorySeparator : clearAllHistorySeparator
+    }
+
+    @MainActor
+    private func makeRecentlyVisitedMenuItems() -> [NSMenuItem] {
+        var menuItems = [recentlyVisitedHeaderMenuItem]
+        let recentVisits = historyGroupingProvider.getRecentVisits(maxCount: Constants.maxRecentlyVisitedItems)
+        for (index, visit) in zip(recentVisits.indices, recentVisits) {
             let visitMenuItem = VisitMenuItem(visitViewModel: VisitViewModel(visit: visit))
             visitMenuItem.setAccessibilityIdentifier("HistoryMenu.recentlyVisitedMenuItem.\(index)")
-            recentlyVisitedMenuItems.append(visitMenuItem)
+            menuItems.append(visitMenuItem)
         }
-        for recentlyVisitedMenuItem in recentlyVisitedMenuItems {
-            addItem(recentlyVisitedMenuItem)
+        return menuItems
+    }
+
+    private func insert(_ menuItems: [NSMenuItem], before anchor: NSMenuItem) {
+        var insertionIndex = index(of: anchor)
+        guard insertionIndex != Constants.itemNotFoundIndex else {
+            assertionFailure("HistoryMenu: anchor separator missing")
+            return
+        }
+        for menuItem in menuItems {
+            insertItem(menuItem, at: insertionIndex)
+            insertionIndex += 1
         }
     }
 
-    // MARK: - Clear All History
-
-    private func addClearAllAndShowHistoryOnTheBottom() {
-        if location == .mainMenu {
-            if showHistorySeparator.menu != nil {
-                removeItem(showHistorySeparator)
-            }
-            addItem(showHistorySeparator)
-            addItem(showHistoryMenuItem)
-        }
-        if clearAllHistorySeparator.menu != nil {
-            removeItem(clearAllHistorySeparator)
-        }
-        addItem(clearAllHistorySeparator)
-        addItem(clearAllHistoryMenuItem)
+    private func removeMenuItems(oldItems: [NSMenuItem]) {
+        oldItems.filter { $0.menu === self }.forEach(removeItem)
     }
 }
 
@@ -200,7 +210,7 @@ extension HistoryMenu {
 
     /**
      * This class manages the shortcut assignment to either of the
-     * "Reopen Last Closed Tab" or "Reopen All Windows From Last Session"
+     * "Reopen Last Closed Tab" or "Reopen All Windows and Tabs From Last Session"
      * menu items.
      */
     final class ReopenMenuItemKeyEquivalentManager {

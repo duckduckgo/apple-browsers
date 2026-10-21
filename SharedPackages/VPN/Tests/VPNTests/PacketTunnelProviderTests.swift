@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import NetworkExtension
 import XCTest
 @testable import VPN
 
@@ -34,5 +35,30 @@ final class PacketTunnelProviderTests: XCTestCase {
         XCTAssertEqual(TunnelError.vpnAccessRevoked(underlyingError).errorUserInfo[NSUnderlyingErrorKey] as? NSError, underlyingError)
 
         XCTAssertEqual(TunnelError.couldNotGenerateTunnelConfiguration(internalError: underlyingError).errorUserInfo[NSUnderlyingErrorKey] as? NSError, underlyingError)
+    }
+
+    func testWhenInterfaceNameHasUtunPrefixThenItIsConsideredTunnelInterface() {
+        XCTAssertTrue(NEPacketTunnelProvider.isTunnelInterfaceName("utun0"))
+        XCTAssertTrue(NEPacketTunnelProvider.isTunnelInterfaceName("utun42"))
+    }
+
+    func testWhenInterfaceNameDoesNotHaveUtunPrefixThenItIsNotConsideredTunnelInterface() {
+        XCTAssertFalse(NEPacketTunnelProvider.isTunnelInterfaceName("en0"))
+        XCTAssertFalse(NEPacketTunnelProvider.isTunnelInterfaceName("lo0"))
+        XCTAssertFalse(NEPacketTunnelProvider.isTunnelInterfaceName("ipsec0"))
+    }
+
+    func testConnectionAttemptSourcePreservesFailureRecoveryOnlyForFailureRecoveryReassertUpdate() {
+        XCTAssertTrue(PacketTunnelProvider.ConnectionAttemptSource.failureRecovery.preservesFailureRecoveryDuringReassertUpdate)
+
+        let supersedingSources: [PacketTunnelProvider.ConnectionAttemptSource] = [
+            .start,
+            .rekey,
+            .serverChange,
+            .locationChange,
+            .adapterRestart,
+            .serverMigration
+        ]
+        XCTAssertTrue(supersedingSources.allSatisfy { !$0.preservesFailureRecoveryDuringReassertUpdate })
     }
 }

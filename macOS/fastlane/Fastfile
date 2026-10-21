@@ -68,6 +68,43 @@ platform :mac do
     do_sync_signing(options.merge({readonly: true}))
   end
 
+  # Fetches and updates certificates and provisioning profiles for Sandbox Review builds that are used for UI tests.
+  # It's an equivalent to the App Store build, but signed with a Developer ID certificate for local testing.
+  #
+  # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
+  #         for it a couple of times during the process.
+  #
+  desc 'Fetches and updates certificates and provisioning profiles for Sandbox Review builds'
+  lane :sync_signing_sandbox_review do |options|
+    readonly = options[:readonly] || !is_ci
+
+    # Sandbox-review is mixed-signed: the main app bundle is re-signed with
+    # Developer ID (so the DMG can be installed locally for UI tests), while
+    # the embedded agents and extensions keep their App Store signatures — their
+    # network-extension entitlements can't be expressed in a Developer ID profile.
+    sync_code_signing(
+      api_key: get_api_key,
+      username: get_username(options),
+      readonly: readonly,
+      type: "appstore",
+      app_identifier: [
+        "com.duckduckgo.mobile.ios.DBP.backgroundAgent.review",
+        "com.duckduckgo.mobile.ios.vpn.agent.review",
+        "com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension",
+        "com.duckduckgo.mobile.ios.vpn.agent.network-extension.review",
+        "com.duckduckgo.mobile.ios.vpn.agent.review.proxy",
+      ]
+    )
+
+    sync_code_signing(
+      api_key: get_api_key,
+      username: get_username(options),
+      readonly: readonly,
+      type: "developer_id",
+      app_identifier: ["com.duckduckgo.mobile.ios.review"]
+    )
+  end
+
   # Fetches and updates certificates and provisioning profiles for CI builds
   #
   # @option [String] username (default: nil) Your DDG Apple ID. Pass it to not be asked
@@ -268,17 +305,17 @@ platform :mac do
   lane :upload_appstore_version_metadata do |options|
     # Get latest App Store version using existing lane
     version_info = fetch_appstore_version_info(options)
-    
+
     # Extract values from lane context
     version = lane_context[SharedValues::LATEST_VERSION]
     build_number = lane_context[SharedValues::LATEST_BUILD_NUMBER]
     timestamp = Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     is_critical = options[:is_critical] || false
-    
+
     UI.message("App Store version: #{version}")
     UI.message("App Store build: #{build_number}")
     UI.message("Is critical: #{is_critical}")
-    
+
     # Generate metadata JSON
     metadata = {
       latest_appstore_version: {
@@ -288,22 +325,22 @@ platform :mac do
         is_critical: is_critical
       }
     }
-    
+
     # Get S3 configuration from environment
     s3_bucket = ENV['RELEASE_BUCKET_NAME']
     s3_prefix = ENV['RELEASE_BUCKET_PREFIX']
     cdn_path = ENV['CDN_PATH']
-    
+
     unless s3_bucket && s3_prefix
       UI.user_error!("Missing required S3 configuration: RELEASE_BUCKET_NAME and RELEASE_BUCKET_PREFIX")
     end
-    
+
     s3_path = "s3://#{s3_bucket}/#{s3_prefix}/"
-    
+
     # Download existing metadata (if exists)
     existing_metadata = {}
     cdn_url = "#{cdn_path}release_metadata.json"
-    
+
     begin
       UI.message("Checking for existing metadata at #{cdn_url}")
       existing_content = sh("curl -fLSs '#{cdn_url}'", log: false)
@@ -313,20 +350,20 @@ platform :mac do
       UI.message("No existing metadata found, will create new file")
       existing_metadata = {}
     end
-    
+
     # Replace the latest_appstore_version entry (this should overwrite any existing entry)
     updated_metadata = existing_metadata.dup
     updated_metadata['latest_appstore_version'] = metadata[:latest_appstore_version]
-    
+
     # Write metadata to file
     File.write('release_metadata.json', JSON.pretty_generate(updated_metadata))
     UI.message("Generated metadata:")
     UI.message(JSON.pretty_generate(updated_metadata))
-    
+
     # Upload to S3
     UI.message("Uploading release_metadata.json to S3...")
     sh("aws s3 cp release_metadata.json '#{s3_path}release_metadata.json' --acl public-read")
-    
+
     UI.success("✅ Successfully updated macOS release metadata")
     UI.message("Version: #{version}")
     UI.message("Build: #{build_number}")

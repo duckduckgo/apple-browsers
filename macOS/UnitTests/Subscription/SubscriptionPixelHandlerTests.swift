@@ -99,6 +99,16 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
         )
     }
 
+    func testOSDistributionActiveSubscription() {
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .osDistributionActiveSubscription)
+
+        let osMajorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+        let expectedName = "os_distribution_active_subscriptions_major_version_\(osMajorVersion)_macos_desktop_monthly"
+        XCTAssertTrue(firedPixels.contains { $0.name == expectedName },
+                      "Expected \(expectedName). Fired: \(firedPixels.map(\.name))")
+    }
+
     func testGetTokensErrorPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
         let error = OAuthClientError.invalidTokenRequest(.reused)
@@ -116,6 +126,29 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
                 "source": subscriptionSource.description,
                 "policycache": AuthTokensCachePolicy.localValid.description
             ]
+        )
+    }
+
+    func testAutomaticSignOutPixel() {
+        let data = makeAutomaticSignOutPixelData()
+        let error = OAuthClientError.invalidTokenRequest(.reused)
+        let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
+        handler.handle(pixel: .automaticSignOut(data, error))
+
+        var expectedParameters = data.parameters
+        expectedParameters["source"] = subscriptionSource.description
+        expectedParameters[PixelKit.Parameters.pixelSource] = pixelSource
+        expectedParameters[PixelKit.Parameters.appVersion] = "1.0.0"
+        expectedParameters[PixelKit.Parameters.underlyingErrorCode] = "2"
+        expectedParameters[PixelKit.Parameters.errorCode] = "11003"
+        expectedParameters[PixelKit.Parameters.underlyingErrorDomain] = OAuthRequest.TokenStatus.errorDomain
+        expectedParameters[PixelKit.Parameters.errorDomain] = OAuthClientError.errorDomain
+        XCTAssertNil(data.parameters["reason"])
+        XCTAssertNil(data.parameters["token_status"])
+
+        assertDailyAndCountPixel(
+            baseName: SubscriptionPixel.subscriptionAutomaticSignOut(data, subscriptionSource, error).name,
+            expectedParameters: expectedParameters
         )
     }
 
@@ -246,6 +279,29 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
         assertParameters(modifiedExpectedParameters, in: daily?.parameters)
         assertParameters(modifiedExpectedParameters, in: count?.parameters)
+    }
+
+    private func makeAutomaticSignOutPixelData() -> SubscriptionAutomaticSignOutPixelData {
+        SubscriptionAutomaticSignOutPixelData(
+            recoveryOutcome: .failed,
+            tokenCachePolicy: .localValid,
+            entitlementStateBefore: .present,
+            accessTokenTimeRemainingBefore: .expired,
+            refreshTokenTimeRemainingBefore: .moreThanThreeDays,
+            refreshTokenAgeBefore: .oneToThreeDays,
+            cachedSubscriptionStatusBefore: .autoRenewable,
+            cachedSubscriptionTrialStatusBefore: .active,
+            cachedSubscriptionPurchasePlatformBefore: .appStore,
+            cachedSubscriptionTimeRemainingBefore: .moreThanThreeDays,
+            storedRefreshTokenStateDuringAttempt: .changed,
+            localTokenStateAfterSignOut: .missing)
+    }
+
+    func testAuthenticationPixelsUseLegacySourceValues() {
+        XCTAssertEqual(SubscriptionPixelHandler.Source.mainApp.description, "MainApp")
+        XCTAssertEqual(SubscriptionPixelHandler.Source.systemExtension.description, "SysExt")
+        XCTAssertEqual(SubscriptionPixelHandler.Source.vpnApp.description, "VPNApp")
+        XCTAssertEqual(SubscriptionPixelHandler.Source.dbp.description, "DBP")
     }
 
     private func assertLegacyDailyPixel(baseName: String, expectedParameters: [String: String]) {

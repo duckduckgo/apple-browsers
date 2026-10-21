@@ -19,13 +19,13 @@
 import AppKit
 import Combine
 import Common
+import FoundationExtensions
 import os.log
 import UserScriptActionsManager
 import WebKit
 
 public protocol NewTabPageSectionsAvailabilityProviding: AnyObject {
     var isOmnibarAvailable: Bool { get }
-    var isNextStepsListWidgetAvailable: Bool { get }
 }
 
 public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
@@ -80,6 +80,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let linkOpener: NewTabPageLinkOpening
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
     private let stateProvider: NewTabPageStateProviding
+    private let isRebrandEnabled: Bool
 
     public init(
         environment: Environment,
@@ -90,7 +91,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
         eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
-        stateProvider: NewTabPageStateProviding
+        stateProvider: NewTabPageStateProviding,
+        isRebrandEnabled: Bool = false
     ) {
         self.environment = environment
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
@@ -101,6 +103,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.linkOpener = linkOpener
         self.eventMapper = eventMapper
         self.stateProvider = stateProvider
+        self.isRebrandEnabled = isRebrandEnabled
         super.init()
 
         Publishers.Merge3(
@@ -154,7 +157,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
             .init(id: .subscriptionWinBackBanner),
-            sectionsAvailabilityProvider.isNextStepsListWidgetAvailable ? .init(id: .nextStepsList) : .init(id: .nextSteps),
+            .init(id: .nextStepsList),
             .init(id: .favorites),
             .init(id: .protections)
         ]
@@ -299,7 +302,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             env: environment.rawValue,
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
-            settings: .init(customizerDrawer: .init(state: .enabled)),
+            settings: .init(
+                customizerDrawer: .init(state: .enabled),
+                newTabPageRebranding: .init(state: isRebrandEnabled ? .enabled : .disabled)
+            ),
             customizer: customizerData,
             tabs: tabs
         )

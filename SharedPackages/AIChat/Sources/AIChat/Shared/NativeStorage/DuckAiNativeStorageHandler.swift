@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import DuckAiDataStore
 import Foundation
 import os.log
@@ -29,7 +30,7 @@ import Persistence
 /// Both backings conform to `DuckAiNativeStorageHandling` and are interchangeable from
 /// the caller's point of view; this class forwards every protocol call to the chosen
 /// implementation.
-public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
+public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling, DuckAiNativeChatsObserving, DuckAiNativeEntriesObserving {
 
     /// Default subdirectory name for the on-disk store. Callers compose this with the
     /// platform-appropriate base location (group container on iOS, application support on macOS).
@@ -46,6 +47,7 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     }
 
     private let backing: DuckAiNativeStorageHandling
+    private let reservedEntryUpdatesSubject = PassthroughSubject<DuckAiNativeStorageReservedEntryKeys, Never>()
 
     public init(_ mode: Mode) throws {
         switch mode {
@@ -59,14 +61,21 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
                 let dataStore = try DuckAiNativeDataStore(
                     databaseURL: path.appendingPathComponent("chats.db"),
                     filesDirectoryURL: path.appendingPathComponent("files"),
-                    key: encryptionKey
+                    key: encryptionKey,
+                    setupCompletion: { result in
+                        switch result {
+                        case .success:
+                            pixelFiring.fire(.initSuccess)
+                        case .failure(let error):
+                            pixelFiring.fire(.initError(error))
+                        }
+                    }
                 )
                 self.backing = DuckAiNativeDiskStorageHandler(
                     settingsStore: settingsStore.throwingKeyedStoring(),
                     dataStore: dataStore
                 )
                 Logger.aiChat.debug("DuckAiNativeStorageHandler: disk store initialized at \(path.path)")
-                pixelFiring.fire(.initSuccess)
             } catch {
                 pixelFiring.fire(.initError(error))
                 throw error
@@ -79,17 +88,39 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
 
     // MARK: - DuckAiNativeStorageHandling forwarding
 
-    public func putEntry(key: String, value: Any) throws { try backing.putEntry(key: key, value: value) }
+    public func putEntry(key: String, value: Any) throws {
+        try backing.putEntry(key: key, value: value)
+        publishIfReserved(key)
+    }
     public func getEntry(key: String) throws -> Any? { try backing.getEntry(key: key) }
     public func getAllEntries() throws -> [String: Any] { try backing.getAllEntries() }
-    public func deleteEntry(key: String) throws { try backing.deleteEntry(key: key) }
-    public func deleteAllEntries() throws { try backing.deleteAllEntries() }
-    public func replaceAllEntries(_ entries: [String: Any]) throws { try backing.replaceAllEntries(entries) }
+    public func deleteEntry(key: String) throws {
+        try backing.deleteEntry(key: key)
+        publishIfReserved(key)
+    }
+    public func deleteAllEntries() throws {
+        try backing.deleteAllEntries()
+        DuckAiNativeStorageReservedEntryKeys.allCases.forEach(reservedEntryUpdatesSubject.send)
+    }
+    public func replaceAllEntries(_ entries: [String: Any]) throws {
+        try backing.replaceAllEntries(entries)
+        // Every reserved key is potentially different, including ones the new blob dropped.
+        DuckAiNativeStorageReservedEntryKeys.allCases.forEach(reservedEntryUpdatesSubject.send)
+    }
 
     public func putChat(chatId: String, data: Data) throws { try backing.putChat(chatId: chatId, data: data) }
     public func putChats(_ chats: [DuckAiChatRecord]) throws { try backing.putChats(chats) }
     public func getChat(chatId: String) throws -> DuckAiChatRecord? { try backing.getChat(chatId: chatId) }
     public func getAllChats() throws -> [DuckAiChatRecord] { try backing.getAllChats() }
+    public func chatsPublisher() -> AnyPublisher<[DuckAiChatRecord], Error> {
+        if let observing = backing as? DuckAiNativeChatsObserving {
+            return observing.chatsPublisher()
+        }
+        // Backing doesn't support observation (memory / null) — emit current state once.
+        return Just((try? backing.getAllChats()) ?? [])
+            .setFailureType(to: Error.self)
+            .eraseToAnyPublisher()
+    }
     public func deleteChat(chatId: String) throws { try backing.deleteChat(chatId: chatId) }
     public func deleteAllChats() throws { try backing.deleteAllChats() }
 
@@ -103,4 +134,17 @@ public final class DuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     public func isMigrationDone() throws -> Bool { try backing.isMigrationDone() }
     public func isMigrationDone(key: String) throws -> Bool { try backing.isMigrationDone(key: key) }
     public func markMigrationDone(key: String) throws { try backing.markMigrationDone(key: key) }
+
+    public var setupSucceeded: Bool? { backing.setupSucceeded }
+
+    // MARK: - DuckAiNativeEntriesObserving
+
+    public var reservedEntryUpdatesPublisher: AnyPublisher<DuckAiNativeStorageReservedEntryKeys, Never> {
+        reservedEntryUpdatesSubject.eraseToAnyPublisher()
+    }
+
+    private func publishIfReserved(_ key: String) {
+        guard let reserved = DuckAiNativeStorageReservedEntryKeys(rawValue: key) else { return }
+        reservedEntryUpdatesSubject.send(reserved)
+    }
 }

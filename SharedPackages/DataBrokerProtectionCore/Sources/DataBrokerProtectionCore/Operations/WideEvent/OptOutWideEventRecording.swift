@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import PixelKit
+import WideEvent
 
 protocol OptOutWideEventRecording: AnyObject {
     associatedtype Data: WideEventData & WideEventDataMeasuringInterval

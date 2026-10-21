@@ -6,28 +6,32 @@ import PackageDescription
 let package = Package(
     name: "SubscriptionUI",
     defaultLocalization: "en",
-    platforms: [ .macOS("11.4") ],
+    platforms: [ .macOS("12.3") ],
     products: [
         .library(
             name: "SubscriptionUI",
             targets: ["SubscriptionUI"]),
     ],
     dependencies: [
+        .package(path: "../../../SharedPackages/WideEvent"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/Networking"),
         .package(path: "../PreferencesUI-macOS"),
         .package(path: "../SwiftUIExtensions"),
-        .package(path: "../FeatureFlags")
+        .package(path: "../FeatureFlags-macOS")
     ],
     targets: [
         .target(
             name: "SubscriptionUI",
             dependencies: [
+                .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 .product(name: "Subscription", package: "BrowserServicesKit"),
+                .product(name: "Networking", package: "Networking"),
                 .product(name: "PreferencesUI-macOS", package: "PreferencesUI-macOS"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
-                .product(name: "FeatureFlags", package: "FeatureFlags")
+                .product(name: "FeatureFlags-macOS", package: "FeatureFlags-macOS")
             ],
             resources: [
                 .process("Resources")

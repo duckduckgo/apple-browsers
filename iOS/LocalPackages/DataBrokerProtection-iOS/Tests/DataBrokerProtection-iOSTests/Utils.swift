@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Common
+import FoundationExtensions
 import Persistence
 import SwiftUI
 @testable import DataBrokerProtection_iOS
@@ -32,17 +33,51 @@ struct IOSManagerTestDependencies {
     let continuedProcessingCoordinator: MockContinuedProcessingCoordinator
     let authenticationManager: MockAuthenticationManager
     let freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager
+    let profileStateManager: DBPProfileStateManaging
+}
+
+final class LockedCount {
+    private let lock = NSLock()
+    private var count = 0
+
+    var value: Int {
+        lock.withLock { count }
+    }
+
+    @discardableResult
+    func increment() -> Int {
+        lock.withLock {
+            count += 1
+            return count
+        }
+    }
 }
 
 @MainActor
-enum DBPContinuedProcessingTestUtils {
+enum DBPIOSManagerTestUtils {
     static func makeTestIOSManager(
         featureFlagger: MockDBPFeatureFlagger = MockDBPFeatureFlagger(),
-        continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator()
-    ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-        return IOSManagerTestDependenciesStore().makeTestIOSManager(
+        continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator(),
+        freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
+    ) async throws -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
+        return try await IOSManagerTestDependenciesStore().makeTestIOSManager(
             featureFlagger: featureFlagger,
-            continuedProcessingCoordinator: continuedProcessingCoordinator
+            continuedProcessingCoordinator: continuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride
+        )
+    }
+
+    static func makeDeferredTestIOSManager(
+        featureFlagger: MockDBPFeatureFlagger = MockDBPFeatureFlagger(),
+        continuedProcessingCoordinator: MockContinuedProcessingCoordinator = MockContinuedProcessingCoordinator(),
+        freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil,
+        provider: @escaping (DBPVaultResources) -> (() throws -> DBPVaultResources)
+    ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
+        return IOSManagerTestDependenciesStore().makeDeferredTestIOSManager(
+            featureFlagger: featureFlagger,
+            continuedProcessingCoordinator: continuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride,
+            provider: provider
         )
     }
 
@@ -53,7 +88,10 @@ enum DBPContinuedProcessingTestUtils {
         optOutJobData: [OptOutJobData] = []
     ) -> BrokerProfileQueryData {
         BrokerProfileQueryData(
-            dataBroker: .mock(withId: brokerId),
+            dataBroker: .mockWithDefaults(
+                id: brokerId,
+                steps: DataBroker.mock.steps
+            ),
             profileQuery: ProfileQuery(id: profileQueryId, firstName: "A", lastName: "B", city: "C", state: "D", birthYear: 1980),
             scanJobData: .init(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: scanPreferredRunDate, historyEvents: []),
             optOutJobData: optOutJobData
@@ -80,6 +118,7 @@ enum DBPContinuedProcessingTestUtils {
         let jobDependencies = MockBrokerProfileJobDependencies()
         let authenticationManager = MockAuthenticationManager()
         let freemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
+        let profileStateManager = DefaultDBPProfileStateManager(keyValueStore: UserDefaults(suiteName: UUID().uuidString)!)
         let eventsHandler = MockOperationEventsHandler()
 
         init() {
@@ -94,11 +133,44 @@ enum DBPContinuedProcessingTestUtils {
 
         func makeTestIOSManager(
             featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingCoordinator: MockContinuedProcessingCoordinator
-        ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
-            let manager = makeManager(
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil
+        ) async throws -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
+            let manager = makeDeferredManager(
                 featureFlagger: featureFlagger,
-                continuedProcessingCoordinator: continuedProcessingCoordinator
+                continuedProcessingCoordinator: continuedProcessingCoordinator,
+                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride,
+                provider: { vaultResources in { vaultResources } }
+            )
+            reset(manager: manager)
+            try await manager.prepareDatabaseAccess()
+
+            return (
+                manager,
+                IOSManagerTestDependencies(
+                    manager: manager,
+                    queueManager: queueManager,
+                    database: database,
+                    eventsHandler: eventsHandler,
+                    continuedProcessingCoordinator: continuedProcessingCoordinator,
+                    authenticationManager: authenticationManager,
+                    freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                    profileStateManager: profileStateManager
+                )
+            )
+        }
+
+        func makeDeferredTestIOSManager(
+            featureFlagger: MockDBPFeatureFlagger,
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil,
+            provider: @escaping (DBPVaultResources) -> (() throws -> DBPVaultResources)
+        ) -> (DataBrokerProtectionIOSManager, IOSManagerTestDependencies) {
+            let manager = makeDeferredManager(
+                featureFlagger: featureFlagger,
+                continuedProcessingCoordinator: continuedProcessingCoordinator,
+                freemiumDBPUserStateManagerOverride: freemiumDBPUserStateManagerOverride,
+                provider: provider
             )
             reset(manager: manager)
 
@@ -111,27 +183,28 @@ enum DBPContinuedProcessingTestUtils {
                     eventsHandler: eventsHandler,
                     continuedProcessingCoordinator: continuedProcessingCoordinator,
                     authenticationManager: authenticationManager,
-                    freemiumDBPUserStateManager: freemiumDBPUserStateManager
+                    freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                    profileStateManager: profileStateManager
                 )
             )
         }
 
-        private func makeManager(
+        private func makeDeferredManager(
             featureFlagger: MockDBPFeatureFlagger,
-            continuedProcessingCoordinator: MockContinuedProcessingCoordinator
+            continuedProcessingCoordinator: MockContinuedProcessingCoordinator,
+            freemiumDBPUserStateManagerOverride: FreemiumDBPUserStateManaging? = nil,
+            provider: @escaping (DBPVaultResources) -> (() throws -> DBPVaultResources)
         ) -> DataBrokerProtectionIOSManager {
-            jobDependencies.database = database
+            let vaultResources = makeVaultResources()
 
-            return DataBrokerProtectionIOSManager(
-                queueManager: queueManager,
-                jobDependencies: jobDependencies,
-                emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            return DataBrokerProtectionIOSManager.withDeferredVaultResources(
+                provider: provider(vaultResources),
+                contentScopeProperties: vaultResources.jobDependencies.contentScopeProperties,
                 authenticationManager: authenticationManager,
                 userNotificationService: MockDataBrokerProtectionUserNotificationService(),
                 sharedPixelsHandler: MockDataBrokerProtectionPixelsHandler(),
                 iOSPixelsHandler: EventMapping<IOSPixels> { _, _, _, _ in },
                 privacyConfigManager: PrivacyConfigurationManagingMock(),
-                database: database,
                 quickLinkOpenURLHandler: { _ in },
                 feedbackViewCreator: { EmptyView() },
                 featureFlagger: featureFlagger,
@@ -139,10 +212,22 @@ enum DBPContinuedProcessingTestUtils {
                 subscriptionManager: MockDataBrokerProtectionSubscriptionManaging(),
                 wideEvent: nil,
                 eventsHandler: eventsHandler,
-                engagementPixelsRepository: MockDataBrokerProtectionEngagementPixelsRepository(),
-                freemiumDBPUserStateManager: freemiumDBPUserStateManager,
+                freemiumDBPUserStateManager: (freemiumDBPUserStateManagerOverride ?? freemiumDBPUserStateManager),
+                profileStateManager: profileStateManager,
                 continuedProcessingCoordinator: continuedProcessingCoordinator,
                 shouldRegisterBackgroundTaskHandler: false
+            )
+        }
+
+        private func makeVaultResources() -> DBPVaultResources {
+            jobDependencies.database = database
+            return DBPVaultResources(
+                database: database,
+                queueManager: queueManager,
+                jobDependencies: jobDependencies,
+                emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+                brokerUpdaterProvider: { nil },
+                engagementPixelsRepository: MockDataBrokerProtectionEngagementPixelsRepository()
             )
         }
 

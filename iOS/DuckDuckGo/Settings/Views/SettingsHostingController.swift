@@ -1,0 +1,107 @@
+//
+//  SettingsHostingController.swift
+//  DuckDuckGo
+//
+//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import UIKit
+import SwiftUI
+import Core
+import Subscription
+
+class SettingsHostingController: UIHostingController<AnyView> {
+    var viewModel: SettingsViewModel
+    var viewProvider: SettingsLegacyViewProvider
+
+    // Is set to nil once used as it should only be fired once per access to any part of settings
+    var productSurfaceTelemetry: ProductSurfaceTelemetry?
+
+    public var isDeepLinking: Bool {
+        return viewModel.deepLinkTarget != nil
+    }
+
+    init(viewModel: SettingsViewModel, viewProvider: SettingsLegacyViewProvider, productSurfaceTelemetry: ProductSurfaceTelemetry) {
+        self.viewModel = viewModel
+        self.viewProvider = viewProvider
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        super.init(rootView: AnyView(EmptyView()))
+
+        viewModel.onRequestPushLegacyView = { [weak self] vc, animated in
+            self?.pushLegacyViewController(vc, animated: animated)
+        }
+
+        viewModel.onRequestPresentLegacyView = { [weak self] vc, modal in
+            self?.presentLegacyViewController(vc, modal: modal)
+        }
+
+        viewModel.onRequestPopLegacyView = { [weak self] in
+            self?.navigationController?.popViewController(animated: true)
+        }
+
+        viewModel.onRequestDismissSettings = { [weak self] in
+            self?.navigationController?.dismiss(animated: true)
+        }
+
+        viewModel.onRequestPresentFireConfirmation = { [weak self] sourceRect, onConfirm, onCancel in
+            self?.presentFireConfirmation(sourceRect: sourceRect, onConfirm: onConfirm, onCancel: onCancel)
+        }
+
+        self.rootView = AnyView(SettingsRootView(viewModel: viewModel))
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        // We only want to call this once per instanciation
+        productSurfaceTelemetry?.settingsUsed()
+        productSurfaceTelemetry = nil
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        decorateNavigationBar()
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    func pushLegacyViewController(_ vc: UIViewController, animated: Bool = true) {
+        navigationController?.pushViewController(vc, animated: animated)
+    }
+
+    func presentLegacyViewController(_ vc: UIViewController, modal: Bool = false) {
+        if modal {
+            vc.modalPresentationStyle = .fullScreen
+        }
+        navigationController?.present(vc, animated: true)
+    }
+
+    @MainActor
+    func presentFireConfirmation(sourceRect: CGRect, onConfirm: @escaping (FireRequest) -> Void, onCancel: @escaping () -> Void) {
+        let presenter = FireConfirmationPresenter()
+        presenter.presentFireConfirmation(
+            on: self,
+            sourceRect: sourceRect,
+            tabViewModel: nil,
+            pixelSource: .settings,
+            fireContext: .default(daxDialogsManager: viewProvider.daxDialogsManager),
+            browsingMode: .normal, // Fire button in settings should always burn everything, so we pass .normal regardless of the current mode.
+            onConfirm: onConfirm,
+            onCancel: onCancel
+        )
+    }
+}

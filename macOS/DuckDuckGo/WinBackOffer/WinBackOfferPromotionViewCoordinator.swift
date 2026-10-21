@@ -20,6 +20,7 @@ import Foundation
 import Combine
 import OSLog
 import Common
+import FoundationExtensions
 import Subscription
 import PixelKit
 

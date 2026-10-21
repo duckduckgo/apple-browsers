@@ -18,8 +18,8 @@
 
 import PrivacyDashboard
 import XCTest
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
+@_spi(Testing) import SharedTestUtilities
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Networking
 
@@ -28,7 +28,6 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSitePixel() {
         fire(NonStandardPixel.brokenSiteReport,
              frequency: .standard,
-             doNotEnforcePrefix: true,
              and: .expect(pixelName: "epbf_macos_desktop"),
              file: #filePath,
              line: #line)
@@ -37,7 +36,6 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSiteShownPixel() {
         fire(NonStandardPixel.brokenSiteReportShown,
              frequency: .standard,
-             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_shown"),
              file: #filePath,
              line: #line)
@@ -46,7 +44,6 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSiteSentPixel() {
         fire(NonStandardPixel.brokenSiteReportSent,
              frequency: .standard,
-             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_sent"),
              file: #filePath,
              line: #line)
@@ -105,6 +102,7 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "blockedTrackers"], "bad.tracker.test,tracking.test")
         XCTAssertEqual(queryItems[valueFor: "surrogates"], "surrogate.domain.test")
         XCTAssertEqual(queryItems[valueFor: "protectionsState"], "true")
+        XCTAssertNil(queryItems[valueFor: "isAfterTabTermination"])
     }
 
     func testThatNativeAppSpecificFieldsAreReported() throws {
@@ -128,18 +126,33 @@ class WebsiteBreakageReportTests: XCTestCase {
             ampURL: "https://example.test",
             urlParametersRemoved: false,
             protectionsState: true,
-            reportFlow: .appMenu,
+            reportFlow: .errorPage,
             errors: nil,
             httpStatusCodes: nil,
             openerContext: nil,
             vpnOn: false,
             jsPerformance: nil,
             userRefreshCount: 0,
-            cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: true, consentRule: "test-cmp", consentHeuristicEnabled: true),
+            cookieConsentInfo: CookieConsentInfo(
+                consentManaged: true,
+                cosmetic: true,
+                optoutFailed: true,
+                selftestFailed: true,
+                consentReloadLoop: true,
+                consentRule: "test-cmp",
+                consentHeuristicEnabled: true,
+                cpmExtensionDroppedCallbacks: 3,
+                cpmExtensionLoaded: true,
+                cpmDashboardState: .applied,
+                cpmStage: .popupFound,
+                cpmErrors: "multiple_cmps,tab_refreshDashboardState",
+                cpmQueueSize: 2,
+                cpmConfigVersion: "123"),
             debugFlags: "",
             privacyExperiments: "",
             isPirEnabled: true,
             isForceDarkModeEnabled: nil,
+            isAfterTabTermination: true,
             lastTabSuspension: nil,
             pageLoadTiming: nil
         )
@@ -169,7 +182,16 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "consentReloadLoop"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentHeuristicEnabled"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentRule"], "test-cmp")
+        XCTAssertEqual(queryItems[valueFor: "cpmExtensionDroppedCallbacks"], "3")
+        XCTAssertEqual(queryItems[valueFor: "cpmExtensionLoaded"], "1")
+        XCTAssertEqual(queryItems[valueFor: "cpmDashboardState"], "applied")
+        XCTAssertEqual(queryItems[valueFor: "cpmStage"], "popup_found")
+        XCTAssertEqual(queryItems[valueFor: "cpmErrors"], "multiple_cmps,tab_refreshDashboardState")
+        XCTAssertEqual(queryItems[valueFor: "cpmQueueSize"], "2")
+        XCTAssertEqual(queryItems[valueFor: "cpmConfigVersion"], "123")
         XCTAssertEqual(queryItems[valueFor: "isPirEnabled"], "true")
+        XCTAssertEqual(queryItems[valueFor: "reportFlow"], "error_page")
+        XCTAssertEqual(queryItems[valueFor: "isAfterTabTermination"], "true")
     }
 
     func testWebExtensionFieldsAreIncludedWhenProvided() throws {

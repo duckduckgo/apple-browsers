@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import SubscriptionTestingUtilities
 import XCTest
 @testable import DuckDuckGo
 
@@ -27,20 +28,22 @@ final class UTIModelStoreTests: XCTestCase {
 
     private var sut: UTIModelStore!
     private var preferences: StubPreferences!
+    private var modelsService: StubModelsService!
+    private var subscriptionManager: SubscriptionManagerMock!
 
     override func setUp() {
         super.setUp()
         preferences = StubPreferences()
-        sut = UTIModelStore(
-            modelsService: StubModelsService(),
-            preferences: preferences,
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager
-        )
+        modelsService = StubModelsService()
+        subscriptionManager = SubscriptionManagerMock()
+        sut = makeSUT(isUpdatedModelPickerEnabled: false)
     }
 
     override func tearDown() {
         sut = nil
         preferences = nil
+        modelsService = nil
+        subscriptionManager = nil
         super.tearDown()
     }
 
@@ -95,6 +98,170 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertNil(sut.persistedModelId)
     }
 
+    // MARK: - persistedModelId: live current-tab model
+
+    func test_persistedModelId_whenLiveModelSet_prefersLiveModel() {
+        preferences.selectedModelId = "gpt-5"
+        sut.models = [
+            makeModel(id: "gpt-5", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        XCTAssertEqual(sut.persistedModelId, "mistral")
+    }
+
+    func test_persistedModelId_whenLiveModelInaccessible_fallsBackToPreferredNewChatModel() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "premium", access: false),
+            makeModel(id: "free", access: true)
+        ]
+
+        sut.updateSelectedModel("premium", isNewChatContext: false)
+
+        XCTAssertEqual(sut.persistedModelId, "haiku")
+    }
+
+    func test_persistedModelId_whenNoLiveAndPreferredAccessible_returnsPreferred() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "gpt-5", access: true),
+            makeModel(id: "haiku", access: true)
+        ]
+
+        XCTAssertEqual(sut.persistedModelId, "haiku")
+    }
+
+    func test_persistedModelId_whenNoLiveAndPreferredInaccessible_returnsFirstAccessible() {
+        preferences.selectedModelId = "premium"
+        sut.models = [
+            makeModel(id: "premium", access: false),
+            makeModel(id: "free", access: true)
+        ]
+
+        XCTAssertEqual(sut.persistedModelId, "free")
+    }
+
+    // MARK: - updateSelectedModel: isNewChatContext
+
+    func test_updateSelectedModel_onNewChat_writesPreferredModelToPreferences() {
+        sut.models = [
+            AIChatModel(id: "haiku", name: "Haiku 4.5", shortName: "H4.5", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true)
+        ]
+
+        sut.updateSelectedModel("haiku", isNewChatContext: true)
+
+        XCTAssertEqual(preferences.selectedModelId, "haiku")
+        XCTAssertEqual(preferences.selectedModelShortName, "H4.5")
+    }
+
+    func test_updateSelectedModel_onOngoingChat_doesNotWritePreferredModelToPreferences() {
+        preferences.selectedModelId = "haiku"
+        preferences.selectedModelShortName = "H4.5"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        XCTAssertEqual(preferences.selectedModelId, "haiku", "ongoing-chat picks must not retarget the new-chat default")
+        XCTAssertEqual(preferences.selectedModelShortName, "H4.5")
+    }
+
+    func test_updateSelectedModel_onOngoingChat_stillUpdatesLiveModel() {
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("haiku", isNewChatContext: true)
+
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        XCTAssertEqual(sut.persistedModelId, "mistral")
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    // MARK: - applyPersistedSelection
+
+    func test_applyPersistedSelection_doesNotTouchPreferredModelPreference() {
+        preferences.selectedModelId = "haiku"
+        preferences.selectedModelShortName = "H4.5"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+
+        sut.applyPersistedSelection(modelID: "mistral", reasoningMode: nil)
+
+        XCTAssertEqual(preferences.selectedModelId, "haiku")
+        XCTAssertEqual(preferences.selectedModelShortName, "H4.5")
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    func test_applyPersistedSelection_nil_clearsLiveButPreservesPreferredModel() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "gpt-5", access: true)
+        ]
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        sut.applyPersistedSelection(modelID: nil, reasoningMode: nil)
+
+        XCTAssertNil(sut.currentModelId)
+        XCTAssertEqual(sut.persistedModelId, "haiku", "fresh tab activation should return to the preferred new-chat default")
+    }
+
+    // MARK: - clearStaleModelSelectionIfNeeded
+
+    func test_clearStale_clearsLiveModel_whenInaccessible() {
+        preferences.selectedModelId = "haiku"
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "premium", access: false)
+        ]
+        sut.updateSelectedModel("premium", isNewChatContext: false)
+
+        sut.clearStaleModelSelectionIfNeeded()
+
+        XCTAssertNil(sut.currentModelId)
+    }
+
+    func test_clearStale_preservesLiveModel_whenAccessible() {
+        sut.models = [
+            makeModel(id: "haiku", access: true),
+            makeModel(id: "mistral", access: true)
+        ]
+        sut.updateSelectedModel("mistral", isNewChatContext: false)
+
+        sut.clearStaleModelSelectionIfNeeded()
+
+        XCTAssertEqual(sut.currentModelId, "mistral")
+    }
+
+    // MARK: - displayShortName
+
+    func test_displayShortName_returnsLiveModelShortName_whenLiveModelInModels() {
+        sut.models = [
+            AIChatModel(id: "haiku", name: "Haiku 4.5", shortName: "H4.5", provider: .anthropic, supportsImageUpload: false, entityHasAccess: true)
+        ]
+
+        sut.applyPersistedSelection(modelID: "haiku", reasoningMode: nil)
+
+        XCTAssertEqual(sut.displayShortName, "H4.5")
+    }
+
+    func test_displayShortName_fallsBackToPreferencesCache_beforeModelsLoad() {
+        preferences.selectedModelShortName = "Cached"
+        sut.models = []
+
+        XCTAssertEqual(sut.displayShortName, "Cached")
+    }
+
     // MARK: - selectedModelSupportsImageUpload
 
     func test_selectedModelSupportsImageUpload_whenNoModels_returnsFalse() {
@@ -111,6 +278,19 @@ final class UTIModelStoreTests: XCTestCase {
         preferences.selectedModelId = "gpt-5"
         sut.models = [makeModel(id: "gpt-5", access: true, supportsImageUpload: false)]
         XCTAssertFalse(sut.selectedModelSupportsImageUpload)
+    }
+
+    func test_selectedModelSupportsFileUpload_whenSelectedModelSupportsIt_returnsTrue() {
+        preferences.selectedModelId = "gpt-4o"
+        sut.models = [makeModel(id: "gpt-4o", access: true, supportedFileTypes: ["application/pdf"])]
+
+        XCTAssertTrue(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, ["application/pdf"])
+    }
+
+    func test_selectedModelSupportsFileUpload_whenNoModelSelected_returnsFalse() {
+        XCTAssertFalse(sut.selectedModelSupportsFileUpload)
+        XCTAssertEqual(sut.selectedModelSupportedFileTypes, [])
     }
 
     // MARK: - selectedModelSupports(tool:)
@@ -188,7 +368,7 @@ final class UTIModelStoreTests: XCTestCase {
             AIChatModel(id: "gpt-5", name: "GPT-5", shortName: "G5", provider: .openAI, supportsImageUpload: false, entityHasAccess: true)
         ]
 
-        sut.updateSelectedModel("gpt-5")
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
 
         XCTAssertEqual(preferences.selectedModelId, "gpt-5")
         XCTAssertEqual(preferences.selectedModelShortName, "G5")
@@ -200,7 +380,7 @@ final class UTIModelStoreTests: XCTestCase {
             makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low])
         ]
 
-        sut.updateSelectedModel("gpt-5")
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
 
         XCTAssertNil(preferences.selectedReasoningMode)
     }
@@ -211,7 +391,7 @@ final class UTIModelStoreTests: XCTestCase {
             makeModel(id: "gpt-5", access: true, supportedReasoningEffort: [.none, .low, .medium])
         ]
 
-        sut.updateSelectedModel("gpt-5")
+        sut.updateSelectedModel("gpt-5", isNewChatContext: true)
 
         XCTAssertEqual(preferences.selectedReasoningMode, .extendedReasoning)
     }
@@ -228,23 +408,277 @@ final class UTIModelStoreTests: XCTestCase {
         XCTAssertEqual(preferences.selectedReasoningMode, .fast)
     }
 
+    func test_fetchModels_whenModelFetchFails_clearsAttachmentLimitsAndNotifies() async {
+        let didUpdate = expectation(description: "models updated")
+        modelsService.result = .failure(StubModelsService.StubError.fetchFailed)
+        sut.attachmentLimits = makeLimits()
+        sut.onModelsUpdated = {
+            didUpdate.fulfill()
+        }
+
+        sut.fetchModels()
+
+        await fulfillment(of: [didUpdate], timeout: 1)
+        XCTAssertNil(sut.attachmentLimits)
+        XCTAssertEqual(sut.subscriptionState.userTier, .free)
+    }
+
+    // MARK: - Free Trial Eligibility
+
+    func test_fetchModels_whenUpdatedModelPickerIsDisabled_keepsTrialEligibilityUnknown() {
+        subscriptionManager.isEligibleForFreeTrialResult = true
+
+        sut.fetchModels()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .unknown)
+    }
+
+    func test_whenUpdatedModelPickerIsDisabled_productAvailabilityDoesNotChangeTrialEligibility() async {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        sut = makeSUT(isUpdatedModelPickerEnabled: false)
+
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        await Task.yield()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .unknown)
+    }
+
+    func test_fetchModels_whenCachedTrialEligibilityChanges_updatesTrialEligibility() {
+        sut = makeSUT(isUpdatedModelPickerEnabled: true)
+        subscriptionManager.isEligibleForFreeTrialResult = true
+
+        sut.fetchModels()
+        XCTAssertEqual(sut.freeTrialEligibility, .eligible)
+
+        subscriptionManager.isEligibleForFreeTrialResult = false
+        sut.fetchModels()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .ineligible)
+    }
+
+    func test_fetchModels_whenPurchasePlatformIsStripe_usesCachedTrialEligibility() {
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.isEligibleForFreeTrialResult = false
+        sut = makeSUT(isUpdatedModelPickerEnabled: true)
+
+        sut.fetchModels()
+
+        XCTAssertEqual(sut.freeTrialEligibility, .ineligible)
+    }
+
+    func test_whenAppStoreProductsBecomeAvailable_updatesTrialEligibilityAndNotifies() async {
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        subscriptionManager.isEligibleForFreeTrialResult = true
+        sut = makeSUT(isUpdatedModelPickerEnabled: true)
+        let didUpdate = expectation(description: "trial eligibility updated")
+        sut.onModelsUpdated = {
+            didUpdate.fulfill()
+        }
+
+        XCTAssertEqual(sut.freeTrialEligibility, .unknown)
+        subscriptionManager.hasAppStoreProductsAvailable = true
+
+        await fulfillment(of: [didUpdate], timeout: 1)
+        XCTAssertEqual(sut.freeTrialEligibility, .eligible)
+    }
+
+    // MARK: - imageGenerationFallbackModel
+
+    func test_imageGenerationFallbackModel_isNilWithoutModels() {
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    func test_imageGenerationFallbackModel_skipsModelsThatCannotGenerateImages() {
+        sut.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
+    }
+
+    func test_imageGenerationFallbackModel_takesTheFirstImageCapableModelTheBackendOffers() {
+        sut.models = [
+            makeModel(id: "first-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-model", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "first-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_isNilWithoutEntityAccess() {
+        sut.models = [makeModel(id: "image-capable", access: false, supportedTools: [.imageGeneration])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    func test_imageGenerationFallbackModel_isNilWhenTheModelCannotGenerateImages() {
+        sut.models = [makeModel(id: "text-only", access: true, supportedTools: [.webSearch])]
+
+        XCTAssertNil(sut.imageGenerationFallbackModel)
+    }
+
+    // MARK: - imageGenerationFallbackModel: editorial label preference
+
+    func test_imageGenerationFallbackModel_prefersAnEndorsedModelOverAnEarlierUnlabelledOne() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-image-model", access: true, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "endorsed-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresACaveatLabelAndKeepsBackendOrder() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "caveat-image-model", access: true, supportedTools: [.imageGeneration], label: .usesLimitsFaster)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "unlabelled-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnUnknownLabelAndKeepsBackendOrder() {
+        sut.models = [
+            makeModel(id: "unlabelled-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "unknown-label-image-model",
+                      access: true,
+                      supportedTools: [.imageGeneration],
+                      label: .unknown("FUTURE_LABEL"))
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "unlabelled-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_withoutAnyLabelsFallsBackToBackendOrder() {
+        sut.models = [
+            makeModel(id: "mistral", access: true),
+            makeModel(id: "first-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "second-image-model", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "first-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnEndorsedModelTheUserCannotAccess() {
+        sut.models = [
+            makeModel(id: "accessible-image-model", access: true, supportedTools: [.imageGeneration]),
+            makeModel(id: "endorsed-gated-model", access: false, supportedTools: [.imageGeneration], label: .everydayUse)
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "accessible-image-model")
+    }
+
+    func test_imageGenerationFallbackModel_ignoresAnEndorsedModelThatCannotGenerateImages() {
+        sut.models = [
+            makeModel(id: "endorsed-text-model", access: true, supportedTools: [.webSearch], label: .everydayUse),
+            makeModel(id: "image-capable", access: true, supportedTools: [.imageGeneration])
+        ]
+
+        XCTAssertEqual(sut.imageGenerationFallbackModel?.id, "image-capable")
+    }
+
+    func testWhenInitialProductFetchResolvesThenHeaderUpsellUsesAvailability() async {
+        for available in [false, true] {
+            subscriptionManager.hasResolvedAppStoreProducts = false
+            subscriptionManager.hasAppStoreProductsAvailable = false
+            sut = makeSUT(isUpdatedModelPickerEnabled: false)
+
+            XCTAssertTrue(sut.shouldShowHeaderUpsell)
+            XCTAssertFalse(sut.allowsSubscriptionUpsell)
+
+            let productsUpdated = expectation(description: "product availability updated")
+            sut.onModelsUpdated = { productsUpdated.fulfill() }
+            subscriptionManager.hasAppStoreProductsAvailable = available
+            await fulfillment(of: [productsUpdated], timeout: 1)
+            XCTAssertTrue(sut.shouldShowHeaderUpsell)
+
+            let resolved = expectation(description: "header refreshed after initial product fetch")
+            sut.onModelsUpdated = { resolved.fulfill() }
+            subscriptionManager.hasResolvedAppStoreProducts = true
+            await fulfillment(of: [resolved], timeout: 1)
+
+            XCTAssertEqual(sut.shouldShowHeaderUpsell, available)
+            XCTAssertEqual(sut.allowsSubscriptionUpsell, available)
+            sut.onModelsUpdated = nil
+        }
+    }
+
+    func testAvailabilityRefreshPreservesCatalogAndChoicesWithoutFetchingForBothPickerVariants() async {
+        for updated in [true, false] {
+            subscriptionManager.hasAppStoreProductsAvailable = true
+            sut = makeSUT(isUpdatedModelPickerEnabled: updated)
+            sut.models = [makeModel(id: "free", access: true, supportedReasoningEffort: [.none, .low]),
+                          makeModel(id: "paid", access: false)]
+            sut.updateSelectedModel("free", isNewChatContext: true)
+            sut.updateSelectedReasoningMode(.reasoning)
+            for available in [false, true] {
+                let refresh = expectation(description: "availability refreshed")
+                sut.onModelsUpdated = { refresh.fulfill() }
+                subscriptionManager.hasAppStoreProductsAvailable = available
+                await fulfillment(of: [refresh], timeout: 1)
+
+                XCTAssertEqual(sut.allowsSubscriptionUpsell, available)
+                XCTAssertEqual(sut.models.map(\.id), ["free", "paid"])
+                XCTAssertEqual(sut.persistedModelId, "free")
+                XCTAssertEqual(sut.selectedReasoningMode, .reasoning)
+                XCTAssertEqual(modelsService.fetchCount, 0)
+                if !updated { XCTAssertEqual(sut.freeTrialEligibility, .unknown) }
+            }
+            sut.onModelsUpdated = nil
+        }
+    }
+
+    func testAvailabilityNotificationReReadsManagerEligibilityInsteadOfPublisherValue() async {
+        subscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
+        let refresh = expectation(description: "availability refreshed")
+        sut.onModelsUpdated = { refresh.fulfill() }
+
+        subscriptionManager.hasAppStoreProductsAvailable = false
+        await fulfillment(of: [refresh], timeout: 1)
+
+        XCTAssertTrue(sut.allowsSubscriptionUpsell)
+    }
+
     // MARK: - Helpers
+
+    private func makeSUT(isUpdatedModelPickerEnabled: Bool) -> UTIModelStore {
+        UTIModelStore(
+            modelsService: modelsService,
+            preferences: preferences,
+            subscriptionManager: subscriptionManager,
+            isUpdatedModelPickerEnabled: isUpdatedModelPickerEnabled
+        )
+    }
+
+    private func makeLimits() -> AIChatAttachmentTierLimits {
+        AIChatAttachmentTierLimits(
+            files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),
+            images: AIChatAttachmentImageLimits(maxPerTurn: 3, maxPerConversation: 5, maxInputCharsWithAttachments: 4500)
+        )
+    }
 
     private func makeModel(
         id: String,
         access: Bool,
         supportsImageUpload: Bool = false,
+        supportedFileTypes: [String] = [],
         supportedTools: [AIChatRAGTool] = [],
-        supportedReasoningEffort: [AIChatReasoningEffort] = []
+        supportedReasoningEffort: [AIChatReasoningEffort] = [],
+        label: AIChatModelLabel? = nil
     ) -> AIChatModel {
         AIChatModel(
             id: id,
             name: id,
             provider: .unknown,
             supportsImageUpload: supportsImageUpload,
+            supportedFileTypes: supportedFileTypes,
             supportedTools: supportedTools,
             entityHasAccess: access,
-            supportedReasoningEffort: supportedReasoningEffort
+            supportedReasoningEffort: supportedReasoningEffort,
+            label: label
         )
     }
 }
@@ -254,10 +688,23 @@ private final class StubPreferences: AIChatPreferencesPersisting {
     var selectedModelId: String?
     var selectedModelShortName: String?
     var selectedReasoningMode: AIChatReasoningMode?
+    var selectedTool: AIChatRAGTool?
     var selectedModelIdPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
     var selectedReasoningEffortPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 }
 
+@MainActor
 private final class StubModelsService: AIChatModelsProviding {
-    func fetchModels() async throws -> [AIChatRemoteModel] { [] }
+    enum StubError: Error {
+        case fetchFailed
+    }
+
+    var result: Result<AIChatModelsResponse, Error> = .success(AIChatModelsResponse(models: []))
+
+    private(set) var fetchCount = 0
+
+    func fetchModels() async throws -> AIChatModelsResponse {
+        fetchCount += 1
+        return try result.get()
+    }
 }

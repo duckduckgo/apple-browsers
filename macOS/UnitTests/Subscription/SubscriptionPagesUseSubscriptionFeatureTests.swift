@@ -16,16 +16,17 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKitTestsUtils
 import Common
-import Networking
-import NetworkingTestingUtils
+import FoundationExtensions
+@_spi(Testing) import Networking
 import SubscriptionTestingUtilities
 import WebKit
 import XCTest
 import UserScript
-import PixelKit
-import PixelKitTestingUtilities
+@_spi(Testing) import PixelKit
+@_spi(Testing) import WideEvent
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -38,6 +39,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private var subscriptionManager: SubscriptionManagerMock!
     private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling!
     private var mockUIHandler: SubscriptionUIHandlerMock!
+    private var mockAIChatTabOpener: MockAIChatTabOpener!
+    private var aiChatSourceHandler: AIChatConversationSourceHandler!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
@@ -79,6 +82,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             subscriptionEventReporter: mockEventReporter,
             pendingTransactionHandler: MockPendingTransactionHandler()
         )
+        mockAIChatTabOpener = MockAIChatTabOpener()
+        aiChatSourceHandler = AIChatConversationSourceHandler()
         sut = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                       subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
                                                       stripePurchaseFlow: mockStripePurchaseFlowV2,
@@ -88,6 +93,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                       notificationCenter: mockNotificationCenter,
                                                       dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                       aiChatURL: URL.duckDuckGo,
+                                                      aiChatTabOpener: mockAIChatTabOpener,
+                                                      aiChatConversationSourceHandler: aiChatSourceHandler,
                                                       wideEvent: mockWideEvent,
                                                       subscriptionEventReporter: mockEventReporter,
                                                       pendingTransactionHandler: MockPendingTransactionHandler(),
@@ -103,6 +110,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         mockStorePurchaseManager = nil
         mockSubscriptionFeatureAvailability = nil
         mockUIHandler = nil
+        mockAIChatTabOpener = nil
+        aiChatSourceHandler = nil
         mockWideEvent = nil
         mockEventReporter = nil
         mockRequestValidator = nil
@@ -314,24 +323,18 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testFeatureSelected_PaidAIChat_ShowsCorrectTab() async throws {
+    func testFeatureSelected_PaidAIChat_OpensDuckAIFromTheSubscriptionPage() async throws {
         // Given
         let params = ["productFeature": "Duck.ai"]
-        let uiHandlerExpectation = expectation(description: "UI handler show tab called")
-
-        mockUIHandler.setDidPerformActionCallback { action in
-            if case .didShowTab(.aiChat(let url)) = action {
-                XCTAssertNotNil(url)
-                uiHandlerExpectation.fulfill()
-            }
-        }
 
         // When
         let result = try await sut.featureSelected(params: params, original: Constants.mockScriptMessage)
 
         // Then
         XCTAssertNil(result)
-        await fulfillment(of: [uiHandlerExpectation], timeout: 1.0)
+        XCTAssertEqual(mockAIChatTabOpener.lastURL, URL.duckDuckGo)
+        XCTAssertEqual(mockAIChatTabOpener.lastBehavior, .newTab(selected: true))
+        XCTAssertEqual(aiChatSourceHandler.consumeData(), .subscriptionPage)
     }
 
     @MainActor
@@ -373,8 +376,37 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(mockWideEvent.completions.count, 2)
         let startedFirst = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         let startedSecond = try XCTUnwrap(mockWideEvent.started.last as? SubscriptionRestoreWideEventData)
-        XCTAssertEqual(startedFirst.funnelName, "funnel_appsettings_macos")
+        XCTAssertEqual(startedFirst.entryPoint, .settings)
         XCTAssertEqual(startedSecond.funnelName, "funnel_onpurchasecheck_multiple")
+    }
+
+    func testWhenMappingPurchaseWideEventOriginsThenOnlyCoarseEntryPointsAreReturned() {
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appSettings.rawValue),
+            .settings)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.appMenu.rawValue),
+            .appMenu)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.winBackLaunch.rawValue),
+            .appPromotion)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.onboardingSubscriptionUpsell.rawValue),
+            .onboarding)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue),
+            .newTabPage)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.duckAISettings.rawValue),
+            .duckAI)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.vpnToolbarUpsell.rawValue),
+            .vpn)
+        XCTAssertEqual(
+            SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: SubscriptionFunnelOrigin.freeScan.rawValue),
+            .personalInformationRemoval)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: nil), .web)
+        XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
     // MARK: - GetSubscriptionTierOptions Tests
@@ -692,7 +724,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil).name })
         XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
     }
 
@@ -705,7 +737,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
-        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil).name })
     }
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixelWithError() async throws {
@@ -719,7 +751,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // The error is now embedded in the pixel enum (SubscriptionPixel.subscriptionTierOptionsFailure(error:))
         let failureEvent = mockEventReporter.reportedTierOptionEvents.first { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name }
         XCTAssertNotNil(failureEvent, "Failure pixel should be fired")
-        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil).name })
     }
 
     func testGetSubscriptionTierOptions_OnFailure_DoesNotFireSuccessPixel() async throws {
@@ -730,7 +762,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         _ = try await sut.getSubscriptionTierOptions(params: "", original: WKScriptMessage.mock())
 
         // Then
-        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess(origin: nil).name })
     }
 
     func testGetSubscriptionTierOptions_WithProTierPresent_FiresUnexpectedProTierPixel() async throws {
@@ -1233,7 +1265,7 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
         reportedActivationErrors.append(subscriptionActivationError)
     }
 
-    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+    func report(subscriptionTierOptionEvent: PixelKit.Event) {
         reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name))
     }
 }

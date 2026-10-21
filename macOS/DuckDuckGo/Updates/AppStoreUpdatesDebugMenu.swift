@@ -19,6 +19,7 @@
 import AppKit
 import AppUpdaterShared
 import Common
+import FoundationExtensions
 
 final class AppStoreUpdatesDebugMenu: NSMenu {
     private let debugSettings = UpdatesDebugSettings()

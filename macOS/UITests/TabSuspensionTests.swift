@@ -24,12 +24,12 @@ class TabSuspensionTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        continueAfterFailure = false
         app = XCUIApplication.setUp(featureFlags: [
             "tabSuspension": true,
             "tabSuspensionDebugging": true,
             "aiChatChromeSidebar": true,  // sidebar and floating sidebar feature flags
-            "aiChatSidebarFloating": true // are required for testing AI Chat sidebar suspension
+            "aiChatSidebarFloating": true, // are required for testing AI Chat sidebar suspension
+            "aiChatChromeMenuButton": false // keep the split sidebar button; this test clicks it directly
         ])
         app.openNewWindow()
     }
@@ -62,7 +62,7 @@ class TabSuspensionTests: UITestCase {
 
         let webView = app.windows.firstMatch.webViews[pageTitle]
         XCTAssertTrue(
-            webView.waitForExistence(timeout: UITests.Timeouts.navigation),
+            webView.waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Suspended tab should reload its web view after being selected"
         )
     }
@@ -94,7 +94,7 @@ class TabSuspensionTests: UITestCase {
         app.typeKey("1", modifierFlags: [.command])
         let webView = app.windows.firstMatch.webViews[inputPageTitle]
         XCTAssertTrue(
-            webView.waitForExistence(timeout: UITests.Timeouts.navigation),
+            webView.waitForExistence(timeout: UITests.Timeouts.localTestServer),
             "Tab should reload after being selected"
         )
 

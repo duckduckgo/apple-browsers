@@ -19,8 +19,7 @@
 
 import Foundation
 import Testing
-import Persistence
-import PersistenceTestingUtils
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 @Suite("Modal Prompt Coordination - Prompt Cooldown Migrator")

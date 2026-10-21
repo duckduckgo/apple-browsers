@@ -23,32 +23,59 @@ import Combine
 public protocol ManagementDialogModelDelegate: AnyObject {
     func turnOffSync()
     func updateDeviceName(_ name: String)
-    func removeDevice(_ device: SyncDevice)
+    func presentRemoveDeviceConfirmation(_ device: SyncDevice)
+    func removeDeviceConfirmed(_ device: SyncDevice)
     func deleteAccount()
+    func turnOffSyncRemoveDeviceSelected()
+    func turnOffSyncDeleteServerDataSelected()
+    func turnOffSyncDeleteServerDataConfirmed()
+    func turnOffSyncDeleteServerDataCancelled()
     func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool)
-    func saveRecoveryPDF()
-    func recoveryCodeNextPressed()
-    func turnOnSync()
-    func enterRecoveryCodePressed()
-    func copyCode()
+    func saveRecoveryPDF(requiresAuthentication: Bool)
+    func enterRecoveryCodePressed() async
+    func copyCode(_ code: String)
+    func syncAnotherDevicePromptDidAppear()
+    func syncSuccessViewDidAppear()
+    func syncSuccessCopyCodePressed(_ code: String)
+    func syncSuccessSaveRecoveryPDFPressed()
+    func syncSuccessDonePressed()
+    func syncThisDeviceOnlyFromPrompt() async
+    func syncWithAnotherDeviceFromPrompt() async
+    func syncThisDeviceFromFallback() async
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
     func userPressedCancel(from dialog: ManagementDialogKind)
+    func shouldEndFlow(from dialog: ManagementDialogKind) async -> Bool
     func switchAccountsCancelled()
     func enterCodeViewDidAppear()
+    func authenticationCancelledPromptClosePressed() async
+    func preparingToSyncAnimationDidFinish()
     func didEndFlow()
 }
 
 public final class ManagementDialogModel: ObservableObject {
 
     @Published public var currentDialog: ManagementDialogKind?
-    public var codeForQR: String?
 
     @Published public var shouldShowErrorMessage: Bool = false
     @Published public var syncErrorMessage: SyncErrorMessage?
-    @Published public var isAIChatSyncEnabled: Bool = false
-    @Published public var shouldShowSingleDeviceSyncPromoOnSyncWithAnotherDeviceScreen: Bool = false
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
+    @Published public var isPreparingToSyncAnimationPaused: Bool = false
+    @Published public var isConnectingThisDeviceOnly: Bool = false
+    @Published public var isConnectingAnotherDevice: Bool = false
+    @Published public var isAuthenticating: Bool = false
+    @Published public var isImprovedPairingFlowEnabled: Bool = false
+    @Published public var authenticationCancelledPromptOffersRetry: Bool = false
+
+    public var thisDeviceName: String?
+
+    public var isConnecting: Bool {
+        isConnectingThisDeviceOnly || isConnectingAnotherDevice
+    }
+
+    public var isBusy: Bool {
+        isConnecting || isAuthenticating
+    }
 
     public weak var delegate: ManagementDialogModelDelegate?
 
@@ -71,6 +98,14 @@ public final class ManagementDialogModel: ObservableObject {
     }
 
     @MainActor
+    public func cancelPressedWithConfirmation() async {
+        if let currentDialog, let delegate {
+            guard await delegate.shouldEndFlow(from: currentDialog) else { return }
+        }
+        cancelPressed()
+    }
+
+    @MainActor
     public func endFlow() {
         if shouldShowSwitchAccountsMessage {
             delegate?.switchAccountsCancelled()
@@ -87,6 +122,11 @@ public final class ManagementDialogModel: ObservableObject {
     public func showSwitchAccountsMessage() {
         shouldShowSwitchAccountsMessage = true
         shouldShowErrorMessage = true
+    }
+
+    @MainActor
+    public func preparingToSyncAnimationDidFinish() {
+        delegate?.preparingToSyncAnimationDidFinish()
     }
 
     @MainActor

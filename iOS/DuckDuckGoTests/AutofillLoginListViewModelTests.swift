@@ -27,8 +27,7 @@ import PrivacyConfigTestsUtils
 @testable import Core
 import BrowserServicesKit
 @testable import Common
-@testable import PersistenceTestingUtils
-import Persistence
+@_spi(Testing) import Persistence
 import PrivacyDashboard
 
 class AutofillLoginListViewModelTests: XCTestCase {
@@ -319,6 +318,69 @@ class AutofillLoginListViewModelTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
     }
 
+    func testWhenDeletingLoginThenUndoRestoresCredentialContentsWithNewIdentity() throws {
+        let vault = MockSecureVault(providers: try MockSecureVaultFactory.makeSecureStorageProviders(reporter: nil))
+        let account = SecureVaultModels.WebsiteAccount(id: "1",
+                                                       title: "Example login",
+                                                       username: "user@example.com",
+                                                       domain: "example.com",
+                                                       signature: "original-signature",
+                                                       notes: "Recovery codes:\n1234-5678\nKeep these safe 🔐",
+                                                       created: Date(timeIntervalSince1970: 1_700_000_000),
+                                                       lastUpdated: Date(timeIntervalSince1970: 1_700_000_100),
+                                                       lastUsed: Date(timeIntervalSince1970: 1_700_000_200))
+        let password = Data("saved-password".utf8)
+        vault.storedAccounts = [account]
+        vault.storedCredentials[1] = .init(account: account, password: password)
+
+        var storedCredentials: [SecureVaultModels.WebsiteCredentials] = []
+        vault.storeWebsiteCredentialsHandler = { [unowned vault] credentials in
+            storedCredentials.append(credentials)
+            var restoredCredentials = credentials
+            restoredCredentials.account.id = "2"
+            vault.storedCredentials[2] = restoredCredentials
+            vault.storedAccounts = [restoredCredentials.account]
+            return 2
+        }
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                  tld: tld,
+                                                  secureVault: vault,
+                                                  privacyConfig: makePrivacyConfig(from: configDisabled),
+                                                  syncService: syncService,
+                                                  keyValueStore: mockStore,
+                                                  featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+
+        XCTAssertTrue(model.delete(account))
+        XCTAssertNil(try vault.websiteCredentialsFor(accountId: 1))
+
+        model.undoLastDelete()
+
+        XCTAssertEqual(storedCredentials.count, 1)
+        let credentialsToRestore = try XCTUnwrap(storedCredentials.first)
+        XCTAssertNil(credentialsToRestore.account.id)
+        XCTAssertEqual(credentialsToRestore.account.title, account.title)
+        XCTAssertEqual(credentialsToRestore.account.username, account.username)
+        XCTAssertEqual(credentialsToRestore.account.domain, account.domain)
+        XCTAssertEqual(credentialsToRestore.account.notes, account.notes)
+        XCTAssertEqual(credentialsToRestore.account.lastUsed, account.lastUsed)
+        XCTAssertEqual(credentialsToRestore.password, password)
+
+        let restoredCredentials = try XCTUnwrap(vault.websiteCredentialsFor(accountId: 2))
+        var expectedAccount = credentialsToRestore.account
+        expectedAccount.id = "2"
+        XCTAssertEqual(restoredCredentials.account, expectedAccount)
+        XCTAssertEqual(restoredCredentials.password, password)
+        XCTAssertEqual(model.sections.count, 1)
+        guard case .credentials(_, let items) = try XCTUnwrap(model.sections.first) else {
+            return XCTFail("Expected a credentials section after undo")
+        }
+        XCTAssertEqual(items.map(\.account), [expectedAccount])
+
+        model.undoLastDelete()
+
+        XCTAssertEqual(storedCredentials.count, 1)
+    }
+
     func testWhenOneAccountSavedAndDeleteAllThenNoAccountsAreShownAndVaultIsEmpty() throws {
         vault.storedAccounts = [
             SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
@@ -553,6 +615,21 @@ class AutofillLoginListViewModelTests: XCTestCase {
         XCTAssertNil(model.getSurveyToPresent())
     }
 
+    func testDismissSyncPromo_DismissesPasswordPromoWithUserTappedReason() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   syncPromoManager: syncPromoManager)
+
+        model.dismissSyncPromo()
+
+        XCTAssertEqual(syncPromoManager.dismissedTouchpoint, .passwords)
+        XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
+    }
+
     func testWhenAllConditionsAreMetThenSurveyIsReturnedAndWhenDismissedNotSurveyIsReturned() {
         let model = MockAutofillLoginListViewModel(appSettings: appSettings,
                                                    tld: tld,
@@ -647,6 +724,36 @@ class AutofillLoginListViewModelTests: XCTestCase {
         suggestionsSection = findSuggestionsSection(in: model.sections)
         XCTAssertNotNil(suggestionsSection, "Should restore suggestions based on currentTabUrl when search is cleared")
         assertSuggestionsContainsDomain(suggestionsSection, domain: "example.com", message: "Suggestions should be restored to currentTabUrl matches when search is cleared")
+    }
+
+    func testWhenSearchSuggestionsNoLongerContainCurrentTabDomainThenBreakageReporterPromptIsHidden() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://example.com"),
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        XCTAssertEqual(model.rowsInSection(0), 2, "Should show one suggested credential row and one breakage reporter row for current tab domain")
+
+        model.isSearching = true
+        model.filterData(with: "test")
+
+        let suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should still have suggestions section for search query domain matches")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "test.com", message: "Suggestions should contain account matching the search query")
+        assertSuggestionsDoesNotContainDomain(suggestionsSection, domain: "example.com", message: "Suggestions should not contain account that matched current tab URL")
+        XCTAssertEqual(model.rowsInSection(0), 1, "Should hide breakage reporter row when current tab domain is not in suggested results")
     }
 
     func testWhenFeatureFlagEnabledAndSearchCleared_ThenSuggestionsAreCleared() {
@@ -883,4 +990,24 @@ class MockAutofillLoginListViewModel: AutofillLoginListViewModel {
             storageConfiguration: .autofillConfig
         )
     }
+}
+
+private final class MockSyncPromoManager: SyncPromoManaging {
+    private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
+    private(set) var dismissalReason: SyncPromoManager.DismissalReason?
+
+    func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
+        false
+    }
+
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
+        dismissedTouchpoint = touchpoint
+        dismissalReason = reason
+    }
+
+    func resetPromos() {}
 }

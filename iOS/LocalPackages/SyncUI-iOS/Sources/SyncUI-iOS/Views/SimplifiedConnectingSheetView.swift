@@ -20,34 +20,90 @@
 import SwiftUI
 import DesignResourcesKit
 
+#if DEBUG
+import PreviewSnapshots
+#endif
 
 public struct SimplifiedConnectingSheetView: View {
 
-    public init() {}
+    @ObservedObject public var model: SyncSettingsViewModel
+
+    public init(model: SyncSettingsViewModel) {
+        self.model = model
+    }
 
     public var body: some View {
-        VStack(spacing: 24) {
-            Image("Sync-128")
-                .padding(.top, 40)
-
-            Text(UserText.simplifiedConnectingTitle)
-                .daxTitle3()
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.horizontal, 40)
-
-            HStack(spacing: 8) {
-                ProgressView()
-                    .tint(Color(designSystemColor: .textSecondary))
-                Text(UserText.simplifiedConnectingStatus)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+        ZStack {
+            switch model.connectingSheetPhase {
+            case .syncAnotherDevice:
+                SyncAnotherDevicePromptView(model: model)
+            case .connecting(let isRecovery, let successDestination):
+                SimplifiedConnectingContentView(
+                    isRecovery: isRecovery,
+                    isFinishing: successDestination != nil,
+                    onAnimationFinished: { model.connectingAnimationDidFinish() }
+                )
+            case .waitingForOtherDevice:
+                SimplifiedConnectingContentView(
+                    isRecovery: false,
+                    isFinishing: false,
+                    isWaitingForOtherDevice: true,
+                    onAnimationFinished: {}
+                )
+            case .success(let destination):
+                SyncSuccessView(model: model, destination: destination)
+            case .none:
+                EmptyView()
             }
-            .padding(.top, 20)
-            .padding(.bottom, 24)
         }
-        .frame(maxWidth: .infinity)
-        .background(Color(designSystemColor: .backgroundSheets).ignoresSafeArea())
     }
 }
+
+#if DEBUG
+struct SimplifiedConnectingSheetView_Previews: PreviewProvider {
+
+    enum State {
+        case syncAnotherDevice
+        case connecting
+        case deviceConnected
+        case waitingForOtherDevice
+        case recovering
+        case recoveryCompleted
+    }
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots<State>(
+        configurations: [
+            .init(name: "Sync Another Device", state: .syncAnotherDevice),
+            .init(name: "Connecting", state: .connecting),
+            .init(name: "Device Connected", state: .deviceConnected, scope: .previews),
+            .init(name: "Check Other Device", state: .waitingForOtherDevice, scope: .previews),
+            .init(name: "Recovering", state: .recovering, scope: .previews),
+            .init(name: "Recovery Completed", state: .recoveryCompleted, scope: .previews)
+        ],
+        configure: { state in
+            SimplifiedConnectingSheetView(model: model(for: state))
+        }
+    )
+
+    private static func model(for state: State) -> SyncSettingsViewModel {
+        switch state {
+        case .syncAnotherDevice:
+            return .connectingSheetPreview(phase: .syncAnotherDevice(isConnecting: false))
+        case .connecting:
+            return .connectingSheetPreview(phase: .connecting(isRecovery: false))
+        case .deviceConnected:
+            return .connectingSheetPreview(phase: .success(.newlySyncing), autoRestoreProvider: .enabled)
+        case .waitingForOtherDevice:
+            return .connectingSheetPreview(phase: .waitingForOtherDevice)
+        case .recovering:
+            return .connectingSheetPreview(phase: .connecting(isRecovery: true))
+        case .recoveryCompleted:
+            return .connectingSheetPreview(phase: .success(.recovery))
+        }
+    }
+}
+#endif

@@ -286,13 +286,37 @@ final class CPMStableBaseURLIntegrationTests: CPMAppIntegrationTestCase {
 
     func testBackgroundProcessCrashStillRecovers() async throws {
         let harness = try await start()
+        // Keep the shipped error-6 retry and confirmed-hang fallback enabled. Other P3
+        // scenarios isolate the origin policy with the independent recovery flags disabled.
+        harness.setFlag(.cpmBackgroundLoadRecovery, enabled: true)
+        harness.setFlag(.cpmMessagingHangRecovery, enabled: true)
         let tab = try XCTUnwrap(harness.openWindow().first)
         assertHealthy(try await harness.navigate(tab, label: "background-crash-baseline"))
         let initial = try XCTUnwrap(harness.context)
         let pid = try XCTUnwrap(CPMAppWebKit.process(CPMAppWebKit.background(initial)))
         XCTAssertEqual(kill(pid, SIGKILL), 0)
         try await harness.wait("owned background crash", timeout: 12) { CPMAppWebKit.process(CPMAppWebKit.background(initial)) != pid }
-        XCTAssertTrue(harness.context === initial)
+        // WebKit may recover natively or leave error 6 after the retry. In the latter case,
+        // exercise the shipped confirmed-hang fallback using two real navigation timeouts.
+        for attempt in 1...2 {
+            let probe = try await harness.navigate(tab, label: "background-crash-recovery-\(attempt)")
+            if probe.responded && probe.pageReceivedInitResponse && probe.failures.isEmpty {
+                assertHealthy(probe)
+                return
+            }
+            if attempt == 1 {
+                assertFailed(probe)
+            } else {
+                // Automatic context replacement cancels the confirming measurement, so its
+                // missing reply need not produce a second timeout diagnostic from the old context.
+                XCTAssertFalse(probe.responded)
+                XCTAssertFalse(probe.pageReceivedInitResponse)
+            }
+        }
+        try await harness.wait("confirmed-hang recovery replaces the crashed context", timeout: 12) { harness.context !== initial }
+        XCTAssertEqual(harness.context?.uniqueIdentifier, initial.uniqueIdentifier)
+        XCTAssertNotEqual(harness.context?.baseURL, initial.baseURL, "Failed worker recovery must abandon its broken registration")
+        try await harness.waitForBackgroundReady()
         assertHealthy(try await harness.navigate(tab, label: "background-crash-recovered"))
     }
 }

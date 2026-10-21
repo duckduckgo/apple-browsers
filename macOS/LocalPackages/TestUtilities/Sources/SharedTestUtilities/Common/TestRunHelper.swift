@@ -46,6 +46,8 @@ extension XCTestCase {
                 if view.window?.className.contains("NSMenu") == true
                     || view.nextResponder?.className.contains("NSMenuBar") == true
                     || view.window?.className.contains("TUINSWindow") == true
+                    // AppKit reuses its Function Row panel and Touch Bar controller across windows.
+                    || view.window?.className == "_NSFunctionRowPanel"
                     || view.className == "NSRemoteView" {
 
                     objToDeinit = nil
@@ -229,6 +231,7 @@ public final class TestRunHelper: NSObject {
                     !(window.className.contains("NSMenu")
                       || window.className.contains("NSNextStep")
                       || window.className.contains("TUINSWindow")
+                      || window.className == "_NSFunctionRowPanel"
                       || window.className == "NSStatusBarWindow")
                 }
 

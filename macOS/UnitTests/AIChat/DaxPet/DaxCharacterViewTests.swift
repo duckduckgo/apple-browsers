@@ -23,17 +23,41 @@ import XCTest
 final class DaxCharacterViewTests: XCTestCase {
 
     private var idleTime: TimeInterval = 0
+    private var mouseLocation = NSPoint(x: -1000, y: -1000)
     private var character: DaxCharacterView!
+    private var window: NSWindow?
 
     override func setUp() {
         super.setUp()
         idleTime = 0
-        character = DaxCharacterView(reduceMotion: { true }, idleTime: { [unowned self] in idleTime })
+        character = DaxCharacterView(reduceMotion: { true },
+                                     idleTime: { [unowned self] in idleTime },
+                                     mouseLocation: { [unowned self] in mouseLocation })
     }
 
     override func tearDown() {
+        window?.close()
+        window = nil
         character = nil
         super.tearDown()
+    }
+
+    /// Puts Dax on screen at a known place, so cursor positions can be over him or not.
+    private func showCharacter() -> NSRect {
+        let frame = NSRect(origin: NSPoint(x: 200, y: 200), size: DaxCharacterView.preferredSize)
+        let window = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = character
+        self.window = window
+        return window.convertToScreen(character.convert(character.bounds, to: nil))
+    }
+
+    /// Strokes the cursor left and right across Dax, one frame per move.
+    private func pet(frames: Int, over frame: NSRect) {
+        for index in 0..<frames {
+            mouseLocation = NSPoint(x: frame.midX + (index.isMultiple(of: 2) ? -20 : 20), y: frame.midY)
+            character.step()
+        }
     }
 
     // MARK: - Sleep
@@ -84,5 +108,45 @@ final class DaxCharacterViewTests: XCTestCase {
         character.step()
 
         XCTAssertFalse(character.isAsleep)
+    }
+
+    // MARK: - Petting
+
+    func testWhenTheCursorStrokesDaxBackAndForthThenHeIsPetted() {
+        let frame = showCharacter()
+
+        pet(frames: 10, over: frame)
+
+        XCTAssertTrue(character.isBeingPetted)
+    }
+
+    func testWhenTheCursorStrokesBesideDaxThenHeIsNotPetted() {
+        let frame = showCharacter().offsetBy(dx: 400, dy: 0)
+
+        pet(frames: 30, over: frame)
+
+        XCTAssertFalse(character.isBeingPetted)
+    }
+
+    func testWhenPettingStopsThenDaxCalmsDown() {
+        let frame = showCharacter()
+        pet(frames: 10, over: frame)
+
+        for _ in 0..<90 { character.step() }
+
+        XCTAssertFalse(character.isBeingPetted)
+    }
+
+    func testWhenPettedLongEnoughThenDaxShowsHisLoveOnce() {
+        let frame = showCharacter()
+        var loved = 0
+        character.onLovedPetting = { loved += 1 }
+
+        pet(frames: 30, over: frame)
+        XCTAssertEqual(loved, 0)
+
+        pet(frames: Int(DaxCharacterView.lovedPettingDuration * 30) + 10, over: frame)
+
+        XCTAssertEqual(loved, 1)
     }
 }

@@ -168,6 +168,17 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertFalse(model.isAsleep)
     }
 
+    func testWhenDaxLovesBeingPettedThenHeartsPopOut() {
+        XCTAssertNil(model.heartBurst)
+
+        model.character.onLovedPetting?()
+        let first = model.heartBurst
+        model.character.onLovedPetting?()
+
+        XCTAssertNotNil(first)
+        XCTAssertNotEqual(model.heartBurst, first)
+    }
+
     func testWhenOpenDuckAIIsTappedThenANewChatOpens() {
         model.openDuckAI()
 

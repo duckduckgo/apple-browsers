@@ -20,8 +20,8 @@ import AppKit
 import ConcurrencyExtensions
 import Lottie
 
-/// Dax, alive: his eyes follow a target, he blinks, breathes, turns to face the cursor, hops, waves
-/// and dozes off when the Mac is left alone.
+/// Dax, alive: his eyes follow a target, he blinks, breathes, turns to face the cursor, hops, waves,
+/// loves being petted and dozes off when the Mac is left alone.
 @MainActor
 final class DaxCharacterView: NSView {
 
@@ -49,6 +49,11 @@ final class DaxCharacterView: NSView {
     }
     var onSleepChange: ((Bool) -> Void)?
 
+    /// Being stroked by the cursor going back and forth over him.
+    private(set) var isBeingPetted = false
+    /// A good, long pet.
+    var onLovedPetting: (() -> Void)?
+
     /// Where Dax looks, in screen coordinates. `nil` lets the cursor lead.
     var lookTarget: NSPoint?
 
@@ -61,6 +66,7 @@ final class DaxCharacterView: NSView {
     private let face = Face()
     private let reduceMotion: () -> Bool
     private let idleTime: () -> TimeInterval
+    private let mouseLocation: () -> NSPoint
 
     private var tick: Timer?
     private var time: TimeInterval = 0
@@ -79,13 +85,20 @@ final class DaxCharacterView: NSView {
     private var drowsiness: CGFloat = 0
     private var startleStartTime: TimeInterval?
     private var breathPhase: CGFloat = 0
+    /// Builds up with each stroke and fades when the cursor rests or leaves.
+    private var petting: CGFloat = 0
+    private var pettingStartTime: TimeInterval?
+    private var lastLovedPettingTime: TimeInterval = -.infinity
+    private var lastPettingMouseLocation: NSPoint?
 
     init(rig: DaxRig? = DaxRig(),
          reduceMotion: @escaping () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion },
-         idleTime: @escaping () -> TimeInterval = DaxCharacterView.systemIdleTime) {
+         idleTime: @escaping () -> TimeInterval = DaxCharacterView.systemIdleTime,
+         mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation }) {
         self.rig = rig
         self.reduceMotion = reduceMotion
         self.idleTime = idleTime
+        self.mouseLocation = mouseLocation
         self.animationView = rig.map {
             LottieAnimationView(animation: $0.animation,
                                 configuration: LottieConfiguration(renderingEngine: .mainThread))
@@ -205,6 +218,7 @@ final class DaxCharacterView: NSView {
         let previousFace = face.snapshot
 
         updateSleep()
+        updatePetting()
         updateEyes()
         updateEyelids()
         updateBody()
@@ -215,7 +229,7 @@ final class DaxCharacterView: NSView {
     }
 
     private func updateEyes() {
-        let mouse = NSEvent.mouseLocation
+        let mouse = mouseLocation()
         if mouse != lastMouseLocation {
             lastMouseLocation = mouse
             lastMouseMoveTime = time
@@ -225,6 +239,9 @@ final class DaxCharacterView: NSView {
         switch mood {
         case _ where isAsleep:
             target = CGPoint(x: 0, y: -0.4)
+        case _ where isBeingPetted:
+            // Blissfully up.
+            target = CGPoint(x: 0, y: 0.5)
         case .thinking:
             // Up and away, pondering.
             target = CGPoint(x: -0.6, y: 0.9)
@@ -237,7 +254,7 @@ final class DaxCharacterView: NSView {
         }
 
         // Face whichever side the action is on, with some hysteresis so he doesn't flicker.
-        if mood != .thinking, !isAsleep {
+        if mood != .thinking, !isAsleep, !isBeingPetted {
             if target.x < -0.55, !facingLeft { turn(left: true) }
             if target.x > 0.55, facingLeft { turn(left: false) }
         }
@@ -305,6 +322,36 @@ final class DaxCharacterView: NSView {
         hop()
     }
 
+    // MARK: - Petting
+
+    nonisolated static let lovedPettingDuration: TimeInterval = 2
+
+    private func updatePetting() {
+        let mouse = mouseLocation()
+        defer { lastPettingMouseLocation = mouse }
+        if let window, let last = lastPettingMouseLocation {
+            let frameOnScreen = window.convertToScreen(convert(bounds, to: nil))
+            if frameOnScreen.contains(mouse) {
+                petting = min(petting + abs(mouse.x - last.x) / 150, 2)
+            }
+        }
+        petting = max(petting - 0.6 / 30, 0)
+
+        // Hysteresis, so a pause between strokes doesn't break the spell.
+        if !isBeingPetted, petting > 0.6 {
+            isBeingPetted = true
+            pettingStartTime = time
+        } else if isBeingPetted, petting < 0.2 {
+            isBeingPetted = false
+            pettingStartTime = nil
+        }
+
+        if let start = pettingStartTime, time - start >= Self.lovedPettingDuration, time - lastLovedPettingTime > 3 {
+            lastLovedPettingTime = time
+            onLovedPetting?()
+        }
+    }
+
     private func updateEyelids() {
         if let start = startleStartTime {
             // Eyes wide with surprise.
@@ -315,6 +362,11 @@ final class DaxCharacterView: NSView {
                 face.eyelids = -0.25 * sin(progress * .pi)
                 return
             }
+        }
+        if isBeingPetted {
+            // A happy squint.
+            face.eyelids = 0.6
+            return
         }
         let droop = drowsiness * 0.95
         if isAsleep || droop > 0.4 {
@@ -351,7 +403,10 @@ final class DaxCharacterView: NSView {
             let progress = (time - start) / 0.25
             if progress >= 1 { bounceStartTime = nil } else { bounceHeight = sin(progress * .pi) * 4 }
         }
-        let sway = motion && mood == .thinking ? sin(time * 2 * .pi / 1.6) * 0.06 : 0
+        var sway = motion && mood == .thinking ? sin(time * 2 * .pi / 1.6) * 0.06 : 0
+        if motion, isBeingPetted {
+            sway += sin(time * 2 * .pi / 0.45) * 0.05 * min(petting, 1)
+        }
 
         flip += ((facingLeft ? -1 : 1) - flip) * 0.35
 

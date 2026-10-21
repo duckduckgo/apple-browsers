@@ -72,6 +72,11 @@ struct DaxPetView: View {
 
             DaxCharacterRepresentable(character: model.character)
                 .frame(width: DaxCharacterView.preferredSize.width, height: DaxCharacterView.preferredSize.height)
+                .overlay(alignment: .top) {
+                    if let burst = model.heartBurst {
+                        HeartBurst().id(burst)
+                    }
+                }
                 .overlay(alignment: .topTrailing) {
                     if model.isAsleep {
                         SleepingZs()
@@ -87,6 +92,31 @@ struct DaxPetView: View {
         .frame(width: Metrics.windowSize.width, height: Metrics.windowSize.height)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.speech)
         .animation(.easeInOut(duration: 0.6), value: model.isAsleep)
+    }
+}
+
+/// A handful of hearts floating up out of a happily petted Dax.
+private struct HeartBurst: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isFloating = false
+
+    private let hearts: [(x: CGFloat, rise: CGFloat, delay: Double, scale: CGFloat)] = [
+        (-22, 34, 0, 0.9), (0, 46, 0.12, 1.1), (20, 30, 0.24, 0.8), (-8, 40, 0.36, 0.7)
+    ]
+
+    var body: some View {
+        ZStack {
+            ForEach(hearts.indices, id: \.self) { index in
+                let heart = hearts[index]
+                Image(nsImage: DesignSystemImages.Color.Size16.heart)
+                    .scaleEffect(isFloating ? heart.scale : 0.3)
+                    .offset(x: heart.x, y: isFloating && !reduceMotion ? -heart.rise : 0)
+                    .opacity(isFloating ? 0 : 1)
+                    .animation(.easeOut(duration: 1.3).delay(heart.delay), value: isFloating)
+            }
+        }
+        .onAppear { isFloating = true }
+        .accessibilityHidden(true)
     }
 }
 

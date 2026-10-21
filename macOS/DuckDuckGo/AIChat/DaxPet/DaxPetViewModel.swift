@@ -31,6 +31,8 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var isComposing = false
     @Published private(set) var speech: String?
     @Published private(set) var isAsleep = false
+    /// Changes each time hearts should pop out of Dax; `nil` when there are none.
+    @Published private(set) var heartBurst: Int?
     @Published var prompt = "" {
         didSet { promptDidChange(from: oldValue) }
     }
@@ -56,6 +58,7 @@ final class DaxPetViewModel: ObservableObject {
             self?.isAsleep = isAsleep
             if isAsleep { self?.say(nil) }
         }
+        self.character.onLovedPetting = { [weak self] in self?.showHearts() }
     }
 
     func sayHello() {
@@ -137,6 +140,14 @@ final class DaxPetViewModel: ObservableObject {
     private func updateLookTarget() {
         let width = (prompt as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13)]).width
         character.lookTarget = caretLocation?(width)
+    }
+
+    private func showHearts() {
+        let burst = (heartBurst ?? 0) + 1
+        heartBurst = burst
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { [weak self] in
+            if self?.heartBurst == burst { self?.heartBurst = nil }
+        }
     }
 
     private func say(_ text: String?, for duration: TimeInterval? = nil) {

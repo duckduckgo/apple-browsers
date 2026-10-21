@@ -945,6 +945,312 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 }
 
+final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
+
+    func testWhenGlassHostIsTransformedThenPreviewTargetsOriginalFieldGeometry() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, hostTransform: CGAffineTransform(scaleX: 0.9, y: 0.9))
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let container = try XCTUnwrap(menu.barView.searchContainer)
+            let frame = container.convert(container.bounds, to: menu.window)
+            let targetCenter = preview.target.container.convert(preview.target.center, to: menu.window)
+
+            XCTAssertTrue(preview.view === container)
+            XCTAssertTrue(preview.target.container === container.superview)
+            XCTAssertEqual(targetCenter.x, frame.midX, accuracy: 0.001)
+            XCTAssertEqual(targetCenter.y, frame.midY, accuracy: 0.001)
+            XCTAssertEqual(preview.target.transform, container.transform)
+            XCTAssertEqual(preview.size, container.bounds.size)
+        }
+    }
+
+    func testWhenMenuDisplaysThenGlassIsDisabledWithoutHidingTheLiveField() throws {
+        for withAnimator in [false, true] {
+            let menu = try makeDisplayedMenu(displayAnimator: withAnimator ? MenuDismissAnimator() : nil)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let glass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertFalse(preview.view.isHidden)
+            XCTAssertEqual(preview.view.alpha, 1)
+            XCTAssertNil(glass.effect)
+
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+
+            XCTAssertTrue(preview.view.window === menu.window)
+            XCTAssertFalse(preview.view.isHidden)
+            let restoredGlass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+            if #available(iOS 26.0, *) {
+                XCTAssertNotNil(restoredGlass.effect)
+            }
+        }
+    }
+
+    func testWhenAppearanceChangesDuringMenuThenPreviewKeepsLiveContentAndAdaptiveFill() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+            let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+            let darkTraits = UITraitCollection(userInterfaceStyle: .dark)
+            XCTAssertNotEqual(fill.resolvedColor(with: lightTraits), fill.resolvedColor(with: darkTraits))
+
+            menu.window.overrideUserInterfaceStyle = .dark
+            menu.window.layoutIfNeeded()
+            menu.barView.refreshMaterialAppearance()
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertEqual(preview.view.traitCollection.userInterfaceStyle, .dark)
+            XCTAssertEqual(menu.barView.searchContainer.backgroundColor, .clear)
+            XCTAssertTrue(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.allSatisfy { $0.effect == nil })
+
+            let dismissal = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                            previewForDismissingMenuWithConfiguration: menu.configuration))
+            XCTAssertTrue(dismissal.view === preview.view)
+            XCTAssertEqual(dismissal.parameters.backgroundColor?.resolvedColor(with: darkTraits), fill.resolvedColor(with: darkTraits))
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+        }
+    }
+
+    func testWhenMovingAddressBarThenWaitsForDismissalAndRestoresGlassBeforeMoving() throws {
+        for actionAfterWillEnd in [false, true] {
+            let menu = try makeDisplayedMenu()
+            defer { menu.window.isHidden = true }
+            let animator = MenuDismissAnimator()
+            var moves = 0
+            let move = {
+                XCTAssertFalse(menu.barView.searchContainer.isHidden)
+                let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+                if #available(iOS 26.0, *) {
+                    XCTAssertNotNil(glass?.effect)
+                }
+                moves += 1
+            }
+
+            if !actionAfterWillEnd {
+                menu.barView.performAfterLongPressMenuDismissal(move)
+            }
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+            if actionAfterWillEnd {
+                menu.barView.performAfterLongPressMenuDismissal(move)
+            }
+
+            XCTAssertEqual(moves, 0)
+            XCTAssertFalse(menu.barView.searchContainer.isHidden)
+            animator.complete()
+
+            XCTAssertEqual(moves, 1)
+            menu.barView.performAfterLongPressMenuDismissal(move)
+            XCTAssertEqual(moves, 2)
+        }
+    }
+
+    func testWhenLandscapeMenuDismissesThenFieldStaysVisibleUntilGlassRestores() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, windowSize: CGSize(width: 844, height: 390))
+            defer { menu.window.isHidden = true }
+            let field = try XCTUnwrap(menu.barView.searchContainer)
+            let parent = field.superview
+            let animator = MenuDismissAnimator()
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+            animator.complete()
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+        }
+    }
+
+    func testWhenMenuIsRemovedDuringDismissalThenPendingMoveIsCancelled() throws {
+        let menu = try makeDisplayedMenu()
+        defer { menu.window.isHidden = true }
+        let animator = MenuDismissAnimator()
+        var didMove = false
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+        menu.barView.longPressMenuProvider = nil
+        animator.complete()
+
+        XCTAssertFalse(didMove)
+        XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+        if #available(iOS 26.0, *) {
+            XCTAssertNotNil(glass?.effect)
+        }
+    }
+
+    func testWhenAddressBarLeavesWindowThenPendingMoveIsCancelled() throws {
+        let menu = try makeDisplayedMenu()
+        defer { menu.window.isHidden = true }
+        let animator = MenuDismissAnimator()
+        var didMove = false
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+        menu.barView.removeFromSuperview()
+        animator.complete()
+
+        XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        XCTAssertFalse(didMove)
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        XCTAssertTrue(didMove)
+    }
+
+    func testWhenMenuIsNotDisplayedThenMoveRunsImmediately() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        var didMove = false
+
+        barView.performAfterLongPressMenuDismissal { didMove = true }
+
+        XCTAssertTrue(didMove)
+    }
+
+    private struct DisplayedMenu {
+        let barView: DefaultOmniBarView
+        let window: UIWindow
+        let interaction: UIContextMenuInteraction
+        let configuration: UIContextMenuConfiguration
+    }
+
+    private func makeDisplayedMenu(isBottom: Bool = false,
+                                   hostTransform: CGAffineTransform = .identity,
+                                   displayAnimator: UIContextMenuInteractionAnimating? = nil,
+                                   windowSize: CGSize = CGSize(width: 390, height: 800)) throws -> DisplayedMenu {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = isBottom
+        barView.frame = CGRect(x: 0, y: 100, width: windowSize.width, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(origin: .zero, size: windowSize))
+        let host = UIView(frame: window.bounds.insetBy(dx: 10, dy: 20))
+        window.addSubview(host)
+        host.addSubview(barView)
+        host.transform = hostTransform
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+        _ = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: displayAnimator)
+        return DisplayedMenu(barView: barView, window: window, interaction: interaction, configuration: configuration)
+    }
+
+    private final class MenuDismissAnimator: NSObject, UIContextMenuInteractionAnimating {
+        var previewViewController: UIViewController? { nil }
+        private var completions: [() -> Void] = []
+
+        func addAnimations(_ animations: @escaping () -> Void) {
+            animations()
+        }
+
+        func addCompletion(_ completion: @escaping () -> Void) {
+            completions.append(completion)
+        }
+
+        func complete() {
+            let callbacks = completions
+            completions.removeAll()
+            callbacks.forEach { $0() }
+        }
+    }
+
+    func testWhenFloatingMenuHighlightsAndDismissesThenPreviewIncludesWholeFieldWithoutMovingControls() throws {
+        for isBottom in [false, true] {
+            let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+            barView.isUsingSmallTopSpacing = isBottom
+            barView.frame = CGRect(x: 0, y: 100, width: 390, height: barView.expectedHeight)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            barView.layoutIfNeeded()
+            barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+
+            let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+                .first { $0.delegate === barView })
+            let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+            let container = try XCTUnwrap(barView.searchContainer)
+            let fieldParent = barView.textField.superview
+            let containerParent = container.superview
+            let contentHost = try XCTUnwrap(container.subviews.first { $0 is DefaultOmniBarView.FloatingGlassContentHostView
+                || $0 is UIVisualEffectView })
+            let contentParent = contentHost.superview
+            let windowSubviews = window.subviews
+
+            let highlight = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+            XCTAssertTrue(highlight.view === container)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            XCTAssertFalse(container.isHidden)
+            barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
+            let dismissal = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+            XCTAssertTrue(highlight.view === dismissal.view)
+            XCTAssertTrue(barView.textField.superview === fieldParent)
+            XCTAssertTrue(container.superview === containerParent)
+            XCTAssertTrue(contentHost.superview === contentParent)
+
+            for preview in [highlight, dismissal] {
+                XCTAssertEqual(preview.view.bounds.size, container.bounds.size)
+                XCTAssertGreaterThan(preview.view.bounds.width, barView.textField.bounds.width)
+                let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+                XCTAssertEqual(fill.resolvedColor(with: barView.traitCollection).cgColor.alpha, 1)
+                let previewBounds = try XCTUnwrap(preview.parameters.visiblePath).bounds
+                XCTAssertEqual(previewBounds.minX, container.bounds.minX, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.minY, container.bounds.minY, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.width, container.bounds.width, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.height, container.bounds.height, accuracy: 0.001)
+            }
+
+            barView.contextMenuInteraction(interaction, willEndFor: configuration, animator: nil)
+            XCTAssertFalse(container.isHidden)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            barView.longPressMenuProvider = nil
+            XCTAssertFalse(barView.textField.interactions.contains { $0 === interaction })
+        }
+    }
+
+    func testWhenFloatingUIIsDisabledThenMenuUsesDefaultPreviews() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+
+    func testWhenInteractionBelongsToAnotherControlThenMenuUsesDefaultPreviews() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = UIContextMenuInteraction(delegate: barView)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+}
+
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
     private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {

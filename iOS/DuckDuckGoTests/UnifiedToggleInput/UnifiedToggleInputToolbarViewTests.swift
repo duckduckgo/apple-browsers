@@ -353,6 +353,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         assertColor(submitButton.backgroundColor, matches: .controlsFillPrimary)
     }
 
+    func testWhenSubmitIsBlockedByPromptLengthThenTheReturnKeyStyleShowsTheInactiveFill() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.usesNewPromptSubmitStyle = true
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByPromptLength = true
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertFalse(submitButton.isEnabled)
+        assertColor(submitButton.backgroundColor, matches: .controlsFillPrimary)
+    }
+
     func test_isGenerating_doesNotReenableUnavailableAttachmentButton() {
         let sut = UnifiedToggleInputToolbarView()
         sut.isImageButtonEnabled = false

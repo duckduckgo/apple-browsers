@@ -30,21 +30,51 @@ protocol AttachmentPasteHandling: AnyObject {
 
     /// Turns supported pasteboard items into attachments; loads asynchronously.
     func pasteAttachments(from pasteboard: UIPasteboard)
+
+    func attachInsertedTextIfLong(_ text: String) -> Bool
 }
 
 /// Shared `paste(_:)` / `canPerformAction(_:)` routing that keeps the paste-intercept logic in one place for the text control.
 @MainActor
 enum AttachmentPasteRouting {
 
-    static func canPaste(with handler: AttachmentPasteHandling?) -> Bool {
-        handler?.canPasteAttachments(from: .general) ?? false
+    static func canPaste(with handler: AttachmentPasteHandling?, pasteboard: UIPasteboard) -> Bool {
+        handler?.canPasteAttachments(from: pasteboard) ?? false
     }
 
     /// Routes the general pasteboard to the handler; returns `false` when the caller should fall back to the default paste.
-    static func routePaste(with handler: AttachmentPasteHandling?) -> Bool {
-        guard let handler, handler.canPasteAttachments(from: .general) else { return false }
-        handler.pasteAttachments(from: .general)
+    static func routePaste(with handler: AttachmentPasteHandling?, pasteboard: UIPasteboard) -> Bool {
+        guard let handler, handler.canPasteAttachments(from: pasteboard) else { return false }
+        handler.pasteAttachments(from: pasteboard)
         return true
+    }
+
+    static func routeInsertedText(_ text: String, with handler: AttachmentPasteHandling?) -> Bool {
+        handler?.attachInsertedTextIfLong(text) ?? false
+    }
+}
+
+@MainActor
+enum PastedTextInsertion {
+
+    typealias Schedule = (@escaping () -> Void) -> Void
+
+    /// Goes through `UITextInput.replace`
+    /// so the delegate's change callbacks keep the text model in sync. UIKit moves the caret again after the
+    /// delegate declines the insertion, so the caret goes back to where the selection began on the next turn.
+    static func removeReplacedSelection(in textView: UITextView,
+                                        range: NSRange,
+                                        schedule: Schedule = { DispatchQueue.main.async(execute: $0) }) {
+        guard range.length > 0,
+              let start = textView.position(from: textView.beginningOfDocument, offset: range.location),
+              let end = textView.position(from: start, offset: range.length),
+              let textRange = textView.textRange(from: start, to: end) else { return }
+        textView.replace(textRange, withText: "")
+        let caret = NSRange(location: range.location, length: 0)
+        schedule { [weak textView] in
+            guard let textView, caret.location <= (textView.text as NSString).length else { return }
+            textView.selectedRange = caret
+        }
     }
 }
 
@@ -68,6 +98,7 @@ struct UnifiedToggleInputPasteSupport {
     let isEnabled: Bool
     let acceptsImages: Bool
     let fileTypes: [UTType]
+    let acceptsPastedText: Bool
     /// Number of images the loader may decode before it stops, so a paste of many photos can't over-allocate.
     let maxImageCount: Int?
     /// Per-file byte limit, used to reject an oversized paste from its size alone before reading it into memory.
@@ -81,6 +112,7 @@ struct UnifiedToggleInputPasteSupport {
         isEnabled: Bool,
         acceptsImages: Bool,
         fileTypes: [UTType],
+        acceptsPastedText: Bool = false,
         maxImageCount: Int? = nil,
         maxFileSizeBytes: Int? = nil,
         remainingFileCount: Int? = nil,
@@ -89,6 +121,7 @@ struct UnifiedToggleInputPasteSupport {
         self.isEnabled = isEnabled
         self.acceptsImages = acceptsImages
         self.fileTypes = fileTypes
+        self.acceptsPastedText = acceptsPastedText
         self.maxImageCount = maxImageCount
         self.maxFileSizeBytes = maxFileSizeBytes
         self.remainingFileCount = remainingFileCount
@@ -114,6 +147,7 @@ protocol UnifiedToggleInputPasteDelegate: AnyObject {
     /// Reports pasted images that couldn't be attached, for the limit that was actually hit.
     func reportRejectedPastedImages(reason: PasteImageRejectionReason)
     func presentPasteError(_ message: String)
+    func addPastedText(_ text: String)
 }
 
 /// Owns the paste orchestration (gate → load → add → report) so the coordinator only supplies limits and add actions via `UnifiedToggleInputPasteDelegate`.
@@ -123,9 +157,20 @@ final class UnifiedToggleInputPasteHandler: AttachmentPasteHandling {
     weak var delegate: UnifiedToggleInputPasteDelegate?
 
     private let attachmentProbe: PasteboardAttachmentProbe
+    private let promptLimits: AIChatPromptLimits
 
-    init(attachmentProbe: PasteboardAttachmentProbe = PasteboardAttachmentProbe()) {
+    init(attachmentProbe: PasteboardAttachmentProbe = PasteboardAttachmentProbe(), promptLimits: AIChatPromptLimits = .current) {
         self.attachmentProbe = attachmentProbe
+        self.promptLimits = promptLimits
+    }
+
+    func attachInsertedTextIfLong(_ text: String) -> Bool {
+        guard text.utf16.count >= promptLimits.pasteConversionThreshold,
+              let delegate else { return false }
+        let support = delegate.pasteAttachmentSupport
+        guard support.isEnabled, support.acceptsPastedText, promptLimits.convertsToPastedText(text) else { return false }
+        delegate.addPastedText(text)
+        return true
     }
 
     func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool {

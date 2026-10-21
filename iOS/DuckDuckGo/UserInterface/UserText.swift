@@ -2516,6 +2516,19 @@ public struct UserText {
     public static let aiChatPromptTooLongTitle = NotLocalizedString("aichat.prompt.too.long.title", value: "Please try a shorter message.", comment: "Error shown below the Duck.ai input while the message is longer than the allowed number of characters")
     public static let aiChatPromptTooLongCountFormat = NotLocalizedString("aichat.prompt.too.long.count", value: "%1$d/%2$d", comment: "Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed")
 
+    public static let aiChatPastedTextAccessibilityLabel = NotLocalizedString("aichat.pasted.text.accessibility.label", value: "Pasted text", comment: "VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted")
+    public static let aiChatPastedTextRemoveAction = NotLocalizedString("aichat.pasted.text.remove", value: "Remove", comment: "VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message")
+    public static let aiChatPastedTextSheetTitle = NotLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows and edits a long block of text the user pasted into Duck.ai")
+    public static let aiChatPastedTextFormattingNote = NotLocalizedString("aichat.pasted.text.formatting.note", value: "Formatting may be inconsistent from source.", comment: "Subtitle of the sheet that shows a long block of text the user pasted into Duck.ai")
+    public static func aiChatPastedTextCharacterCount(_ count: Int) -> String {
+        let format = NotLocalizedString("aichat.pasted.text.character.count", value: count == 1 ? "%d character" : "%d characters", comment: "Count line in the Duck.ai pasted-text sheet, giving the size of the pasted text. Not localized until complete locale-specific plural forms are available.")
+        return String.localizedStringWithFormat(format, count)
+    }
+    public static func aiChatPastedTextOverLimitCount(count: Int, limit: Int) -> String {
+        let format = NotLocalizedString("aichat.pasted.text.over.limit.count", value: "%1$d/%2$d characters", comment: "Count line in the Duck.ai pasted-text sheet while the message is over the length limit, e.g. 16800/16000 characters. %1$d is the current character count, %2$d is the most this pasted text may hold")
+        return String(format: format, count, limit)
+    }
+
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")
     public static let aiChatHeaderPaidTitle = NotLocalizedString("aichat.header.paidTitle", value: "Duck.ai", comment: "Label shown in the Duck.ai tab header for paid subscribers")

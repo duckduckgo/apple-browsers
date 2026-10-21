@@ -747,6 +747,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let floatingGlassContentHostView = FloatingGlassContentHostView()
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
+    private var isShowingOmniBarLongPressPreview = false
+    private var omniBarLongPressPendingAction: (() -> Void)?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
@@ -840,6 +842,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        if window == nil {
+            omniBarLongPressPendingAction = nil
+            restoreAddressBarAfterLongPressMenu()
+        }
         reportFooterVisibility()
     }
 
@@ -888,6 +894,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func makeGlass() {
+        guard !isShowingOmniBarLongPressPreview else {
+            glassEffect.effect = nil
+            glassEffectConfiguration = nil
+            setFieldBackgroundColor(.clear)
+            return
+        }
         guard isFloatingUIEnabled else {
             makeOpaque()
             return
@@ -1578,6 +1590,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func removeOmniBarLongPressInteraction() {
         guard let omniBarLongPressInteraction else { return }
+        omniBarLongPressPendingAction = nil
+        restoreAddressBarAfterLongPressMenu()
         searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
@@ -1868,9 +1882,74 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        floatingAddressBarMenuPreview(for: interaction)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        floatingAddressBarMenuPreview(for: interaction)
+    }
+
+    private func floatingAddressBarMenuPreview(for interaction: UIContextMenuInteraction) -> UITargetedPreview? {
+        guard isFloatingUIEnabled,
+              interaction === omniBarLongPressInteraction,
+              let window,
+              !searchAreaContainerView.bounds.isEmpty else { return nil }
+
+        isShowingOmniBarLongPressPreview = true
+        makeGlass()
+        window.layoutIfNeeded()
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = fireMode
+            ? UIColor(singleUseColor: .fireModeBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
+        parameters.visiblePath = UIBezierPath(roundedRect: searchAreaContainerView.bounds,
+                                             cornerRadius: searchAreaContainerView.bounds.height / 2)
+
+        return UITargetedPreview(view: searchAreaContainerView, parameters: parameters)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willEndFor configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionAnimating?) {
+        guard interaction === omniBarLongPressInteraction else { return }
+        if let animator {
+            animator.addCompletion { [weak self] in
+                self?.completeLongPressMenuDismissal()
+            }
+        } else {
+            completeLongPressMenuDismissal()
+        }
+    }
+
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void) {
+        guard isShowingOmniBarLongPressPreview else {
+            action()
+            return
+        }
+        omniBarLongPressPendingAction = action
+    }
+
+    private func completeLongPressMenuDismissal() {
+        restoreAddressBarAfterLongPressMenu()
+        let action = omniBarLongPressPendingAction
+        omniBarLongPressPendingAction = nil
+        if let action {
+            action()
+        }
+    }
+
+    private func restoreAddressBarAfterLongPressMenu() {
+        guard isShowingOmniBarLongPressPreview else { return }
+        isShowingOmniBarLongPressPreview = false
+        updateFireModeAppearance()
     }
 }
 

@@ -197,7 +197,6 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-ff.aiChatNativeChatHistory", "true",
             "-ff.aiChatAddressBarRecentChats", "true",
             "-ff.customizeNTPIcons", "true",
-            "-aichat.settings.isEnabled", "true",
         ])
 
         let aiChatButton = element(withIdentifier: AccessibilityID.aiChat)
@@ -232,6 +231,12 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         XCTAssertGreaterThan(searchField.frame.width, 100)
         XCTAssertTrue(searchField.frame.intersects(app.frame))
+
+        searchField.press(forDuration: 0.8)
+        XCTAssertTrue(app.buttons[barPosition.oppositeMoveAction].waitForExistence(timeout: timeout))
+        dismissMenu(containing: barPosition.oppositeMoveAction)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        assertConfiguredBarPosition()
 
         XCUIDevice.shared.orientation = .portrait
         XCTAssertTrue(waitUntil(timeout: timeout) { self.app.frame.height > self.app.frame.width })
@@ -306,6 +311,13 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
         assertConfiguredBarPosition()
+    }
+
+    func verifyNewTabPageAddressBarRelocation() {
+        moveAddressBar(to: barPosition.opposite)
+        assertChromeButtonsAreUsable()
+        moveAddressBar(to: barPosition)
+        assertChromeButtonsAreUsable()
     }
 
     func verifyStatusBarScrollEdgeInBothBarPositions() {
@@ -1122,6 +1134,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
+    func testNewTabPageAddressBarRelocation() { verifyNewTabPageAddressBarRelocation() }
     func testStatusBarScrollEdgeInBothBarPositions() { verifyStatusBarScrollEdgeInBothBarPositions() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
@@ -1158,6 +1171,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
     func testRuntimeAddressBarRelocation() { verifyRuntimeAddressBarRelocation() }
     func testConsecutiveAddressBarRelocation() { verifyConsecutiveAddressBarRelocation() }
+    func testNewTabPageAddressBarRelocation() { verifyNewTabPageAddressBarRelocation() }
     func testFloatingContentInsets() { verifyFloatingContentInsets() }
     func testUnifiedToggleInputKeyboardGeometry() { verifyUnifiedToggleInputKeyboardGeometry() }
     func testBottomPinnedInputSurvivesKeyboardDismissal() { verifyBottomPinnedInputSurvivesKeyboardDismissal() }

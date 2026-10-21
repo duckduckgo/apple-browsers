@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 
 public enum HistoryImport {
@@ -57,7 +58,21 @@ public enum HistoryImport {
         }
     }
 
-    public enum Error: Swift.Error {
+    public enum Error: DDGError {
         case historyNotLoaded
+
+        public static var errorDomain: String { "com.duckduckgo.history.HistoryImport.Error" }
+
+        public var errorCode: Int {
+            switch self {
+            case .historyNotLoaded: return 1
+            }
+        }
+
+        public var description: String {
+            switch self {
+            case .historyNotLoaded: return "History has not finished loading"
+            }
+        }
     }
 }

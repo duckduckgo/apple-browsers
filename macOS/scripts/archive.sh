@@ -266,7 +266,7 @@ sign_sparkle_helpers() {
 	# Code Sign on Copy signs only the outer framework. Export used to sign these helpers.
 	# https://sparkle-project.org/documentation/sandboxing/#code-signing
 	local certificate_prefix="${workdir}/ui-app-signing-"
-	codesign --display --extract-certificates "$certificate_prefix" "${app_path}"
+	codesign --display --extract-certificates="$certificate_prefix" "${app_path}"
 	local identity
 	identity=$(shasum -a 1 "${certificate_prefix}0" | awk '{print $1}')
 	local helper

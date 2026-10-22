@@ -104,6 +104,47 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
         onSuggest?()
         return suggestions
     }
+
+    var lookup: DaxPetLookup?
+    var lookups: [String] = []
+    func lookup(_ prompt: String) async -> DaxPetLookup? {
+        lookups.append(prompt)
+        return lookup
+    }
+
+    var picks: [Int] = []
+    var pickedFrom: [[String]] = []
+    func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int] {
+        pickedFrom.append(pages)
+        return picks
+    }
+}
+
+@MainActor
+private final class StubDaxPetBrowser: DaxPetBrowsing {
+    var openTabs: [DaxPetTab] = []
+    var visits: [DaxPetVisit] = []
+    var switchedTo: [DaxPetTab] = []
+    var opened: [URL] = []
+    var searches: [[String]] = []
+
+    func switchTo(_ tab: DaxPetTab) {
+        switchedTo.append(tab)
+    }
+
+    func history(matching terms: [String], limit: Int) -> [DaxPetVisit] {
+        searches.append(terms)
+        return Array(visits.prefix(limit))
+    }
+
+    func open(_ url: URL) {
+        opened.append(url)
+    }
+}
+
+@MainActor
+private final class StubDaxPetHistoryConsent: DaxPetHistoryConsent {
+    var canSearchHistory: Bool?
 }
 
 @MainActor
@@ -943,5 +984,221 @@ final class DaxPetViewModelTests: XCTestCase {
         model.openDuckAI()
 
         XCTAssertEqual(submitter.openDuckAICount, 1)
+    }
+
+    // MARK: - Lookups in the browser
+
+    private static let flights = DaxPetTab(id: "1", title: "Google Flights", url: URL(string: "https://www.google.com/travel/flights")!)
+    private static let github = DaxPetTab(id: "2", title: "Pull requests", url: URL(string: "https://github.com/pulls")!)
+    private static let hotel = DaxPetTab(id: "3", title: "Hotel Adlon", url: URL(string: "https://www.booking.com/adlon")!)
+
+    private func makeLookingModel(isOnDevice: Bool = true, consent: Bool? = true)
+        -> (DaxPetViewModel, StubDaxPetIntelligence, StubDaxPetBrowser, StubDaxPetHistoryConsent) {
+        let intelligence = StubDaxPetIntelligence()
+        intelligence.isOnDevice = isOnDevice
+        let browser = StubDaxPetBrowser()
+        browser.openTabs = [Self.flights, Self.github, Self.hotel]
+        let historyConsent = StubDaxPetHistoryConsent()
+        historyConsent.canSearchHistory = consent
+        let model = DaxPetViewModel(submitter: submitter, character: DaxCharacterView(reduceMotion: { true }),
+                                    intelligence: intelligence, browsing: browser, historyConsent: historyConsent)
+        model.submissionDelay = 0
+        return (model, intelligence, browser, historyConsent)
+    }
+
+    private func ask(_ model: DaxPetViewModel, _ prompt: String) async {
+        model.startComposing()
+        model.prompt = prompt
+        model.submit()
+        await settle(model)
+    }
+
+    func testWhenTheOneTabAskedForIsFoundThenItComesForwardAndNothingGoesToDuckAI() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["flights"], daysBack: 0)
+        intelligence.picks = [0]
+
+        await ask(model, "where's my flights tab?")
+
+        XCTAssertEqual(intelligence.pickedFrom, [["Google Flights — www.google.com"]])
+        XCTAssertEqual(browser.switchedTo, [Self.flights])
+        XCTAssertFalse(model.isComposing)
+        XCTAssertEqual(model.speech, UserText.daxPetFoundHere)
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testWhenNoTabHasTheWordsThenTheModelChoosesFromThemAll() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["email"], daysBack: 0)
+
+        await ask(model, "take me to my email")
+
+        XCTAssertEqual(intelligence.pickedFrom.first?.count, 3)
+    }
+
+    func testWhenSeveralTabsMatchThenTheyAreOfferedWithDuckAIAsTheWayOn() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["o"], daysBack: 0)
+        intelligence.picks = [2, 0]
+
+        await ask(model, "which tab was it?")
+
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetFoundTabs, content: .items([.tab(Self.hotel), .tab(Self.flights)])))
+        XCTAssertTrue(model.isComposing)
+
+        model.openFinding(.tab(Self.hotel))
+
+        XCTAssertEqual(browser.switchedTo, [Self.hotel])
+        XCTAssertNil(model.findings)
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testWhenNothingIsFoundThenTheRequestGoesToDuckAI() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["weather"], daysBack: 0)
+        intelligence.picks = []
+
+        await ask(model, "where's the weather tab?")
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(submitter.submittedPrompts, ["where's the weather tab?"])
+        XCTAssertTrue(browser.switchedTo.isEmpty)
+        XCTAssertNil(model.findings)
+    }
+
+    func testAQuestionForDuckAIGoesStraightOn() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = nil
+
+        await ask(model, "what's the capital of France?")
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(intelligence.lookups, ["what's the capital of France?"])
+        XCTAssertTrue(intelligence.pickedFrom.isEmpty)
+        XCTAssertTrue(browser.searches.isEmpty)
+        XCTAssertEqual(submitter.submittedPrompts, ["what's the capital of France?"])
+    }
+
+    func testWithoutAppleIntelligenceEveryRequestGoesStraightToDuckAI() async {
+        let (model, intelligence, browser, _) = makeLookingModel(isOnDevice: false)
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["flights"], daysBack: 0)
+
+        await ask(model, "where's my flights tab?")
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertTrue(intelligence.lookups.isEmpty)
+        XCTAssertTrue(browser.switchedTo.isEmpty)
+        XCTAssertEqual(submitter.submittedPrompts, ["where's my flights tab?"])
+    }
+
+    func testWhenPagesFromTheHistoryMatchThenTheyAreOfferedAndOneOpens() async throws {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        let recipe = DaxPetVisit(title: "Carbonara", url: try XCTUnwrap(URL(string: "https://food.example/carbonara")), date: Date())
+        browser.visits = [recipe]
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["recipe"], daysBack: 1)
+        intelligence.picks = [0]
+
+        await ask(model, "the recipe I looked at yesterday")
+
+        XCTAssertEqual(browser.searches, [["recipe"]])
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetFoundHistory, content: .items([.visit(recipe)])))
+
+        model.openFinding(.visit(recipe))
+
+        XCTAssertEqual(browser.opened, [recipe.url])
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testThePagesFromWhenTheUserSaidComeFirst() async throws {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        let now = Date()
+        model.now = { now }
+        let old = DaxPetVisit(title: "Old", url: try XCTUnwrap(URL(string: "https://a.example/")), date: now.addingTimeInterval(-30 * 86_400))
+        let recent = DaxPetVisit(title: "Recent", url: try XCTUnwrap(URL(string: "https://b.example/")), date: now.addingTimeInterval(-3_600))
+        browser.visits = [old, recent]
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["a"], daysBack: 1)
+
+        await ask(model, "that page from yesterday")
+
+        XCTAssertEqual(intelligence.pickedFrom.first?.map { $0.components(separatedBy: " — ").first }, ["Recent", "Old"])
+    }
+
+    func testBeforeTheFirstHistorySearchDaxAsksAndAYesSearchesFromThenOn() async throws {
+        let (model, intelligence, browser, consent) = makeLookingModel(consent: nil)
+        browser.visits = [DaxPetVisit(title: "Carbonara", url: try XCTUnwrap(URL(string: "https://food.example/")), date: Date())]
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["recipe"], daysBack: 0)
+        intelligence.picks = [0]
+
+        await ask(model, "the recipe from yesterday")
+
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetHistoryAsk, content: .askingToSearchHistory))
+        XCTAssertTrue(browser.searches.isEmpty)
+
+        model.allowHistorySearch()
+        await settle(model)
+
+        XCTAssertEqual(consent.canSearchHistory, true)
+        XCTAssertEqual(browser.searches, [["recipe"]])
+        XCTAssertEqual(model.findings?.headline, UserText.daxPetFoundHistory)
+    }
+
+    func testTurningDownTheHistorySearchSendsTheRequestToDuckAIAndDaxDoesNotAskAgain() async {
+        let (model, intelligence, browser, consent) = makeLookingModel(consent: nil)
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["recipe"], daysBack: 0)
+        await ask(model, "the recipe from yesterday")
+
+        model.askDuckAIInstead()
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(consent.canSearchHistory, false)
+        XCTAssertTrue(browser.searches.isEmpty)
+        XCTAssertEqual(submitter.submittedPrompts, ["the recipe from yesterday"])
+    }
+
+    func testWithoutLeaveToSearchTheHistoryTheRequestGoesToDuckAI() async {
+        let (model, intelligence, browser, _) = makeLookingModel(consent: false)
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["recipe"], daysBack: 0)
+
+        await ask(model, "the recipe from yesterday")
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertTrue(browser.searches.isEmpty)
+        XCTAssertNil(model.findings)
+    }
+
+    func testAskingDuckAIInsteadSendsTheRequestWithoutLookingAgain() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["o"], daysBack: 0)
+        intelligence.picks = [0, 1]
+        await ask(model, "which tab was it?")
+
+        model.askDuckAIInstead()
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(intelligence.lookups.count, 1)
+        XCTAssertEqual(submitter.submittedPrompts, ["which tab was it?"])
+    }
+
+    func testTypingPutsTheFindingsAway() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["o"], daysBack: 0)
+        intelligence.picks = [0, 1]
+        await ask(model, "which tab was it?")
+
+        model.prompt = "which tab was it? the blue one"
+
+        XCTAssertNil(model.findings)
     }
 }

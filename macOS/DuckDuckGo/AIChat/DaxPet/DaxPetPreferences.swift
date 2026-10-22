@@ -32,6 +32,11 @@ final class DaxPetPreferences: ObservableObject {
         didSet { persistor.canSeeForegroundApp = canSeeForegroundApp }
     }
 
+    /// Lets Dax search the browsing history on the Mac; `nil` until the user answers him the first time.
+    @Published var canSearchHistory: Bool? {
+        didSet { persistor.canSearchHistory = canSearchHistory }
+    }
+
     /// Whether the setting is offered at all.
     var isAvailable: Bool {
         featureFlagger.isFeatureOn(.aiChatDaxPet)
@@ -65,8 +70,17 @@ final class DaxPetPreferences: ObservableObject {
         self.featureFlagger = featureFlagger
         isEnabled = persistor.isEnabled
         canSeeForegroundApp = persistor.canSeeForegroundApp
+        canSearchHistory = persistor.canSearchHistory
     }
 }
+
+/// The user's say-so for Dax to search their history, asked for the first time he needs it.
+@MainActor
+protocol DaxPetHistoryConsent: AnyObject {
+    var canSearchHistory: Bool? { get set }
+}
+
+extension DaxPetPreferences: DaxPetHistoryConsent {}
 
 protocol DaxPetPreferencesPersistor {
     var isEnabled: Bool { get set }
@@ -74,6 +88,7 @@ protocol DaxPetPreferencesPersistor {
     var position: CGPoint? { get set }
     var wardrobe: DaxWardrobe { get set }
     var canSeeForegroundApp: Bool { get set }
+    var canSearchHistory: Bool? { get set }
 }
 
 struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
@@ -83,6 +98,7 @@ struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
         case position = "dax-pet.position"
         case wardrobe = "dax-pet.wardrobe"
         case canSeeForegroundApp = "dax-pet.can-see-foreground-app"
+        case canSearchHistory = "dax-pet.can-search-history"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
@@ -110,6 +126,11 @@ struct DaxPetPreferencesUserDefaultsPersistor: DaxPetPreferencesPersistor {
     var canSeeForegroundApp: Bool {
         get { (try? keyValueStore.object(forKey: Key.canSeeForegroundApp.rawValue) as? Bool) ?? false }
         nonmutating set { try? keyValueStore.set(newValue, forKey: Key.canSeeForegroundApp.rawValue) }
+    }
+
+    var canSearchHistory: Bool? {
+        get { (try? keyValueStore.object(forKey: Key.canSearchHistory.rawValue)) as? Bool }
+        nonmutating set { try? keyValueStore.set(newValue, forKey: Key.canSearchHistory.rawValue) }
     }
 
     var wardrobe: DaxWardrobe {

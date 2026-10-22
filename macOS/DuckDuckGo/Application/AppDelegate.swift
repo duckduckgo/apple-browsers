@@ -2862,6 +2862,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                     subscriptionManager: subscriptionManager,
                                                     preferences: aiChatPreferencesPersistor
                                                 )),
+                                            browsing: DaxPetBrowser(windowControllersManager: windowControllersManager,
+                                                                    historyCoordinator: historyCoordinator),
                                             isInternalUser: { [internalUserDecider] in internalUserDecider.isInternalUser })
         coordinator.start()
         daxPetCoordinator = coordinator

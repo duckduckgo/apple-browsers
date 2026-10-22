@@ -40,6 +40,18 @@ struct DaxPetPreferencesView: View {
                     if canSee { DaxPetScreenLooker.requestPermission() }
                 }
             }
+
+            if preferences.isEnabled, DaxPetIntelligenceFactory.isAvailable {
+                VStack(alignment: .leading, spacing: 2) {
+                    ToggleMenuItem(UserText.daxPetHistoryToggle, isOn: Binding(
+                        get: { preferences.canSearchHistory ?? false },
+                        set: { preferences.canSearchHistory = $0 }
+                    ))
+                    .accessibilityIdentifier("Preferences.AIChat.daxPetHistoryToggle")
+                    TextMenuItemCaption(UserText.daxPetHistoryCaption)
+                }
+                .padding(.leading, 19)
+            }
         }
     }
 }

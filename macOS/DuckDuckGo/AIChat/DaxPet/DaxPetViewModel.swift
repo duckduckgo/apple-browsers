@@ -48,6 +48,45 @@ struct DaxPetPageContent: Equatable {
     let text: String
 }
 
+/// What Dax found in the browser for a request, offered as chips, with Duck.ai as the way on.
+struct DaxPetFindings: Equatable {
+
+    enum Item: Equatable, Identifiable {
+        case tab(DaxPetTab)
+        case visit(DaxPetVisit)
+
+        var id: String {
+            switch self {
+            case .tab(let tab): return tab.id
+            case .visit(let visit): return visit.url.absoluteString
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .tab(let tab): return tab.title
+            case .visit(let visit): return visit.title
+            }
+        }
+
+        var url: URL {
+            switch self {
+            case .tab(let tab): return tab.url
+            case .visit(let visit): return visit.url
+            }
+        }
+    }
+
+    enum Content: Equatable {
+        case items([Item])
+        /// Dax asks before he first searches the history.
+        case askingToSearchHistory
+    }
+
+    let headline: String
+    let content: Content
+}
+
 @MainActor
 final class DaxPetViewModel: ObservableObject {
 
@@ -65,6 +104,8 @@ final class DaxPetViewModel: ObservableObject {
     /// The on-device gist of the page open in the browser and follow-ups to it, offered when the pointer
     /// rests on Dax.
     @Published private(set) var glance: DaxPetPageGlance?
+    /// Tabs or pages Dax found on the Mac for the request, before anything goes to Duck.ai.
+    @Published private(set) var findings: DaxPetFindings?
 
     /// Dax won't sum up the same page again for this long.
     var glanceCooldown: TimeInterval = 600
@@ -106,6 +147,12 @@ final class DaxPetViewModel: ObservableObject {
     private let intelligence: DaxPetIntelligence
     private let screenLooker: DaxPetScreenLooking?
     private let canSeeForegroundApp: () -> Bool
+    private let browsing: DaxPetBrowsing?
+    private let historyConsent: DaxPetHistoryConsent?
+    /// The prompt Dax last looked up in the browser, so the next Return sends rather than looks again.
+    private var lookedUpPrompt: String?
+    private var pendingHistoryLookup: DaxPetLookup?
+    private(set) var isLookingUp = false
     /// The prompt the screen was last checked for, so the next Return sends rather than checks again.
     private var screenCheckedPrompt: String?
     private(set) var isCheckingScreen = false
@@ -119,11 +166,15 @@ final class DaxPetViewModel: ObservableObject {
          character: DaxCharacterView? = nil,
          intelligence: DaxPetIntelligence? = nil,
          screenLooker: DaxPetScreenLooking? = nil,
-         canSeeForegroundApp: @escaping () -> Bool = { false }) {
+         canSeeForegroundApp: @escaping () -> Bool = { false },
+         browsing: DaxPetBrowsing? = nil,
+         historyConsent: DaxPetHistoryConsent? = nil) {
         self.submitter = submitter
         self.intelligence = intelligence ?? DaxPetNoIntelligence()
         self.screenLooker = screenLooker
         self.canSeeForegroundApp = canSeeForegroundApp
+        self.browsing = browsing
+        self.historyConsent = historyConsent
         self.character = character ?? DaxCharacterView()
         self.character.onSleepChange = { [weak self] isAsleep in
             self?.isAsleep = isAsleep
@@ -172,6 +223,8 @@ final class DaxPetViewModel: ObservableObject {
         prompt = ""
         attachments = []
         screenCheckedPrompt = nil
+        lookedUpPrompt = nil
+        findings = nil
         clearSuggestions()
         character.mood = isAwaitingAnswer ? .thinking : .idle
         character.lookTarget = nil
@@ -186,12 +239,18 @@ final class DaxPetViewModel: ObservableObject {
     func submit() {
         let typed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         let prompt = typed.isEmpty && !attachments.isEmpty ? dropAction?.prompt ?? "" : typed
-        guard !prompt.isEmpty, !isCheckingScreen else { return }
+        guard !prompt.isEmpty, !isCheckingScreen, !isLookingUp else { return }
+        if shouldLookUp(prompt) {
+            Task { await lookUp(prompt) }
+            return
+        }
         if shouldCheckScreen(for: prompt), let screenLooker, let app = screenLooker.foregroundApp {
             Task { await checkScreen(for: prompt, in: app, with: screenLooker) }
             return
         }
         screenCheckedPrompt = nil
+        lookedUpPrompt = nil
+        findings = nil
         let (query, payload) = DaxPetAttachmentLoader.prompt(prompt, attachments: attachments, capabilities: attachmentCapabilities)
         isComposing = false
         self.prompt = ""
@@ -210,6 +269,127 @@ final class DaxPetViewModel: ObservableObject {
             scheduleAnswerTimeout(after: answerStartTimeout)
         }
     }
+
+    // MARK: - Lookups in the browser
+
+    /// Typed requests only, with the on-device model to tell what they are, and only once each.
+    private func shouldLookUp(_ prompt: String) -> Bool {
+        browsing != nil && intelligence.isOnDevice && attachments.isEmpty && lookedUpPrompt != prompt
+    }
+
+    /// Tabs and pages Dax can find on the Mac he finds at once; anything else, or nothing found, goes on to Duck.ai.
+    private func lookUp(_ prompt: String) async {
+        isLookingUp = true
+        lookedUpPrompt = prompt
+        character.mood = .thinking
+        let lookup = await intelligence.lookup(prompt)
+        isLookingUp = false
+        guard isStillAsking(prompt) else { return }
+        character.mood = .listening
+
+        guard let lookup, let browsing else { return submit() }
+        switch (lookup.kind, historyConsent?.canSearchHistory) {
+        case (.openTab, _):
+            await findTab(for: prompt, lookup, in: browsing)
+        case (.history, true?):
+            await findPage(for: prompt, lookup, in: browsing)
+        case (.history, nil) where historyConsent != nil:
+            pendingHistoryLookup = lookup
+            say(nil)
+            findings = DaxPetFindings(headline: UserText.daxPetHistoryAsk, content: .askingToSearchHistory)
+        case (.history, _):
+            submit()
+        }
+    }
+
+    /// Tabs open at most this long go to the on-device model to choose from.
+    static let maximumCandidates = 30
+
+    private func findTab(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
+        let tabs = browsing.openTabs
+        let matching = tabs.filter { tab in lookup.terms.contains { Self.page(tab.title, tab.url, contains: $0) } }
+        let candidates = Array((matching.isEmpty ? tabs : matching).prefix(Self.maximumCandidates))
+        character.mood = .thinking
+        let picks = await intelligence.pick(prompt, from: candidates.map { "\($0.title) — \($0.url.host ?? "")" }, maximum: 3)
+        guard isStillAsking(prompt) else { return }
+        character.mood = .listening
+        let found = picks.map { candidates[$0] }
+        switch found.count {
+        case 0:
+            submit()
+        case 1:
+            openFinding(.tab(found[0]))
+        default:
+            show(found.map(DaxPetFindings.Item.tab), headline: UserText.daxPetFoundTabs)
+        }
+    }
+
+    private func findPage(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
+        let visits = browsing.history(matching: lookup.terms, limit: Self.maximumCandidates * 2)
+        // The model's sense of time is loose, so a date the user gave only puts the pages from then first.
+        let since = now().addingTimeInterval(-Double(lookup.daysBack + 1) * 24 * 60 * 60)
+        let ordered = lookup.daysBack > 0 ? visits.filter { $0.date >= since } + visits.filter { $0.date < since } : visits
+        let candidates = Array(ordered.prefix(Self.maximumCandidates))
+        guard !candidates.isEmpty else { return submit() }
+        character.mood = .thinking
+        let pages = candidates.map { "\($0.title) — \($0.url.host ?? ""), \(Self.modelDateFormatter.localizedString(for: $0.date, relativeTo: now()))" }
+        let picks = await intelligence.pick(prompt, from: pages, maximum: 3)
+        guard isStillAsking(prompt) else { return }
+        character.mood = .listening
+        guard !picks.isEmpty else { return submit() }
+        show(picks.map { .visit(candidates[$0]) }, headline: UserText.daxPetFoundHistory)
+    }
+
+    private func show(_ items: [DaxPetFindings.Item], headline: String) {
+        say(nil)
+        findings = DaxPetFindings(headline: headline, content: .items(items))
+    }
+
+    /// Brings the tab forward or opens the page, and Dax is done.
+    func openFinding(_ item: DaxPetFindings.Item) {
+        guard let browsing else { return }
+        switch item {
+        case .tab(let tab): browsing.switchTo(tab)
+        case .visit(let visit): browsing.open(visit.url)
+        }
+        endComposing()
+        character.hop()
+        say(UserText.daxPetFoundHere, for: 3)
+    }
+
+    /// The user would rather Duck.ai answered; turning down the history search also means not asking again.
+    func askDuckAIInstead() {
+        if findings?.content == .askingToSearchHistory {
+            historyConsent?.canSearchHistory = false
+        }
+        findings = nil
+        pendingHistoryLookup = nil
+        submit()
+    }
+
+    func allowHistorySearch() {
+        historyConsent?.canSearchHistory = true
+        findings = nil
+        guard let lookup = pendingHistoryLookup, let prompt = lookedUpPrompt, let browsing else { return }
+        pendingHistoryLookup = nil
+        Task { await findPage(for: prompt, lookup, in: browsing) }
+    }
+
+    private func isStillAsking(_ prompt: String) -> Bool {
+        isComposing && lookedUpPrompt == prompt && self.prompt.trimmingCharacters(in: .whitespacesAndNewlines) == prompt
+    }
+
+    static func page(_ title: String, _ url: URL, contains term: String) -> Bool {
+        (title + " " + url.absoluteString).range(of: term, options: [.caseInsensitive, .diacriticInsensitive]) != nil
+    }
+
+    /// For the on-device model, which reads English best.
+    private static let modelDateFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.unitsStyle = .full
+        return formatter
+    }()
 
     // MARK: - The app in front
 
@@ -365,7 +545,7 @@ final class DaxPetViewModel: ObservableObject {
 
     /// With the pointer resting on him, Dax reads the open page on the device and sums it up in a bubble.
     func glanceAtPage() async {
-        guard intelligence.isOnDevice, !isComposing, !isAsleep, !isAwaitingAnswer, speech == nil, glance == nil,
+        guard intelligence.isOnDevice, !isComposing, !isAsleep, !isAwaitingAnswer, speech == nil, glance == nil, findings == nil,
               suggestions.isEmpty, let page = await submitter.currentPageContent(), !page.text.isEmpty else { return }
         if let last = lastGlance, last.url == page.url, now().timeIntervalSince(last.time) < glanceCooldown { return }
         lastGlance = (page.url, now())
@@ -463,6 +643,8 @@ final class DaxPetViewModel: ObservableObject {
         guard isComposing, prompt != oldValue else { return }
         if !prompt.isEmpty, speech != nil { say(nil) }
         if !prompt.isEmpty { suggestions = [] }
+        findings = nil
+        pendingHistoryLookup = nil
         updateLookTarget()
 
         character.noticeTyping()

@@ -37,6 +37,10 @@ protocol DaxPetIntelligence {
     func pageGlance(title: String, content: String) async -> DaxPetPageGlance?
     /// Whether answering `prompt` needs to see what the user has open in `appName`.
     func refersToScreen(_ prompt: String, appName: String) async -> Bool
+    /// What to look up in the browser for `prompt`; `nil` when it's a question for Duck.ai.
+    func lookup(_ prompt: String) async -> DaxPetLookup?
+    /// The positions in `pages` of the ones `prompt` is after, best first, at most `maximum`.
+    func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int]
 }
 
 struct DaxPetPageGlance: Equatable {
@@ -44,15 +48,35 @@ struct DaxPetPageGlance: Equatable {
     let followUps: [String]
 }
 
+/// Something Dax can find in the browser himself, without asking Duck.ai.
+struct DaxPetLookup: Equatable {
+    enum Kind: Equatable {
+        case openTab
+        case history
+    }
+
+    let kind: Kind
+    /// Words to search titles and addresses for.
+    let terms: [String]
+    /// How far back the user said, in days; 0 when they didn't.
+    let daysBack: Int
+}
+
 enum DaxPetIntelligenceFactory {
 
     /// The on-device model where Apple Intelligence is on; otherwise Dax does without.
     @MainActor
     static func make() -> DaxPetIntelligence {
-        if #available(macOS 26, *), SystemLanguageModel.default.isAvailable, SystemLanguageModel.default.supportsLocale() {
+        if #available(macOS 26, *), isAvailable {
             return DaxPetOnDeviceIntelligence()
         }
         return DaxPetNoIntelligence()
+    }
+
+    /// Whether this Mac has Apple Intelligence on, in a language it speaks.
+    static var isAvailable: Bool {
+        guard #available(macOS 26, *) else { return false }
+        return SystemLanguageModel.default.isAvailable && SystemLanguageModel.default.supportsLocale()
     }
 }
 
@@ -63,6 +87,8 @@ struct DaxPetNoIntelligence: DaxPetIntelligence {
     func suggestions(for attachments: [DaxPetAttachment]) async -> [String] { [] }
     func variations(of line: String) async -> [String] { [] }
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? { nil }
+    func lookup(_ prompt: String) async -> DaxPetLookup? { nil }
+    func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int] { [] }
 }
 
 @available(macOS 26, *)
@@ -194,6 +220,72 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         let response = try? await session.respond(to: "Question: \(prompt)", generating: ScreenReference.self,
                                                   options: GenerationOptions(temperature: 0))
         return response?.content.needsTheScreen ?? false
+    }
+
+    @Generable
+    enum LookupAction {
+        case findOpenTab
+        case findPageFromHistory
+        case askAssistant
+    }
+
+    @Generable
+    struct LookupIntent {
+        @Guide(description: "In a few words, what the user wants")
+        var reason: String
+        @Guide(description: "What the user is asking for")
+        var action: LookupAction
+        @Guide(description: "One to three short words to search page titles and addresses for, like a site, product or topic; no dates, no filler words like page, tab or article",
+               .count(1...3))
+        var searchTerms: [String]
+        @Guide(description: "How many days back the user means, 0 when they don't say")
+        var daysBack: Int
+    }
+
+    func lookup(_ prompt: String) async -> DaxPetLookup? {
+        let session = LanguageModelSession(instructions: """
+            The user asks Dax, a helper in their web browser, for something. Decide what they want.
+            findOpenTab: go to or find a tab they already have open, like "where's my flights tab?", \
+            "go to github", "switch to the tab with the recipe", "which tab has my email?".
+            findPageFromHistory: find a page they visited before, like "what was that article about rust I read \
+            last week?", "find the recipe I looked at yesterday", "that hotel site from Monday".
+            askAssistant: anything else, which an AI assistant answers: questions, writing, and anything about \
+            the page they're on, like "what's the capital of France?", "summarize this page", \
+            "write a poem about tabs", "explain this", "how do I clear my history?".
+            """)
+        guard let intent = try? await session.respond(to: "Request: \(prompt)", generating: LookupIntent.self,
+                                                      options: GenerationOptions(temperature: 0)).content else { return nil }
+        let terms = intent.searchTerms.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        let kind: DaxPetLookup.Kind
+        switch intent.action {
+        case .findOpenTab: kind = .openTab
+        case .findPageFromHistory: kind = .history
+        case .askAssistant: return nil
+        }
+        return DaxPetLookup(kind: kind, terms: terms, daysBack: max(intent.daysBack, 0))
+    }
+
+    @Generable
+    struct Picks {
+        @Guide(description: "Numbers of the pages that match what the user is looking for, best match first; empty when none clearly matches")
+        var numbers: [Int]
+    }
+
+    func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int] {
+        guard !pages.isEmpty else { return [] }
+        let session = LanguageModelSession(instructions: """
+            The user is looking for a page among these numbered ones. Give the numbers of the pages that are \
+            what they're looking for, best first, at most \(maximum). Give none when no page clearly is.
+            """)
+        let list = pages.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        guard let picks = try? await session.respond(to: "Looking for: \(prompt)\n\nPages:\n\(list)", generating: Picks.self,
+                                                     options: GenerationOptions(temperature: 0)).content else { return [] }
+        var seen = Set<Int>()
+        return picks.numbers
+            .map { $0 - 1 }
+            .filter { pages.indices.contains($0) && seen.insert($0).inserted }
+            .prefix(maximum)
+            .map { $0 }
     }
 
     /// The user's language, by its English name, for the model to answer in.

@@ -29,6 +29,7 @@ final class DaxPetCoordinator: NSObject {
     private let preferences: DaxPetPreferences
     private var persistor: DaxPetPreferencesPersistor
     private let submitter: DaxPetPromptSubmitting
+    private let browsing: DaxPetBrowsing?
 
     private var window: DaxPetWindow?
     private var model: DaxPetViewModel?
@@ -51,6 +52,7 @@ final class DaxPetCoordinator: NSObject {
     init(preferences: DaxPetPreferences,
          persistor: DaxPetPreferencesPersistor,
          submitter: DaxPetPromptSubmitting,
+         browsing: DaxPetBrowsing? = nil,
          notificationCenter: NotificationCenter = .default,
          isBrowserActive: @escaping @MainActor () -> Bool = { NSApp.isActive },
          now: @escaping () -> Date = Date.init,
@@ -58,6 +60,7 @@ final class DaxPetCoordinator: NSObject {
         self.preferences = preferences
         self.persistor = persistor
         self.submitter = submitter
+        self.browsing = browsing
         self.notificationCenter = notificationCenter
         self.isBrowserActive = isBrowserActive
         self.now = now
@@ -82,7 +85,9 @@ final class DaxPetCoordinator: NSObject {
         let model = DaxPetViewModel(submitter: submitter,
                                     intelligence: intelligence,
                                     screenLooker: DaxPetScreenLooker(),
-                                    canSeeForegroundApp: { [preferences] in preferences.canSeeForegroundApp })
+                                    canSeeForegroundApp: { [preferences] in preferences.canSeeForegroundApp },
+                                    browsing: browsing,
+                                    historyConsent: preferences)
         let window = DaxPetWindow(contentRect: NSRect(origin: .zero, size: DaxPetView.Metrics.windowSize))
         window.contentView = NSHostingView(rootView: DaxPetView(model: model))
         window.delegate = self
@@ -285,7 +290,7 @@ final class DaxPetCoordinator: NSObject {
         let characterFrame = DaxPetView.Metrics.characterFrame().offsetBy(dx: model.character.strollOffset, dy: 0)
         let isOverCharacter = characterFrame.contains(point)
         var interactiveFrames = [characterFrame, DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
-        if model.speech != nil || !model.suggestions.isEmpty || model.glance != nil {
+        if model.speech != nil || !model.suggestions.isEmpty || model.glance != nil || model.findings != nil {
             interactiveFrames.append(DaxPetView.Metrics.bubbleFrame())
         }
         // A press in progress (e.g. dragging Dax) keeps its window.

@@ -74,6 +74,12 @@ struct DaxPetView: View {
                 if !model.suggestions.isEmpty {
                     SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
+                } else if let findings = model.findings {
+                    FindingsBubble(findings: findings,
+                                   onOpen: model.openFinding,
+                                   onAllowHistory: model.allowHistorySearch,
+                                   onAskDuckAI: model.askDuckAIInstead)
+                        .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let glance = model.glance {
                     GlanceBubble(glance: glance) { followUp in Task { await model.askAboutGlance(followUp) } }
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
@@ -111,6 +117,7 @@ struct DaxPetView: View {
         .animation(.easeInOut(duration: 0.6), value: model.isAsleep)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.suggestions)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.glance)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.findings)
     }
 }
 
@@ -147,19 +154,94 @@ private struct ChipList: View {
             Button {
                 onSelect(suggestion)
             } label: {
-                Text(suggestion)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
-                    .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
-                    .contentShape(Capsule())
+                ChipLabel(text: suggestion)
             }
             .buttonStyle(.plain)
             .help(suggestion)
+        }
+    }
+}
+
+/// One chip's capsule; the accented one stands out as the way on to Duck.ai.
+private struct ChipLabel: View {
+    let text: String
+    var isAccented = false
+    var maxWidth: CGFloat?
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12, weight: isAccented ? .semibold : .medium))
+            .foregroundColor(Color(designSystemColor: isAccented ? .accentPrimary : .textPrimary))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(maxWidth: maxWidth)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
+            .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+            .contentShape(Capsule())
+    }
+}
+
+/// What Dax found on the Mac, a chip each, and Duck.ai as the way on; or his question before he first
+/// searches the history.
+private struct FindingsBubble: View {
+    let findings: DaxPetFindings
+    let onOpen: (DaxPetFindings.Item) -> Void
+    let onAllowHistory: () -> Void
+    let onAskDuckAI: () -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(findings.headline)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 280)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color(designSystemColor: .surfacePrimary))
+                        .shadow(color: .black.opacity(0.18), radius: 6, y: 2)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 14).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+
+            Group {
+                if #available(macOS 13, *) {
+                    ChipRows(spacing: 6, maximumRows: 2) { chips }
+                } else {
+                    HStack(spacing: 6) { chips }
+                }
+            }
+            .frame(width: DaxPetView.Metrics.composingWidth)
+            .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var chips: some View {
+        // Duck.ai first, so it's never the chip left out of a full row.
+        Button(action: onAskDuckAI) {
+            ChipLabel(text: UserText.daxPetFindingsAskDuckAI, isAccented: true)
+        }
+        .buttonStyle(.plain)
+        switch findings.content {
+        case .items(let items):
+            ForEach(items) { item in
+                Button { onOpen(item) } label: {
+                    ChipLabel(text: item.title, maxWidth: 130)
+                }
+                .buttonStyle(.plain)
+                .help(item.url.host ?? item.url.absoluteString)
+            }
+        case .askingToSearchHistory:
+            Button(action: onAllowHistory) {
+                ChipLabel(text: UserText.daxPetHistoryAllow)
+            }
+            .buttonStyle(.plain)
         }
     }
 }

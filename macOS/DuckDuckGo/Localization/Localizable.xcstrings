@@ -61,6 +61,102 @@
         }
       }
     },
+    "duckai.dax-pet.found.ask-duck-ai" : {
+      "comment" : "Button next to the tabs or pages Dax, the DuckDuckGo mascot, found for the user; it sends their question to Duck.ai instead",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Ask Duck.ai"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.found.here" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he brings forward the tab or opens the page the user asked him to find",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Here it is!"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.found.history" : {
+      "comment" : "Shown by Dax, the DuckDuckGo mascot, above pages from the browsing history that match what the user asked him to find. Each page is a button below",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You visited these:"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.found.tabs" : {
+      "comment" : "Shown by Dax, the DuckDuckGo mascot, above the open tabs that match what the user asked him to find. Each tab is a button below",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Found these in your tabs:"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.history.allow" : {
+      "comment" : "Button that lets Dax, the DuckDuckGo mascot, search the browsing history on the Mac, now and from then on",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Look Through History"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.history.ask" : {
+      "comment" : "Shown by Dax, the DuckDuckGo mascot, the first time the user asks him to find a page they visited. Buttons below let him search the browsing history, or send the question to Duck.ai",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Want me to look through your history? It stays on your Mac."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.history.caption" : {
+      "comment" : "Caption under the setting that lets Dax, the DuckDuckGo mascot, search the browsing history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "When you ask Dax for a page you visited, like “that recipe from yesterday”, Apple Intelligence searches your history on your Mac. Nothing leaves your Mac."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.history.toggle" : {
+      "comment" : "Checkbox in Settings → AI Features, under the option to show Dax, the DuckDuckGo mascot. It lets him search the browsing history when asked for a page the user visited",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Let Dax search your browsing history"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {

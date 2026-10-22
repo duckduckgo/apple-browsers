@@ -293,12 +293,14 @@
 		3DE24E39E95BA7002DD6923C /* DaxPetViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */; };
 		AA34BA1DBB7C7A29A3C9C626 /* DaxRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */; };
 		DB186FC7914A285AE63B972E /* DaxPetIntelligenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */; };
+		704FB594AFFB69E578090EFF /* DaxPetBrowsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */; };
 		4312C109CA95560195D85BD4 /* DaxOutfitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */; };
 		07680164011752947684B5E6 /* DaxPetAttachmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */; };
 		CE1AB9135982086133D7D804 /* DaxPetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */; };
 		6A4075C705DE61853F1DD0E0 /* DaxCharacterViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA62F815A31E391954396F90 /* DaxCharacterViewTests.swift */; };
 		2B6759D6378BEDC8D9B6973B /* DaxRigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */; };
 		8009163D27ADAD96D27C190F /* DaxPetIntelligenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */; };
+		0BB91D4A5DD1D7BE2696E693 /* DaxPetBrowsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */; };
 		27BB7A382CF76A66499B710F /* DaxOutfitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */; };
 		99918611294B84AFF0B5796F /* DaxPetAttachmentsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */; };
 		C76464E44EFF2A6B074D85AA /* DaxPetCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */; };
@@ -442,11 +444,13 @@
 		9B632FDFD824EF7E7BF197B3 /* DaxPetViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */; };
 		82FF8643CBC4FBCCBB3F47F9 /* DaxRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */; };
 		2B7DD651FC88FD590002E5A4 /* DaxPetScreenLooker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */; };
+		5A88F47949CAF303B0DC369E /* DaxPetBrowsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */; };
 		EAE27112E3CFF562E5D353CF /* DaxPetIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */; };
 		14A58F8FF88963953A4963FE /* DaxOutfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */; };
 		1B62F759DAAD005073A3188D /* DaxPetAttachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */; };
 		FE26E80FE66AEAC6DF375F17 /* DaxRig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */; };
 		91FF5CC5208E38A5F135437D /* DaxPetScreenLooker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */; };
+		491025D79D6F0F7573E4EFA7 /* DaxPetBrowsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */; };
 		66C6EF89FFB224FD20B95BE4 /* DaxPetIntelligence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */; };
 		E5C88507AE3ED17CB7CF72A7 /* DaxOutfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */; };
 		1AC6816D2971A01A294FECE4 /* DaxPetAttachments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */; };
@@ -5403,6 +5407,7 @@
 		B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetViewModelTests.swift; sourceTree = "<group>"; };
 		8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxRigTests.swift; sourceTree = "<group>"; };
 		A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetIntelligenceTests.swift; sourceTree = "<group>"; };
+		7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetBrowsingTests.swift; sourceTree = "<group>"; };
 		00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxOutfitTests.swift; sourceTree = "<group>"; };
 		FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetAttachmentsTests.swift; sourceTree = "<group>"; };
 		FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -5479,6 +5484,7 @@
 		74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetViewModel.swift; sourceTree = "<group>"; };
 		0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxRig.swift; sourceTree = "<group>"; };
 		04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetScreenLooker.swift; sourceTree = "<group>"; };
+		372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetBrowsing.swift; sourceTree = "<group>"; };
 		646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetIntelligence.swift; sourceTree = "<group>"; };
 		BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxOutfit.swift; sourceTree = "<group>"; };
 		4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxPetAttachments.swift; sourceTree = "<group>"; };
@@ -8789,6 +8795,7 @@
 				B87A6D8AED861FEE73EB1164 /* DaxPetViewModelTests.swift */,
 				8DCED9FA1E7ADC07440C9A64 /* DaxRigTests.swift */,
 				A8EC30367E93B14BCFB04A71 /* DaxPetIntelligenceTests.swift */,
+				7E8E4FA42AB8AA567FBEF716 /* DaxPetBrowsingTests.swift */,
 				00685BBB3DE355130CCCF23D /* DaxOutfitTests.swift */,
 				FAB7B212D3BD55AFB2B51B0C /* DaxPetAttachmentsTests.swift */,
 				FCDE4E4804B715C4A12C5ED9 /* DaxPetCoordinatorTests.swift */,
@@ -9457,6 +9464,7 @@
 				74DF1A869D1511D61F690971 /* DaxPetViewModel.swift */,
 				0885AD7D2BC1B3D2834D16ED /* DaxRig.swift */,
 				04690AF94773435CE5EB1E32 /* DaxPetScreenLooker.swift */,
+				372854BB5C923C82B98AB58C /* DaxPetBrowsing.swift */,
 				646C271B4D8B09088C2F9FB4 /* DaxPetIntelligence.swift */,
 				BE383E12A7D7550277D9A2A7 /* DaxOutfit.swift */,
 				4871A3F0BFB917621800B776 /* DaxPetAttachments.swift */,
@@ -16664,6 +16672,7 @@
 				9B632FDFD824EF7E7BF197B3 /* DaxPetViewModel.swift in Sources */,
 				FE26E80FE66AEAC6DF375F17 /* DaxRig.swift in Sources */,
 				91FF5CC5208E38A5F135437D /* DaxPetScreenLooker.swift in Sources */,
+				491025D79D6F0F7573E4EFA7 /* DaxPetBrowsing.swift in Sources */,
 				66C6EF89FFB224FD20B95BE4 /* DaxPetIntelligence.swift in Sources */,
 				E5C88507AE3ED17CB7CF72A7 /* DaxOutfit.swift in Sources */,
 				1AC6816D2971A01A294FECE4 /* DaxPetAttachments.swift in Sources */,
@@ -18030,6 +18039,7 @@
 				3DE24E39E95BA7002DD6923C /* DaxPetViewModelTests.swift in Sources */,
 				2B6759D6378BEDC8D9B6973B /* DaxRigTests.swift in Sources */,
 				8009163D27ADAD96D27C190F /* DaxPetIntelligenceTests.swift in Sources */,
+				0BB91D4A5DD1D7BE2696E693 /* DaxPetBrowsingTests.swift in Sources */,
 				27BB7A382CF76A66499B710F /* DaxOutfitTests.swift in Sources */,
 				99918611294B84AFF0B5796F /* DaxPetAttachmentsTests.swift in Sources */,
 				C76464E44EFF2A6B074D85AA /* DaxPetCoordinatorTests.swift in Sources */,
@@ -19098,6 +19108,7 @@
 				9987A46C3819AA1A434F4C0A /* DaxPetViewModel.swift in Sources */,
 				82FF8643CBC4FBCCBB3F47F9 /* DaxRig.swift in Sources */,
 				2B7DD651FC88FD590002E5A4 /* DaxPetScreenLooker.swift in Sources */,
+				5A88F47949CAF303B0DC369E /* DaxPetBrowsing.swift in Sources */,
 				EAE27112E3CFF562E5D353CF /* DaxPetIntelligence.swift in Sources */,
 				14A58F8FF88963953A4963FE /* DaxOutfit.swift in Sources */,
 				1B62F759DAAD005073A3188D /* DaxPetAttachments.swift in Sources */,
@@ -19956,6 +19967,7 @@
 				DB3256B56603C9D1666E8371 /* DaxPetViewModelTests.swift in Sources */,
 				AA34BA1DBB7C7A29A3C9C626 /* DaxRigTests.swift in Sources */,
 				DB186FC7914A285AE63B972E /* DaxPetIntelligenceTests.swift in Sources */,
+				704FB594AFFB69E578090EFF /* DaxPetBrowsingTests.swift in Sources */,
 				4312C109CA95560195D85BD4 /* DaxOutfitTests.swift in Sources */,
 				07680164011752947684B5E6 /* DaxPetAttachmentsTests.swift in Sources */,
 				CE1AB9135982086133D7D804 /* DaxPetCoordinatorTests.swift in Sources */,

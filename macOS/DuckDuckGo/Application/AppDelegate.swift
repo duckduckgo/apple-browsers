@@ -2356,9 +2356,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Bitwarden's Chrome Web Store ID. Bitwarden is disabled while the `webExtensionBitwarden` flag is off.
-    private static let bitwardenChromeWebStoreID = "nngceckbapebfimnlniiiahkandclblb"
-
     @available(macOS 15.4, *)
     @MainActor
     private func initializeWebExtensions() async {
@@ -2395,17 +2392,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @available(macOS 15.4, *)
     @MainActor
     private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
-        guard self.webExtensionManager === webExtensionManager, webExtensionManager.remoteDisableEnforcer == nil else { return }
-        let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
-            manager: webExtensionManager,
+        guard self.webExtensionManager === webExtensionManager else { return }
+        webExtensionManager.startRemoteDisableEnforcer(
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            disabledExtensionIDs: { [featureFlagger] in
-                featureFlagger.isFeatureOn(.webExtensionBitwarden) ? [] : [Self.bitwardenChromeWebStoreID]
-            },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            featureFlagger: featureFlagger
         )
-        webExtensionManager.remoteDisableEnforcer = remoteDisableEnforcer
-        remoteDisableEnforcer.start()
     }
 
     @available(macOS 15.4, *)

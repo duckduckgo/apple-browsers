@@ -133,8 +133,268 @@ final class FormBrowserToolsTests: XCTestCase {
 
     // MARK: -
 
+    // MARK: - fillForm
+
+    func testWhenFillingThenValuesAreReadBackRefusedFieldsFailAloneAndErrorsAreReported() async throws {
+        driver.pages = [Self.quotePage(), Self.quotePage(phoneError: "Enter a 10-digit US phone number.")]
+
+        let result = await fillForm().execute(arguments: [
+            "tabId": .string(tabs[2].uuid),
+            "fields": [
+                ["ref": "e1", "value": "Pat Doe"],
+                ["ref": "e2", "value": "2 bedrooms"],
+                ["ref": "e4", "value": "I rent"],
+                ["ref": "e6", "value": "hunter2"],
+                ["ref": "e3", "value": "12"]
+            ]
+        ], context: context)
+
+        XCTAssertEqual(result, .success([
+            "tabId": .string(tabs[2].uuid),
+            "filled": [["ref": "e1", "value": "Pat Doe"], ["ref": "e2", "value": "2br"], ["ref": "e4", "value": "rent"], ["ref": "e3", "value": "12"]],
+            "failed": [["ref": "e6", "error": "restricted"]],
+            "errors": [["ref": "e3", "message": "Enter a 10-digit US phone number."]]
+        ]))
+        XCTAssertEqual(driver.appliedActions, [
+            .text(ref: "e1", value: "Pat Doe"),
+            .select(ref: "e2", value: "2br"),
+            .check(ref: "e5", checked: true),
+            .text(ref: "e3", value: "12")
+        ])
+        XCTAssertEqual(settler.settles.map { $0.timeout }, [FillFormBrowserTool.timeout])
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("submit") })
+    }
+
+    func testWhenFieldsAreMissingEmptyOrTooManyThenTheArgumentsAreInvalid() async {
+        let tooMany: JSONValue = .array((0...FillFormBrowserTool.maxFields).map { _ in ["ref": "e1", "value": "x"] })
+        let invalid: [JSONValue] = [[], tooMany, [["value": "x"]], [["ref": "e1", "value": 5]], [["ref": "", "value": "x"]], "e1"]
+
+        for fields in invalid {
+            let result = await fillForm().execute(arguments: ["tabId": .string(tabs[2].uuid), "fields": fields], context: context)
+            XCTAssertEqual(result, .failure(.invalidArguments), "\(fields)")
+        }
+        XCTAssertFalse(driver.calls.contains("apply"))
+    }
+
+    func testWhenNothingCanBeFilledThenNothingIsAppliedAndTheFailuresAreReported() async throws {
+        let result = await fillForm().execute(arguments: ["tabId": .string(tabs[2].uuid), "fields": [["ref": "e6", "value": "hunter2"], ["ref": "e42", "value": "x"]]],
+                                              context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["filled"], [])
+        XCTAssertEqual(payload["failed"], [["ref": "e6", "error": "restricted"], ["ref": "e42", "error": "not_found"]])
+        XCTAssertFalse(driver.calls.contains("apply"))
+        XCTAssertTrue(settler.settles.isEmpty)
+    }
+
+    func testWhenFillingIsCancelledWhileThePageSettlesThenTheCallIsCancelled() async throws {
+        settler.suspendsUntilCancelled = true
+
+        let tool = fillForm()
+        let arguments: JSONValue = ["tabId": .string(tabs[2].uuid), "fields": [["ref": "e1", "value": "Pat"]]]
+        let call = Task { await tool.execute(arguments: arguments, context: context) }
+        try await waitUntil { !self.settler.settles.isEmpty }
+        call.cancel()
+
+        let result = await call.value
+        XCTAssertEqual(result, .failure(.cancelled))
+    }
+
+    // MARK: - clickElement
+
+    func testWhenTheButtonIsASubmitThenTheClickIsRefusedWithoutClicking() async {
+        let result = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid), "ref": "b2"], context: context)
+
+        XCTAssertEqual(result, .failure(.useSubmitForm))
+        XCTAssertEqual(driver.calls, ["page"])
+    }
+
+    func testWhenClickingNextThenThePageAfterwardsIsReturnedWithItsErrors() async throws {
+        driver.pages = [Self.quotePage(), Self.quotePage(phoneError: "This field is required.")]
+
+        let result = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid), "ref": "b1"], context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["tabId"], .string(tabs[2].uuid))
+        XCTAssertEqual(payload["url"], "https://quotes.example/movers")
+        XCTAssertEqual(payload["title"], "Free Moving Quote | Example Movers")
+        XCTAssertEqual(payload["navigated"], false)
+        XCTAssertEqual(payload["errors"], [["ref": "e3", "message": "This field is required."]])
+        XCTAssertEqual(payload["snapshot"]?["tabId"], .string(tabs[2].uuid))
+        XCTAssertEqual(driver.calls, ["page", "click b1", "page"])
+        XCTAssertEqual(settler.settles.map { $0.quietPeriod }, [ClickElementBrowserTool.quietPeriod])
+    }
+
+    func testWhenTheClickShowsNoErrorsAndNavigatesThenErrorsAreLeftOut() async throws {
+        settler.navigated = true
+
+        let result = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid), "ref": "b1"], context: context)
+
+        let payload = try XCTUnwrap(result.successPayload?.objectValue)
+        XCTAssertNil(payload["errors"])
+        XCTAssertEqual(payload["navigated"], true)
+    }
+
+    func testWhenTheButtonIsUnknownThenItIsNotFound() async {
+        let unknown = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid), "ref": "b9"], context: context)
+        let missing = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid)], context: context)
+
+        XCTAssertEqual(unknown, .failure(.notFound))
+        XCTAssertEqual(missing, .failure(.invalidArguments))
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("click") })
+    }
+
+    // MARK: - submitForm
+
+    func testWhenAskingToSubmitThenThePromptPreviewsWhatTheSiteWillReceive() async throws {
+        var page = Self.quotePage(name: "Pat Doe")
+        page.fields[1].value = "2br"
+        page.fields[3].checked = true
+        driver.pages = [page]
+
+        let prompt = await submitForm().approvalPrompt(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f1"], context: context)
+
+        XCTAssertEqual(prompt, .ask(message: "Duck.ai wants to submit a form on Example Movers.", meta: [
+            "formPreview": [
+                "site": "Example Movers",
+                "url": "https://quotes.example/movers",
+                "formName": "moving-quote",
+                "fields": [
+                    ["label": "Full name", "value": "Pat Doe"],
+                    ["label": "Home size", "value": "2 bedrooms"],
+                    ["label": "Do you own or rent?", "value": "I own"]
+                ]
+            ]
+        ]))
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("submit") })
+    }
+
+    func testWhenThePageIsASignInPageThenTheSubmitIsRefusedBeforeAsking() async {
+        driver.pages = [BrowserToolRawPage(url: "https://quotes.example/login", forms: [.init(ref: "f1")], fields: [
+            .init(ref: "e1", formRef: "f1", type: "email"),
+            .init(ref: "e2", formRef: "f1", type: "password")
+        ])]
+
+        let prompt = await submitForm().approvalPrompt(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f1"], context: context)
+        let direct = await submitForm().execute(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f1"], context: context)
+
+        XCTAssertEqual(prompt, .refuse(.restricted))
+        XCTAssertEqual(direct, .failure(.restricted))
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("submit") })
+    }
+
+    func testWhenTheFormIsUnknownOrTheTabIsTheUsersThenTheSubmitIsRefusedBeforeAsking() async {
+        let unknownForm = await submitForm().approvalPrompt(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f9"], context: context)
+        let usersTab = await submitForm().approvalPrompt(arguments: ["tabId": .string(tabs[1].uuid), "formRef": "f1"], context: context)
+
+        XCTAssertEqual(unknownForm, .refuse(.notFound))
+        XCTAssertEqual(usersTab, .refuse(.notFound))
+    }
+
+    func testWhenSubmittedAndTheFormIsReplacedByAConfirmationThenItWasSubmitted() async throws {
+        var confirmation = BrowserToolRawPage(url: "https://quotes.example/movers", title: "Quote request received | Example Movers")
+        confirmation.messages = [.init(text: "Thanks! Your quote request was received. Reference BBM-12345.", isAlert: false)]
+        driver.pages = [Self.quotePage(name: "Pat Doe"), confirmation]
+
+        let result = await submitForm().execute(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f1"], context: context)
+
+        XCTAssertEqual(result, .success([
+            "tabId": .string(tabs[2].uuid),
+            "url": "https://quotes.example/movers",
+            "title": "Quote request received | Example Movers",
+            "submitted": true,
+            "confirmationText": "Thanks! Your quote request was received. Reference BBM-12345.",
+            "errors": []
+        ]))
+        XCTAssertEqual(driver.submittedWith?.formRef, "f1")
+        XCTAssertEqual(driver.submittedWith?.submitterRef, "b2")
+        XCTAssertEqual(settler.settles.map { $0.timeout }, [SubmitFormBrowserTool.timeout])
+    }
+
+    func testWhenTheSiteRejectsTheSubmitThenItIsNotSubmittedAndItsErrorsAreReturned() async throws {
+        driver.pages = [Self.quotePage(), Self.quotePage(phoneError: "Enter a 10-digit US phone number.")]
+
+        let result = await submitForm().execute(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f1"], context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["submitted"], false)
+        XCTAssertEqual(payload["errors"], [["ref": "e3", "message": "Enter a 10-digit US phone number."]])
+    }
+
+    /// The path a real call takes: the invoker asks with the tool's preview, and only Once submits.
+    func testWhenTheUserApprovesThePromptThenTheFormIsSubmittedAndWhenTheyDeclineItIsNot() async {
+        let elicitations = AIChatElicitationCoordinator(timeout: 5)
+        let invoker = makeInvoker(elicitations: elicitations)
+        let arguments: JSONValue = ["tabId": .string(tabs[2].uuid), "formRef": "f1"]
+
+        let declined = await invoker.invoke(toolNamed: "submitForm", arguments: arguments, context: context,
+                                            elicitationPusher: AnsweringPusher(elicitations: elicitations, answer: MCPElicitationResult(action: .decline)))
+        XCTAssertEqual(declined, .failure(.denied))
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("submit") })
+
+        let pusher = AnsweringPusher(elicitations: elicitations, answer: MCPElicitationResult(action: .accept, content: ["choice": "allowOnce"]))
+        _ = await invoker.invoke(toolNamed: "submitForm", arguments: arguments, context: context, elicitationPusher: pusher)
+        XCTAssertTrue(driver.calls.contains("submit f1"))
+        XCTAssertEqual(pusher.pushed?.requestedSchema, BrowserToolPermissionElicitation.allowOnceSchema)
+        XCTAssertNotNil(pusher.pushed?.meta?["formPreview"])
+    }
+
+    func testWhenTheCallIsCancelledWhileTheUserDecidesThenThePromptIsDismissedAndNothingIsSubmitted() async throws {
+        let elicitations = AIChatElicitationCoordinator(timeout: 5)
+        let invoker = makeInvoker(elicitations: elicitations)
+        let pusher = AnsweringPusher(elicitations: elicitations, answer: nil)
+        let arguments: JSONValue = ["tabId": .string(tabs[2].uuid), "formRef": "f1"]
+
+        let call = Task { await invoker.invoke(toolNamed: "submitForm", arguments: arguments, context: context, callID: "call-1", elicitationPusher: pusher) }
+        try await waitUntil { !elicitations.pendingPrompts.isEmpty }
+        invoker.cancelCall(callID: "call-1", ownerTabID: context.ownerTabID)
+
+        let result = await call.value
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertTrue(elicitations.pendingPrompts.isEmpty)
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("submit") })
+    }
+
+    func testWhenDescribedThenSubmitFormIsApprovedEachCallAndTheOthersAreAuto() {
+        XCTAssertTrue(submitForm().approvesEachCall)
+        XCTAssertEqual(submitForm().permissionMode, .ask)
+        XCTAssertEqual(fillForm().permissionMode, .auto)
+        XCTAssertEqual(clickElement().permissionMode, .auto)
+        XCTAssertEqual(allTools().map { $0.name }, ["getPageSnapshot", "fillForm", "clickElement", "submitForm"])
+    }
+
+    // MARK: -
+
+    private func fillForm() -> FillFormBrowserTool {
+        FillFormBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver, settler: settler)
+    }
+
+    private func clickElement() -> ClickElementBrowserTool {
+        ClickElementBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver, settler: settler)
+    }
+
+    private func submitForm() -> SubmitFormBrowserTool {
+        SubmitFormBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver, settler: settler)
+    }
+
     private func allTools() -> [any BrowserTool] {
-        [GetPageSnapshotBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver)]
+        [GetPageSnapshotBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver), fillForm(), clickElement(), submitForm()]
+    }
+
+    private func makeInvoker(elicitations: AIChatElicitationCoordinator) -> BrowserToolInvoker {
+        let configuration = FormToolsConfiguration()
+        return BrowserToolInvoker(catalog: BrowserToolCatalog(tools: allTools(), configuration: configuration),
+                                  configuration: configuration,
+                                  permissions: FormToolsPermissions(),
+                                  elicitations: elicitations,
+                                  openedTabs: openedTabs)
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<200 where !condition() {
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        XCTAssertTrue(condition())
     }
 
     private func arguments(tabID: String) -> JSONValue {
@@ -192,7 +452,7 @@ final class StubFormDriver: BrowserToolFormDriving {
             case .text(let ref, let value), .select(let ref, let value):
                 BrowserToolFillReadback(ref: ref, found: true, value: value, checked: nil)
             case .check(let ref, let checked):
-                BrowserToolFillReadback(ref: ref, found: true, value: "on", checked: checked)
+                BrowserToolFillReadback(ref: ref, found: true, value: pages.first?.fields.first { $0.ref == ref }?.value ?? "on", checked: checked)
             }
         }
     }
@@ -225,5 +485,37 @@ final class StubPageSettler: BrowserToolPageSettling {
             try await Task.sleep(nanoseconds: 60 * NSEC_PER_SEC)
         }
         return navigated
+    }
+}
+
+private final class FormToolsConfiguration: BrowserToolsConfiguration {
+    let isEnabled = true
+    func isToolEnabled(named name: String) -> Bool { true }
+}
+
+private final class FormToolsPermissions: BrowserToolPermissionStoring {
+    let storedDecisions: [String: BrowserToolPermissionState] = [:]
+    func state(forToolNamed name: String) -> BrowserToolPermissionState { .ask }
+    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {}
+    func clearAll() {}
+}
+
+/// Answers the prompt as soon as it is pushed; `answer: nil` leaves it pending.
+private final class AnsweringPusher: AIChatElicitationPushing {
+    private let elicitations: AIChatElicitationCoordinator
+    private let answer: MCPElicitationResult?
+    private(set) var pushed: MCPElicitationCreateParams?
+
+    init(elicitations: AIChatElicitationCoordinator, answer: MCPElicitationResult?) {
+        self.elicitations = elicitations
+        self.answer = answer
+    }
+
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool {
+        pushed = params
+        if let answer {
+            elicitations.complete(id: params.id, result: answer)
+        }
+        return true
     }
 }

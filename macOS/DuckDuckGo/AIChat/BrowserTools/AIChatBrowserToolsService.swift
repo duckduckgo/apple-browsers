@@ -91,6 +91,7 @@ final class AIChatBrowserToolsService {
                                      openedTabs: BrowserToolOpenedTabs) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
         let formDriver = WebViewFormDriver()
+        let formSettler = FormPageSettleWaiter(driver: formDriver)
         return [
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
             SwitchToTabBrowserTool(windowControllersManager: windowControllersManager),
@@ -100,7 +101,10 @@ final class AIChatBrowserToolsService {
             HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
             OpenTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, loadWaiter: TabPageLoadWaiter()),
             CloseTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs),
-            GetPageSnapshotBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver)
+            GetPageSnapshotBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver),
+            FillFormBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler),
+            ClickElementBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler),
+            SubmitFormBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler)
         ]
     }
 

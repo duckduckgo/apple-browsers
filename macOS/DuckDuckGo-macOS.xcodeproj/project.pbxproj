@@ -3265,6 +3265,9 @@
 		AB1E70130000000000000002 /* FindInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70130000000000000001 /* FindInPageBrowserTool.swift */; };
 		AB1E70130000000000000003 /* FindInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70130000000000000001 /* FindInPageBrowserTool.swift */; };
 		AB1E70140000000000000002 /* HighlightInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */; };
+		EE1890B62EDCBFC20188C66B /* SubmitFormBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7B68C04BE96AFBC2E146102 /* SubmitFormBrowserTool.swift */; };
+		146A7820A73AB0750F135B6B /* ClickElementBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE576646E3369BFE8D7549C7 /* ClickElementBrowserTool.swift */; };
+		8CDC508363E9A0F329950317 /* FillFormBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04CD7564A81067EB441E1186 /* FillFormBrowserTool.swift */; };
 		2A6D8B198CA99425910C3A1B /* GetPageSnapshotBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1088A9C14E3745FB01E2DA33 /* GetPageSnapshotBrowserTool.swift */; };
 		B24BF3351987E9AF21FF8FE4 /* BrowserToolFormDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A58C38C1FE33D32B036A554 /* BrowserToolFormDriver.swift */; };
 		D819C2AB0C893CE649786150 /* BrowserToolFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE46C0D8282CA9490C71E40C /* BrowserToolFormModel.swift */; };
@@ -3272,6 +3275,9 @@
 		4C8FF47C14BB94E9156ED3CF /* CloseTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B952770509F714221242466A /* CloseTabBrowserTool.swift */; };
 		3FFAF18A0F20E7999F83E362 /* OpenTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E248316295239F976E1EEB6 /* OpenTabBrowserTool.swift */; };
 		AB1E70140000000000000003 /* HighlightInPageBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */; };
+		7C7FF641B71A6942FADA9DBD /* SubmitFormBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7B68C04BE96AFBC2E146102 /* SubmitFormBrowserTool.swift */; };
+		B0148B9088FF6D0723C9F05F /* ClickElementBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE576646E3369BFE8D7549C7 /* ClickElementBrowserTool.swift */; };
+		346DF17D79A4781E7C7C567A /* FillFormBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04CD7564A81067EB441E1186 /* FillFormBrowserTool.swift */; };
 		351559DE0DD02597D19D4815 /* GetPageSnapshotBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1088A9C14E3745FB01E2DA33 /* GetPageSnapshotBrowserTool.swift */; };
 		F5D767AE1423A6B6745AB0D5 /* BrowserToolFormDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A58C38C1FE33D32B036A554 /* BrowserToolFormDriver.swift */; };
 		2300003BA9ACFE644EAFC9ED /* BrowserToolFormModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE46C0D8282CA9490C71E40C /* BrowserToolFormModel.swift */; };
@@ -6793,6 +6799,9 @@
 		AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadTabContentBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70130000000000000001 /* FindInPageBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightInPageBrowserTool.swift; sourceTree = "<group>"; };
+		F7B68C04BE96AFBC2E146102 /* SubmitFormBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubmitFormBrowserTool.swift; sourceTree = "<group>"; };
+		FE576646E3369BFE8D7549C7 /* ClickElementBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClickElementBrowserTool.swift; sourceTree = "<group>"; };
+		04CD7564A81067EB441E1186 /* FillFormBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FillFormBrowserTool.swift; sourceTree = "<group>"; };
 		1088A9C14E3745FB01E2DA33 /* GetPageSnapshotBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetPageSnapshotBrowserTool.swift; sourceTree = "<group>"; };
 		9A58C38C1FE33D32B036A554 /* BrowserToolFormDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolFormDriver.swift; sourceTree = "<group>"; };
 		CE46C0D8282CA9490C71E40C /* BrowserToolFormModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolFormModel.swift; sourceTree = "<group>"; };
@@ -12714,6 +12723,9 @@
 				AB1E70120000000000000001 /* ReadTabContentBrowserTool.swift */,
 				AB1E70130000000000000001 /* FindInPageBrowserTool.swift */,
 				AB1E70140000000000000001 /* HighlightInPageBrowserTool.swift */,
+				F7B68C04BE96AFBC2E146102 /* SubmitFormBrowserTool.swift */,
+				FE576646E3369BFE8D7549C7 /* ClickElementBrowserTool.swift */,
+				04CD7564A81067EB441E1186 /* FillFormBrowserTool.swift */,
 				1088A9C14E3745FB01E2DA33 /* GetPageSnapshotBrowserTool.swift */,
 				9A58C38C1FE33D32B036A554 /* BrowserToolFormDriver.swift */,
 				CE46C0D8282CA9490C71E40C /* BrowserToolFormModel.swift */,
@@ -16507,6 +16519,9 @@
 				49103F0FCBEE0113B0D9134B /* PromoServiceFactory+ImportSyncEmptyStates.swift in Sources */,
 				AB1E70130000000000000002 /* FindInPageBrowserTool.swift in Sources */,
 				AB1E70140000000000000002 /* HighlightInPageBrowserTool.swift in Sources */,
+				EE1890B62EDCBFC20188C66B /* SubmitFormBrowserTool.swift in Sources */,
+				146A7820A73AB0750F135B6B /* ClickElementBrowserTool.swift in Sources */,
+				8CDC508363E9A0F329950317 /* FillFormBrowserTool.swift in Sources */,
 				2A6D8B198CA99425910C3A1B /* GetPageSnapshotBrowserTool.swift in Sources */,
 				B24BF3351987E9AF21FF8FE4 /* BrowserToolFormDriver.swift in Sources */,
 				D819C2AB0C893CE649786150 /* BrowserToolFormModel.swift in Sources */,
@@ -18597,6 +18612,9 @@
 				AB1E70120000000000000003 /* ReadTabContentBrowserTool.swift in Sources */,
 				AB1E70130000000000000003 /* FindInPageBrowserTool.swift in Sources */,
 				AB1E70140000000000000003 /* HighlightInPageBrowserTool.swift in Sources */,
+				7C7FF641B71A6942FADA9DBD /* SubmitFormBrowserTool.swift in Sources */,
+				B0148B9088FF6D0723C9F05F /* ClickElementBrowserTool.swift in Sources */,
+				346DF17D79A4781E7C7C567A /* FillFormBrowserTool.swift in Sources */,
 				351559DE0DD02597D19D4815 /* GetPageSnapshotBrowserTool.swift in Sources */,
 				F5D767AE1423A6B6745AB0D5 /* BrowserToolFormDriver.swift in Sources */,
 				2300003BA9ACFE644EAFC9ED /* BrowserToolFormModel.swift in Sources */,

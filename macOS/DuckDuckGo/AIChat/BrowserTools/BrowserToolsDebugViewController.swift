@@ -290,6 +290,11 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("findInPage", "query"): return "games"
         case ("highlightInPage", "quotes"): return "games"
         case ("openTab", "url"): return "https://duckduckgo.com/"
+        case ("getPageSnapshot", "tabId"), ("fillForm", "tabId"), ("clickElement", "tabId"), ("submitForm", "tabId"):
+            return ownerTabProvider().flatMap { service.openedTabs.tabIDs(ownerTabID: $0.uuid).last }
+        case ("fillForm", "fields"): return #"[{"ref": "e1", "value": "Pat Doe"}]"#
+        case ("clickElement", "ref"): return "b1"
+        case ("submitForm", "formRef"): return "f1"
         default: return nil
         }
     }

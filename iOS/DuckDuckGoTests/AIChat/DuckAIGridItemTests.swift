@@ -18,7 +18,9 @@
 //
 
 import XCTest
+import UIKit
 import AIChat
+import Core
 @testable import DuckDuckGo
 
 final class DuckAIGridItemTests: XCTestCase {
@@ -172,7 +174,79 @@ final class DuckAIGridItemTests: XCTestCase {
         XCTAssertNil(DuckAIGridItem.empty(title: nil, chip: nil).chipKind)
     }
 
+    @MainActor
+    func testWhenGridShowsWebsiteOrNewTabThenRichCardIsNotCreated() {
+        let cell = TabViewGridCell(frame: .zero)
+        let website = Tab(link: Link(title: nil, url: URL(string: "https://example.com")!), fireTab: false)
+        update(cell, tab: website)
+        XCTAssertNil(cell.richCardContainer)
+
+        let newTab = Tab(fireTab: false)
+        update(cell, tab: newTab)
+        XCTAssertNil(cell.richCardContainer)
+    }
+
+    @MainActor
+    func testWhenGridShowsRichAIContentThenCardIsCreatedAndReused() throws {
+        let cell = TabViewGridCell(frame: .zero)
+        let tab = makeAITab()
+        update(cell, tab: tab, item: .text(title: "Chat", snippet: "Hello"))
+        let card = try XCTUnwrap(cell.richCardContainer)
+        XCTAssertFalse(card.isHidden)
+        XCTAssertTrue(cell.preview?.isHidden == true)
+
+        update(cell, tab: tab, item: .voice)
+        XCTAssertTrue(cell.richCardContainer === card)
+        XCTAssertFalse(card.isHidden)
+        XCTAssertTrue(cell.accessibilityElements?.contains { ($0 as? UIView) === card } == true)
+    }
+
+    @MainActor
+    func testWhenRichGridCellShowsScreenshotFallbackThenCardIsHidden() throws {
+        let cell = TabViewGridCell(frame: .zero)
+        let tab = makeAITab()
+        update(cell, tab: tab, item: .voice)
+        let card = try XCTUnwrap(cell.richCardContainer)
+
+        cell.prepareForReuse()
+        let screenshot = UIImage()
+        cell.update(withTab: tab, isSelectionModeEnabled: false, preview: screenshot, isFireModeEnabled: false)
+        XCTAssertTrue(cell.richCardContainer === card)
+        XCTAssertTrue(card.isHidden)
+        XCTAssertTrue(cell.preview?.isHidden == false)
+        XCTAssertTrue(cell.preview?.image === screenshot)
+        XCTAssertFalse(cell.accessibilityElements?.contains { ($0 as? UIView) === card } == true)
+    }
+
+    @MainActor
+    func testWhenGridShowsBareEmptyAIContentThenRichCardIsNotCreated() {
+        let cell = TabViewGridCell(frame: .zero)
+        let tab = makeAITab()
+        update(cell, tab: tab, item: .empty(title: nil, chip: nil))
+        XCTAssertNil(cell.richCardContainer)
+        XCTAssertNotNil(cell.preview?.image)
+        XCTAssertTrue(cell.preview?.isHidden == false)
+    }
+
+    @MainActor
+    func testWhenListShowsRichAIContentThenGridCardIsNotCreated() {
+        let cell = TabViewListCell(frame: .zero)
+        let tab = makeAITab()
+        update(cell, tab: tab, item: .text(title: "Chat", snippet: "Hello"))
+        XCTAssertNil(cell.richCardContainer)
+    }
+
     // MARK: - Helpers
+
+    @MainActor
+    private func makeAITab() -> Tab {
+        Tab(link: Link(title: nil, url: URL(string: "https://duckduckgo.com/?ia=chat&chatID=chat-1")!), fireTab: false)
+    }
+
+    @MainActor
+    private func update(_ cell: TabViewCell, tab: Tab, item: DuckAIGridItem? = nil) {
+        cell.update(withTab: tab, isSelectionModeEnabled: false, preview: nil, isFireModeEnabled: false, duckAIGridItem: item)
+    }
 
     private func makeChat(title: String,
                           model: String,

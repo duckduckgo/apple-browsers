@@ -123,6 +123,8 @@ class TabViewCell: UICollectionViewCell {
     /// Container for the Duck.ai rich tab grid card content (text/image/voice/empty).
     var richCardContainer: DuckAIGridCardView?
 
+    func setupRichCardIfNeeded() { }
+
     /// File-ref token guarding the in-flight thumbnail load.
     private var currentThumbnailFileRef: String?
     private var thumbnailLoadTask: Task<Void, Never>?
@@ -625,6 +627,7 @@ class TabViewCell: UICollectionViewCell {
             preview?.image = DesignSystemImages.Color.Size96.duckAI
             preview?.contentMode = .center
         } else if let item = duckAIGridItem {
+            setupRichCardIfNeeded()
             richCardContainer?.configure(with: item)
             richCardContainer?.isHidden = false
             preview?.isHidden = true

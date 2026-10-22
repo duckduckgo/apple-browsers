@@ -57,6 +57,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--ssh-config', type=Path, help='Pinned Virfield config or your configured Mac mini host')
     parser.add_argument('--results', type=Path, default=Path('remote-ui-results'))
+    parser.add_argument('--remote-root', default='workspace/ddg-ui-tests', help='Remote workspace root; use the lease workspace on a physical Virfield host')
     parser.add_argument('host', help='An SSH host alias with a verified host key')
     parser.add_argument('manifest', help='CI run-review.json URL')
     parser.add_argument('run_arguments', nargs=argparse.REMAINDER, help='Arguments forwarded to artifact.py run')
@@ -66,7 +67,7 @@ def main():
     if not args.manifest.startswith('https://'):
         parser.error('The CI manifest URL must use HTTPS')
     stamp = datetime.now().strftime('%Y%m%d-%H%M%S-%f')
-    remote = 'ddg-ui-tests/' + stamp
+    remote = args.remote_root.rstrip('/') + '/' + stamp
     options = ['-F', str(args.ssh_config.resolve())] if args.ssh_config else []
     command = shlex.join(['bash', '-s', '--', args.manifest, remote] + args.run_arguments)
     try:

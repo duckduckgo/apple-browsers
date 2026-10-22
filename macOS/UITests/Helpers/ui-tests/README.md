@@ -123,6 +123,9 @@ keychain and deletes its password file before results are fetched. Run one UI wo
 It does not provision machines, disable host-key checks, reset an
 OS or release leases. Use a dedicated test account/profile and run only one UI session per Mac.
 Virfield guests and physical hosts use the same protocol once a lease is ready.
+The default remote root is `~/workspace/ddg-ui-tests`. For a physical Virfield lease, pass
+`--remote-root /Users/admin/virfield/leases/<vm-name>/workspace/ddg-ui-tests` so all files stay in
+that lease's workspace.
 
 [MacinCloud documents Monterey for Dedicated Server plans](https://support.macincloud.com/support/solutions/articles/8000095277-macos-monterey-12-6-7-now-supported-on-macincloud-dedicated-servers).
 That announcement is from 2023; confirm current Intel/M1 Monterey stock, full Xcode 13.4.1,

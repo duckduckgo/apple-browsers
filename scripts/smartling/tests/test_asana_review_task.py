@@ -102,17 +102,17 @@ class NotesHTMLTests(unittest.TestCase):
             "🌍 Couldn't authorize the job.\n"
             "\n"
             "🔗 Job: https://dashboard.smartling.com/app/projects/p/account-jobs/p:j\n"
-            "✋ Reason: HTTP 400: <bad> & worse"
+            "✋ Reason: HTTP 400: \"<bad>\" & worse"
         )
 
         html_notes = ASANA_REVIEW_TASK.notes_html(notes)
 
         self.assertEqual(html_notes, (
-            "<body>🌍 Couldn&#x27;t authorize the job.\n"
+            "<body>🌍 Couldn't authorize the job.\n"
             "\n"
             "<strong>🔗 Job:</strong> <a href=\"https://dashboard.smartling.com/app/projects/p/account-jobs/p:j\">"
             "https://dashboard.smartling.com/app/projects/p/account-jobs/p:j</a>\n"
-            "<strong>✋ Reason:</strong> HTTP 400: &lt;bad&gt; &amp; worse</body>"
+            "<strong>✋ Reason:</strong> HTTP 400: \"&lt;bad&gt;\" &amp; worse</body>"
         ))
 
 

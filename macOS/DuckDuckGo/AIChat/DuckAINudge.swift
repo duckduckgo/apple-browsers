@@ -147,10 +147,12 @@ final class DuckAINudgeEngine {
         var languageName: String?
         var readMinutes: Int?
         var compareTabIDs: [String] = []
+        var isTrip = false
+        var tripDays: Int?
         var generated: GeneratedCopy?
 
         var wantsGeneratedCopy: Bool {
-            generated == nil && ![.translate, .summarize, .compare, .code].contains(kind)
+            generated == nil && !isTrip && ![.translate, .summarize, .compare, .code].contains(kind)
         }
     }
 
@@ -183,6 +185,19 @@ final class DuckAINudgeEngine {
 
         if signals?.jsonLd?.reservation != nil || types.contains(where: { $0.hasSuffix("reservation") }) {
             return Candidate(kind: .travel, isConfident: true)
+        }
+        let isTravelSite = ["wetravel.com", "tourradar.com"].contains(where: { host.hasSuffix($0) })
+            || path.hasPrefix("/trips/") || path.hasPrefix("/tours/")
+        let tripEvent = signals?.jsonLd?.event.flatMap { isMultiDayTrip($0, title: title, isTravelSite: isTravelSite) ? $0 : nil }
+        if signals?.jsonLd?.trip != nil || types.contains("trip") || types.contains("touristtrip") || tripEvent != nil {
+            var candidate = Candidate(kind: .travel, isConfident: true)
+            candidate.isTrip = true
+            let start = signals?.jsonLd?.trip?.startDate ?? tripEvent?.startDate
+            let end = signals?.jsonLd?.trip?.endDate ?? tripEvent?.endDate
+            if let start = start.flatMap(day), let end = end.flatMap(day) {
+                candidate.tripDays = Int(end.timeIntervalSince(start) / 86400) + 1
+            }
+            return candidate
         }
         if signals?.jsonLd?.recipe != nil || types.contains("recipe") {
             return Candidate(kind: .recipe, isConfident: true)
@@ -225,6 +240,21 @@ final class DuckAINudgeEngine {
             return candidate
         }
         return nil
+    }
+
+    private func isMultiDayTrip(_ event: AIChatPageTypeSignals.JSONLDSummary.Event, title: String, isTravelSite: Bool) -> Bool {
+        guard let start = event.startDate.flatMap(day), let end = event.endDate.flatMap(day),
+              end.timeIntervalSince(start) >= 24 * 60 * 60 else { return false }
+        let text = "\(event.name ?? "") \(title)"
+        return isTravelSite || text.range(of: #"\b(trip|tour|holiday|itinerary|getaway|travel)"#, options: [.regularExpression, .caseInsensitive]) != nil
+    }
+
+    private func day(_ string: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: String(string.prefix(10)))
     }
 
     private func readMinutes(context: AIChatPageContextData) -> Int {
@@ -298,6 +328,10 @@ final class DuckAINudgeEngine {
             let fileName = url.lastPathComponent
             subtitle = fileName.contains(".") ? "Duck.ai can walk you through \(fileName)." : "Duck.ai can walk you through it."
             prompts = chips(["Explain this code", "Show me an example", "What are the gotchas?"])
+        case .travel where candidate.isTrip:
+            title = "Planning this trip?"
+            subtitle = candidate.tripDays.map { "Duck.ai can plan your \($0) days and what to pack." } ?? "Duck.ai can plan your days and what to pack."
+            prompts = chips(["Plan my days", "What should I pack?", "Get the trip details"])
         case .travel:
             title = "Getting ready for your trip?"
             subtitle = "Duck.ai can plan around your booking."
@@ -633,11 +667,12 @@ enum DuckAIPageActionPerformer {
         let event = EKEvent(eventStore: eventStore)
         event.title = title
         event.startDate = start
-        event.isAllDay = isAllDay
-        if let endString = action["end"] as? String, let (end, _) = parseDate(endString), end > start {
+        let end = (action["end"] as? String).flatMap(parseDate)?.0
+        event.isAllDay = action["allDay"] as? Bool ?? (isAllDay || spansWholeDays(start: start, end: end))
+        if let end, end > start {
             event.endDate = end
         } else {
-            event.endDate = isAllDay ? start : start.addingTimeInterval(2 * 60 * 60)
+            event.endDate = event.isAllDay ? start : start.addingTimeInterval(2 * 60 * 60)
         }
         event.location = action["location"] as? String
         event.notes = action["notes"] as? String
@@ -684,6 +719,16 @@ enum DuckAIPageActionPerformer {
         }
         Logger.aiChat.notice("[Nudge] reminders list \(list.title, privacy: .public) now has \(saved.count) items: \(saved.compactMap(\.title).joined(separator: ", "), privacy: .public)")
         return "Added \(items.count) items to “\(list.title)” in Reminders."
+    }
+
+    /// Duck.ai renders date-only trips as midnight to 23:59 (or midnight), which should be saved as all-day.
+    private static func spansWholeDays(start: Date, end: Date?) -> Bool {
+        guard let end, end.timeIntervalSince(start) >= 86400 - 60 else { return false }
+        let calendar = Calendar.current
+        let startTime = calendar.dateComponents([.hour, .minute], from: start)
+        let endTime = calendar.dateComponents([.hour, .minute], from: end)
+        return startTime.hour == 0 && startTime.minute == 0
+            && (endTime.hour == 0 && endTime.minute == 0 || endTime.hour == 23 && endTime.minute == 59)
     }
 
     private static func parseDate(_ string: String) -> (Date, isAllDay: Bool)? {

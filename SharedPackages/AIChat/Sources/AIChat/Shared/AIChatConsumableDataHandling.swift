@@ -298,6 +298,7 @@ public struct AIChatPageTypeSignals: Codable, Equatable {
         public let event: Event?
         public let product: Product?
         public let reservation: Reservation?
+        public let trip: Trip?
 
         public struct Recipe: Codable, Equatable {
             public let name: String?
@@ -318,6 +319,13 @@ public struct AIChatPageTypeSignals: Codable, Equatable {
             public let price: String?
             public let currency: String?
             public let rating: Double?
+        }
+
+        public struct Trip: Codable, Equatable {
+            public let name: String?
+            public let startDate: String?
+            public let endDate: String?
+            public let itinerary: [String]?
         }
 
         public struct Reservation: Codable, Equatable {

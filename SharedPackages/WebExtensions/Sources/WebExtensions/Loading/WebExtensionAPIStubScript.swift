@@ -36,6 +36,10 @@ import Foundation
 ///   one, so DuckDuckGo autofill can step aside for it. Without that handler they are persisted in
 ///   `storage.local` under one reserved key.
 ///
+/// In an extension page embedded in a website, `chrome.action.openPopup` goes to the app through
+/// `actionOpenPopupMessageHandlerName`, since WebKit's own would take the website's web process down.
+/// Without that handler it is hidden.
+///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
 /// solves, for Chrome-only code no generic stub can cover.
 ///
@@ -60,6 +64,10 @@ public enum WebExtensionAPIStubScript {
     /// Name of the script message handler `chrome.permissions` asks about app permissions, the ones WebKit
     /// doesn't know (see `WebExtensionAppPermission`). Without it they are never held.
     public static let permissionsMessageHandlerName = "ddgWebExtensionPermissions"
+
+    /// Name of the script message handler `chrome.action.openPopup` goes through in an embedded frame.
+    /// Only tabs install it: pages the extension controller hosts call WebKit's own `openPopup`.
+    public static let actionOpenPopupMessageHandlerName = "ddgWebExtensionActionOpenPopup"
 
     /// Permissions WebKit doesn't know that the script implements itself. They are always granted,
     /// without asking the user.
@@ -1280,11 +1288,41 @@ public enum WebExtensionAPIStubScript {
         // process. iCloud Passwords' completion list is one: it is the "Enable Password AutoFill"
         // prompt under a login field. A call to `action.openPopup()` from such a frame is a
         // message WebKit's UI process treats as invalid, and WebKit answers an invalid message by
-        // terminating the web process, which takes the website down with it. Extensions feature-
-        // detect `action.openPopup` and, when it is absent, open their own popup page with
-        // `window.open()` instead — the path they already ship for Firefox — so the member is
-        // hidden in every frame that is not the top frame. The background page's own offscreen
-        // iframe loses it too, at no cost.
+        // terminating the web process, which takes the website down with it. In a tab the app
+        // installs the open-popup handler and opens the popup itself, as a click on the toolbar
+        // button does, so in every frame that is not the top frame the call is forwarded there.
+        // Where the handler is missing, such as the background page's offscreen iframe, the member
+        // is hidden: extensions feature-detect `action.openPopup` and, when it is absent, fall back
+        // to `window.open()`, the path they already ship for Firefox.
+        var actionOpenPopupMessageHandlerName = "\(Self.actionOpenPopupMessageHandlerName)";
+
+        function actionOpenPopupMessageHandler() {
+            try {
+                var handlers = globalThis.webkit && globalThis.webkit.messageHandlers;
+                var handler = handlers && handlers[actionOpenPopupMessageHandlerName];
+                return handler && typeof handler.postMessage === "function" ? handler : null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        function makeForwardedOpenPopup(handler) {
+            return function() {
+                var last = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                var callback = typeof last === "function" ? last : undefined;
+                var promise;
+                try {
+                    promise = Promise.resolve(handler.postMessage({}));
+                } catch (error) {
+                    promise = Promise.reject(error);
+                }
+                return answerBothStyles(promise.then(function() {
+                    return undefined;
+                }), callback);
+            };
+        }
+
+        var forwardedMembers = [];
         var hiddenMembers = [];
         try {
             var isEmbeddedFrame = false;
@@ -1295,19 +1333,25 @@ public enum WebExtensionAPIStubScript {
                 isEmbeddedFrame = true;
             }
             if (isEmbeddedFrame && api.action && api.action.openPopup !== undefined) {
-                if (define(api.action, "openPopup", undefined)) {
+                var openPopupHandler = actionOpenPopupMessageHandler();
+                if (openPopupHandler !== null) {
+                    if (define(api.action, "openPopup", makeForwardedOpenPopup(openPopupHandler))) {
+                        forwardedMembers.push("action.openPopup");
+                    }
+                } else if (define(api.action, "openPopup", undefined)) {
                     hiddenMembers.push("action.openPopup");
                 }
             }
         } catch (error) {
-            console.info("[DuckDuckGo] Could not hide chrome.action.openPopup: " + error);
+            console.info("[DuckDuckGo] Could not replace chrome.action.openPopup: " + error);
         }
 
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0
-            || wrappedNamespaces.length > 0 || hiddenMembers.length > 0) {
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0
+            || forwardedMembers.length > 0 || hiddenMembers.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], wrapped: [" + wrappedNamespaces.join(", ") + "], hidden: [" + hiddenMembers.join(", ") + "]");
+                + "], wrapped: [" + wrappedNamespaces.join(", ") + "], forwarded: [" + forwardedMembers.join(", ")
+                + "], hidden: [" + hiddenMembers.join(", ") + "]");
         }
     })();
 

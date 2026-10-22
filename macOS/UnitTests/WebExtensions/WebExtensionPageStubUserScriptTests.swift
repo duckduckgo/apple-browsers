@@ -53,11 +53,12 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
         XCTAssertTrue(script.requiresRunInPageContentWorld)
     }
 
-    func testThatScriptListensForCompatibilityReportsIdleRequestsPrivacySettingsAndPermissions() {
+    func testThatScriptListensForCompatibilityReportsIdleRequestsPrivacySettingsPermissionsAndOpenPopup() {
         XCTAssertEqual(script.messageNames, [WebExtensionAPICompatibilityScript.messageHandlerName,
                                              WebExtensionAPIStubScript.idleMessageHandlerName,
                                              WebExtensionAPIStubScript.privacyMessageHandlerName,
-                                             WebExtensionAPIStubScript.permissionsMessageHandlerName])
+                                             WebExtensionAPIStubScript.permissionsMessageHandlerName,
+                                             WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName])
     }
 
     func testThatScriptIsCreatedForInternalUsers() {

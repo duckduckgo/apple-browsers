@@ -210,6 +210,88 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.action.openPopup === originalOpenPopup")
     }
 
+    func testWhenPageIsTheTopFrameWithTheOpenPopupHandler_ThenActionOpenPopupIsLeftAlone() throws {
+        try installFakeOpenPopupHandler()
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        var top = globalThis;
+        var originalOpenPopup = chrome.action.openPopup;
+        """)
+        try assertNoExceptions()
+
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
+        try assertTrue("openPopupRequests.length === 0")
+    }
+
+    func testWhenAnEmbeddedFrameHasTheOpenPopupHandler_ThenOpenPopupAsksTheAppAndResolves() throws {
+        try installFakeOpenPopupHandler()
+        context.evaluateScript("""
+        var nativeOpenPopupCalls = 0;
+        chrome.action = { openPopup: function() { nativeOpenPopupCalls += 1; } };
+        var top = {};
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup().then(function(value) { openPopupOutcome = value; }, function() { openPopupOutcome = 'rejected'; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === undefined")
+        try assertTrue("JSON.stringify(openPopupRequests) === '[{}]'")
+        try assertTrue("nativeOpenPopupCalls === 0")
+        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('forwarded: [action.openPopup], hidden: []') !== -1; })")
+    }
+
+    func testWhenAnEmbeddedFrameCallsOpenPopupWithACallback_ThenTheCallbackIsCalledWithoutAnError() throws {
+        try installFakeOpenPopupHandler()
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        var top = {};
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var callbackError = 'pending';
+        chrome.action.openPopup({}, function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("callbackError === null")
+        try assertTrue("openPopupRequests.length === 1")
+    }
+
+    func testWhenTheAppCannotOpenThePopup_ThenThePromiseRejectsAndTheCallbackSeesLastError() throws {
+        try installFakeOpenPopupHandler(fails: true)
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        var top = {};
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup().then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
+        var callbackError = 'pending';
+        chrome.action.openPopup(function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === 'The caller is not in a tab'")
+        try assertTrue("callbackError === 'The caller is not in a tab'")
+        try assertTrue("chrome.runtime.lastError === undefined")
+    }
+
     // MARK: - Missing Namespaces
 
     func testWhenNamespaceIsMissing_ThenItsEventsExposeListenerAPI() throws {
@@ -1716,6 +1798,23 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
                         return Promise.resolve(true);
                     }
                     return Promise.resolve(names.every(function(name) { return appGranted.indexOf(name) !== -1; }));
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A tab whose app opens the action popup: `openPopupRequests` collects what the script posted. With
+    /// `fails`, every message is rejected the way the app refuses a frame outside a tab.
+    private func installFakeOpenPopupHandler(fails: Bool = false) throws {
+        context.evaluateScript("""
+        var openPopupRequests = [];
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName)": {
+                postMessage: function(payload) {
+                    openPopupRequests.push(payload);
+                    return \(fails ? "Promise.reject(new Error('The caller is not in a tab'))" : "Promise.resolve(null)");
                 }
             }
         } };

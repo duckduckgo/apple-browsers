@@ -35,7 +35,7 @@ final class PastedTextSheetTests: XCTestCase {
         XCTAssertFalse(rules.canSave(""))
         XCTAssertFalse(rules.canSave(" \n\t"))
         XCTAssertTrue(rules.canSave("1234567890"))
-        XCTAssertTrue(rules.isOverLimit("12345678901"))
+        XCTAssertEqual(rules.subtitle(for: "12345678901")?.isOverLimit, true)
         XCTAssertTrue(rules.canSave("12345678901"), "Lets the user trim several pastes in turn while the prompt is still too long")
     }
 
@@ -43,7 +43,7 @@ final class PastedTextSheetTests: XCTestCase {
         let rules = PastedTextSheetRules(original: original, mode: .viewOnly)
 
         XCTAssertFalse(rules.canSave("fine"))
-        XCTAssertFalse(rules.isOverLimit(String(repeating: "a", count: 100_000)))
+        XCTAssertNil(rules.subtitle(for: String(repeating: "a", count: 100_000)), "View-only has no limit to be over")
     }
 
     func testSavingIdenticalContentIsUnchangedAndAnEditIsANewValue() {

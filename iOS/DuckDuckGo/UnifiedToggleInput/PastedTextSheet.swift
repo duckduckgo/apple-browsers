@@ -73,11 +73,6 @@ struct PastedTextSheetRules: Equatable {
 
     func count(of text: String) -> Int { text.utf16.count }
 
-    func isOverLimit(_ text: String) -> Bool {
-        guard case .editable(let limit) = mode else { return false }
-        return count(of: text) > limit
-    }
-
     /// Saving over the limit lets the user trim several pastes in turn; the input's too-long error keeps Send off until the prompt fits.
     func canSave(_ text: String) -> Bool {
         guard case .editable = mode else { return false }

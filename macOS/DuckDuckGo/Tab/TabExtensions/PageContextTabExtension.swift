@@ -270,6 +270,11 @@ final class PageContextTabExtension {
                     Task {
                         await self.handleSignalsOnly(pageContext)
                     }
+                } else if !self.autoAttachSuppression.suppressesAutoAttach,
+                          Self.isYouTubeTranscriptUpdate(pageContext, cached: self.cachedPageContext) {
+                    Task {
+                        await self.handle(pageContext)
+                    }
                 }
             }
             .store(in: &userScriptCancellables)
@@ -343,6 +348,16 @@ final class PageContextTabExtension {
     static func shouldDeliverCollectionResult(_ result: AIChatPageContextData?, wasForced: Bool, cached: AIChatPageContextData?) -> Bool {
         if result?.hasAttachedPage == true { return true }
         return wasForced && cached?.hasAttachedPage != true
+    }
+
+    /// On YouTube the transcript arrives in a second collection result, after a manual attach has
+    /// already taken the first one (description and comments). Let it replace that page.
+    static func isYouTubeTranscriptUpdate(_ result: AIChatPageContextData?, cached: AIChatPageContextData?) -> Bool {
+        guard let result, let cached, cached.hasAttachedPage, result.hasAttachedPage, result.url == cached.url,
+              result.pageTypeSignals?.youtube?.hasTranscript == true, cached.pageTypeSignals?.youtube?.hasTranscript != true else {
+            return false
+        }
+        return true
     }
 
     /// Whether turning auto-attach on can re-push what's cached instead of collecting afresh. Only

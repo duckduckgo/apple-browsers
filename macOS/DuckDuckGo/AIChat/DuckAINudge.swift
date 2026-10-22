@@ -592,6 +592,12 @@ enum DuckAIPageActionPerformer {
         }
         guard #available(macOS 14, *), try await eventStore.requestFullAccessToEvents() else { throw ActionError.accessDenied("Calendar") }
 
+        let window = eventStore.predicateForEvents(withStart: start.addingTimeInterval(-86400), end: start.addingTimeInterval(86400), calendars: nil)
+        if let existing = eventStore.events(matching: window).first(where: { $0.title == title }) {
+            Logger.aiChat.notice("[Nudge] event already in Calendar: \(existing.title ?? "", privacy: .public) at \(existing.startDate, privacy: .public) in \(existing.calendar.title, privacy: .public)")
+            return "“\(title)” is already in Calendar."
+        }
+
         let event = EKEvent(eventStore: eventStore)
         event.title = title
         event.startDate = start
@@ -606,6 +612,8 @@ enum DuckAIPageActionPerformer {
         event.url = (action["url"] as? String).flatMap(URL.init(string:)) ?? sourceURL
         event.calendar = eventStore.defaultCalendarForNewEvents
         try eventStore.save(event, span: .thisEvent, commit: true)
+        let saved = eventStore.event(withIdentifier: event.eventIdentifier)
+        Logger.aiChat.notice("[Nudge] added event: \(saved?.title ?? "missing", privacy: .public) at \(String(describing: saved?.startDate), privacy: .public) in \(saved?.calendar.title ?? "", privacy: .public)")
         return "Added “\(title)” to Calendar."
     }
 
@@ -634,6 +642,10 @@ enum DuckAIPageActionPerformer {
             try eventStore.save(reminder, commit: false)
         }
         try eventStore.commit()
+        let saved = await withCheckedContinuation { continuation in
+            eventStore.fetchReminders(matching: eventStore.predicateForReminders(in: [list])) { continuation.resume(returning: $0 ?? []) }
+        }
+        Logger.aiChat.notice("[Nudge] reminders list \(list.title, privacy: .public) now has \(saved.count) items: \(saved.compactMap(\.title).joined(separator: ", "), privacy: .public)")
         return "Added \(items.count) items to “\(list.title)” in Reminders."
     }
 

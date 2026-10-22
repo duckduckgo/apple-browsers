@@ -131,7 +131,11 @@
                                     "properties": {
                                         "domain": { "type": "string", "description": "The top level error domain" },
                                         "code": { "type": "integer", "description": "The top level error code" },
-                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Additional error description",
+                                            "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                                        },
                                         "underlying_domain": { "type": "string", "description": "The underlying error domain" },
                                         "underlying_code": { "type": "integer", "description": "The underlying error code" },
                                         "underlying_domain2": {
@@ -200,7 +204,11 @@
                                     "properties": {
                                         "domain": { "type": "string", "description": "The top level error domain" },
                                         "code": { "type": "integer", "description": "The top level error code" },
-                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Additional error description",
+                                            "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                                        },
                                         "underlying_domain": { "type": "string", "description": "The underlying error domain" },
                                         "underlying_code": { "type": "integer", "description": "The underlying error code" },
                                         "underlying_domain2": {
@@ -269,7 +277,11 @@
                                     "properties": {
                                         "domain": { "type": "string", "description": "The top level error domain" },
                                         "code": { "type": "integer", "description": "The top level error code" },
-                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Additional error description",
+                                            "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                                        },
                                         "underlying_domain": { "type": "string", "description": "The underlying error domain" },
                                         "underlying_code": { "type": "integer", "description": "The underlying error code" },
                                         "underlying_domain2": {
@@ -338,7 +350,11 @@
                                     "properties": {
                                         "domain": { "type": "string", "description": "The top level error domain" },
                                         "code": { "type": "integer", "description": "The top level error code" },
-                                        "description": { "type": "string", "description": "Additional error description" },
+                                        "description": {
+                                            "type": "string",
+                                            "description": "Additional error description",
+                                            "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+                                        },
                                         "underlying_domain": { "type": "string", "description": "The underlying error domain" },
                                         "underlying_code": { "type": "integer", "description": "The underlying error code" },
                                         "underlying_domain2": {

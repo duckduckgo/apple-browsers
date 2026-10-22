@@ -679,7 +679,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var isPromptOverLimit = false {
         didSet {
             guard oldValue != isPromptOverLimit else { return }
-            attachmentsStripView.showsPromptLengthError = isPromptOverLimit
             updateAIChatSendButton(hasText: !(aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
     }

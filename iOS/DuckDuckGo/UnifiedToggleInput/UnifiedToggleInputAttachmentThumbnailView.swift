@@ -49,12 +49,6 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
     var onTap: ((UUID) -> Void)?
-    var showsPromptLengthError = false {
-        didSet {
-            guard showsPromptLengthError != oldValue else { return }
-            applyAppearance()
-        }
-    }
     private lazy var tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
     private let attachment: UnifiedToggleInputAttachment
     private let usesCompactLayout: Bool
@@ -199,18 +193,14 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
 private extension UnifiedToggleInputAttachmentThumbnailView {
 
-    var isErrorStyled: Bool {
-        attachment.isInvalid || (showsPromptLengthError && attachment.pastedText != nil)
-    }
-
     var borderColor: UIColor {
-        isErrorStyled
+        attachment.isInvalid
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.60 : 0.34)
             : UIColor(designSystemColor: .lines)
     }
 
     var chipBackgroundColor: UIColor {
-        isErrorStyled
+        attachment.isInvalid
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.24 : 0.18)
             : UIColor(designSystemColor: .controlsFillPrimary)
     }

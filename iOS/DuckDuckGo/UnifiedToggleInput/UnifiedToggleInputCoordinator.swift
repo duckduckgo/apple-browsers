@@ -593,7 +593,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 isPastedTextEnabled: { [weak self] in self?.isPastedTextEnabled ?? false },
                 isEditing: { [weak self] in self?.isEditing ?? false },
                 isVoiceSessionActive: { [weak self] in self?.isVoiceSessionActive ?? false },
-                pastedTextSheetLimit: { [weak self] in self?.promptLengthGate.sheetLimit(for: $0) ?? 0 }
+                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in

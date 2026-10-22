@@ -128,29 +128,30 @@ final class UTIPromptLengthGateTests: XCTestCase {
         XCTAssertEqual(events, ["nil"])
     }
 
-    func testSheetLimitIsWhatThePasteMayGrowToAndNeverNegative() {
+    func testEachPastesSheetCountsTheWholePromptAgainstTheFullLimit() {
         let gate = makeGate()
-        let paste = AIChatPastedText(content: text(5_000))
-        attachments = [.pastedText(paste)]
-        promptText = text(1_000)
-        gate.refresh()
-        XCTAssertEqual(gate.sheetLimit(for: paste), 15_000)
+        let long = AIChatPastedText(content: text(15_753))
+        let short = AIChatPastedText(content: text(4_121))
+        attachments = [.pastedText(long), .pastedText(short)]
 
-        promptText = text(17_000)
-        gate.refresh()
-        XCTAssertEqual(gate.sheetLimit(for: paste), 0, "Clamped for display; Save stays off above it")
+        for paste in [long, short] {
+            let rules = PastedTextSheetRules(original: paste, mode: gate.sheetMode(for: paste))
+            XCTAssertEqual(rules.subtitle(for: paste.content), PastedTextSheetSubtitle(count: 19_874, limit: 16_000))
+        }
+        let rules = PastedTextSheetRules(original: short, mode: gate.sheetMode(for: short))
+        XCTAssertEqual(rules.subtitle(for: text(247))?.isOverLimit, false, "Trimming either paste brings the total under")
     }
 
-    func testSheetCountsThePasteAgainstTheLowerLimitWhileAnImageIsAttached() {
+    func testSheetCountsTheWholePromptAgainstTheLowerLimitWhileAnImageIsAttached() {
         let gate = makeGate()
         attachmentLimits = makeLimits(maxInputCharsWithAttachments: 4_500)
         let paste = AIChatPastedText(content: text(4_000))
         attachments = [.pastedText(paste), .image(AIChatImageAttachment(image: UIImage(), fileName: "a.jpg"))]
         promptText = text(100)
 
-        let rules = PastedTextSheetRules(original: paste, mode: .editable(limit: gate.sheetLimit(for: paste)))
+        let rules = PastedTextSheetRules(original: paste, mode: gate.sheetMode(for: paste))
 
-        XCTAssertEqual(rules.subtitle(for: paste.content), PastedTextSheetSubtitle(count: 4_000, limit: 4_400))
+        XCTAssertEqual(rules.subtitle(for: paste.content), PastedTextSheetSubtitle(count: 4_100, limit: 4_500))
         XCTAssertEqual(rules.subtitle(for: text(4_401))?.isOverLimit, true)
     }
 

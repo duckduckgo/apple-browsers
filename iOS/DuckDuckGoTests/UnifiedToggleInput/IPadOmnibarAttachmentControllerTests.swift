@@ -1224,7 +1224,7 @@ final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
         sut.addPastedText("pasted")
         let id = try XCTUnwrap(strip.attachments.first?.id)
         var limitRequests: [String] = []
-        sut.pastedTextSheetLimit = { limitRequests.append($0.content); return 12 }
+        sut.pastedTextSheetMode = { limitRequests.append($0.content); return .editable(limit: 12) }
         var dismissals = 0
         sut.onPastedTextSheetDismissed = { dismissals += 1 }
 

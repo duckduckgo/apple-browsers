@@ -24,7 +24,8 @@ import SwiftUI
 import UIKit
 
 enum PastedTextSheetMode: Equatable {
-    case editable(limit: Int)
+    /// `otherCount` is the rest of the prompt, so the counter shows the whole prompt against the prompt's limit.
+    case editable(limit: Int, otherCount: Int = 0)
     /// A paste from a sent prompt: the web app matches returned pastes by content, so it can be read, not changed.
     case viewOnly
 }
@@ -85,8 +86,8 @@ struct PastedTextSheetRules: Equatable {
 
     /// The view-only sheet has no limit to count against, so it carries no subtitle.
     func subtitle(for text: String) -> PastedTextSheetSubtitle? {
-        guard case .editable(let limit) = mode else { return nil }
-        return PastedTextSheetSubtitle(count: count(of: text), limit: limit)
+        guard case .editable(let limit, let otherCount) = mode else { return nil }
+        return PastedTextSheetSubtitle(count: otherCount + count(of: text), limit: limit)
     }
 
     func hasUnsavedEdits(_ text: String) -> Bool {

@@ -221,6 +221,7 @@ enum GeneratedTabAction {
     case moveToNewWindow
     case bookmark
     case addToFavorites
+    case createTabGroup
 
     var contract: TabGroupAction {
         switch self {
@@ -229,6 +230,7 @@ enum GeneratedTabAction {
         case .moveToNewWindow: return .moveToNewWindow
         case .bookmark: return .bookmark
         case .addToFavorites: return .addToFavorites
+        case .createTabGroup: return .createTabGroup
         }
     }
 }

@@ -44,7 +44,7 @@ enum TabOrganizerProposalBuilder {
         }
 
         var groups = keys
-            .map { ProposedGroup(name: names[$0] ?? $0, tabIDs: members[$0] ?? [], action: .keep) }
+            .map { ProposedGroup(name: names[$0] ?? $0, tabIDs: members[$0] ?? [], action: .createTabGroup) }
             .sorted { $0.tabIDs.count > $1.tabIDs.count }
 
         var other = tabs.map(\.id).filter { !assigned.contains($0) }

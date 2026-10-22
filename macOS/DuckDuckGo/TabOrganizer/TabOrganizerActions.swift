@@ -32,6 +32,7 @@ struct TabOrganizerActions {
             switch group.action {
             case .bookmark: bookmark(group)
             case .addToFavorites: addToFavorites(group)
+            case .createTabGroup: createTabGroup(group)
             case .keep, .close, .moveToNewWindow: break
             }
         }
@@ -117,6 +118,26 @@ struct TabOrganizerActions {
         let websites = websites(for: group)
         guard !websites.isEmpty else { return }
         bookmarkManager.makeBookmarks(for: websites, inNewFolderNamed: group.name, withinParentFolder: .root)
+    }
+
+    /// Joins the window's tab group with the same name, otherwise creates one in the next unused colour.
+    private func createTabGroup(_ group: ProposedGroup) {
+        let tabs = unpinnedTabs(withIDs: group.tabIDs)
+        guard !tabs.isEmpty else { return }
+
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
+        let tabGroup = tabGroupManager.groups.first { $0.name.caseInsensitiveCompare(group.name) == .orderedSame }
+            ?? tabGroupManager.createGroup(name: group.name, color: nextColor(in: tabGroupManager))
+        for tab in tabs {
+            tabGroupManager.setGroup(tabGroup.id, for: tab)
+        }
+        tabCollectionViewModel.arrangeTabsByGroup()
+    }
+
+    private func nextColor(in tabGroupManager: TabGroupManager) -> TabGroupColor {
+        let used = Set(tabGroupManager.groups.map(\.color))
+        return TabGroupColor.allCases.first { !used.contains($0) }
+            ?? TabGroupColor.allCases[tabGroupManager.groups.count % TabGroupColor.allCases.count]
     }
 
     private func addToFavorites(_ group: ProposedGroup) {

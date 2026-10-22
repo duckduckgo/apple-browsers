@@ -298,6 +298,12 @@ final class TabOrganizerViewModel: ObservableObject {
         }
     }
 
+    func setActionForAll(_ action: TabGroupAction) {
+        for index in groups.indices {
+            groups[index].action = action
+        }
+    }
+
     func setAction(_ action: TabGroupAction, for group: ProposedGroup) {
         guard let index = groups.firstIndex(where: { $0.id == group.id }) else { return }
         groups[index].action = action
@@ -311,7 +317,7 @@ final class TabOrganizerViewModel: ObservableObject {
     }
 
     var applySummary: String? {
-        let counts: [(TabGroupAction, String)] = [(.moveToNewWindow, "move"), (.close, "close"), (.bookmark, "bookmark"), (.addToFavorites, "favorite")]
+        let counts: [(TabGroupAction, String)] = [(.moveToNewWindow, "move"), (.close, "close"), (.bookmark, "bookmark"), (.addToFavorites, "favorite"), (.createTabGroup, "group")]
         let parts = counts.compactMap { action, verb in
             let count = selectedTabIDs(for: action).count
             return count > 0 ? "\(verb) \(count)" : nil
@@ -339,6 +345,7 @@ extension TabGroupAction {
         case .moveToNewWindow: return "New window"
         case .bookmark: return "Bookmark"
         case .addToFavorites: return "Add to favorites"
+        case .createTabGroup: return "Tab group"
         }
     }
 }
@@ -488,6 +495,17 @@ struct TabOrganizerView: View {
     private var results: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Spacer()
+                    Menu("Set all to…") {
+                        ForEach(TabGroupAction.allCases, id: \.self) { action in
+                            Button(action.title) { viewModel.setActionForAll(action) }
+                        }
+                    }
+                    .menuStyle(.borderlessButton)
+                    .fixedSize()
+                    .font(.caption)
+                }
                 if let notice = viewModel.notice {
                     Text(notice).foregroundColor(.secondary).padding(.bottom, 4)
                 }

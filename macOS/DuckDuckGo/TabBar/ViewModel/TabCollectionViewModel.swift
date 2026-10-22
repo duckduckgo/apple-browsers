@@ -1016,6 +1016,32 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
+    /// Puts each group's tabs together, groups in the order of their first tab, ungrouped tabs last.
+    /// One pass after group assignments change; the selected tab stays selected.
+    func arrangeTabsByGroup() {
+        guard changesEnabled else { return }
+        let tabs = tabCollection.tabs
+        var groupOrder: [UUID] = []
+        for tab in tabs {
+            if let groupID = tabGroupManager.groupID(for: tab), !groupOrder.contains(groupID) {
+                groupOrder.append(groupID)
+            }
+        }
+        let arranged = groupOrder.flatMap { groupID in tabs.filter { tabGroupManager.groupID(for: $0) == groupID } }
+            + tabs.filter { tabGroupManager.groupID(for: $0) == nil }
+        guard arranged.map(\.uuid) != tabs.map(\.uuid) else { return }
+
+        let selectedTabID = selectionIndex?.isUnpinnedTab == true ? selectedTabViewModel?.tab.uuid : nil
+        for (targetIndex, tab) in arranged.enumerated() {
+            guard let currentIndex = tabCollection.tabs.firstIndex(where: { $0.uuid == tab.uuid }), currentIndex != targetIndex else { continue }
+            tabCollection.moveTab(at: currentIndex, to: targetIndex)
+        }
+        if let selectedTabID, let index = tabCollection.tabs.firstIndex(where: { $0.uuid == selectedTabID }) {
+            selectWithoutResettingState(at: .unpinned(index))
+        }
+        delegate?.tabCollectionViewModelDidMultipleChanges(self)
+    }
+
     /// Moves a tab to be adjacent to other tabs in its group.
     func moveTabToGroup(_ tab: some TabGroupMember, group: TabGroup?, using tabGroupManager: TabGroupManager) {
         guard changesEnabled else { return }

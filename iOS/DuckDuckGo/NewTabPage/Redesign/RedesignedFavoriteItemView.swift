@@ -75,7 +75,7 @@ extension RedesignedFavoriteItemView {
     }
 }
 
-/// Keeps the favicon inside a circular tile without cropping the site's artwork.
+/// Keeps the favicon inside a rounded rectangle tile without cropping the site's artwork.
 struct RedesignedFavoriteIconView: View {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
@@ -86,9 +86,9 @@ struct RedesignedFavoriteIconView: View {
             .scaleEffect(Metrics.faviconSize / Metrics.sourceIconSize)
             .frame(width: Metrics.faviconSize, height: Metrics.faviconSize)
             .frame(width: Metrics.tileSize, height: Metrics.tileSize)
-            .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
-            .contentShape(Circle())
-            .contentShape([.contextMenuPreview, .dragPreview], Circle())
+            .background(RedesignedFavoriteTileMetrics.tileShape.fill(Color(designSystemColor: .controlsFillPrimary)))
+            .contentShape(RedesignedFavoriteTileMetrics.tileShape)
+            .contentShape([.contextMenuPreview, .dragPreview], RedesignedFavoriteTileMetrics.tileShape)
     }
 }
 

@@ -88,7 +88,7 @@ struct RedesignedFavoritesView: View {
             addFavoriteButton
 
             ForEach(1..<columns.count, id: \.self) { _ in
-                Circle()
+                RedesignedFavoriteTileMetrics.tileShape
                     .strokeBorder(Color(designSystemColor: .textSecondary),
                                   style: StrokeStyle(lineWidth: Metrics.placeholderStrokeWidth, dash: Metrics.placeholderDashPattern))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
@@ -106,7 +106,7 @@ struct RedesignedFavoritesView: View {
                     .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                     .background(Color(designSystemColor: .controlsFillPrimary))
-                    .clipShape(Circle())
+                    .clipShape(RedesignedFavoriteTileMetrics.tileShape)
             }
         }
         .buttonStyle(.plain)
@@ -187,7 +187,7 @@ struct RedesignedFavoritesView: View {
                           onDragActivityChanged: { isDraggingFavorite = $0 },
                           itemSizeCacheKey: { AnyHashable($0) },
                           isItemReorderingEnabled: { isExpanded || !overflow || collapsedIDs.contains($0.id) },
-                          previewPath: { UIBezierPath(ovalIn: $0) }) { favorite in
+                          previewPath: { UIBezierPath(roundedRect: $0, cornerRadius: RedesignedFavoriteTileMetrics.cornerRadius) }) { favorite in
             let isVisible = isExpanded || !overflow || collapsedIDs.contains(favorite.id)
             ZStack(alignment: .top) {
                 Button {
@@ -249,7 +249,7 @@ struct RedesignedFavoritesView: View {
                     .foregroundColor(Color(designSystemColor: .icons))
                     .frame(width: Metrics.tileSize, height: Metrics.tileSize)
                     .background(Color(designSystemColor: .controlsFillPrimary))
-                    .clipShape(Circle())
+                    .clipShape(RedesignedFavoriteTileMetrics.tileShape)
             }
         }
         .buttonStyle(.plain)

@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Submits a platform's exported strings to a new Smartling job and authorizes it
 # when the maximum USD estimate is at most --auto-authorize-max-usd.
-# Writes job_name, outcome, job_id, total_strings (strings × locales), locales, max_usd and reason
+# Writes job_name, outcome, job_id, total_strings (strings × locales), locales, max_usd, reason and failed
+# (true when the submission failed, as opposed to a job left for review)
 # to GITHUB_OUTPUT.
 
 usage() {
@@ -66,6 +67,7 @@ total_strings="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 locales="$(jq -r '.locales // empty' "$RESULT_FILE")"
 max_usd="$(jq -r '.max_usd' "$RESULT_FILE")"
 reason="$(jq -r '.reason' "$RESULT_FILE")"
+failed="$(jq -r '.failed' "$RESULT_FILE")"
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
 	{
@@ -76,6 +78,7 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
 		echo "locales=$locales"
 		echo "max_usd=$max_usd"
 		echo "reason=$reason"
+		echo "failed=$failed"
 	} >> "$GITHUB_OUTPUT"
 fi
 

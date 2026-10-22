@@ -58,6 +58,7 @@ class SubmitResult:
             'locales': self.locales,
             'max_usd': self.max_usd,
             'reason': self.reason,
+            'failed': self.failed,
         }
 
 

@@ -169,6 +169,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.job_id, 'job-123')
         self.assertEqual(result.max_usd, '500.01')
         self.assertEqual((result.total_strings, result.locales), (10, 1))
+        self.assertFalse(result.as_dict()['failed'])
         self.assertEqual(client.authorized_jobs, [])
 
     async def testWhenEstimateHasWarningsThenReviewIsRequired(self):
@@ -235,6 +236,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('status FAILED', result.reason)
+        self.assertTrue(result.as_dict()['failed'])
 
     async def testWhenEstimateTimesOutThenReviewIsRequired(self):
         client = FakeSmartlingClient(estimate_status='PROCESSING')

@@ -120,6 +120,18 @@ jobs:
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
     secrets: inherit
 
+  submit_translations:
+    name: Submit Release to Smartling
+    # Nothing depends on this job, so a failed submission never blocks the release.
+    # The version comes from the release branch name, which covers both a given and a calculated version.
+    needs: create_release_branch
+    uses: ./.github/workflows/smartling_release_submit.yml
+    with:
+      platform: iOS
+      branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      asana_task_url: ${{ needs.create_release_branch.outputs.asana_task_url }}
+    secrets: inherit
+
   prepare_release:
     name: Prepare Release
     needs: [ create_release_branch, run_tests ]

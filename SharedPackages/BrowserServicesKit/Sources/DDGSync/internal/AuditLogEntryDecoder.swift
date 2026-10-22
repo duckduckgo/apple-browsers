@@ -17,12 +17,19 @@
 //
 
 import Foundation
+import DDGError
 
 /// Caches the initial key-load result, including failures, and allows one forced refresh per audit-log page.
 /// The fetch loop uses this instance sequentially; it is intentionally not Sendable.
 final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
-    enum Error: Swift.Error {
+    enum Error: DDGError {
         case forcedRefreshAlreadyAttempted
+
+        static var errorDomain: String { "com.duckduckgo.sync.audit-log.account-info-keys" }
+
+        var errorCode: Int { 1 }
+
+        var description: String { "The account-info key refresh was already attempted for this audit-log page." }
     }
 
     private let manager: any AccountInfoKeyProviding

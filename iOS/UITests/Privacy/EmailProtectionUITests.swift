@@ -25,6 +25,7 @@ final class EmailProtectionUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
+        app.dismissAddressBarEditing()
         let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
         XCTAssertTrue(
             menuButton.wait(for: NSPredicate(format: "isHittable == true AND isEnabled == true"), timeout: UITestTimeouts.navigation),

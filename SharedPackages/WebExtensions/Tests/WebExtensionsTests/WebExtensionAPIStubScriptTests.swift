@@ -791,6 +791,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("typeof chrome.webNavigation.onCreatedNavigationTarget.addListener === 'function'")
+        try assertTrue("typeof chrome.webNavigation.onHistoryStateUpdated.addListener === 'function'")
+        try assertTrue("typeof chrome.webNavigation.onTabReplaced.addListener === 'function'")
         try assertTrue("typeof chrome.runtime.onSuspend.addListener === 'function'")
 
         try assertTrue("chrome.webNavigation.onCommitted === originalOnCommitted")

@@ -150,7 +150,7 @@ final class DuckAINudgeEngine {
         var generated: GeneratedCopy?
 
         var wantsGeneratedCopy: Bool {
-            generated == nil && ![.translate, .summarize, .compare].contains(kind)
+            generated == nil && ![.translate, .summarize, .compare, .code].contains(kind)
         }
     }
 
@@ -295,7 +295,8 @@ final class DuckAINudgeEngine {
             prompts = chips(["What am I agreeing to?", "What data do they collect and share?", "How do I opt out?"])
         case .code:
             title = "Reading code?"
-            subtitle = "Duck.ai can walk you through it."
+            let fileName = url.lastPathComponent
+            subtitle = fileName.contains(".") ? "Duck.ai can walk you through \(fileName)." : "Duck.ai can walk you through it."
             prompts = chips(["Explain this code", "Show me an example", "What are the gotchas?"])
         case .travel:
             title = "Getting ready for your trip?"
@@ -381,8 +382,22 @@ final class DuckAINudgeEngine {
         }
         guard let subtitle = subtitle ?? nil else { return nil }
         let trimmed = subtitle.trimmingCharacters(in: .whitespacesAndNewlines.union(.init(charactersIn: "\"")))
-        guard trimmed.count > 8, trimmed.count <= 70 else { return nil }
+        guard trimmed.count > 8, trimmed.count <= 70, Self.isGrounded(trimmed, in: context) else {
+            Logger.aiChat.notice("[Nudge] dropped generated subtitle: \(trimmed, privacy: .public)")
+            return nil
+        }
         return trimmed
+    }
+
+    /// The on-device model sometimes writes a subtitle about a different page; keep it only if it
+    /// shares a meaningful word with this page's title or opening text.
+    static func isGrounded(_ text: String, in context: AIChatPageContextData) -> Bool {
+        func words(_ string: String) -> Set<String> {
+            Set(string.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).filter { $0.count >= 4 })
+        }
+        let generic: Set<String> = ["this", "that", "with", "your", "help", "page", "duck"]
+        let source = words(context.title + " " + context.content.prefix(600))
+        return !words(text).subtracting(generic).isDisjoint(with: source)
     }
 
     private func withTimeout<T: Sendable>(seconds: Double, _ operation: @escaping @Sendable () async -> T) async -> T? {
@@ -454,6 +469,7 @@ struct DuckAINudgeCalloutView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .focusable(false)
                 .accessibilityIdentifier("DuckAINudge.dismiss")
             }
 
@@ -485,6 +501,7 @@ struct DuckAINudgeCalloutView: View {
                             .contentShape(Capsule())
                         }
                         .buttonStyle(.plain)
+                        .focusable(false)
                         .accessibilityIdentifier("DuckAINudge.chip")
                     }
                 }

@@ -22,6 +22,7 @@ import PrivacyConfig
 public enum ChromeWebStoreID: String {
     case bitwarden = "nngceckbapebfimnlniiiahkandclblb"
     case onePassword = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+    case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
 }
 
 public enum ChromeWebStoreStatus: String, Codable {

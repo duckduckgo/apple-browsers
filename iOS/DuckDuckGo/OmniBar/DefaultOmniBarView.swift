@@ -676,6 +676,13 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private(set) var visibleFooterMessages: [UTIFooterItem] = []
     private var renderedFooterMessages: [UTIFooterItem] = []
     private var reportedFooterIDs: [UTIFooterItem.ID] = []
+    var isPromptOverLimit = false {
+        didSet {
+            guard oldValue != isPromptOverLimit else { return }
+            attachmentsStripView.showsPromptLengthError = isPromptOverLimit
+            updateAIChatSendButton(hasText: !(aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+    }
 
     let aiChatTextView: ResignSuppressingTextView = {
         let textView = ResignSuppressingTextView()
@@ -747,6 +754,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     private let floatingGlassContentHostView = FloatingGlassContentHostView()
 
     private var omniBarLongPressInteraction: UIContextMenuInteraction?
+    private var isShowingOmniBarLongPressPreview = false
+    private var omniBarLongPressPendingAction: (() -> Void)?
     private let defaultBackgroundColor = UIColor(designSystemColor: .background)
     private let isFloatingUIEnabled: Bool
     fileprivate var savedBarChromeBackgroundColor: UIColor?
@@ -840,6 +849,10 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
+        if window == nil {
+            omniBarLongPressPendingAction = nil
+            restoreAddressBarAfterLongPressMenu()
+        }
         reportFooterVisibility()
     }
 
@@ -888,6 +901,12 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     }
 
     func makeGlass() {
+        guard !isShowingOmniBarLongPressPreview else {
+            glassEffect.effect = nil
+            glassEffectConfiguration = nil
+            setFieldBackgroundColor(.clear)
+            return
+        }
         guard isFloatingUIEnabled else {
             makeOpaque()
             return
@@ -1578,6 +1597,8 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
     private func removeOmniBarLongPressInteraction() {
         guard let omniBarLongPressInteraction else { return }
+        omniBarLongPressPendingAction = nil
+        restoreAddressBarAfterLongPressMenu()
         searchAreaView.textField.removeInteraction(omniBarLongPressInteraction)
         self.omniBarLongPressInteraction = nil
     }
@@ -1868,9 +1889,74 @@ extension DefaultOmniBarView: UIContextMenuInteractionDelegate {
     }
 
     func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForHighlightingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        floatingAddressBarMenuPreview(for: interaction)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                previewForDismissingMenuWithConfiguration configuration: UIContextMenuConfiguration) -> UITargetedPreview? {
+        floatingAddressBarMenuPreview(for: interaction)
+    }
+
+    private func floatingAddressBarMenuPreview(for interaction: UIContextMenuInteraction) -> UITargetedPreview? {
+        guard isFloatingUIEnabled,
+              interaction === omniBarLongPressInteraction,
+              let window,
+              !searchAreaContainerView.bounds.isEmpty else { return nil }
+
+        isShowingOmniBarLongPressPreview = true
+        makeGlass()
+        window.layoutIfNeeded()
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = fireMode
+            ? UIColor(singleUseColor: .fireModeBackground)
+            : UIColor(designSystemColor: .backgroundTertiary)
+        parameters.visiblePath = UIBezierPath(roundedRect: searchAreaContainerView.bounds,
+                                             cornerRadius: searchAreaContainerView.bounds.height / 2)
+
+        return UITargetedPreview(view: searchAreaContainerView, parameters: parameters)
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                 willDisplayMenuFor configuration: UIContextMenuConfiguration,
                                 animator: UIContextMenuInteractionAnimating?) {
         onLongPressMenuDisplayed?()
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willEndFor configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionAnimating?) {
+        guard interaction === omniBarLongPressInteraction else { return }
+        if let animator {
+            animator.addCompletion { [weak self] in
+                self?.completeLongPressMenuDismissal()
+            }
+        } else {
+            completeLongPressMenuDismissal()
+        }
+    }
+
+    func performAfterLongPressMenuDismissal(_ action: @escaping () -> Void) {
+        guard isShowingOmniBarLongPressPreview else {
+            action()
+            return
+        }
+        omniBarLongPressPendingAction = action
+    }
+
+    private func completeLongPressMenuDismissal() {
+        restoreAddressBarAfterLongPressMenu()
+        let action = omniBarLongPressPendingAction
+        omniBarLongPressPendingAction = nil
+        if let action {
+            action()
+        }
+    }
+
+    private func restoreAddressBarAfterLongPressMenu() {
+        guard isShowingOmniBarLongPressPreview else { return }
+        isShowingOmniBarLongPressPreview = false
+        updateFireModeAppearance()
     }
 }
 
@@ -2541,12 +2627,13 @@ extension DefaultOmniBarView {
 
     func updateAIChatSendButton(hasText: Bool) {
         // Mirror the iPhone unified toggle rule: submit is available with text or a valid attachment,
-        // and blocked while any attachment is invalid. Voice only stands in when the input is truly
-        // empty (no text and no attachments) and the Terms of Service disclaimer isn't asking for Ask.
+        // and blocked while any attachment is invalid or the prompt is over its length limit. Voice only
+        // stands in when the input is truly empty (no text and no attachments) and the Terms of Service
+        // disclaimer isn't asking for Ask.
         let attachments = attachmentsStripView.attachments
         let hasValidAttachment = attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = attachments.contains(where: \.isInvalid)
-        let canSubmit = !hasInvalidAttachment && (hasText || hasValidAttachment)
+        let canSubmit = !hasInvalidAttachment && !isPromptOverLimit && (hasText || hasValidAttachment)
         let accentColor = fireMode ? UIColor(singleUseColor: .fireModeAccent) : UIColor(designSystemColor: .accentPrimary)
         if canSubmit {
             setAIChatSendButtonContent(DesignSystemImages.Glyphs.Size24.arrowRightSmall)

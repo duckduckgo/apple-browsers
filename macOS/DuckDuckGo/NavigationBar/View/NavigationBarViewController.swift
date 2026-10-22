@@ -1511,12 +1511,13 @@ final class NavigationBarViewController: NSViewController {
             })
     }
 
-    /// Web extension buttons show on web pages and the New Tab page. Other tabs with native content hide them.
+    /// Web extension buttons show on web pages, extension pages and the New Tab page. Native content hides them.
     private func updateWebExtensionButtonsVisibility(for content: TabContent) {
         guard #available(macOS 15.4, *),
               let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
         let isNewTab = if case .newtab = content { true } else { false }
-        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab
+        let isExtensionPage = if case .webExtensionUrl = content { true } else { false }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab || isExtensionPage
         updater.refreshActions()
     }
 

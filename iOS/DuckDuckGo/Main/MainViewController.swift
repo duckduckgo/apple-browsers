@@ -1304,7 +1304,8 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.swipeOverlayView = overlay
     }
 
-    func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
+    /// `reportingSnapshotTimeout`: see `TabViewController.preparePreview`.
+    func updatePreviewForCurrentTab(reportingSnapshotTimeout: Bool = false, completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         // Returning by swipe also needs chrome and screen geometry when the NTP was left
         // through the tab switcher, which otherwise only saves a content-sized thumbnail.
@@ -1323,8 +1324,9 @@ class MainViewController: UIViewController {
 
         } else if let currentTab = self.tabManager.current(), currentTab.link != nil {
             // Web view
-            currentTab.preparePreview(completion: { image in
-                if let image {
+            // A snapshot that never answers (a frozen page) must not keep a closed tab alive.
+            currentTab.preparePreview(reportTimeout: reportingSnapshotTimeout, completion: { [weak currentTab] image in
+                if let image, let currentTab {
                     self.previewsSource.update(preview: image,
                                                forTab: currentTab.tabModel)
                 }
@@ -1622,7 +1624,7 @@ class MainViewController: UIViewController {
 
         // Check if first responder is within the sheet's view hierarchy
         if let firstResponder = UIResponder.currentFirstResponder(),
-           firstResponder.isInViewHierarchy(of: sheetVC.view) {
+           firstResponder.isInViewHierarchy(ofPresentationChainFrom: sheetVC) {
             // Keyboard is for the sheet, don't dismiss
             return
         }
@@ -5490,7 +5492,7 @@ extension MainViewController: BrowserChromeDelegate {
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
                 barsVisibilityPercent: percent,
-                collapseStart: FloatingDomainCapsuleController.handoffStart
+                collapseStart: FloatingDomainCapsuleController.handoffEnd
               )
             : 0
         let panelHeight = toolbar.setButtonRowCollapseProgress(
@@ -6490,6 +6492,12 @@ extension MainViewController: OmniBarDelegate {
                 self?.currentTab?.onCopyAction(forUrl: url)
             },
             onMoveAddressBar: { [weak self] in
+                if self?.isFloatingUIEnabled == true {
+                    self?.omniBar.barView.performAfterLongPressMenuDismissal { [weak self] in
+                        self?.moveFloatingAddressBar()
+                    }
+                    return
+                }
                 // iOS 26 has broken something so we have to use an animation
                 //  to get symmetry in the movement (rather than disabling animations
                 //  which doesn't appear to work properly on iOS 26.4,
@@ -6521,6 +6529,62 @@ extension MainViewController: OmniBarDelegate {
 
     func onOmniBarLongPressMenuDisplayed() {
         longPressBarMenuBuilder.fireOmniBarMenuOpenPixel()
+    }
+
+    private func moveFloatingAddressBar() {
+        guard !isAddressBarMoveInProgress else { return }
+        isAddressBarMoveInProgress = true
+        view.layoutIfNeeded()
+        viewCoordinator.navigationBarContainer.backgroundColor = .clear
+        omniBar.prepareForMoveTransition()
+
+        if #available(iOS 26.0, *), newTabPageViewController != nil, !UIAccessibility.isReduceMotionEnabled {
+            UIView.animate(springDuration: 0.5, bounce: 0, options: [.allowUserInteraction, .beginFromCurrentState]) {
+                self.toggleAddressBarLocation()
+                self.omniBar.moveTransitionCompleted()
+                self.revealFloatingChromeImmediately()
+                self.decorate()
+                self.view.layoutIfNeeded()
+            } completion: { [weak self] _ in
+                self?.isAddressBarMoveInProgress = false
+            }
+            return
+        }
+
+        let snapshot: UIImageView?
+        if !UIAccessibility.isReduceMotionEnabled, let window = view.window, !window.bounds.isEmpty {
+            // Freeze glass before rehosting.
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = window.traitCollection.displayScale
+            let image = UIGraphicsImageRenderer(bounds: window.bounds, format: format).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            snapshot = UIImageView(image: image)
+            snapshot?.frame = window.bounds
+            snapshot?.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            snapshot?.isUserInteractionEnabled = false
+            if let snapshot {
+                window.addSubview(snapshot)
+            }
+        } else {
+            snapshot = nil
+        }
+
+        UIView.performWithoutAnimation {
+            self.toggleAddressBarLocation()
+            self.omniBar.moveTransitionCompleted()
+            self.revealFloatingChromeImmediately()
+            self.decorate()
+            self.view.layoutIfNeeded()
+        }
+
+        isAddressBarMoveInProgress = false
+        guard let snapshot else { return }
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut, .allowUserInteraction], animations: {
+            snapshot.alpha = 0
+        }) { _ in
+            snapshot.removeFromSuperview()
+        }
     }
 
     private func toggleAddressBarLocation() {
@@ -8595,7 +8659,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         // Don't clear `openedAfterIdle` on switcher open — the after-idle session
         // ends on actual tab transition (see `transitionTo`), not on peeking.
         hideNotificationBarIfBrokenSitePromptShown()
-        updatePreviewForCurrentTab {
+        updatePreviewForCurrentTab(reportingSnapshotTimeout: true) {
             ViewHighlighter.hideAll()
             Task { @MainActor in
                 await self.segueToTabSwitcher()
@@ -8684,8 +8748,11 @@ extension MainViewController {
 
         fireExecutor.prepare(for: request)
         
-        fireButtonAnimator.animate {
+        let instrumentation = DefaultFireAnimationInstrumentation(request: request)
+        fireButtonAnimator.animate(instrumentation: instrumentation) {
+            instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
+            instrumentation.burnDidFinish()
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: { [weak self] in

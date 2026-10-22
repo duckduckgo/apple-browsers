@@ -19,6 +19,11 @@
 import Foundation
 import PrivacyConfig
 
+public enum ChromeWebStoreID: String {
+    case bitwarden = "nngceckbapebfimnlniiiahkandclblb"
+    case onePassword = "aeblfdkhhhdcdjpifhhbdiojplfjncoa"
+}
+
 public enum ChromeWebStoreStatus: String, Codable {
     case installable, installed, unsupported, unknown
 }

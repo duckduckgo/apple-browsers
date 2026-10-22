@@ -33,9 +33,11 @@ final class SwitchBarTextView: UITextView {
     /// When set, a native image/file paste is routed into the attachment strip; `nil` keeps default paste.
     weak var attachmentPasteHandler: AttachmentPasteHandling?
 
+    var pasteboard: () -> UIPasteboard = { .general }
+
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         if isInputFrozen && action == #selector(paste(_:)) { return false }
-        if action == #selector(paste(_:)), AttachmentPasteRouting.canPaste(with: attachmentPasteHandler) {
+        if action == #selector(paste(_:)), AttachmentPasteRouting.canPaste(with: attachmentPasteHandler, pasteboard: pasteboard()) {
             return true
         }
         return super.canPerformAction(action, withSender: sender)
@@ -43,11 +45,12 @@ final class SwitchBarTextView: UITextView {
 
     override func paste(_ sender: Any?) {
         guard !isInputFrozen else { return }
-        guard AttachmentPasteRouting.routePaste(with: attachmentPasteHandler) else {
+        let pasteboard = pasteboard()
+        guard AttachmentPasteRouting.routePaste(with: attachmentPasteHandler, pasteboard: pasteboard) else {
             super.paste(sender)
             return
         }
-        if let text = UIPasteboard.general.string, !text.isEmpty {
+        if let text = pasteboard.string, !text.isEmpty {
             insertText(text)
         }
     }

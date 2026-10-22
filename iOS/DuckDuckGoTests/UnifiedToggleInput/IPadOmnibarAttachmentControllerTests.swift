@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import FeatureFlags_iOS
 @_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import UIKit
@@ -808,6 +809,453 @@ final class IPadOmnibarDraftTests: XCTestCase {
 
     private func file(named name: String) -> UnifiedToggleInputAttachment {
         .file(AIChatFileAttachment(data: Data([1]), fileName: name, mimeType: "application/pdf"))
+    }
+}
+
+@MainActor
+final class IPadOmnibarPastedTextTests: XCTestCase {
+
+    private var window: UIWindow?
+    private let pixels = PixelKitMock()
+    private let termsSuiteName = "IPadOmnibarPastedTextTests.terms"
+
+    override func setUp() {
+        super.setUp()
+        UserDefaults(suiteName: termsSuiteName)?.removePersistentDomain(forName: termsSuiteName)
+    }
+
+    override func tearDown() {
+        window?.isHidden = true
+        window = nil
+        UserDefaults(suiteName: termsSuiteName)?.removePersistentDomain(forName: termsSuiteName)
+        super.tearDown()
+    }
+
+    // MARK: - Interception
+
+    func testPasteBelowThresholdStaysInline() throws {
+        let (controller, view) = try makeController()
+        expand(controller, view)
+
+        XCTAssertTrue(paste(text(length: 3_999), into: controller, view))
+        XCTAssertTrue(view.attachmentsStripView.attachments.isEmpty)
+    }
+
+    func testPasteAtThresholdBecomesChipAndIsNotInserted() throws {
+        let (controller, view) = try makeController()
+        expand(controller, view)
+        let pasted = text(length: 4_000)
+
+        XCTAssertFalse(paste(pasted, into: controller, view))
+        XCTAssertEqual(view.attachmentsStripView.attachments.compactMap(\.pastedText).map(\.content), [pasted])
+        XCTAssertEqual(view.aiChatTextView.text, "")
+    }
+
+    func testPasteInSearchModeStaysInline() throws {
+        let (controller, view) = try makeController()
+        expand(controller, view)
+        controller.setSelectedTextEntryMode(.search)
+
+        XCTAssertTrue(paste(text(length: 4_100), into: controller, view))
+        XCTAssertTrue(view.attachmentsStripView.attachments.isEmpty)
+    }
+
+    func testPasteWithFeatureOffStaysInline() throws {
+        let (controller, view) = try makeController(flags: [])
+        expand(controller, view)
+
+        XCTAssertTrue(paste(text(length: 4_100), into: controller, view))
+        XCTAssertTrue(view.attachmentsStripView.attachments.isEmpty)
+    }
+
+    // MARK: - Over the limit
+
+    func testOverLimitShowsErrorAloneOverTermsBlocksSendAndKeepsReturnAsNewLine() throws {
+        let (controller, view) = try makeController(flags: [.unifiedToggleInputPastedText, .duckAINativeTermsOfService])
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.termsConsent])
+
+        XCTAssertFalse(paste(text(length: 16_100), into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+
+        XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.promptTooLong])
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.subtitle, "16100/16000")
+        XCTAssertFalse(view.aiChatSendButton.isEnabled)
+        XCTAssertTrue(view.attachmentsStripView.showsPromptLengthError)
+        XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle, "Ask stays while the error hides the disclaimer")
+        XCTAssertEqual(view.aiChatTextView.keyboardType, .default, "Return keeps adding a new line while the error hides the disclaimer")
+        XCTAssertTrue(pressReturn(controller, view))
+        view.aiChatSendButton.sendActions(for: .primaryActionTriggered)
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled)
+
+        view.attachmentsStripView.removeAttachment(id: chipID, isUserInitiated: true)
+
+        XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.termsConsent])
+        XCTAssertFalse(view.attachmentsStripView.showsPromptLengthError)
+        XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+    }
+
+    func testOverLimitWithTermsAcceptedBlocksReturnAndSend() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 16_100), into: controller, view))
+
+        XCTAssertFalse(pressReturn(controller, view), "Return is consumed, not inserted")
+        view.aiChatSendButton.sendActions(for: .primaryActionTriggered)
+
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled)
+        XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.promptTooLong])
+        XCTAssertEqual(view.attachmentsStripView.attachments.count, 1, "The draft stays for the user to fix")
+    }
+
+    func testTypingOverTheLimitAfterAChipShowsTheErrorAndTypingBackClearsIt() throws {
+        let (controller, view) = try makeController()
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 15_900), into: controller, view))
+        XCTAssertTrue(view.visibleFooterMessages.isEmpty)
+
+        enter(String(repeating: "a", count: 101), in: controller, view)
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.subtitle, "16001/16000")
+        XCTAssertFalse(view.aiChatSendButton.isEnabled)
+
+        enter(String(repeating: "a", count: 100), in: controller, view)
+        XCTAssertTrue(view.visibleFooterMessages.isEmpty)
+        XCTAssertTrue(view.aiChatSendButton.isEnabled)
+    }
+
+    // MARK: - Submission
+
+    func testSubmitMeasuresTheSentTextNotTheLastTypedDraft() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+
+        controller.submitAIChatQuery(text(length: 16_001))
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled, "Set without typing, so only the submit measures it")
+
+        controller.submitAIChatQuery(text(length: 100))
+        XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
+    }
+
+    func testURLShapedPromptWithoutAttachmentsNavigates() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled)
+    }
+
+    func testURLShapedPromptNavigatesAgainAfterLastChipRemoved() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 4_100), into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+        view.attachmentsStripView.removeAttachment(id: chipID, isUserInitiated: true)
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertFalse(delegate.wasOnPromptSubmittedCalled)
+    }
+
+    func testURLShapedPromptWithChipSubmitsToDuckAIWithPastedText() throws {
+        let (controller, view) = try makeController()
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        let pasted = text(length: 4_100)
+        XCTAssertFalse(paste(pasted, into: controller, view))
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
+        XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertEqual(delegate.promptQuery, "https://example.com/path")
+        XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.textPasted?.map(\.content), [pasted])
+        let controlValues = try XCTUnwrap(delegate.promptControlValues)
+        XCTAssertFalse(DuckAIPromptFlowStart(controlValues: controlValues, tools: nil).attachmentsSelected, "A paste is prompt text")
+    }
+
+    func testURLShapedPromptWithImageSubmitsToDuckAIWithImage() throws {
+        let (controller, view) = try makeController(flags: [])
+        let delegate = MockOmniBarDelegate()
+        controller.omniDelegate = delegate
+        expand(controller, view)
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 2, height: 2)).image { $0.fill(CGRect(x: 0, y: 0, width: 2, height: 2)) }
+        view.attachmentsStripView.addAttachment(.image(AIChatImageAttachment(image: image, fileName: "photo.jpg")))
+        enter("https://example.com/path", in: controller, view)
+
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertTrue(delegate.wasOnPromptSubmittedCalled)
+        XCTAssertFalse(delegate.wasOnOmniQuerySubmittedCalled)
+        XCTAssertEqual(delegate.promptControlValues?.selectedAttachments.images?.count, 1)
+        let controlValues = try XCTUnwrap(delegate.promptControlValues)
+        XCTAssertTrue(DuckAIPromptFlowStart(controlValues: controlValues, tools: nil).attachmentsSelected)
+    }
+
+    // MARK: - Sheet
+
+    func testSavingInTheSheetReplacesTheChipAndRestoresTheInput() throws {
+        let (controller, view) = try makeController()
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 4_100), into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+
+        view.attachmentsStripView.onAttachmentTapped?(chipID)
+        let sheet = try XCTUnwrap(controller.presentedViewController as? PastedTextSheetHostingController)
+        controller.setSelectedTextEntryMode(.search)
+        view.setSearchAreaExpanded(false, animated: false)
+        let edited = text(length: 4_200)
+        sheet.finish(.saved(AIChatPastedText(content: edited)))
+
+        XCTAssertEqual(view.attachmentsStripView.attachments.compactMap(\.pastedText).map(\.content), [edited])
+        XCTAssertNotEqual(view.attachmentsStripView.attachments.first?.id, chipID, "A saved edit is a new value")
+        XCTAssertEqual(controller.selectedTextEntryMode, .aiChat)
+        XCTAssertTrue(view.isSearchAreaExpanded)
+    }
+
+    func testCancellingTheSheetKeepsTheChipAndRestoresTheInput() throws {
+        let (controller, view) = try makeController()
+        expand(controller, view)
+        let pasted = text(length: 4_100)
+        XCTAssertFalse(paste(pasted, into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+
+        view.attachmentsStripView.onAttachmentTapped?(chipID)
+        let sheet = try XCTUnwrap(controller.presentedViewController as? PastedTextSheetHostingController)
+        controller.setSelectedTextEntryMode(.search)
+        view.setSearchAreaExpanded(false, animated: false)
+        sheet.finish(.unchanged)
+
+        XCTAssertEqual(view.attachmentsStripView.attachments.map(\.id), [chipID])
+        XCTAssertEqual(view.attachmentsStripView.attachments.first?.pastedText?.content, pasted)
+        XCTAssertEqual(controller.selectedTextEntryMode, .aiChat)
+        XCTAssertTrue(view.isSearchAreaExpanded)
+    }
+
+    func testReviewingAChipInTheSheetKeepsTheInputOutcomeOpen() throws {
+        let (controller, view) = try makeController()
+        controller.omniDelegate = MockOmniBarDelegate()
+        expand(controller, view)
+        XCTAssertFalse(paste(text(length: 4_100), into: controller, view))
+        let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+
+        view.attachmentsStripView.onAttachmentTapped?(chipID)
+        let sheet = try XCTUnwrap(controller.presentedViewController as? PastedTextSheetHostingController)
+        controller.setSelectedTextEntryMode(.search)
+        view.setSearchAreaExpanded(false, animated: false)
+        sheet.finish(.unchanged)
+        XCTAssertTrue(inputOutcomes.isEmpty, "Reviewing a chip is not an abandon")
+
+        enter("summarize", in: controller, view)
+        XCTAssertFalse(pressReturn(controller, view))
+
+        XCTAssertEqual(inputOutcomes.map { $0["outcome"] }, ["prompt_submitted"])
+    }
+
+    // MARK: - Helpers
+
+    private var inputOutcomes: [[String: String]] {
+        pixels.actualFireCalls.filter { $0.pixel.name == DuckAiInputOutcomeEvent.pixelName }.compactMap(\.pixel.parameters)
+    }
+
+    private func makeController(flags: [FeatureFlag] = [.unifiedToggleInputPastedText]) throws -> (DefaultOmniBarViewController, DefaultOmniBarView) {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = flags
+        let controller = DefaultOmniBarViewController(
+            dependencies: MockOmnibarDependency(
+                featureFlagger: featureFlagger,
+                aiChatSettings: MockAIChatSettingsProvider(isAIChatSearchInputUserSettingsEnabled: true),
+                userInterfaceIdiomProvider: DraftIPadIdiomProvider()
+            ),
+            isFloatingUIEnabled: false,
+            termsOfServiceStore: DuckAiTermsOfServiceStore(keyValueStore: try XCTUnwrap(UserDefaults(suiteName: termsSuiteName))),
+            inputOutcomePixelFiring: UTIPixelFiring(pixelKit: { [pixels] in pixels })
+        )
+        controller.loadViewIfNeeded()
+        controller.enterPadState()
+        let view = try XCTUnwrap(controller.view as? DefaultOmniBarView)
+        view.setLayoutMode(.expandedPad)
+        // The sheet is presented from the key window of the bar's scene, so the window needs one.
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        window.frame = CGRect(x: 0, y: 0, width: 1024, height: 768)
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        self.window = window
+        return (controller, view)
+    }
+
+    private func expand(_ controller: DefaultOmniBarViewController, _ view: DefaultOmniBarView) {
+        controller.setSelectedTextEntryMode(.aiChat)
+        view.setSearchAreaExpanded(true, animated: false)
+    }
+
+    private func enter(_ text: String, in controller: DefaultOmniBarViewController, _ view: DefaultOmniBarView) {
+        view.aiChatTextView.text = text
+        controller.textViewDidChange(view.aiChatTextView)
+    }
+
+    /// What UIKit asks before inserting a paste; `true` means the text goes in as typed text.
+    private func paste(_ text: String, into controller: DefaultOmniBarViewController, _ view: DefaultOmniBarView) -> Bool {
+        let end = (view.aiChatTextView.text as NSString).length
+        return controller.textView(view.aiChatTextView, shouldChangeTextIn: NSRange(location: end, length: 0), replacementText: text)
+    }
+
+    private func pressReturn(_ controller: DefaultOmniBarViewController, _ view: DefaultOmniBarView) -> Bool {
+        let end = (view.aiChatTextView.text as NSString).length
+        return controller.textView(view.aiChatTextView, shouldChangeTextIn: NSRange(location: end, length: 0), replacementText: "\n")
+    }
+
+    private func text(length: Int) -> String {
+        String(repeating: "x", count: length)
+    }
+}
+
+@MainActor
+final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
+
+    private var sut: IPadOmnibarAttachmentController!
+    private var strip: UnifiedToggleInputAttachmentsStripView!
+    private var pixels: PixelKitMock!
+    private var window: UIWindow!
+
+    override func setUp() {
+        super.setUp()
+        let store = UTIModelStore(
+            modelsService: StubAttachmentModelsService(),
+            preferences: StubAttachmentPreferences(),
+            subscriptionManager: SubscriptionManagerMock(),
+            isUpdatedModelPickerEnabled: false
+        )
+        strip = UnifiedToggleInputAttachmentsStripView()
+        pixels = PixelKitMock()
+        sut = IPadOmnibarAttachmentController(store: store, pixelFiring: pixels)
+        sut.attachmentsStripView = strip
+        window = UIWindow(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+        window.rootViewController = UIViewController()
+        window.makeKeyAndVisible()
+        sut.presenterProvider = { [window] in window?.rootViewController }
+    }
+
+    override func tearDown() {
+        window.isHidden = true
+        window = nil
+        sut = nil
+        strip = nil
+        pixels = nil
+        super.tearDown()
+    }
+
+    func testAddingPastedTextFiresAttachedPixelForTheAddressBar() {
+        var expandRequests = 0
+        sut.onExpandRequested = { expandRequests += 1 }
+
+        sut.addPastedText("pasted")
+
+        XCTAssertEqual(strip.attachments.compactMap(\.pastedText).map(\.content), ["pasted"])
+        XCTAssertEqual(sut.encodedAttachments.textPasted?.map(\.content), ["pasted"])
+        XCTAssertEqual(expandRequests, 1)
+        XCTAssertEqual(firedPixels.map(\.name), ["aichat_unified_input_pasted_text_attached"])
+        XCTAssertEqual(firedPixels.map(\.surface), ["address_bar"])
+    }
+
+    func testRemovingAChipByTheUserFiresRemovedPixelOnlyForTheAddressBar() throws {
+        sut.addPastedText("pasted")
+        let id = try XCTUnwrap(strip.attachments.first?.id)
+
+        strip.removeAttachment(id: id)
+        XCTAssertEqual(firedPixels.count, 1, "A programmatic removal is not reported")
+
+        sut.addPastedText("again")
+        let secondID = try XCTUnwrap(strip.attachments.first?.id)
+        strip.removeAttachment(id: secondID, isUserInitiated: true)
+
+        XCTAssertEqual(firedPixels.last?.name, "aichat_unified_input_pasted_text_removed")
+        XCTAssertEqual(firedPixels.last?.surface, "address_bar")
+    }
+
+    func testOpeningAndSavingTheSheetReportsOpenedThenEditedAndCallsDismissed() throws {
+        sut.addPastedText("pasted")
+        let id = try XCTUnwrap(strip.attachments.first?.id)
+        var limitRequests: [String] = []
+        sut.pastedTextSheetLimit = { limitRequests.append($0.content); return 12 }
+        var dismissals = 0
+        sut.onPastedTextSheetDismissed = { dismissals += 1 }
+
+        sut.presentPastedTextSheet(id: id)
+        let sheet = try XCTUnwrap(window.rootViewController?.presentedViewController as? PastedTextSheetHostingController)
+        XCTAssertEqual(limitRequests, ["pasted"])
+        sheet.finish(.saved(AIChatPastedText(content: "edited")))
+
+        XCTAssertEqual(strip.attachments.compactMap(\.pastedText).map(\.content), ["edited"])
+        XCTAssertEqual(sut.encodedAttachments.textPasted?.map(\.content), ["edited"])
+        XCTAssertEqual(firedPixels.map(\.name), [
+            "aichat_unified_input_pasted_text_attached",
+            "aichat_unified_input_pasted_text_sheet_opened",
+            "aichat_unified_input_pasted_text_edited"
+        ])
+        XCTAssertEqual(dismissals, 1)
+    }
+
+    func testClosingTheSheetUnchangedKeepsTheChipAndReportsNoEdit() throws {
+        sut.addPastedText("pasted")
+        let id = try XCTUnwrap(strip.attachments.first?.id)
+        var dismissals = 0
+        sut.onPastedTextSheetDismissed = { dismissals += 1 }
+
+        sut.presentPastedTextSheet(id: id)
+        let sheet = try XCTUnwrap(window.rootViewController?.presentedViewController as? PastedTextSheetHostingController)
+        sheet.finish(.unchanged)
+
+        XCTAssertEqual(strip.attachments.map(\.id), [id])
+        XCTAssertEqual(firedPixels.map(\.name), ["aichat_unified_input_pasted_text_attached", "aichat_unified_input_pasted_text_sheet_opened"])
+        XCTAssertEqual(dismissals, 1)
+    }
+
+    func testSavingAfterTheChipIsGoneReportsNoEdit() throws {
+        sut.addPastedText("pasted")
+        let id = try XCTUnwrap(strip.attachments.first?.id)
+        var dismissals = 0
+        sut.onPastedTextSheetDismissed = { dismissals += 1 }
+
+        sut.presentPastedTextSheet(id: id)
+        let sheet = try XCTUnwrap(window.rootViewController?.presentedViewController as? PastedTextSheetHostingController)
+        sut.resetSelection()
+        sheet.finish(.saved(AIChatPastedText(content: "edited")))
+
+        XCTAssertTrue(strip.attachments.isEmpty)
+        XCTAssertEqual(firedPixels.map(\.name), ["aichat_unified_input_pasted_text_attached", "aichat_unified_input_pasted_text_sheet_opened"])
+        XCTAssertEqual(dismissals, 1)
+    }
+
+    func testTappingANonPastedChipOpensNothing() {
+        strip.addAttachment(.file(AIChatFileAttachment(data: Data([1]), fileName: "doc.pdf", mimeType: "application/pdf")))
+
+        strip.onAttachmentTapped?(strip.attachments[0].id)
+
+        XCTAssertNil(window.rootViewController?.presentedViewController)
+        XCTAssertTrue(firedPixels.isEmpty)
+    }
+
+    private var firedPixels: [(name: String, surface: String?)] {
+        pixels.actualFireCalls.map { ($0.pixel.name, $0.pixel.parameters?["surface"]) }
     }
 }
 

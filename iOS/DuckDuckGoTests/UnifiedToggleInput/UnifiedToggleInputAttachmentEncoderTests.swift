@@ -23,6 +23,19 @@ import XCTest
 
 final class UnifiedToggleInputAttachmentEncoderTests: XCTestCase {
 
+    func testAttachmentsSelectedCountsTabsImagesAndFilesButNotPastes() {
+        let paste = UnifiedToggleInputAttachment.pastedText(AIChatPastedText(content: "pasted"))
+        let tab = UnifiedToggleInputAttachment.tab(UnifiedToggleInputTabAttachment(tabId: "tab", title: "Page",
+                                                                                   url: URL(string: "https://example.com")!,
+                                                                                   source: .recentTabs))
+
+        XCTAssertFalse([UnifiedToggleInputAttachment]().hasAttachmentsSelected)
+        XCTAssertFalse([paste].hasAttachmentsSelected)
+        XCTAssertTrue([paste, tab].hasAttachmentsSelected)
+        XCTAssertTrue([paste, .image(makeImageAttachment())].hasAttachmentsSelected)
+        XCTAssertTrue([.file(makeFileAttachment())].hasAttachmentsSelected)
+    }
+
     func testNothingAttachedEncodesNoKinds() {
         XCTAssertEqual(encode([]), .none)
     }

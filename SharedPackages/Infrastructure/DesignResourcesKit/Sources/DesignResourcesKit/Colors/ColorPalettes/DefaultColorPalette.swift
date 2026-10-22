@@ -344,8 +344,6 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .black.opacity(0.84), darkColor: .white.opacity(0.88))
         case .unifiedToggleInputAttachmentErrorIcon:
             return DynamicColor(staticColor: xD4452F)
-        case .tabSwitcherTrackerCountBackground:
-            return DynamicColor(lightColor: .green0, darkColor: .x2C3A2A)
         case let .rebranding(rebrandingColor):
             return dynamicColor(for: rebrandingColor)
         case .toolbarButton:

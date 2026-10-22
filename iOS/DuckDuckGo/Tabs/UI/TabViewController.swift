@@ -89,6 +89,8 @@ enum WebViewPreviewSnapshotGeometry {
 
 enum WebViewPreviewSnapshotPolicy {
 
+    static let timeout: TimeInterval = 1
+
     static func shouldCapture(isLoading: Bool) -> Bool {
         !isLoading
     }
@@ -205,6 +207,7 @@ class TabViewController: UIViewController {
     let tabInteractionStateSource: TabInteractionStateSource?
 
     var isLinkPreview = false
+    var linkPreviewNavigationCancellable: AnyCancellable?
 
     // A workaround for an issue when in some cases webview reports `isLoading == true` when it was stoppped.
     var isLoading: Bool {
@@ -781,6 +784,7 @@ class TabViewController: UIViewController {
     private let tabTerminationErrorPageInstrumentation: any TabTerminationErrorPageInstrumenting
     private lazy var terminationReloadMonitor = TerminationReloadMonitor(pixelFiring: pixelFiring)
     private let freezeMonitor: WebContentFreezeMonitor
+    private let previewSnapshotCapturer = WebViewPreviewSnapshotCapturer()
 
     private(set) var aiChatContentHandler: AIChatContentHandling
     private(set) var voiceSearchHelper: VoiceSearchHelperProtocol
@@ -3041,7 +3045,8 @@ extension TabViewController: WKNavigationDelegate {
     /// Captures a preview of the current web content via WebKit's asynchronous `takeSnapshot`, which
     /// renders out of process rather than blocking the main thread. Falls back to `preparePreviewSync`
     /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
-    func preparePreview(completion: @escaping (UIImage?) -> Void) {
+    /// `reportTimeout` fires `web-content_preview-snapshot-timeout` when the snapshot times out; only the tab switcher sets it.
+    func preparePreview(reportTimeout: Bool = false, completion: @escaping (UIImage?) -> Void) {
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
@@ -3070,11 +3075,13 @@ extension TabViewController: WKNavigationDelegate {
                 return
             }
 
-            let configuration = makePreviewSnapshotConfiguration(
-                rect: visibleRect,
-                windowSize: webView.window?.bounds.size ?? visibleRect.size,
-                afterScreenUpdates: true)
-            webView.takeSnapshot(with: configuration) { image, _ in
+            previewSnapshotCapturer.capture(webView: webView,
+                                            rect: visibleRect,
+                                            timeout: WebViewPreviewSnapshotPolicy.timeout,
+                                            waitForScreenUpdates: true) { [weak self] image, result in
+                if reportTimeout, result.isTimeout {
+                    self?.freezeMonitor.previewSnapshotTimedOut(result: result)
+                }
                 completion(image)
             }
         }
@@ -3097,25 +3104,14 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
-        let configuration = makePreviewSnapshotConfiguration(
-            rect: rect,
-            windowSize: webView.window?.bounds.size ?? rect.size,
-            afterScreenUpdates: false)
-        webView.takeSnapshot(with: configuration) { image, _ in
+        previewSnapshotCapturer.capture(webView: webView,
+                                        rect: rect,
+                                        timeout: WebViewPreviewSnapshotPolicy.timeout,
+                                        waitForScreenUpdates: false) { image, _ in
             DispatchQueue.main.async {
                 completion(image)
             }
         }
-    }
-
-    private func makePreviewSnapshotConfiguration(rect: CGRect,
-                                                  windowSize: CGSize,
-                                                  afterScreenUpdates: Bool) -> WKSnapshotConfiguration {
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = rect
-        configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize))
-        configuration.afterScreenUpdates = afterScreenUpdates
-        return configuration
     }
 
     /// Renders the web view on the calling thread. `drawHierarchy` blocks until the render server
@@ -4915,6 +4911,8 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
+        pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
+
         if #available(iOS 16.0, *) {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction

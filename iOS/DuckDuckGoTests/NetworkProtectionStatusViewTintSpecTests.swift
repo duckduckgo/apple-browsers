@@ -31,9 +31,7 @@ final class NetworkProtectionStatusViewTintSpecTests: XCTestCase {
 
     func testTintSpecKeypathsExistInBundledAnimations() throws {
         let animations: [(name: String, spec: TintSpec)] = [
-            ("vpn-animation", .rebranded),
-            ("vpn-light-mode-legacy", .legacy),
-            ("vpn-dark-mode-legacy", .legacy)
+            ("vpn-animation", .rebranded)
         ]
 
         for (name, spec) in animations {

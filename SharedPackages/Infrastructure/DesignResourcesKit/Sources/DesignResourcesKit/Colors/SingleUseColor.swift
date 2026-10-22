@@ -66,9 +66,6 @@ public enum SingleUseColor {
     case unifiedToggleInputListeningGlowReducedMotionRing
     case unifiedToggleInputListeningGlowReducedMotionHalo
 
-    /// Tab switcher tracker count info panel background color
-    case tabSwitcherTrackerCountBackground
-
     /// Colors introduced for the 2026 rebrand. Some have the same value as a `DesignSystemColor` (e.g. `accentPrimary`,
     /// `destructivePrimary`) – for new code, prefer using the `DesignSystemColor` instead.
     case rebranding(Rebranding)

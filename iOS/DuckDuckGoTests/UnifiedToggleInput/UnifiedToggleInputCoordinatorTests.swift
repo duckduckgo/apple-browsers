@@ -1637,6 +1637,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_activateFromOmnibar_withPrefilledTextAndToggleEnabled_selectsAllText() throws {
         let text = "test query"
+        let sut = makeSynchronousFocusCoordinator()
         sut.updateToggleEnabled(true)
         sut.activateFromOmnibar(prefilledText: text)
         let textField = try XCTUnwrap(firstDescendant(of: UITextField.self, in: sut.viewController.view))
@@ -1647,6 +1648,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_activateFromOmnibar_withPrefilledAIChatText_selectsAllText() throws {
         let text = "test prompt"
+        let sut = makeSynchronousFocusCoordinator()
         sut.activateFromOmnibar(prefilledText: text, inputMode: .aiChat)
         // Scoped to the text entry: the footer card carries a text view of its own.
         let textEntry = try XCTUnwrap(firstDescendant(of: SwitchBarTextEntryView.self, in: sut.viewController.view))
@@ -1658,12 +1660,29 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_activateFromOmnibar_withPrefilledTextAndToggleDisabled_selectsAllText() throws {
         let text = "test query"
+        let sut = makeSynchronousFocusCoordinator()
         sut.updateToggleEnabled(false)
         sut.activateFromOmnibar(prefilledText: text)
         let textField = try XCTUnwrap(firstDescendant(of: UITextField.self, in: sut.viewController.view))
 
         XCTAssertFalse(textField.isHidden)
         assertAllTextIsSelected(in: textField, expectedLength: text.utf16.count)
+    }
+
+    private func makeSynchronousFocusCoordinator() -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            featureDiscovery: mockFeatureDiscovery,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            scheduleOmnibarFocus: { $0() }
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
     }
 
     func test_activateFromOmnibar_toggleDisabled_forcesSearchMode() {
@@ -4222,20 +4241,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     private func assertAllTextIsSelected(in textInput: UIView & UITextInput, expectedLength: Int, file: StaticString = #filePath, line: UInt = #line) {
-        let expectation = expectation(description: "All prefilled text selected")
-        DispatchQueue.main.async {
-            DispatchQueue.main.async {
-                guard let selectedRange = textInput.selectedTextRange else {
-                    XCTFail("Expected a selected text range", file: file, line: line)
-                    expectation.fulfill()
-                    return
-                }
-                XCTAssertEqual(textInput.offset(from: textInput.beginningOfDocument, to: selectedRange.start), 0, file: file, line: line)
-                XCTAssertEqual(textInput.offset(from: selectedRange.start, to: selectedRange.end), expectedLength, file: file, line: line)
-                expectation.fulfill()
-            }
+        guard let selectedRange = textInput.selectedTextRange else {
+            XCTFail("Expected a selected text range", file: file, line: line)
+            return
         }
-        waitForExpectations(timeout: 1)
+        XCTAssertEqual(textInput.offset(from: textInput.beginningOfDocument, to: selectedRange.start), 0, file: file, line: line)
+        XCTAssertEqual(textInput.offset(from: selectedRange.start, to: selectedRange.end), expectedLength, file: file, line: line)
     }
 
     private func firstDescendant<View: UIView>(of type: View.Type, in view: UIView) -> View? {

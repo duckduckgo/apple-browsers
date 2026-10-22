@@ -467,6 +467,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
     case pdfPageContext
 
+    /// Attaches page context to the sidebar by default; a manual remove lasts across navigation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
+    case pageContextAutoAttach
+
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
     case sidebarAttachMoreTabs
 
@@ -1046,4 +1050,6 @@ public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature
     case bitwarden
     case onePassword
     case lastPass
+    case iCloudPasswords
+    case darkReader
 }

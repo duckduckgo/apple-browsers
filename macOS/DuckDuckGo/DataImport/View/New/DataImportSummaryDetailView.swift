@@ -284,21 +284,6 @@ struct DataImportSummaryDetailView: View {
     }
 }
 
-private struct CloseButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .background(
-                configuration.isPressed
-                ? Color(designSystemColor: .buttonsPrimaryPressed)
-                : Color(designSystemColor: .buttonsPrimaryDefault)
-            )
-            .foregroundColor(.white)
-            .cornerRadius(6)
-    }
-}
-
 #if DEBUG
 #Preview("Passwords - Duplicates & Failures") {
     DataImportSummaryDetailView(

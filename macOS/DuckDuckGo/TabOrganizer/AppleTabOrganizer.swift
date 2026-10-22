@@ -51,11 +51,19 @@ final class AppleTabOrganizer: TabOrganizing {
         case .groupByTopic:
             return TabOrganizerProposalBuilder.proposal(from: try await topicLabels(for: tabs), tabs: tabs)
         case .instruction(let text):
+            // A separate, tiny question first: the small model answers "how many groups" reliably on its own,
+            // but not as an optional field inside the bigger answer.
+            let shape = try await requestShape(text)
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
             let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
-            if let criterion = response.groupBy {
-                return try await split(response, by: criterion, tabs: tabs)
+            if shape.wantsSeveralGroups {
+                if shape.namedCategories.count >= 2 {
+                    return try await sort(tabs, into: shape.namedCategories, response: response)
+                }
+                if let criterion = response.groupBy {
+                    return try await split(response, by: criterion, tabs: tabs)
+                }
             }
             return TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs)
         }
@@ -66,6 +74,34 @@ final class AppleTabOrganizer: TabOrganizing {
     Each suggestion is an action plus a broad category of tabs, like news, streaming, shopping, travel or work. \
     Never name a single site or brand. Use a different category for each suggestion.
     """
+
+    private static let shapeInstructions = """
+    You read what a person asks about their open browser tabs and say how many separate groups of tabs they want.
+    """
+
+    private func requestShape(_ text: String) async throws -> (wantsSeveralGroups: Bool, namedCategories: [String]) {
+        let session = LanguageModelSession(instructions: Self.shapeInstructions)
+        let shape = try await session.respond(to: "Request: \(text)", generating: GeneratedRequestShape.self).content
+        var seen = Set<String>()
+        let categories = shape.namedCategories
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
+        return (shape.wantsSeveralGroups, categories)
+    }
+
+    /// "find AI safety and shopping tabs": the person's own categories become the groups.
+    private func sort(_ tabs: [TabSnapshot], into categories: [String], response: InstructionResponse) async throws -> TabOrganizerProposal {
+        var groups = TabOrganizerProposalBuilder.proposal(from: try await labels(for: tabs, topics: categories), tabs: tabs).groups
+        for index in groups.indices {
+            if groups[index].name == TabOrganizerProposalBuilder.otherGroupName {
+                groups[index].name = TabOrganizerProposalBuilder.everythingElseGroupName
+                groups[index].action = response.actionForOthers
+            } else {
+                groups[index].action = response.actionForMatching
+            }
+        }
+        return TabOrganizerProposal(groups: groups)
+    }
 
     /// Groups the matching tabs by `criterion` with the same two phases as group by topic.
     private func split(_ response: InstructionResponse, by criterion: String, tabs: [TabSnapshot]) async throws -> TabOrganizerProposal {
@@ -92,6 +128,11 @@ final class AppleTabOrganizer: TabOrganizing {
     /// for the whole window, then it assigns tabs to exactly those topics in batches of 10.
     private func topicLabels(for tabs: [TabSnapshot], criterion: String? = nil) async throws -> TopicResponse {
         let topics = try await broadTopics(for: tabs, criterion: criterion)
+        return try await labels(for: tabs, topics: topics)
+    }
+
+    /// Puts every tab into one of `topics` (or Other), 10 tabs at a time, with a second pass for skipped tabs.
+    private func labels(for tabs: [TabSnapshot], topics: [String]) async throws -> TopicResponse {
         guard !topics.isEmpty else { return TopicResponse(labels: []) }
 
         var labels: [TopicResponse.Label] = []
@@ -242,6 +283,15 @@ struct GeneratedSuggestion {
 struct GeneratedSuggestions {
     @Guide(description: "Suggestions about different categories, using a mix of actions", .count(5))
     var suggestions: [GeneratedSuggestion]
+}
+
+@available(macOS 26.0, *)
+@Generable
+struct GeneratedRequestShape {
+    @Guide(description: "true only when the request asks for more than one separate group of tabs, like 'find news and shopping tabs' or 'separate dogs by breed'")
+    var wantsSeveralGroups: Bool
+    @Guide(description: "The categories of tabs the request names, like news and shopping. Empty when it names fewer than two")
+    var namedCategories: [String]
 }
 
 @available(macOS 26.0, *)

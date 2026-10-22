@@ -46,10 +46,7 @@ enum TabGroupAction: String, CaseIterable, Codable {
     case addToFavorites
     case createTabGroup
     case ungroup
-    /// Only from "rename X to Y"; the new name is in `ProposedGroup.newName`.
-    case rename
 
-    /// What the action pickers offer; Rename only makes sense with a new name.
     static let choices: [TabGroupAction] = [.createTabGroup, .keep, .close, .moveToNewWindow, .bookmark, .addToFavorites, .ungroup]
 }
 
@@ -58,13 +55,10 @@ struct ProposedGroup: Identifiable, Equatable {
     var name: String
     var tabIDs: [String]
     var action: TabGroupAction
-    var newName: String?
 }
 
 struct TabOrganizerProposal: Equatable {
     var groups: [ProposedGroup]
-    /// Set for requests like "a bookmark folder for each group": on top of existing results only the action changes.
-    var actionForEachGroup: TabGroupAction?
 }
 
 enum TabOrganizerError: Error {
@@ -94,12 +88,4 @@ struct InstructionResponse: Codable {
     let actionForOthers: TabGroupAction
     /// Set when the request asks to split the matching tabs, e.g. "breed" for "separate dogs by breed".
     var groupBy: String?
-    /// "A bookmark folder for each group", "close every group": the action applies per group, not to one match.
-    var forEachGroup = false
-    var groupEdit: GroupEdit = .none
-    var newName: String?
-
-    enum GroupEdit: String, Codable {
-        case none, merge, moveInto, ungroup, rename
-    }
 }

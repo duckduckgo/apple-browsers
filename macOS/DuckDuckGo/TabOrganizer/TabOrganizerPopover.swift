@@ -205,14 +205,7 @@ final class TabOrganizerViewModel: ObservableObject {
                 let proposal = try await AppleTabOrganizer().organize(snapshotsForModel, request: request)
                 guard !Task.isCancelled else { return }
                 tabs = snapshots
-                if case .instruction = request, !groups.isEmpty, let action = proposal.actionForEachGroup {
-                    // Leftover tabs aren't a group anyone asked about.
-                    let leftovers = [TabOrganizerProposalBuilder.otherGroupName, TabOrganizerProposalBuilder.everythingElseGroupName]
-                    for index in groups.indices where !leftovers.contains(groups[index].name) {
-                        groups[index].action = action
-                    }
-                    notice = nil
-                } else if case .instruction = request, !groups.isEmpty {
+                if case .instruction = request, !groups.isEmpty {
                     refine(with: proposal)
                 } else {
                     groups = proposal.groups
@@ -399,12 +392,12 @@ final class TabOrganizerViewModel: ObservableObject {
     }
 
     private func changedTabIDs(in group: ProposedGroup) -> [String] {
-        guard group.action != .keep, group.action != .rename else { return [] }
+        guard group.action != .keep else { return [] }
         return group.tabIDs.filter { selectedTabIDs.contains($0) && !isUnchanged($0, in: group) && tab(withID: $0)?.isPinned != true }
     }
 
     var changeCount: Int {
-        groups.reduce(0) { $0 + changedTabIDs(in: $1).count } + groups.filter { $0.action == .rename }.count
+        groups.reduce(0) { $0 + changedTabIDs(in: $1).count }
     }
 
     var isCloseOnly: Bool {
@@ -446,7 +439,6 @@ final class TabOrganizerViewModel: ObservableObject {
     func apply() {
         let selectedGroups = groups.compactMap { group -> ProposedGroup? in
             guard group.action != .keep else { return nil }
-            guard group.action != .rename else { return group }
             var selected = group
             selected.tabIDs = selectedTabIDs(for: group.action).filter(group.tabIDs.contains)
             return selected.tabIDs.isEmpty ? nil : selected
@@ -466,7 +458,6 @@ extension TabGroupAction {
         case .addToFavorites: return "Add to favorites"
         case .createTabGroup: return "Tab group"
         case .ungroup: return "Ungroup"
-        case .rename: return "Rename"
         }
     }
 }
@@ -749,10 +740,7 @@ struct TabOrganizerView: View {
             }
             Text("\(group.tabIDs.count)").foregroundColor(.secondary)
             Spacer()
-            if group.action == .rename, let newName = group.newName {
-                Text("Rename to \(newName)").foregroundColor(.accentColor)
-            } else {
-                Picker("", selection: Binding(get: { group.action },
+            Picker("", selection: Binding(get: { group.action },
                                               set: { viewModel.setAction($0, for: group) })) {
                     ForEach(TabGroupAction.choices, id: \.self) { action in
                         Text(action.title).tag(action)
@@ -761,7 +749,6 @@ struct TabOrganizerView: View {
                 .labelsHidden()
                 .pickerStyle(.menu)
                 .fixedSize()
-            }
             Menu {
                 Button("Rename…") { viewModel.renameProposedGroup(group) }
                 let others = viewModel.groups.filter { $0.id != group.id }

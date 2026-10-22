@@ -54,18 +54,11 @@ final class AppleTabOrganizer: TabOrganizing {
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
             let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
-            // The small model over-reports "each group", so it also has to be in the words.
-            if response.forEachGroup, Self.mentionsEveryGroup(text) {
-                return try await eachGroup(tabs, action: response.actionForMatching)
-            }
             if let criterion = response.groupBy {
                 return try await split(response, by: criterion, tabs: tabs)
             }
-            // "the shopping group": a named tab group is matched in code, not left to the model.
+            // "the shopping group": a tab group named in the request is matched in code, not by the model.
             let namedGroups = Self.groupNames(mentionedIn: text, tabs: tabs)
-            if let proposal = Self.groupEditProposal(response, namedGroups: namedGroups, tabs: tabs) {
-                return proposal
-            }
             if !namedGroups.isEmpty, response.actionForMatching != .keep {
                 return Self.proposal(for: namedGroups, action: response.actionForMatching, tabs: tabs)
             }
@@ -103,57 +96,17 @@ final class AppleTabOrganizer: TabOrganizing {
         return TabOrganizerProposal(groups: groups)
     }
 
-    static func mentionsEveryGroup(_ text: String) -> Bool {
-        let words = Set(text.lowercased().components(separatedBy: CharacterSet.letters.inverted))
-        return !words.isDisjoint(with: ["each", "every", "all"])
-    }
-
     /// Existing tab group names that appear in the request, whole words, ignoring case.
     static func groupNames(mentionedIn text: String, tabs: [TabSnapshot]) -> [String] {
         let request = " " + text.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: " ") + " "
-        var found: [(name: String, position: String.Index)] = []
-        for name in tabs.compactMap(\.groupName) where !found.contains(where: { $0.name == name }) {
+        var names: [String] = []
+        for name in tabs.compactMap(\.groupName) where !names.contains(name) {
             let normalized = name.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: " ")
-            if let range = request.range(of: " \(normalized) ") {
-                found.append((name, range.lowerBound))
+            if request.contains(" \(normalized) ") {
+                names.append(name)
             }
         }
-        // In the order the request names them: "merge News and Tech" keeps News.
-        return found.sorted { $0.position < $1.position }.map(\.name)
-    }
-
-    /// Merge, move into, ungroup and rename. The model only says which edit; the groups are the ones named in
-    /// the request, and an edit that doesn't fit them falls back to a plain find.
-    static func groupEditProposal(_ response: InstructionResponse, namedGroups: [String], tabs: [TabSnapshot]) -> TabOrganizerProposal? {
-        func members(_ name: String) -> [String] { tabs.filter { $0.groupName == name }.map(\.id) }
-        func withEverythingElse(_ groups: [ProposedGroup]) -> TabOrganizerProposal {
-            let used = Set(groups.flatMap(\.tabIDs))
-            let others = tabs.map(\.id).filter { !used.contains($0) }
-            let everythingElse = ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: .keep)
-            return TabOrganizerProposal(groups: others.isEmpty ? groups : groups + [everythingElse])
-        }
-
-        switch response.groupEdit {
-        case .merge where namedGroups.count >= 2:
-            let target = namedGroups[0]
-            return withEverythingElse([ProposedGroup(name: target, tabIDs: namedGroups.flatMap(members), action: .createTabGroup)])
-        case .moveInto where !namedGroups.isEmpty:
-            let target = namedGroups.last!
-            let moving = response.matchingTabNumbers
-                .compactMap { tabs.indices.contains($0 - 1) ? tabs[$0 - 1] : nil }
-                .filter { $0.groupName != target }
-                .map(\.id)
-            guard !moving.isEmpty else { return nil }
-            return withEverythingElse([ProposedGroup(name: target, tabIDs: members(target) + moving, action: .createTabGroup)])
-        case .ungroup where !namedGroups.isEmpty:
-            return withEverythingElse(namedGroups.map { ProposedGroup(name: $0, tabIDs: members($0), action: .ungroup) })
-        case .rename where namedGroups.count == 1:
-            guard let newName = response.newName, !newName.isEmpty,
-                  newName.caseInsensitiveCompare(namedGroups[0]) != .orderedSame else { return nil }
-            return withEverythingElse([ProposedGroup(name: namedGroups[0], tabIDs: members(namedGroups[0]), action: .rename, newName: newName)])
-        default:
-            return nil
-        }
+        return names
     }
 
     static func proposal(for groupNames: [String], action: TabGroupAction, tabs: [TabSnapshot]) -> TabOrganizerProposal {
@@ -165,24 +118,6 @@ final class AppleTabOrganizer: TabOrganizing {
             groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: .keep))
         }
         return TabOrganizerProposal(groups: groups)
-    }
-
-    /// The window's tab groups with `action`; without tab groups, the topics from group by topic.
-    private func eachGroup(_ tabs: [TabSnapshot], action: TabGroupAction) async throws -> TabOrganizerProposal {
-        let labels: TopicResponse
-        if tabs.contains(where: { $0.groupName != nil }) {
-            labels = TopicResponse(labels: tabs.enumerated().compactMap { index, tab in
-                tab.groupName.map { TopicResponse.Label(tabNumber: index + 1, topic: $0) }
-            })
-        } else {
-            labels = try await topicLabels(for: tabs)
-        }
-        var proposal = TabOrganizerProposalBuilder.proposal(from: labels, tabs: tabs)
-        for index in proposal.groups.indices where proposal.groups[index].name != TabOrganizerProposalBuilder.otherGroupName {
-            proposal.groups[index].action = action
-        }
-        proposal.actionForEachGroup = action
-        return proposal
     }
 
     static let topicBatchSize = 10
@@ -288,7 +223,6 @@ final class AppleTabOrganizer: TabOrganizing {
         func lines(excerptLimit: Int) -> String {
             zip(numbers, tabs).map { number, tab in
                 var line = "\(number). \(tab.title) — \(tab.host)\(tab.path)"
-                if let groupName = tab.groupName { line += " (in group \(groupName))" }
                 if let pageType = tab.pageType { line += " [\(pageType)]" }
                 if let excerpt = tab.excerpt, excerptLimit > 0 { line += ": \(excerpt.prefix(excerptLimit))" }
                 return line
@@ -392,23 +326,7 @@ struct GeneratedTopicResponse {
 
 @available(macOS 26.0, *)
 @Generable
-enum GeneratedGroupEdit {
-    case none
-    case merge
-    case moveInto
-    case ungroup
-    case rename
-}
-
-@available(macOS 26.0, *)
-@Generable
 struct GeneratedInstructionResponse {
-    @Guide(description: "merge: combine tab groups. moveInto: move some tabs into a tab group. ungroup: dissolve a tab group. rename: rename a tab group. none: anything else")
-    var groupEdit: GeneratedGroupEdit
-    @Guide(description: "For rename only: the new group name. Empty otherwise")
-    var newName: String
-    @Guide(description: "true when the request asks to do something for each tab group or each topic, like 'a bookmark folder for each group' or 'move every group to its own window'")
-    var forEachGroup: Bool
     @Guide(description: "Short name for the matching tabs, 1 to 3 words")
     var name: String
     @Guide(description: "Numbers of the tabs the request is about")
@@ -426,19 +344,6 @@ struct GeneratedInstructionResponse {
                                    matchingTabNumbers: matchingTabNumbers,
                                    actionForMatching: actionForMatching.contract,
                                    actionForOthers: actionForOthers.contract,
-                                   groupBy: criterion.isEmpty ? nil : criterion,
-                                   forEachGroup: forEachGroup,
-                                   groupEdit: groupEditContract,
-                                   newName: newName.trimmingCharacters(in: .whitespacesAndNewlines))
-    }
-
-    private var groupEditContract: InstructionResponse.GroupEdit {
-        switch groupEdit {
-        case .none: return .none
-        case .merge: return .merge
-        case .moveInto: return .moveInto
-        case .ungroup: return .ungroup
-        case .rename: return .rename
-        }
+                                   groupBy: criterion.isEmpty ? nil : criterion)
     }
 }

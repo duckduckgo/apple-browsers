@@ -522,15 +522,46 @@ final class DuckAINudgePopover: NSPopover {
         behavior = .semitransient
         animates = true
         let view = DuckAINudgeCalloutView(nudge: nudge, onPrompt: onPrompt, onDismiss: onDismiss)
-        let controller = NSHostingController(rootView: view)
-        if #available(macOS 13, *) {
-            controller.sizingOptions = .preferredContentSize
-        }
-        contentViewController = controller
+        contentViewController = DuckAINudgeCalloutViewController(rootView: view)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+/// Clicks in a popover that isn't key are otherwise swallowed to activate it, so the first click on a chip did nothing.
+private final class DuckAINudgeHostingView: NSHostingView<DuckAINudgeCalloutView> {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+}
+
+private final class DuckAINudgeCalloutViewController: NSViewController {
+
+    private let rootView: DuckAINudgeCalloutView
+
+    init(rootView: DuckAINudgeCalloutView) {
+        self.rootView = rootView
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        let hostingView = DuckAINudgeHostingView(rootView: rootView)
+        hostingView.frame.size = hostingView.fittingSize
+        preferredContentSize = hostingView.fittingSize
+        view = hostingView
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+        // The popover otherwise focuses its first control and draws a focus ring around the X.
+        view.window?.makeFirstResponder(nil)
+        DispatchQueue.main.async { [weak self] in
+            self?.view.window?.makeFirstResponder(nil)
+        }
     }
 }
 

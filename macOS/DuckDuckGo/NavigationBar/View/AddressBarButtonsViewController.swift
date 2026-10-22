@@ -3397,14 +3397,23 @@ extension AddressBarButtonsViewController {
         let name = "duckai.nudge.dot"
         layer.sublayers?.filter { $0.name == name }.forEach { $0.removeFromSuperlayer() }
         guard visible else { return }
+        layer.masksToBounds = false
         let dot = CALayer()
         dot.name = name
-        let side: CGFloat = 8
-        dot.frame = CGRect(x: 10, y: button.isFlipped ? 3 : button.bounds.height - side - 3, width: side, height: side)
+        let side: CGFloat = 12
+        dot.frame = CGRect(x: 18, y: button.isFlipped ? 1 : button.bounds.height - side - 1, width: side, height: side)
         dot.cornerRadius = side / 2
-        dot.backgroundColor = NSColor.controlAccentColor.cgColor
-        dot.borderColor = NSColor.windowBackgroundColor.cgColor
-        dot.borderWidth = 1.5
+        dot.backgroundColor = NSColor(srgbRed: 0.22, green: 0.41, blue: 0.94, alpha: 1).cgColor
+        dot.borderColor = NSColor.white.cgColor
+        dot.borderWidth = 2
+        dot.zPosition = 100
+        let pulse = CABasicAnimation(keyPath: "transform.scale")
+        pulse.fromValue = 1
+        pulse.toValue = 1.25
+        pulse.duration = 0.6
+        pulse.autoreverses = true
+        pulse.repeatCount = 3
+        dot.add(pulse, forKey: "pulse")
         layer.addSublayer(dot)
     }
 
@@ -3454,7 +3463,7 @@ extension AddressBarButtonsViewController {
             self.showNudgePopover(nudge)
         }
         nudgeAutoOpenWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: workItem)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5, execute: workItem)
     }
 
     private func showNudgePopover(_ nudge: DuckAINudge) {

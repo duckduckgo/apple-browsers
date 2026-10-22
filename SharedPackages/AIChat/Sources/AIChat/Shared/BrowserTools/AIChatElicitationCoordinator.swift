@@ -36,7 +36,7 @@ public struct PendingElicitation: Equatable, Sendable {
 }
 
 /// Correlates a pushed prompt with the `elicitation/response` that answers it. An unanswered prompt
-/// resolves as `cancel` when the timeout lapses.
+/// resolves as `cancel` when the timeout lapses, or when the call waiting on it is cancelled.
 @MainActor
 public final class AIChatElicitationCoordinator {
 
@@ -66,23 +66,31 @@ public final class AIChatElicitationCoordinator {
                        requestedSchema: JSONValue,
                        ownerTabID: String,
                        pusher: (any AIChatElicitationPushing)?) async -> MCPElicitationResult {
-        guard let pusher else { return .cancel }
+        guard let pusher, !Task.isCancelled else { return .cancel }
         let id = makeID()
         let params = MCPElicitationCreateParams(id: id, message: message, requestedSchema: requestedSchema)
         let info = PendingElicitation(id: id, ownerTabID: ownerTabID, toolName: toolName, message: message)
 
-        return await withCheckedContinuation { continuation in
-            // Registered before the push so an answer that arrives synchronously still correlates.
-            let timeoutTask = Task { [weak self, timeout] in
-                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                guard !Task.isCancelled else { return }
-                self?.complete(id: id, result: .cancel)
-            }
-            entries[id] = Entry(info: info, continuation: continuation, timeout: timeoutTask)
-            order.append(id)
+        return await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                // Registered before the push so an answer that arrives synchronously still correlates.
+                let timeoutTask = Task { [weak self, timeout] in
+                    try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                    guard !Task.isCancelled else { return }
+                    self?.complete(id: id, result: .cancel)
+                }
+                entries[id] = Entry(info: info, continuation: continuation, timeout: timeoutTask)
+                order.append(id)
 
-            if !pusher.pushElicitationCreate(params) {
-                complete(id: id, result: .cancel)
+                if !pusher.pushElicitationCreate(params) {
+                    complete(id: id, result: .cancel)
+                }
+            }
+        } onCancel: {
+            // Runs on whichever thread cancelled; the entry is only touched on the main actor, where
+            // it is registered by the time this hop runs.
+            Task { @MainActor [weak self] in
+                self?.complete(id: id, result: .cancel)
             }
         }
     }

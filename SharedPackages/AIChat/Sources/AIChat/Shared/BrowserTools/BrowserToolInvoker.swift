@@ -23,11 +23,18 @@ import Foundation
 @MainActor
 public final class BrowserToolInvoker {
 
+    /// Call ids are chosen by the front end, so they are only unique within one chat.
+    private struct CallKey: Hashable {
+        let ownerTabID: String
+        let callID: String
+    }
+
     private let catalog: BrowserToolCatalog
     private let configuration: BrowserToolsConfiguration
     private let permissions: BrowserToolPermissionStoring
     private let elicitations: AIChatElicitationCoordinator
     private let openedTabs: BrowserToolOpenedTabs
+    private var inFlightCalls: [CallKey: Task<BrowserToolResult, Never>] = [:]
 
     public init(catalog: BrowserToolCatalog,
                 configuration: BrowserToolsConfiguration,
@@ -41,12 +48,52 @@ public final class BrowserToolInvoker {
         self.openedTabs = openedTabs
     }
 
-    /// - Parameter elicitationPusher: where a permission prompt for this call is delivered. `nil`
-    ///   means it cannot be, so an `ask` tool completes as `cancelled`.
+    /// - Parameters:
+    ///   - callID: lets `cancelCall` stop this call later. Without one the call cannot be cancelled.
+    ///   - elicitationPusher: where a permission prompt for this call is delivered. `nil` means it
+    ///     cannot be, so an `ask` tool completes as `cancelled`.
     public func invoke(toolNamed name: String,
                        arguments: JSONValue?,
                        context: BrowserToolCallContext,
+                       callID: String? = nil,
                        elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
+        guard let callID, !callID.isEmpty else {
+            return await run(toolNamed: name, arguments: arguments, context: context, elicitationPusher: elicitationPusher)
+        }
+
+        // Its own task, so cancelling it reaches the prompt and the tool but not the bridge's reply.
+        let key = CallKey(ownerTabID: context.ownerTabID, callID: callID)
+        let task = Task {
+            await self.run(toolNamed: name, arguments: arguments, context: context, elicitationPusher: elicitationPusher)
+        }
+        inFlightCalls[key] = task
+        let result = await task.value
+        // A reused call id may already belong to a newer call.
+        if inFlightCalls[key] == task {
+            inFlightCalls[key] = nil
+        }
+        return result
+    }
+
+    /// The call then completes as `cancelled`, closing anything it had started. False when no call
+    /// with that id is in flight for this chat.
+    @discardableResult
+    public func cancelCall(callID: String, ownerTabID: String) -> Bool {
+        guard let task = inFlightCalls[CallKey(ownerTabID: ownerTabID, callID: callID)] else { return false }
+        task.cancel()
+        return true
+    }
+
+    public func cancelCalls(ownerTabID: String) {
+        for (key, task) in inFlightCalls where key.ownerTabID == ownerTabID {
+            task.cancel()
+        }
+    }
+
+    private func run(toolNamed name: String,
+                     arguments: JSONValue?,
+                     context: BrowserToolCallContext,
+                     elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolResult {
         guard configuration.isEnabled else { return .failure(.unavailable) }
 
         // Covers an unknown name and a disabled sub-feature alike: the front end learns only that
@@ -77,7 +124,10 @@ public final class BrowserToolInvoker {
             }
         }
 
-        return await tool.execute(arguments: arguments, context: context)
+        guard !Task.isCancelled else { return .failure(.cancelled) }
+        let result = await tool.execute(arguments: arguments, context: context)
+        // A tool that finished without noticing still answers as cancelled: the front end asked to stop.
+        return Task.isCancelled ? .failure(.cancelled) : result
     }
 
     private func targetsTabOpenedByThisChat(_ tool: any BrowserTool, arguments: JSONValue?, context: BrowserToolCallContext) -> Bool {

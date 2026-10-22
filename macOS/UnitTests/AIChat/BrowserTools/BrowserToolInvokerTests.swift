@@ -403,6 +403,79 @@ final class BrowserToolInvokerTests: XCTestCase {
         XCTAssertFalse(tool.didExecute)
     }
 
+    // MARK: - Cancellation
+
+    func testWhenACallIsCancelledWhileItsPromptIsPendingThenItIsCancelledAndTheToolDoesNotRun() async throws {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        let pusher = SilentPusher()
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+        let call = Task { await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), callID: "call-1", elicitationPusher: pusher) }
+        try await waitUntil { !self.elicitations.pendingPrompts.isEmpty }
+
+        XCTAssertTrue(invoker.cancelCall(callID: "call-1", ownerTabID: "owner-tab"))
+        let result = await call.value
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertTrue(elicitations.pendingPrompts.isEmpty)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    /// The front end asked to stop, so even a tool that finishes regardless answers `cancelled`.
+    func testWhenACallIsCancelledWhileTheToolRunsThenItAnswersCancelled() async throws {
+        let tool = SlowBrowserTool(name: "alpha")
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+        let call = Task { await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), callID: "call-1", elicitationPusher: nil) }
+        try await waitUntil { tool.didStart }
+
+        invoker.cancelCall(callID: "call-1", ownerTabID: "owner-tab")
+        tool.finish()
+        let result = await call.value
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertTrue(tool.didFinish)
+    }
+
+    /// Call ids come from the front end, so one chat must not be able to stop another's call.
+    func testWhenAnotherChatCancelsTheSameCallIdThenTheCallContinues() async throws {
+        let tool = SlowBrowserTool(name: "alpha")
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+        let call = Task { await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), callID: "call-1", elicitationPusher: nil) }
+        try await waitUntil { tool.didStart }
+
+        XCTAssertFalse(invoker.cancelCall(callID: "call-1", ownerTabID: "other-chat"))
+        tool.finish()
+        let result = await call.value
+
+        XCTAssertEqual(result, .success([:]))
+    }
+
+    func testWhenAllOfAChatsCallsAreCancelledThenEachAnswersCancelled() async throws {
+        let first = SlowBrowserTool(name: "alpha")
+        let second = SlowBrowserTool(name: "beta")
+        let invoker = makeInvoker(tools: [first, second], enabledToolNames: ["alpha", "beta"])
+        let firstCall = Task { await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), callID: "call-1", elicitationPusher: nil) }
+        let secondCall = Task { await invoker.invoke(toolNamed: "beta", arguments: nil, context: context(), callID: "call-2", elicitationPusher: nil) }
+        try await waitUntil { first.didStart && second.didStart }
+
+        invoker.cancelCalls(ownerTabID: "owner-tab")
+        first.finish()
+        second.finish()
+        let firstResult = await firstCall.value
+        let secondResult = await secondCall.value
+
+        XCTAssertEqual(firstResult, .failure(.cancelled))
+        XCTAssertEqual(secondResult, .failure(.cancelled))
+    }
+
+    func testWhenNoCallHasTheIdThenCancellingReportsNothingWasCancelled() async {
+        let invoker = makeInvoker(tools: [SpyBrowserTool(name: "alpha")], enabledToolNames: ["alpha"])
+        _ = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), callID: "call-1", elicitationPusher: nil)
+
+        XCTAssertFalse(invoker.cancelCall(callID: "call-1", ownerTabID: "owner-tab"))
+        XCTAssertFalse(invoker.cancelCall(callID: "never-made", ownerTabID: "owner-tab"))
+    }
+
     // MARK: - Envelope
 
     func testWhenCallSucceedsThenItMapsOntoTheMCPEnvelopeWithoutError() {
@@ -431,6 +504,13 @@ final class BrowserToolInvokerTests: XCTestCase {
                                   permissions: permissions,
                                   elicitations: elicitations,
                                   openedTabs: openedTabs)
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async throws {
+        for _ in 0..<200 where !condition() {
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        XCTAssertTrue(condition())
     }
 
     private func context(isBurner: Bool = false, supportsElicitationForm: Bool = true) -> BrowserToolCallContext {
@@ -489,6 +569,42 @@ private final class SpyBrowserTool: BrowserTool {
         receivedContext = context
         return result
     }
+}
+
+/// Runs until `finish()`, and ignores cancellation, like a tool with no cancellation point of its own.
+private final class SlowBrowserTool: BrowserTool {
+    let name: String
+    var title: String { "Slow" }
+    var description: String { "Slow tool" }
+    let permissionMode = BrowserToolPermissionMode.auto
+    var inputSchema: JSONValue { ["type": "object"] }
+
+    private(set) var didStart = false
+    private(set) var didFinish = false
+    private var continuation: CheckedContinuation<Void, Never>?
+
+    init(name: String) {
+        self.name = name
+    }
+
+    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+        didStart = true
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+        }
+        didFinish = true
+        return .success([:])
+    }
+
+    func finish() {
+        continuation?.resume()
+        continuation = nil
+    }
+}
+
+/// Delivers the prompt and never answers it.
+private final class SilentPusher: AIChatElicitationPushing {
+    func pushElicitationCreate(_ params: MCPElicitationCreateParams) -> Bool { true }
 }
 
 private final class InMemoryPermissionStore: BrowserToolPermissionStoring {

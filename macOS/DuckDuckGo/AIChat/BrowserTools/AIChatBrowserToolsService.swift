@@ -45,6 +45,8 @@ final class AIChatBrowserToolsService {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let pushers = NSHashTable<AnyObject>.weakObjects()
     private var catalogChangeNotifier: BrowserToolCatalogChangeNotifier?
+    private var windowListCancellable: AnyCancellable?
+    private var tabListCancellable: AnyCancellable?
 
     /// Reported to the front end as `supportsBrowserTools`. The front end must not open a session
     /// when this is false, which also protects against version skew.
@@ -80,6 +82,7 @@ final class AIChatBrowserToolsService {
             signature: { [configuration, catalog] in configuration.isEnabled ? catalog.enabledTools.map(\.name) : [] },
             onChange: { [weak self] in self?.pushToolsListChanged() }
         )
+        watchForClosedTabs()
     }
 
     /// Registration order is the order the front end sees in `tools/list`.
@@ -97,6 +100,63 @@ final class AIChatBrowserToolsService {
             OpenTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, loadWaiter: TabPageLoadWaiter()),
             CloseTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs)
         ]
+    }
+
+    // MARK: - Duck.ai's tabs
+
+    /// Stops the chat's calls and closes the tabs it opened, once the page that made them is gone:
+    /// its session was re-initialized, or its owner tab closed.
+    func endSession(ownerTabID: TabIdentifier) {
+        invoker.cancelCalls(ownerTabID: ownerTabID)
+        for tabID in openedTabs.removeAll(ownerTabID: ownerTabID) {
+            BrowserToolTargetTab.closeUnpinnedTab(withID: tabID, in: windowControllersManager)
+        }
+    }
+
+    /// Same shape as `AIChatAttachedTabsTracker`: every window's tab lists, re-collected as windows
+    /// come and go, since a closed window takes its tabs without emptying the lists first.
+    private func watchForClosedTabs() {
+        windowListCancellable = Publishers.Merge(windowControllersManager.didRegisterWindowController.asVoid(),
+                                                 windowControllersManager.didUnregisterWindowController.asVoid())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.watchTabLists()
+                self?.handleClosedTabs()
+            }
+        watchTabLists()
+    }
+
+    private func watchTabLists() {
+        let lists = windowControllersManager.allTabCollectionViewModels.flatMap { collection -> [AnyPublisher<Void, Never>] in
+            var lists = [collection.tabCollection.$tabs.dropFirst().asVoid().eraseToAnyPublisher()]
+            if let pinnedTabs = collection.pinnedTabsCollection {
+                lists.append(pinnedTabs.$tabs.dropFirst().asVoid().eraseToAnyPublisher())
+            }
+            return lists
+        }
+        tabListCancellable = Publishers.MergeMany(lists)
+            // A move between windows is two mutations; read the lists once both have landed.
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.handleClosedTabs()
+            }
+    }
+
+    private func handleClosedTabs() {
+        guard !openedTabs.ownerTabIDs.isEmpty else { return }
+        let openTabIDs = Set(windowControllersManager.allTabCollectionViewModels
+            .flatMap { ($0.pinnedTabsCollection?.tabs ?? []) + $0.tabCollection.tabs }
+            .map(\.uuid))
+        for ownerTabID in openedTabs.ownerTabIDs {
+            guard openTabIDs.contains(ownerTabID) else {
+                endSession(ownerTabID: ownerTabID)
+                continue
+            }
+            // Closed by the user: forgotten, so they no longer count towards the chat's cap.
+            for tabID in openedTabs.tabIDs(ownerTabID: ownerTabID) where !openTabIDs.contains(tabID) {
+                openedTabs.remove(tabID)
+            }
+        }
     }
 
     // MARK: - Pushes

@@ -189,6 +189,13 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertTrue(mockHandler.didCallMCPElicitationResponse)
     }
 
+    @MainActor func testWhenCancelledNotificationIsReceivedThenItRoutesToTheMCPHandler() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.notificationsCancelled.rawValue))
+        _ = try await handler([""], WKScriptMessage.mock())
+
+        XCTAssertTrue(mockHandler.didCallMCPNotificationsCancelled)
+    }
+
     // MARK: - Open Settings handshake
 
     @MainActor func testRequestOpenSettingsActionArmsHandshake() {
@@ -440,6 +447,7 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didCallMCPToolsList = false
     var didCallMCPToolsCall = false
     var didCallMCPElicitationResponse = false
+    var didCallMCPNotificationsCancelled = false
     var receivedElicitationPusher: (any AIChatElicitationPushing)?
 
     func mcpInitialize(params: Any, message: UserScriptMessage) async -> Encodable? {
@@ -465,6 +473,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
         didCallMCPElicitationResponse = true
+        return nil
+    }
+
+    func mcpNotificationsCancelled(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didCallMCPNotificationsCancelled = true
         return nil
     }
 

@@ -305,6 +305,27 @@ public struct AIChatElicitationResponseRequest: Decodable, Equatable, Sendable {
     private enum CodingKeys: String, CodingKey { case id, result }
 }
 
+// MARK: - Cancellation
+
+/// Inbound `notifications/cancelled`. `requestId` is the `callId` of the `tools/call` to stop. MCP
+/// allows a string or a number there, so both are read.
+public struct MCPCancelledNotification: Decodable, Equatable, Sendable {
+    public let requestId: String
+    public let reason: String?
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if let string = try? container.decode(String.self, forKey: .requestId) {
+            requestId = string
+        } else {
+            requestId = String(try container.decode(Int.self, forKey: .requestId))
+        }
+        reason = try? container.decodeIfPresent(String.self, forKey: .reason)
+    }
+
+    private enum CodingKeys: String, CodingKey { case requestId, reason }
+}
+
 // MARK: - Tab change hint
 
 /// Params of the `aiChatTabChanged` push: metadata only, never page content.

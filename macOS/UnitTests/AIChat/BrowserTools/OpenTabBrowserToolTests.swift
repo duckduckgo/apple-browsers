@@ -153,6 +153,26 @@ final class OpenTabBrowserToolTests: XCTestCase {
         XCTAssertTrue(openedTabs.tabIDs(ownerTabID: context.ownerTabID).isEmpty)
     }
 
+    /// The path `notifications/cancelled` takes: the invoker cancels the call's task by its id.
+    func testWhenAPendingCallIsCancelledThroughTheInvokerThenItAnswersCancelledAndTheTabIsClosed() async throws {
+        waiter.suspendsUntilCancelled = true
+        let invoker = makeInvoker()
+
+        let call = Task {
+            await invoker.invoke(toolNamed: "openTab", arguments: ["url": "https://shop.example"], context: context,
+                                 callID: "call-1", elicitationPusher: nil)
+        }
+        try await waitUntil { !self.waiter.waitedTabs.isEmpty }
+        XCTAssertEqual(collection.allTabsCount, 2)
+
+        XCTAssertTrue(invoker.cancelCall(callID: "call-1", ownerTabID: context.ownerTabID))
+        let result = await call.value
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertEqual(collection.allTabsCount, 1)
+        XCTAssertTrue(openedTabs.tabIDs(ownerTabID: context.ownerTabID).isEmpty)
+    }
+
     // MARK: - Cap
 
     func testWhenTheChatAlreadyHasFiveTabsThenTheOldestIsClosed() async throws {
@@ -232,6 +252,15 @@ final class OpenTabBrowserToolTests: XCTestCase {
         return tabIDs
     }
 
+    private func makeInvoker() -> BrowserToolInvoker {
+        let configuration = AllToolsEnabled()
+        return BrowserToolInvoker(catalog: BrowserToolCatalog(tools: [tool], configuration: configuration),
+                                  configuration: configuration,
+                                  permissions: NoStoredDecisions(),
+                                  elicitations: AIChatElicitationCoordinator(timeout: 5),
+                                  openedTabs: openedTabs)
+    }
+
     private func waitUntil(_ condition: () -> Bool) async throws {
         for _ in 0..<200 where !condition() {
             try await Task.sleep(nanoseconds: 5_000_000)
@@ -255,6 +284,18 @@ final class StubPageLoadWaiter: BrowserToolPageLoadWaiting {
         onWait?(tab)
         return outcome
     }
+}
+
+private final class AllToolsEnabled: BrowserToolsConfiguration {
+    let isEnabled = true
+    func isToolEnabled(named name: String) -> Bool { true }
+}
+
+private final class NoStoredDecisions: BrowserToolPermissionStoring {
+    let storedDecisions: [String: BrowserToolPermissionState] = [:]
+    func state(forToolNamed name: String) -> BrowserToolPermissionState { .ask }
+    func setState(_ state: BrowserToolPermissionState, forToolNamed name: String) {}
+    func clearAll() {}
 }
 
 extension BrowserToolResult {

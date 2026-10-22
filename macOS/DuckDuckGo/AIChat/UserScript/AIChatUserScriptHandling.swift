@@ -140,6 +140,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
     @MainActor func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpNotificationsCancelled(params: Any, message: UserScriptMessage) async -> Encodable?
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
@@ -1351,6 +1352,8 @@ extension AIChatUserScriptHandler {
         let request: MCPInitializeRequest? = DecodableHelper.decode(from: params)
 
         if let ownerTabID = ownerTabID(for: message) {
+            // A fresh handshake means the page that made the earlier calls and opened the tabs is gone.
+            browserTools.endSession(ownerTabID: ownerTabID)
             browserTools.sessions.applyInitialize(forOwnerTabID: ownerTabID,
                                                   protocolVersion: request?.protocolVersion,
                                                   supportsElicitationForm: request?.supportsElicitationForm ?? false)
@@ -1422,6 +1425,7 @@ extension AIChatUserScriptHandler {
         let result = await browserTools.invoker.invoke(toolNamed: request.name,
                                                        arguments: request.arguments,
                                                        context: context,
+                                                       callID: request.callId,
                                                        elicitationPusher: elicitationPusher)
         return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
     }
@@ -1432,6 +1436,16 @@ extension AIChatUserScriptHandler {
     func mcpElicitationResponse(params: Any, message: UserScriptMessage) async -> Encodable? {
         if let response: AIChatElicitationResponseRequest = DecodableHelper.decode(from: params), !response.id.isEmpty {
             browserTools.elicitations.complete(id: response.id, result: response.result ?? .cancel)
+        }
+        return MCPEmptyResult()
+    }
+
+    /// A notification, so nothing waits on the reply. The cancelled call itself answers `cancelled`.
+    @MainActor
+    func mcpNotificationsCancelled(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let notification: MCPCancelledNotification = DecodableHelper.decode(from: params),
+           let ownerTabID = ownerTabID(for: message) {
+            browserTools.invoker.cancelCall(callID: notification.requestId, ownerTabID: ownerTabID)
         }
         return MCPEmptyResult()
     }

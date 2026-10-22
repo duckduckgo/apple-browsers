@@ -123,6 +123,37 @@ final class AIChatElicitationCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.pendingPrompts.isEmpty)
     }
 
+    /// `notifications/cancelled` reaches a pending prompt by cancelling the call that waits on it.
+    func testWhenTheWaitingTaskIsCancelledThenThePromptResolvesAsCancel() async throws {
+        let task = elicit()
+        try await waitForPending(count: 1)
+
+        task.cancel()
+        let result = await task.value
+
+        XCTAssertEqual(result, .cancel)
+        XCTAssertTrue(coordinator.pendingPrompts.isEmpty)
+        XCTAssertFalse(coordinator.complete(id: "id-1", result: .decline))
+    }
+
+    func testWhenTheTaskIsAlreadyCancelledThenNoPromptIsPushed() async {
+        let coordinator = coordinator!
+        let pusher = pusher!
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await coordinator.elicit(toolName: "alpha",
+                                            message: "m",
+                                            requestedSchema: BrowserToolPermissionElicitation.choiceSchema,
+                                            ownerTabID: "tab",
+                                            pusher: pusher)
+        }
+
+        let result = await task.value
+
+        XCTAssertEqual(result, .cancel)
+        XCTAssertTrue(pusher.pushed.isEmpty)
+    }
+
     func testWhenTwoPromptsArePendingThenEachResolvesWithItsOwnAnswer() async throws {
         let first = elicit(toolName: "alpha")
         let second = elicit(toolName: "beta")

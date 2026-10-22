@@ -44,6 +44,7 @@ final class BrowserToolsDebugViewController: NSViewController {
     private let logScroll = NSScrollView()
     private let permissionsStack = NSStackView()
     private var promptEntries: [String: LogEntryView] = [:]
+    private var lastCallID: String?
 
     init(windowControllersManager: WindowControllersManagerProtocol,
          service: AIChatBrowserToolsService = NSApp.delegateTyped.aiChatBrowserToolsService,
@@ -107,11 +108,21 @@ final class BrowserToolsDebugViewController: NSViewController {
             appendToLog(summary: "→ \(problem.message); nothing sent", detail: nil)
             return
         }
+        let callID = "panel-\(Int(Date().timeIntervalSince1970 * 1000))"
+        lastCallID = callID
         run("tools/call", params: [
             "name": name,
-            "callId": "panel-\(Int(Date().timeIntervalSince1970 * 1000))",
+            "callId": callID,
             "arguments": arguments
         ])
+    }
+
+    @objc private func cancelLastCall() {
+        guard let lastCallID else {
+            appendToLog(summary: "→ no call to cancel", detail: nil)
+            return
+        }
+        run("notifications/cancelled", params: ["requestId": lastCallID, "reason": "Cancelled from the debug panel"])
     }
 
     @objc private func toolPicked() {
@@ -278,6 +289,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("searchHistory", "limit"): return "5"
         case ("findInPage", "query"): return "games"
         case ("highlightInPage", "quotes"): return "games"
+        case ("openTab", "url"): return "https://duckduckgo.com/"
         default: return nil
         }
     }
@@ -372,6 +384,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             await chatHandler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
         }
         case .elicitationResponse: chatHandler.mcpElicitationResponse
+        case .notificationsCancelled: chatHandler.mcpNotificationsCancelled
         default: nil
         }
     }
@@ -477,7 +490,8 @@ final class BrowserToolsDebugViewController: NSViewController {
         let call = NSStackView(views: [
             NSTextField(labelWithString: "tools/call"),
             toolPicker,
-            makeButton("Call", #selector(callTool))
+            makeButton("Call", #selector(callTool)),
+            makeButton("Cancel last call", #selector(cancelLastCall))
         ])
         call.orientation = .horizontal
         call.spacing = 6

@@ -277,9 +277,35 @@ final class BrowserToolsWireFormatTests: XCTestCase {
         XCTAssertEqual(AIChatUserScriptMessages.notificationsInitialized.rawValue, "notifications/initialized")
         XCTAssertEqual(AIChatUserScriptMessages.toolsList.rawValue, "tools/list")
         XCTAssertEqual(AIChatUserScriptMessages.toolsCall.rawValue, "tools/call")
+        XCTAssertEqual(AIChatUserScriptMessages.notificationsCancelled.rawValue, "notifications/cancelled")
+    }
+
+    // MARK: - Cancellation
+
+    func testWhenCancelledNotificationIsDecodedThenTheRequestIdAndReasonAreRead() throws {
+        let notification = try decoded(MCPCancelledNotification.self, from: #"{"requestId": "call-7", "reason": "user stopped"}"#)
+
+        XCTAssertEqual(notification.requestId, "call-7")
+        XCTAssertEqual(notification.reason, "user stopped")
+    }
+
+    /// MCP allows a numeric request id.
+    func testWhenCancelledNotificationHasANumericRequestIdThenItIsReadAsAString() throws {
+        let notification = try decoded(MCPCancelledNotification.self, from: #"{"requestId": 7}"#)
+
+        XCTAssertEqual(notification.requestId, "7")
+        XCTAssertNil(notification.reason)
+    }
+
+    func testWhenCancelledNotificationHasNoRequestIdThenItDoesNotDecode() {
+        XCTAssertThrowsError(try decoded(MCPCancelledNotification.self, from: #"{"reason": "x"}"#))
     }
 
     // MARK: -
+
+    private func decoded<T: Decodable>(_ type: T.Type, from json: String) throws -> T {
+        try JSONDecoder().decode(type, from: Data(json.utf8))
+    }
 
     private func encoded<T: Encodable>(_ value: T) throws -> JSONValue {
         let data = try JSONEncoder().encode(value)

@@ -231,6 +231,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             }
         case .elicitationResponse:
             return handler.mcpElicitationResponse
+        case .notificationsCancelled:
+            return handler.mcpNotificationsCancelled
 
         case .reportMetric:
             return handler.reportMetric

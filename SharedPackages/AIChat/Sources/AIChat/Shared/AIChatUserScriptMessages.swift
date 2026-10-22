@@ -153,6 +153,9 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     /// MCP `elicitation/response` — the FE's answer to a pending `elicitationCreate`.
     case elicitationResponse = "elicitation/response"
 
+    /// MCP `notifications/cancelled` — the FE no longer wants the result of a `toolsCall`.
+    case notificationsCancelled = "notifications/cancelled"
+
     /// MCP `notifications/tools/list_changed` — pushed (native→FE) when the tool catalogue changes.
     case toolsListChanged = "notifications/tools/list_changed"
 

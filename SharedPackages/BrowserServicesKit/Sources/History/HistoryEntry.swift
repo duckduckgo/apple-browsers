@@ -68,12 +68,6 @@ final public class HistoryEntry {
         return visit
     }
 
-    func removeVisits(_ removedVisits: Set<Visit>, restoringLastVisit previousLastVisit: Date) {
-        visits.subtract(removedVisits)
-        numberOfTotalVisits -= removedVisits.count
-        lastVisit = visits.map(\.date).max() ?? previousLastVisit
-    }
-
     // MARK: - Tracker blocking info
 
     public private(set) var numberOfTrackersBlocked: Int

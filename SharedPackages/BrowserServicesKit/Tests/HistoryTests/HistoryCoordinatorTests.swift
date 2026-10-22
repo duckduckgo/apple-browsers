@@ -198,38 +198,13 @@ class HistoryCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenSavingImportedVisitsFails_ThenImportThrowsAndRollsBackTheUnsavedVisits() async throws {
-        let localDate = Date().addingTimeInterval(-7200)
-        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator(history: [
-            savedHistoryEntry(of: .duckDuckGo, title: "Local", visitedAt: localDate)
-        ])
+    func testWhenSavingAnImportedEntryFails_ThenImportThrows() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
         historyStoringMock.saveError = HistoryStoringMock.HistoryStoringMockError.defaultError
-        let newURL = URL(string: "https://example.com/")!
 
-        let error = await importError(of: [importedVisit(title: "Imported", hoursAgo: 1), importedVisit(of: newURL, title: "New", hoursAgo: 1)],
-                                      into: historyCoordinator)
+        let error = await importError(of: [importedVisit(title: "New", hoursAgo: 1)], into: historyCoordinator)
 
         XCTAssertEqual(error as? HistoryStoringMock.HistoryStoringMockError, .defaultError)
-        let entry = try XCTUnwrap(historyCoordinator.historyDictionary?[.duckDuckGo])
-        XCTAssertEqual(entry.visits.map(\.date), [localDate])
-        XCTAssertEqual(entry.numberOfTotalVisits, 1)
-        XCTAssertEqual(entry.lastVisit, localDate)
-        XCTAssertEqual(entry.title, "Local")
-        XCTAssertNil(historyCoordinator.historyDictionary?[newURL])
-    }
-
-    @MainActor
-    func testWhenRetryingAfterAPartiallyFailedImport_ThenOnlyTheUnsavedVisitsAreImported() async throws {
-        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
-        let importer = HistoryImporter(historyCoordinator: historyCoordinator)
-        let parseResult = HistoryImport.ParseResult(visits: [importedVisit(title: "First", hoursAgo: 1),
-                                                             importedVisit(of: URL(string: "https://example.com/")!, title: "Second", hoursAgo: 2)],
-                                                    skipped: 0)
-        await failImport(of: parseResult, using: importer, afterSuccessfulSaves: 1, in: historyStoringMock)
-
-        let summary = try await importer.importVisits(parseResult)
-
-        XCTAssertEqual(summary, HistoryImport.Summary(imported: 1, alreadyInHistory: 1))
     }
 
     @MainActor
@@ -857,27 +832,6 @@ class HistoryCoordinatorTests: XCTestCase {
         HistoryImport.Visit(url: url, title: title, date: Date().addingTimeInterval(-hoursAgo * 3600))
     }
 
-    private func savedHistoryEntry(of url: URL, title: String, visitedAt date: Date) -> HistoryEntry {
-        let entry = HistoryEntry(url: url)
-        _ = entry.addVisit(at: date, tabID: nil)
-        entry.title = title
-        entry.visits.forEach { $0.savingState = .saved }
-        return entry
-    }
-
-    @MainActor
-    private func failImport(
-        of parseResult: HistoryImport.ParseResult,
-        using importer: HistoryImporter,
-        afterSuccessfulSaves successfulSaves: Int,
-        in historyStoringMock: HistoryStoringMock
-    ) async {
-        historyStoringMock.saveError = HistoryStoringMock.HistoryStoringMockError.defaultError
-        historyStoringMock.savesBeforeError = successfulSaves
-        _ = try? await importer.importVisits(parseResult)
-        historyStoringMock.saveError = nil
-    }
-
     @MainActor
     private func importError(of visits: [HistoryImport.Visit], into historyCoordinator: HistoryCoordinator) async -> Error? {
         do {
@@ -914,8 +868,8 @@ class HistoryCoordinatorTests: XCTestCase {
 fileprivate extension HistoryCoordinator {
 
     @MainActor
-    static func aHistoryCoordinator(history: BrowsingHistory = []) async -> (HistoryStoringMock, HistoryCoordinator) {
-        let historyStoringMock = HistoryStoringMock(cleanOldResult: .success(history), removeEntriesResult: .success(()))
+    static func aHistoryCoordinator() async -> (HistoryStoringMock, HistoryCoordinator) {
+        let historyStoringMock = HistoryStoringMock(cleanOldResult: .success(BrowsingHistory()), removeEntriesResult: .success(()))
         let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
 
         // Use a continuation to wait for async loading
@@ -998,7 +952,6 @@ actor HistoryStoringMock: HistoryStoring {
     }
 
     @MainActor var saveError: Error?
-    @MainActor var savesBeforeError = 0
     @MainActor var saveCalled = false
     @MainActor var savedHistoryEntries = [HistoryEntry]()
     @MainActor var savedVisitsWithTabIDs: [(visit: Visit, tabID: String?)] = []
@@ -1019,14 +972,7 @@ actor HistoryStoringMock: HistoryStoring {
             saveCompletion?()
         }
 
-        let saveError = await MainActor.run { () -> Error? in
-            guard savesBeforeError == 0 else {
-                savesBeforeError -= 1
-                return nil
-            }
-            return saveError
-        }
-        if let saveError {
+        if let saveError = await saveError {
             throw saveError
         }
         return entry.visits.map { ($0.identifier!, $0.date) }

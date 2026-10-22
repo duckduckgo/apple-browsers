@@ -121,15 +121,6 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }()
     private var regularCleaningTimer: Timer?
 
-    private struct ImportedEntryChange {
-        let entry: HistoryEntry
-        let isNewEntry: Bool
-        let previousTitle: String?
-        let previousLastVisit: Date
-        var visits = [Visit]()
-        var importedTitle: String?
-    }
-
     @MainActor private(set) public var isHistoryLoaded = false
 
     // Source of truth
@@ -169,72 +160,29 @@ final public class HistoryCoordinator: HistoryCoordinating {
     /// Adds imported visits in a batch, publishing history once, and returns after each changed entry has been saved once.
     ///
     /// An imported title replaces the entry's title only when its visit is the entry's newest, or the entry has no title.
-    /// If a save fails, the imported visits that didn't reach the store are removed again, so a retry imports them.
     @MainActor
     public func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         guard isHistoryLoaded, var historyDictionary else {
             throw HistoryImport.Error.historyNotLoaded
         }
 
-        var changes = [URL: ImportedEntryChange]()
+        var changedEntries = [URL: HistoryEntry]()
         for importedVisit in visits.sorted(by: { $0.date < $1.date }) {
-            let existingEntry = historyDictionary[importedVisit.url]
-            let entry = existingEntry ?? HistoryEntry(url: importedVisit.url)
-            var change = changes[importedVisit.url] ?? ImportedEntryChange(entry: entry,
-                                                                            isNewEntry: existingEntry == nil,
-                                                                            previousTitle: entry.title,
-                                                                            previousLastVisit: entry.lastVisit)
-            change.visits.append(entry.addVisit(at: importedVisit.date, tabID: nil))
+            let entry = historyDictionary[importedVisit.url] ?? HistoryEntry(url: importedVisit.url)
+            _ = entry.addVisit(at: importedVisit.date, tabID: nil)
             if let title = importedVisit.title, !title.isEmpty,
                importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
                 entry.title = title
             }
-            change.importedTitle = entry.title
             historyDictionary[importedVisit.url] = entry
-            changes[importedVisit.url] = change
+            changedEntries[importedVisit.url] = entry
         }
 
         self.historyDictionary = historyDictionary
-        do {
-            for change in changes.values {
-                try await saveImportedEntry(change.entry)
-            }
-        } catch {
-            rollBackUnsavedVisits(of: changes.values)
-            throw error
-        }
-    }
-
-    @MainActor
-    private func saveImportedEntry(_ entry: HistoryEntry) async throws {
-        let unsavedVisits = entry.visits.filter { $0.savingState == .initialized }
-        guard let entryCopy = copyForSaving(entry) else { return }
-        do {
+        for entry in changedEntries.values {
+            guard let entryCopy = copyForSaving(entry) else { continue }
             try await store(entryCopy, of: entry)
-        } catch {
-            unsavedVisits.forEach { $0.savingState = .initialized }
-            throw error
         }
-    }
-
-    /// Visits a browsing save stored while the import was waiting count as saved and are kept.
-    @MainActor
-    private func rollBackUnsavedVisits(of changes: some Sequence<ImportedEntryChange>) {
-        guard var historyDictionary else { return }
-
-        for change in changes where historyDictionary[change.entry.url] === change.entry {
-            let unsavedVisits = Set(change.visits.filter { $0.savingState == .initialized })
-            guard !unsavedVisits.isEmpty else { continue }
-
-            change.entry.removeVisits(unsavedVisits, restoringLastVisit: change.previousLastVisit)
-            if change.entry.title == change.importedTitle {
-                change.entry.title = change.previousTitle
-            }
-            if change.isNewEntry && change.entry.visits.isEmpty {
-                historyDictionary.removeValue(forKey: change.entry.url)
-            }
-        }
-        self.historyDictionary = historyDictionary
     }
 
     public func addBlockedTracker(entityName: String, on url: URL) {

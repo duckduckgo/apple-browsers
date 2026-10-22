@@ -61,6 +61,22 @@ class AsanaClient:
         self.token = token
 
     def _request(self, method: str, path: str, params: Optional[Dict] = None, body: Optional[Dict] = None):
+        return self._send(method, path, params, body)['data']
+
+    def _get_all(self, path: str, params: Dict, max_pages: int = 20) -> List[Dict]:
+        """Get every item of a collection, following Asana's next_page offsets."""
+        params = {**params, 'limit': 100}
+        items = []
+        for _ in range(max_pages):
+            response = self._send('GET', path, params)
+            items.extend(response['data'])
+            offset = (response.get('next_page') or {}).get('offset')
+            if not offset:
+                return items
+            params['offset'] = offset
+        raise RuntimeError(f"Asana GET {path} has more than {max_pages} pages")
+
+    def _send(self, method: str, path: str, params: Optional[Dict] = None, body: Optional[Dict] = None) -> Dict:
         url = f"{ASANA_API}{path}"
         if params:
             url += f"?{urlencode(params)}"
@@ -72,7 +88,7 @@ class AsanaClient:
         })
         try:
             with urlopen(request, timeout=30) as response:
-                return json.loads(response.read())['data']
+                return json.loads(response.read())
         except HTTPError as error:
             try:
                 messages = [item.get('message', '') for item in json.loads(error.read()).get('errors', [])]
@@ -81,14 +97,13 @@ class AsanaClient:
             raise RuntimeError(f"Asana {method} {path} failed with HTTP {error.code}: {'; '.join(messages) or error.reason}") from error
 
     def rotation_tasks(self, section_id: str, since: date) -> List[Dict]:
-        return self._request('GET', f'/sections/{section_id}/tasks', {
+        return self._get_all(f'/sections/{section_id}/tasks', {
             'completed_since': f'{since.isoformat()}T00:00:00Z',
             'opt_fields': 'assignee.name,start_on,due_on',
-            'limit': 100,
         })
 
     def sections(self, project_id: str) -> List[Dict]:
-        return self._request('GET', f'/projects/{project_id}/sections', {'opt_fields': 'name'})
+        return self._get_all(f'/projects/{project_id}/sections', {'opt_fields': 'name'})
 
     def create_task(self, body: Dict) -> Dict:
         return self._request('POST', '/tasks', {'opt_fields': 'permalink_url'}, body)

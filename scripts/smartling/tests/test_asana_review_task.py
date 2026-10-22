@@ -70,6 +70,31 @@ class PickDRITests(unittest.TestCase):
         self.assertIsNone(dri)
 
 
+class PagedAsanaClient(ASANA_REVIEW_TASK.AsanaClient):
+    """Serves a section's rotation over two pages, like Asana's paginated collections."""
+
+    def __init__(self):
+        super().__init__('token')
+        self.requested_offsets = []
+
+    def _send(self, method, path, params=None, body=None):  # pylint: disable=unused-argument
+        self.requested_offsets.append(params.get('offset'))
+        if params.get('offset') is None:
+            return {'data': ROTATION[:2], 'next_page': {'offset': 'page-2'}}
+        return {'data': ROTATION[2:], 'next_page': None}
+
+
+class AsanaClientTests(unittest.TestCase):
+
+    def testRotationTasksFollowEveryPage(self):
+        client = PagedAsanaClient()
+
+        tasks = client.rotation_tasks('apple-ios-triage', date(2026, 10, 7))
+
+        self.assertEqual(tasks, ROTATION)
+        self.assertEqual(client.requested_offsets, [None, 'page-2'])
+
+
 class NotesHTMLTests(unittest.TestCase):
 
     def testLabelsAreBoldURLsAreLinksAndTextIsEscaped(self):

@@ -21,6 +21,7 @@ import Combine
 import Common
 import FoundationExtensions
 import Foundation
+import os.log
 import Persistence
 import UserScript
 import WebKit
@@ -123,6 +124,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         guard let webView else {
             return
         }
+        Logger.aiChat.notice("[Nudge] native -> FE: submitAIChatNativePrompt")
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
@@ -131,6 +133,7 @@ final class AIChatUserScript: NSObject, Subfeature {
             return
         }
         let response = PageContextResponse(pageContext: pageContextData)
+        Logger.aiChat.notice("[Nudge] native -> FE: submitAIChatPageContext \(pageContextData?.content.count ?? -1) chars")
         broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
@@ -162,6 +165,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        Logger.aiChat.notice("[Nudge] FE -> native: \(methodName, privacy: .public)")
         let handler = resolveHandler(forMethodNamed: methodName)
         if handler != nil {
             advanceOpenSettingsHandshake()

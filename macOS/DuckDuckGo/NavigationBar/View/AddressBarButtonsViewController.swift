@@ -3510,6 +3510,9 @@ extension AddressBarButtonsViewController {
             }
             let payload: AIChatPageContextPayload = contexts.count == 1 ? .single(contexts[0]) : .multiple(contexts)
             let nativePrompt = AIChatNativePrompt.queryPrompt(prompt.text, autoSubmit: prompt.autoSubmit, pageContext: payload)
+            if let json = try? JSONEncoder().encode(nativePrompt) {
+                try? json.write(to: URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("duckai-nudge-prompt.json"))
+            }
             guard let self else { return }
             NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
             tab.pageContext?.suppressAutoPageContextForSelectionAction()

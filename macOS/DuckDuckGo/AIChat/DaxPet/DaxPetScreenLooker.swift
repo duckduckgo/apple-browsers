@@ -18,6 +18,7 @@
 
 import AppKit
 import ScreenCaptureKit
+import Vision
 
 /// The app the user is in, which Dax can be asked about.
 struct DaxPetForegroundApp: Equatable {
@@ -31,6 +32,8 @@ protocol DaxPetScreenLooking {
     var foregroundApp: DaxPetForegroundApp? { get }
     /// A screenshot of the app's front window, or `nil` without Screen Recording permission.
     func captureWindow(of app: DaxPetForegroundApp) async -> NSImage?
+    /// The text in the app's front window, read on the Mac.
+    func readText(of app: DaxPetForegroundApp) async -> String?
 }
 
 /// Takes screenshots of the app in front through ScreenCaptureKit, only when asked to.
@@ -75,6 +78,27 @@ final class DaxPetScreenLooker: DaxPetScreenLooking {
 
         guard let image = try? await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration) else { return nil }
         return NSImage(cgImage: image, size: NSSize(width: image.width, height: image.height))
+    }
+
+    /// Text read off a window is cut to what the on-device model reads.
+    static let maximumTextLength = 3000
+
+    func readText(of app: DaxPetForegroundApp) async -> String? {
+        guard let image = await captureWindow(of: app)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return await Self.recognizeText(in: image)
+    }
+
+    /// Vision reads the text on the Mac, off the main thread.
+    static func recognizeText(in image: CGImage) async -> String? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                try? VNImageRequestHandler(cgImage: image).perform([request])
+                let text = (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+                continuation.resume(returning: text.isEmpty ? nil : String(text.prefix(maximumTextLength)))
+            }
+        }
     }
 
     /// Window lists come front to back, so the app's first normal window is the one the user sees.

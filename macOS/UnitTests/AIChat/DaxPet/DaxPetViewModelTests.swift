@@ -128,10 +128,19 @@ private final class StubDaxPetIntelligence: DaxPetIntelligence {
         return lookup
     }
 
+    var screenTopic: DaxPetScreenTopic?
+    var screenTexts: [String] = []
+    func screenTopic(_ text: String, appName: String) async -> DaxPetScreenTopic? {
+        screenTexts.append(text)
+        return screenTopic
+    }
+
     var picks: [Int] = []
     var pickedFrom: [[String]] = []
+    var pickedFor: [String] = []
     func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int] {
         pickedFrom.append(pages)
+        pickedFor.append(prompt)
         return picks
     }
 }
@@ -176,6 +185,11 @@ private final class StubDaxPetScreenLooker: DaxPetScreenLooking {
     func captureWindow(of app: DaxPetForegroundApp) async -> NSImage? {
         captures += 1
         return screenshot
+    }
+
+    var text: String? = "Your booking at Hotel Adlon Kempinski Berlin is confirmed"
+    func readText(of app: DaxPetForegroundApp) async -> String? {
+        text
     }
 }
 
@@ -1008,7 +1022,7 @@ final class DaxPetViewModelTests: XCTestCase {
     private static let github = DaxPetTab(id: "2", title: "Pull requests", url: URL(string: "https://github.com/pulls")!)
     private static let hotel = DaxPetTab(id: "3", title: "Hotel Adlon", url: URL(string: "https://www.booking.com/adlon")!)
 
-    private func makeLookingModel(isOnDevice: Bool = true, consent: Bool? = true)
+    private func makeLookingModel(isOnDevice: Bool = true, consent: Bool? = true, screenLooker: StubDaxPetScreenLooker? = nil)
         -> (DaxPetViewModel, StubDaxPetIntelligence, StubDaxPetBrowser, StubDaxPetHistoryConsent) {
         let intelligence = StubDaxPetIntelligence()
         intelligence.isOnDevice = isOnDevice
@@ -1017,7 +1031,8 @@ final class DaxPetViewModelTests: XCTestCase {
         let historyConsent = StubDaxPetHistoryConsent()
         historyConsent.canSearchHistory = consent
         let model = DaxPetViewModel(submitter: submitter, character: DaxCharacterView(reduceMotion: { true }),
-                                    intelligence: intelligence, browsing: browser, historyConsent: historyConsent)
+                                    intelligence: intelligence, screenLooker: screenLooker, canSeeForegroundApp: { screenLooker != nil },
+                                    browsing: browser, historyConsent: historyConsent)
         model.submissionDelay = 0
         return (model, intelligence, browser, historyConsent)
     }
@@ -1442,5 +1457,70 @@ final class DaxPetViewModelTests: XCTestCase {
         await model.showWhereOnPage()
 
         XCTAssertEqual(model.speech, UserText.daxPetShowWhereMissed)
+    }
+
+    // MARK: - The app in front and the browsing
+
+    func testWhenAskedAboutTheAppInFrontDaxFindsTheTabsAndPagesAboutWhatIsInIt() async throws {
+        let looker = StubDaxPetScreenLooker()
+        let (model, intelligence, browser, _) = makeLookingModel(screenLooker: looker)
+        let earlier = DaxPetVisit(title: "Hotel Adlon Kempinski Berlin – reviews", url: try XCTUnwrap(URL(string: "https://reviews.example/adlon")), date: Date())
+        browser.visits = [earlier]
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["page"], daysBack: 0)
+        intelligence.refersToScreen = true
+        intelligence.screenTopic = DaxPetScreenTopic(topic: "A hotel booking", terms: ["Hotel Adlon"])
+        intelligence.picks = [0, 1]
+
+        await ask(model, "did I look at this before?")
+
+        XCTAssertEqual(intelligence.screenTexts, ["Your booking at Hotel Adlon Kempinski Berlin is confirmed"])
+        XCTAssertEqual(browser.searches, [["Hotel Adlon"]])
+        XCTAssertEqual(intelligence.pickedFor, ["A hotel booking: Hotel Adlon"])
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetFoundFromScreen, content: .items([.tab(Self.hotel), .visit(earlier)])))
+        XCTAssertEqual(looker.captures, 0, "The window is read, not sent")
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testWithoutLeaveToSearchTheHistoryOnlyOpenTabsAreFoundFromTheScreen() async {
+        let looker = StubDaxPetScreenLooker()
+        let (model, intelligence, browser, _) = makeLookingModel(consent: false, screenLooker: looker)
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["page"], daysBack: 0)
+        intelligence.refersToScreen = true
+        intelligence.screenTopic = DaxPetScreenTopic(topic: "A hotel booking", terms: ["Hotel Adlon"])
+        intelligence.picks = [0]
+
+        await ask(model, "did I look at this before?")
+
+        XCTAssertTrue(browser.searches.isEmpty)
+        XCTAssertEqual(model.findings?.content, .items([.tab(Self.hotel)]))
+    }
+
+    func testWhenNothingAboutTheScreenIsFoundThenAScreenshotIsOfferedForDuckAI() async {
+        let looker = StubDaxPetScreenLooker()
+        let (model, intelligence, _, _) = makeLookingModel(screenLooker: looker)
+        submitter.capabilities = Self.imageCapabilities
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["page"], daysBack: 0)
+        intelligence.refersToScreen = true
+        intelligence.screenTopic = DaxPetScreenTopic(topic: "Something new", terms: ["Zeppelin"])
+
+        await ask(model, "did I look at this before?")
+
+        XCTAssertNil(model.findings)
+        XCTAssertEqual(looker.captures, 1)
+        XCTAssertEqual(model.speech, UserText.daxPetScreenReady("Mail"))
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testARequestThatIsNotAboutTheScreenLooksUpTabsAsUsual() async {
+        let looker = StubDaxPetScreenLooker()
+        let (model, intelligence, browser, _) = makeLookingModel(screenLooker: looker)
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["flights"], daysBack: 0)
+        intelligence.refersToScreen = false
+        intelligence.picks = [0]
+
+        await ask(model, "where's my flights tab?")
+
+        XCTAssertTrue(intelligence.screenTexts.isEmpty)
+        XCTAssertEqual(browser.switchedTo, [Self.flights])
     }
 }

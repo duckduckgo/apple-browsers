@@ -68,6 +68,13 @@ final class DaxPetBrowsingTests: XCTestCase {
         XCTAssertEqual(DaxPetBrowser.rank(visits, matching: ["duck"], limit: 2).map(\.title), ["Duck 5", "Duck 4"])
     }
 
+    func testATermMatchesWhenAllItsWordsAreThereInAnyOrder() {
+        XCTAssertTrue(DaxPetBrowser.mentions("Le Creuset Signature Round Dutch Oven", "le creuset dutch oven"))
+        XCTAssertTrue(DaxPetBrowser.mentions("Café de Flore", "cafe"))
+        XCTAssertFalse(DaxPetBrowser.mentions("Le Creuset Signature Round Casserole", "le creuset dutch oven"))
+        XCTAssertFalse(DaxPetBrowser.mentions("Anything", " "))
+    }
+
     private func visit(_ url: String, title: String, at seconds: TimeInterval) -> Visit {
         let date = Date(timeIntervalSince1970: seconds)
         let entry = HistoryEntry(identifier: UUID(), url: URL(string: url)!, title: title, failedToLoad: false,

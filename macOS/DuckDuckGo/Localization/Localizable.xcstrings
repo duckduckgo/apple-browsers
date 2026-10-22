@@ -97,6 +97,18 @@
         }
       }
     },
+    "duckai.dax-pet.found.from-screen" : {
+      "comment" : "Shown by Dax, the DuckDuckGo mascot, above open tabs and pages from the browsing history about what's in the app in front, e.g. the hotel in an email. Each page is a button below",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You've seen this before:"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.found.here" : {
       "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he brings forward the tab or opens the page the user asked him to find",
       "extractionState" : "extracted_with_value",
@@ -34662,7 +34674,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "When you ask Dax about what's on your screen, like “what is this?”, he can take a screenshot of the app you're in for you to send to Duck.ai. Apple Intelligence decides on your Mac whether you're asking about the screen, and nothing is sent until you press Return. Needs Screen Recording permission."
+            "value" : "When you ask Dax about what's on your screen, like “what is this?”, he can take a screenshot of the app you're in for you to send to Duck.ai. Apple Intelligence decides on your Mac whether you're asking about the screen, and nothing is sent until you press Return. He can also read the window on your Mac to find pages you've seen about it, like “did I look at this before?”. Needs Screen Recording permission."
           }
         }
       }

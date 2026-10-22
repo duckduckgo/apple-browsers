@@ -88,7 +88,7 @@ final class DaxPetBrowser: DaxPetBrowsing {
         for visit in visits {
             guard let entry = visit.historyEntry else { continue }
             let haystack = (entry.title ?? "") + " " + entry.url.absoluteString
-            let score = terms.filter { haystack.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }.count
+            let score = terms.filter { mentions(haystack, $0) }.count
             guard score > 0 else { continue }
             if let existing = best[entry.url], existing.visit.date >= visit.date { continue }
             let title = SearchHistoryBrowserTool.displayTitle(title: entry.title, url: entry.url)
@@ -98,5 +98,11 @@ final class DaxPetBrowser: DaxPetBrowsing {
             .sorted { $0.score != $1.score ? $0.score > $1.score : $0.visit.date > $1.visit.date }
             .prefix(limit)
             .map(\.visit)
+    }
+
+    /// Whether `text` has every word of `term`, in any order, ignoring case and accents.
+    static func mentions(_ text: String, _ term: String) -> Bool {
+        let words = term.split(whereSeparator: { $0.isWhitespace })
+        return !words.isEmpty && words.allSatisfy { text.range(of: $0, options: [.caseInsensitive, .diacriticInsensitive]) != nil }
     }
 }

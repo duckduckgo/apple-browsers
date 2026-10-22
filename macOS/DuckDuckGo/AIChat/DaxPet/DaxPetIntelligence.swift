@@ -42,6 +42,14 @@ protocol DaxPetIntelligence {
     func lookup(_ prompt: String) async -> DaxPetLookup?
     /// The positions in `pages` of the ones `prompt` is after, best first, at most `maximum`.
     func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int]
+    /// What the user is looking at, from the text in the app in front.
+    func screenTopic(_ text: String, appName: String) async -> DaxPetScreenTopic?
+}
+
+/// What's on the user's screen, and words to find pages about it.
+struct DaxPetScreenTopic: Equatable {
+    let topic: String
+    let terms: [String]
 }
 
 struct DaxPetPageGlance: Equatable {
@@ -140,6 +148,7 @@ struct DaxPetNoIntelligence: DaxPetIntelligence {
     func kind(of attachments: [DaxPetAttachment]) async -> DaxPetDropKind? { nil }
     func lookup(_ prompt: String) async -> DaxPetLookup? { nil }
     func pick(_ prompt: String, from pages: [String], maximum: Int) async -> [Int] { [] }
+    func screenTopic(_ text: String, appName: String) async -> DaxPetScreenTopic? { nil }
 }
 
 @available(macOS 26, *)
@@ -344,6 +353,28 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             .filter { pages.indices.contains($0) && seen.insert($0).inserted }
             .prefix(maximum)
             .map { $0 }
+    }
+
+    @Generable
+    struct ScreenTopic {
+        @Guide(description: "What the user is looking at, in a few words, like a product, place, article or person")
+        var topic: String
+        @Guide(description: "One to three short words to search web page titles for, like the names of products, places, brands or people; no generic words",
+               .count(1...3))
+        var searchTerms: [String]
+    }
+
+    func screenTopic(_ text: String, appName: String) async -> DaxPetScreenTopic? {
+        let session = LanguageModelSession(instructions: """
+            This is text read off the user's screen in \(appName). Say what they're looking at, and words to search \
+            their browsing history for pages about it. Leave out the app's own buttons and menus.
+            """)
+        guard let response = try? await session.respond(to: String(text.prefix(Self.contentLimit)), generating: ScreenTopic.self,
+                                                        options: GenerationOptions(temperature: 0)).content else { return nil }
+        let topic = response.topic.trimmingCharacters(in: .whitespacesAndNewlines)
+        let terms = response.searchTerms.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+        guard !topic.isEmpty, !terms.isEmpty else { return nil }
+        return DaxPetScreenTopic(topic: topic, terms: terms)
     }
 
     /// The user's language, by its English name, for the model to answer in.

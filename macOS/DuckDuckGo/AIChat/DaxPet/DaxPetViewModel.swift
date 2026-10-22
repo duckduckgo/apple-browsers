@@ -163,7 +163,8 @@ final class DaxPetViewModel: ObservableObject {
     private let historyConsent: DaxPetHistoryConsent?
     /// The prompt Dax last looked up in the browser, so the next Return sends rather than looks again.
     private var lookedUpPrompt: String?
-    private var pendingHistoryLookup: DaxPetLookup?
+    /// The search to run once the user lets Dax look through the history.
+    private var pendingHistorySearch: (() async -> Void)?
     private(set) var isLookingUp = false
     /// The prompt the screen was last checked for, so the next Return sends rather than checks again.
     private var screenCheckedPrompt: String?
@@ -315,22 +316,82 @@ final class DaxPetViewModel: ObservableObject {
         character.mood = .listening
 
         guard let lookup, let browsing else { return submit() }
-        switch (lookup.kind, historyConsent?.canSearchHistory) {
-        case (.openTab, _):
-            await findTab(for: prompt, lookup, in: browsing)
-        case (.compareTabs, _) where submitter.canCompareTabs:
+        switch lookup.kind {
+        case .compareTabs:
+            guard submitter.canCompareTabs else { return submit() }
             await chooseTabsToCompare(for: prompt, lookup, in: browsing)
-        case (.compareTabs, _):
-            submit()
-        case (.history, true?):
-            await findPage(for: prompt, lookup, in: browsing)
-        case (.history, nil) where historyConsent != nil:
-            pendingHistoryLookup = lookup
+        case .openTab, .history:
+            if let screenLooker, let app = await appTheRequestIsAbout(prompt) {
+                await withHistoryConsent { [weak self] canSearchHistory in
+                    await self?.findFromScreen(for: prompt, in: app, with: screenLooker, browsing, includingHistory: canSearchHistory)
+                }
+            } else if lookup.kind == .openTab {
+                await findTab(for: prompt, lookup, in: browsing)
+            } else {
+                await withHistoryConsent { [weak self] canSearchHistory in
+                    guard canSearchHistory else { self?.submit(); return }
+                    await self?.findPage(for: prompt, lookup, in: browsing)
+                }
+            }
+        }
+    }
+
+    /// Runs `search` with whether the history may be searched, asking the user the first time.
+    private func withHistoryConsent(_ search: @escaping (Bool) async -> Void) async {
+        switch historyConsent?.canSearchHistory {
+        case true?:
+            await search(true)
+        case nil where historyConsent != nil:
+            pendingHistorySearch = { await search(true) }
             say(nil)
             findings = DaxPetFindings(headline: UserText.daxPetHistoryAsk, content: .askingToSearchHistory)
-        case (.history, _):
-            submit()
+        default:
+            await search(false)
         }
+    }
+
+    /// The app in front, when the request is about what the user has open in it.
+    private func appTheRequestIsAbout(_ prompt: String) async -> DaxPetForegroundApp? {
+        guard canSeeForegroundApp(), let app = screenLooker?.foregroundApp else { return nil }
+        return await intelligence.refersToScreen(prompt, appName: app.name) ? app : nil
+    }
+
+    /// Dax reads the app in front on the Mac and finds the tabs and pages about what's in it. Finding
+    /// none, the request goes on to Duck.ai with a screenshot offered, as any question about the screen.
+    private func findFromScreen(for prompt: String, in app: DaxPetForegroundApp, with screenLooker: DaxPetScreenLooking,
+                                _ browsing: DaxPetBrowsing, includingHistory: Bool) async {
+        character.mood = .thinking
+        say(UserText.daxPetScreenLooking(at: app.name))
+        var topic: DaxPetScreenTopic?
+        if let text = await screenLooker.readText(of: app) {
+            topic = await intelligence.screenTopic(text, appName: app.name)
+        }
+        guard isStillAsking(prompt) else { return }
+        guard let topic else { return goOnToDuckAI() }
+
+        let tabs = browsing.openTabs.filter { tab in topic.terms.contains { DaxPetBrowser.mentions(tab.title + " " + tab.url.absoluteString, $0) } }
+        let openURLs = Set(tabs.map(\.url))
+        let visits = includingHistory ? browsing.history(matching: topic.terms, limit: Self.maximumCandidates).filter { !openURLs.contains($0.url) } : []
+        let candidates = Array((tabs.map(DaxPetFindings.Item.tab) + visits.map(DaxPetFindings.Item.visit)).prefix(Self.maximumCandidates))
+        guard !candidates.isEmpty else { return goOnToDuckAI() }
+
+        let pages = candidates.map { item -> String in
+            switch item {
+            case .tab(let tab): return "\(tab.title) — \(tab.url.host ?? ""), open now"
+            case .visit(let visit): return "\(visit.title) — \(visit.url.host ?? ""), \(Self.modelDateFormatter.localizedString(for: visit.date, relativeTo: now()))"
+            }
+        }
+        let picks = await intelligence.pick("\(topic.topic): \(topic.terms.joined(separator: ", "))", from: pages, maximum: 3)
+        guard isStillAsking(prompt) else { return }
+        guard !picks.isEmpty else { return goOnToDuckAI() }
+        character.mood = .listening
+        show(picks.map { candidates[$0] }, headline: UserText.daxPetFoundFromScreen)
+    }
+
+    private func goOnToDuckAI() {
+        character.mood = .listening
+        say(nil)
+        submit()
     }
 
     /// Tabs open at most this long go to the on-device model to choose from.
@@ -338,7 +399,7 @@ final class DaxPetViewModel: ObservableObject {
 
     private func findTab(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
         let tabs = browsing.openTabs
-        let matching = tabs.filter { tab in lookup.terms.contains { Self.page(tab.title, tab.url, contains: $0) } }
+        let matching = tabs.filter { tab in lookup.terms.contains { DaxPetBrowser.mentions(tab.title + " " + tab.url.absoluteString, $0) } }
         let candidates = Array((matching.isEmpty ? tabs : matching).prefix(Self.maximumCandidates))
         character.mood = .thinking
         let picks = await intelligence.pick(prompt, from: candidates.map { "\($0.title) — \($0.url.host ?? "")" }, maximum: 3)
@@ -361,7 +422,7 @@ final class DaxPetViewModel: ObservableObject {
     /// The tabs to compare join the prompt as chips, and the next Return sends them along.
     private func chooseTabsToCompare(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
         let tabs = browsing.openTabs
-        let matching = tabs.filter { tab in lookup.terms.contains { Self.page(tab.title, tab.url, contains: $0) } }
+        let matching = tabs.filter { tab in lookup.terms.contains { DaxPetBrowser.mentions(tab.title + " " + tab.url.absoluteString, $0) } }
         let candidates = Array((matching.count >= 2 ? matching : tabs).prefix(Self.maximumCandidates))
         character.mood = .thinking
         let picks = await intelligence.pick(prompt, from: candidates.map { "\($0.title) — \($0.url.host ?? "")" },
@@ -418,24 +479,20 @@ final class DaxPetViewModel: ObservableObject {
             historyConsent?.canSearchHistory = false
         }
         findings = nil
-        pendingHistoryLookup = nil
+        pendingHistorySearch = nil
         submit()
     }
 
     func allowHistorySearch() {
         historyConsent?.canSearchHistory = true
         findings = nil
-        guard let lookup = pendingHistoryLookup, let prompt = lookedUpPrompt, let browsing else { return }
-        pendingHistoryLookup = nil
-        Task { await findPage(for: prompt, lookup, in: browsing) }
+        guard let search = pendingHistorySearch else { return }
+        pendingHistorySearch = nil
+        Task { await search() }
     }
 
     private func isStillAsking(_ prompt: String) -> Bool {
         isComposing && lookedUpPrompt == prompt && self.prompt.trimmingCharacters(in: .whitespacesAndNewlines) == prompt
-    }
-
-    static func page(_ title: String, _ url: URL, contains term: String) -> Bool {
-        (title + " " + url.absoluteString).range(of: term, options: [.caseInsensitive, .diacriticInsensitive]) != nil
     }
 
     /// For the on-device model, which reads English best.
@@ -787,7 +844,7 @@ final class DaxPetViewModel: ObservableObject {
         if !prompt.isEmpty, speech != nil { say(nil) }
         if !prompt.isEmpty { suggestions = [] }
         findings = nil
-        pendingHistoryLookup = nil
+        pendingHistorySearch = nil
         updateLookTarget()
 
         character.noticeTyping()

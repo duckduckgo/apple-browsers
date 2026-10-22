@@ -66,9 +66,9 @@ final class FireWindowClosingTests: XCTestCase {
 
     // MARK: - Tests
 
-    func testSnapshotFlagIsEnabledByDefaultAndSupportsLocalOverride() {
-        guard case .enabled = FeatureFlag.fireWindowSnapshotAnimation.defaultValue else {
-            return XCTFail("Snapshot presentation must be enabled without remote configuration")
+    func testSnapshotFlagDefaultsToInternalUsersAndSupportsLocalOverride() {
+        guard case .internalOnly = FeatureFlag.fireWindowSnapshotAnimation.defaultValue else {
+            return XCTFail("Snapshot presentation must default to internal users only")
         }
         XCTAssertTrue(FeatureFlag.fireWindowSnapshotAnimation.supportsLocalOverriding)
         guard case .remoteReleasable(let subfeature) = FeatureFlag.fireWindowSnapshotAnimation.source else {

@@ -208,14 +208,16 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
                                                                     account: account,
                                                                     isUnifiedReadEnabled: isUnifiedReadEnabled,
                                                                     accountInfoKeyProvider: effectiveAccountInfoKeyProvider)
-        let initialMappings = entries.map {
-            registeredDevice(from: $0,
+        let initialMappings = entries.map { entry in
+            registeredDevice(from: entry,
                              account: account,
-                             accountInfoKey: accountInfoKeyResolution.key,
+                             accountInfoKey: accountInfoKey(for: entry,
+                                                            fallback: accountInfoKeyResolution.key,
+                                                            provider: effectiveAccountInfoKeyProvider),
                              thirdPartyMainKey: nil,
                              isUnifiedReadEnabled: isUnifiedReadEnabled)
         }
-        let finalMappings: [MappingAttempt]
+        var finalMappings = initialMappings
         var wasAccountInfoKeyRefreshCancelled = false
         var accountInfoKeyRefreshFailureReason: UnifiedDeviceListEvent.AccountInfoKeyUnavailableReason?
         if initialMappings.contains(where: { $0.unifiedDeviceInfoFailure == .staleKey }),
@@ -223,22 +225,21 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             do {
                 let refreshedAccountInfoKey = try await effectiveAccountInfoKeyProvider.refreshKey(for: account)
                 Logger.sync.debug("Sync-UnifiedDevices: refreshed account_info key after stale device_info")
-                finalMappings = entries.map {
-                    registeredDevice(from: $0,
+                for index in entries.indices where initialMappings[index].unifiedDeviceInfoFailure == .staleKey {
+                    let entry = entries[index]
+                    finalMappings[index] = registeredDevice(from: entry,
                                      account: account,
-                                     accountInfoKey: refreshedAccountInfoKey,
+                                     accountInfoKey: accountInfoKey(for: entry,
+                                                                    fallback: refreshedAccountInfoKey,
+                                                                    provider: effectiveAccountInfoKeyProvider),
                                      thirdPartyMainKey: nil,
                                      isUnifiedReadEnabled: isUnifiedReadEnabled)
                 }
             } catch is CancellationError {
                 wasAccountInfoKeyRefreshCancelled = true
-                finalMappings = initialMappings
             } catch {
                 accountInfoKeyRefreshFailureReason = UnifiedDeviceListTelemetry.accountInfoKeyUnavailableReason(for: error)
-                finalMappings = initialMappings
             }
-        } else {
-            finalMappings = initialMappings
         }
         let resolvedMappings = await mappingsApplyingThirdPartyFallback(to: finalMappings,
                                                                         entries: entries,
@@ -488,6 +489,16 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         } catch {
             return .failed(.corrupt)
         }
+    }
+
+    private func accountInfoKey(for entry: RegisteredDeviceEntry,
+                                fallback: AccountInfoKey?,
+                                provider: (any AccountInfoKeyProviding)?) -> AccountInfoKey? {
+        guard let encryptedDeviceInfo = entry.info,
+              let keyID = try? jweCompactCodec.protectedKeyID(in: encryptedDeviceInfo) else {
+            return fallback
+        }
+        return provider?.cachedKey(matching: keyID) ?? fallback
     }
 
     private func decryptedLegacyRegisteredDevice(from entry: RegisteredDeviceEntry,

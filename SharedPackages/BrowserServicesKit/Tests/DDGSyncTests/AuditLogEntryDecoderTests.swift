@@ -174,20 +174,19 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Audit-log entries map before a later account-info key refresh", .timeLimit(.minutes(1)))
-    func testWhenLaterEntryRefreshesAccountInfoKeyThenEarlierDeviceInfoRemainsDecoded() async throws {
+    @Test("A refresh keeps both newer and older audit-log keys available", .timeLimit(.minutes(1)), arguments: [false, true])
+    func testWhenAccountInfoKeyRefreshesThenBothKeyGenerationsRemainDecoded(newestKeyFirst: Bool) async throws {
         let firstFixture = try makeFixture()
         let secondFixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
         firstFixture.keyManager.refreshKeyStub = secondFixture.key
         let codec = DeviceInfoCodec()
         let firstInfo = try codec.encrypt(DeviceInfo(name: "First key device", type: "desktop"), using: firstFixture.protectedKey)
         let secondInfo = try codec.encrypt(DeviceInfo(name: "Second key device", type: "desktop"), using: secondFixture.protectedKey)
-        let firstPayload = try auditPayload(device: ["id": "first", "info": firstInfo])
-        let secondPayload = try auditPayload(device: ["id": "second", "info": secondInfo])
-        let entries = [
-            try encryptedAuditEntry(id: "first", payload: firstPayload, key: firstFixture.key),
-            try encryptedAuditEntry(id: "second", payload: secondPayload, key: secondFixture.key)
-        ]
+        let newestPayload = try auditPayload(device: ["id": "newest", "info": secondInfo])
+        let olderPayload = try auditPayload(device: ["id": "older", "info": firstInfo])
+        let olderEntry = try encryptedAuditEntry(id: "older", payload: olderPayload, key: firstFixture.key)
+        let newestEntry = try encryptedAuditEntry(id: "newest", payload: newestPayload, key: secondFixture.key)
+        let entries = newestKeyFirst ? [newestEntry, olderEntry] : [olderEntry, newestEntry]
         let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
                                             accountInfoKeys: firstFixture.keyManager,
                                             deviceInfoCodec: codec,
@@ -206,8 +205,47 @@ struct AuditLogEntryDecoderTests {
             Issue.record("Expected both account-info key generations to decode")
             return
         }
-        #expect(first.device.name == "First key device")
-        #expect(second.device.name == "Second key device")
+        #expect(first.device.name == (newestKeyFirst ? "Second key device" : "First key device"))
+        #expect(second.device.name == (newestKeyFirst ? "First key device" : "Second key device"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Device and actor snapshots use their retained account-info keys", .timeLimit(.minutes(1)))
+    func testWhenActorSnapshotRefreshesAccountInfoKeyThenDeviceSnapshotRemainsDecoded() async throws {
+        let firstFixture = try makeFixture()
+        let secondFixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
+        firstFixture.keyManager.refreshKeyStub = secondFixture.key
+        let codec = DeviceInfoCodec()
+        let deviceInfo = try codec.encrypt(DeviceInfo(name: "K1 device", type: "desktop"), using: firstFixture.protectedKey)
+        let actorInfo = try codec.encrypt(DeviceInfo(name: "K2 actor", type: "mobile"), using: secondFixture.protectedKey)
+        let payload = try JSONSerialization.data(withJSONObject: [
+            "type": "login",
+            "occurred_at": "2026-09-02T14:03:11Z",
+            "device": ["id": "device", "info": deviceInfo],
+            "actor": ["id": "actor", "info": actorInfo]
+        ])
+        let entry = try encryptedAuditEntry(id: "mixed-keys", payload: payload, key: firstFixture.key)
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: firstFixture.keyManager,
+                                            deviceInfoCodec: codec,
+                                            isScopedAccessCredentialsEnabled: { false },
+                                            canReadUnifiedDeviceList: { true })
+        let (accountManager, api, endpoint) = makeAccountManager(fixture: firstFixture, mapper: mapper)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest([entry])
+
+        let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
+
+        #expect(firstFixture.keyManager.loadKeyCalls.count == 1)
+        #expect(firstFixture.keyManager.refreshKeyCalls.count == 1)
+        guard page.entries.count == 1,
+              case .decoded(let event) = page.entries[0] else {
+            Issue.record("Expected an audit event with both snapshots decoded")
+            return
+        }
+        #expect(event.device.name == "K1 device")
+        #expect(event.device.type == "desktop")
+        #expect(event.actor?.name == "K2 actor")
+        #expect(event.actor?.type == "mobile")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -274,7 +312,7 @@ struct AuditLogEntryDecoderTests {
     @available(iOS 16, macOS 13, *)
     @Test("Page key refresh limit bridges to a safe error", .timeLimit(.minutes(1)))
     func testWhenPageKeyRefreshLimitIsReachedThenBridgesToSafeNSError() {
-        let error = PageScopedAccountInfoKeys.Error.forcedRefreshAlreadyAttempted as NSError
+        let error = PageScopedAccountInfoKeys.RefreshLimitError.forcedRefreshAlreadyAttempted as NSError
 
         #expect(error.domain == "com.duckduckgo.sync.audit-log.account-info-keys")
         #expect(error.code == 1)

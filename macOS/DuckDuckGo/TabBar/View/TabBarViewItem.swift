@@ -24,6 +24,7 @@ import FoundationExtensions
 import DesignResourcesKitIcons
 import FeatureFlags_macOS
 import PrivacyConfig
+import SwiftUI
 import WebKit
 
 struct OtherTabBarViewItemsState {
@@ -179,12 +180,24 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var faviconView = TabFaviconView()
     fileprivate lazy var titleView = TabTitleView()
 
+    /// A grouped tab's underline in the group colour.
     fileprivate let groupBackgroundColorView = {
-        let view = ColorView(frame: .zero, backgroundColor: nil, cornerRadius: 6)
-        view.alphaValue = 0.5
+        let view = ColorView(frame: .zero, backgroundColor: nil, cornerRadius: 1)
         view.isHidden = true
         return view
     }()
+
+    /// The pill shown in header mode; rebuilt on every configure.
+    fileprivate var groupHeaderPillView: NSView? {
+        didSet {
+            oldValue?.removeFromSuperview()
+            if let groupHeaderPillView {
+                groupHeaderPillView.frame = bounds
+                groupHeaderPillView.autoresizingMask = [.width, .height]
+                addSubview(groupHeaderPillView)
+            }
+        }
+    }
 
     /// Label for displaying group name when in header mode
     fileprivate let groupHeaderNameLabel: NSTextField = {
@@ -328,12 +341,11 @@ final class TabBarItemCellView: NSView {
     private func layout(widthStage: WidthStage) {
         mouseOverView.frame = bounds
 
-        let padding: CGFloat = 4
-        let height = bounds.height - (padding * 2)
-        groupBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
-                                                y: bounds.midY - (height / 2),
-                                                width: bounds.width - (padding * 2),
-                                                height: height)
+        let underlineInset: CGFloat = 10
+        groupBackgroundColorView.frame = NSRect(x: bounds.origin.x + underlineInset,
+                                                y: bounds.origin.y + 4,
+                                                width: max(0, bounds.width - (underlineInset * 2)),
+                                                height: 2)
 
         // Group header name label - centered in the cell
         if isGroupHeader {
@@ -473,6 +485,7 @@ final class TabBarItemCellView: NSView {
         isGroupHeader = false
         groupHeaderNameLabel.isHidden = true
         groupHeaderNameLabel.stringValue = ""
+        groupHeaderPillView = nil
         faviconView.reset()
         titleView.reset()
     }
@@ -994,17 +1007,22 @@ final class TabBarViewItem: NSCollectionViewItem {
     // MARK: - Group Header Mode
 
     /// Configures this item to display as a group header instead of a tab
-    func configureAsGroupHeader(_ group: TabGroup) {
+    func configureAsGroupHeader(_ group: TabGroup, tabCount: Int, isCollapsed: Bool, favicons: [NSImage]) {
         clearSubscriptions()
 
         currentHeaderGroup = group
         cell.isGroupHeader = true
 
-        cell.groupBackgroundColorView.backgroundColor = group.color.nsColor
-        cell.groupBackgroundColorView.isHidden = false
-
-        cell.groupHeaderNameLabel.stringValue = group.name
-        cell.groupHeaderNameLabel.isHidden = false
+        cell.groupBackgroundColorView.isHidden = true
+        cell.groupHeaderNameLabel.isHidden = true
+        cell.groupHeaderPillView = PassThroughHostingView(rootView: TabGroupHeaderPill(
+            name: group.name,
+            color: Color(group.color.nsColor),
+            tabCount: tabCount,
+            isCollapsed: isCollapsed,
+            favicons: isCollapsed ? Array(favicons.prefix(TabGroupHeaderPill.maxStackedFavicons)) : []
+        ))
+        cell.toolTip = isCollapsed ? "Expand \(group.name)" : "Collapse \(group.name)"
 
         cell.faviconView.isHidden = true
         cell.titleView.isHidden = true
@@ -1020,6 +1038,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         currentHeaderGroup = nil
         cell.isGroupHeader = false
         cell.groupHeaderNameLabel.isHidden = true
+        cell.groupHeaderPillView = nil
+        cell.toolTip = nil
 
         cell.faviconView.isHidden = false
         cell.titleView.isHidden = false
@@ -1894,3 +1914,60 @@ extension TabBarViewItem {
     }
 }
 #endif
+
+// MARK: - Tab group header pill
+
+/// Clicks go through to the cell's mouse handling, which toggles the group.
+private final class PassThroughHostingView<Content: View>: NSHostingView<Content> {
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+/// Colour dot, name, count and chevron. Collapsed, it also shows a few of the group's favicons.
+struct TabGroupHeaderPill: View {
+
+    static let maxStackedFavicons = 3
+    static let horizontalPadding: CGFloat = 10
+    /// Neighbouring tabs overlap item edges in some tab styles; this keeps their separators off the pill.
+    static let outerPadding: CGFloat = 10
+
+    let name: String
+    let color: Color
+    let tabCount: Int
+    let isCollapsed: Bool
+    let favicons: [NSImage]
+
+    /// Item width that fits the pill without truncating.
+    static func width(name: String, tabCount: Int, isCollapsed: Bool) -> CGFloat {
+        let font = NSFont.systemFont(ofSize: 12, weight: .medium)
+        let text = (name as NSString).size(withAttributes: [.font: font]).width
+            + ("\(tabCount)" as NSString).size(withAttributes: [.font: font]).width
+        let faviconsWidth = isCollapsed ? CGFloat(min(tabCount, maxStackedFavicons)) * 9 + 12 : 0
+        // dot 8 + chevron 10 + three 6pt gaps, inner and outer padding
+        return ceil(text + faviconsWidth + 8 + 10 + 18 + (horizontalPadding + outerPadding) * 2)
+    }
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(name).font(.system(size: 12, weight: .medium)).lineLimit(1)
+            if !favicons.isEmpty {
+                HStack(spacing: -5) {
+                    ForEach(favicons.indices, id: \.self) { index in
+                        Image(nsImage: favicons[index])
+                            .resizable()
+                            .frame(width: 12, height: 12)
+                            .clipShape(RoundedRectangle(cornerRadius: 3))
+                    }
+                }
+            }
+            Text("\(tabCount)").font(.system(size: 12)).opacity(0.7)
+            Image(systemName: isCollapsed ? "chevron.right" : "chevron.down").font(.system(size: 9, weight: .semibold))
+        }
+        .padding(.horizontal, Self.horizontalPadding)
+        .padding(.vertical, 4)
+        .background(Capsule().fill(color.opacity(0.18)))
+        .foregroundColor(.primary)
+        .padding(.horizontal, Self.outerPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}

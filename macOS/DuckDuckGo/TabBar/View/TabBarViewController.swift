@@ -2749,8 +2749,17 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
             return NSSize(width: pinnedTabWidth, height: pinnedTabHeight)
         }
 
-        // Check if this displayItem corresponds to the selected tab
+        // Group headers are only as wide as their pill
         let items = displayItems
+        if indexPath.item < items.count, let group = items[indexPath.item].groupHeader {
+            let groupTabs = tabCollectionViewModel.tabGroupManager.tabs(in: group, from: tabCollectionViewModel.tabCollection.tabs)
+            let width = TabGroupHeaderPill.width(name: group.name,
+                                                 tabCount: groupTabs.count,
+                                                 isCollapsed: tabCollectionViewModel.tabGroupManager.isCollapsed(group))
+            return NSSize(width: width, height: standardTabHeight)
+        }
+
+        // Check if this displayItem corresponds to the selected tab
         var isItemSelected = false
         if indexPath.item < items.count,
            let tab = items[indexPath.item].tab,
@@ -2828,7 +2837,11 @@ extension TabBarViewController: NSCollectionViewDataSource {
 
         switch displayItem {
         case .groupHeader(let group):
-            tabBarViewItem.configureAsGroupHeader(group)
+            let groupTabs = tabCollectionViewModel.tabGroupManager.tabs(in: group, from: tabCollectionViewModel.tabCollection.tabs)
+            tabBarViewItem.configureAsGroupHeader(group,
+                                                  tabCount: groupTabs.count,
+                                                  isCollapsed: tabCollectionViewModel.tabGroupManager.isCollapsed(group),
+                                                  favicons: groupTabs.compactMap(\.favicon))
             tabBarViewItem.delegate = self
 
         case .tab(let tab):

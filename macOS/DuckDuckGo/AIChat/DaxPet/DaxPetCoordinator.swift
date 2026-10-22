@@ -508,6 +508,14 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
 
     var canSummarizeCurrentPage: Bool { currentPage != nil }
 
+    func showOnCurrentPage(_ text: String) async -> Bool {
+        guard let (windowController, tab) = currentPage else { return false }
+        windowController.window?.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        guard case .painted = await WebViewPageHighlighter().highlight(text, in: tab) else { return false }
+        return true
+    }
+
     var canCompareTabs: Bool {
         featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts)
     }

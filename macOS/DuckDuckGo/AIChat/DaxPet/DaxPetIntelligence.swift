@@ -19,6 +19,7 @@
 import AIChat
 import Foundation
 import FoundationModels
+import NaturalLanguage
 import PDFKit
 
 /// Apple Intelligence's on-device model, for Dax's own small decisions; nothing it reads leaves the Mac.
@@ -46,6 +47,54 @@ protocol DaxPetIntelligence {
 struct DaxPetPageGlance: Equatable {
     let summary: String
     let followUps: [String]
+    /// Words on the page the gist comes from, for Dax to point at.
+    var quote: String?
+}
+
+/// Finds where on the page the on-device model's sentence came from, since it doesn't always copy it exactly.
+enum DaxPetPageQuote {
+
+    /// WebKit's find lights up one string, so a few words from the start of the sentence stand for it.
+    static let fragmentWordCount = 8
+    /// How much of the model's sentence a page sentence must share to be the one it came from.
+    static let minimumShare = 0.6
+    static let minimumSharedWords = 3
+
+    /// The start of the page sentence `quote` came from, as written on the page.
+    static func fragment(matching quote: String, in text: String) -> String? {
+        let quoteWords = words(in: quote)
+        guard quoteWords.count >= minimumSharedWords else { return nil }
+        var best: (sentence: String, shared: Int)?
+        let tokenizer = NLTokenizer(unit: .sentence)
+        tokenizer.string = text
+        tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
+            let sentence = String(text[range])
+            let shared = quoteWords.intersection(words(in: sentence)).count
+            if shared > best?.shared ?? 0 { best = (sentence, shared) }
+            return true
+        }
+        guard let best, best.shared >= minimumSharedWords,
+              Double(best.shared) / Double(quoteWords.count) >= minimumShare else { return nil }
+        return leadingWords(of: best.sentence)
+    }
+
+    private static func words(in text: String) -> Set<String> {
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        return Set(tokenizer.tokens(for: text.startIndex..<text.endIndex).map { text[$0].lowercased() })
+    }
+
+    /// The sentence's first few words, without heading or list marks.
+    private static func leadingWords(of sentence: String) -> String? {
+        let text = String(sentence.drop { $0.isWhitespace || "#*->•".contains($0) })
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        let wordRanges = tokenizer.tokens(for: text.startIndex..<text.endIndex)
+        guard let last = wordRanges.prefix(fragmentWordCount).last else { return nil }
+        let end = wordRanges.count > fragmentWordCount ? last.upperBound : text.endIndex
+        let fragment = text[..<end].trimmingCharacters(in: .whitespacesAndNewlines)
+        return fragment.isEmpty ? nil : fragment
+    }
 }
 
 /// Something Dax can find in the browser himself, without asking Duck.ai.
@@ -182,6 +231,8 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         @Guide(description: "Short follow-up requests the reader could send to an AI assistant about this page, each two to five words, without quotes",
                .count(3))
         var followUps: [String]
+        @Guide(description: "The one sentence on the page that best shows what it's about, copied word for word")
+        var keySentence: String
     }
 
     func pageGlance(title: String, content: String) async -> DaxPetPageGlance? {
@@ -199,7 +250,8 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         let followUps = response.content.followUps
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
             .filter { !$0.isEmpty }
-        return DaxPetPageGlance(summary: summary, followUps: followUps)
+        let quote = response.content.keySentence.trimmingCharacters(in: .whitespacesAndNewlines)
+        return DaxPetPageGlance(summary: summary, followUps: followUps, quote: quote.isEmpty ? nil : quote)
     }
 
     @Generable

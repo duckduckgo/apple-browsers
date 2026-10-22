@@ -86,7 +86,9 @@ struct DaxPetView: View {
                                    onAskDuckAI: model.askDuckAIInstead)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let glance = model.glance {
-                    GlanceBubble(glance: glance) { followUp in Task { await model.askAboutGlance(followUp) } }
+                    GlanceBubble(glance: glance,
+                                 onAsk: { followUp in Task { await model.askAboutGlance(followUp) } },
+                                 onShowWhere: { Task { await model.showWhereOnPage() } })
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let speech = model.speech {
                     SpeechBubble(text: speech)
@@ -487,6 +489,7 @@ private struct DaxCharacterRepresentable: NSViewRepresentable {
 private struct GlanceBubble: View {
     let glance: DaxPetPageGlance
     let onAsk: (String?) -> Void
+    let onShowWhere: () -> Void
 
     var body: some View {
         VStack(spacing: 6) {
@@ -519,11 +522,44 @@ private struct GlanceBubble: View {
                     .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
             )
 
-            if !glance.followUps.isEmpty {
-                ChipList(suggestions: glance.followUps, maximumRows: 2) { onAsk($0) }
-                    .frame(width: DaxPetView.Metrics.composingWidth)
+            if !glance.followUps.isEmpty || glance.quote != nil {
+                Group {
+                    if #available(macOS 13, *) {
+                        ChipRows(spacing: 6, maximumRows: 2) { chips }
+                    } else {
+                        VStack(spacing: 6) { chips }
+                    }
+                }
+                .frame(width: DaxPetView.Metrics.composingWidth)
+                .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
             }
         }
+    }
+}
+
+private extension GlanceBubble {
+
+    /// "Show me where" first, so it's never the chip left out of a full row; on macOS 12 one follow-up fits beside it.
+    @ViewBuilder
+    var chips: some View {
+        if glance.quote != nil {
+            Button(action: onShowWhere) {
+                ChipLabel(text: UserText.daxPetShowWhere, isAccented: true)
+            }
+            .buttonStyle(.plain)
+        }
+        ForEach(followUpsThatFit, id: \.self) { followUp in
+            Button { onAsk(followUp) } label: {
+                ChipLabel(text: followUp)
+            }
+            .buttonStyle(.plain)
+            .help(followUp)
+        }
+    }
+
+    private var followUpsThatFit: [String] {
+        if #available(macOS 13, *) { return glance.followUps }
+        return Array(glance.followUps.prefix(glance.quote == nil ? 2 : 1))
     }
 }
 

@@ -253,6 +253,42 @@
         }
       }
     },
+    "duckai.dax-pet.show-where" : {
+      "comment" : "Button under the speech bubble where Dax, the DuckDuckGo mascot, sums up the page open in the browser; it highlights on the page the sentence his summary comes from",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Me Where"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.show-where.found" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he highlighted on the page the sentence his summary comes from",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Right there!"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.show-where.missed" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when he couldn't find on the page the sentence his summary comes from, e.g. because the page changed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hmm, I can't spot it on the page anymore."
+          }
+        }
+      }
+    },
     "duckai.dax-pet.tool.finding" : {
       "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches a web page for some text",
       "extractionState" : "extracted_with_value",

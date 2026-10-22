@@ -45,6 +45,8 @@ protocol DaxPetPromptSubmitting {
 
     /// The text of the web page open in the browser, if there is one.
     func currentPageContent() async -> DaxPetPageContent?
+    /// Brings the open page forward and lights up `text` on it; `false` when it isn't there.
+    func showOnCurrentPage(_ text: String) async -> Bool
 }
 
 struct DaxPetPageContent: Equatable {
@@ -682,7 +684,9 @@ final class DaxPetViewModel: ObservableObject {
         guard character.mood == .thinking, !isAwaitingAnswer else { return }
         character.mood = .idle
         guard let pageGlance, !isComposing, speech == nil else { return }
-        glance = DaxPetPageGlance(summary: pageGlance.summary, followUps: Array(pageGlance.followUps.prefix(3)))
+        // Only words really on the page can be lit up there.
+        let quote = pageGlance.quote.flatMap { DaxPetPageQuote.fragment(matching: $0, in: page.text) }
+        glance = DaxPetPageGlance(summary: pageGlance.summary, followUps: Array(pageGlance.followUps.prefix(3)), quote: quote)
         let work = DispatchWorkItem { [weak self] in self?.glance = nil }
         glanceWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 15, execute: work)
@@ -692,6 +696,18 @@ final class DaxPetViewModel: ObservableObject {
     func askAboutGlance(_ followUp: String? = nil) async {
         clearGlance()
         await ask(followUp ?? UserText.daxPetSummarizePrompt)
+    }
+
+    /// Lights up on the page where the gist comes from.
+    func showWhereOnPage() async {
+        guard let quote = glance?.quote else { return }
+        clearGlance()
+        if await submitter.showOnCurrentPage(quote) {
+            character.hop()
+            say(UserText.daxPetShowWhereFound, for: 3)
+        } else {
+            say(UserText.daxPetShowWhereMissed, for: 4)
+        }
     }
 
     private func clearGlance() {

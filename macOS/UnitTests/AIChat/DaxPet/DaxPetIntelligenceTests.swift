@@ -45,3 +45,31 @@ final class DaxPetIntelligenceTests: XCTestCase {
         XCTAssertEqual(DaxPetOnDeviceIntelligence.describe([.file(file)]), "A file named archive.zip")
     }
 }
+
+final class DaxPetPageQuoteTests: XCTestCase {
+
+    private let page = """
+        # Hotel Adlon Kempinski Berlin
+        Unter den Linden 77, Mitte, 10117 Berlin, Germany
+        Situated next to the Brandenburg Gate, this luxurious hotel offers a spa with an indoor pool and elegant rooms. \
+        Guests love the location.
+        """
+
+    func testTheSentenceTheModelMeantIsFoundEvenWhenItRewordedIt() {
+        let fragment = DaxPetPageQuote.fragment(matching: "This luxurious hotel next to the Brandenburg Gate offers a spa with a pool.", in: page)
+
+        XCTAssertEqual(fragment, "Situated next to the Brandenburg Gate, this luxurious")
+    }
+
+    func testTheFragmentIsWrittenAsOnThePageWithoutHeadingMarks() {
+        XCTAssertEqual(DaxPetPageQuote.fragment(matching: "Hotel Adlon Kempinski Berlin", in: page), "Hotel Adlon Kempinski Berlin")
+    }
+
+    func testASentenceThatIsNotOnThePageIsNotFound() {
+        XCTAssertNil(DaxPetPageQuote.fragment(matching: "The museum opens at nine every morning.", in: page))
+    }
+
+    func testTooFewWordsToTellAreNotFound() {
+        XCTAssertNil(DaxPetPageQuote.fragment(matching: "Hotel", in: page))
+    }
+}

@@ -62,6 +62,13 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
         page
     }
 
+    var shownOnPage: [String] = []
+    var showOnPageResult = true
+    func showOnCurrentPage(_ text: String) async -> Bool {
+        shownOnPage.append(text)
+        return showOnPageResult
+    }
+
     var canCompareTabs = true
     var compareResult = true
     var comparisons: [(prompt: String, tabs: [DaxPetTab])] = []
@@ -1378,5 +1385,62 @@ final class DaxPetViewModelTests: XCTestCase {
         await fulfillment(of: [submitted], timeout: 1)
         XCTAssertTrue(intelligence.pickedFrom.isEmpty)
         XCTAssertEqual(submitter.submittedPrompts, ["compare these hotels"])
+    }
+
+    // MARK: - Show me where
+
+    private static let mallardPage = DaxPetPageContent(
+        url: "https://en.wikipedia.org/wiki/Mallard",
+        title: "Mallard",
+        text: "# Mallard\nThe mallard (Anas platyrhynchos) is a dabbling duck that breeds throughout the Americas. It is common."
+    )
+
+    func testTheGistPointsAtTheWordsOnThePageItComesFrom() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page about mallards.", followUps: [],
+                                                   quote: "The mallard is a dabbling duck that breeds throughout the Americas.")
+        submitter.page = Self.mallardPage
+
+        await model.glanceAtPage()
+
+        XCTAssertEqual(model.glance?.quote, "The mallard (Anas platyrhynchos) is a dabbling duck")
+    }
+
+    func testWhenTheSentenceIsNotOnThePageThereIsNothingToPointAt() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page about mallards.", followUps: [], quote: "Geese migrate south in autumn.")
+        submitter.page = Self.mallardPage
+
+        await model.glanceAtPage()
+
+        XCTAssertNotNil(model.glance)
+        XCTAssertNil(model.glance?.quote)
+    }
+
+    func testShowMeWhereLightsUpTheWordsOnThePage() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page about mallards.", followUps: [],
+                                                   quote: "The mallard is a dabbling duck that breeds throughout the Americas.")
+        submitter.page = Self.mallardPage
+        await model.glanceAtPage()
+
+        await model.showWhereOnPage()
+
+        XCTAssertEqual(submitter.shownOnPage, ["The mallard (Anas platyrhynchos) is a dabbling duck"])
+        XCTAssertNil(model.glance)
+        XCTAssertEqual(model.speech, UserText.daxPetShowWhereFound)
+    }
+
+    func testWhenTheWordsAreGoneFromThePageDaxSaysSo() async {
+        let (model, intelligence) = makeModel(suggesting: [])
+        submitter.showOnPageResult = false
+        intelligence.pageGlance = DaxPetPageGlance(summary: "A page about mallards.", followUps: [],
+                                                   quote: "The mallard is a dabbling duck that breeds throughout the Americas.")
+        submitter.page = Self.mallardPage
+        await model.glanceAtPage()
+
+        await model.showWhereOnPage()
+
+        XCTAssertEqual(model.speech, UserText.daxPetShowWhereMissed)
     }
 }

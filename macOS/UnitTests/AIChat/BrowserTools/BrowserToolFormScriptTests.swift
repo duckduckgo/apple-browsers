@@ -125,7 +125,50 @@ final class BrowserToolFormScriptTests: XCTestCase {
         XCTAssertEqual(readback.map(\.value), ["P", "2br", "on"])
         XCTAssertEqual(readback.last?.checked, true)
         let events = try await webView.callAsyncJavaScript("return window.events.join(',')", contentWorld: .page) as? String
-        XCTAssertEqual(events, "input,change")
+        XCTAssertEqual(events, "input,change,blur")
+    }
+
+    /// A real focus would let Autofill open its prompt in a tab the user is not looking at.
+    func testWhenFieldsAreFilledThenFocusDoesNotMove() async throws {
+        let page = try await loadFixture()
+        let name = try field("fullName", in: page)
+
+        _ = await driver.apply([.text(ref: name.ref, value: "Pat")], in: webView)
+
+        let focused = try await webView.callAsyncJavaScript("return document.activeElement === document.body", contentWorld: .page) as? Bool
+        XCTAssertEqual(focused, true)
+    }
+
+    func testWhenAskedToFocusAnElementThenItGetsFocus() async throws {
+        let page = try await loadFixture()
+        let company = try field("company", in: page)
+
+        let focusedByDriver = await driver.focus(company.ref, in: webView)
+
+        XCTAssertTrue(focusedByDriver)
+        let focusedName = try await webView.callAsyncJavaScript("return document.activeElement.name", contentWorld: .page) as? String
+        XCTAssertEqual(focusedName, "company")
+    }
+
+    func testWhenAFieldHoldsCardDataThenItsValueNeverLeavesThePage() async throws {
+        let page = try await loadFixture()
+
+        XCTAssertNil(try field("ccnum", in: page).value)
+        XCTAssertNil(try field("verification", in: page).value)
+        XCTAssertEqual(try field("verification", in: page).ddgInputType, "creditCards.cardSecurityCode")
+        XCTAssertTrue(BrowserToolForms.hasPaymentFields(page))
+    }
+
+    func testWhenAFormShowsAnOutputOrAReadOnlyFieldThenTheyAreReportedAsReadOnly() async throws {
+        let page = try await loadFixture()
+
+        let total = try field("total", in: page)
+        XCTAssertEqual(total.type, "output")
+        XCTAssertEqual(total.value, "$129.00")
+        XCTAssertEqual(total.labels.labelFor, "Total")
+        XCTAssertTrue(total.readOnly)
+        XCTAssertTrue(try field("code", in: page).readOnly)
+        XCTAssertFalse(try field("fullName", in: page).readOnly)
     }
 
     /// The page writes its message into `<id>-error` on change, as the quote sites do.
@@ -205,6 +248,10 @@ final class BrowserToolFormScriptTests: XCTestCase {
         <div class="field check"><input type="checkbox" id="packing" name="packing"><label for="packing">Add packing</label></div>
         <div class="field"><label for="pw">Create a password</label><input type="password" id="pw" name="pw" value="secret" autocomplete="new-password"></div>
         <input type="hidden" name="token" value="abc">
+        <label for="code">Promo code</label><input id="code" name="code" value="SPRING" readonly>
+        <label for="card">Card number</label><input id="card" name="ccnum" autocomplete="cc-number" value="4242424242424242">
+        <label for="check">Check digits</label><input id="check" name="verification" data-ddg-inputtype="creditCards.cardSecurityCode" value="123">
+        <label for="total">Total</label><output id="total" name="total">$129.00</output>
         <fieldset id="step-2" hidden><legend>Later</legend><label for="later">Later field</label><input id="later" name="later"></fieldset>
         <button type="button" id="next">Next</button>
         <button>Get my quote</button>
@@ -214,7 +261,7 @@ final class BrowserToolFormScriptTests: XCTestCase {
     <script>
       window.events = [];
       const fullName = document.getElementById('full-name');
-      ['input', 'change'].forEach((type) => fullName.addEventListener(type, () => window.events.push(type)));
+      ['input', 'change', 'blur'].forEach((type) => fullName.addEventListener(type, () => window.events.push(type)));
       fullName.addEventListener('change', () => {
         document.getElementById('full-name-error').textContent = fullName.value.length < 2 ? 'Too short.' : '';
       });

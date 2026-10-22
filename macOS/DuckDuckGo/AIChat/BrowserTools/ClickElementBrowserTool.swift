@@ -92,7 +92,7 @@ final class ClickElementBrowserTool: BrowserTool {
         guard let button = page.buttons.first(where: { $0.ref == ref && $0.visible && !$0.disabled }) else {
             return .failure(.notFound)
         }
-        guard !BrowserToolForms.isSubmit(button) else { return .failure(.useSubmitForm) }
+        guard !BrowserToolForms.isSubmit(button, in: page) else { return .failure(.useSubmitForm) }
 
         let startURL = tab.webView.url
         guard await driver.click(ref, in: tab.webView) else { return .failure(.notFound) }

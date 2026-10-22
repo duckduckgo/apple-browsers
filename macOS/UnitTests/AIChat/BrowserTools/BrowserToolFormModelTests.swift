@@ -199,10 +199,113 @@ final class BrowserToolFormModelTests: XCTestCase {
         XCTAssertTrue(BrowserToolForms.isRestrictedPage(page))
     }
 
-    func testWhenThePageAsksForCardDetailsThenItIsRestricted() {
-        XCTAssertTrue(BrowserToolForms.isRestrictedPage(page(fields: [Field(ref: "e1", formRef: "f1", autocomplete: "cc-number")])))
-        XCTAssertTrue(BrowserToolForms.isRestrictedPage(page(fields: [Field(ref: "e1", formRef: "f1", name: "cardNumber")])))
-        XCTAssertTrue(BrowserToolForms.isRestrictedPage(page(fields: [Field(ref: "e1", formRef: "f1", name: "cvv")])))
+    /// A checkout is not refused as restricted: it is handed to the user, who pays themselves.
+    func testWhenThePageAsksForCardDetailsThenItHasPaymentFieldsButIsNotRestricted() {
+        for field in [Field(ref: "e1", formRef: "f1", autocomplete: "cc-number"), Field(ref: "e1", formRef: "f1", name: "cardNumber"),
+                      Field(ref: "e1", formRef: "f1", name: "cvv"), Field(ref: "e1", formRef: "f1", ddgInputType: "creditCards.cardSecurityCode")] {
+            let page = self.page(fields: [field])
+            XCTAssertTrue(BrowserToolForms.hasPaymentFields(page), field.name + field.autocomplete + field.ddgInputType)
+            XCTAssertFalse(BrowserToolForms.isRestrictedPage(page))
+        }
+    }
+
+    // MARK: - Payment fields
+
+    func testWhenAFieldIsForCardDataByAutocompleteAutofillOrNameThenItIsAPaymentField() {
+        let payment = ["cc-number", "cc-csc", "cc-exp", "cc-exp-month", "cc-exp-year", "cc-name", "cc-type", "billing cc-number"].map {
+            Field(ref: "e1", formRef: "f1", autocomplete: $0)
+        } + [
+            Field(ref: "e2", formRef: "f1", ddgInputType: "creditCards.cardNumber"),
+            Field(ref: "e3", formRef: "f1", name: "card_number")
+        ]
+
+        for field in payment {
+            XCTAssertTrue(BrowserToolForms.isPaymentField(field), field.autocomplete + field.ddgInputType + field.name)
+        }
+        XCTAssertFalse(BrowserToolForms.isPaymentField(Field(ref: "e4", formRef: "f1", name: "email", autocomplete: "email",
+                                                               ddgInputType: "identities.emailAddress")))
+    }
+
+    func testWhenSnapshottingACheckoutThenPaymentFieldsAreMarkedAndNeverCarryAValue() throws {
+        let page = page(fields: [
+            Field(ref: "e1", formRef: "f1", name: "given", autocomplete: "given-name", labels: Labels(labelFor: "First name"), value: "Jamie"),
+            Field(ref: "e2", formRef: "f1", name: "card", autocomplete: "cc-number", labels: Labels(labelFor: "Card number"), value: "4242424242424242"),
+            Field(ref: "e3", formRef: "f1", name: "x", labels: Labels(labelFor: "Security code"), value: "123", ddgInputType: "creditCards.cardSecurityCode"),
+            Field(ref: "e4", formRef: "f1", tag: "output", type: "output", name: "total", labels: Labels(labelFor: "Total"), value: "$129.00", readOnly: true)
+        ])
+
+        let form = try XCTUnwrap(BrowserToolForms.snapshot(of: page, tabID: "t")["forms"]?.arrayValue?.first)
+
+        XCTAssertEqual(form["hasPaymentFields"], true)
+        XCTAssertEqual(form["fields"], [
+            ["ref": "e1", "label": "First name", "type": "text", "required": false, "autocomplete": "given-name", "value": "Jamie"],
+            ["ref": "e2", "label": "Card number", "type": "text", "required": false, "autocomplete": "cc-number", "sensitive": "payment"],
+            ["ref": "e3", "label": "Security code", "type": "text", "required": false, "autocomplete": "", "sensitive": "payment"],
+            ["ref": "e4", "label": "Total", "type": "output", "required": false, "autocomplete": "", "value": "$129.00", "readOnly": true]
+        ])
+    }
+
+    func testWhenFillingPaymentOrReadOnlyFieldsThenTheUserMustActOrTheyAreDisabled() {
+        let fields = BrowserToolForms.fields(in: page(fields: [
+            Field(ref: "e1", formRef: "f1", autocomplete: "cc-number"),
+            Field(ref: "e2", formRef: "f1", tag: "output", type: "output", readOnly: true),
+            Field(ref: "e3", formRef: "f1", readOnly: true),
+            Field(ref: "e4", formRef: "f1", autocomplete: "given-name")
+        ]))
+
+        let plan = BrowserToolForms.fillPlan(for: [("e1", "4242424242424242"), ("e2", "$1"), ("e3", "x"), ("e4", "Jamie")], fields: fields)
+
+        XCTAssertEqual(plan.failed.map { $0.error }, ["user_action_required", "disabled", "disabled"])
+        XCTAssertEqual(plan.steps.map(\.action), [.text(ref: "e4", value: "Jamie")])
+    }
+
+    func testWhenPreviewingThenOutputsAndPaymentFieldsAreLeftOut() throws {
+        let page = page(fields: [
+            Field(ref: "e1", formRef: "f1", labels: Labels(labelFor: "Name"), value: "Jamie"),
+            Field(ref: "e2", formRef: "f1", autocomplete: "cc-name", labels: Labels(labelFor: "Name on card"), value: "Jamie"),
+            Field(ref: "e3", formRef: "f1", tag: "output", type: "output", labels: Labels(labelFor: "Total"), value: "$129.00", readOnly: true)
+        ])
+
+        let preview = try XCTUnwrap(BrowserToolForms.preview(of: "f1", in: page))
+
+        XCTAssertEqual(preview.fields.map { $0.label }, ["Name"])
+    }
+
+    // MARK: - Order and cart buttons
+
+    func testWhenAButtonPlacesAnOrderOrPaysThenItIsASubmitWhateverItsType() {
+        for text in ["Place order", "Pay", "Pay now", "Buy now", "Complete purchase", "Confirm order", "PLACE ORDER"] {
+            XCTAssertTrue(BrowserToolForms.isSubmit(Button(ref: "b1", formRef: "f1", tag: "button", typeAttribute: "button", text: text)), text)
+        }
+    }
+
+    func testWhenAButtonOnlyMovesTowardsCheckoutThenItIsNotASubmit() {
+        for text in ["Add to cart", "Continue to checkout", "View cart", "PayPal info"] {
+            XCTAssertFalse(BrowserToolForms.isSubmit(Button(ref: "b1", formRef: "f1", tag: "button", typeAttribute: "button", text: text)), text)
+        }
+    }
+
+    /// A product form sends a size and a quantity, nothing personal, so its cart button stays clickable.
+    func testWhenACartButtonSubmitsAFormWithoutTypedDetailsThenItIsClickable() {
+        let addToCart = Button(ref: "b1", formRef: "f1", tag: "button", typeAttribute: nil, inForm: true, text: "Add to cart")
+        let product = page(fields: [
+            Field(ref: "e1", formRef: "f1", tag: "select", type: "select", name: "size"),
+            Field(ref: "e2", formRef: "f1", type: "number", name: "quantity")
+        ], buttons: [addToCart])
+        let shipping = page(fields: [Field(ref: "e1", formRef: "f1", type: "text", name: "address")], buttons: [addToCart])
+
+        XCTAssertFalse(BrowserToolForms.isSubmit(addToCart, in: product))
+        XCTAssertTrue(BrowserToolForms.isSubmit(addToCart, in: shipping))
+        XCTAssertTrue(BrowserToolForms.isSubmit(Button(ref: "b2", formRef: "f1", typeAttribute: "submit", text: "Get my quote"), in: product))
+    }
+
+    func testWhenSnapshottingAProductFormThenItsCartButtonIsNotASubmit() throws {
+        let page = page(fields: [Field(ref: "e1", formRef: "f1", tag: "select", type: "select", name: "size")],
+                        buttons: [Button(ref: "b1", formRef: "f1", typeAttribute: "submit", text: "Add to cart")])
+
+        let buttons = try XCTUnwrap(BrowserToolForms.snapshot(of: page, tabID: "t")["forms"]?.arrayValue?.first?["buttons"])
+
+        XCTAssertEqual(buttons, [["ref": "b1", "text": "Add to cart", "isSubmit": false]])
     }
 
     /// The cleaning quote offers an optional account password among many other fields.
@@ -242,8 +345,9 @@ final class BrowserToolFormModelTests: XCTestCase {
             "forms": [[
                 "ref": "f1",
                 "name": "quote",
-                "fields": [["ref": "e1", "label": "Street", "type": "text", "required": false, "value": "1 Main St"]],
-                "buttons": [["ref": "b1", "text": "Next", "isSubmit": false]]
+                "fields": [["ref": "e1", "label": "Street", "type": "text", "required": false, "autocomplete": "", "value": "1 Main St"]],
+                "buttons": [["ref": "b1", "text": "Next", "isSubmit": false]],
+                "hasPaymentFields": false
             ]],
             "messages": []
         ])
@@ -258,8 +362,8 @@ final class BrowserToolFormModelTests: XCTestCase {
         let fields = try XCTUnwrap(BrowserToolForms.snapshot(of: page, tabID: "t")["forms"]?.arrayValue?.first?["fields"]?.arrayValue)
 
         XCTAssertEqual(fields, [
-            ["ref": "e1", "label": "Password", "type": "password", "required": false],
-            ["ref": "e2", "label": "Card", "type": "text", "required": false]
+            ["ref": "e1", "label": "Password", "type": "password", "required": false, "autocomplete": ""],
+            ["ref": "e2", "label": "Card", "type": "text", "required": false, "autocomplete": "cc-number", "sensitive": "payment"]
         ])
     }
 
@@ -275,11 +379,11 @@ final class BrowserToolFormModelTests: XCTestCase {
         let fields = try XCTUnwrap(BrowserToolForms.snapshot(of: page, tabID: "t")["forms"]?.arrayValue?.first?["fields"]?.arrayValue)
 
         XCTAssertEqual(fields, [
-            ["ref": "e1", "label": "Home size", "type": "select", "required": true,
+            ["ref": "e1", "label": "Home size", "type": "select", "required": true, "autocomplete": "",
              "options": [["value": "", "label": "Choose…"], ["value": "2br", "label": "2 bedrooms"]]],
-            ["ref": "e2", "label": "Packing", "type": "checkbox", "required": false, "value": "false"],
-            ["ref": "e3", "label": "Phone", "type": "tel", "required": false, "value": "12", "error": "Enter a 10-digit US phone number."],
-            ["ref": "e4", "label": "Do you own or rent?", "type": "radio", "required": false, "options": [["value": "own", "label": "I own"]]]
+            ["ref": "e2", "label": "Packing", "type": "checkbox", "required": false, "autocomplete": "", "value": "false"],
+            ["ref": "e3", "label": "Phone", "type": "tel", "required": false, "autocomplete": "", "value": "12", "error": "Enter a 10-digit US phone number."],
+            ["ref": "e4", "label": "Do you own or rent?", "type": "radio", "required": false, "autocomplete": "", "options": [["value": "own", "label": "I own"]]]
         ])
     }
 

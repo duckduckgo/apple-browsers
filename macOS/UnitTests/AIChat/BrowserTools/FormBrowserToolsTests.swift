@@ -363,6 +363,70 @@ final class FormBrowserToolsTests: XCTestCase {
         XCTAssertEqual(allTools().map { $0.name }, ["getPageSnapshot", "fillForm", "clickElement", "submitForm"])
     }
 
+    // MARK: - Checkout
+
+    func testWhenSnapshottingACheckoutThenCardFieldsHaveNoValueAndTheTotalIsAnOutput() async throws {
+        driver.pages = [Self.checkoutPage()]
+
+        let result = await GetPageSnapshotBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver)
+            .execute(arguments: ["tabId": .string(tabs[2].uuid)], context: context)
+
+        let form = try XCTUnwrap(result.successPayload?["forms"]?.arrayValue?.first)
+        let fields = try XCTUnwrap(form["fields"]?.arrayValue)
+        XCTAssertEqual(form["hasPaymentFields"], true)
+        XCTAssertEqual(fields.filter { $0["sensitive"] == "payment" }.map { $0["ref"] }, ["e2", "e3"])
+        XCTAssertTrue(fields.filter { $0["sensitive"] == "payment" }.allSatisfy { $0["value"] == nil })
+        XCTAssertEqual(fields.last, ["ref": "e4", "label": "Order total", "type": "output", "required": false, "autocomplete": "",
+                                     "value": "$129.00", "readOnly": true])
+    }
+
+    func testWhenFillingTheCardFieldThenTheUserMustDoItAndTheOtherFieldsStillFill() async throws {
+        driver.pages = [Self.checkoutPage()]
+
+        let result = await fillForm().execute(arguments: [
+            "tabId": .string(tabs[2].uuid),
+            "fields": [["ref": "e1", "value": "Jamie"], ["ref": "e2", "value": "4242424242424242"]]
+        ], context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["failed"], [["ref": "e2", "error": "user_action_required"]])
+        XCTAssertEqual(payload["filled"], [["ref": "e1", "value": "Jamie"]])
+        XCTAssertEqual(driver.appliedActions, [.text(ref: "e1", value: "Jamie")])
+    }
+
+    func testWhenSubmittingACheckoutThenTheUserMustDoItAndNobodyIsAsked() async {
+        driver.pages = [Self.checkoutPage()]
+        let arguments: JSONValue = ["tabId": .string(tabs[2].uuid), "formRef": "f1"]
+
+        let prompt = await submitForm().approvalPrompt(arguments: arguments, context: context)
+        let direct = await submitForm().execute(arguments: arguments, context: context)
+
+        XCTAssertEqual(prompt, .refuse(.userActionRequired))
+        XCTAssertEqual(direct, .failure(.userActionRequired))
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("submit") })
+    }
+
+    func testWhenClickingPlaceOrderThenItIsRefusedEvenAsAPlainButton() async {
+        driver.pages = [Self.checkoutPage()]
+
+        let result = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid), "ref": "b1"], context: context)
+
+        XCTAssertEqual(result, .failure(.useSubmitForm))
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("click") })
+    }
+
+    func testWhenClickingAddToCartOnAProductFormThenItIsClicked() async throws {
+        driver.pages = [BrowserToolRawPage(url: "https://shop.example/product", forms: [.init(ref: "f1")], fields: [
+            .init(ref: "e1", formRef: "f1", tag: "select", type: "select", name: "size", value: "42"),
+            .init(ref: "e2", formRef: "f1", type: "number", name: "quantity", value: "1")
+        ], buttons: [.init(ref: "b1", formRef: "f1", typeAttribute: nil, inForm: true, text: "Add to cart")])]
+
+        let result = await clickElement().execute(arguments: ["tabId": .string(tabs[2].uuid), "ref": "b1"], context: context)
+
+        XCTAssertNotNil(result.successPayload)
+        XCTAssertTrue(driver.calls.contains("click b1"))
+    }
+
     // MARK: -
 
     private func fillForm() -> FillFormBrowserTool {
@@ -401,6 +465,24 @@ final class FormBrowserToolsTests: XCTestCase {
         ["tabId": .string(tabID), "ref": "b1", "formRef": "f1", "fields": [["ref": "e1", "value": "Pat"]]]
     }
 
+    /// e1 first name, e2 card number, e3 security code (classified by Autofill), e4 the total; b1 Place order.
+    static func checkoutPage() -> BrowserToolRawPage {
+        typealias Field = BrowserToolRawPage.Field
+        typealias Labels = BrowserToolRawPage.Labels
+        return BrowserToolRawPage(
+            url: "https://shop.example/checkout",
+            title: "Checkout | Example Shoes",
+            forms: [.init(ref: "f1", name: "checkout")],
+            fields: [
+                Field(ref: "e1", formRef: "f1", name: "firstName", autocomplete: "given-name", labels: Labels(labelFor: "First name"), value: ""),
+                Field(ref: "e2", formRef: "f1", name: "cc", autocomplete: "cc-number", labels: Labels(labelFor: "Card number")),
+                Field(ref: "e3", formRef: "f1", name: "x", labels: Labels(labelFor: "Security code"), ddgInputType: "creditCards.cardSecurityCode"),
+                Field(ref: "e4", formRef: "f1", tag: "output", type: "output", name: "total", labels: Labels(labelFor: "Order total"),
+                      value: "$129.00", readOnly: true)
+            ],
+            buttons: [.init(ref: "b1", formRef: "f1", typeAttribute: "button", text: "Place order")])
+    }
+
     /// e1 name, e2 home size, e3 phone with an error, e4/e5 a radio group, e6 password; b1 Next, b2 submit.
     static func quotePage(name: String = "", phoneError: String = "", url: String = "https://quotes.example/movers") -> BrowserToolRawPage {
         typealias Field = BrowserToolRawPage.Field
@@ -433,6 +515,7 @@ final class StubFormDriver: BrowserToolFormDriving {
     var pages: [BrowserToolRawPage] = []
     var readback: [BrowserToolFillReadback]?
     var clickSucceeds = true
+    var focusSucceeds = true
     var submitSucceeds = true
     private(set) var calls: [String] = []
     private(set) var appliedActions: [BrowserToolFillAction] = []
@@ -460,6 +543,11 @@ final class StubFormDriver: BrowserToolFormDriving {
     func click(_ ref: String, in webView: WKWebView) async -> Bool {
         calls.append("click \(ref)")
         return clickSucceeds
+    }
+
+    func focus(_ ref: String, in webView: WKWebView) async -> Bool {
+        calls.append("focus \(ref)")
+        return focusSucceeds
     }
 
     func submit(formRef: String, submitterRef: String?, in webView: WKWebView) async -> Bool {

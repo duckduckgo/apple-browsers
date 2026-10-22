@@ -20,7 +20,8 @@ import AIChat
 import Foundation
 
 /// Submits a form on a tab Duck.ai opened. The user approves every submit from a preview of what
-/// the site will receive; no decision is remembered, and login and checkout pages are refused.
+/// the site will receive; no decision is remembered. Login pages are refused, and a checkout is
+/// left for the user to complete.
 @MainActor
 final class SubmitFormBrowserTool: BrowserTool {
 
@@ -102,7 +103,7 @@ final class SubmitFormBrowserTool: BrowserTool {
             formRef = readyFormRef
         }
 
-        let submitter = page.buttons.first { $0.formRef == formRef && $0.visible && !$0.disabled && BrowserToolForms.isSubmit($0) }
+        let submitter = page.buttons.first { $0.formRef == formRef && $0.visible && !$0.disabled && BrowserToolForms.isSubmit($0, in: page) }
         let startURL = tab.webView.url
         guard await driver.submit(formRef: formRef, submitterRef: submitter?.ref, in: tab.webView) else { return .failure(.notFound) }
         let navigated: Bool
@@ -142,6 +143,8 @@ final class SubmitFormBrowserTool: BrowserTool {
         }
         guard let formRef = arguments?["formRef"]?.stringValue, !formRef.isEmpty else { return .failure(.invalidArguments) }
         guard let page = await driver.page(in: tab.webView) else { return .failure(.unavailable) }
+        // A checkout is the user's to complete: `showTab` hands it over with the card field focused.
+        guard !BrowserToolForms.hasPaymentFields(page) else { return .failure(.userActionRequired) }
         guard !BrowserToolForms.isRestrictedPage(page) else { return .failure(.restricted) }
         guard page.forms.contains(where: { $0.ref == formRef && $0.visible }) else { return .failure(.notFound) }
         return .ready(tabID: tabID, tab: tab, page: page, formRef: formRef)

@@ -78,7 +78,7 @@ final class FillFormBrowserTool: BrowserTool {
                     "type": "object",
                     "properties": [
                         "ref": ["type": "string"],
-                        "error": ["type": "string", "enum": ["not_found", "restricted", "invalid_option", "disabled"]]
+                        "error": ["type": "string", "enum": ["not_found", "restricted", "invalid_option", "disabled", "user_action_required"]]
                     ],
                     "required": ["ref", "error"]
                 ]
@@ -121,6 +121,7 @@ final class FillFormBrowserTool: BrowserTool {
         guard let entries = Self.entries(from: arguments?["fields"]) else { return .failure(.invalidArguments) }
         guard let page = await driver.page(in: tab.webView) else { return .failure(.unavailable) }
 
+        // Payment fields fail as `user_action_required`: the user fills those with their own Autofill.
         let plan = BrowserToolForms.fillPlan(for: entries, fields: BrowserToolForms.fields(in: page))
         var filled: [JSONValue] = []
         var failed: [JSONValue] = plan.failed.map { ["ref": .string($0.ref), "error": .string($0.error)] }

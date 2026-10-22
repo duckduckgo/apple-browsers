@@ -30,9 +30,12 @@
     const maxValue = 2000;
     const maxPageText = 4000;
 
-    const controlSelector = 'input:not([type="submit" i]):not([type="button" i]):not([type="reset" i]):not([type="image" i]), select, textarea';
+    // `<output>` too: shops show computed values such as an order total in one.
+    const controlSelector = 'input:not([type="submit" i]):not([type="button" i]):not([type="reset" i]):not([type="image" i]), select, textarea, output';
     const buttonSelector = 'button, input[type="submit" i], input[type="button" i], input[type="reset" i], input[type="image" i], [role="button"]';
     const anyControlSelector = 'input, select, textarea';
+    // Card fields by name, for pages that neither set `autocomplete` nor were classified by Autofill.
+    const paymentNamePattern = /card.?num|cc.?num|cvc|cvv|csc|card.?security/i;
     // Left out of label text: the controls themselves, and error and hint text that sits beside them.
     const notLabelSelector = 'input, select, textarea, button, script, style, [class*="error" i], [role="alert"], [class*="hint" i]';
 
@@ -200,6 +203,8 @@
         const tag = control.tagName.toLowerCase();
         const type = tag === 'input' ? (control.getAttribute('type') || 'text').toLowerCase() : tag;
         const autocomplete = clean(control.getAttribute('autocomplete')).toLowerCase();
+        // Set by DuckDuckGo Autofill when it classifies a field, e.g. `creditCards.cardNumber`.
+        const ddgInputType = control.getAttribute('data-ddg-inputtype') || '';
         const isSame = type === 'radio' ? sameRadioGroup(control) : (other) => other === control;
         const field = {
             ref: refFor(control, 'e'),
@@ -208,14 +213,18 @@
             type,
             name: control.getAttribute('name') || '',
             autocomplete,
-            required: control.required || control.getAttribute('aria-required') === 'true',
+            required: Boolean(control.required) || control.getAttribute('aria-required') === 'true',
             disabled: control.matches(':disabled'),
+            readOnly: tag === 'output' || Boolean(control.readOnly),
+            ddgInputType,
             visible: isVisible(control),
             labels: labelsOf(control, isSame),
             error: errorOf(control, isSame),
         };
-        // Secret values never leave the page.
-        const secret = type === 'password' || type === 'file' || /(^|\s)cc-/.test(autocomplete);
+        // Secret values never leave the page: passwords, uploads and anything that looks like card data.
+        const payment = /(^|\s)cc-/.test(autocomplete) || ddgInputType.startsWith('creditCards.')
+            || paymentNamePattern.test(control.getAttribute('name') || '') || paymentNamePattern.test(control.id || '');
+        const secret = type === 'password' || type === 'file' || payment;
         if (!secret) {
             field.value = (control.value || '').slice(0, maxValue);
         }
@@ -315,14 +324,16 @@
                     element.click();
                 }
             } else {
+                // No real focus: on a focus event Autofill opens its prompt, and a tab Duck.ai fills
+                // is usually in the background. Blur is dispatched instead, for validation run on blur.
                 const setter = valueSetters[element.tagName.toLowerCase()];
-                element.focus();
                 if (setter) {
                     setter.call(element, action.value);
                 }
                 fire(element, 'input');
                 fire(element, 'change');
-                element.blur();
+                element.dispatchEvent(new FocusEvent('blur'));
+                element.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
             }
             return { ref: action.ref, found: true, value: (element.value || '').slice(0, maxValue), checked: Boolean(element.checked) };
         });
@@ -351,6 +362,17 @@
         lastChange = Date.now();
         element.click();
         return true;
+    }
+
+    // A real focus, for `showTab`: on a card field it lets Autofill offer the user's saved card.
+    function focus(ref) {
+        const element = elementFor(ref);
+        if (!element) {
+            return false;
+        }
+        element.scrollIntoView({ block: 'center', inline: 'nearest' });
+        element.focus({ preventScroll: true });
+        return document.activeElement === element;
     }
 
     function isSubmitType(element) {
@@ -384,5 +406,5 @@
         return false;
     }
 
-    globalThis.__duckAIForms = { page, apply, click, submit, millisecondsSinceLastChange };
+    globalThis.__duckAIForms = { page, apply, click, focus, submit, millisecondsSinceLastChange };
 })();

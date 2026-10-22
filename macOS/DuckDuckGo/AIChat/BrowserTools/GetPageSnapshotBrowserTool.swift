@@ -117,9 +117,12 @@ enum BrowserToolFormSchemas {
                                             "required": ["value", "label"]
                                         ]
                                     ],
-                                    "error": ["type": "string"]
+                                    "error": ["type": "string"],
+                                    "autocomplete": ["type": "string"],
+                                    "readOnly": ["type": "boolean"],
+                                    "sensitive": ["type": "string", "enum": ["payment"]]
                                 ],
-                                "required": ["ref", "label", "type", "required"]
+                                "required": ["ref", "label", "type", "required", "autocomplete"]
                             ]
                         ],
                         "buttons": [
@@ -133,9 +136,10 @@ enum BrowserToolFormSchemas {
                                 ],
                                 "required": ["ref", "text", "isSubmit"]
                             ]
-                        ]
+                        ],
+                        "hasPaymentFields": ["type": "boolean"]
                     ],
-                    "required": ["ref", "fields", "buttons"]
+                    "required": ["ref", "fields", "buttons", "hasPaymentFields"]
                 ]
             ],
             "messages": ["type": "array", "items": ["type": "string"]]

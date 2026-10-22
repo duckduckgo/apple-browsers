@@ -26,6 +26,8 @@ protocol BrowserToolFormDriving: AnyObject {
     func page(in webView: WKWebView) async -> BrowserToolRawPage?
     func apply(_ actions: [BrowserToolFillAction], in webView: WKWebView) async -> [BrowserToolFillReadback]?
     func click(_ ref: String, in webView: WKWebView) async -> Bool
+    /// Scrolls the element into view and gives it focus. False when it is gone or cannot take focus.
+    func focus(_ ref: String, in webView: WKWebView) async -> Bool
     func submit(formRef: String, submitterRef: String?, in webView: WKWebView) async -> Bool
     func millisecondsSinceLastChange(in webView: WKWebView) async -> Int?
 }
@@ -59,6 +61,10 @@ final class WebViewFormDriver: BrowserToolFormDriving {
 
     func click(_ ref: String, in webView: WKWebView) async -> Bool {
         await call("__duckAIForms.click(ref)", arguments: ["ref": ref], in: webView)?.boolValue ?? false
+    }
+
+    func focus(_ ref: String, in webView: WKWebView) async -> Bool {
+        await call("__duckAIForms.focus(ref)", arguments: ["ref": ref], in: webView)?.boolValue ?? false
     }
 
     func submit(formRef: String, submitterRef: String?, in webView: WKWebView) async -> Bool {

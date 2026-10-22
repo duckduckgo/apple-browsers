@@ -70,6 +70,9 @@ struct BrowserToolRawPage: Decodable, Equatable {
         var checked: Bool?
         var options: [Option]?
         var groupLabels: GroupLabels?
+        var readOnly: Bool = false
+        /// DuckDuckGo Autofill's classification of the field, e.g. `creditCards.cardNumber`.
+        var ddgInputType: String = ""
     }
 
     struct Button: Decodable, Equatable {
@@ -133,6 +136,10 @@ struct BrowserToolFormField: Equatable {
     /// For a radio group: the ref of the radio behind each option value.
     var radioRefs: [String: String] = [:]
     var error: String?
+    var autocomplete: String = ""
+    var readOnly: Bool = false
+    /// Card data. Only the user fills it, and its value is never read.
+    var payment: Bool = false
 }
 
 struct BrowserToolFormError: Equatable {
@@ -272,7 +279,8 @@ enum BrowserToolForms {
                                                    value: raw.checked == true ? option.value : nil,
                                                    options: [option],
                                                    radioRefs: [option.value: raw.ref],
-                                                   error: raw.error.isEmpty ? nil : raw.error))
+                                                   error: raw.error.isEmpty ? nil : raw.error,
+                                                   autocomplete: raw.autocomplete))
             }
         }
         return fields
@@ -280,8 +288,9 @@ enum BrowserToolForms {
 
     private static func field(from raw: BrowserToolRawPage.Field) -> BrowserToolFormField {
         let restricted = isRestricted(raw)
+        let payment = isPaymentField(raw)
         let value: String?
-        if restricted {
+        if restricted || payment {
             value = nil
         } else if raw.type == "checkbox" {
             value = raw.checked == true ? "true" : "false"
@@ -298,7 +307,10 @@ enum BrowserToolForms {
                                     restricted: restricted,
                                     value: value,
                                     options: raw.options,
-                                    error: raw.error.isEmpty ? nil : raw.error)
+                                    error: raw.error.isEmpty ? nil : raw.error,
+                                    autocomplete: raw.autocomplete,
+                                    readOnly: raw.readOnly,
+                                    payment: payment)
     }
 
     // MARK: - Restrictions
@@ -311,12 +323,9 @@ enum BrowserToolForms {
         return autocompleteTokens(field).contains { $0.hasPrefix("cc-") || $0 == "current-password" || $0 == "new-password" }
     }
 
-    /// A login or checkout page. Its snapshot is still readable, but nothing on it is submitted.
+    /// A login page. Its snapshot is still readable, but nothing on it is submitted.
     static func isRestrictedPage(_ page: BrowserToolRawPage) -> Bool {
         let visibleFields = page.fields.filter(\.visible)
-        if visibleFields.contains(where: isPaymentField) {
-            return true
-        }
         return Dictionary(grouping: visibleFields, by: \.formRef).contains { formRef, fields in
             guard fields.contains(where: { $0.type == "password" }) else { return false }
             // A quote form may offer an optional password; a sign-in form is little else.
@@ -326,8 +335,16 @@ enum BrowserToolForms {
         }
     }
 
-    private static func isPaymentField(_ field: BrowserToolRawPage.Field) -> Bool {
-        autocompleteTokens(field).contains { $0.hasPrefix("cc-") } || matches(field.name, paymentFieldNames)
+    /// Card data by `autocomplete`, by Autofill's own classification, or by name.
+    static func isPaymentField(_ field: BrowserToolRawPage.Field) -> Bool {
+        autocompleteTokens(field).contains { $0.hasPrefix("cc-") }
+            || field.ddgInputType.hasPrefix("creditCards.")
+            || matches(field.name, paymentFieldNames)
+    }
+
+    /// A checkout: the user pays and places the order themselves, so nothing on it is submitted for them.
+    static func hasPaymentFields(_ page: BrowserToolRawPage, formRef: String? = nil) -> Bool {
+        page.fields.contains { $0.visible && (formRef == nil || $0.formRef == formRef) && isPaymentField($0) }
     }
 
     private static func autocompleteTokens(_ field: BrowserToolRawPage.Field) -> [String] {
@@ -336,22 +353,30 @@ enum BrowserToolForms {
 
     // MARK: - Buttons
 
-    /// A submit button by type, or one whose text says it sends something. The second keeps a
-    /// script-driven "Get my quote" from being clicked without the user's approval.
-    static func isSubmit(_ button: BrowserToolRawPage.Button) -> Bool {
+    /// A submit button by type, or one whose text says it sends something or orders. The second
+    /// keeps a script-driven "Get my quote" or "Place order" from being clicked without approval.
+    /// Cart buttons such as "Add to cart" stay clickable as long as their form takes no typed-in
+    /// details, since then the submit carries nothing personal.
+    static func isSubmit(_ button: BrowserToolRawPage.Button, formHasTextEntry: Bool = true) -> Bool {
         let type = button.typeAttribute?.lowercased()
-        switch button.tag {
-        case "input" where type == "submit" || type == "image":
-            return true
-        case "button" where button.inForm && type != "button" && type != "reset":
-            return true
-        default:
-            break
-        }
         if type == "reset" {
             return false
         }
+        let submitsByType = (button.tag == "input" && (type == "submit" || type == "image"))
+            || (button.tag == "button" && button.inForm && type != "button")
+        if submitsByType {
+            return formHasTextEntry || !matches(button.text, cartWords)
+        }
         return matches(button.text, submitWords)
+    }
+
+    static func isSubmit(_ button: BrowserToolRawPage.Button, in page: BrowserToolRawPage) -> Bool {
+        isSubmit(button, formHasTextEntry: formHasTextEntry(button.formRef, in: page))
+    }
+
+    /// Whether the form takes typed-in details, the kind a submit would send.
+    static func formHasTextEntry(_ formRef: String, in page: BrowserToolRawPage) -> Bool {
+        page.fields.contains { $0.formRef == formRef && $0.visible && !$0.disabled && textEntryTypes.contains($0.type) }
     }
 
     // MARK: - Snapshot
@@ -365,6 +390,7 @@ enum BrowserToolForms {
         for form in page.forms {
             let formFields = fields.filter { $0.formRef == form.ref }.prefix(fieldBudget)
             let formButtons = page.buttons.filter { $0.formRef == form.ref && $0.visible && !$0.disabled }.prefix(buttonBudget)
+            let formHasTextEntry = formHasTextEntry(form.ref, in: page)
             fieldBudget -= formFields.count
             buttonBudget -= formButtons.count
             guard !formFields.isEmpty || !formButtons.isEmpty else { continue }
@@ -373,8 +399,9 @@ enum BrowserToolForms {
                 "ref": .string(form.ref),
                 "fields": .array(formFields.map(snapshotValue)),
                 "buttons": .array(formButtons.map {
-                    ["ref": .string($0.ref), "text": .string($0.text), "isSubmit": .bool(isSubmit($0))]
-                })
+                    ["ref": .string($0.ref), "text": .string($0.text), "isSubmit": .bool(isSubmit($0, formHasTextEntry: formHasTextEntry))]
+                }),
+                "hasPaymentFields": .bool(hasPaymentFields(page, formRef: form.ref))
             ]
             if !form.name.isEmpty { object["name"] = .string(form.name) }
             forms.append(.object(object))
@@ -394,9 +421,12 @@ enum BrowserToolForms {
             "ref": .string(field.ref),
             "label": .string(field.label),
             "type": .string(field.type),
-            "required": .bool(field.required)
+            "required": .bool(field.required),
+            "autocomplete": .string(field.autocomplete)
         ]
-        if !field.restricted, let value = field.value, !value.isEmpty { object["value"] = .string(value) }
+        if !field.restricted, !field.payment, let value = field.value, !value.isEmpty { object["value"] = .string(value) }
+        if field.readOnly { object["readOnly"] = true }
+        if field.payment { object["sensitive"] = "payment" }
         if let options = field.options, field.type == "select" || field.type == "radio" {
             object["options"] = .array(options.map { ["value": .string($0.value), "label": .string($0.label)] })
         }
@@ -424,11 +454,15 @@ enum BrowserToolForms {
                 plan.failed.append((entry.ref, "not_found"))
                 continue
             }
+            if field.payment {
+                plan.failed.append((entry.ref, "user_action_required"))
+                continue
+            }
             if field.restricted {
                 plan.failed.append((entry.ref, "restricted"))
                 continue
             }
-            if field.disabled {
+            if field.disabled || field.readOnly {
                 plan.failed.append((entry.ref, "disabled"))
                 continue
             }
@@ -474,7 +508,8 @@ enum BrowserToolForms {
     static func preview(of formRef: String, in page: BrowserToolRawPage) -> BrowserToolFormPreview? {
         guard let form = page.forms.first(where: { $0.ref == formRef }) else { return nil }
         let rows: [(label: String, value: String)] = fields(in: page).compactMap { field in
-            guard field.formRef == formRef, field.visible, !field.restricted,
+            // An `<output>` shows a result; the site does not receive it.
+            guard field.formRef == formRef, field.visible, !field.restricted, !field.payment, field.type != "output",
                   let value = field.value, !value.isEmpty else { return nil }
             switch field.type {
             case "checkbox":
@@ -549,7 +584,10 @@ enum BrowserToolForms {
     // MARK: - Text
 
     private static let titleSeparators = [" | ", " - ", " – ", " — ", " · ", " :: "]
-    private static let submitWords = #"\b(submit|send|request|quote|book|confirm|order|pay|checkout|check out|sign up|register)\b"#
+    private static let submitWords = #"\b(submit|send|request|quote|book|confirm|place order|complete order|order now|pay|buy now|purchase|sign up|register)\b"#
+    private static let cartWords = #"\b(add to (cart|bag|basket)|(continue|go|proceed) to checkout|checkout|check out|view (cart|bag|basket))\b"#
+    /// Fields a person types details into; a quantity or a choice is not one.
+    private static let textEntryTypes: Set<String> = ["text", "email", "tel", "search", "url", "password", "date", "textarea"]
     private static let signInWords = #"\b(sign in|log in|login|sign on)\b"#
     private static let paymentFieldNames = #"(card.?num|cc.?num|cvc|cvv|csc|card.?security)"#
 

@@ -5489,7 +5489,7 @@ extension MainViewController: BrowserChromeDelegate {
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
                 barsVisibilityPercent: percent,
-                collapseStart: FloatingDomainCapsuleController.handoffStart
+                collapseStart: FloatingDomainCapsuleController.handoffEnd
               )
             : 0
         let panelHeight = toolbar.setButtonRowCollapseProgress(
@@ -8745,8 +8745,11 @@ extension MainViewController {
 
         fireExecutor.prepare(for: request)
         
-        fireButtonAnimator.animate {
+        let instrumentation = DefaultFireAnimationInstrumentation(request: request)
+        fireButtonAnimator.animate(instrumentation: instrumentation) {
+            instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
+            instrumentation.burnDidFinish()
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: { [weak self] in

@@ -925,9 +925,9 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 
     func testWhenAtOrBelowCollapseStartThenToolbarButtonRowIsFullyCollapsed() {
-        for percent in [CGFloat(0.6), 0.45, 0.0] {
+        for percent in [CGFloat(0.85), 0.6, 0.45, 0.0] {
             XCTAssertEqual(
-                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, collapseStart: 0.6),
+                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, collapseStart: 0.85),
                 1,
                 accuracy: 0.001,
                 "the button row must have finished collapsing by collapseStart, at percent \(percent)"
@@ -936,12 +936,20 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 
     func testWhenAboveCollapseStartThenToolbarButtonRowCollapseIsGradual() {
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, collapseStart: 0.6), 0, accuracy: 0.001)
-        // Halfway between collapseStart (0.6) and 1.0 (0.8) should be halfway collapsed.
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.8, collapseStart: 0.6), 0.5, accuracy: 0.001)
-        // A single unanimated scroll frame must not consume most of the ~56pt height change: a 0.1
-        // step down from rest collapses a quarter of the row, not two thirds.
-        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.9, collapseStart: 0.6), 0.25, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, collapseStart: 0.85), 0, accuracy: 0.001)
+        // Halfway between collapseStart (0.85) and 1.0 (0.925) should be halfway collapsed.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.925, collapseStart: 0.85), 0.5, accuracy: 0.001)
+    }
+
+    // The pill is single-row, so it must not start appearing until the bottom bar is single-row too.
+    func testWhenBottomPillStartsFadingInThenToolbarButtonRowHasFinishedCollapsing() {
+        let pillFadeStart = FloatingDomainCapsuleController.alphaHandoffEnd(for: .bottom)
+        let collapse = FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
+            barsVisibilityPercent: pillFadeStart,
+            collapseStart: FloatingDomainCapsuleController.handoffEnd
+        )
+
+        XCTAssertEqual(collapse, 1, accuracy: 0.001)
     }
 }
 

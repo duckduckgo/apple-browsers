@@ -84,7 +84,7 @@ permissions:
 jobs:
   smartling:
     name: ${{ inputs.platform }} ${{ inputs.kind }} translation job
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 45
     # A failed release submission is reported on the release task instead of failing the code freeze run.
     continue-on-error: ${{ inputs.kind == 'release' }}
@@ -204,6 +204,7 @@ jobs:
         uses: ./.github/actions/select-xcode-version
 
       - name: Set up Python
+        if: runner.environment != 'self-hosted'
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'

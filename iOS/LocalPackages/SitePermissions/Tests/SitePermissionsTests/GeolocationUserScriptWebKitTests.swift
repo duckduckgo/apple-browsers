@@ -245,6 +245,50 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         XCTAssertEqual(delegate.permissionQueryCount, 1)
     }
 
+    func testBlankIframesKeepShimWithoutRegisteringWhileRequestsStillWork() async throws {
+        let delegate = WebKitTestGeolocationDelegate()
+        let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
+        script.activationHandler = { _ in true }
+        let recorder = RegistrationRecordingHandler(script: script)
+        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript, messageHandler: recorder)
+        let blankFrames = """
+        <script>
+            for (let index = 0; index < 50; index++) {
+                document.body.appendChild(document.createElement("iframe")).className = "blank";
+            }
+        </script></body>
+        """
+        let server = try await WebKitLoopbackHTTPServer.start(
+            html: frameHostHTML(source: "/frame").replacingOccurrences(of: "</body>", with: blankFrames),
+            frameHTML: frameExerciseHTML
+        )
+        defer { server.stop() }
+
+        try await harness.load(try XCTUnwrap(server.url))
+        assertAllowed(try await frameResult(in: harness.webView), "Same-origin iframe")
+        assertAllowed(try await exerciseGeolocation(in: harness.webView), "Top frame")
+        let blankFrameState = try await javaScriptDictionary(in: harness.webView, body: """
+        const frames = Array.from(document.querySelectorAll("iframe.blank"), (frame) => frame.contentWindow);
+        const errorCode = await new Promise((resolve) => frames[0].navigator.geolocation.getCurrentPosition(
+            () => resolve(0),
+            (error) => resolve(error.code)
+        ));
+        return {
+            count: frames.length,
+            shimmed: frames.every((frame) => frame.__ddgSitePermissionsGeolocation !== undefined),
+            errorCode
+        };
+        """)
+
+        XCTAssertEqual(blankFrameState["count"] as? Int, 50)
+        XCTAssertEqual(blankFrameState["shimmed"] as? Bool, true, "A blank frame must not expose WebKit's own geolocation API")
+        XCTAssertEqual(blankFrameState["errorCode"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        // One web content process delivers messages in order, so blank-frame registrations would arrive first.
+        XCTAssertEqual(Set(recorder.registeredDocumentIDs).count, 2, "Only frames that use geolocation may register")
+        XCTAssertEqual(delegate.positionRequestCount, 2)
+        XCTAssertEqual(delegate.permissionQueryCount, 2)
+    }
+
     func testSameOriginIframeFollowsAllowAttributeWithoutPolicyAPI() async throws {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
@@ -1014,7 +1058,8 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
 
     private func makeHarness(script: GeolocationUserScript,
                              precedingScript: String? = nil,
-                             includePolicyScript: Bool = true) -> WebKitTestHarness {
+                             includePolicyScript: Bool = true,
+                             messageHandler: WKScriptMessageHandlerWithReply? = nil) -> WebKitTestHarness {
         let configuration = WKWebViewConfiguration()
         if let precedingScript {
             for world in [WKContentWorld.page, .defaultClient] {
@@ -1036,7 +1081,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
                                                                         forMainFrameOnly: script.forMainFrameOnly,
                                                                         in: .page))
         for messageName in script.messageNames {
-            configuration.userContentController.addScriptMessageHandler(script, contentWorld: .page, name: messageName)
+            configuration.userContentController.addScriptMessageHandler(messageHandler ?? script, contentWorld: .page, name: messageName)
         }
         return WebKitTestHarness(configuration: configuration)
     }
@@ -1204,6 +1249,29 @@ private final class WebKitLoopbackHTTPServer: @unchecked Sendable {
 
     func stop() {
         listener.cancel()
+    }
+}
+
+/// Records frame registrations, then passes every message to the script.
+@MainActor
+private final class RegistrationRecordingHandler: NSObject, WKScriptMessageHandlerWithReply {
+
+    private let script: GeolocationUserScript
+    private(set) var registeredDocumentIDs = [String]()
+
+    init(script: GeolocationUserScript) {
+        self.script = script
+    }
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
+        if let body = message.body as? [String: Any], body["kind"] as? String == "registerFrame" {
+            registeredDocumentIDs.append(body["documentID"] as? String ?? "")
+        }
+        (script as WKScriptMessageHandlerWithReply).userContentController(userContentController,
+                                                                          didReceive: message,
+                                                                          replyHandler: replyHandler)
     }
 }
 

@@ -310,11 +310,26 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         }
 
         return try loadJS(scriptContext.fileName, from: ContentScopeScripts.Bundle, withReplacements: [
-            "$CONTENT_SCOPE$": privacyConfigJson,
+            "$CONTENT_SCOPE$": try jsonParseExpression(for: privacyConfigJson),
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,
             "$WEBKIT_MESSAGING_CONFIG$": jsonConfigString
         ])
+    }
+
+    /// Wraps JSON in a `JSON.parse("…")` expression for injection into the script source.
+    ///
+    /// Every frame compiles its own copy of the script. A large object literal compiles to code that builds each object,
+    /// which stays in memory for as long as the frame keeps any of the script's functions alive; a string literal is one constant.
+    static func jsonParseExpression(for json: String) throws -> String {
+        guard let literal = String(data: try JSONEncoder().encode(json), encoding: .utf8) else {
+            throw EncodingError.invalidValue(json, EncodingError.Context(codingPath: [], debugDescription: "Failed to encode JSON as a string literal"))
+        }
+        // A JSON string is a valid JavaScript string literal, except that engines before ES2019 reject raw U+2028 and U+2029
+        let escaped = literal
+            .replacingOccurrences(of: "\u{2028}", with: "\\u2028")
+            .replacingOccurrences(of: "\u{2029}", with: "\\u2029")
+        return "JSON.parse(\(escaped))"
     }
 
     private static func encodeProperties(_ properties: ContentScopeProperties, scriptContext: ContentScopeScriptContext) throws -> String {

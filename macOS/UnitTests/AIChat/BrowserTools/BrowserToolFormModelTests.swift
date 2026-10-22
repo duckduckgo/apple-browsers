@@ -385,7 +385,7 @@ final class BrowserToolFormModelTests: XCTestCase {
     }
 
     func testWhenTheFormIsUnknownThenThereIsNoPreview() {
-        XCTAssertNil(BrowserToolForms.preview(of: "f9", in: quotePage()))
+        XCTAssertNil(BrowserToolForms.preview(of: "f42", in: quotePage()))
     }
 
     func testWhenPreviewedThenItEncodesTheContractShape() throws {

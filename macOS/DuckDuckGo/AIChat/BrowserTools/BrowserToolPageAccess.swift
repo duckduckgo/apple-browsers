@@ -74,6 +74,30 @@ enum BrowserToolTargetTab {
         return tab
     }
 
+    enum OpenedTabResolution {
+        case resolved(tabID: TabIdentifier, tab: Tab)
+        case failure(BrowserToolFailure)
+    }
+
+    /// The tab a form tool acts on, which must be one this chat opened with `openTab`. The user's
+    /// tabs and other chats' tabs answer exactly like tabs that do not exist. Looks in every
+    /// window, since the user may have dragged the tab out of the chat's.
+    static func openedTab(tabIDArgument: JSONValue?,
+                          context: BrowserToolCallContext,
+                          openedTabs: BrowserToolOpenedTabs,
+                          in windowControllersManager: WindowControllersManagerProtocol) -> OpenedTabResolution {
+        guard let tabID = tabIDArgument?.stringValue?.trimmingCharacters(in: .whitespaces), !tabID.isEmpty else {
+            return .failure(.invalidArguments)
+        }
+        guard openedTabs.contains(tabID, ownerTabID: context.ownerTabID) else { return .failure(.notFound) }
+        for collection in windowControllersManager.allTabCollectionViewModels {
+            if let index = collection.indexInAllTabs(where: { $0.uuid == tabID }), let tab = collection.materialize(at: index) {
+                return .resolved(tabID: tabID, tab: tab)
+            }
+        }
+        return .failure(.notFound)
+    }
+
     /// Looks in every window, since the user may have dragged the tab out of the chat's. A pinned
     /// tab is left alone: pinning it made it the user's.
     @discardableResult

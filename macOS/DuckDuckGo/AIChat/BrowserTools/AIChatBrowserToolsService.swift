@@ -90,6 +90,7 @@ final class AIChatBrowserToolsService {
                                      historyCoordinator: HistoryCoordinating,
                                      openedTabs: BrowserToolOpenedTabs) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
+        let formDriver = WebViewFormDriver()
         return [
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
             SwitchToTabBrowserTool(windowControllersManager: windowControllersManager),
@@ -98,7 +99,8 @@ final class AIChatBrowserToolsService {
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
             OpenTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, loadWaiter: TabPageLoadWaiter()),
-            CloseTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs)
+            CloseTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs),
+            GetPageSnapshotBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver)
         ]
     }
 

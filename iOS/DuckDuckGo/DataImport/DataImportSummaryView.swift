@@ -327,7 +327,7 @@ struct DataImportSummaryView: View {
 
         var body: some View {
             LottieView(
-                lottieFile: AppRebrand.isAppRebranded() ? "success" : "success-legacy",
+                lottieFile: "success",
                 isAnimating: $isAnimating,
                 contentSize: CGSize(width: 200, height: 128)
             )
@@ -420,7 +420,7 @@ struct DataImportSummaryView: View {
         }
 
         fileprivate enum Metrics {
-            static var imageSize: CGFloat { AppRebrand.isAppRebranded() ? 96 : 64 }
+            static let imageSize: CGFloat = 96
         }
     }
 
@@ -431,7 +431,7 @@ struct DataImportSummaryView: View {
         
         var body: some View {
             VStack(alignment: .center, spacing: 0) {
-                Image(rebrandable: "Sync-Pending-96")
+                Image(.syncPending96)
                     .resizable()
                     .frame(width: Metrics.imageSize, height: Metrics.imageSize)
                     .padding(.top, 16)

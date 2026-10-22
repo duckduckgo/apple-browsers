@@ -137,7 +137,7 @@ struct PromptBarShortcutRecorderView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)
-                        .stroke(Color(designSystemColor: .lines))
+                        .stroke(Color(designSystemColor: .surfaceDecorationPrimary))
                 )
         }
     }
@@ -159,7 +159,7 @@ struct PromptBarShortcutRecorderView: View {
 
     private var wellBorderColor: Color {
         switch state {
-        case .idle: return Color(designSystemColor: .lines)
+        case .idle: return Color(designSystemColor: .surfaceDecorationPrimary)
         case .recording: return Color(designSystemColor: .accentPrimary)
         case .rejected: return Color(designSystemColor: .destructivePrimary)
         }

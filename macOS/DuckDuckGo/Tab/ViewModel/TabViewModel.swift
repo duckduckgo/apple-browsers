@@ -27,7 +27,6 @@ import MaliciousSiteProtection
 import PrivacyConfig
 import PrivacyDashboard
 import WebKit
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import WebExtensions
 
@@ -340,10 +339,6 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToAddressBarDuckAIState() {
-        guard DesignSystemRebrand.isAppRebranded() else {
-            return
-        }
-
         tab.addressBarSharedTextState.$isInDuckAIMode
             .removeDuplicates()
             .dropFirst()
@@ -436,10 +431,6 @@ final class TabViewModel: NSObject {
     }
 
     private func placeholder(tabContent: TabContent, inDuckAIMode: Bool) -> NSAttributedString? {
-        guard DesignSystemRebrand.isAppRebranded() else {
-            return nil
-        }
-
         if inDuckAIMode {
             return .addressBarPlaceholderForDuckAI
         }
@@ -513,6 +504,11 @@ final class TabViewModel: NSObject {
             }
         } else if case .newtab = tab.content, tab.burnerMode.isBurner {
             title = UserText.burnerTabHomeTitle
+        } else if #available(macOS 15.4, *),
+                  case .webExtensionUrl(let url) = tab.content,
+                  let name = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension.displayName,
+                  !name.isEmpty {
+            title = name
         } else {
             title = tab.content.displayTitle(pageTitle: tab.title, pageURL: tab.url)
         }
@@ -523,9 +519,18 @@ final class TabViewModel: NSObject {
     }
 
     private func updateFavicon(_ tabFavicon: NSImage?? = .none /* provided from .sink or taken from tab.favicon (optional) if .none */) {
+        let extensionIcon: NSImage?
+        if #available(macOS 15.4, *),
+           case .webExtensionUrl(let url) = tab.content,
+           let webExtension = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension {
+            let size = NSSize(width: 16, height: 16)
+            extensionIcon = webExtension.icon(for: size) ?? webExtension.actionIcon(for: size)
+        } else {
+            extensionIcon = nil
+        }
         favicon = tab.content.displayedFavicon(
             error: isShowingErrorPage ? tab.error : nil,
-            actualFavicon: tabFavicon ?? tab.favicon,
+            actualFavicon: extensionIcon ?? tabFavicon ?? tab.favicon,
             isBurner: tab.burnerMode.isBurner,
             featureFlagger: featureFlagger
         )
@@ -708,21 +713,21 @@ private extension NSAttributedString {
 
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
-    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : NSImage(resource: .settingsMulticolor16Legacy),
+    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.settings,
                                                                            title: UserText.settings)
-    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : NSImage(resource: .bookmarksFolder),
+    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.bookmarksNew,
                                                                             title: UserText.bookmarks)
-    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : NSImage(resource: .historyFaviconLegacy),
+    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.history,
                                                                           title: UserText.mainMenuHistory)
     static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .personalInformationRemovalMulticolor16),
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.subscription : NSImage(resource: .privacyProLegacy),
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.subscription,
                                                                                title: UserText.subscriptionName)
     static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .identityTheftRestorationMulticolor16),
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
     static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .duckPlayerSettings),
                                                                              title: UserText.duckPlayer)
-    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : NSImage(resource: .emailProtectionIconLegacy),
+    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.emailProtection,
                                                                                   title: UserText.emailProtectionPreferences)
     static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .releaseNotesIndicator),
                                                                                title: UserText.releaseNotesTitle)

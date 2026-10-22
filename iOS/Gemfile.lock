@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: 3bf0a240cdab98753295bcedb567147a3747256b
-  tag: 4.2.3
+  revision: 0a54329d49d0e25814061d5a7a15ca21074aed70
+  tag: 4.3.0
   specs:
-    fastlane-plugin-ddg_apple_automation (4.2.3)
+    fastlane-plugin-ddg_apple_automation (4.3.0)
       asana
       climate_control
       httpparty
@@ -29,7 +29,7 @@ GEM
     auth-sanitizer (0.2.3)
       version_gem (~> 1.1, >= 1.1.14)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1289.0)
+    aws-partitions (1.1296.0)
     aws-sdk-core (3.257.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
@@ -42,7 +42,7 @@ GEM
     aws-sdk-kms (1.132.0)
       aws-sdk-core (~> 3, >= 3.256.0)
       aws-sigv4 (~> 1.5)
-    aws-sdk-s3 (1.232.1)
+    aws-sdk-s3 (1.233.2)
       aws-sdk-core (~> 3, >= 3.256.0)
       aws-sdk-kms (~> 1)
       aws-sigv4 (~> 1.5)
@@ -62,14 +62,14 @@ GEM
     declarative (0.0.20)
     digest-crc (0.7.0)
       rake (>= 12.0.0, < 14.0.0)
-    domain_name (0.6.20260907)
+    domain_name (0.7.20261007)
     dotenv (2.8.1)
     emoji_regex (3.2.3)
     erb (6.0.7)
-    excon (1.7.1)
+    excon (1.7.3)
       logger
-    faraday (2.14.4)
-      faraday-net_http (>= 2.0, < 3.5)
+    faraday (2.15.0)
+      faraday-net_http (>= 2.0, < 3.6)
       json
       logger
     faraday-cookie_jar (0.0.8)
@@ -79,7 +79,7 @@ GEM
       faraday (>= 1, < 3)
     faraday-multipart (1.2.0)
       multipart-post (~> 2.0)
-    faraday-net_http (3.4.4)
+    faraday-net_http (3.5.0)
       net-http (~> 0.5)
     faraday-retry (2.4.0)
       faraday (~> 2.0)
@@ -140,9 +140,9 @@ GEM
       xcpretty-travis-formatter (>= 0.0.3, < 2.0.0)
     fastlane-sirp (1.1.0)
     gh_inspector (1.1.3)
-    google-apis-androidpublisher_v3 (0.108.0)
+    google-apis-androidpublisher_v3 (0.109.0)
       google-apis-core (>= 0.15.0, < 2.a)
-    google-apis-core (1.2.5)
+    google-apis-core (1.3.1)
       addressable (~> 2.9)
       faraday (~> 2.13)
       faraday-follow_redirects (~> 0.3)
@@ -155,7 +155,7 @@ GEM
       google-apis-core (>= 0.15.0, < 2.a)
     google-apis-playcustomapp_v1 (0.18.0)
       google-apis-core (>= 0.15.0, < 2.a)
-    google-apis-storage_v1 (0.67.0)
+    google-apis-storage_v1 (0.69.0)
       google-apis-core (>= 0.15.0, < 2.a)
     google-cloud-core (1.9.0)
       google-cloud-env (>= 1.0, < 3.a)
@@ -164,7 +164,7 @@ GEM
       base64 (~> 0.2)
       faraday (>= 1.0, < 3.a)
     google-cloud-errors (1.7.0)
-    google-cloud-storage (1.62.0)
+    google-cloud-storage (1.62.1)
       addressable (~> 2.8)
       digest-crc (~> 0.4)
       google-apis-core (>= 0.18, < 2)
@@ -173,8 +173,8 @@ GEM
       google-cloud-core (~> 1.6)
       googleauth (~> 1.9)
       mini_mime (~> 1.0)
-    google-logging-utils (0.2.0)
-    googleauth (1.17.4)
+    google-logging-utils (0.2.1)
+    googleauth (1.17.5)
       faraday (>= 1.0, < 3.a)
       google-cloud-env (~> 2.2)
       google-logging-utils (~> 0.1)
@@ -187,7 +187,7 @@ GEM
     highline (2.0.3)
     http-cookie (1.0.8)
       domain_name (~> 0.5)
-    httparty (0.24.2)
+    httparty (0.24.3)
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
@@ -213,8 +213,11 @@ GEM
     mutex_m (0.3.0)
     nanaimo (0.4.0)
     naturally (2.3.0)
-    net-http (0.9.1)
+    net-http (0.10.0)
+      net-protocol (>= 0.3.0)
       uri (>= 0.11.1)
+    net-protocol (0.4.0)
+      timeout
     nkf (0.3.0)
     oauth2 (2.0.25)
       anonymous_loader (~> 0.1, >= 0.1.3)
@@ -235,7 +238,7 @@ GEM
     plist (3.7.2)
     pp (0.6.4)
       prettyprint
-    prettyprint (0.2.0)
+    prettyprint (0.2.1)
     prism (1.9.0)
     pstore (0.2.1)
     public_suffix (7.0.5)
@@ -245,14 +248,14 @@ GEM
       logger
       prism (>= 1.6.0)
       tsort
-    rdoc (8.0.0)
+    rdoc (8.1.0)
       erb
       prism (>= 1.6.0)
       rbs (>= 4.0.0)
       tsort
     reline (0.7.0)
       io-console (~> 0.5)
-    representable (3.3.0)
+    representable (3.3.1)
       declarative (< 0.1.0)
       trailblazer-option (>= 0.1.1, < 0.2.0)
       uber (< 0.2.0)
@@ -265,7 +268,7 @@ GEM
       faraday (>= 0.17.3, < 3)
     security (0.1.5)
     semantic (1.6.1)
-    signet (0.22.0)
+    signet (0.22.1)
       addressable (~> 2.8)
       faraday (>= 0.17.5, < 3.a)
       jwt (>= 1.5, < 4.0)
@@ -278,6 +281,7 @@ GEM
     terminal-notifier (2.0.0)
     terminal-table (4.0.0)
       unicode-display_width (>= 1.1.1, < 4)
+    timeout (0.6.1)
     trailblazer-option (0.1.2)
     tsort (0.2.0)
     tty-cursor (0.7.1)
@@ -288,7 +292,7 @@ GEM
     unicode-display_width (3.3.0)
       unicode-emoji (~> 4.3)
     unicode-emoji (4.3.0)
-    uri (1.1.1)
+    uri (1.1.2)
     version_gem (1.1.15)
     word_wrap (1.0.0)
     xcodeproj (1.28.1)
@@ -313,4 +317,4 @@ DEPENDENCIES
   fastlane-plugin-ddg_apple_automation!
 
 BUNDLED WITH
-   2.6.2
+  4.0.16

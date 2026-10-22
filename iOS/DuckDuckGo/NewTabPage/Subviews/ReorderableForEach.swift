@@ -202,7 +202,15 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
            measurement.key == sizeCacheKey, measurement.width == width, measurement.traits == traits {
             return measurement.size
         }
-        let size = uiViewController.sizeThatFits(in: CGSize(width: width, height: UIView.layoutFittingExpandedSize.height))
+
+        var size = uiViewController.sizeThatFits(in: CGSize(width: width, height: UIView.layoutFittingExpandedSize.height))
+
+        // The host rounds its fitted width to a pixel boundary. Measure the height at
+        // that width too, so text wraps the same way when the cell is displayed.
+        if size.width != width {
+            size = uiViewController.sizeThatFits(in: CGSize(width: size.width, height: UIView.layoutFittingExpandedSize.height))
+        }
+
         if let sizeCacheKey {
             context.coordinator.measuredSize = (sizeCacheKey, width, traits, size)
         }

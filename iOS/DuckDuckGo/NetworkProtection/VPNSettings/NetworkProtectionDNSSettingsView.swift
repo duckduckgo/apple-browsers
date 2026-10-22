@@ -50,7 +50,7 @@ struct NetworkProtectionDNSSettingsView: View {
                             .foregroundColor(.init(designSystemColor: .textSecondary))
                     }
                 }
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
                 .onChange(of: viewModel.isCustomDNSSelected) { _ in
                     viewModel.updateApplyButtonState()
                 }
@@ -102,7 +102,7 @@ struct NetworkProtectionDNSSettingsView: View {
             Text(UserText.vpnSettingDNSSectionDisclaimer)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         .onAppear {
             isCustomDNSServerFocused = true
         }

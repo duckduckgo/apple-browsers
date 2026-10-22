@@ -152,6 +152,8 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
     // MARK: Delegate functions
 
+    var isUserAuthenticationPromptNeeded: Bool { false }
+
     func authenticateUser() async throws {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }

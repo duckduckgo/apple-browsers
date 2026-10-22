@@ -141,9 +141,7 @@ public struct SitePermissionDialogView: View {
             .frame(width: Constants.iconSize, height: Constants.iconSize)
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .frame(width: Constants.iconContainerSize, height: Constants.iconContainerSize)
-            .background(AppRebrand.isAppRebranded()
-                        ? Color(singleUseColor: .rebranding(.buttonsSecondaryDefault))
-                        : Color(designSystemColor: .buttonsSecondaryFillDefault))
+            .background(Color(singleUseColor: .rebranding(.buttonsSecondaryDefault)))
             .clipShape(RoundedRectangle(cornerRadius: Constants.iconContainerCornerRadius, style: .continuous))
             .accessibilityHidden(true)
     }

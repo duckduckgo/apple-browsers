@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import WebKit
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -27,6 +28,16 @@ public protocol ChromeWebStoreManaging: AnyObject {
     func status(for identifier: String) -> ChromeWebStoreStatus
     func install(identifier: String, downloadURL: URL) async -> Bool
     func remove(identifier: String) async -> Bool
+    /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
+    /// or `nil` for an extension the catalog doesn't list.
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+public extension ChromeWebStoreManaging {
+    func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
+        nil
+    }
 }
 
 @MainActor
@@ -66,6 +77,10 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
         catalog.extensionIDs
     }
 
+    public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
+        catalog.catalogEntry(of: identifier)
+    }
+
     public func status(for identifier: String) -> ChromeWebStoreStatus {
         guard let manager else { return .unknown }
         guard catalog.contains(identifier) else { return .unsupported }
@@ -98,7 +113,7 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
             let filename = archive.version.map { "\(identifier)-\($0).zip" } ?? "\(identifier).zip"
             let file = directory.appendingPathComponent(filename)
             try archive.data.write(to: file, options: .atomic)
-            let webExtension = try await WKWebExtension(resourceBaseURL: file)
+            let webExtension = try await WKWebExtension.makeCopyingErrors(at: file)
 
             guard webExtension.errors.isEmpty else {
                 throw ChromeWebStoreError.unsupportedManifest

@@ -74,6 +74,16 @@ struct UTIFooterMessageMapper {
         )
     }
 
+    func promptTooLongMessage(count: Int, limit: Int) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .alert,
+            title: UserText.aiChatPromptTooLongTitle,
+            subtitle: String(format: UserText.aiChatPromptTooLongCountFormat, count, limit),
+            primaryAction: nil,
+            isDismissible: false
+        )
+    }
+
     func multiTabPromotionMessage(title: String = UserText.aiChatMultiTabPromotion) -> UTIFooterMessage {
         let emphasizedText = title.range(of: "·").map {
             String(title[..<$0.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)

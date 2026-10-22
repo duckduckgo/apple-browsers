@@ -194,7 +194,7 @@ final class SyncPromoManager: SyncPromoManaging, InternalPromoDelegate {
         guard Self.isSyncTurnedOn(authState), didStartSetupFromPromo else { return }
         // The queue may already have hidden the promo as ineligible; recording `.actioned` still applies to it.
         didStartSetupFromPromo = false
-        recordResult(content.promoID, .actioned)
+        recordResult(content.promoID, .actioned())
     }
 
     private static func isSyncTurnedOn(_ authState: SyncAuthState) -> Bool {

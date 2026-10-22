@@ -25,11 +25,6 @@ public enum SingleUseColor {
     case fireModeAccent
 
 #if os(iOS)
-    /// Background for grouped-list rows and visually associated inline cards.
-    /// Temporary compatibility token; replace with `.surfaceTertiary` when the
-    /// legacy palette and app-rebranding feature flag are removed.
-    case groupedListContentBackground
-
     case controlWidgetBackground
     case unifiedFeedbackFieldBackground
     case privacyDashboardBackground
@@ -61,11 +56,8 @@ public enum SingleUseColor {
     /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
     case unifiedToggleInputStopButtonBackground
 
-    /// Tab switcher tracker count info panel background color
-    case tabSwitcherTrackerCountBackground
-
-    /// Color used for 2026 Rebranding. Currently used only in Onboarding, hence they're isolated to avoid bleeding in other parts of the App.
-    /// DefaultColorPalette should be updated with new colors when the time comes.
+    /// Colors introduced for the 2026 rebrand. Some have the same value as a `DesignSystemColor` (e.g. `accentPrimary`,
+    /// `destructivePrimary`) – for new code, prefer using the `DesignSystemColor` instead.
     case rebranding(Rebranding)
 
     /// On iOS 26 toolbar buttons get some effect applied to them which affects the lightness of the color.  This is temporary
@@ -86,6 +78,12 @@ public enum SingleUseColor {
 
     /// Native voice-mode chrome (header + status strip) background, matching the web voice background.
     case duckAIVoiceModeBackground
+
+    /// Fill over the frosted module background on the redesigned New Tab Page, tinted toward its pond background image.
+    case newTabPageModuleTint
+
+    /// Search input card on the redesigned New Tab Page; navy in dark mode to match its pond background image.
+    case newTabPageSearchCardBackground
 
     /// The confetti burst's particle palette. Each brand hue supplies a body fill and a darker outline
     case confettiMandarinFill

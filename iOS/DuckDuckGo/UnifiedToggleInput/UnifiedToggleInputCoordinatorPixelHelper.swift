@@ -98,6 +98,20 @@ enum UnifiedToggleInputPixelSurface: String {
     case contextualChat = "contextual_chat"
 }
 
+/// Whether a submitted address-bar query was a search or an address, so URLs can be filtered out.
+enum UnifiedToggleInputQueryType: String {
+    case search
+    case url
+
+    init(query: String) {
+        self = URL.isValidAddressBarURLInput(query) ? .url : .search
+    }
+
+    init(loading url: URL) {
+        self = url.isDuckDuckGoSearch ? .search : .url
+    }
+}
+
 enum UnifiedToggleInputPromptPageType: String {
     case ntp
     case serp
@@ -174,14 +188,20 @@ extension UTIToolsMenu.Item.Identifier {
 final class UnifiedToggleInputCoordinatorPixelHelper {
     private init() {}
 
-    static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment, surface: UnifiedToggleInputPixelSurface, firing: UTIPixelFiring = .live) {
+    static func fireAttachmentRemovedPixel(for attachment: UnifiedToggleInputAttachment,
+                                           surface: UnifiedToggleInputPixelSurface,
+                                           pageType: UnifiedToggleInputPromptPageType = .unknown,
+                                           firing: UTIPixelFiring = .live) {
         switch attachment {
         case .tab(let tab):
-            firing.fire(MultiTabAttachmentPixel(action: .removed, source: tab.source, surface: surface), frequency: .dailyAndCount)
+            firing.fire(MultiTabAttachmentPixel(action: .removed, source: tab.source,
+                                               attribution: .init(surface: surface, pageType: pageType)), frequency: .dailyAndCount)
         case .image:
             firing.fireDailyAndCount(.unifiedToggleInputImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputFileRemoved, surfaceParameters(surface))
+        case .pastedText:
+            firing.fire(UnifiedToggleInputPastedTextPixel(action: .removed, surface: surface), frequency: .dailyAndCount)
         }
     }
 
@@ -193,6 +213,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             firing.fireDailyAndCount(.unifiedToggleInputEditImageRemoved, surfaceParameters(surface))
         case .file, .invalidFile:
             firing.fireDailyAndCount(.unifiedToggleInputEditFileRemoved, surfaceParameters(surface))
+        case .pastedText:
+            break
         }
     }
 
@@ -259,6 +281,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         origin: AIChatEntryPointSource? = nil,
         defaultMode: DefaultOmnibarMode? = nil,
         isFirstPromptNewInstall: Bool = false,
+        usageContext: UsageContext? = nil,
         firing: UTIPixelFiring = .live
     ) {
         let selectedToolValue = UnifiedPromptSubmittedSelectedToolPixelValue(selectedTool: selectedTool).rawValue
@@ -271,6 +294,8 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
             "reasoning_effort": reasoningEffort,
             "has_image_attachment": hasImageAttachment(in: attachments) ? "true" : "false",
             "has_file_attachment": hasFileAttachment(in: attachments) ? "true" : "false",
+            "has_tab_attachment": attachments.contains(where: \.isTab) ? "true" : "false",
+            "has_pasted_text": attachments.contains { $0.pastedText != nil } ? "true" : "false",
             "has_text": hasText ? "true" : "false",
             "surface": surface.rawValue
         ]
@@ -278,6 +303,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         parameters["origin"] = origin?.rawValue
         parameters["default_mode"] = defaultMode?.rawValue
         parameters[PixelParameters.aiChatFirstPromptNewInstall] = isFirstPromptNewInstall ? "true" : nil
+        parameters.merge(usageContext?.parameters ?? [:]) { $1 }
 
         firing.fireDailyAndCount(.unifiedToggleInputPromptSubmitted, parameters)
     }
@@ -287,14 +313,18 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         pageType: UnifiedToggleInputPromptPageType? = nil,
         isToggleVisible: Bool,
         defaultMode: DefaultOmnibarMode? = nil,
+        queryType: UnifiedToggleInputQueryType,
+        usageContext: UsageContext? = nil,
         firing: UTIPixelFiring = .live
     ) {
         var parameters = [
             "surface": surface.rawValue,
-            "toggle_visible": isToggleVisible ? "true" : "false"
+            "toggle_visible": isToggleVisible ? "true" : "false",
+            "query_type": queryType.rawValue
         ]
         parameters["page_type"] = pageType?.rawValue
         parameters["default_mode"] = defaultMode?.rawValue
+        parameters.merge(usageContext?.parameters ?? [:]) { $1 }
 
         firing.fireDailyAndCount(.unifiedToggleInputQuerySubmitted, parameters)
     }
@@ -345,7 +375,7 @@ final class UnifiedToggleInputCoordinatorPixelHelper {
         attachments.contains { attachment in
             switch attachment {
             case .file, .invalidFile: return true
-            case .image, .tab: return false
+            case .image, .tab, .pastedText: return false
             }
         }
     }

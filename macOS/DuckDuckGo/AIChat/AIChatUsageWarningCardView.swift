@@ -625,7 +625,7 @@ final class AIChatUsageWarningCardView: NSView {
     private static func attributedAttachmentPrivacyDisclosure() -> NSAttributedString {
         attributedDisclosure(format: UserText.aiChatAttachmentPrivacyDisclosureFormat,
                              linkText: UserText.aiChatAttachmentPrivacyLearnMore,
-                             url: URL.aiChatPrivacy)
+                             url: URL.aiChatUploadFilesAndImagesPrivacy)
     }
 
     private static func attributedDisclosure(format: String, linkText: String, url: URL) -> NSAttributedString {
@@ -714,6 +714,7 @@ final class AIChatUsageWarningCardView: NSView {
         NSAppearance.withAppearance(appearance) {
             tintView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
                 .withAlphaComponent(Constants.tintAlpha)
+            ringView.trackColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
         }
         // Re-assert last, or an appearance change repaints a fill the style had hidden.
         apply(backgroundStyle)
@@ -991,7 +992,7 @@ final class AIChatUsageWarningActionButton: NSView {
         CATransaction.setDisableActions(true)
         effectiveAppearance.performAsCurrentDrawingAppearance {
             backgroundLayer.backgroundColor = fill.cgColor
-            dividerView.backgroundColor = NSColor(designSystemColor: .lines)
+            dividerView.backgroundColor = NSColor(designSystemColor: .surfaceDecorationPrimary)
             applyTitleStyling()
             iconImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)
             chevronImageView.contentTintColor = NSColor(designSystemColor: .textPrimary)

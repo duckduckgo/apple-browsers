@@ -82,6 +82,13 @@ final class AIChatState: NSObject {
         }
     }
 
+    /// Forgets the conversation so the next load starts a new chat, keeping the sidebar layout.
+    func resetChat() {
+        // Not `nil`: `initialAIChatURL` is restored from the last saved URL, so it can still carry the old `chatID`.
+        aiChatURL = aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
+        restorationData = nil
+    }
+
     /// Returns true if the session has expired based on the configured timeout.
     var isSessionExpired: Bool {
         guard let hiddenAt else { return false }

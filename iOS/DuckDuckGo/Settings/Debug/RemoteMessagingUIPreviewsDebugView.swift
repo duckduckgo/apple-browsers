@@ -21,7 +21,6 @@ import SwiftUI
 import UIKit
 import RemoteMessaging
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 /// Renders one full remote-message card per supported message type, so each layout can be reviewed in its real message UI.
 /// 
@@ -98,7 +97,7 @@ struct RemoteMessagingUIPreviewsDebugView: View {
              .bigSingleAction(_, _, let placeholder, _, _, _),
              .bigTwoAction(_, _, let placeholder, _, _, _, _, _),
              .promoSingleAction(_, _, let placeholder, _, _, _):
-            return UIImage(rebrandable: placeholder.rawValue)
+            return UIImage(named: placeholder.rawValue)
         }
     }
 }

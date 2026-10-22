@@ -179,10 +179,10 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         }
         try? await Task.sleep(nanoseconds: 50_000_000)
 
-        coordinator.onUserAction?(.actioned)
+        coordinator.onUserAction?(.actioned())
 
         let result = await task.value
-        XCTAssertEqual(result, .actioned)
+        XCTAssertEqual(result, .actioned())
     }
 
     func testShow_suspendsAndResumesWithIgnoredOnClose() async {

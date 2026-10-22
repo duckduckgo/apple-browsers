@@ -33,14 +33,14 @@ final class LastActiveTabStoreTests {
         return (store, defaults)
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Returns nil when nothing has been recorded", .timeLimit(.minutes(1)))
     func returnsNilWhenEmpty() {
         let (store, _) = makeStore()
         #expect(store.lastActiveNonEmptyTabUID == nil)
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Round-trips a recorded UID", .timeLimit(.minutes(1)))
     func roundTripsRecordedUID() {
         let (store, _) = makeStore()
@@ -48,7 +48,7 @@ final class LastActiveTabStoreTests {
         #expect(store.lastActiveNonEmptyTabUID == "tab-uid-1")
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("Latest write wins", .timeLimit(.minutes(1)))
     func latestWriteWins() {
         let (store, _) = makeStore()
@@ -58,7 +58,7 @@ final class LastActiveTabStoreTests {
         #expect(store.lastActiveNonEmptyTabUID == "tab-uid-3")
     }
 
-    @available(iOS 16, *)
+    @available(iOS 16, macOS 13, *)
     @Test("State persists across new store instances on the same backing storage", .timeLimit(.minutes(1)))
     func persistsAcrossStoreInstances() {
         let (firstStore, defaults) = makeStore()

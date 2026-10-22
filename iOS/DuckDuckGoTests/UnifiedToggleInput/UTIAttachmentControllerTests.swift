@@ -34,6 +34,7 @@ final class UTIAttachmentControllerTests: XCTestCase {
     private var config: FakeEnvironmentConfig!
     private var callbackSpy: CallbackSpy!
     private var pixelKitMock: PixelKitMock!
+    private var presentingWindow: UIWindow?
 
     override func setUp() {
         super.setUp()
@@ -44,6 +45,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
     }
 
     override func tearDown() {
+        presentingWindow?.isHidden = true
+        presentingWindow = nil
         pixelKitMock = nil
         view = nil
         config = nil
@@ -103,6 +106,66 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertNotNil(view.validationMessage)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileValidationFailed.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"], "file_picker")
+    }
+
+    func testAddPastedText_addsChipFiresAttachedPixelAndPersists() {
+        config.limits = makeLimits()
+        let sut = makeController()
+
+        sut.addPastedText("a long paste")
+
+        XCTAssertEqual(view.attachments.compactMap(\.pastedText).map(\.content), ["a long paste"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["aichat_unified_input_pasted_text_attached"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["surface": "address_bar"])
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
+        XCTAssertEqual(callbackSpy.onExpandIfNeededCount, 1)
+    }
+
+    func testPresentingTheSheetFiresSheetOpenedAndClosingUnchangedFiresNothingMore() throws {
+        let host = makePresentingHost()
+        config.presenter = host
+        let sut = makeController()
+        sut.addPastedText("original")
+        let id = try XCTUnwrap(view.attachments.first?.id)
+        let firedBefore = pixelKitMock.actualFireCalls.count
+
+        sut.presentPastedTextSheet(id: id)
+        let sheet = try XCTUnwrap(host.presentedViewController as? PastedTextSheetHostingController)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.dropFirst(firedBefore).map(\.pixel.name), ["aichat_unified_input_pasted_text_sheet_opened"])
+
+        sheet.finish(.unchanged)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, firedBefore + 1)
+        XCTAssertEqual(view.attachments.first?.pastedText?.content, "original")
+        XCTAssertEqual(callbackSpy.onPastedTextSheetDismissedCount, 1)
+    }
+
+    func testSavingInTheSheetReplacesThePasteFiresEditedAndRestoresFocus() throws {
+        let host = makePresentingHost()
+        config.presenter = host
+        let sut = makeController()
+        sut.addPastedText("original")
+        let id = try XCTUnwrap(view.attachments.first?.id)
+        sut.presentPastedTextSheet(id: id)
+        let sheet = try XCTUnwrap(host.presentedViewController as? PastedTextSheetHostingController)
+        let draftChangesBefore = callbackSpy.onDraftChangedCount
+
+        sheet.finish(.saved(AIChatPastedText(content: "edited")))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, "aichat_unified_input_pasted_text_edited")
+        XCTAssertEqual(view.attachments.first?.pastedText?.content, "edited")
+        XCTAssertEqual(view.attachments.first?.id == id, false, "A saved edit is a new value with a new id")
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, draftChangesBefore + 1)
+        XCTAssertEqual(callbackSpy.onPastedTextSheetDismissedCount, 1)
+    }
+
+    private func makePresentingHost() -> UIViewController {
+        let host = UIViewController()
+        let window = UIWindow(frame: UIScreen.main.bounds)
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        presentingWindow = window
+        return host
     }
 
     // MARK: - Remove / clear
@@ -264,7 +327,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
 
             let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
             XCTAssertEqual(calls.map(\.pixel.name), ["aichat_unified_input_tab_picker_canceled"])
-            XCTAssertEqual(calls.first?.pixel.parameters, ["surface": "contextual_chat", "source": "tab_picker"])
+            XCTAssertEqual(calls.first?.pixel.parameters,
+                           ["surface": "contextual_chat", "page_type": "unknown", "source": "tab_picker"])
             XCTAssertEqual(calls.first?.frequency, .dailyAndCount)
             XCTAssertEqual(Set(view.attachments.compactMap { $0.tabAttachment?.tabId }), selectedTabIds)
             XCTAssertEqual(callbackSpy.onDraftChangedCount, draftChangeCount)
@@ -479,15 +543,35 @@ final class UTIAttachmentControllerTests: XCTestCase {
         XCTAssertTrue(view.attachments.isEmpty)
     }
 
-    func test_tabSelection_ignoresNonContextualSurfacesAndGeneratingState() {
+    func test_tabSelection_allowsNonContextualDuckAISurfaces() {
         enableTabAttachments()
-        let controller = makeController()
         config.isContextualChatState = false
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
-        config.isContextualChatState = true
-        view.isGenerating = true
-        XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
-        XCTAssertTrue(view.attachments.isEmpty)
+        let controller = makeController()
+
+        XCTAssertTrue(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs))
+        XCTAssertEqual(view.attachments.compactMap { $0.tabAttachment?.tabId }, ["first"])
+        XCTAssertEqual(callbackSpy.onDraftChangedCount, 1)
+    }
+
+    func test_tabSelection_rejectsSearchGeneratingEditingAndVoiceStates() {
+        for isContextual in [false, true] {
+            for blockedState in ["search", "generating", "editing", "voice"] {
+                enableTabAttachments()
+                config.isContextualChatState = isContextual
+                config.inputMode = blockedState == "search" ? .search : .aiChat
+                view.isGenerating = blockedState == "generating"
+                config.isEditing = blockedState == "editing"
+                config.isVoiceSessionActive = blockedState == "voice"
+                config.candidateReadCount = 0
+                let controller = makeController()
+                let scenario = "\(blockedState), contextual: \(isContextual)"
+
+                XCTAssertFalse(controller.toggleTabAttachment(candidate(id: "first"), attachmentSource: .recentTabs), scenario)
+                XCTAssertTrue(view.attachments.isEmpty, scenario)
+                XCTAssertEqual(config.candidateReadCount, 0, scenario)
+                XCTAssertEqual(callbackSpy.onDraftChangedCount, 0, scenario)
+            }
+        }
     }
 
     func test_tabSelection_rejectsOtherModeAndClosedCandidates() {
@@ -583,8 +667,8 @@ final class UTIAttachmentControllerTests: XCTestCase {
             firing: UTIPixelFiring(pixelKit: { [unowned self] in pixelKitMock }),
             context: { UTIPixelContext(surface: .contextualChat, isDuckAISurfaceForAttribution: true,
                                       inputMode: .aiChat, isToggleVisible: false, pageType: .unknown, duckAIEntrySource: nil) })
-        return MultiTabPickerPixelSession(surfaceProvider: { .contextualChat }) {
-            reporter.reportTabAttachment($0, source: .tabPicker, surface: $1)
+        return MultiTabPickerPixelSession(attributionProvider: { reporter.currentTabPixelAttribution() }) {
+            reporter.reportTabAttachment($0, source: .tabPicker, attribution: $1)
         }
     }
 
@@ -637,10 +721,12 @@ final class UTIAttachmentControllerTests: XCTestCase {
                 currentTabUID: { "tab-1" },
                 isPageContextAttachable: { config.isCurrentPageAttachable },
                 pageContextAttachHandler: { config.pageContextAttachHandler },
-                presenterViewController: { nil },
+                presenterViewController: { config.presenter },
                 tabAttachmentSource: { config.tabSource },
                 tabAttachmentFeatureState: { config.tabFeatureState },
-                pageContextRemoveHandler: { config.pageContextRemoveHandler }
+                pageContextRemoveHandler: { config.pageContextRemoveHandler },
+                isEditing: { config.isEditing },
+                isVoiceSessionActive: { config.isVoiceSessionActive }
             ),
             callbacks: callbackSpy.callbacks
         )
@@ -699,6 +785,8 @@ private final class FakeEnvironmentConfig {
     var usage: AIChatAttachmentUsage?
     var inputMode: TextEntryMode = .aiChat
     var isContextualChatState = false
+    var isEditing = false
+    var isVoiceSessionActive = false
     var keepsUnavailableAttachmentButtonVisible = false
     var tabSource: MultiTabAttachmentSource?
     var tabs: [Tab] = []
@@ -708,6 +796,7 @@ private final class FakeEnvironmentConfig {
     var isCurrentPageAttachable: Bool?
     var pageContextAttachHandler: (() -> Void)?
     var pageContextRemoveHandler: (() -> Void)?
+    var presenter: UIViewController?
 
     var maximumTabAttachmentCount: Int? {
         guard case .available(let count) = tabFeatureState else { return nil }
@@ -721,13 +810,15 @@ private final class CallbackSpy {
     var onExpandIfNeededCount = 0
     var updateFloatingReturnKeyCount = 0
     var onTabAttachedCount = 0
+    var onPastedTextSheetDismissedCount = 0
 
     var callbacks: UTIAttachmentController.Callbacks {
         .init(
             onDraftChanged: { self.onDraftChangedCount += 1 },
             onExpandIfNeeded: { self.onExpandIfNeededCount += 1 },
             updateFloatingReturnKey: { self.updateFloatingReturnKeyCount += 1 },
-            onTabAttached: { self.onTabAttachedCount += 1 }
+            onTabAttached: { self.onTabAttachedCount += 1 },
+            onPastedTextSheetDismissed: { self.onPastedTextSheetDismissedCount += 1 }
         )
     }
 }

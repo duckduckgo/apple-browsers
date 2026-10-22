@@ -580,6 +580,21 @@ final class LaunchBreadcrumbTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Entering the foreground is recorded until the app becomes active", .timeLimit(.minutes(1)))
+    func enteringForegroundIsRecorded() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.willEnterForeground)
+
+        #expect(launchBreadcrumb.current == ["step": "entering-foreground"])
+        #expect(stateMachine.currentState.name == "connected")
+
+        stateMachine.handle(.didBecomeActive)
+
+        #expect(launchBreadcrumb.current == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A launch that reaches Background leaves no breadcrumb", .timeLimit(.minutes(1)))
     func backgroundLaunchClearsBreadcrumb() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
@@ -669,6 +684,50 @@ final class LaunchBreadcrumbTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A window dropped while initializing is reported with the launch step reached", .timeLimit(.minutes(1)))
+    func windowDroppedWhileInitializingIsReported() {
+        // As if Launching.init spun the run loop after marking content-blocking.
+        store.set(["step": "content-blocking"], forKey: LaunchBreadcrumb.key)
+
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(
+            pixel: LaunchBreadcrumbPixel.eventDroppedDuringLaunch(event: "willConnectToWindow", state: "initializing", step: "content-blocking"),
+            frequency: .dailyAndCount)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An event dropped while launching is reported", .timeLimit(.minutes(1)))
+    func eventDroppedWhileLaunchingIsReported() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.didBecomeActive)
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["event": "didBecomeActive", "state": "launching", "step": "launched"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Only the first event dropped during launch is reported", .timeLimit(.minutes(1)))
+    func onlyFirstDroppedEventIsReported() {
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.didBecomeActive)
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willResignActive)
+
+        #expect(pixelKit.actualFireCalls.map(\.pixel.parameters) == [["event": "willConnectToWindow", "state": "initializing", "step": "none"]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Events dropped after launch are not reported as dropped during launch", .timeLimit(.minutes(1)))
+    func eventDroppedAfterLaunchIsNotReported() {
+        stateMachine.handle(.didFinishLaunching(isTesting: false))
+        stateMachine.handle(.willConnectToWindow(window: UIWindow()))
+        stateMachine.handle(.willResignActive)
+
+        #expect(stateMachine.currentState.name == "connected")
+        #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Nothing is reported after a launch that finished", .timeLimit(.minutes(1)))
     func nothingReportedAfterCompletedLaunch() {
         stateMachine.handle(.didFinishLaunching(isTesting: false))
@@ -679,6 +738,23 @@ final class LaunchBreadcrumbTests {
         launchBreadcrumb.reportIncompleteLaunch()
 
         #expect(pixelKit.actualFireCalls.isEmpty)
+    }
+
+}
+
+@MainActor
+@Suite("App event names")
+final class AppEventNameTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Event names leave out associated values", .timeLimit(.minutes(1)))
+    func namesLeaveOutAssociatedValues() {
+        #expect(AppEvent.willConnectToWindow(window: UIWindow()).name == "willConnectToWindow")
+        #expect(AppEvent.didFinishLaunching(isTesting: false).name == "didFinishLaunching")
+        #expect(AppEvent.didBecomeActive.name == "didBecomeActive")
+        #expect(AppEvent.didEnterBackground.name == "didEnterBackground")
+        #expect(AppEvent.willResignActive.name == "willResignActive")
+        #expect(AppEvent.willEnterForeground.name == "willEnterForeground")
     }
 
 }

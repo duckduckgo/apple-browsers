@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -246,12 +247,22 @@ private struct ReorderDragSource<Content: View, Preview: View>: UIViewController
                                       width: previewSize.width,
                                       height: previewSize.height)
 
-            // Use the rendered tile, including its loaded favicon. A newly created,
-            // detached SwiftUI host can be empty when UIKit captures the lift preview.
+            // Capture the loaded favicon and flatten the translucent tile over an opaque backing.
+            let renderer = UIGraphicsImageRenderer(size: previewSize)
+            let image = renderer.image { context in
+                UIColor(designSystemColor: .background).resolvedColor(with: view.traitCollection).setFill()
+                context.fill(CGRect(origin: .zero, size: previewSize))
+                context.cgContext.translateBy(x: -previewFrame.minX, y: -previewFrame.minY)
+                view.drawHierarchy(in: view.bounds, afterScreenUpdates: false)
+            }
+            let previewView = UIImageView(image: image)
             let parameters = UIDragPreviewParameters()
             parameters.backgroundColor = .clear
-            parameters.visiblePath = source.previewPath?(previewFrame) ?? UIBezierPath(rect: previewFrame)
-            return UITargetedDragPreview(view: view, parameters: parameters)
+            parameters.visiblePath = source.previewPath?(previewView.bounds) ?? UIBezierPath(rect: previewView.bounds)
+            // UIKit adds a circular backing to rounded drag shadows on iOS 26.
+            parameters.shadowPath = UIBezierPath()
+            let target = UIDragPreviewTarget(container: view, center: CGPoint(x: previewFrame.midX, y: previewFrame.midY))
+            return UITargetedDragPreview(view: previewView, parameters: parameters, target: target)
         }
 
         func dragInteraction(_ interaction: UIDragInteraction, session: UIDragSession, didEndWith operation: UIDropOperation) {

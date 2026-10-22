@@ -667,6 +667,8 @@ final class UnifiedToggleInputView: UIView {
     private let toolsToolbar = UnifiedToggleInputToolbarView()
     /// Stands in for the toolbar row while speech is transcribed into the field.
     private let voiceListeningView = UnifiedToggleInputVoiceListeningView()
+    /// Circles the card while the listening row shows.
+    private let listeningGlow = UnifiedToggleInputListeningGlow()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
     private let footerCard = UIStackView()
@@ -1344,6 +1346,7 @@ final class UnifiedToggleInputView: UIView {
             self.toolbarHeightConstraint.constant = showsToolbarSlot ? Constants.toolbarHeight : 0
             self.toolsToolbar.alpha = self.toolbarAlpha(showingToolbar: showToolbar)
             self.voiceListeningView.alpha = (expanded && self.isInlineVoiceListening) ? 1 : 0
+            self.listeningGlow.setActive(expanded && self.isInlineVoiceListening)
             self.updateAttachmentsStripLayout()
             self.applyFooterForCardLayout(expanded: expanded)
         }
@@ -1569,6 +1572,7 @@ final class UnifiedToggleInputView: UIView {
         toolbarHeightConstraint.constant = toolbarSlotHeight(showingToolbar: showToolbar)
         toolsToolbar.alpha = toolbarAlpha(showingToolbar: showToolbar)
         voiceListeningView.alpha = isInlineVoiceListening ? 1 : 0
+        listeningGlow.setActive(isInlineVoiceListening)
         updateAttachmentsStripLayout()
     }
 
@@ -1586,6 +1590,7 @@ final class UnifiedToggleInputView: UIView {
         toolbarHeightConstraint.constant = 0
         toolsToolbar.alpha = 0
         voiceListeningView.alpha = 0
+        listeningGlow.setActive(false)
         attachmentsStripHeightConstraint.constant = 0
         attachmentsStrip.alpha = 0
         textEntryView.isExpandable = false
@@ -1640,8 +1645,10 @@ final class UnifiedToggleInputView: UIView {
 
         guard isExpanded else {
             voiceListeningView.alpha = 0
+            listeningGlow.setActive(false)
             return
         }
+        listeningGlow.setActive(listening)
 
         let mode = handler.currentToggleState
         let showToolbar = mode == .aiChat && !isShowingInactiveCardAppearance
@@ -2048,6 +2055,8 @@ private extension UnifiedToggleInputView {
         }
 
         setupConstraints()
+        // Last, so the comet draws above the card's content as well as the card.
+        listeningGlow.install(around: cardView)
         applyFireModeAppearance(isFireTab: handler.isFireTab)
     }
 

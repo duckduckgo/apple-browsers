@@ -187,7 +187,17 @@ enum PromptLengthText {
 
     /// Fills a `%1$d`/`%2$d` format with the count and the limit.
     static func format(_ format: String, _ count: Int, _ limit: Int, locale: Locale = .current) -> String {
-        let objectFormat = format.replacingOccurrences(of: "%1$d", with: "%1$@").replacingOccurrences(of: "%2$d", with: "%2$@")
+        let objectFormat = positional(format).replacingOccurrences(of: "%1$d", with: "%1$@").replacingOccurrences(of: "%2$d", with: "%2$@")
         return String(format: objectFormat, number(count, locale: locale), number(limit, locale: locale))
+    }
+
+    /// A translation may use plain `%d`s; numbers them in order so the first is the count and the second the limit.
+    static func positional(_ format: String) -> String {
+        var result = format
+        for index in 1...2 {
+            guard let range = result.range(of: "(?<!%)%d", options: .regularExpression) else { break }
+            result.replaceSubrange(range, with: "%\(index)$d")
+        }
+        return result
     }
 }

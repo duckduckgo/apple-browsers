@@ -169,6 +169,31 @@ final class PastedTextSheetTests: XCTestCase {
         ])
     }
 
+    func testATranslationWithPlainPlaceholdersPutsTheCountFirstAndKeepsItsColour() {
+        let subtitle = PastedTextSheetSubtitle(count: 16_001, limit: 16_000)
+
+        let line = subtitle.attributed(format: "%d/%d", locale: Self.plainDigits)
+
+        XCTAssertEqual(String(line.characters), "16001/16000")
+        XCTAssertEqual(colors(in: line), [
+            "16001": light(.destructivePrimary),
+            "/16000": light(.textSecondary)
+        ])
+    }
+
+    func testALiteralPercentInATranslationShowsAsOnePercentSign() {
+        let subtitle = PastedTextSheetSubtitle(count: 16, limit: 16_000)
+
+        let line = subtitle.attributed(format: "%% %1$d/%2$d %%", locale: Self.plainDigits)
+
+        XCTAssertEqual(String(line.characters), "% 16/16000 %")
+        XCTAssertEqual(colors(in: line), [
+            "% ": light(.textSecondary),
+            "16": light(.textPrimary),
+            "/16000 %": light(.textSecondary)
+        ])
+    }
+
     func testTheCountUsesLocaleDigitsAndStillTurnsRed() {
         let subtitle = PastedTextSheetSubtitle(count: 16_001, limit: 16_000)
 

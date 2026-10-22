@@ -66,6 +66,15 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertFalse(message.isDismissible)
     }
 
+    func test_promptLengthText_fillsPlainPlaceholdersCountFirst() {
+        XCTAssertEqual(PromptLengthText.format("%d/%d", 17_002, 16_000, locale: Locale(identifier: "en_US")), "17002/16000")
+    }
+
+    func test_promptLengthText_keepsALiteralPercentAndLeavesItUnnumbered() {
+        XCTAssertEqual(PromptLengthText.format("100%% %d/%d", 17_002, 16_000, locale: Locale(identifier: "en_US")), "100% 17002/16000")
+        XCTAssertEqual(PromptLengthText.positional("%%d %d"), "%%d %1$d")
+    }
+
     // MARK: - Headlines
 
     func test_message_approachingNamesTheWindowAndThePercentage() {

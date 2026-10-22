@@ -42,7 +42,7 @@ struct PastedTextSheetSubtitle: Equatable {
 
     /// Built from the format's pieces around `%1$d` so the count keeps its colour wherever a translation puts it.
     func attributed(format: String = UserText.aiChatPastedTextCountFormat, locale: Locale = .current) -> AttributedString {
-        let pieces = format.components(separatedBy: "%1$d")
+        let pieces = PromptLengthText.positional(format).components(separatedBy: "%1$d")
         guard pieces.count == 2 else {
             return Self.secondary(PromptLengthText.format(format, count, limit, locale: locale))
         }
@@ -57,6 +57,7 @@ struct PastedTextSheetSubtitle: Equatable {
 
     private func limitFilled(_ piece: String, locale: Locale) -> String {
         piece.replacingOccurrences(of: "%2$d", with: PromptLengthText.number(limit, locale: locale))
+            .replacingOccurrences(of: "%%", with: "%")
     }
 
     private static func secondary(_ text: String) -> AttributedString {
@@ -105,6 +106,7 @@ struct PastedTextSheetView: View {
 
     @State private var text: String
     @FocusState private var isTextFocused: Bool
+    @Environment(\.sizeCategory) private var sizeCategory
     private let rules: PastedTextSheetRules
     private let onSave: (String) -> Void
     private let onCancel: () -> Void
@@ -129,7 +131,7 @@ struct PastedTextSheetView: View {
             header
             Group {
                 if isViewOnly {
-                    PastedTextReadOnlyView(text: text)
+                    PastedTextReadOnlyView(text: text, sizeCategory: sizeCategory)
                 } else {
                     TextEditor(text: $text)
                         .font(Font(PastedTextSheetMetrics.bodyFont()))
@@ -176,6 +178,7 @@ struct PastedTextSheetView: View {
                 }
             }
             .lineLimit(1)
+            .padding(.horizontal, PastedTextSheetMetrics.buttonSize + PastedTextSheetMetrics.titleButtonGap)
             .padding(.top, PastedTextSheetMetrics.titleTopPadding)
         }
         .padding(.horizontal, PastedTextSheetMetrics.headerHorizontalPadding)
@@ -190,6 +193,7 @@ private enum PastedTextSheetMetrics {
     static let headerBottomPadding: CGFloat = 10
     static let titleTopPadding: CGFloat = 5
     static let buttonSize: CGFloat = 44
+    static let titleButtonGap: CGFloat = 8
     /// UITextView pads 8pt above the first line and 5pt before each line, so these land the text 16pt below the header and 32pt from the edges.
     static let bodyHorizontalPadding: CGFloat = 27
     static let bodyTopPadding: CGFloat = 8
@@ -257,6 +261,14 @@ private struct PastedTextSheetCircleBackground: ViewModifier {
 /// A disabled `TextEditor` cannot scroll, so the view-only sheet shows its text in a `UITextView` that scrolls and selects but never edits.
 private struct PastedTextReadOnlyView: UIViewRepresentable {
     let text: String
+    /// The font is built for one text size, so a change of size rebuilds it.
+    let sizeCategory: ContentSizeCategory
+
+    final class Coordinator {
+        var appliedSizeCategory: ContentSizeCategory?
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -267,7 +279,8 @@ private struct PastedTextReadOnlyView: UIViewRepresentable {
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        guard textView.text != text else { return }
+        guard textView.text != text || context.coordinator.appliedSizeCategory != sizeCategory else { return }
+        context.coordinator.appliedSizeCategory = sizeCategory
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineSpacing = PastedTextSheetMetrics.bodyLineSpacing()
         textView.attributedText = NSAttributedString(string: text, attributes: [

@@ -165,6 +165,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Answers `chrome.privacy.services` calls for extension pages.
     private let privacyHandler = WebExtensionPrivacyMessageHandler()
     private let permissionsHandler = WebExtensionPermissionsMessageHandler()
+    private let actionPopupHandler = WebExtensionActionPopupMessageHandler()
 #endif
 
     /// Pixel firing for analytics.
@@ -324,6 +325,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
         permissionsHandler.controller = permissionController
         permissionsHandler.extensionContext = { [weak self] url in
+            self?.extensionContext(for: url)
+        }
+        actionPopupHandler.extensionContext = { [weak self] url in
             self?.extensionContext(for: url)
         }
         // Granting `privacy` can make an extension's earlier setting count; taking it back hands autofill
@@ -1290,6 +1294,16 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     public func handlePermissionsMessage(_ message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         permissionsHandler.reply(to: message, replyHandler: replyHandler)
+    }
+
+    /// Opens the action popup for `chrome.action.openPopup()` from an extension page embedded in a
+    /// website in `tab`. Pages the controller hosts call WebKit's own `openPopup`, so this handler is
+    /// not installed there.
+    @MainActor
+    public func handleActionOpenPopupMessage(_ message: WKScriptMessage,
+                                             tab: (any WKWebExtensionTab)?,
+                                             replyHandler: @escaping (Any?, String?) -> Void) {
+        actionPopupHandler.reply(to: message, tab: tab, replyHandler: replyHandler)
     }
 #endif
 

@@ -293,7 +293,7 @@ final class FormBrowserToolsTests: XCTestCase {
 
     func testWhenSubmittedAndTheFormIsReplacedByAConfirmationThenItWasSubmitted() async throws {
         var confirmation = BrowserToolRawPage(url: "https://quotes.example/movers", title: "Quote request received | Example Movers")
-        confirmation.messages = [.init(text: "Thanks! Your quote request was received. Reference BBM-12345.", isAlert: false)]
+        confirmation.messages = [.init(text: "Thanks, we received your request. Reference REF-12345.", isAlert: false)]
         driver.pages = [Self.quotePage(name: "Pat Doe"), confirmation]
 
         let result = await submitForm().execute(arguments: ["tabId": .string(tabs[2].uuid), "formRef": "f1"], context: context)
@@ -303,7 +303,7 @@ final class FormBrowserToolsTests: XCTestCase {
             "url": "https://quotes.example/movers",
             "title": "Quote request received | Example Movers",
             "submitted": true,
-            "confirmationText": "Thanks! Your quote request was received. Reference BBM-12345.",
+            "confirmationText": "Thanks, we received your request. Reference REF-12345.",
             "errors": []
         ]))
         XCTAssertEqual(driver.submittedWith?.formRef, "f1")

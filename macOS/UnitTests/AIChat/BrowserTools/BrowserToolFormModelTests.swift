@@ -295,12 +295,12 @@ final class BrowserToolFormModelTests: XCTestCase {
 
     func testWhenAFormHasNothingVisibleThenItIsLeftOutAndMessagesAreListed() throws {
         var page = self.page(fields: [Field(ref: "e1", formRef: "f1", visible: false)])
-        page.messages = [.init(text: "Thanks! Your quote request was received.", isAlert: false)]
+        page.messages = [.init(text: "Thanks, we received your request.", isAlert: false)]
 
         let snapshot = BrowserToolForms.snapshot(of: page, tabID: "t")
 
         XCTAssertEqual(snapshot["forms"], [])
-        XCTAssertEqual(snapshot["messages"], ["Thanks! Your quote request was received."])
+        XCTAssertEqual(snapshot["messages"], ["Thanks, we received your request."])
     }
 
     // MARK: - Filling
@@ -400,10 +400,10 @@ final class BrowserToolFormModelTests: XCTestCase {
         }
 
         XCTAssertEqual(site("Acme Movers", "Quote | Something else", "https://acme.example"), "Acme Movers")
-        XCTAssertEqual(site(nil, "Free Moving Quote | Bluebird Movers", "https://test.duck.co/quotes/movers.html"), "Bluebird Movers")
-        XCTAssertEqual(site(nil, "Sunpeak Solar - Your solar quote", "https://www.sunpeaksolar.com/quote"), "Sunpeak Solar")
-        XCTAssertEqual(site(nil, "Quote form", "https://www.tidynest.com/quote"), "tidynest.com")
-        XCTAssertEqual(site("  ", "Book a Cleaning Quote · Tidy Nest", "https://x.example"), "Tidy Nest")
+        XCTAssertEqual(site(nil, "Free Moving Quote | Harbor Movers", "https://quotes.example/movers.html"), "Harbor Movers")
+        XCTAssertEqual(site(nil, "Brightfield Solar - Your solar quote", "https://www.brightfieldsolar.com/quote"), "Brightfield Solar")
+        XCTAssertEqual(site(nil, "Quote form", "https://www.sparkleclean.example/quote"), "sparkleclean.example")
+        XCTAssertEqual(site("  ", "Book a Cleaning Quote · Sparkle Clean", "https://x.example"), "Sparkle Clean")
     }
 
     // MARK: - Submit outcome
@@ -411,7 +411,7 @@ final class BrowserToolFormModelTests: XCTestCase {
     func testWhenTheSubmitNavigatedOrTheFormWentAwayThenItWasSubmitted() {
         let before = quotePage()
         var replaced = BrowserToolRawPage(url: before.url, title: "Quote request received | Example Movers")
-        replaced.messages = [.init(text: "Thanks! Your quote request was received.", isAlert: false)]
+        replaced.messages = [.init(text: "Thanks, we received your request.", isAlert: false)]
 
         XCTAssertTrue(BrowserToolForms.submitOutcome(navigated: true, formRef: "f1", before: before, after: nil).submitted)
         XCTAssertTrue(BrowserToolForms.submitOutcome(navigated: false, formRef: "f1", before: before, after: replaced).submitted)
@@ -445,10 +445,10 @@ final class BrowserToolFormModelTests: XCTestCase {
 
     func testConfirmationTextPrefersStatusMessagesThenTheMainTextAndIsCapped() {
         var withStatus = BrowserToolRawPage(url: "https://x.example", mainText: "Main")
-        withStatus.messages = [.init(text: "Thanks!", isAlert: false), .init(text: "Reference BBM-1234.", isAlert: false)]
+        withStatus.messages = [.init(text: "Thanks!", isAlert: false), .init(text: "Reference REF-1234.", isAlert: false)]
         let long = BrowserToolRawPage(url: "https://x.example", mainText: String(repeating: "a", count: 5000))
 
-        XCTAssertEqual(BrowserToolForms.confirmationText(of: withStatus), "Thanks!\nReference BBM-1234.")
+        XCTAssertEqual(BrowserToolForms.confirmationText(of: withStatus), "Thanks!\nReference REF-1234.")
         XCTAssertEqual(BrowserToolForms.confirmationText(of: long).count, BrowserToolForms.maxConfirmationLength)
         XCTAssertEqual(BrowserToolForms.confirmationText(of: nil), "")
     }

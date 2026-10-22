@@ -187,7 +187,7 @@ final class BrowserToolFormScriptTests: XCTestCase {
         try XCTUnwrap(value, file: file, line: line)
     }
 
-    /// Modelled on the hackdays quote sites, but written for these tests.
+    /// Written for these tests, with the label, step and error patterns quote forms commonly use.
     private static let fixture = """
     <!DOCTYPE html>
     <html><head><title>Get a quote | Example Movers</title><meta property="og:site_name" content="Example Movers"></head>

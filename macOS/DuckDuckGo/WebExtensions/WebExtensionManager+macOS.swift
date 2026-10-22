@@ -55,6 +55,29 @@ extension WebExtensionManager {
     static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
     }
+
+    /// Start after installed extensions load, so enforcement can't race the initial load.
+    @MainActor
+    func startRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        guard remoteDisableEnforcer == nil else { return }
+        let enforcer = WebExtensionRemoteDisableEnforcer(
+            manager: self,
+            configurationManager: configurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                var disabledIDs: Set<String> = []
+                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
+                    disabledIDs.insert(ChromeWebStoreID.bitwarden.rawValue)
+                }
+                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
+                    disabledIDs.insert(ChromeWebStoreID.onePassword.rawValue)
+                }
+                return disabledIDs
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+        )
+        remoteDisableEnforcer = enforcer
+        enforcer.start()
+    }
 }
 
 // MARK: - Factory
@@ -116,6 +139,16 @@ enum WebExtensionManagerFactory {
             isCPMMessagingHangRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
             },
+            isCPMNetworkProcessRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
@@ -124,10 +157,6 @@ enum WebExtensionManagerFactory {
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,
-            // Bitwarden's catalog entry decides whether a password manager extension may replace DuckDuckGo autofill.
-            isAutofillTakeoverEnabled: {
-                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(ExtensionsCatalogSubfeature.bitwarden)
-            },
             scriptletConfiguration: scriptletConfiguration
         )
 

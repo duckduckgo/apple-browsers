@@ -17,10 +17,12 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
+/// Shared Sync text styles. Each component retains its own typography and alignment.
 enum SyncUIViews {
 
-    struct TextHeader: View {
+    struct DialogTitle: View {
         let text: String
 
         var body: some View {
@@ -32,19 +34,7 @@ enum SyncUIViews {
         }
     }
 
-    struct TextHeader2: View {
-        let text: String
-
-        var body: some View {
-            Text(text)
-                .font(
-                    .system(size: 17)
-                    .weight(.semibold)
-                )
-        }
-    }
-
-    struct TextDetailMultiline: View {
+    struct DialogMessage: View {
         let text: String
 
         var body: some View {
@@ -54,23 +44,85 @@ enum SyncUIViews {
         }
     }
 
-    struct TextDetailSecondary: View {
-        let text: String
-
-        var body: some View {
-            Text(.init(text))
-                .foregroundColor(Color(.blackWhite60))
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    struct TextLink: View {
+    struct CenteredTitle: View {
         let text: String
 
         var body: some View {
             Text(text)
-                .fontWeight(.semibold)
-                .foregroundColor(Color(.linkBlue))
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    struct SectionHeading: View {
+        let text: String
+
+        var body: some View {
+            Text(text)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+        }
+    }
+
+    struct CenteredBody: View {
+        let text: String
+
+        var body: some View {
+            Text(text)
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    struct CenteredMarkdownBody: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    struct CenteredSecondaryBody: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    struct LeadingSecondaryBody: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .multilineTextAlignment(.leading)
+        }
+    }
+
+    struct Caption: View {
+        let text: String
+
+        var body: some View {
+            Text(.init(text))
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

@@ -749,6 +749,10 @@ extension XCUIApplication {
         switch state {
         case .restoreLastSession:
             radioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+            // SwiftUI on macOS 12 exposes this radio button's title without its identifier.
+            if !radioButton.exists {
+                radioButton = prefs.radioButtons["Reopen all windows and tabs from last session"]
+            }
         case .fireWindow:
             radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeFireWindow]
             picker = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeRegularWindow]

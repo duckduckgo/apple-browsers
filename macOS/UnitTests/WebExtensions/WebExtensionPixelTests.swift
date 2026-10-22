@@ -56,7 +56,9 @@ final class WebExtensionPixelTests: XCTestCase {
 
         XCTAssertEqual(names, ["web_extension_api_gaps_bitwarden_macos",
                                "web_extension_api_gaps_onepassword_macos",
-                               "web_extension_api_gaps_lastpass_macos"])
+                               "web_extension_api_gaps_lastpass_macos",
+                               "web_extension_api_gaps_icloudpasswords_macos",
+                               "web_extension_api_gaps_darkreader_macos"])
         XCTAssertEqual(pixel.parameters, ["extension_version": "2026.10.1", "missing_api_count": "31", "unsupported_url_count": "2"])
         XCTAssertEqual(pixel.namePrefix, .none)
     }

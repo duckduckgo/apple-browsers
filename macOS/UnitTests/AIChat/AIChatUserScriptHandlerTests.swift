@@ -1906,6 +1906,46 @@ struct AIChatUserScriptHandlerTests {
         SubscriptionTestingUtilities.MockWKWebView(url: URL(string: url)!)
     }
 
+    // MARK: - Page context added / removed
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Adding page context in the chat publishes added, not removed", .timeLimit(.minutes(1)))
+    @MainActor
+    func testTogglePageContextOnPublishesAdded() {
+        var added = 0
+        var removed = 0
+        let cancellables = [
+            handler.pageContextAddedPublisher.sink { added += 1 },
+            handler.pageContextRemovedPublisher.sink { removed += 1 }
+        ]
+
+        _ = handler.togglePageContextTelemetry(params: ["enabled": true], message: WKScriptMessage.mock())
+
+        withExtendedLifetime(cancellables) {
+            #expect(added == 1)
+            #expect(removed == 0)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Removing page context in the chat publishes removed, not added", .timeLimit(.minutes(1)))
+    @MainActor
+    func testTogglePageContextOffPublishesRemoved() {
+        var added = 0
+        var removed = 0
+        let cancellables = [
+            handler.pageContextAddedPublisher.sink { added += 1 },
+            handler.pageContextRemovedPublisher.sink { removed += 1 }
+        ]
+
+        _ = handler.togglePageContextTelemetry(params: ["enabled": false], message: WKScriptMessage.mock())
+
+        withExtendedLifetime(cancellables) {
+            #expect(added == 0)
+            #expect(removed == 1)
+        }
+    }
+
     // MARK: - Free Trial Conversion Tracking
 
     @available(iOS 16, macOS 13, *)

@@ -38,6 +38,6 @@ extension DuckAIPromptFlowStart {
                   reasoningEffort: controlValues.selectedReasoningEffort,
                   userTier: controlValues.userTier,
                   toolsSelected: selectedTools?.isEmpty == false,
-                  attachmentsSelected: controlValues.selectedImages?.isEmpty == false || controlValues.selectedFiles?.isEmpty == false)
+                  attachmentsSelected: controlValues.attachmentsSelected)
     }
 }

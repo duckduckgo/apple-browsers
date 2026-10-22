@@ -41,6 +41,22 @@ final class ScoreTests: XCTestCase {
         assertHasNonZeroScore("«Рукописи не горят»: первый замысел «Мастера и Маргариты». Лекция из курса «Мир Булгакова». АУДИО - YouTube", "Рукописи")
     }
 
+    func testWhenQueryIsNumberAfterPunctuationInTitle_ThenScored() {
+        let title = "Fix crash by alex · Pull Request #7531 · duckduckgo/apple-browsers · GitHub"
+        assertHasNonZeroScore(title, "7531")
+        assertHasNonZeroScore(title, "#7531")
+        assertHasNonZeroScore("Fix (7531) crash", "7531")
+        assertHasNonZeroScore("Pull Request #7531 · repo", "pull 7531")
+    }
+
+    func testWhenQueryIsInsideWordInTitle_ThenNotScored() {
+        let score = Score(title: "Build x7531 failed",
+                          url: URL(string: "https://www.testcase.com/notroot")!,
+                          visitCount: 0,
+                          query: "7531")
+        XCTAssertEqual(score, 0)
+    }
+
     func assertHasNonZeroScore(_ title: String, _ query: String) {
         let score = Score(title: title,
                            url: URL(string: "https://www.testcase.com/notroot")!,

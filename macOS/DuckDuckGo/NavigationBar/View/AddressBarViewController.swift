@@ -240,6 +240,12 @@ final class AddressBarViewController: NSViewController {
         tabCollectionViewModel.isPopup
     }
 
+    /// Narrowest width the required constraints allow: leading buttons, minimum passive text field width and trailing buttons
+    var minimumWidth: CGFloat {
+        guard isViewLoaded else { return 0 }
+        return passiveTextFieldMinXConstraint.constant + LayoutConstants.passiveTextFieldMinWidth + passiveTextFieldTrailingConstraint.constant
+    }
+
     private var accentColor: NSColor {
         return isBurner ? NSColor(resource: .burnerAccent) : NSColor.controlAccentColor
     }

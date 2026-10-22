@@ -118,6 +118,34 @@ final class TabViewModelTests: XCTestCase {
         }
     }
 
+    func testVisitedDomainsIncludeLinkPreviewsWithoutChangingTabHistory() async throws {
+        let historyURLs = [URL(string: "https://example.com")!]
+        mockHistoryManager.tabHistoryResult = historyURLs
+        tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example/first"))
+        tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example/second"))
+        tab.recordLinkPreviewDomain(for: URL(string: "https://example.com/preview"))
+        tab.recordLinkPreviewDomain(for: URL(string: "https://redirect.example"))
+
+        let domains = try await sut.visitedDomains()
+        let history = try await sut.tabHistory()
+
+        XCTAssertEqual(domains, ["example.com", "preview.example", "redirect.example"])
+        XCTAssertEqual(history, historyURLs)
+        XCTAssertTrue(mockHistoryManager.addVisitCalls.isEmpty)
+    }
+
+    func testVisitedDomainsIncludePreviewsAfterViewModelRecreationAndStayScopedToParentTab() async throws {
+        tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example"))
+        let recreatedViewModel = TabViewModel(tab: tab, historyManager: mockHistoryManager)
+        let otherViewModel = TabViewModel(tab: Tab(), historyManager: mockHistoryManager)
+
+        let parentDomains = try await recreatedViewModel.visitedDomains()
+        let otherDomains = try await otherViewModel.visitedDomains()
+
+        XCTAssertEqual(parentDomains, ["preview.example"])
+        XCTAssertTrue(otherDomains.isEmpty)
+    }
+
     // MARK: - Current AI Chat ID Tests
 
     func testWhenTabIsNotAITab_ThenCurrentAIChatIdReturnsNil() {

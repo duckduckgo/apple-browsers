@@ -121,6 +121,10 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemCrashMultipleTimesAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
+
+    // Tab Groups
+    @MainActor func tabBarViewItemCurrentTabGroup(_ tabBarViewItem: TabBarViewItem) -> TabGroup?
+    @MainActor func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem)
 }
 
 final class TabBarItemCellView: NSView {
@@ -174,6 +178,27 @@ final class TabBarItemCellView: NSView {
     private lazy var backgroundView = TabBackgroundView()
     fileprivate lazy var faviconView = TabFaviconView()
     fileprivate lazy var titleView = TabTitleView()
+
+    fileprivate let groupBackgroundColorView = {
+        let view = ColorView(frame: .zero, backgroundColor: nil, cornerRadius: 6)
+        view.alphaValue = 0.5
+        view.isHidden = true
+        return view
+    }()
+
+    /// Label for displaying group name when in header mode
+    fileprivate let groupHeaderNameLabel: NSTextField = {
+        let label = NSTextField(labelWithString: "")
+        label.font = .systemFont(ofSize: 11, weight: .medium)
+        label.textColor = .labelColor
+        label.alignment = .center
+        label.lineBreakMode = .byTruncatingTail
+        label.isHidden = true
+        return label
+    }()
+
+    /// Whether this cell is displaying a group header instead of a tab
+    fileprivate var isGroupHeader: Bool = false
 
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
@@ -249,6 +274,12 @@ final class TabBarItemCellView: NSView {
         addSubview(backgroundView)
         addSubview(mouseOverView)
 
+        // Group background color view (above mouseOverView)
+        addSubview(groupBackgroundColorView)
+
+        // Group header name label (for header mode)
+        addSubview(groupHeaderNameLabel)
+
         faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
         titleView.setAccessibilityIdentifier("TabBarViewItem.title")
 
@@ -296,6 +327,22 @@ final class TabBarItemCellView: NSView {
 
     private func layout(widthStage: WidthStage) {
         mouseOverView.frame = bounds
+
+        let padding: CGFloat = 4
+        let height = bounds.height - (padding * 2)
+        groupBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
+                                                y: bounds.midY - (height / 2),
+                                                width: bounds.width - (padding * 2),
+                                                height: height)
+
+        // Group header name label - centered in the cell
+        if isGroupHeader {
+            let labelHeight: CGFloat = 14
+            groupHeaderNameLabel.frame = NSRect(x: bounds.origin.x + 8,
+                                                y: bounds.midY - (labelHeight / 2),
+                                                width: bounds.width - 16,
+                                                height: labelHeight)
+        }
 
         if backgroundView.frame != bounds {
             withoutAnimation {
@@ -422,6 +469,10 @@ final class TabBarItemCellView: NSView {
     }
 
     func clear() {
+        // Reset header state
+        isGroupHeader = false
+        groupHeaderNameLabel.isHidden = true
+        groupHeaderNameLabel.stringValue = ""
         faviconView.reset()
         titleView.reset()
     }
@@ -922,12 +973,73 @@ final class TabBarViewItem: NSCollectionViewItem {
         representedObject = nil
     }
 
+    /// The group this item represents when in header mode (nil when displaying a tab)
+    private(set) var currentHeaderGroup: TabGroup?
+
+    func updateGroupBackground() {
+        withoutAnimation {
+            updateGroupBackgroundInternal()
+        }
+    }
+
+    private func updateGroupBackgroundInternal() {
+        if !cell.isGroupHeader, let group = delegate?.tabBarViewItemCurrentTabGroup(self) {
+            cell.groupBackgroundColorView.backgroundColor = group.color.nsColor
+            cell.groupBackgroundColorView.isHidden = false
+        } else if !cell.isGroupHeader {
+            cell.groupBackgroundColorView.isHidden = true
+        }
+    }
+
+    // MARK: - Group Header Mode
+
+    /// Configures this item to display as a group header instead of a tab
+    func configureAsGroupHeader(_ group: TabGroup) {
+        clearSubscriptions()
+
+        currentHeaderGroup = group
+        cell.isGroupHeader = true
+
+        cell.groupBackgroundColorView.backgroundColor = group.color.nsColor
+        cell.groupBackgroundColorView.isHidden = false
+
+        cell.groupHeaderNameLabel.stringValue = group.name
+        cell.groupHeaderNameLabel.isHidden = false
+
+        cell.faviconView.isHidden = true
+        cell.titleView.isHidden = true
+        cell.closeButton.isHidden = true
+        cell.audioButton.isHidden = true
+        cell.crashIndicatorButton.isHidden = true
+        cell.rightSeparatorView.isHidden = true
+        cell.needsLayout = true
+    }
+
+    /// Resets the item from header mode back to normal tab mode
+    func resetFromGroupHeader() {
+        currentHeaderGroup = nil
+        cell.isGroupHeader = false
+        cell.groupHeaderNameLabel.isHidden = true
+
+        cell.faviconView.isHidden = false
+        cell.titleView.isHidden = false
+        cell.closeButton.isHidden = false
+        cell.rightSeparatorView.isHidden = false
+    }
+
     private func updateSubviews() {
         /// Ensure  `updateSubviews` does not trigger any unexpected animations
         CATransaction.begin()
         defer {
             CATransaction.commit()
         }
+
+        // Group headers have fixed visibility
+        guard !cell.isGroupHeader else {
+            updateSeparatorView()
+            return
+        }
+        updateGroupBackgroundInternal()
 
         let tabStyleProvider = theme.tabStyleProvider
 
@@ -1184,6 +1296,10 @@ extension TabBarViewItem: NSMenuDelegate {
 
         // Close Section
         addCloseMenuItem(to: menu)
+
+        // Tab Groups Section
+        menu.addItem(.separator())
+        addTabGroupsMenuItem(to: menu)
         if !isPinned {
             addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
             if !isBurner {
@@ -1386,7 +1502,32 @@ extension TabBarViewItem: NSMenuDelegate {
 
 }
 
+extension TabBarViewItem {
+
+    // MARK: - Tab Groups
+
+    private func addTabGroupsMenuItem(to menu: NSMenu) {
+        let currentGroup = delegate?.tabBarViewItemCurrentTabGroup(self)
+        let title = currentGroup != nil ? "Edit Tab Group…" : "Add to Tab Group…"
+
+        let tabGroupsMenuItem = NSMenuItem(title: title, action: #selector(manageTabGroupsAction(_:)), keyEquivalent: "")
+        tabGroupsMenuItem.target = self
+        menu.addItem(tabGroupsMenuItem)
+    }
+
+    @objc private func manageTabGroupsAction(_ sender: NSMenuItem) {
+        delegate?.tabBarViewItemManageTabGroups(self)
+    }
+}
+
 extension TabBarViewItem: MouseClickViewDelegate {
+
+    func mouseClickView(_ mouseClickView: MouseClickView, mouseUpEvent: NSEvent) {
+        // Handle header clicks - toggle collapsed state
+        if currentHeaderGroup != nil {
+            delegate?.tabBarViewItemSelectTab(self)
+        }
+    }
 
     func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
         delegate?.tabBarViewItem(self, isMouseOver: isMouseOver)
@@ -1706,6 +1847,8 @@ extension TabBarViewItem {
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}
         func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {}
+        func tabBarViewItemCurrentTabGroup(_ tabBarViewItem: TabBarViewItem) -> TabGroup? { nil }
+        func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem) {}
         func tabBarViewItemCanBeDuplicated(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBePinned(_: TabBarViewItem) -> Bool { false }
         func tabBarViewItemCanBeBookmarked(_: TabBarViewItem) -> Bool { false }

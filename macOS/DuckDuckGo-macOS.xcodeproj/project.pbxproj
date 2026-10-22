@@ -1981,6 +1981,12 @@
 		561D29C72BDA74F4007B91D0 /* MockDDGSyncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */; };
 		562532A02BC069180034D316 /* ZoomPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */; };
 		562532A12BC069190034D316 /* ZoomPopoverViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */; };
+		5625AEB02F2BB5290044C476 /* TabGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625AEAF2F2BB5290044C476 /* TabGroup.swift */; };
+		5625AEB12F2BB5290044C476 /* TabGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625AEAF2F2BB5290044C476 /* TabGroup.swift */; };
+		5625AEB32F2BBDD20044C476 /* TabGroupEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625AEB22F2BBDD20044C476 /* TabGroupEditorView.swift */; };
+		5625AEB42F2BBDD20044C476 /* TabGroupEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625AEB22F2BBDD20044C476 /* TabGroupEditorView.swift */; };
+		5625AEB62F2BBDDA0044C476 /* TabGroupsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625AEB52F2BBDDA0044C476 /* TabGroupsManagementView.swift */; };
+		5625AEB72F2BBDDA0044C476 /* TabGroupsManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5625AEB52F2BBDDA0044C476 /* TabGroupsManagementView.swift */; };
 		562802C72DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */; };
 		562802C82DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */; };
 		562984702AC4610100AC20EB /* SyncPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5629846E2AC4610100AC20EB /* SyncPreferencesTests.swift */; };
@@ -6059,6 +6065,9 @@
 		561D29C02BDA7430007B91D0 /* MockSyncPausedStateManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSyncPausedStateManaging.swift; sourceTree = "<group>"; };
 		561D29C42BDA749A007B91D0 /* MockDDGSyncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDDGSyncing.swift; sourceTree = "<group>"; };
 		5625329D2BC069100034D316 /* ZoomPopoverViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZoomPopoverViewModelTests.swift; sourceTree = "<group>"; };
+		5625AEAF2F2BB5290044C476 /* TabGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabGroup.swift; sourceTree = "<group>"; };
+		5625AEB22F2BBDD20044C476 /* TabGroupEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabGroupEditorView.swift; sourceTree = "<group>"; };
+		5625AEB52F2BBDDA0044C476 /* TabGroupsManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabGroupsManagementView.swift; sourceTree = "<group>"; };
 		562802C62DAAB43B009F2F04 /* ContextualDialogsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDialogsManager.swift; sourceTree = "<group>"; };
 		5629846E2AC4610100AC20EB /* SyncPreferencesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPreferencesTests.swift; sourceTree = "<group>"; };
 		563A3CF92D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigurationManagerIntegrationTests.swift; sourceTree = "<group>"; };
@@ -12073,6 +12082,8 @@
 				B6BDD9F12940764100F68088 /* UserScripts */,
 				AA86491C24D83868001BABEE /* View */,
 				AA86491D24D83A59001BABEE /* ViewModel */,
+				5625AEB22F2BBDD20044C476 /* TabGroupEditorView.swift */,
+				5625AEB52F2BBDDA0044C476 /* TabGroupsManagementView.swift */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -12124,6 +12135,7 @@
 				B6C00ED6292FB4B4009C73A6 /* TabExtensionsBuilder.swift */,
 				983DFB2428B67036006B7E34 /* UserContentUpdating.swift */,
 				B634DBE2293C8FFF00C3C99E /* UserDialogRequest.swift */,
+				5625AEAF2F2BB5290044C476 /* TabGroup.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -16222,6 +16234,7 @@
 				3706FAEE293F65D500E42796 /* SaveIdentityPopover.swift in Sources */,
 				1D5C23292F150A680055046E /* AIChatSuggestionsView.swift in Sources */,
 				3706FAF0293F65D500E42796 /* YoutubePlayerNavigationHandler.swift in Sources */,
+				5625AEB32F2BBDD20044C476 /* TabGroupEditorView.swift in Sources */,
 				37197EA32942441D00394917 /* UserDialogRequest.swift in Sources */,
 				BBD7A1D02F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */,
 				566B736A2BECC02D00FF1959 /* SyncAlertsPresenter.swift in Sources */,
@@ -16401,6 +16414,7 @@
 				3706FB3D293F65D500E42796 /* FocusRingView.swift in Sources */,
 				EE650D5E2EB112CA00B3D1D7 /* NewProfilePickerView.swift in Sources */,
 				3706FB3E293F65D500E42796 /* BookmarksBarViewModel.swift in Sources */,
+				5625AEB72F2BBDDA0044C476 /* TabGroupsManagementView.swift in Sources */,
 				3706FB3F293F65D500E42796 /* NSPopUpButtonView.swift in Sources */,
 				84E720682EAA1A44002618BD /* PermissionManagerMock.swift in Sources */,
 				F156E39C2FB5FCBA004A8424 /* Documentation.docc in Sources */,
@@ -17320,6 +17334,7 @@
 				3706FC9F293F65D500E42796 /* NSMenuItemExtension.swift in Sources */,
 				1E54E8E62EB376B000EB24CD /* AutoconsentTabExtension.swift in Sources */,
 				3706FCA0293F65D500E42796 /* ContiguousBytesExtension.swift in Sources */,
+				5625AEB02F2BB5290044C476 /* TabGroup.swift in Sources */,
 				BB4AA6752E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */,
 				BB4AA6762E96FD600008CC12 /* WinBackOfferPromptView.swift in Sources */,
 				BB4AA6772E96FD600008CC12 /* WinBackOfferPromptViewModel.swift in Sources */,
@@ -18498,6 +18513,7 @@
 				1D4B03D72CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */,
 				85D0327B2B8E3D090041D1FB /* HistoryCoordinatorExtension.swift in Sources */,
 				BB960BCE2DD77A0B002C46DD /* SettingsIconsProviding.swift in Sources */,
+				5625AEB62F2BBDDA0044C476 /* TabGroupsManagementView.swift in Sources */,
 				84A74E242EF58EB4006A5B61 /* UserDefaultsKeys.swift in Sources */,
 				AA80EC54256BE3BC007083E7 /* UserText.swift in Sources */,
 				1EC711512D033D200009EB5C /* UserText+NetworkProtection+Shared.swift in Sources */,
@@ -18553,6 +18569,7 @@
 				AA6EF9AD25066F42004754E6 /* WindowsManager.swift in Sources */,
 				842FE5462F16691D002F8ABC /* WarnBeforeQuitOverlayPresenter.swift in Sources */,
 				31E3FD722CE39C4600A392C8 /* AIChatDebugURLSettings.swift in Sources */,
+				5625AEB12F2BB5290044C476 /* TabGroup.swift in Sources */,
 				C172E7372C93968E00521D9A /* SyncPromoPixelKitEvent.swift in Sources */,
 				B684121C2B6A1D880092F66A /* ErrorPageHTMLTemplate.swift in Sources */,
 				B65C7DFB2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
@@ -18724,6 +18741,7 @@
 				B6B1E87E26D5DA0E0062C350 /* DownloadsPopover.swift in Sources */,
 				85774AFF2A713D3B00DE0561 /* BookmarksBarMenuFactory.swift in Sources */,
 				4B9292A026670D2A00AD2C21 /* SpacerNode.swift in Sources */,
+				5625AEB42F2BBDD20044C476 /* TabGroupEditorView.swift in Sources */,
 				3775913629AB9A1C00E26367 /* SyncManagementDialogViewController.swift in Sources */,
 				CC26B6132F0BDEC600D380B6 /* NewTabPageNextStepsCardsPixelHandler.swift in Sources */,
 				7B7F5D242C52725A00826256 /* AddExcludedDomainButtonsView.swift in Sources */,

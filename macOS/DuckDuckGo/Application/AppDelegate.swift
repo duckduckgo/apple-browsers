@@ -259,6 +259,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
     let bookmarkManager: LocalBookmarkManager
+    /// Hack days: tab groups, in memory only.
+    let tabGroupManager = TabGroupManager()
     let bookmarkDragDropManager: BookmarkDragDropManager
     let historyCoordinator: HistoryCoordinator
     let fireproofDomains: FireproofDomains

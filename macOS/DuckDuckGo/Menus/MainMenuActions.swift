@@ -1703,6 +1703,23 @@ extension MainViewController {
         }
     }
 
+    @objc func showManageTabGroups(_ sender: Any?) {
+        guard view.window != nil else { return }
+
+        var hostingController: NSHostingController<TabGroupsManagementView>?
+
+        let tabGroupsView = TabGroupsManagementView(
+            tabGroupManager: NSApp.delegateTyped.tabGroupManager,
+            currentTabUUID: nil,
+            onDismiss: {
+                hostingController?.dismiss(nil)
+            }
+        )
+
+        hostingController = NSHostingController(rootView: tabGroupsView)
+        presentAsSheet(hostingController!)
+    }
+
     @objc func mergeAllWindows(_ sender: Any?) {
         guard let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         assert(!self.isBurner)

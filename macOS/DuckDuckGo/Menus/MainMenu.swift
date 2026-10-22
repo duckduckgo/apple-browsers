@@ -562,6 +562,7 @@ final class MainMenu: NSMenu {
                     .withImage(DesignSystemImages.Glyphs.Size12.pin)
                 NSMenuItem(title: UserText.moveTabToNewWindow, action: #selector(MainViewController.moveTabToNewWindow))
                 NSMenuItem(title: UserText.mainMenuWindowMergeAllWindows, action: #selector(NSWindow.mergeAllWindows))
+                NSMenuItem(title: "Manage Tab Groups…", action: #selector(MainViewController.showManageTabGroups))
                 NSMenuItem.separator()
 
                 NSMenuItem(title: UserText.mainMenuWindowShowPreviousTab, action: #selector(MainViewController.showPreviousTab), keyEquivalent: [.control, .shift, .tab])

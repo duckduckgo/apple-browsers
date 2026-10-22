@@ -17,9 +17,10 @@
 //
 
 import AIChat
-import Foundation
+import AppKit
 import FoundationModels
 import NaturalLanguage
+import os.log
 import PDFKit
 
 /// Apple Intelligence's on-device model, for Dax's own small decisions; nothing it reads leaves the Mac.
@@ -129,9 +130,17 @@ enum DaxPetIntelligenceFactory {
     @MainActor
     static func make() -> DaxPetIntelligence {
         if #available(macOS 26, *), isAvailable {
+            Logger.aiChat.notice("Dax: Apple Intelligence is on, so Dax decides on the device")
             return DaxPetOnDeviceIntelligence()
         }
+        Logger.aiChat.notice("Dax: no Apple Intelligence (\(unavailabilityReason, privacy: .public)), so every question goes to Duck.ai")
         return DaxPetNoIntelligence()
+    }
+
+    private static var unavailabilityReason: String {
+        guard #available(macOS 26, *) else { return "needs macOS 26" }
+        let model = SystemLanguageModel.default
+        return model.isAvailable ? "language not supported" : String(describing: model.availability)
     }
 
     /// Whether this Mac has Apple Intelligence on, in a language it speaks.
@@ -162,6 +171,28 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
 
     var isOnDevice: Bool { true }
 
+    /// Runs one request, logging how long it took or why it failed.
+    private func respond<Content: Generable>(_ session: LanguageModelSession, to prompt: String, generating type: Content.Type,
+                                             temperature: Double, for task: String) async -> Content? {
+        let start = Date()
+        do {
+            let content = try await session.respond(to: prompt, generating: type, options: GenerationOptions(temperature: temperature)).content
+            Logger.aiChat.notice("Dax: \(task, privacy: .public) took \(Self.milliseconds(since: start))ms")
+            return content
+        } catch {
+            Logger.aiChat.error("""
+                Dax: \(task, privacy: .public) failed after \(Self.milliseconds(since: start))ms, \
+                browser \(NSApp.isActive ? "in front" : "in the background", privacy: .public): \
+                \(String(reflecting: error), privacy: .public)
+                """)
+            return nil
+        }
+    }
+
+    private static func milliseconds(since start: Date) -> Int {
+        Int(Date().timeIntervalSince(start) * 1000)
+    }
+
     @Generable
     struct Suggestions {
         @Guide(description: "Requests the user could send to an AI assistant about the content, each at most five words, without quotes",
@@ -177,9 +208,9 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             Suggest short, useful requests they could send, phrased as commands like "Summarize the key points". \
             Reply in \(Self.userLanguage).
             """)
-        guard let response = try? await session.respond(to: content, generating: Suggestions.self,
-                                                        options: GenerationOptions(temperature: 0.6)) else { return [] }
-        return response.content.requests
+        guard let response = await respond(session, to: content, generating: Suggestions.self, temperature: 0.6,
+                                           for: "drop suggestions") else { return [] }
+        return response.requests
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
             .filter { !$0.isEmpty }
     }
@@ -198,9 +229,9 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             For example, for "On it!" you might write "Quack, on it!", "Leave it to me!" or "Working on it!". \
             No emoji. Reply in \(Self.userLanguage).
             """)
-        guard let response = try? await session.respond(to: "Line: \(line)", generating: Variations.self,
-                                                        options: GenerationOptions(temperature: 0.7)) else { return [] }
-        return response.content.lines
+        guard let response = await respond(session, to: "Line: \(line)", generating: Variations.self, temperature: 0.7,
+                                           for: "line rewording") else { return [] }
+        return response.lines
     }
 
     @Generable
@@ -225,9 +256,9 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             document or web page. code: source code, a stack trace or logs. message: an email or chat message written to the user. \
             other: anything else, like a short note or a list.
             """)
-        guard let response = try? await session.respond(to: Self.describe(attachments), generating: Kind.self,
-                                                        options: GenerationOptions(temperature: 0)) else { return nil }
-        switch response.content {
+        guard let response = await respond(session, to: Self.describe(attachments), generating: Kind.self, temperature: 0,
+                                           for: "drop kind") else { return nil }
+        switch response {
         case .article: return .article
         case .code: return .code
         case .message: return .message
@@ -254,14 +285,14 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             "Explain the main argument". Reply in \(Self.userLanguage).
             """)
         let page = "Title: \(title)\n\n\(content.prefix(Self.contentLimit))"
-        guard let response = try? await session.respond(to: page, generating: PageGlance.self,
-                                                        options: GenerationOptions(temperature: 0.4)) else { return nil }
-        let summary = response.content.summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let response = await respond(session, to: page, generating: PageGlance.self, temperature: 0.4,
+                                           for: "page gist") else { return nil }
+        let summary = response.summary.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !summary.isEmpty else { return nil }
-        let followUps = response.content.followUps
+        let followUps = response.followUps
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"“”"))) }
             .filter { !$0.isEmpty }
-        let quote = response.content.keySentence.trimmingCharacters(in: .whitespacesAndNewlines)
+        let quote = response.keySentence.trimmingCharacters(in: .whitespacesAndNewlines)
         return DaxPetPageGlance(summary: summary, followUps: followUps, quote: quote.isEmpty ? nil : quote)
     }
 
@@ -282,9 +313,10 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             It doesn't when the question stands on its own: "what's the capital of France?", "write a poem about \
             ducks", "how do I boil an egg?", "help me write an email to my landlord".
             """)
-        let response = try? await session.respond(to: "Question: \(prompt)", generating: ScreenReference.self,
-                                                  options: GenerationOptions(temperature: 0))
-        return response?.content.needsTheScreen ?? false
+        let response = await respond(session, to: "Question: \(prompt)", generating: ScreenReference.self, temperature: 0,
+                                     for: "screen check")
+        Logger.aiChat.notice("Dax: about the screen: \(response?.needsTheScreen ?? false, privacy: .public)")
+        return response?.needsTheScreen ?? false
     }
 
     @Generable
@@ -324,8 +356,12 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             the page they're on, like "what's the capital of France?", "summarize this page", \
             "write a poem about tabs", "explain this", "how do I clear my history?".
             """)
-        guard let intent = try? await session.respond(to: "Request: \(prompt)", generating: LookupIntent.self,
-                                                      options: GenerationOptions(temperature: 0)).content else { return nil }
+        guard let intent = await respond(session, to: "Request: \(prompt)", generating: LookupIntent.self, temperature: 0,
+                                         for: "routing") else { return nil }
+        Logger.aiChat.notice("""
+            Dax: routed \(prompt, privacy: .private) to \(String(describing: intent.action), privacy: .public), \
+            words \(intent.searchTerms, privacy: .private), days back \(intent.daysBack, privacy: .public)
+            """)
         let terms = intent.searchTerms.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         let kind: DaxPetLookup.Kind
         switch intent.action {
@@ -351,8 +387,9 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             what they're looking for, best first, at most \(maximum). Give none when no page clearly is.
             """)
         let list = pages.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
-        guard let picks = try? await session.respond(to: "Looking for: \(prompt)\n\nPages:\n\(list)", generating: Picks.self,
-                                                     options: GenerationOptions(temperature: 0)).content else { return [] }
+        guard let picks = await respond(session, to: "Looking for: \(prompt)\n\nPages:\n\(list)", generating: Picks.self, temperature: 0,
+                                        for: "picking from \(pages.count) pages") else { return [] }
+        Logger.aiChat.notice("Dax: picked \(picks.numbers, privacy: .public) of \(pages.count, privacy: .public)")
         var seen = Set<Int>()
         return picks.numbers
             .map { $0 - 1 }
@@ -375,8 +412,8 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             This is text read off the user's screen in \(appName). Say what they're looking at, and words to search \
             their browsing history for pages about it. Leave out the app's own buttons and menus.
             """)
-        guard let response = try? await session.respond(to: String(text.prefix(Self.contentLimit)), generating: ScreenTopic.self,
-                                                        options: GenerationOptions(temperature: 0)).content else { return nil }
+        guard let response = await respond(session, to: String(text.prefix(Self.contentLimit)), generating: ScreenTopic.self,
+                                           temperature: 0, for: "screen topic") else { return nil }
         let topic = response.topic.trimmingCharacters(in: .whitespacesAndNewlines)
         let terms = response.searchTerms.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         guard !topic.isEmpty, !terms.isEmpty else { return nil }

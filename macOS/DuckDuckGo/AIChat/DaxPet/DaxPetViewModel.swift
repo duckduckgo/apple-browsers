@@ -19,6 +19,7 @@
 import AIChat
 import AppKit
 import Combine
+import os.log
 
 @MainActor
 protocol DaxPetPromptSubmitting {
@@ -292,12 +293,22 @@ final class DaxPetViewModel: ObservableObject {
     func submit() {
         let typed = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         let prompt = typed.isEmpty && !attachments.isEmpty ? dropAction?.prompt ?? "" : typed
-        guard !prompt.isEmpty, !isCheckingScreen, !isLookingUp else { return }
+        guard !prompt.isEmpty, !isCheckingScreen, !isLookingUp else {
+            Logger.aiChat.notice("Dax: Return ignored (checking screen: \(self.isCheckingScreen, privacy: .public), looking up: \(self.isLookingUp, privacy: .public))")
+            return
+        }
         if shouldLookUp(prompt) {
+            Logger.aiChat.notice("Dax: looking \(prompt, privacy: .private) up on the device first")
             Task { await lookUp(prompt) }
             return
         }
+        Logger.aiChat.notice("""
+            Dax: not looking up (on device: \(self.intelligence.isOnDevice, privacy: .public), \
+            browser: \(self.browsing != nil, privacy: .public), attachments: \(self.attachments.count, privacy: .public), \
+            tabs to compare: \(self.comparedTabs.count, privacy: .public), looked up already: \(self.lookedUpPrompt == prompt, privacy: .public))
+            """)
         if shouldCheckScreen(for: prompt), let screenLooker, let app = screenLooker.foregroundApp {
+            Logger.aiChat.notice("Dax: checking whether it's about \(app.name, privacy: .public)")
             Task { await checkScreen(for: prompt, in: app, with: screenLooker) }
             return
         }
@@ -315,6 +326,10 @@ final class DaxPetViewModel: ObservableObject {
         character.mood = .thinking
         say(line(UserText.daxPetThinking))
 
+        Logger.aiChat.notice("""
+            Dax: sending to Duck.ai, with attachments: \(payload != nil, privacy: .public), \
+            tabs to compare: \(tabs.count, privacy: .public)
+            """)
         DispatchQueue.main.asyncAfter(deadline: .now() + submissionDelay) { [weak self] in
             guard let self else { return }
             if tabs.isEmpty {
@@ -351,7 +366,10 @@ final class DaxPetViewModel: ObservableObject {
         guard isStillAsking(prompt) else { return }
         character.mood = .listening
 
-        guard let lookup, let browsing else { return submit() }
+        guard let lookup, let browsing else {
+            Logger.aiChat.notice("Dax: nothing to look up in the browser, so it's for Duck.ai")
+            return submit()
+        }
         switch lookup.kind {
         case .listTabs:
             listTabs(in: browsing)
@@ -376,6 +394,7 @@ final class DaxPetViewModel: ObservableObject {
 
     /// Runs `search` with whether the history may be searched, asking the user the first time.
     private func withHistoryConsent(_ search: @escaping (Bool) async -> Void) async {
+        Logger.aiChat.notice("Dax: history search allowed: \(String(describing: self.historyConsent?.canSearchHistory), privacy: .public)")
         switch historyConsent?.canSearchHistory {
         case true?:
             await search(true)
@@ -405,12 +424,14 @@ final class DaxPetViewModel: ObservableObject {
             topic = await intelligence.screenTopic(text, appName: app.name)
         }
         guard isStillAsking(prompt) else { return }
+        Logger.aiChat.notice("Dax: read \(app.name, privacy: .public): \(topic?.topic ?? "nothing", privacy: .private)")
         guard let topic else { return goOnToDuckAI() }
 
         let tabs = browsing.openTabs.filter { tab in topic.terms.contains { DaxPetBrowser.mentions(tab.title + " " + tab.url.absoluteString, $0) } }
         let openURLs = Set(tabs.map(\.url))
         let visits = includingHistory ? browsing.history(matching: topic.terms, limit: Self.maximumCandidates).filter { !openURLs.contains($0.url) } : []
         let candidates = Array((tabs.map(DaxPetFindings.Item.tab) + visits.map(DaxPetFindings.Item.visit)).prefix(Self.maximumCandidates))
+        Logger.aiChat.notice("Dax: \(tabs.count, privacy: .public) tabs and \(visits.count, privacy: .public) history pages about the screen")
         guard !candidates.isEmpty else { return goOnToDuckAI() }
 
         let pages = candidates.map { item -> String in
@@ -435,6 +456,7 @@ final class DaxPetViewModel: ObservableObject {
     /// Every open tab, to pick from; no model needed.
     private func listTabs(in browsing: DaxPetBrowsing) {
         let tabs = browsing.openTabs
+        Logger.aiChat.notice("Dax: listing \(tabs.count, privacy: .public) open tabs")
         guard !tabs.isEmpty else { return say(UserText.daxPetNoTabs, for: 4) }
         say(nil)
         findings = DaxPetFindings(headline: UserText.daxPetYourTabs, content: .items(tabs.map(DaxPetFindings.Item.tab)), total: tabs.count)
@@ -452,6 +474,10 @@ final class DaxPetViewModel: ObservableObject {
         guard isStillAsking(prompt) else { return }
         character.mood = .listening
         let found = picks.map { candidates[$0] }
+        Logger.aiChat.notice("""
+            Dax: found \(found.count, privacy: .public) of \(candidates.count, privacy: .public) tabs \
+            (\(matching.count, privacy: .public) had the words)
+            """)
         switch found.count {
         case 0:
             submit()
@@ -475,6 +501,7 @@ final class DaxPetViewModel: ObservableObject {
                                             maximum: Self.maximumComparedTabs)
         guard isStillAsking(prompt) else { return }
         character.mood = .listening
+        Logger.aiChat.notice("Dax: \(picks.count, privacy: .public) of \(candidates.count, privacy: .public) tabs to compare")
         guard picks.count >= 2 else { return submit() }
         comparedTabs = picks.map { candidates[$0] }
         updateLookTarget()
@@ -492,6 +519,7 @@ final class DaxPetViewModel: ObservableObject {
         let since = now().addingTimeInterval(-Double(lookup.daysBack + 1) * 24 * 60 * 60)
         let ordered = lookup.daysBack > 0 ? visits.filter { $0.date >= since } + visits.filter { $0.date < since } : visits
         let candidates = Array(ordered.prefix(Self.maximumCandidates))
+        Logger.aiChat.notice("Dax: \(visits.count, privacy: .public) history pages have the words")
         guard !candidates.isEmpty else { return submit() }
         character.mood = .thinking
         let pages = candidates.map { "\($0.title) — \($0.url.host ?? ""), \(Self.modelDateFormatter.localizedString(for: $0.date, relativeTo: now()))" }
@@ -538,7 +566,11 @@ final class DaxPetViewModel: ObservableObject {
     }
 
     private func isStillAsking(_ prompt: String) -> Bool {
-        isComposing && lookedUpPrompt == prompt && self.prompt.trimmingCharacters(in: .whitespacesAndNewlines) == prompt
+        let isStillAsking = isComposing && lookedUpPrompt == prompt && self.prompt.trimmingCharacters(in: .whitespacesAndNewlines) == prompt
+        if !isStillAsking {
+            Logger.aiChat.notice("Dax: the request was closed or changed while he looked, so he dropped it")
+        }
+        return isStillAsking
     }
 
     /// For the on-device model, which reads English best.
@@ -564,6 +596,10 @@ final class DaxPetViewModel: ObservableObject {
         character.mood = .thinking
         let refersToScreen = await intelligence.refersToScreen(prompt, appName: app.name)
         let capabilities = refersToScreen ? await submitter.attachmentCapabilities() : attachmentCapabilities
+        Logger.aiChat.notice("""
+            Dax: about \(app.name, privacy: .public): \(refersToScreen, privacy: .public), \
+            model takes images: \(capabilities.validator(pendingImageCount: 0, pendingFiles: []).canAttachImages, privacy: .public)
+            """)
         isCheckingScreen = false
         guard isComposing, screenCheckedPrompt == prompt else { return }
         character.mood = .listening

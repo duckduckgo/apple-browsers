@@ -1968,6 +1968,7 @@ class MainViewController: UIViewController {
                                                expandedFrame: floatingBarExpandedFrame(),
                                                reduceMotion: UIAccessibility.isReduceMotionEnabled,
                                                in: view)
+        bringFindInPageToFrontIfNeeded()
     }
 
     /// True when the floating domain capsule morph is driving the chrome transition (floating UI on,
@@ -4018,6 +4019,7 @@ class MainViewController: UIViewController {
         browserTabMentionSuggestionsController?.updateLayout()
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
+        bringFindInPageToFrontIfNeeded()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -4271,10 +4273,17 @@ class MainViewController: UIViewController {
         currentTab?.findInPage?.delegate = self
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
+        bringFindInPageToFrontIfNeeded()
+    }
+
+    private func bringFindInPageToFrontIfNeeded() {
+        guard let findInPageView, !findInPageView.isHidden,
+              view.subviews.last !== findInPageView else { return }
+        view.bringSubviewToFront(findInPageView)
     }
 
     func dismissSystemFindNavigator(for tab: TabViewController?) {
-        guard #available(iOS 16.0, *) else { return }
+        guard #available(iOS 16.0, *), tab?.findInPageImplementation == .system else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
         restoreChromeIfHiddenByFindInPage()
@@ -8160,7 +8169,7 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, *), tab.findInPageImplementation == .system {
             dismissSystemFindNavigator(for: tab)
             return
         }

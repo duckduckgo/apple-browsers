@@ -106,6 +106,8 @@ class TabSwitcherPageViewController: UIViewController {
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
     private var fireModeEmptyStateTopConstraint: NSLayoutConstraint?
+    private var floatingTopClearance = FireModeEmptyStateMetrics.estimatedFloatingTopClearance
+    private var isPreparedForDisplay = false
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
     private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     private var voiceSessionChangesCancellable: AnyCancellable?
@@ -194,13 +196,12 @@ class TabSwitcherPageViewController: UIViewController {
         subscribeToVoiceSessionChanges()
         bindTrackerCount()
         trackerCountViewModel?.refresh()
-        setupFireModeEmptyState()
     }
 
     private var lastLayoutSize: CGSize = .zero
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
         let currentSize = view.bounds.size
         guard currentSize != lastLayoutSize, currentSize != .zero else { return }
         lastLayoutSize = currentSize
@@ -223,7 +224,7 @@ class TabSwitcherPageViewController: UIViewController {
     }
 
     private func setupFireModeEmptyState() {
-        guard browsingMode == .fire, isFireModeEnabled else { return }
+        guard browsingMode == .fire, isFireModeEnabled, fireModeEmptyStateHostingController == nil else { return }
         let emptyStateView = FireModeEmptyStateView(type: .tabSwitcher(onNewFireTab: { [weak self] in
             PixelKit.fire(Pixel.Event.fireModeEmptyStateNewTab)
             self?.onNewFireTab?()
@@ -243,7 +244,7 @@ class TabSwitcherPageViewController: UIViewController {
             // `mainTopPadding` then adds 24pt above the pictogram.
             topConstraint = hostingController.view.topAnchor.constraint(
                 equalTo: view.topAnchor,
-                constant: FireModeEmptyStateMetrics.estimatedFloatingTopClearance)
+                constant: floatingTopClearance)
             fireModeEmptyStateTopConstraint = topConstraint
         } else {
             topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
@@ -268,12 +269,22 @@ class TabSwitcherPageViewController: UIViewController {
 
     func applyFloatingTopClearance(_ topBarBottomOffset: CGFloat) {
         guard isFloatingTabSwitcherEnabled else { return }
-        fireModeEmptyStateTopConstraint?.constant = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
+        floatingTopClearance = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
+        fireModeEmptyStateTopConstraint?.constant = floatingTopClearance
+    }
+
+    func prepareForDisplay() {
+        loadViewIfNeeded()
+        isPreparedForDisplay = true
+        updateEmptyStateVisibility()
     }
 
     func updateEmptyStateVisibility() {
         guard browsingMode == .fire else { return }
         let shouldShowEmptyState = tabsModel.tabs.isEmpty
+        if shouldShowEmptyState && isPreparedForDisplay {
+            setupFireModeEmptyState()
+        }
         fireModeEmptyStateHostingController?.view.isHidden = !shouldShowEmptyState
         collectionView.isHidden = shouldShowEmptyState
     }
@@ -353,10 +364,10 @@ class TabSwitcherPageViewController: UIViewController {
         }
     }
     
-    func scrollToInitialTab() {
+    func scrollToInitialTab(at position: UICollectionView.ScrollPosition = .bottom) {
         guard let index = tabsModel.currentIndex,
               index < collectionView.numberOfItems(inSection: 0) else { return }
-        collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: .bottom, animated: false)
+        collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: position, animated: false)
     }
 
     func enterEditingMode() {

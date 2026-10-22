@@ -251,7 +251,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         cardView.applyScreenPose(cardFrame: screenBounds)
         host.addSubview(cardView)
         self.cardView = cardView
-
         installChromeSnapshots(of: mainViewController, in: window)
         return true
     }
@@ -340,7 +339,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
 
             controller.view.frame = self.previewContainer.bounds
             self.previewContainer.addSubview(controller.view)
-            controller.prepareForPresentation()
+            controller.prepareForPresentation(centerCurrentTab: true)
             self.positionCurrentCell(in: controller)
             self.previewedTabSwitcher = controller
 
@@ -376,7 +375,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         guard let tab = mainViewController?.tabManager.currentTabsModel.currentTab,
               let row = tabSwitcher.tabsModel.indexOf(tab: tab) else { return nil }
         let indexPath = IndexPath(row: row, section: 0)
-        collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: false)
         collectionView.layoutIfNeeded()
         guard let attributes = collectionView.layoutAttributesForItem(at: indexPath) else { return nil }
 
@@ -470,10 +468,15 @@ final class TabSwitcherSwipeUpTransition: NSObject {
               let context = transitionContext,
               let tabSwitcher = context.viewController(forKey: .to) as? TabSwitcherViewController else { return }
 
+        let previewSize = tabSwitcher.view.bounds.size
         tabSwitcher.view.frame = context.finalFrame(for: tabSwitcher)
         tabSwitcher.view.alpha = tabSwitcher === previewedTabSwitcher ? 1 : 0
         context.containerView.insertSubview(tabSwitcher.view, aboveSubview: backdrop)
-        tabSwitcher.prepareForPresentation()
+        if tabSwitcher !== previewedTabSwitcher || previewSize != tabSwitcher.view.bounds.size {
+            tabSwitcher.prepareForPresentation(centerCurrentTab: true)
+        } else {
+            tabSwitcher.view.layoutIfNeeded()
+        }
         UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
             tabSwitcher.view.alpha = 1
         }

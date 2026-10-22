@@ -25,7 +25,6 @@ import DDGSync
 import WebKit
 import Bookmarks
 import Persistence
-import os.log
 import SwiftUI
 import Combine
 import DesignResourcesKit
@@ -271,6 +270,7 @@ class TabSwitcherViewController: UIViewController {
         let source = modeChangeFromSwipe ? "swipe" : "tap"
         modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
+        activePageController.prepareForDisplay()
         PixelKit.fire(Pixel.Event.tabSwitcherModeToggled, options: .parameters([
             PixelParameters.browsingMode: newMode.pixelParamValue,
             PixelParameters.source: source
@@ -393,7 +393,7 @@ class TabSwitcherViewController: UIViewController {
             duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
-
+        activePageController.prepareForDisplay()
     }
 
     private func embedPageController(_ pageController: TabSwitcherPageViewController?, in container: UIView) {
@@ -486,6 +486,8 @@ class TabSwitcherViewController: UIViewController {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.tabManagerUsed()
         showFireButtonPulseIfNeeded()
+        // Prepare offscreen Fire content after presentation so it doesn't block the drag.
+        firePageController?.prepareForDisplay()
     }
 
     private func showFireButtonPulseIfNeeded() {
@@ -533,11 +535,16 @@ class TabSwitcherViewController: UIViewController {
         
     }
 
-    func prepareForPresentation() {
+    func prepareForPresentation(centerCurrentTab: Bool = false) {
         prepareChromeForPresentation()
         view.layoutIfNeeded()
         syncPagingScrollViewToCurrentMode(animated: false)
-        self.scrollToInitialTab()
+        if centerCurrentTab {
+            // The swipe needs only its active destination, already at its final position.
+            activePageController.scrollToInitialTab(at: .centeredVertically)
+        } else {
+            scrollToInitialTab()
+        }
     }
 
     private func prepareChromeForPresentation() {
@@ -743,6 +750,11 @@ extension TabSwitcherViewController {
 // MARK: - UIScrollViewDelegate (paging)
 
 extension TabSwitcherViewController: UIScrollViewDelegate {
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        guard scrollView === pagingScrollView else { return }
+        firePageController?.prepareForDisplay()
+    }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView === pagingScrollView else { return }

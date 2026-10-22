@@ -173,6 +173,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     // MARK: - TabSwitcherChrome
 
     func install(in view: UIView, contentView: UIScrollView) {
+        NSLayoutConstraint.deactivate(layoutConstraints)
+        layoutConstraints = []
         hostView = view
         self.contentView = contentView
 
@@ -377,7 +379,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     }
 
     func applyCollectionContentInset(to collectionView: UICollectionView) {
-        collectionView.contentInsetAdjustmentBehavior = .never
+        if collectionView.contentInsetAdjustmentBehavior != .never {
+            collectionView.contentInsetAdjustmentBehavior = .never
+        }
 
         let topInset = topBarBottomOffset
         let toolbarHeight = toolbar.frame.height > 0 ? toolbar.frame.height : Metrics.estimatedToolbarHeight
@@ -391,17 +395,21 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             bottomClearance = toolbarHeight + Metrics.bottomFloatingInset
         }
 
-        let previousTopInset = collectionView.contentInset.top
-        let wasScrolledToTop = abs(collectionView.contentOffset.y + previousTopInset) < 1
-
-        collectionView.contentInset.top = topInset
-        collectionView.contentInset.bottom = bottomClearance
-        collectionView.verticalScrollIndicatorInsets = collectionView.contentInset
-
-        if wasScrolledToTop {
-            collectionView.contentOffset.y = -topInset
-        } else {
-            collectionView.contentOffset.y += previousTopInset - topInset
+        var contentInset = collectionView.contentInset
+        contentInset.top = topInset
+        contentInset.bottom = bottomClearance
+        if collectionView.contentInset != contentInset {
+            let previousTopInset = collectionView.contentInset.top
+            var contentOffset = collectionView.contentOffset
+            let wasScrolledToTop = abs(contentOffset.y + previousTopInset) < 1
+            collectionView.contentInset = contentInset
+            contentOffset.y = wasScrolledToTop ? -topInset : contentOffset.y + previousTopInset - topInset
+            if collectionView.contentOffset != contentOffset {
+                collectionView.contentOffset = contentOffset
+            }
+        }
+        if collectionView.verticalScrollIndicatorInsets != contentInset {
+            collectionView.verticalScrollIndicatorInsets = contentInset
         }
     }
 
@@ -416,8 +424,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         contentView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.isHidden = interfaceMode.isLarge
 
-        NSLayoutConstraint.deactivate(layoutConstraints)
-        layoutConstraints = []
+        guard layoutConstraints.isEmpty else { return }
 
         [navigationBar, toolbar, fallbackTopBackgroundView, contentView].forEach { $0.removeFromSuperview() }
 

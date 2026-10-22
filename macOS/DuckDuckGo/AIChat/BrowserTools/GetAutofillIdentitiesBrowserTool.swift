@@ -40,7 +40,7 @@ final class GetAutofillIdentitiesBrowserTool: BrowserTool {
             "purpose": [
                 "type": "string",
                 "maxLength": .int(GetAutofillIdentitiesBrowserTool.maxPurposeLength),
-                "description": "Shown to the user, e.g. \"to fill the checkout on Stride Runners\"."
+                "description": "Shown to the user, e.g. \"to fill the checkout on Example Shoes\"."
             ]
         ]
     ]

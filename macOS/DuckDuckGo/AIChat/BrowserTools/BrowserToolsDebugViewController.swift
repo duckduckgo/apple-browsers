@@ -341,7 +341,7 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("clickElement", "ref"): return "b1"
         case ("submitForm", "formRef"): return "f1"
         case ("showTab", "focusRef"): return "e1"
-        case ("getAutofillIdentities", "purpose"): return "to fill the checkout on Stride Runners"
+        case ("getAutofillIdentities", "purpose"): return "to fill the checkout on Example Shoes"
         default: return nil
         }
     }

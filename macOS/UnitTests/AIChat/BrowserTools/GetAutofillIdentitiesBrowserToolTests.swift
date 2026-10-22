@@ -44,11 +44,11 @@ final class GetAutofillIdentitiesBrowserToolTests: XCTestCase {
     // MARK: - Prompt
 
     func testWhenAskedThenTheUserPicksFromTheSavedIdentities() async {
-        let prompt = await tool.approvalPrompt(arguments: ["purpose": "to fill the checkout on Stride Runners"], context: context)
+        let prompt = await tool.approvalPrompt(arguments: ["purpose": "to fill the checkout on Example Shoes"], context: context)
 
         XCTAssertEqual(prompt, .choose(message: "Share a saved identity with Duck.ai?", choices: ["1", "2"], meta: [
             "kind": "identityPicker",
-            "purpose": "to fill the checkout on Stride Runners",
+            "purpose": "to fill the checkout on Example Shoes",
             "options": [
                 ["value": "1", "title": "Home", "subtitle": "Jamie Rivera · Springfield"],
                 ["value": "2", "title": "Sam Lee", "subtitle": "Sam Lee"]

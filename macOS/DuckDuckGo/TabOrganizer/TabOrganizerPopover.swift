@@ -399,12 +399,12 @@ final class TabOrganizerViewModel: ObservableObject {
     }
 
     private func changedTabIDs(in group: ProposedGroup) -> [String] {
-        guard group.action != .keep else { return [] }
+        guard group.action != .keep, group.action != .rename else { return [] }
         return group.tabIDs.filter { selectedTabIDs.contains($0) && !isUnchanged($0, in: group) && tab(withID: $0)?.isPinned != true }
     }
 
     var changeCount: Int {
-        groups.reduce(0) { $0 + changedTabIDs(in: $1).count }
+        groups.reduce(0) { $0 + changedTabIDs(in: $1).count } + groups.filter { $0.action == .rename }.count
     }
 
     var isCloseOnly: Bool {
@@ -424,7 +424,7 @@ final class TabOrganizerViewModel: ObservableObject {
     /// Existing tab groups that every one of their tabs would leave.
     var summary: String? {
         var leavingTabIDs = Set<String>()
-        for group in groups where [.close, .moveToNewWindow, .createTabGroup].contains(group.action) {
+        for group in groups where [.close, .moveToNewWindow, .createTabGroup, .ungroup].contains(group.action) {
             leavingTabIDs.formUnion(changedTabIDs(in: group))
         }
         var emptied: [String] = []
@@ -446,6 +446,7 @@ final class TabOrganizerViewModel: ObservableObject {
     func apply() {
         let selectedGroups = groups.compactMap { group -> ProposedGroup? in
             guard group.action != .keep else { return nil }
+            guard group.action != .rename else { return group }
             var selected = group
             selected.tabIDs = selectedTabIDs(for: group.action).filter(group.tabIDs.contains)
             return selected.tabIDs.isEmpty ? nil : selected
@@ -464,6 +465,8 @@ extension TabGroupAction {
         case .bookmark: return "Bookmark"
         case .addToFavorites: return "Add to favorites"
         case .createTabGroup: return "Tab group"
+        case .ungroup: return "Ungroup"
+        case .rename: return "Rename"
         }
     }
 }
@@ -620,7 +623,7 @@ struct TabOrganizerView: View {
                 HStack {
                     Spacer()
                     Menu("Set all to…") {
-                        ForEach(TabGroupAction.allCases, id: \.self) { action in
+                        ForEach(TabGroupAction.choices, id: \.self) { action in
                             Button(action.title) { viewModel.setActionForAll(action) }
                         }
                     }
@@ -746,15 +749,19 @@ struct TabOrganizerView: View {
             }
             Text("\(group.tabIDs.count)").foregroundColor(.secondary)
             Spacer()
-            Picker("", selection: Binding(get: { group.action },
-                                          set: { viewModel.setAction($0, for: group) })) {
-                ForEach(TabGroupAction.allCases, id: \.self) { action in
-                    Text(action.title).tag(action)
+            if group.action == .rename, let newName = group.newName {
+                Text("Rename to \(newName)").foregroundColor(.accentColor)
+            } else {
+                Picker("", selection: Binding(get: { group.action },
+                                              set: { viewModel.setAction($0, for: group) })) {
+                    ForEach(TabGroupAction.choices, id: \.self) { action in
+                        Text(action.title).tag(action)
+                    }
                 }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .fixedSize()
             }
-            .labelsHidden()
-            .pickerStyle(.menu)
-            .fixedSize()
             Menu {
                 Button("Rename…") { viewModel.renameProposedGroup(group) }
                 let others = viewModel.groups.filter { $0.id != group.id }

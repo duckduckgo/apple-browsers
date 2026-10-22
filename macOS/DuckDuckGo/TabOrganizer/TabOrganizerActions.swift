@@ -33,6 +33,8 @@ struct TabOrganizerActions {
             case .bookmark: bookmark(group)
             case .addToFavorites: addToFavorites(group)
             case .createTabGroup: createTabGroup(group)
+            case .ungroup: ungroup(group)
+            case .rename: rename(group)
             case .keep, .close, .moveToNewWindow: break
             }
         }
@@ -132,6 +134,23 @@ struct TabOrganizerActions {
             tabGroupManager.setGroup(tabGroup.id, for: tab)
         }
         tabCollectionViewModel.arrangeTabsByGroup()
+    }
+
+    private func ungroup(_ group: ProposedGroup) {
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
+        for tab in unpinnedTabs(withIDs: group.tabIDs) {
+            tabGroupManager.setGroup(nil, for: tab)
+        }
+        if let tabGroup = tabGroupManager.groups.first(where: { $0.name == group.name }),
+           tabGroupManager.tabs(in: tabGroup, from: unpinnedTabs).isEmpty {
+            tabGroupManager.unregisterGroup(tabGroup)
+        }
+    }
+
+    private func rename(_ group: ProposedGroup) {
+        guard let newName = group.newName,
+              let tabGroup = tabCollectionViewModel.tabGroupManager.groups.first(where: { $0.name == group.name }) else { return }
+        TabGroupOperations(tabCollectionViewModel: tabCollectionViewModel).rename(tabGroup, to: newName)
     }
 
     private func nextColor(in tabGroupManager: TabGroupManager) -> TabGroupColor {

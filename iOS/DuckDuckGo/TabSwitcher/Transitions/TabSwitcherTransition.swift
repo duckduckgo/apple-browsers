@@ -402,7 +402,7 @@ class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDele
             return nil
         }
 
-        if let swipeUpTransition, swipeUpTransition.isActive {
+        if let swipeUpTransition, swipeUpTransition.presentsTabSwitcher {
             return swipeUpTransition
         }
         

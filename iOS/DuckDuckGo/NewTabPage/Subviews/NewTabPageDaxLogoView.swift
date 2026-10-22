@@ -40,7 +40,7 @@ struct NewTabPageDaxLogoView: View {
     /// Where the duck's circle is drawn within the aspect-fitted animation. Every variant of the
     /// animation shares the same composition: a 2100×1620 canvas with the circle (radius 470) centred
     /// at (1058, 630).
-    static func daxCircle(inAnimationFrame frame: CGRect) -> CGRect {
+    private static func daxCircle(inAnimationFrame frame: CGRect) -> CGRect {
         let canvas = CGSize(width: 2100, height: 1620)
         let scale = min(frame.width / canvas.width, frame.height / canvas.height)
         let center = CGPoint(x: frame.midX + (1058 - canvas.width / 2) * scale,

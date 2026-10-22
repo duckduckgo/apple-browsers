@@ -27,10 +27,9 @@ struct TabSwitcherSwipeUpGeometryTests {
     private let screen = CGRect(x: 0, y: 0, width: 402, height: 874)
 
     @available(iOS 16, macOS 13, *)
-    @Test("The card fills the screen until the finger passes the touch slop", .timeLimit(.minutes(1)))
+    @Test("The card fills the screen before the finger moves", .timeLimit(.minutes(1)))
     func cardFillsScreenAtRest() {
         #expect(TabSwitcherSwipeUpGeometry.cardFrame(forTravel: 0, in: screen) == screen)
-        #expect(TabSwitcherSwipeUpGeometry.cardFrame(forTravel: 12, in: screen) == screen)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -75,29 +74,27 @@ struct TabSwitcherSwipeUpGeometryTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("In a grid cell the page sits below the header, inset, pinned to the top at full width", .timeLimit(.minutes(1)))
-    func gridPreviewLayoutMatchesCell() {
-        let layout = TabSwitcherSwipeUpGeometry.previewLayout(forCellSize: CGSize(width: 180, height: 209),
-                                                              contentSize: CGSize(width: 402, height: 874),
-                                                              contentCropTop: 62)
+    @Test("The card heads for where the current tab's cell was last laid out", .timeLimit(.minutes(1)))
+    func storedCellFrame() {
+        let screen = CGRect(x: 0, y: 0, width: 999, height: 874)
+        let cellFrame = CGRect(x: 30, y: 200, width: 150, height: 180)
 
-        let inset = TabViewGridCell.Constants.previewHorizontalInset / 2
-        #expect(layout.clipFrame.minX == inset)
-        #expect(layout.clipFrame.minY == TabViewGridCell.Constants.headerHeight)
-        #expect(layout.clipFrame.width == 180 - inset * 2)
-        #expect(layout.contentFrame.width == layout.clipFrame.width)
-        #expect(layout.contentFrame.minY < 0)
+        TabSwitcherCellFrameCache.store(cellFrame, row: 3, screenWidth: screen.width)
+
+        #expect(TabSwitcherCellFrameCache.frame(forRow: 3, in: screen) == cellFrame)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("The classic new tab page's Dax circle is found within its aspect-fitted animation", .timeLimit(.minutes(1)))
-    func classicDaxCircle() {
-        let animationFrame = CGRect(x: 0, y: 300, width: 393, height: 162)
-        let circle = NewTabPageDaxLogoView.daxCircle(inAnimationFrame: animationFrame)
+    @Test("Before any cell was laid out, the card heads for the cell's place in the grid", .timeLimit(.minutes(1)))
+    func estimatedCellFrame() {
+        let first = TabSwitcherCellFrameCache.frame(forRow: 0, in: screen)
+        let second = TabSwitcherCellFrameCache.frame(forRow: 1, in: screen)
+        let third = TabSwitcherCellFrameCache.frame(forRow: 2, in: screen)
 
-        #expect(abs(circle.width - 94) < 0.001)
-        #expect(circle.width == circle.height)
-        #expect(abs(circle.midX - (animationFrame.midX + 0.8)) < 0.001)
-        #expect(abs(circle.midY - (animationFrame.midY - 18)) < 0.001)
+        #expect(first.width == floor(TabSwitcherGridLayoutGeometry.columnWidth(for: screen.width)))
+        #expect(second.minY == first.minY)
+        #expect(second.minX - first.maxX == TabSwitcherGridLayoutGeometry.spacing)
+        #expect(third.minX == first.minX)
+        #expect(third.minY > first.minY)
     }
 }

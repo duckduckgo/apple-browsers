@@ -76,10 +76,14 @@ final class TabSwitcherSwipeUpTransition: NSObject {
 
     private(set) var isActive = false
 
+    /// Whether the next presentation of the tab switcher belongs to this transition. A swipe that is
+    /// springing back isn't one, so the tab switcher button still works meanwhile.
+    var presentsTabSwitcher: Bool { isActive && isCommitted }
+
     private let host = UIView()
     private let backdrop = UIView()
     private var cardView: TabSwitcherCardView?
-    private var returnToolbarSnapshot: (tab: Tab, view: UIView)?
+    private var returnToolbarSnapshot: (tab: Tab, tabCount: Int, view: UIView)?
     private var chromeSnapshots: [UIView] = []
 
     private var screenBounds: CGRect = .zero
@@ -88,7 +92,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
     private var cardTarget: CGRect?
 
     private var transitionContext: UIViewControllerContextTransitioning?
-    private var isTabSwitcherInstalled = false
     private var commitAnimators: [UIViewPropertyAnimator] = []
     private weak var hiddenCell: UICollectionViewCell?
     private var isLanding = false
@@ -205,19 +208,22 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         }
     }
 
+    /// Nil once tabs were opened or closed, since the copy's tab switcher button shows the old count.
     func takeReturnToolbarSnapshot() -> (tab: Tab, view: UIView)? {
         defer { returnToolbarSnapshot = nil }
-        return returnToolbarSnapshot
+        guard let returnToolbarSnapshot,
+              returnToolbarSnapshot.tabCount == mainViewController?.tabManager.currentTabsModel.count else { return nil }
+        return (returnToolbarSnapshot.tab, returnToolbarSnapshot.view)
     }
 
     /// The live toolbar is hidden under the tab switcher and can't be snapshotted reliably while it is (its glass
-    /// samples the wrong backdrop), so keep a copy for the way back to the same tab. Taken as late as possible:
-    /// at the start of the transition, the tab switcher button would still be drawn pressed.
+    /// samples the wrong backdrop), so keep a copy for the way back to the same tab.
     private func keepToolbarSnapshotForReturn(of mainViewController: MainViewController, in window: UIView) {
         returnToolbarSnapshot = nil
-        guard let tab = mainViewController.tabManager.currentTabsModel.currentTab,
+        let tabsModel = mainViewController.tabManager.currentTabsModel
+        guard let tab = tabsModel.currentTab,
               let snapshot = toolbarSnapshot(of: mainViewController, in: window) else { return }
-        returnToolbarSnapshot = (tab, snapshot)
+        returnToolbarSnapshot = (tab, tabsModel.count, snapshot)
     }
 
     private func toolbarSnapshot(of mainViewController: MainViewController, in window: UIView) -> UIView? {
@@ -258,15 +264,12 @@ final class TabSwitcherSwipeUpTransition: NSObject {
 
         isCommitted = true
         commitSpring = spring
-        let key = TabSwitcherCellFrameCache.Key(row: row,
-                                                tabCount: mainViewController.tabManager.currentTabsModel.count,
-                                                screenWidth: screenBounds.width)
-        springCard(to: TabSwitcherCellFrameCache.frame(for: key, screenHeight: screenBounds.height))
+        springCard(to: TabSwitcherCellFrameCache.frame(forRow: row, in: screenBounds))
         CATransaction.flush()
 
         // The presentation can be refused (another one is in flight, say); don't strand the card on screen.
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self, weak cardView] in
-            guard let self, let cardView, self.cardView === cardView, self.transitionContext == nil else { return }
+            guard let self, let cardView, self.cardView === cardView, self.isActive, self.transitionContext == nil else { return }
             self.commitAnimators.forEach { $0.stopAnimation(true) }
             self.commitAnimators = []
             self.tearDownOverlay()
@@ -292,7 +295,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
     }
 
     private func installTabSwitcher() {
-        guard isActive, !isTabSwitcherInstalled,
+        guard isActive,
               let context = transitionContext,
               let tabSwitcher = context.viewController(forKey: .to) as? TabSwitcherViewController else { return }
 
@@ -300,7 +303,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         tabSwitcher.view.alpha = 0
         context.containerView.insertSubview(tabSwitcher.view, aboveSubview: backdrop)
         tabSwitcher.prepareForPresentation()
-        isTabSwitcherInstalled = true
         UIView.animate(withDuration: 0.3, delay: 0, options: [.curveEaseOut, .allowUserInteraction]) {
             tabSwitcher.view.alpha = 1
         }
@@ -431,7 +433,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         isCommitted = false
         transitionContext = nil
         cardTarget = nil
-        isTabSwitcherInstalled = false
     }
 }
 

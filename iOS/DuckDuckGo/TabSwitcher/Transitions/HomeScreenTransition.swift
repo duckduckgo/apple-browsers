@@ -26,10 +26,6 @@ protocol HomeScreenTransitionSource: AnyObject {
     var transitionLogo: HomeScreenTransitionLogo? { get }
 }
 
-extension HomeScreenTransitionSource {
-    var transitionLogo: HomeScreenTransitionLogo? { nil }
-}
-
 /// The Dax a page shows, so a transition can carry it to and from the tab switcher cell's logo.
 struct HomeScreenTransitionLogo {
     /// Dax's circle, in window coordinates.

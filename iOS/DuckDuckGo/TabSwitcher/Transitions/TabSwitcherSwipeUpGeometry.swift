@@ -116,39 +116,37 @@ enum TabSwitcherSwipeUpGeometry {
 /// for it before the tab switcher has been built. The card moves on to the real cell once it is laid out.
 enum TabSwitcherCellFrameCache {
 
-    struct Key: Hashable {
+    private struct Key: Hashable {
         let row: Int
-        let tabCount: Int
         let screenWidth: CGFloat
     }
 
     private static var frames: [Key: CGRect] = [:]
 
-    /// The grid cell's last known frame, else the same row's at another tab count, else where a fresh grid would put it.
-    static func frame(for key: Key, screenHeight: CGFloat) -> CGRect {
-        if let frame = frames[key] {
+    /// The grid cell's last known frame, else roughly where a fresh grid would put it.
+    static func frame(forRow row: Int, in screen: CGRect) -> CGRect {
+        if let frame = frames[Key(row: row, screenWidth: screen.width)] {
             return frame
         }
-        if let sameRow = frames.first(where: { $0.key.row == key.row && $0.key.screenWidth == key.screenWidth }) {
-            return sameRow.value
-        }
 
-        let spacing: CGFloat = 16
-        let columns = 2
-        let width = (key.screenWidth - spacing * CGFloat(columns + 1)) / CGFloat(columns)
-        let height = width * 1.16
+        let spacing = TabSwitcherGridLayoutGeometry.spacing
+        let width = floor(TabSwitcherGridLayoutGeometry.columnWidth(for: screen.width))
+        let columns = max(1, Int((screen.width - spacing) / (width + spacing)))
+        let height = TabSwitcherViewController.Constants.cellMaxHeight
+        // Below the tab switcher's title bar.
         let top: CGFloat = 138
-        let unclampedY = top + CGFloat(key.row / columns) * (height + spacing)
+        let unclampedY = top + CGFloat(row / columns) * (height + spacing)
         // The tab switcher scrolls the current tab into the middle, so far rows never land off screen.
-        let y = min(unclampedY, max(top, screenHeight / 2 - height / 2))
-        return CGRect(x: spacing + CGFloat(key.row % columns) * (width + spacing), y: y, width: width, height: height)
+        let y = min(unclampedY, max(top, screen.height / 2 - height / 2))
+        return CGRect(x: spacing + CGFloat(row % columns) * (width + spacing), y: y, width: width, height: height)
     }
 
     static func store(_ frame: CGRect, row: Int, in tabSwitcher: TabSwitcherViewController) {
         guard DefaultTabSwitcherSettings().isGridViewEnabled else { return }
-        let key = Key(row: row,
-                      tabCount: tabSwitcher.tabsModel.count,
-                      screenWidth: tabSwitcher.view.window?.bounds.width ?? tabSwitcher.view.bounds.width)
-        frames[key] = frame
+        store(frame, row: row, screenWidth: tabSwitcher.view.window?.bounds.width ?? tabSwitcher.view.bounds.width)
+    }
+
+    static func store(_ frame: CGRect, row: Int, screenWidth: CGFloat) {
+        frames[Key(row: row, screenWidth: screenWidth)] = frame
     }
 }

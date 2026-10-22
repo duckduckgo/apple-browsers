@@ -79,11 +79,10 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
-        case newTabPageSuggestedPromptsDismissed
         case newTabPageSuggestedPromptsSubmitCount
     }
 
-    /// The suggested-prompt chips hide for good once this many have been sent. Matches the web.
+    /// The suggested-prompt chips hide for good once this many Duck.ai prompts have been sent. Matches the web.
     static let maxSubmittedSuggestedPrompts = 5
 
     private enum LegacyKey: String {
@@ -661,22 +660,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var showSuggestedPrompts: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts)
-            && !suggestedPromptsDismissed
             && suggestedPromptsSubmitCount < Self.maxSubmittedSuggestedPrompts
-    }
-
-    var suggestedPromptsDismissed: Bool {
-        get {
-            (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsDismissed.rawValue) as? Bool) ?? false
-        }
-        set {
-            do {
-                try keyValueStore.set(newValue, forKey: Key.newTabPageSuggestedPromptsDismissed.rawValue)
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to set suggested prompts dismissed in keyValueStore: \(error.localizedDescription)")
-            }
-            suggestedPromptsChangedSubject.send(())
-        }
     }
 
     var suggestedPromptsSubmitCount: Int {
@@ -701,11 +685,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
-    /// Debug menu: brings the suggested-prompt chips back by clearing the dismissal and the submit count.
+    /// Debug menu: brings the suggested-prompt chips back by clearing the submit count.
     /// Static so it can run without a provider; open NTPs pick it up through the notification.
     static func resetSuggestedPrompts(in keyValueStore: ThrowingKeyValueStoring, notificationCenter: NotificationCenter = .default) {
         do {
-            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsDismissed.rawValue)
             try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue)
         } catch {
             Logger.newTabPageOmnibar.error("Failed to reset suggested prompts in keyValueStore: \(error.localizedDescription)")

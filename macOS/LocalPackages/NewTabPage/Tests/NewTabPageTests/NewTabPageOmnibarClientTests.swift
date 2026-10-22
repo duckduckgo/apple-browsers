@@ -1034,36 +1034,12 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     @MainActor
     func testGetConfigIncludesSuggestedPromptsStateFromProvider() async throws {
         configProvider.showSuggestedPrompts = true
-        configProvider.suggestedPromptsDismissed = false
         configProvider.suggestedPromptsSubmitCount = 3
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.showSuggestedPrompts, true)
-        XCTAssertEqual(config.suggestedPromptsDismissed, false)
         XCTAssertEqual(config.suggestedPromptsSubmitCount, 3)
-    }
-
-    @MainActor
-    func testWhenSetConfigDismissesSuggestedPromptsThenItIsPersisted() async throws {
-        var newConfig = makeSetConfig()
-        newConfig.suggestedPromptsDismissed = true
-
-        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
-
-        XCTAssertTrue(configProvider.suggestedPromptsDismissed)
-    }
-
-    /// Another open NTP can echo a config from before the dismissal.
-    @MainActor
-    func testWhenSetConfigEchoesUndismissedSuggestedPromptsThenTheDismissalStays() async throws {
-        configProvider.suggestedPromptsDismissed = true
-        var newConfig = makeSetConfig()
-        newConfig.suggestedPromptsDismissed = false
-
-        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
-
-        XCTAssertTrue(configProvider.suggestedPromptsDismissed)
     }
 
     @MainActor

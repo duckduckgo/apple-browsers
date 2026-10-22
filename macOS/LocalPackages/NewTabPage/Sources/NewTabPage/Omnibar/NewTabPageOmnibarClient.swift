@@ -197,7 +197,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
-            suggestedPromptsDismissed: configProvider.suggestedPromptsDismissed,
             suggestedPromptsSubmitCount: configProvider.suggestedPromptsSubmitCount
         )
     }
@@ -233,13 +232,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         return nil
     }
 
-    /// Both values only move forward, so a stale config echoed by another open NTP can't
+    /// The count only moves forward, so a stale config echoed by another open NTP can't
     /// bring the chips back.
     @MainActor
     private func persistSuggestedPrompts(from config: NewTabPageDataModel.OmnibarConfig) {
-        if config.suggestedPromptsDismissed == true, !configProvider.suggestedPromptsDismissed {
-            configProvider.suggestedPromptsDismissed = true
-        }
         if let count = config.suggestedPromptsSubmitCount, count > configProvider.suggestedPromptsSubmitCount {
             configProvider.suggestedPromptsSubmitCount = count
         }
@@ -302,7 +298,6 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
-            suggestedPromptsDismissed: configProvider.suggestedPromptsDismissed,
             suggestedPromptsSubmitCount: configProvider.suggestedPromptsSubmitCount
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)

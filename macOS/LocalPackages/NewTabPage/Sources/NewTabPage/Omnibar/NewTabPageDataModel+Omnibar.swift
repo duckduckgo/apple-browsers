@@ -309,13 +309,12 @@ public extension NewTabPageDataModel {
         var requiresAiTermsAcceptance: Bool?
         var launcherPromo: OmnibarLauncherPromo?
         /// Shows the Duck.ai suggested-prompt chips below the Duck.ai input. Driven by the
-        /// `aiChatNtpSuggestedPrompts` feature flag; false once the user dismissed them or sent
-        /// enough of them. The web echoes it back in `omnibar_setConfig`, where native ignores it.
+        /// `aiChatNtpSuggestedPrompts` feature flag; false once the user sent enough Duck.ai prompts.
+        /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
         var showSuggestedPrompts: Bool?
-        /// Set by the web when the user closes the chips with the X. Native persists it; one-way.
-        var suggestedPromptsDismissed: Bool?
-        /// How many suggested prompts the user has sent. The web increments it and hides the chips
-        /// at 5; native persists it and never lets an echo lower it.
+        /// How many Duck.ai prompts the user has sent from the NTP while the chips were offered, from
+        /// the chips or typed. The web increments it and hides the chips at 5; native persists it and
+        /// never lets an echo lower it.
         var suggestedPromptsSubmitCount: Int?
     }
 

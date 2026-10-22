@@ -1018,17 +1018,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testShowSuggestedPrompts_isFalseOnceDismissed() throws {
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
-
-        provider.suggestedPromptsDismissed = true
-
-        XCTAssertFalse(provider.showSuggestedPrompts)
-    }
-
-    @MainActor
     func testShowSuggestedPrompts_isFalseOnceFivePromptsWereSent() throws {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
@@ -1045,12 +1034,10 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSuggestedPromptsState_persistsAcrossProviders() throws {
         let store = try makeStore()
         let first = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
-        first.suggestedPromptsDismissed = true
         first.suggestedPromptsSubmitCount = 3
 
         let second = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
-        XCTAssertTrue(second.suggestedPromptsDismissed)
         XCTAssertEqual(second.suggestedPromptsSubmitCount, 3)
     }
 
@@ -1060,8 +1047,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         var events = 0
         let cancellable = provider.suggestedPromptsPublisher.sink { events += 1 }
 
-        provider.suggestedPromptsDismissed = true
         provider.suggestedPromptsSubmitCount = 1
+        provider.suggestedPromptsSubmitCount = 2
 
         cancellable.cancel()
         XCTAssertEqual(events, 2)
@@ -1074,7 +1061,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences(), notificationCenter: notificationCenter)
-        provider.suggestedPromptsDismissed = true
         provider.suggestedPromptsSubmitCount = 5
         var events = 0
         let cancellable = provider.suggestedPromptsPublisher.sink { events += 1 }
@@ -1082,7 +1068,6 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         NewTabPageOmnibarConfigProvider.resetSuggestedPrompts(in: store, notificationCenter: notificationCenter)
 
         cancellable.cancel()
-        XCTAssertFalse(provider.suggestedPromptsDismissed)
         XCTAssertEqual(provider.suggestedPromptsSubmitCount, 0)
         XCTAssertTrue(provider.showSuggestedPrompts)
         XCTAssertEqual(events, 1)

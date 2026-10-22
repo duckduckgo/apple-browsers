@@ -58,6 +58,7 @@ class ReleaseStatus:
     """Machine-readable result for checking whether a release's files are translated."""
     outcome: str
     job_id: str = ""
+    job_url: str = ""
     job_status: str = ""
     total_strings: Optional[int] = None
     strings_left: Optional[int] = None
@@ -476,7 +477,7 @@ async def run_submit(client: SmartlingClient,
             None
         )
         if pending_job:
-            job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
+            job_id = job_uid(pending_job)
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
             # The run that left this job waiting already opened a review task, so don't open another.
             return SubmitResult(
@@ -486,16 +487,12 @@ async def run_submit(client: SmartlingClient,
                 reason=f"'{pending_job['jobName']}' is still awaiting authorization, so no new job was created"
             )
 
-        existing_jobs = await client.list_jobs(job_name, [])
-        existing_job = next(
-            (job for job in existing_jobs if job.get('jobName') == job_name),
-            None
-        )
+        existing_job = await find_job(client, job_name)
         if existing_job:
             log(f"⏭️ A job named '{job_name}' already exists")
             return SubmitResult(
                 outcome='skipped_existing_job',
-                job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
+                job_id=job_uid(existing_job),
                 job_name=job_name,
                 reason=f"A job named '{job_name}' already exists"
             )
@@ -605,6 +602,11 @@ def strings_left_per_locale(file_status: Dict, locales: List[str]) -> Dict[str, 
     return strings_left
 
 
+def job_uid(job: Dict) -> str:
+    """A job's ID, whichever field the endpoint returned it in."""
+    return job.get('translationJobUid') or job.get('jobUid', '')
+
+
 async def find_job(client: SmartlingClient, job_name: str) -> Optional[Dict]:
     """The job named exactly job_name, if there is one."""
     jobs = await client.list_jobs(job_name, [])
@@ -627,7 +629,7 @@ async def run_release_status(client: SmartlingClient,
     try:
         job = await find_job(client, job_name)
         if job:
-            job_id = job.get('translationJobUid') or job.get('jobUid', '')
+            job_id = job_uid(job)
             job_status = job.get('jobStatus', '')
             log(f"📋 '{job_name}' is {job_status}: {job_url(client, job_id)}")
         else:
@@ -795,6 +797,8 @@ async def release_status_command(args):
     try:
         async with SmartlingClient(get_credentials(args)) as client:
             result = await run_release_status(client, args.job_name, args.file_uris)
+            if result.job_id:
+                result.job_url = job_url(client, result.job_id)
     except Exception as error:  # pylint: disable=broad-except
         result = failed_release_status(error)
 

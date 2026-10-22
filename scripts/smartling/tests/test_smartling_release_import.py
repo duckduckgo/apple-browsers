@@ -15,7 +15,8 @@ IMPORT_BRANCH = 'smartling/release-ios-0.1.0'
 STRINGS_PATH = 'iOS/App/de.lproj/Localizable.strings'
 
 READY = {
-    'outcome': 'ready', 'job_id': 'job-1', 'job_status': 'COMPLETED', 'total_strings': 20,
+    'outcome': 'ready', 'job_id': 'job-1', 'job_url': 'https://dashboard.smartling.com/app/projects/p/account-jobs/p:job-1',
+    'job_status': 'COMPLETED', 'total_strings': 20,
     'strings_left': 0, 'incomplete_locales': [], 'locales': 2, 'reason': '',
 }
 
@@ -153,6 +154,8 @@ class ReleaseImportScriptTests(unittest.TestCase):
         outputs = self.run_import()
 
         self.assertEqual(outputs['outcome'], 'pr_opened')
+        self.assertEqual(outputs['job_url'], READY['job_url'])
+        self.assertIn(f"[Release iOS 0.1.0]({READY['job_url']})", self.body(0))
         self.assertIn('Integrity check: passed', self.body(0))
         self.assertEqual(git(self.repo, 'show', '--name-only', '--format=', IMPORT_BRANCH), STRINGS_PATH)
 

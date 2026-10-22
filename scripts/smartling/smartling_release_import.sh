@@ -51,6 +51,7 @@ done
 OUTCOME=""
 REASON=""
 JOB_ID=""
+JOB_URL=""
 JOB_STATUS=""
 TOTAL_STRINGS=""
 STRINGS_LEFT=""
@@ -73,6 +74,7 @@ finish() {
 			echo "version=$VERSION"
 			echo "job_name=$JOB_NAME"
 			echo "job_id=$JOB_ID"
+			echo "job_url=$JOB_URL"
 			echo "job_status=$JOB_STATUS"
 			echo "total_strings=$TOTAL_STRINGS"
 			echo "strings_left=$STRINGS_LEFT"
@@ -128,6 +130,7 @@ RESULT_FILE="${RUNNER_TEMP:-/tmp}/smartling-release-status-${PLATFORM}.json"
 
 status_outcome="$(jq -r '.outcome' "$RESULT_FILE")"
 JOB_ID="$(jq -r '.job_id' "$RESULT_FILE")"
+JOB_URL="$(jq -r '.job_url // empty' "$RESULT_FILE")"
 JOB_STATUS="$(jq -r '.job_status' "$RESULT_FILE")"
 TOTAL_STRINGS="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 STRINGS_LEFT="$(jq -r '.strings_left // empty' "$RESULT_FILE")"
@@ -184,8 +187,8 @@ git add -A -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstr
 git commit -m "Import $PLATFORM $VERSION translations from Smartling"
 git push --force origin "HEAD:refs/heads/$IMPORT_BRANCH"
 
-if [ -n "$JOB_ID" ]; then
-	job_line="- Smartling job: [$JOB_NAME](https://dashboard.smartling.com/app/projects/$SMARTLING_PROJECT_ID/account-jobs/$SMARTLING_PROJECT_ID:$JOB_ID)"
+if [ -n "$JOB_URL" ]; then
+	job_line="- Smartling job: [$JOB_NAME]($JOB_URL)"
 else
 	job_line="- Smartling job: none, every string in the release was already translated by earlier jobs"
 fi

@@ -47,6 +47,51 @@ jobs:
         platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
 
     steps:
+      - name: Resolve platform configuration
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
+                echo "ASANA_INCOMING_SECTION_NAME=Incoming"
+                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210869535563575"
+                echo "REVIEW_TASK_GITHUB_ASSIGNEE=pballart"
+              } >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
+                echo "ASANA_INCOMING_SECTION_NAME=Incoming: Dev Related Issues"
+                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210871971126998"
+                echo "REVIEW_TASK_GITHUB_ASSIGNEE=andremartingo"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unknown platform: $PLATFORM" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Check out the Asana task script
+        uses: actions/checkout@v6
+        with:
+          path: workflow-scripts
+          sparse-checkout: scripts/smartling/asana_review_task.py
+          sparse-checkout-cone-mode: false
+
+      - name: Keep the Asana task script
+        run: |
+          cp workflow-scripts/scripts/smartling/asana_review_task.py "$RUNNER_TEMP/asana_review_task.py"
+          rm -rf workflow-scripts
+
       - name: Find the release branch
         id: release
         env:
@@ -94,32 +139,6 @@ jobs:
           ref: ${{ steps.release.outputs.branch }}
           submodules: recursive
 
-      - name: Resolve platform configuration
-        if: steps.release.outputs.branch != ''
-        env:
-          PLATFORM: ${{ matrix.platform }}
-        run: |
-          case "$PLATFORM" in
-            iOS)
-              {
-                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
-                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
-                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
-              } >> "$GITHUB_ENV"
-              ;;
-            macOS)
-              {
-                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
-                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
-                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
-              } >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "Unknown platform: $PLATFORM" >&2
-              exit 1
-              ;;
-          esac
-
       - name: Check the release branch has the import script
         id: script
         if: steps.release.outputs.branch != ''
@@ -162,38 +181,54 @@ jobs:
           [ "$REIMPORT" != "true" ] || args+=(--reimport)
           ./scripts/smartling/smartling_release_import.sh "${args[@]}"
 
-      - name: Open ${{ matrix.platform }} release translations task
-        if: >-
-          always() && steps.release.outputs.is_wednesday == 'true' &&
-          steps.script.outputs.available == 'true' &&
-          (steps.import.outputs.outcome == 'not_ready' || steps.import.outputs.outcome == 'status_error')
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
-        with:
-          action: create-asana-task
-          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-project: ${{ matrix.platform == 'iOS' && vars.GH_ASANA_IOS_APP_PROJECT_ID || vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
-          asana-task-name: "Release translations not ready: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
-          asana-task-description: >-
-            The ${{ matrix.platform }} translations for ${{ steps.release.outputs.branch }} aren't ready to import yet.
-            Please follow up with the Smartling AoR DRI.
-            Job: ${{ steps.import.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.import.outputs.job_id) || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }}).
-            String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}.
-            Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}.
-            Reason: ${{ steps.import.outputs.reason }}.
-            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - name: Decide on an Asana task
+        id: task
+        if: ${{ !cancelled() }}
+        env:
+          OUTCOME: ${{ steps.import.outputs.outcome }}
+          JOB_STATUS: ${{ job.status }}
+          IS_WEDNESDAY: ${{ steps.release.outputs.is_wednesday }}
+          IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
+        run: |
+          if [[ "$OUTCOME" == not_ready || "$OUTCOME" == status_error ]]; then
+            [[ "$IS_WEDNESDAY" != true ]] || echo "kind=not_ready" >> "$GITHUB_OUTPUT"
+          elif [[ "$JOB_STATUS" == failure && "$IS_SCHEDULED" == true ]]; then
+            echo "kind=failure" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Open ${{ matrix.platform }} release import failure task
-        if: >-
-          failure() && github.event_name == 'schedule' &&
-          steps.import.outputs.outcome != 'status_error' &&
-          steps.import.outputs.outcome != 'not_ready'
+      - name: Resolve ${{ matrix.platform }} task assignee
+        id: task-assignee
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
+        continue-on-error: true
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
-          action: create-asana-task
-          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-project: ${{ matrix.platform == 'iOS' && vars.GH_ASANA_IOS_APP_PROJECT_ID || vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
-          asana-task-name: "Release translations import failed: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
-          asana-task-description: >-
-            The nightly ${{ matrix.platform }} release translations import failed for ${{ steps.release.outputs.branch || 'the release branch' }}.
-            Reason: ${{ steps.import.outputs.reason || 'a workflow step failed before the import ran' }}.
-            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          action: get-asana-user-id
+          github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+
+      - name: Open ${{ matrix.platform }} release translations ${{ steps.task.outputs.kind }} task
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          TASK_KIND: ${{ steps.task.outputs.kind }}
+          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
+          TASK_NAME: "${{ steps.task.outputs.kind == 'not_ready' && 'Release translations not ready' || 'Release translations import failed' }}: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
+          TASK_NOTES: |
+            ${{ steps.task.outputs.kind == 'not_ready' && format('⏳ The {0} translations for {1} aren''t ready to import yet. Please follow up with the Smartling AoR DRI.', matrix.platform, steps.release.outputs.branch) || format('❌ The nightly {0} release translations import failed for {1}.', matrix.platform, steps.release.outputs.branch || 'the release branch') }}
+
+            🔗 Job: ${{ steps.import.outputs.job_url || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }})
+            📝 String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}
+            🌍 Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}
+            ✋ Reason: ${{ steps.import.outputs.reason || 'A step failed before the import ran. See the workflow logs.' }}
+            🌿 Release branch: ${{ steps.release.outputs.branch || 'not found' }}
+            ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          task_args=()
+          [ "$TASK_KIND" != not_ready ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")
+          [ -z "$ASSIGNEE" ] || task_args+=(--assignee "$ASSIGNEE")
+          python3 "$RUNNER_TEMP/asana_review_task.py" \
+            --project "$ASANA_PROJECT_ID" \
+            --section-name "$ASANA_INCOMING_SECTION_NAME" \
+            --name "$TASK_NAME" \
+            --notes "$TASK_NOTES" \
+            ${task_args[@]+"${task_args[@]}"}

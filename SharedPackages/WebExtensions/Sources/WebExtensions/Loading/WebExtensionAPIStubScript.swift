@@ -38,7 +38,6 @@ import Foundation
 ///
 /// In an extension page embedded in a website, `chrome.action.openPopup` goes to the app through
 /// `actionOpenPopupMessageHandlerName`, since WebKit's own would take the website's web process down.
-/// Without that handler it is hidden.
 ///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
 /// solves, for Chrome-only code no generic stub can cover.
@@ -1291,9 +1290,8 @@ public enum WebExtensionAPIStubScript {
         // terminating the web process, which takes the website down with it. In a tab the app
         // installs the open-popup handler and opens the popup itself, as a click on the toolbar
         // button does, so in every frame that is not the top frame the call is forwarded there.
-        // Where the handler is missing, such as the background page's offscreen iframe, the member
-        // is hidden: extensions feature-detect `action.openPopup` and, when it is absent, fall back
-        // to `window.open()`, the path they already ship for Firefox.
+        // Only tabs have the handler: frames of pages the extension controller hosts run in the
+        // extension's process, where WebKit's own `openPopup` works.
         var actionOpenPopupMessageHandlerName = "\(Self.actionOpenPopupMessageHandlerName)";
 
         function actionOpenPopupMessageHandler() {
@@ -1323,7 +1321,6 @@ public enum WebExtensionAPIStubScript {
         }
 
         var forwardedMembers = [];
-        var hiddenMembers = [];
         try {
             var isEmbeddedFrame = false;
             try {
@@ -1332,14 +1329,10 @@ public enum WebExtensionAPIStubScript {
                 // A cross-origin `top` throws on access, which also means this is not the top frame.
                 isEmbeddedFrame = true;
             }
-            if (isEmbeddedFrame && api.action && api.action.openPopup !== undefined) {
-                var openPopupHandler = actionOpenPopupMessageHandler();
-                if (openPopupHandler !== null) {
-                    if (define(api.action, "openPopup", makeForwardedOpenPopup(openPopupHandler))) {
-                        forwardedMembers.push("action.openPopup");
-                    }
-                } else if (define(api.action, "openPopup", undefined)) {
-                    hiddenMembers.push("action.openPopup");
+            var openPopupHandler = isEmbeddedFrame ? actionOpenPopupMessageHandler() : null;
+            if (openPopupHandler !== null && api.action && api.action.openPopup !== undefined) {
+                if (define(api.action, "openPopup", makeForwardedOpenPopup(openPopupHandler))) {
+                    forwardedMembers.push("action.openPopup");
                 }
             }
         } catch (error) {
@@ -1347,11 +1340,10 @@ public enum WebExtensionAPIStubScript {
         }
 
         if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0
-            || forwardedMembers.length > 0 || hiddenMembers.length > 0) {
+            || forwardedMembers.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], wrapped: [" + wrappedNamespaces.join(", ") + "], forwarded: [" + forwardedMembers.join(", ")
-                + "], hidden: [" + hiddenMembers.join(", ") + "]");
+                + "], wrapped: [" + wrappedNamespaces.join(", ") + "], forwarded: [" + forwardedMembers.join(", ") + "]");
         }
     })();
 

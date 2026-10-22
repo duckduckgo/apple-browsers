@@ -183,18 +183,18 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     // MARK: - Embedded Frames
 
-    func testWhenPageIsAnEmbeddedFrame_ThenActionOpenPopupIsHidden() throws {
+    func testWhenAnEmbeddedFrameHasNoOpenPopupHandler_ThenActionOpenPopupIsLeftAlone() throws {
         context.evaluateScript("""
         chrome.action = { openPopup: function() {}, setIcon: function() {} };
         var top = {};
+        var originalOpenPopup = chrome.action.openPopup;
         """)
         try assertNoExceptions()
 
         try evaluateStubScript()
 
-        try assertTrue("chrome.action.openPopup === undefined")
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
         try assertTrue("typeof chrome.action.setIcon === 'function'")
-        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('hidden: [action.openPopup]') !== -1; })")
     }
 
     func testWhenPageIsTheTopFrame_ThenActionOpenPopupIsLeftAlone() throws {
@@ -244,7 +244,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("openPopupOutcome === undefined")
         try assertTrue("JSON.stringify(openPopupRequests) === '[{}]'")
         try assertTrue("nativeOpenPopupCalls === 0")
-        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('forwarded: [action.openPopup], hidden: []') !== -1; })")
+        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('forwarded: [action.openPopup]') !== -1; })")
     }
 
     func testWhenAnEmbeddedFrameCallsOpenPopupWithACallback_ThenTheCallbackIsCalledWithoutAnError() throws {

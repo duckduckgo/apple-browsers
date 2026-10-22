@@ -311,7 +311,7 @@ extension TabViewController {
     ) -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
         // Content updates rebuild UserScripts, but geolocation owns frame registrations and watch callbacks.
         let geolocationUserScript = sitePermissionsState.geolocationUserScript
-            ?? GeolocationUserScript(installImmediately: true)
+            ?? GeolocationUserScript()
         geolocationUserScript.activationHandler = { [weak self] frame in
             self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
         }

@@ -29,7 +29,9 @@ import WebKit
 struct SitePermissionsContentScope {
 
     /// JavaScript that is true once the geolocation shim has installed in the evaluated frame.
-    static let geolocationShimInstalled = "typeof navigator.duckduckgo?.messageHandlers?.geolocationWatchResult === \"function\""
+    static let geolocationShimInstalled = "!navigator.geolocation.getCurrentPosition.toString().includes(\"[native code]\")"
+    /// JavaScript that is true in a world where the geolocation policy feature answers native code.
+    static let geolocationPolicyInstalled = "typeof navigator.duckduckgo?.messageHandlers?.geolocationPolicyConstraints === \"function\""
 
     private struct BaseConfiguration: CustomisedPrivacyConfigurationJSONGenerating {
         let privacyConfiguration: Data? = #"{"version":1,"features":{},"unprotectedTemporary":[]}"#.data(using: .utf8)

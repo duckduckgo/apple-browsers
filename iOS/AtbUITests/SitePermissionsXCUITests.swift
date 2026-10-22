@@ -28,6 +28,8 @@ final class SitePermissionsXCUITests: XCTestCase {
     private let app = XCUIApplication()
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
     private let server = HttpServer()
+    /// Serves cross-origin frames: a different port is a different origin.
+    private let frameServer = HttpServer()
     private let timeout: TimeInterval = 20
     private var port = 0
 
@@ -42,6 +44,17 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/atb.js"] = { _ in .ok(.json(["version": "v1-1", "majorVersion": 1, "minorVersion": 1])) }
         server["/exti/"] = { _ in .accepted }
         server["/t/:pixelName"] = { _ in .accepted }
+        server["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
+        frameServer["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
+        try frameServer.start(0, forceIPv4: true, priority: .userInitiated)
+        let framePort = try frameServer.port()
+        server["/iframe-same-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "/geolocation-frame", sandbox: "allow-scripts allow-same-origin allow-forms allow-popups")))
+        }
+        server["/iframe-opaque-sandbox"] = { _ in .ok(.html(Self.iframeHTML(src: "/geolocation-frame", sandbox: "allow-scripts"))) }
+        server["/iframe-cross-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/geolocation-frame")))
+        }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
     }
@@ -49,6 +62,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     override func tearDownWithError() throws {
         app.terminate()
         server.stop()
+        frameServer.stop()
         try super.tearDownWithError()
     }
 
@@ -517,6 +531,28 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("Settings.SitePermissions.Site.127.0.0.1"))
         XCTAssertEqual(element("Settings.SitePermissions.Site.geolocation").value as? String, "Ask Each Time")
         tap(app.navigationBars.buttons["Site Permissions"])
+    }
+
+    func testWhenSameOriginIframeRequestsLocationThenSiteDialogPrecedesSystemPromptAndFrameGetsCoordinates() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp()
+        openPermissionPage(path: "/iframe-same-origin")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame location"])
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        // maximumAge: 0 needs a fix timestamped after authorization and acquisition begin.
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("Frame result: success 37.3317,-122.0301")
+    }
+
+    func testWhenCrossOriginIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-cross-origin")
+    }
+
+    func testWhenOpaqueSandboxedIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-opaque-sandbox")
     }
 
     func testWhenActiveLocationWatchIsDeniedThenItStopsAndReallowDoesNotRestartIt() throws {
@@ -1056,6 +1092,18 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location error 1 1")
     }
 
+    private func assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: String) {
+        launchApp()
+        openPermissionPage(path: path)
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame location"])
+        assertResult("Frame result: error 1")
+        // Location authorization is reset in setUp, so a native request would still show the iOS alert.
+        XCTAssertFalse(element("SitePermissions.Dialog").waitForExistence(timeout: 2))
+        XCTAssertFalse(springboard.alerts.firstMatch.waitForExistence(timeout: 2))
+        assertNoPermissionPrompt()
+    }
+
     private func simulateLocation(latitude: Double, longitude: Double) throws {
         guard #available(iOS 16.4, *) else {
             throw XCTSkip("Deterministic device location requires iOS 16.4 or later")
@@ -1317,6 +1365,42 @@ final class SitePermissionsXCUITests: XCTestCase {
             position => result.textContent = 'watch success ' + coordinates(position),
             error => result.textContent = 'watch error ' + error.code,
             {maximumAge: 0, enableHighAccuracy: true});
+        }
+      </script>
+    </body>
+    </html>
+    """
+
+    private static func iframeHTML(src: String, sandbox: String? = nil) -> String {
+        let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""
+        return """
+        <!doctype html>
+        <html lang="en">
+        <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Permissions fixture</title></head>
+        <body>
+          <h1>Permissions fixture</h1>
+          <p role="status">ready</p>
+          <iframe src="\(src)" allow="geolocation"\(sandboxAttribute)></iframe>
+        </body>
+        </html>
+        """
+    }
+
+    private static let geolocationFrameHTML = """
+    <!doctype html>
+    <html lang="en">
+    <body>
+      <button onclick="requestFrameLocation()">Frame location</button>
+      <p id="frameResult" role="status">Frame result: ready</p>
+      <script>
+        function requestFrameLocation() {
+          const result = document.getElementById('frameResult');
+          result.textContent = 'Frame result: pending';
+          navigator.geolocation.getCurrentPosition(
+            position => result.textContent = 'Frame result: success '
+              + position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4),
+            error => result.textContent = 'Frame result: error ' + error.code,
+            {maximumAge: 0});
         }
       </script>
     </body>

@@ -132,11 +132,12 @@ public struct GeolocationFrame {
         frameInfo.webView === webView
     }
 
+    /// Evaluates `script` in this frame's isolated content world, where the content-scope policy feature runs.
     @MainActor
     public func evaluateJavaScript(_ script: String,
                                    in webView: WKWebView,
                                    completionHandler: @escaping @Sendable (Result<Any, Error>) -> Void) {
-        webView.evaluateJavaScript(script, in: frameInfo, in: .page, completionHandler: completionHandler)
+        webView.evaluateJavaScript(script, in: frameInfo, in: .defaultClient, completionHandler: completionHandler)
     }
 }
 
@@ -181,7 +182,6 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     public static let policyFeatureName = "sitePermissionsGeolocationPolicy"
 
     enum MessageKind: String {
-        case registerFrame
         case getCurrentPosition
         case queryPermission
         case startWatch
@@ -195,42 +195,51 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     }
 
     static let capabilityToken = UUID().uuidString + UUID().uuidString
-    private static let signingToken = UUID().uuidString + UUID().uuidString
-    private static let defaultMessagingContext = "contentScopeScripts"
+    /// The isolated content-scope script's messaging context, which its subscriptions require.
+    private static let isolatedMessagingContext = "contentScopeScriptsIsolated"
 
-    private let installImmediately: Bool
+    /// Asks the isolated-world policy feature for the frame's current constraints and awaits its reply.
+    private static let policyConstraintsScript: String = {
+        let subscriptionName = "geolocationPolicyConstraints"
+        let event: [String: Any] = [
+            "context": isolatedMessagingContext,
+            "featureName": policyFeatureName,
+            "subscriptionName": subscriptionName,
+            "params": [String: Any]()
+        ]
+        let encodedEvent = javaScriptObject(from: event) ?? "{}"
+        return "return await navigator.duckduckgo?.messageHandlers?.[\(javaScriptString(subscriptionName))]?.(\(encodedEvent));"
+    }()
 
     public let featureName = GeolocationUserScript.featureNameValue
     public let messageOriginPolicy: MessageOriginPolicy = .all
     public weak var broker: UserScriptMessageBroker?
 
     /// Settings for the page-world feature. Without them the feature leaves the page untouched.
+    /// With them it hardens the page API at document start, so inject them only into tab web views;
+    /// `duck.ai` and its subdomains remain untouched.
     public var featureSettings: [String: Any] {
-        ["capability": Self.capabilityToken, "installImmediately": installImmediately]
+        ["capability": Self.capabilityToken]
     }
 
-    /// Settings for the isolated-world policy feature. The signing token must never reach the page world.
+    /// Settings for the isolated-world policy feature. Without them it does not run.
     public static var policyFeatureSettings: [String: Any] {
-        ["signingToken": signingToken]
+        ["enabled": true]
     }
 
     @MainActor public weak var delegate: GeolocationUserScriptDelegate?
 
-    /// Enables the shim for frames owned by the embedding app. The default leaves native APIs untouched.
+    /// Decides which frames native code serves. Requests from other frames, and every request without it, are denied.
     @MainActor public var activationHandler: ((GeolocationFrame) -> Bool)?
 
     @MainActor private var watchRegistry = GeolocationWatchRegistry()
     @MainActor private var permissionStatusRegistry = GeolocationWatchRegistry()
-    @MainActor private var frameRegistrations = GeolocationFrameRegistrationStore()
     @MainActor private var lifecycleGeneration: UInt64 = 0
     @MainActor private var pendingDocumentEvaluations = [UUID: CheckedContinuation<Any?, Never>]()
 
     @MainActor
-    /// - Parameter installImmediately: Hardens the page API synchronously at document start. Use only when the
-    ///   embedding app scopes this feature to its tab web views; `duck.ai` and its subdomains remain untouched.
-    public init(delegate: GeolocationUserScriptDelegate? = nil, installImmediately: Bool = false) {
+    public init(delegate: GeolocationUserScriptDelegate? = nil) {
         self.delegate = delegate
-        self.installImmediately = installImmediately
         super.init()
     }
 
@@ -254,31 +263,22 @@ public final class GeolocationUserScript: NSObject, Subfeature {
             return Self.errorPayload(.permissionDenied, message: "Unauthenticated geolocation request")
         }
 
-        if kind == .registerFrame {
-            return await handleFrameRegistration(body: body, frame: frame, webView: message.webView)
-        }
-
-        // Only the isolated world supplies policy. Page messages cannot replace
-        // a registered document's identity or its sandbox verdict.
+        // Each request names its page document. Only the isolated world can prove that the frame still
+        // holds that document, so its report also supplies the policy and sandbox verdict for the request.
         guard activationHandler?(frame) == true,
-              let nonce = body["nonce"] as? String,
-              Self.isValidNonce(nonce),
+              let pageDocumentID = body["documentID"] as? String,
+              Self.isValidNonce(pageDocumentID),
               let webView = message.webView,
-              frame.isAssociated(with: webView),
-              let registration = frameRegistrations.registration(
-                for: nonce,
-                frame: GeolocationNativeFrameIdentity(frame: frame, webView: webView)
-              ) else {
-            return Self.errorPayload(.permissionDenied, message: "Unregistered geolocation frame")
+              frame.isAssociated(with: webView) else {
+            return Self.errorPayload(.permissionDenied, message: "Geolocation is not active in this frame")
         }
 
         let generation = lifecycleGeneration
         guard let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
-              policy.documentID == registration.documentID,
-              body["documentID"] as? String == registration.pageDocumentID,
-              await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView, generation: generation),
+              policy.pageDocumentID == pageDocumentID,
               generation == lifecycleGeneration,
-              activationHandler?(frame) == true else {
+              activationHandler?(frame) == true,
+              frame.isAssociated(with: webView) else {
             return Self.errorPayload(.permissionDenied, message: "Geolocation document is no longer active")
         }
         guard kind == .clearWatch || policy.constraints.allowsRequest else {
@@ -294,24 +294,24 @@ public final class GeolocationUserScript: NSObject, Subfeature {
         case .queryPermission:
             return handlePermissionQuery(body: body,
                                          frame: frame,
-                                         nonce: nonce,
+                                         pageDocumentID: pageDocumentID,
+                                         documentID: policy.documentID,
                                          constraints: policy.constraints,
                                          webView: webView)
         case .startWatch:
             return handleWatchStart(body: body,
                                     frame: frame,
-                                    nonce: nonce,
+                                    pageDocumentID: pageDocumentID,
+                                    documentID: policy.documentID,
                                     constraints: policy.constraints,
                                     webView: webView)
         case .clearWatch:
-            return handleWatchCancellation(body: body, nonce: nonce)
-        case .registerFrame:
-            return Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request")
+            return handleWatchCancellation(body: body, pageDocumentID: pageDocumentID)
         }
     }
 
-    /// Cancels watches and permission-status subscriptions, resolves pending document checks
-    /// with no result, then clears frame registrations.
+    /// Cancels watches and permission-status subscriptions, and resolves pending document checks
+    /// with no result.
     /// Call on navigation, process replacement, and tab teardown. The delegate must
     /// separately cancel pending one-shot work.
     @MainActor
@@ -322,7 +322,6 @@ public final class GeolocationUserScript: NSObject, Subfeature {
         evaluations.values.forEach { $0.resume(returning: nil) }
         let requestIDs = watchRegistry.removeAll()
         let statusIDs = permissionStatusRegistry.removeAll()
-        frameRegistrations.removeAll()
         for requestID in requestIDs {
             delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
         }
@@ -337,9 +336,9 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     /// the watch and asks the delegate to cancel location acquisition.
     @MainActor @discardableResult
     public func send(_ result: GeolocationPositionResult, toWatchWithID requestID: String) -> Bool {
-        guard watchRegistry.contains(requestID) else { return false }
-        guard let script = callbackScript(.watchResult,
-                                          callbackID: requestID,
+        guard let documentID = watchRegistry.documentID(for: requestID),
+              let script = callbackScript(.watchResult,
+                                          documentID: documentID,
                                           params: ["requestID": requestID, "result": Self.positionPayload(result)]) else { return false }
         let sent = watchRegistry.send(script, to: requestID) { [weak self] succeeded in
             guard !succeeded, let self, self.watchRegistry.remove(requestID) else { return }
@@ -351,8 +350,9 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     /// Delivers a final result and removes both native and page-side watch state.
     @MainActor @discardableResult
     public func sendTerminal(_ result: GeolocationPositionResult, toWatchWithID requestID: String) -> Bool {
-        guard let script = callbackScript(.terminalWatchResult,
-                                          callbackID: requestID,
+        guard let documentID = watchRegistry.documentID(for: requestID),
+              let script = callbackScript(.terminalWatchResult,
+                                          documentID: documentID,
                                           params: ["requestID": requestID, "result": Self.positionPayload(result)]),
               let callback = watchRegistry.take(requestID) else { return false }
 
@@ -364,8 +364,9 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     /// Refreshes a previously queried `PermissionStatus` in its exact requesting frame.
     @MainActor @discardableResult
     public func send(_ state: GeolocationPermissionState, toPermissionStatusWithID statusID: String) -> Bool {
-        guard let script = callbackScript(.permissionState,
-                                          callbackID: statusID,
+        guard let documentID = permissionStatusRegistry.documentID(for: statusID),
+              let script = callbackScript(.permissionState,
+                                          documentID: documentID,
                                           params: ["statusID": statusID, "state": state.rawValue]) else { return false }
         return permissionStatusRegistry.send(script, to: statusID) { [weak self] succeeded in
             guard !succeeded, let self, self.permissionStatusRegistry.remove(statusID) else { return }
@@ -391,17 +392,19 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     @MainActor
     private func handlePermissionQuery(body: [String: Any],
                                        frame: GeolocationFrame,
-                                       nonce: String,
+                                       pageDocumentID: String,
+                                       documentID: String,
                                        constraints: GeolocationRequestConstraints,
                                        webView: WKWebView) -> [String: Any] {
         guard let statusID = body["statusID"] as? String,
-              Self.isValidRequestID(statusID),
+              Self.isCallbackID(statusID, ownedBy: pageDocumentID),
               let delegate else {
             return Self.permissionPayload(.denied)
         }
 
         let registered = permissionStatusRegistry.register(statusID,
-                                                           nonce: nonce) { [weak webView] script, completion in
+                                                           owner: pageDocumentID,
+                                                           documentID: documentID) { [weak webView] script, completion in
             guard let webView else {
                 completion(false)
                 return
@@ -422,63 +425,23 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     }
 
     @MainActor
-    private func handleFrameRegistration(body: [String: Any], frame: GeolocationFrame, webView: WKWebView?) async -> [String: Any] {
-        guard let nonce = body["nonce"] as? String,
-              Self.isValidNonce(nonce),
-              let pageDocumentID = body["documentID"] as? String,
-              Self.isValidNonce(pageDocumentID) else {
-            return Self.errorPayload(.permissionDenied, message: "Invalid geolocation document identity")
-        }
-        guard activationHandler?(frame) == true else {
-            return ["status": "registered", "enabled": false]
-        }
-        let generation = lifecycleGeneration
-        guard let webView,
-              frame.isAssociated(with: webView),
-              let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
-              await isCurrentDocument(pageDocumentID, in: frame, webView: webView, generation: generation),
-              generation == lifecycleGeneration,
-              activationHandler?(frame) == true,
-              frame.isAssociated(with: webView),
-              frameRegistrations.register(nonce: nonce,
-                                          frame: GeolocationNativeFrameIdentity(frame: frame, webView: webView),
-                                          documentID: policy.documentID,
-                                          pageDocumentID: pageDocumentID) else {
-            return Self.errorPayload(.permissionDenied, message: "Unable to register geolocation frame")
-        }
-        return ["status": "registered", "enabled": true, "constraints": [
-            "isSecureContext": policy.constraints.isSecureContext,
-            "isSandboxed": policy.constraints.isSandboxed,
-            "isPolicyAllowed": policy.constraints.isPolicyAllowed
-        ]]
-    }
-
-    @MainActor
     private func documentPolicy(in frame: GeolocationFrame,
                                 webView: WKWebView,
-                                generation: UInt64) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
+                                generation: UInt64) async -> GeolocationDocumentPolicy? {
         let value = await evaluateDocumentJavaScript(generation: generation) { completion in
             webView.callAsyncJavaScript(
-                "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
+                Self.policyConstraintsScript,
                 arguments: [:], in: frame.frameInfo, in: .defaultClient, completionHandler: completion)
         }
         guard let value,
               let policy = value as? [String: Any],
               let documentID = policy["documentID"] as? String,
               Self.isValidNonce(documentID) else { return nil }
-        return (documentID, Self.constraints(from: policy))
-    }
-
-    @MainActor
-    private func isCurrentDocument(_ documentID: String,
-                                   in frame: GeolocationFrame,
-                                   webView: WKWebView,
-                                   generation: UInt64) async -> Bool {
-        let value = await evaluateDocumentJavaScript(generation: generation) { completion in
-            webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID",
-                                       in: frame.frameInfo, in: .page, completionHandler: completion)
-        }
-        return value as? String == documentID
+        // The isolated world reports the page feature's identity in the same reply, so both belong to one document.
+        let pageDocumentID = policy["pageDocumentID"] as? String
+        return GeolocationDocumentPolicy(documentID: documentID,
+                                         pageDocumentID: pageDocumentID.flatMap { Self.isValidNonce($0) ? $0 : nil },
+                                         constraints: Self.constraints(from: policy))
     }
 
     @MainActor
@@ -502,11 +465,12 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     @MainActor
     private func handleWatchStart(body: [String: Any],
                                   frame: GeolocationFrame,
-                                  nonce: String,
+                                  pageDocumentID: String,
+                                  documentID: String,
                                   constraints: GeolocationRequestConstraints,
                                   webView: WKWebView?) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
-              Self.isValidRequestID(requestID),
+              Self.isCallbackID(requestID, ownedBy: pageDocumentID),
               let webView,
               let delegate else {
             return Self.errorPayload(.positionUnavailable, message: "Geolocation is unavailable")
@@ -514,7 +478,8 @@ public final class GeolocationUserScript: NSObject, Subfeature {
 
         // Register before invoking the delegate, which may send an update immediately.
         let registered = watchRegistry.register(requestID,
-                                                nonce: nonce) { [weak webView] script, completion in
+                                                owner: pageDocumentID,
+                                                documentID: documentID) { [weak webView] script, completion in
             guard let webView else {
                 completion(false)
                 return
@@ -536,13 +501,13 @@ public final class GeolocationUserScript: NSObject, Subfeature {
     }
 
     @MainActor
-    private func handleWatchCancellation(body: [String: Any], nonce: String) -> [String: Any] {
+    private func handleWatchCancellation(body: [String: Any], pageDocumentID: String) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
-              Self.isValidRequestID(requestID) else {
+              Self.isCallbackID(requestID, ownedBy: pageDocumentID) else {
             return Self.errorPayload(.positionUnavailable, message: "Invalid geolocation watch")
         }
 
-        if watchRegistry.remove(requestID, nonce: nonce) {
+        if watchRegistry.remove(requestID, owner: pageDocumentID) {
             delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
         }
         return ["status": "cleared"]
@@ -580,6 +545,11 @@ public final class GeolocationUserScript: NSObject, Subfeature {
         return bytes.count == 32 && bytes.allSatisfy {
             ($0 >= 48 && $0 <= 57) || ($0 >= 97 && $0 <= 102)
         }
+    }
+
+    /// Whether `callbackID` is a valid watch or permission-status ID that the page document created.
+    static func isCallbackID(_ callbackID: String, ownedBy pageDocumentID: String) -> Bool {
+        isValidRequestID(callbackID) && callbackID.hasPrefix(pageDocumentID + ":")
     }
 
     static func isValidRequestID(_ requestID: String) -> Bool {
@@ -630,21 +600,23 @@ public final class GeolocationUserScript: NSObject, Subfeature {
         return value
     }
 
-    /// Builds a content-scope subscription event for the page. The page acknowledges ownership by returning `true`.
-    private func callbackScript(_ subscription: Subscription, callbackID: String, params: [String: Any]) -> String? {
+    /// Builds a delivery for the isolated policy feature, which forwards it to the page feature only while
+    /// the frame still holds the document with `documentID`: a WKFrameInfo can outlive its document.
+    /// The script evaluates to `true` when the page feature acknowledges ownership.
+    private func callbackScript(_ subscription: Subscription, documentID: String, params: [String: Any]) -> String? {
+        let deliverySubscription = "geolocationDeliver"
         let event: [String: Any] = [
-            "context": broker?.context ?? Self.defaultMessagingContext,
-            "featureName": featureName,
-            "subscriptionName": subscription.rawValue,
-            "params": params
+            "context": Self.isolatedMessagingContext,
+            "featureName": Self.policyFeatureName,
+            "subscriptionName": deliverySubscription,
+            "params": [
+                "documentID": documentID,
+                "subscriptionName": subscription.rawValue,
+                "params": params
+            ]
         ]
         guard let encodedEvent = Self.javaScriptObject(from: event) else { return nil }
-        let documentID = String(callbackID.prefix { $0 != ":" })
-        // A WKFrameInfo can outlive its document. Check the document token before exposing the payload.
-        return """
-        window.__ddgSitePermissionsGeolocationDocumentID === \(Self.javaScriptString(documentID)) &&
-        navigator.duckduckgo?.messageHandlers?.[\(Self.javaScriptString(subscription.rawValue))]?.(\(encodedEvent)) === true
-        """
+        return "navigator.duckduckgo?.messageHandlers?.[\(Self.javaScriptString(deliverySubscription))]?.(\(encodedEvent)) === true"
     }
 
     private static func jsonValue(_ value: Double?) -> Any {
@@ -669,7 +641,9 @@ final class GeolocationWatchRegistry {
     typealias Callback = (String, @escaping (Bool) -> Void) -> Void
 
     private struct Entry {
-        let nonce: String
+        /// The page document that created the callback.
+        let owner: String
+        let documentID: String
         let callback: Callback
     }
 
@@ -681,12 +655,18 @@ final class GeolocationWatchRegistry {
         entries[requestID] != nil
     }
 
+    /// - Parameter documentID: The isolated-world identity of the document that owns `requestID`.
     func register(_ requestID: String,
-                  nonce: String,
+                  owner: String,
+                  documentID: String,
                   callback: @escaping Callback) -> Bool {
         guard entries[requestID] == nil else { return false }
-        entries[requestID] = Entry(nonce: nonce, callback: callback)
+        entries[requestID] = Entry(owner: owner, documentID: documentID, callback: callback)
         return true
+    }
+
+    func documentID(for requestID: String) -> String? {
+        entries[requestID]?.documentID
     }
 
     func send(_ script: String,
@@ -703,9 +683,9 @@ final class GeolocationWatchRegistry {
     }
 
     @discardableResult
-    func remove(_ requestID: String, nonce: String) -> Bool {
+    func remove(_ requestID: String, owner: String) -> Bool {
         guard let entry = entries[requestID],
-              entry.nonce == nonce else { return false }
+              entry.owner == owner else { return false }
         entries.removeValue(forKey: requestID)
         return true
     }
@@ -720,65 +700,10 @@ final class GeolocationWatchRegistry {
     }
 }
 
-@MainActor
-final class GeolocationFrameRegistrationStore {
+/// A frame's policy as the isolated world reported it, with both worlds' identities for its current document.
+struct GeolocationDocumentPolicy {
 
-    struct Registration: Equatable {
-        let frame: GeolocationNativeFrameIdentity
-        let documentID: String
-        let pageDocumentID: String
-    }
-
-    private var registrations = [String: Registration]()
-
-    var count: Int { registrations.count }
-
-    func register(nonce: String,
-                  frame: GeolocationNativeFrameIdentity,
-                  documentID: String,
-                  pageDocumentID: String) -> Bool {
-        if let registration = registrations[nonce] {
-            return registration.frame == frame && registration.documentID == documentID && registration.pageDocumentID == pageDocumentID
-        }
-        registrations[nonce] = Registration(frame: frame, documentID: documentID, pageDocumentID: pageDocumentID)
-        return true
-    }
-
-    func registration(for nonce: String, frame: GeolocationNativeFrameIdentity) -> Registration? {
-        guard let registration = registrations[nonce], registration.frame == frame else { return nil }
-        return registration
-    }
-
-    func removeAll() {
-        registrations.removeAll()
-    }
-}
-
-struct GeolocationNativeFrameIdentity: Equatable {
-
-    let webViewID: ObjectIdentifier
-    let scheme: String
-    let host: String
-    let port: Int
-    let isMainFrame: Bool
-
-    init(webViewID: ObjectIdentifier,
-         scheme: String,
-         host: String,
-         port: Int,
-         isMainFrame: Bool) {
-        self.webViewID = webViewID
-        self.scheme = scheme
-        self.host = host
-        self.port = port
-        self.isMainFrame = isMainFrame
-    }
-
-    init(frame: GeolocationFrame, webView: WKWebView) {
-        webViewID = ObjectIdentifier(webView)
-        scheme = frame.securityOrigin.protocol
-        host = frame.securityOrigin.host
-        port = frame.securityOrigin.port
-        isMainFrame = frame.isMainFrame
-    }
+    let documentID: String
+    let pageDocumentID: String?
+    let constraints: GeolocationRequestConstraints
 }

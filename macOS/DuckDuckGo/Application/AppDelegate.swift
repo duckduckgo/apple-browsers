@@ -2360,24 +2360,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @available(macOS 15.4, *)
     @MainActor
     private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
-        guard self.webExtensionManager === webExtensionManager, webExtensionManager.remoteDisableEnforcer == nil else { return }
-        let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
-            manager: webExtensionManager,
+        guard self.webExtensionManager === webExtensionManager else { return }
+        webExtensionManager.startRemoteDisableEnforcer(
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            disabledExtensionIDs: { [featureFlagger] in
-                var disabledIDs: Set<String> = []
-                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
-                    disabledIDs.insert(ChromeWebStoreID.bitwarden.rawValue)
-                }
-                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
-                    disabledIDs.insert(ChromeWebStoreID.onePassword.rawValue)
-                }
-                return disabledIDs
-            },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            featureFlagger: featureFlagger
         )
-        webExtensionManager.remoteDisableEnforcer = remoteDisableEnforcer
-        remoteDisableEnforcer.start()
     }
 
     @available(macOS 15.4, *)

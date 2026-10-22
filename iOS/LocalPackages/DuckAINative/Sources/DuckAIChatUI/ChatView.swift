@@ -115,9 +115,9 @@ public final class ChatViewController: UIViewController, UIScrollViewDelegate {
         }
         layout.addArrangedSubview(scrollView)
         transcript.axis = .vertical
-        transcript.spacing = 16
+        transcript.spacing = 12
         transcript.isLayoutMarginsRelativeArrangement = true
-        transcript.layoutMargins = UIEdgeInsets(top: 16, left: 24, bottom: 57, right: 24)
+        transcript.layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 57, right: 12)
         transcript.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(transcript)
         NSLayoutConstraint.activate([
@@ -129,6 +129,8 @@ public final class ChatViewController: UIViewController, UIScrollViewDelegate {
         ])
         status.axis = .vertical
         status.spacing = 8
+        status.isLayoutMarginsRelativeArrangement = true
+        status.layoutMargins = UIEdgeInsets(top: 4, left: 12, bottom: 0, right: 12)
         transcript.addArrangedSubview(status)
     }
 

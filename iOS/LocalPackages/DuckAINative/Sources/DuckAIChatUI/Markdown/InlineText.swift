@@ -53,7 +53,7 @@ final class InlineTextView: UITextView {
                 }
                 if intent.contains(.code) {
                     attributes[.font] = ChatTypography.inlineCode.font
-                    attributes[.backgroundColor] = DuckAIChatTokens.Color.codeFrame
+                    attributes[.backgroundColor] = DuckAIChatTokens.Color.controlSecondary
                 }
                 if intent.contains(.strikethrough) { attributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue }
                 if let link = run.link { attributes[.link] = link }
@@ -63,7 +63,10 @@ final class InlineTextView: UITextView {
             result.append(NSAttributedString(string: text, attributes: [.font: style.font, .foregroundColor: DuckAIChatTokens.Color.textPrimary]))
         }
         let paragraph = NSMutableParagraphStyle()
-        paragraph.minimumLineHeight = style.lineHeight
+        let lineHeight = max(style.lineHeight, style.font.lineHeight)
+        paragraph.minimumLineHeight = lineHeight
+        paragraph.maximumLineHeight = lineHeight
+        result.addAttribute(.kern, value: style.tracking, range: NSRange(location: 0, length: result.length))
         result.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: result.length))
         attributedText = result
         invalidateIntrinsicContentSize()

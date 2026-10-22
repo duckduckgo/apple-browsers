@@ -22,6 +22,7 @@ import UIKit
 
 final class MarkdownBlockView: UIStackView {
     private var block: MarkdownBlock?
+    private var codeText: InlineTextView?
 
     init() {
         super.init(frame: .zero)
@@ -45,7 +46,7 @@ final class MarkdownBlockView: UIStackView {
             }
         case .codeBlock(let language, let code):
             if case .codeBlock(let oldLanguage, _) = previous, oldLanguage == language,
-               let view = arrangedSubviews.last as? InlineTextView {
+               let view = codeText {
                 view.update(code, style: ChatTypography.code, markdown: false)
                 return
             }
@@ -53,74 +54,107 @@ final class MarkdownBlockView: UIStackView {
         }
         arrangedSubviews.forEach { $0.removeFromSuperview() }
         backgroundColor = .clear
+        codeText = nil
+        spacing = 8
         isLayoutMarginsRelativeArrangement = false
         switch value {
         case .paragraph(let text): addText(text)
         case .heading(let level, let text): addText(text, style: ChatTypography.heading(level))
-        case .list(let ordered, let start, let items):
-            for (index, text) in items.enumerated() {
-                let row = UIStackView()
-                row.alignment = .top
-                row.spacing = 8
-                let marker = chatLabel(ordered ? "\(start + index)." : "•")
-                marker.setContentHuggingPriority(.required, for: .horizontal)
-                marker.setContentCompressionResistancePriority(.required, for: .horizontal)
-                row.addArrangedSubview(marker)
-                let content = InlineTextView()
-                content.update(text)
-                row.addArrangedSubview(content)
-                addArrangedSubview(row)
-            }
-        case .codeBlock(let language, let code):
-            backgroundColor = DuckAIChatTokens.Color.codeFrame
-            layer.cornerRadius = 16
-            isLayoutMarginsRelativeArrangement = true
-            layoutMargins = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
-            let heading = UIStackView(arrangedSubviews: [chatLabel(language ?? "Code", style: ChatTypography.codeLabel),
-                                                       chatButton("Copy code", symbol: "doc.on.doc") { [weak self] in
-                guard case .codeBlock(_, let text) = self?.block else { return }
-                UIPasteboard.general.string = text
-            }])
-            addArrangedSubview(heading)
-            addText(code, style: ChatTypography.code, markdown: false)
-        case .blockquote(let blocks):
-            backgroundColor = DuckAIChatTokens.Color.userBubble
-            isLayoutMarginsRelativeArrangement = true
-            layoutMargins = UIEdgeInsets(top: 8, left: 12, bottom: 8, right: 12)
-            let row = UIStackView()
-            row.spacing = 12
-            let rule = UIView()
-            rule.backgroundColor = DuckAIChatTokens.Color.decorationSecondary
-            rule.widthAnchor.constraint(equalToConstant: 3).isActive = true
-            row.addArrangedSubview(rule)
-            let quoted = UIStackView()
-            quoted.axis = .vertical
-            quoted.spacing = 8
-            for block in blocks { let child = MarkdownBlockView(); child.update(block); quoted.addArrangedSubview(child) }
-            row.addArrangedSubview(quoted)
-            addArrangedSubview(row)
-        case .table(let header, let rows):
-            for (index, cells) in ([header] + rows).enumerated() {
-                let row = UIStackView()
-                row.distribution = .fillEqually
-                row.spacing = 8
-                row.backgroundColor = index == 0 ? DuckAIChatTokens.Color.userBubble : .clear
-                for cell in cells {
-                    let text = InlineTextView()
-                    text.update(index == 0 ? "**" + cell + "**" : cell, style: ChatTypography.tableCell)
-                    row.addArrangedSubview(text)
-                }
-                addArrangedSubview(row)
-                let separator = UIView()
-                separator.backgroundColor = DuckAIChatTokens.Color.decorationSecondary
-                separator.heightAnchor.constraint(equalToConstant: 1).isActive = true
-                addArrangedSubview(separator)
-            }
+        case .list(let ordered, let start, let items): addList(ordered: ordered, start: start, items: items)
+        case .codeBlock(let language, let code): addCode(language: language, code: code)
+        case .blockquote(let blocks): addQuote(blocks)
+        case .table(let header, let rows): addTable(header: header, rows: rows)
         case .thematicBreak:
             let line = UIView()
             line.backgroundColor = DuckAIChatTokens.Color.decorationSecondary
             line.heightAnchor.constraint(equalToConstant: 1).isActive = true
             addArrangedSubview(line)
+        }
+    }
+
+    private func addList(ordered: Bool, start: Int, items: [String]) {
+        isLayoutMarginsRelativeArrangement = true
+        layoutMargins = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 0)
+        for (index, text) in items.enumerated() {
+            let row = UIStackView()
+            row.alignment = .top
+            row.spacing = 8
+            let marker = chatLabel(ordered ? "\(start + index)." : "•")
+            marker.textColor = DuckAIChatTokens.Color.listMarker
+            marker.textAlignment = .right
+            marker.widthAnchor.constraint(greaterThanOrEqualToConstant: 16).isActive = true
+            marker.setContentHuggingPriority(.required, for: .horizontal)
+            marker.setContentCompressionResistancePriority(.required, for: .horizontal)
+            row.addArrangedSubview(marker)
+            let content = InlineTextView()
+            content.update(text)
+            row.addArrangedSubview(content)
+            addArrangedSubview(row)
+        }
+    }
+
+    private func addCode(language: String?, code: String) {
+        backgroundColor = DuckAIChatTokens.Color.codeFrame
+        layer.cornerRadius = 16
+        spacing = 0
+        isLayoutMarginsRelativeArrangement = true
+        layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 8, right: 8)
+        let label = chatLabel(language ?? "Code", style: ChatTypography.codeLabel)
+        label.textColor = DuckAIChatTokens.Color.codeLanguage
+        let copy = chatIconButton("Copy code", symbol: "doc.on.doc") { [weak self] in
+            guard case .codeBlock(_, let text) = self?.block else { return }
+            UIPasteboard.general.string = text
+        }
+        let heading = UIStackView(arrangedSubviews: [label, UIView(), copy])
+        heading.alignment = .center
+        heading.isLayoutMarginsRelativeArrangement = true
+        heading.layoutMargins = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: 0)
+        heading.heightAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
+        addArrangedSubview(heading)
+        let text = InlineTextView()
+        text.update(code, style: ChatTypography.code, markdown: false)
+        text.backgroundColor = DuckAIChatTokens.Color.codeBackground
+        text.layer.cornerRadius = 12
+        text.textContainerInset = UIEdgeInsets(top: 8, left: 16, bottom: 16, right: 16)
+        codeText = text
+        addArrangedSubview(text)
+    }
+
+    private func addQuote(_ blocks: [MarkdownBlock]) {
+        let row = UIStackView()
+        row.spacing = 16
+        let rule = UIView()
+        rule.backgroundColor = DuckAIChatTokens.Color.controlTertiary
+        rule.layer.cornerRadius = 2
+        rule.widthAnchor.constraint(equalToConstant: 4).isActive = true
+        row.addArrangedSubview(rule)
+        let quoted = UIStackView()
+        quoted.axis = .vertical
+        quoted.spacing = 8
+        for block in blocks { let child = MarkdownBlockView(); child.update(block); quoted.addArrangedSubview(child) }
+        row.addArrangedSubview(quoted)
+        addArrangedSubview(row)
+    }
+
+    private func addTable(header: [String], rows: [[String]]) {
+        spacing = 0
+        for (index, cells) in ([header] + rows).enumerated() {
+            let row = UIStackView()
+            row.distribution = .fillEqually
+            row.spacing = 8
+            for cell in cells {
+                let text = InlineTextView()
+                text.update(index == 0 ? "**" + cell + "**" : cell, style: ChatTypography.tableCell)
+                text.textContainerInset = UIEdgeInsets(top: index == 0 ? 0 : 8, left: 1, bottom: index == 0 ? 4 : 8, right: 8)
+                row.addArrangedSubview(text)
+            }
+            addArrangedSubview(row)
+            if index < rows.count {
+                let separator = UIView()
+                separator.backgroundColor = index == 0 ? DuckAIChatTokens.Color.textPrimary : DuckAIChatTokens.Color.decorationSecondary
+                separator.heightAnchor.constraint(equalToConstant: index == 0 ? 1.6 : 1).isActive = true
+                addArrangedSubview(separator)
+            }
         }
     }
 

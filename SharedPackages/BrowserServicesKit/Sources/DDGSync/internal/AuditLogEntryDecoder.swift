@@ -19,10 +19,12 @@
 import Foundation
 import DDGError
 
-/// Caches the initial key-load result, including failures, and allows one forced refresh per audit-log page.
+/// Retains every key loaded for the page so refreshing for a newer entry does not discard
+/// a key needed by an older entry.
+/// The initial load result and one forced refresh are also shared across the page.
 /// The fetch loop uses this instance sequentially; it is intentionally not Sendable.
 final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
-    enum Error: DDGError {
+    enum RefreshLimitError: DDGError {
         case forcedRefreshAlreadyAttempted
 
         static var errorDomain: String { "com.duckduckgo.sync.audit-log.account-info-keys" }
@@ -35,6 +37,7 @@ final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
     private let manager: any AccountInfoKeyProviding
     private var initialKeyResult: Result<AccountInfoKey, Swift.Error>?
     private var didAttemptForcedRefresh = false
+    private var keysByID: [String: AccountInfoKey] = [:]
 
     init(manager: any AccountInfoKeyProviding) {
         self.manager = manager
@@ -46,7 +49,7 @@ final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
         }
         do {
             let key = try await manager.loadKey(for: account)
-            initialKeyResult = .success(key)
+            cache(key)
             return key
         } catch {
             initialKeyResult = .failure(error)
@@ -56,12 +59,21 @@ final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
 
     func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey {
         guard !didAttemptForcedRefresh else {
-            throw Error.forcedRefreshAlreadyAttempted
+            throw RefreshLimitError.forcedRefreshAlreadyAttempted
         }
         didAttemptForcedRefresh = true
         let key = try await manager.refreshKey(for: account)
-        initialKeyResult = .success(key)
+        cache(key)
         return key
+    }
+
+    func cachedKey(matching keyID: String) -> AccountInfoKey? {
+        keysByID[keyID]
+    }
+
+    private func cache(_ key: AccountInfoKey) {
+        keysByID[key.kid] = key
+        initialKeyResult = .success(key)
     }
 }
 
@@ -177,24 +189,27 @@ struct AuditLogEntryDecoder {
     }
 
     private func decryptPayload(for entry: AuditLogEntry, account: SyncAccount) async throws -> PayloadDecryptionResult {
+        let keyID: String
         do {
-            guard try jweCompactCodec.protectedKeyID(in: entry.payload) != nil else {
+            guard let protectedKeyID = try jweCompactCodec.protectedKeyID(in: entry.payload) else {
                 return .unreadable(.missingKeyID)
             }
+            keyID = protectedKeyID
         } catch {
             return .unreadable(.decryptionFailed)
         }
         guard let accountInfoKeys else {
             return .unreadable(.keyUnavailable)
         }
-        let key: AccountInfoKey
+        let loadedKey: AccountInfoKey
         do {
-            key = try await accountInfoKeys.loadKey(for: account)
+            loadedKey = try await accountInfoKeys.loadKey(for: account)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
             return .unreadable(.keyUnavailable)
         }
+        let key = accountInfoKeys.cachedKey(matching: keyID) ?? loadedKey
         do {
             let data = try jweCompactCodec.decryptRSAOAEP256(token: entry.payload,
                                                             privateKey: key.privateKey,

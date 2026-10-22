@@ -265,8 +265,8 @@ struct AccountManager: AccountManaging {
                                            thirdPartyPasswordRecoveryCache: pagePasswordRecoveryCache)
         var entries = [AuditLogEntryDecodingResult]()
         entries.reserveCapacity(response.auditLog.entries.count)
-        // Historical entries can use different keys. Decode and map each one before a later entry
-        // refreshes the keys, so already-readable device details are preserved.
+        // Map each event before continuing so an unreadable snapshot does not prevent another event
+        // from using its cached third-party password.
         for entry in response.auditLog.entries {
             try Task.checkCancellation()
             entries.append(try await decoder.decode(entry, for: account))

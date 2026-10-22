@@ -60,16 +60,61 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         XCTAssertEqual(call.frequency, .dailyAndCount)
     }
 
-    func testWhenStoreCannotBeRecreatedThenDatabaseIsNilAndBothAttemptsFirePixel() throws {
-        // A regular file in the store's path means the store directory can never be created.
+    func testWhenStoreFailsToLoadForAnotherReasonThenDatabaseIsNilWithoutRecreatingIt() throws {
+        // A regular file in the store's path means the store directory can't be created, which isn't corruption.
         let blockingFile = location.appendingPathComponent("blocker")
         try Data().write(to: blockingFile)
 
         let database = PrivacyStatsDatabase(location: blockingFile.appendingPathComponent("store"), pixelFiring: pixelKit)
 
         XCTAssertNil(database)
-        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["stage": "initial"], ["stage": "retry"]])
-        XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount, .dailyAndCount])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["stage": "initial"]])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount])
+    }
+
+    func testIsCorruption() {
+        let corrupt: [Error] = [
+            NSError(domain: NSCocoaErrorDomain, code: NSFileReadCorruptFileError),
+            NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [NSSQLiteErrorDomain: NSNumber(value: 11)]),
+            NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [NSSQLiteErrorDomain: NSNumber(value: 26)]),
+            NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [NSSQLiteErrorDomain: NSNumber(value: 779)]), // SQLITE_CORRUPT_INDEX
+            NSError(domain: NSSQLiteErrorDomain, code: 11)
+        ]
+        let recoverable: [Error] = [
+            NSError(domain: NSCocoaErrorDomain, code: 256),
+            NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [NSSQLiteErrorDomain: NSNumber(value: 4618)]), // SQLITE_IOERR_SHMOPEN
+            NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [NSSQLiteErrorDomain: NSNumber(value: 13)]), // SQLITE_FULL
+            NSError(domain: NSSQLiteErrorDomain, code: 13)
+        ]
+
+        corrupt.forEach { XCTAssertTrue(PrivacyStatsDatabase.isCorruption($0), "\($0)") }
+        recoverable.forEach { XCTAssertFalse(PrivacyStatsDatabase.isCorruption($0), "\($0)") }
+    }
+
+    func testWhenUnavailablePrivacyStatsIsClearedThenStoreFilesAreDeleted() async throws {
+        let files = ["PrivacyStats.sqlite", "PrivacyStats.sqlite-wal", "PrivacyStats.sqlite-shm"].map { location.appendingPathComponent($0) }
+        try files.forEach { try Data("stats".utf8).write(to: $0) }
+
+        let result = await UnavailablePrivacyStats(storeLocation: location).clearPrivacyStats()
+
+        XCTAssertNoThrow(try result.get())
+        files.forEach { XCTAssertFalse(FileManager.default.fileExists(atPath: $0.path)) }
+    }
+
+    func testWhenUnavailablePrivacyStatsIsClearedWithNoStoreFilesThenItSucceeds() async {
+        let result = await UnavailablePrivacyStats(storeLocation: location).clearPrivacyStats()
+
+        XCTAssertNoThrow(try result.get())
+    }
+
+    func testWhenUnavailablePrivacyStatsCannotDeleteStoreFilesThenClearFails() async throws {
+        try Data("stats".utf8).write(to: location.appendingPathComponent("PrivacyStats.sqlite"))
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: location.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: location.path) }
+
+        let result = await UnavailablePrivacyStats(storeLocation: location).clearPrivacyStats()
+
+        XCTAssertThrowsError(try result.get())
     }
 
     private func assertStoreIsUsable(_ database: PrivacyStatsDatabase) throws {

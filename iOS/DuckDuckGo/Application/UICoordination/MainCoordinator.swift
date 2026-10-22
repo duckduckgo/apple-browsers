@@ -689,8 +689,11 @@ final class MainCoordinator {
     }
 
     private static func makePrivacyStats() -> PrivacyStatsProviding {
-        guard let database = PrivacyStatsDatabase() else { return UnavailablePrivacyStats() }
-        return PrivacyStats(databaseProvider: database)
+        let location = PrivacyStatsDatabase.defaultLocation
+        if let database = PrivacyStatsDatabase(location: location) {
+            return PrivacyStats(databaseProvider: database)
+        }
+        return UnavailablePrivacyStats(storeLocation: location)
     }
 
     // MARK: - Public API

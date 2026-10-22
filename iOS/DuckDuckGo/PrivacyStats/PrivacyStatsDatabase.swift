@@ -35,8 +35,8 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     private let database: CoreDataDatabase
     private let pixelFiring: (any PixelKitFiring)?
 
-    /// Stats are rebuildable, so a store that cannot be opened is deleted and recreated.
-    /// Returns `nil` if that fails too.
+    /// Stats are rebuildable, so a corrupted store is deleted and recreated. Returns `nil` for any other load error,
+    /// leaving the store in place for the next launch, or if recreating a corrupted store fails.
     init?(location: URL = PrivacyStatsDatabase.defaultLocation,
           pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.location = location
@@ -50,17 +50,44 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
         database
     }
 
+    /// Deletes the store's files. Missing files are ignored.
+    static func deleteStoreFiles(at location: URL) throws {
+        for suffix in ["", "-wal", "-shm"] {
+            do {
+                try FileManager.default.removeItem(at: location.appendingPathComponent("\(name).sqlite\(suffix)"))
+            } catch CocoaError.fileNoSuchFile {
+                continue
+            }
+        }
+    }
+
+    /// Whether a store load error means the file itself is unreadable, as opposed to an error that can clear up on its own.
+    static func isCorruption(_ error: Error) -> Bool {
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain && nsError.code == NSFileReadCorruptFileError {
+            return true
+        }
+        let sqliteCode = nsError.domain == NSSQLiteErrorDomain ? nsError.code : (nsError.userInfo[NSSQLiteErrorDomain] as? NSNumber)?.intValue
+        guard let sqliteCode else { return false }
+        // Primary result code, ignoring extended bits: SQLITE_CORRUPT (11) or SQLITE_NOTADB (26).
+        return [11, 26].contains(sqliteCode & 0xFF)
+    }
+
     private func prepareStore() -> Bool {
         do {
             try loadStore()
             return true
         } catch {
-            Logger.general.error("Could not load Privacy Stats database, recreating it: \(error.localizedDescription, privacy: .public)")
             pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, stage: .initial), frequency: .dailyAndCount)
-            deleteStoreFiles()
+            guard Self.isCorruption(error) else {
+                Logger.general.error("Could not load Privacy Stats database: \(error.localizedDescription, privacy: .public)")
+                return false
+            }
+            Logger.general.error("Privacy Stats database is corrupted, recreating it: \(error.localizedDescription, privacy: .public)")
         }
 
         do {
+            try Self.deleteStoreFiles(at: location)
             try loadStore()
             return true
         } catch {
@@ -81,13 +108,7 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
         if let loadError { throw loadError }
     }
 
-    private func deleteStoreFiles() {
-        for suffix in ["", "-wal", "-shm"] {
-            try? FileManager.default.removeItem(at: location.appendingPathComponent("\(Self.name).sqlite\(suffix)"))
-        }
-    }
-
-    private static var defaultLocation: URL {
+    static var defaultLocation: URL {
         guard let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
             fatalError("Failed to resolve application support directory")
         }
@@ -109,9 +130,10 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 enum PrivacyStatsDatabasePixel: PixelKit.Event {
 
     enum Stage: String {
-        /// The store failed to load at launch.
+        /// The store failed to load at launch. A corrupted store is then recreated; otherwise Privacy Stats is
+        /// unavailable for this session.
         case initial
-        /// The store failed to load again after it was deleted. Privacy Stats is unavailable for this session.
+        /// A corrupted store failed to load again after it was recreated. Privacy Stats is unavailable for this session.
         case retry
     }
 

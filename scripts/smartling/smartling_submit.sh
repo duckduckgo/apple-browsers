@@ -8,8 +8,8 @@ set -euo pipefail
 # to GITHUB_OUTPUT.
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --job-name <name> --pending-job-prefix <prefix> --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>] [--delete-job-on-failure]" >&2
-	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --pending-job-prefix 'Release iOS 7.200.0' --file-uri-prefix release/ios/7.200.0 --delete-job-on-failure" >&2
+	echo "Usage: $0 <iOS|macOS> --job-name <name> [--pending-job-prefix <prefix>] --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>] [--delete-job-on-failure]" >&2
+	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --file-uri-prefix release/ios/7.200.0 --delete-job-on-failure" >&2
 	exit 1
 }
 
@@ -17,7 +17,6 @@ PLATFORM="${1:-}"
 shift || true
 
 JOB_NAME=""
-PENDING_JOB_PREFIX=""
 FILE_URI_PREFIX=""
 AUTO_AUTHORIZE_MAX_USD="500.00"
 EXTRA_ARGS=()
@@ -25,7 +24,7 @@ EXTRA_ARGS=()
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--job-name) JOB_NAME="${2:-}"; shift 2 ;;
-		--pending-job-prefix) PENDING_JOB_PREFIX="${2:-}"; shift 2 ;;
+		--pending-job-prefix) EXTRA_ARGS+=(--pending-job-prefix "${2:-}"); shift 2 ;;
 		--file-uri-prefix) FILE_URI_PREFIX="${2:-}"; shift 2 ;;
 		--auto-authorize-max-usd) AUTO_AUTHORIZE_MAX_USD="${2:-}"; shift 2 ;;
 		--delete-job-on-failure) EXTRA_ARGS+=(--delete-job-on-failure); shift ;;
@@ -48,7 +47,7 @@ case "$PLATFORM" in
 		;;
 esac
 
-if [ -z "$JOB_NAME" ] || [ -z "$PENDING_JOB_PREFIX" ] || [ -z "$FILE_URI_PREFIX" ] || [ -z "$AUTO_AUTHORIZE_MAX_USD" ]; then
+if [ -z "$JOB_NAME" ] || [ -z "$FILE_URI_PREFIX" ] || [ -z "$AUTO_AUTHORIZE_MAX_USD" ]; then
 	usage
 fi
 
@@ -56,7 +55,6 @@ RESULT_FILE="${RUNNER_TEMP:-/tmp}/smartling-submit-${PLATFORM}.json"
 
 ./scripts/smartling/loc_tool.sh submit \
 	--job-name "$JOB_NAME" \
-	--pending-job-prefix "$PENDING_JOB_PREFIX" \
 	--file-uri-prefix "$FILE_URI_PREFIX" \
 	--files "${FILES[@]}" \
 	--auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD" \

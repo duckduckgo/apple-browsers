@@ -103,9 +103,19 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           platform_lowercase="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
-          release_branch_prefix="release/${platform_lowercase}/"
-          if [[ -z "$VERSION" && "$RELEASE_BRANCH" == "$release_branch_prefix"* ]]; then
-            VERSION="${RELEASE_BRANCH#"$release_branch_prefix"}"
+          # A release branch decides the version; any other branch (e.g. for testing) needs one passed in.
+          if [[ "$RELEASE_BRANCH" =~ ^release/([^/]+)/([^/]+)$ ]]; then
+            branch_platform="${BASH_REMATCH[1]}"
+            branch_version="${BASH_REMATCH[2]}"
+            if [[ "$branch_platform" != "$platform_lowercase" ]]; then
+              echo "Branch '$RELEASE_BRANCH' is a release branch for '$branch_platform', not '$platform_lowercase'." >&2
+              exit 1
+            fi
+            if [[ -n "$VERSION" && "$VERSION" != "$branch_version" ]]; then
+              echo "Version '$VERSION' doesn't match release branch '$RELEASE_BRANCH'." >&2
+              exit 1
+            fi
+            VERSION="$branch_version"
           fi
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Can't resolve a release version from version '$VERSION' and branch '$RELEASE_BRANCH'." >&2
@@ -168,8 +178,8 @@ jobs:
           set -e -o pipefail
           "./$PLATFORM/scripts/loc_export.sh" | xcbeautify
 
-      # Using the job name as the pending prefix means a rerun of code freeze finds this release's own job
-      # (awaiting authorization or not) and doesn't create a second one, while other releases' jobs are ignored.
+      # No pending-job prefix: only a job with exactly this name stops a new one, so a rerun of code freeze finds
+      # this release's own job in any state, while other releases' jobs are ignored.
       # A job left half-submitted by a failure is deleted, so that a rerun starts over instead of finding it.
       - name: Submit ${{ inputs.platform }} release strings to Smartling
         id: submit
@@ -180,7 +190,6 @@ jobs:
         run: |
           ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
             --job-name "$JOB_NAME" \
-            --pending-job-prefix "$JOB_NAME" \
             --file-uri-prefix "$FILE_URI_PREFIX" \
             --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD" \
             --delete-job-on-failure
@@ -245,7 +254,8 @@ jobs:
           echo "task_id=$task_id" >> "$GITHUB_OUTPUT"
 
       - name: Comment on the release task
-        if: steps.release-task.outputs.task_id != ''
+        # Without a status check, GitHub would add success() and skip this after a failed step.
+        if: ${{ !cancelled() && steps.release-task.outputs.task_id != '' }}
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: post-comment-asana-task

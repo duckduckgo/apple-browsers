@@ -432,6 +432,8 @@ async def run_submit(client: SmartlingClient,
                      sleep=asyncio.sleep) -> SubmitResult:
     """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd.
 
+    With a pending_job_prefix, nothing is submitted while a job whose name starts with it awaits authorization.
+    Without one, only a job named exactly job_name stops a new submission.
     With delete_job_on_failure, a job this run created is deleted if the submission fails before authorizing it,
     so a rerun with the same job name starts over instead of finding a half-submitted job.
     """
@@ -441,7 +443,7 @@ async def run_submit(client: SmartlingClient,
         pending_jobs = await client.list_jobs(
             pending_job_prefix,
             ['AWAITING_AUTHORIZATION']
-        )
+        ) if pending_job_prefix else []
         pending_job = next(
             (
                 job for job in pending_jobs
@@ -474,7 +476,10 @@ async def run_submit(client: SmartlingClient,
                 reason=f"A job named '{job_name}' already exists"
             )
 
-        log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        if pending_job_prefix:
+            log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        else:
+            log(f"🔍 No job named '{job_name}'")
 
         locales = await client.get_project_locales()
         job_id = await client.create_job(
@@ -790,7 +795,7 @@ def main():
     # Submit
     submit_parser = subparsers.add_parser('submit')
     submit_parser.add_argument('--job-name', required=True)
-    submit_parser.add_argument('--pending-job-prefix', required=True,
+    submit_parser.add_argument('--pending-job-prefix', default='',
                                help='Skip submission while a job with this name prefix awaits authorization')
     submit_parser.add_argument('--file-uri-prefix', required=True,
                                help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')

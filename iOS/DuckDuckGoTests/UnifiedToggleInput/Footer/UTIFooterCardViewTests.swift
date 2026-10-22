@@ -107,7 +107,7 @@ final class UTIFooterCardViewTests: XCTestCase {
 
         let title = try XCTUnwrap(titleLabel(in: sut))
         let subtitle = try XCTUnwrap(subtitleLabel(in: sut))
-        XCTAssertEqual(title.text, "Text exceeds the character limit 17002/16000.")
+        XCTAssertEqual(title.text, "Text exceeds the character limit 17,002/16,000.")
         XCTAssertEqual(title.font, .daxCaption1())
         XCTAssertEqual(light(title.textColor), light(UIColor(designSystemColor: .destructivePrimary)))
         XCTAssertEqual(subtitle.text, "Reduce or remove text to continue chat.")

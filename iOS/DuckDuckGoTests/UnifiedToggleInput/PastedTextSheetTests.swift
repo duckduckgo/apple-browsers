@@ -126,11 +126,11 @@ final class PastedTextSheetTests: XCTestCase {
 
         XCTAssertEqual(subtitle, PastedTextSheetSubtitle(count: 923, limit: 16_000))
         XCTAssertFalse(subtitle.isOverLimit)
-        let line = PastedTextSheetView.attributed(subtitle)
-        XCTAssertEqual(String(line.characters), "923/16000", "Plain integers, no compact 16k and no unit")
+        let line = subtitle.attributed(locale: Self.english)
+        XCTAssertEqual(String(line.characters), "923/16,000", "Whole numbers, no compact 16k and no unit")
         XCTAssertEqual(colors(in: line), [
             "923": light(.textPrimary),
-            "/16000": light(.textSecondary)
+            "/16,000": light(.textSecondary)
         ])
     }
 
@@ -140,12 +140,51 @@ final class PastedTextSheetTests: XCTestCase {
         let subtitle = try XCTUnwrap(rules.subtitle(for: String(repeating: "a", count: 16_001)))
 
         XCTAssertTrue(subtitle.isOverLimit)
-        let line = PastedTextSheetView.attributed(subtitle)
-        XCTAssertEqual(String(line.characters), "16001/16000")
+        let line = subtitle.attributed(locale: Self.english)
+        XCTAssertEqual(String(line.characters), "16,001/16,000")
         XCTAssertEqual(colors(in: line), [
-            "16001": light(.destructivePrimary),
+            "16,001": light(.destructivePrimary),
+            "/16,000": light(.textSecondary)
+        ])
+    }
+
+    func testTheCountKeepsItsColourWhenItIsAPrefixOfTheLimit() {
+        let subtitle = PastedTextSheetSubtitle(count: 16, limit: 16_000)
+
+        XCTAssertEqual(colors(in: subtitle.attributed(format: "%1$d/%2$d", locale: Self.plainDigits)), [
+            "16": light(.textPrimary),
             "/16000": light(.textSecondary)
         ])
+    }
+
+    func testTheCountKeepsItsColourWhenATranslationPutsTheLimitFirst() {
+        let subtitle = PastedTextSheetSubtitle(count: 16, limit: 16_000)
+
+        let line = subtitle.attributed(format: "%2$d / %1$d", locale: Self.plainDigits)
+
+        XCTAssertEqual(String(line.characters), "16000 / 16")
+        XCTAssertEqual(colors(in: line), [
+            "16000 / ": light(.textSecondary),
+            "16": light(.textPrimary)
+        ])
+    }
+
+    func testTheCountUsesLocaleDigitsAndStillTurnsRed() {
+        let subtitle = PastedTextSheetSubtitle(count: 16_001, limit: 16_000)
+
+        let line = subtitle.attributed(locale: Locale(identifier: "ar_EG"))
+
+        XCTAssertEqual(String(line.characters), "١٦٬٠٠١/١٦٬٠٠٠")
+        XCTAssertEqual(colors(in: line), [
+            "١٦٬٠٠١": light(.destructivePrimary),
+            "/١٦٬٠٠٠": light(.textSecondary)
+        ])
+    }
+
+    func testVoiceOverReadsTheCountAsCharactersOfTheLimitNotASlash() {
+        let subtitle = PastedTextSheetSubtitle(count: 923, limit: 16_000)
+
+        XCTAssertEqual(subtitle.accessibilityLabel(locale: Self.english), "923 of 16,000 characters")
     }
 
     func testCountAtExactlyTheLimitIsNotRed() throws {
@@ -153,7 +192,7 @@ final class PastedTextSheetTests: XCTestCase {
 
         let subtitle = try XCTUnwrap(rules.subtitle(for: String(repeating: "a", count: 16_000)))
 
-        XCTAssertEqual(colors(in: PastedTextSheetView.attributed(subtitle))["16000"], light(.textPrimary))
+        XCTAssertEqual(colors(in: subtitle.attributed(locale: Self.english))["16,000"], light(.textPrimary))
     }
 
     func testViewOnlySheetIsTitledPastedTextWithNoSubtitleAndEditableIsEditText() {
@@ -174,6 +213,9 @@ final class PastedTextSheetTests: XCTestCase {
     }
 
     private static let light = UITraitCollection(userInterfaceStyle: .light)
+    private static let english = Locale(identifier: "en_US")
+    /// POSIX formats numbers without grouping, which keeps the prefix cases readable.
+    private static let plainDigits = Locale(identifier: "en_US_POSIX")
 
     private func light(_ color: DesignSystemColor) -> UIColor {
         UIColor(designSystemColor: color).resolvedColor(with: Self.light)

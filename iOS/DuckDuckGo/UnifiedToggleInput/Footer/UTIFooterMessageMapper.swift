@@ -77,7 +77,7 @@ struct UTIFooterMessageMapper {
     func promptTooLongMessage(count: Int, limit: Int) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: .alert,
-            title: String(format: UserText.aiChatPromptTooLongTitleFormat, count, limit),
+            title: String.localizedStringWithFormat(UserText.aiChatPromptTooLongTitleFormat, count, limit),
             subtitle: UserText.aiChatPromptTooLongSubtitle,
             primaryAction: nil,
             isDismissible: false,

@@ -39,6 +39,31 @@ struct PastedTextSheetSubtitle: Equatable {
     let limit: Int
 
     var isOverLimit: Bool { count > limit }
+
+    /// Built from the format's pieces around `%1$d` so the count keeps its colour wherever a translation puts it.
+    func attributed(format: String = UserText.aiChatPastedTextCountFormat, locale: Locale = .current) -> AttributedString {
+        let pieces = format.components(separatedBy: "%1$d")
+        guard pieces.count == 2 else {
+            return Self.secondary(String(format: format, locale: locale, count, limit))
+        }
+        var countText = AttributedString(String(format: "%d", locale: locale, count))
+        countText.foregroundColor = Color(designSystemColor: isOverLimit ? .destructivePrimary : .textPrimary)
+        return Self.secondary(limitFilled(pieces[0], locale: locale)) + countText + Self.secondary(limitFilled(pieces[1], locale: locale))
+    }
+
+    func accessibilityLabel(locale: Locale = .current) -> String {
+        String(format: UserText.aiChatPastedTextCountAccessibilityFormat, locale: locale, count, limit)
+    }
+
+    private func limitFilled(_ piece: String, locale: Locale) -> String {
+        String(format: piece.replacingOccurrences(of: "%2$d", with: "%1$d"), locale: locale, limit)
+    }
+
+    private static func secondary(_ text: String) -> AttributedString {
+        var line = AttributedString(text)
+        line.foregroundColor = Color(designSystemColor: .textSecondary)
+        return line
+    }
 }
 
 struct PastedTextSheetRules: Equatable {
@@ -144,8 +169,9 @@ struct PastedTextSheetView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .accessibilityAddTraits(.isHeader)
                 if let subtitle = rules.subtitle(for: text) {
-                    Text(Self.attributed(subtitle))
+                    Text(subtitle.attributed())
                         .daxCaption1()
+                        .accessibilityLabel(subtitle.accessibilityLabel())
                         .accessibilityIdentifier("PastedTextSheet.Count")
                 }
             }
@@ -155,16 +181,6 @@ struct PastedTextSheetView: View {
         .padding(.horizontal, PastedTextSheetMetrics.headerHorizontalPadding)
         .padding(.top, PastedTextSheetMetrics.grabberHeight)
         .padding(.bottom, PastedTextSheetMetrics.headerBottomPadding)
-    }
-
-    static func attributed(_ subtitle: PastedTextSheetSubtitle) -> AttributedString {
-        let countText = String(subtitle.count)
-        var line = AttributedString(String(format: UserText.aiChatPastedTextCountFormat, subtitle.count, subtitle.limit))
-        line.foregroundColor = Color(designSystemColor: .textSecondary)
-        if let range = line.range(of: countText) {
-            line[range].foregroundColor = Color(designSystemColor: subtitle.isOverLimit ? .destructivePrimary : .textPrimary)
-        }
-        return line
     }
 }
 

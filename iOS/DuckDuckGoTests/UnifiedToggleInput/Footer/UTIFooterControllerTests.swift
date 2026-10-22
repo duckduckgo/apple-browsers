@@ -1906,7 +1906,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
         XCTAssertEqual(presenter.appliedStacks.count, appliedBefore + 1)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
-        XCTAssertEqual(sut.currentMessage?.title, "Text exceeds the character limit 16900/16000.")
+        XCTAssertEqual(sut.currentMessage?.title, "Text exceeds the character limit 16,900/16,000.")
     }
 
     func testTermsStayInEffectWhileThePromptTooLongErrorHidesThem() {

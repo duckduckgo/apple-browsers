@@ -260,6 +260,7 @@ final class BrowserToolsWireFormatTests: XCTestCase {
         XCTAssertEqual(BrowserToolFailure.invalidArguments.rawValue, "invalid_arguments")
         XCTAssertEqual(BrowserToolFailure.notFound.rawValue, "not_found")
         XCTAssertEqual(BrowserToolFailure.unavailable.rawValue, "unavailable")
+        XCTAssertEqual(BrowserToolFailure.blocked.rawValue, "blocked")
         XCTAssertEqual(BrowserToolFailure.denied.rawValue, "denied")
         XCTAssertEqual(BrowserToolFailure.cancelled.rawValue, "cancelled")
         XCTAssertEqual(BrowserToolFailure.elicitationUnsupported.rawValue, "elicitation_unsupported")

@@ -3273,7 +3273,9 @@
 		AB1E70150000000000000002 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */; };
 		AB1E70150000000000000003 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */; };
 		AB1E70160000000000000002 /* HighlightInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */; };
+		93650DC1DCEFADEDE74DAC94 /* BrowserToolOpenedTabsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784984ED61669E5B2F1E0624 /* BrowserToolOpenedTabsTests.swift */; };
 		AB1E70160000000000000003 /* HighlightInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */; };
+		B6643CD6A106B4CE67625C68 /* BrowserToolOpenedTabsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 784984ED61669E5B2F1E0624 /* BrowserToolOpenedTabsTests.swift */; };
 		AB1E70170000000000000002 /* FindInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */; };
 		AB1E70170000000000000003 /* FindInPageBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */; };
 		AB1E70180000000000000002 /* ReadTabContentBrowserToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */; };
@@ -6769,6 +6771,7 @@
 		AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatElicitationCoordinatorTests.swift; sourceTree = "<group>"; };
 		AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolCatalogChangeNotifierTests.swift; sourceTree = "<group>"; };
 		AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightInPageBrowserToolTests.swift; sourceTree = "<group>"; };
+		784984ED61669E5B2F1E0624 /* BrowserToolOpenedTabsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolOpenedTabsTests.swift; sourceTree = "<group>"; };
 		AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInPageBrowserToolTests.swift; sourceTree = "<group>"; };
 		AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadTabContentBrowserToolTests.swift; sourceTree = "<group>"; };
 		AB1E70190000000000000001 /* SearchHistoryBrowserToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchHistoryBrowserToolTests.swift; sourceTree = "<group>"; };
@@ -12689,6 +12692,7 @@
 				AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */,
 				AB1E70150000000000000001 /* BrowserToolCatalogChangeNotifierTests.swift */,
 				AB1E70160000000000000001 /* HighlightInPageBrowserToolTests.swift */,
+				784984ED61669E5B2F1E0624 /* BrowserToolOpenedTabsTests.swift */,
 				AB1E70170000000000000001 /* FindInPageBrowserToolTests.swift */,
 				AB1E70180000000000000001 /* ReadTabContentBrowserToolTests.swift */,
 				AB1E70190000000000000001 /* SearchHistoryBrowserToolTests.swift */,
@@ -17676,6 +17680,7 @@
 				AB1E70090000000000000003 /* AIChatElicitationCoordinatorTests.swift in Sources */,
 				AB1E70150000000000000003 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */,
 				AB1E70160000000000000003 /* HighlightInPageBrowserToolTests.swift in Sources */,
+				B6643CD6A106B4CE67625C68 /* BrowserToolOpenedTabsTests.swift in Sources */,
 				AB1E70170000000000000003 /* FindInPageBrowserToolTests.swift in Sources */,
 				AB1E70180000000000000003 /* ReadTabContentBrowserToolTests.swift in Sources */,
 				AB1E70190000000000000003 /* SearchHistoryBrowserToolTests.swift in Sources */,
@@ -20122,6 +20127,7 @@
 				AB1E70090000000000000002 /* AIChatElicitationCoordinatorTests.swift in Sources */,
 				AB1E70150000000000000002 /* BrowserToolCatalogChangeNotifierTests.swift in Sources */,
 				AB1E70160000000000000002 /* HighlightInPageBrowserToolTests.swift in Sources */,
+				93650DC1DCEFADEDE74DAC94 /* BrowserToolOpenedTabsTests.swift in Sources */,
 				AB1E70170000000000000002 /* FindInPageBrowserToolTests.swift in Sources */,
 				AB1E70180000000000000002 /* ReadTabContentBrowserToolTests.swift in Sources */,
 				AB1E70190000000000000002 /* SearchHistoryBrowserToolTests.swift in Sources */,

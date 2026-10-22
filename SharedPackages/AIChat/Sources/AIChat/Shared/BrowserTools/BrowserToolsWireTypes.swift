@@ -339,6 +339,9 @@ public enum BrowserToolFailure: String, Equatable, Sendable, CaseIterable {
     /// Feature or sub-feature off, tool unknown, or a Fire window — deliberately indistinguishable.
     case unavailable
 
+    /// A page could not be loaded: a navigation error or an HTTP error response.
+    case blocked
+
     /// The user refused, now or by a stored decision.
     case denied
 

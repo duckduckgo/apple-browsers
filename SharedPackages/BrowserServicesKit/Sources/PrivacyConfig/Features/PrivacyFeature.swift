@@ -610,6 +610,12 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Paints previously-found matches on a page.
     case highlightInPage
+
+    /// Opens a URL in a background tab of the owner tab's window.
+    case openTab
+
+    /// Closes a tab that `openTab` opened.
+    case closeTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

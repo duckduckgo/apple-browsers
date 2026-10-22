@@ -163,6 +163,8 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .readTabContent: .aiChatBrowserToolReadTabContent
         case .findInPage: .aiChatBrowserToolFindInPage
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
+        case .openTab: .aiChatBrowserToolOpenTab
+        case .closeTab: .aiChatBrowserToolCloseTab
         }
     }
 }

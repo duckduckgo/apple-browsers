@@ -2,11 +2,12 @@ name: Smartling - Submit
 
 # Submits one platform's strings to Smartling and authorizes the job up to a limit. Above it, the maintenance DRI
 # gets a review task.
-#   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. Fails the run on errors.
+#   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. Fails the run on errors, and a
+#            failure in Smartling also gets a task for the platform's owner.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it.
 #            Errors are reported on the release task instead of failing code freeze.
-# To test without authorizing anything, run it manually with auto_authorize_max_usd set to 0. For a release, use a
-# test branch with a fake 0.x.y version.
+# To test without authorizing anything or opening a review task, run it manually with auto_authorize_max_usd set to 0.
+# For a release, use a test branch with a fake 0.x.y version.
 on:
   workflow_call:
     inputs:
@@ -249,41 +250,46 @@ jobs:
           echo "Dry run: would submit '$JOB_NAME' with files under $FILE_URI_PREFIX/, authorized up to \$$AUTO_AUTHORIZE_MAX_USD." \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
-      # A job over the limit gets a review task. So does any nightly failure; release failures go to the release task.
-      - name: Decide on a review task
-        id: review
-        if: >-
-          always() && !cancelled() && !inputs.dry_run && steps.job.outcome == 'success' &&
-          (steps.submit.outputs.outcome == 'review_required' || failure())
+      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly submission that failed in
+      # Smartling gets a failure task. A failure before the submission (runner, Xcode, export) gets no task: the failed
+      # run is the signal. Release failures go to the release task.
+      - name: Decide on an Asana task
+        id: task
+        if: ${{ !cancelled() && steps.submit.outputs.outcome != '' }}
         env:
-          FAILED: ${{ job.status == 'failure' || steps.submit.outputs.failed == 'true' }}
+          OUTCOME: ${{ steps.submit.outputs.outcome }}
+          FAILED: ${{ steps.submit.outputs.failed }}
         run: |
-          if [[ "$KIND" == nightly || "$FAILED" != true ]]; then
-            echo "needed=true" >> "$GITHUB_OUTPUT"
+          if [[ "$FAILED" == true ]]; then
+            [[ "$KIND" != nightly ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+          elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
+            echo "kind=review" >> "$GITHUB_OUTPUT"
           fi
 
-      # For now the review task goes to a fixed person per platform while the automation beds in.
-      # Remove this step and --assignee below to assign the platform's triage DRI instead.
-      - name: Resolve ${{ inputs.platform }} review task assignee
-        id: review-assignee
-        if: ${{ !cancelled() && steps.review.outputs.needed == 'true' }}
-        continue-on-error: true  # Fall back to the triage DRI if the lookup fails.
+      # The platform's owner gets failure tasks. For now they get review tasks too while the automation beds in;
+      # remove --assignee below for review tasks to assign the platform's triage DRI instead.
+      - name: Resolve ${{ inputs.platform }} task assignee
+        id: task-assignee
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
+        continue-on-error: true  # A review task falls back to the triage DRI and a failure task to no one.
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: get-asana-user-id
           github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
           github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
 
-      # Due today in the app project's incoming section (named differently per project), assigned to the platform's triage DRI
-      # from the Asana triage rotation (on weekends, the next week's DRI), unless an assignee was resolved above.
-      - name: Open ${{ inputs.platform }} Smartling review task
-        if: ${{ !cancelled() && steps.review.outputs.needed == 'true' }}
+      # Due today in the app project's incoming section (named differently per project). A review task is assigned to the
+      # platform's triage DRI from the Asana triage rotation (on weekends, the next week's DRI), unless an assignee was
+      # resolved above. A failure task never goes to the triage DRI.
+      - name: Open ${{ inputs.platform }} Smartling ${{ steps.task.outputs.kind }} task
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          ASSIGNEE: ${{ steps.review-assignee.outputs.asanaUserId }}
-          TASK_NAME: "Smartling job needs review: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.job.outputs.job_name) }}"
+          TASK_KIND: ${{ steps.task.outputs.kind }}
+          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
+          TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.job.outputs.job_name) }}"
           TASK_NOTES: |
-            🌍 The ${{ inputs.platform }} ${{ inputs.kind }} Smartling job could not be automatically authorized.${{ inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '' }}
+            ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized. A job created before the failure is left in Smartling.', inputs.platform, inputs.kind) }}
 
             🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
             💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}
@@ -293,15 +299,15 @@ jobs:
             🔖 Commit: ${{ steps.checkout.outputs.commit || 'unavailable' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
-          assignee_args=()
-          [ -z "$ASSIGNEE" ] || assignee_args=(--assignee "$ASSIGNEE")
+          task_args=()
+          [ "$TASK_KIND" != review ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")
+          [ -z "$ASSIGNEE" ] || task_args+=(--assignee "$ASSIGNEE")
           python3 ./scripts/smartling/asana_review_task.py \
             --project "$ASANA_PROJECT_ID" \
             --section-name "$ASANA_INCOMING_SECTION_NAME" \
-            --rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID" \
             --name "$TASK_NAME" \
             --notes "$TASK_NOTES" \
-            "${assignee_args[@]}"
+            ${task_args[@]+"${task_args[@]}"}
 
       - name: Resolve release task ID
         id: release-task
@@ -333,7 +339,7 @@ jobs:
             🔁 To retry, run the "Smartling - Submit" workflow with kind release, platform ${{ inputs.platform }} and branch ${{ inputs.branch }}.
 
       # The submit script exits successfully even when Smartling fails, so the nightly run fails here, after the
-      # review task is open. Release runs report on the release task instead.
+      # failure task is open. Release runs report on the release task instead.
       - name: Fail the nightly run if the submission failed
         if: ${{ !cancelled() && inputs.kind == 'nightly' && steps.submit.outputs.failed == 'true' }}
         env:

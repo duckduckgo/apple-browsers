@@ -131,15 +131,16 @@ def review_task(client: AsanaClient, args, today: date) -> Dict:
     except Exception as error:  # pylint: disable=broad-except
         log(f"⚠️ Couldn't look up the sections: {error}")
 
-    try:
-        dri = pick_dri(client.rotation_tasks(args.rotation_section, today - timedelta(days=14)), today)
-        if dri:
-            body['assignee'] = dri['gid']
-            log(f"👤 Assigning to {dri.get('name', dri['gid'])}, the triage DRI for {today.isoformat()}")
-        else:
-            log(f"⚠️ No triage DRI scheduled for {today.isoformat()}, leaving the task unassigned")
-    except Exception as error:  # pylint: disable=broad-except
-        log(f"⚠️ Couldn't look up the triage DRI: {error}")
+    if args.rotation_section:
+        try:
+            dri = pick_dri(client.rotation_tasks(args.rotation_section, today - timedelta(days=14)), today)
+            if dri:
+                body['assignee'] = dri['gid']
+                log(f"👤 Assigning to {dri.get('name', dri['gid'])}, the triage DRI for {today.isoformat()}")
+            else:
+                log(f"⚠️ No triage DRI scheduled for {today.isoformat()}, leaving the task unassigned")
+        except Exception as error:  # pylint: disable=broad-except
+            log(f"⚠️ Couldn't look up the triage DRI: {error}")
 
     if args.assignee:
         body['assignee'] = args.assignee
@@ -152,7 +153,7 @@ def main():
     parser = argparse.ArgumentParser(description='Open the Asana task for a Smartling job that needs review')
     parser.add_argument('--project', required=True, help='Asana project to create the task in')
     parser.add_argument('--section-name', required=True, help='Section to create the task in, e.g. "Incoming: Dev Related Issues"')
-    parser.add_argument('--rotation-section', required=True, help='Asana section listing the weekly triage DRI rotation')
+    parser.add_argument('--rotation-section', help='Asana section listing the weekly triage DRI rotation; without it, only --assignee is assigned')
     parser.add_argument('--name', required=True)
     parser.add_argument('--notes', required=True, help='Plain text; "Label: value" lines get a bold label, URLs become links')
     parser.add_argument('--assignee', help='Assign to this user (GID, email or "me") instead of the triage DRI')

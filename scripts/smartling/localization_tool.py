@@ -19,7 +19,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import List, Dict, Optional
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass, field
 from urllib.parse import urlencode
 
 import aiohttp
@@ -50,16 +50,24 @@ class SubmitResult:
     failed: bool = False
 
     def as_dict(self) -> Dict:
-        return {
-            'outcome': self.outcome,
-            'job_id': self.job_id,
-            'job_name': self.job_name,
-            'total_strings': self.total_strings,
-            'locales': self.locales,
-            'max_usd': self.max_usd,
-            'reason': self.reason,
-            'failed': self.failed,
-        }
+        return asdict(self)
+
+
+@dataclass
+class ReleaseStatus:
+    """Machine-readable result for checking whether a release's files are translated."""
+    outcome: str
+    job_id: str = ""
+    job_url: str = ""
+    job_status: str = ""
+    total_strings: Optional[int] = None
+    strings_left: Optional[int] = None
+    incomplete_locales: List[str] = field(default_factory=list)
+    locales: Optional[int] = None
+    reason: str = ""
+
+    def as_dict(self) -> Dict:
+        return asdict(self)
 
 
 # ============================================================================
@@ -192,7 +200,10 @@ class SmartlingClient:
     async def get_project_locales(self) -> List[str]:
         """Get valid project locales."""
         data = await self._request('GET', f'/projects-api/v2/projects/{self.creds.project_id}')
-        return [loc['localeId'] for loc in data['response']['data']['targetLocales']]
+        return [
+            loc['localeId'] for loc in data['response']['data']['targetLocales']
+            if loc.get('enabled', True)
+        ]
 
     async def create_batch(self, job_id: str, file_uris: List[str]) -> str:
         """Create file batch."""
@@ -270,6 +281,15 @@ class SmartlingClient:
         )
         return [f['uri'] for f in data['response']['data'].get('items', [])]
 
+    async def get_file_status(self, file_uri: str) -> Dict:
+        """Get a file's string counts, in total and per locale."""
+        data = await self._request(
+            'GET',
+            f'/files-api/v2/projects/{self.creds.project_id}/file/status',
+            params={'fileUri': file_uri}
+        )
+        return data['response']['data']
+
     async def download_file(self, file_uri: str, locale: str) -> bytes:
         """Download translated file."""
         # Ensure token is valid
@@ -292,6 +312,11 @@ class SmartlingClient:
 # ============================================================================
 # CLI Commands
 # ============================================================================
+
+def error_reason(error: Exception) -> str:
+    """An error message on one line, short enough for step outputs and annotations."""
+    return str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+
 
 def log(message: str):
     """Print a progress line for CI logs."""
@@ -452,7 +477,7 @@ async def run_submit(client: SmartlingClient,
             None
         )
         if pending_job:
-            job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
+            job_id = job_uid(pending_job)
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
             # The run that left this job waiting already opened a review task, so don't open another.
             return SubmitResult(
@@ -462,16 +487,12 @@ async def run_submit(client: SmartlingClient,
                 reason=f"'{pending_job['jobName']}' is still awaiting authorization, so no new job was created"
             )
 
-        existing_jobs = await client.list_jobs(job_name, [])
-        existing_job = next(
-            (job for job in existing_jobs if job.get('jobName') == job_name),
-            None
-        )
+        existing_job = await find_job(client, job_name)
         if existing_job:
             log(f"⏭️ A job named '{job_name}' already exists")
             return SubmitResult(
                 outcome='skipped_existing_job',
-                job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
+                job_id=job_uid(existing_job),
                 job_name=job_name,
                 reason=f"A job named '{job_name}' already exists"
             )
@@ -547,7 +568,7 @@ async def run_submit(client: SmartlingClient,
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
         traceback.print_exc()
-        reason = str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+        reason = error_reason(error)
         if delete_job_on_failure and unauthorized_job_id:
             try:
                 process_id = await client.cancel_job(unauthorized_job_id)
@@ -566,6 +587,92 @@ async def run_submit(client: SmartlingClient,
             reason=reason,
             failed=True
         )
+
+
+def strings_left_per_locale(file_status: Dict, locales: List[str]) -> Dict[str, int]:
+    """Strings neither completed nor excluded, for each locale that still has some."""
+    total = int(file_status.get('totalStringCount') or 0)
+    by_locale = {item.get('localeId'): item for item in file_status.get('items') or []}
+    strings_left = {}
+    for locale in locales:
+        item = by_locale.get(locale, {})
+        done = int(item.get('completedStringCount') or 0) + int(item.get('excludedStringCount') or 0)
+        if done < total:
+            strings_left[locale] = total - done
+    return strings_left
+
+
+def job_uid(job: Dict) -> str:
+    """A job's ID, whichever field the endpoint returned it in."""
+    return job.get('translationJobUid') or job.get('jobUid', '')
+
+
+async def find_job(client: SmartlingClient, job_name: str) -> Optional[Dict]:
+    """The job named exactly job_name, if there is one."""
+    jobs = await client.list_jobs(job_name, [])
+    return next((job for job in jobs if job.get('jobName') == job_name), None)
+
+
+def failed_release_status(error: Exception, job_id: str = "", job_status: str = "") -> ReleaseStatus:
+    """Log the error and report it as the release status."""
+    log(f"❌ {error}")
+    traceback.print_exc()
+    return ReleaseStatus(outcome='error', job_id=job_id, job_status=job_status, reason=error_reason(error))
+
+
+async def run_release_status(client: SmartlingClient,
+                             job_name: str,
+                             file_uris: List[str]) -> ReleaseStatus:
+    """Report whether every string in the release files is translated in every locale."""
+    job_id = ""
+    job_status = ""
+    try:
+        job = await find_job(client, job_name)
+        if job:
+            job_id = job_uid(job)
+            job_status = job.get('jobStatus', '')
+            log(f"📋 '{job_name}' is {job_status}: {job_url(client, job_id)}")
+        else:
+            log(f"📋 No job named '{job_name}'")
+    except Exception as error:  # pylint: disable=broad-except
+        log(f"⚠️ Could not look up '{job_name}': {error}")
+
+    try:
+        locales = await client.get_project_locales()
+        total_strings = 0
+        strings_left = 0
+        incomplete_locales = set()
+        for file_uri in file_uris:
+            try:
+                file_status = await client.get_file_status(file_uri)
+            except Exception as error:  # pylint: disable=broad-except
+                raise RuntimeError(f"Could not read the status of {file_uri}: {error}") from error
+            file_total = int(file_status.get('totalStringCount') or 0)
+            left = strings_left_per_locale(file_status, locales)
+            log(
+                f"📊 {file_uri}: {file_total} strings, "
+                f"{len(locales) - len(left)} of {len(locales)} locales complete"
+            )
+            total_strings += file_total * len(locales)
+            strings_left += sum(left.values())
+            incomplete_locales.update(left)
+
+        if total_strings == 0:
+            raise RuntimeError("The release files have no strings")
+
+        outcome = 'not_ready' if strings_left else 'ready'
+        log(f"{'⏳' if strings_left else '✅'} {strings_left} of {total_strings} string translations left")
+        return ReleaseStatus(
+            outcome=outcome,
+            job_id=job_id,
+            job_status=job_status,
+            total_strings=total_strings,
+            strings_left=strings_left,
+            incomplete_locales=sorted(incomplete_locales),
+            locales=len(locales)
+        )
+    except Exception as error:  # pylint: disable=broad-except
+        return failed_release_status(error, job_id, job_status)
 
 
 def get_git_branch() -> str:
@@ -660,7 +767,7 @@ async def submit_command(args):
         traceback.print_exc()
         result = SubmitResult(
             outcome='review_required',
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            reason=error_reason(error),
             failed=True
         )
 
@@ -682,6 +789,29 @@ async def submit_command(args):
     print(f"TOTAL_STRINGS={'' if result.total_strings is None else result.total_strings}")
     print(f"LOCALES={'' if result.locales is None else result.locales}")
     print(f"MAX_USD={result.max_usd}")
+    print(f"REASON={result.reason}")
+
+
+async def release_status_command(args):
+    """Report whether a release's files are translated in every locale."""
+    try:
+        async with SmartlingClient(get_credentials(args)) as client:
+            result = await run_release_status(client, args.job_name, args.file_uris)
+            if result.job_id:
+                result.job_url = job_url(client, result.job_id)
+    except Exception as error:  # pylint: disable=broad-except
+        result = failed_release_status(error)
+
+    if result.outcome == 'error':
+        annotate('error', f"{args.job_name}: {result.reason}")
+    else:
+        annotate('notice', f"{args.job_name}: {result.outcome}")
+
+    Path(args.result_file).write_text(json.dumps(result.as_dict()), encoding='utf-8')
+    print(f"OUTCOME={result.outcome}")
+    print(f"JOB_ID={result.job_id}")
+    print(f"JOB_STATUS={result.job_status}")
+    print(f"STRINGS_LEFT={'' if result.strings_left is None else result.strings_left}")
     print(f"REASON={result.reason}")
 
 
@@ -735,28 +865,34 @@ async def download_command(args):
     out_dir.mkdir(parents=True, exist_ok=True)
 
     async with SmartlingClient(get_credentials(args)) as client:
-        job = await client.get_job(args.job_id)
-        print(f"📋 Job: {job['jobName']}")
-        print(f"📊 Status: {job['jobStatus']}")
+        if args.file_uris:
+            file_uris = args.file_uris
+            locales = await client.get_project_locales()
+            print(f"📁 Downloading {len(file_uris)} files for {len(locales)} locales")
+        else:
+            job = await client.get_job(args.job_id)
+            print(f"📋 Job: {job['jobName']}")
+            print(f"📊 Status: {job['jobStatus']}")
 
-        if job['jobStatus'] != "COMPLETED":
-            if not args.allow_unfinished:
+            if job['jobStatus'] != "COMPLETED":
+                if not args.allow_unfinished:
+                    print("DOWNLOADED=0")
+                    print(f"⚠️  Job not completed (status: {job['jobStatus']})")
+                    return
+                print(f"⚠️  Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
+
+            file_uris = await client.get_job_files(args.job_id)
+            if not file_uris:
                 print("DOWNLOADED=0")
-                print(f"⚠️  Job not completed (status: {job['jobStatus']})")
+                print("⚠️  No files found in job")
                 return
-            print(f"⚠️  Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
 
-        file_uris = await client.get_job_files(args.job_id)
-        if not file_uris:
-            print("DOWNLOADED=0")
-            print("⚠️  No files found in job")
-            return
-
-        print(f"📁 Found {len(file_uris)} files")
+            print(f"📁 Found {len(file_uris)} files")
+            locales = job['targetLocaleIds']
 
         count = 0
         for file_uri in file_uris:
-            for locale in job['targetLocaleIds']:
+            for locale in locales:
                 try:
                     data = await client.download_file(file_uri, locale)
                     file_name = Path(file_uri).name
@@ -775,6 +911,8 @@ async def download_command(args):
                     print(f"⚠️  Failed to download {file_uri} for {locale}: {e}")
 
         print(f"DOWNLOADED={count}")
+        if args.file_uris and count < len(file_uris) * len(locales):
+            raise RuntimeError(f"Downloaded {count} of {len(file_uris) * len(locales)} files")
         print(f"\n🎉 Downloaded {count} files")
 
 
@@ -806,6 +944,14 @@ def main():
                                help='Delete the job this run created if the submission fails before authorizing it')
     submit_parser.add_argument('--result-file', default='submit_result.json')
 
+    # Release status
+    release_status_parser = subparsers.add_parser('release-status')
+    release_status_parser.add_argument('--job-name', required=True,
+                                       help="The release's job, e.g. 'Release iOS 7.200.0', linked when it exists")
+    release_status_parser.add_argument('--file-uris', nargs='+', required=True,
+                                       help='The release files, e.g. release/ios/7.200.0/en.xliff')
+    release_status_parser.add_argument('--result-file', default='release_status.json')
+
     # Status
     status_parser = subparsers.add_parser('status')
     status_parser.add_argument('--job-id', required=True)
@@ -816,7 +962,10 @@ def main():
 
     # Download
     download_parser = subparsers.add_parser('download')
-    download_parser.add_argument('--job-id', required=True)
+    download_source = download_parser.add_mutually_exclusive_group(required=True)
+    download_source.add_argument('--job-id')
+    download_source.add_argument('--file-uris', nargs='+',
+                                 help="Download these files for every project locale, whatever their job's status")
     download_parser.add_argument('--out-dir', default='./downloads')
     download_parser.add_argument('--allow-unfinished', action='store_true',
                                  help='Download even if the job is not COMPLETED (defaults to False)')
@@ -830,6 +979,7 @@ def main():
     commands = {
         'upload': upload_command,
         'submit': submit_command,
+        'release-status': release_status_command,
         'status': status_command,
         'approve': approve_command,
         'download': download_command,

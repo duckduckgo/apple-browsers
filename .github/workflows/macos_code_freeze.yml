@@ -113,7 +113,9 @@ jobs:
     name: Submit Release to Smartling
     # Nothing depends on this job, so a failed submission never blocks the release.
     # The version comes from the release branch name, which covers both a given and a calculated version.
+    # Set the MACOS_SMARTLING_RELEASE_SUBMISSION repository variable to 0 to stop submitting at code freeze.
     needs: create_release_branch
+    if: vars.MACOS_SMARTLING_RELEASE_SUBMISSION != '0'
     uses: ./.github/workflows/smartling_release_submit.yml
     with:
       platform: macOS

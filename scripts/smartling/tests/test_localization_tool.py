@@ -99,7 +99,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.export_file = Path(export_dir.name) / 'en.xliff'
         self.export_file.write_text('<xliff/>', encoding='utf-8')
 
-    async def run_submit(self, client, auto_authorize_max_usd='500.00'):
+    async def run_submit(self, client, auto_authorize_max_usd='500.00', delete_job_on_failure=False):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return await LOCALIZATION_TOOL.run_submit(
                 client=client,
@@ -108,6 +108,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
                 pending_job_prefix='Nightly iOS - ',
                 file_uri_prefix='main',
                 auto_authorize_max_usd=Decimal(auto_authorize_max_usd),
+                delete_job_on_failure=delete_job_on_failure,
                 sleep=no_sleep
             )
 
@@ -237,6 +238,27 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('status FAILED', result.reason)
         self.assertTrue(result.as_dict()['failed'])
+        self.assertEqual(client.operations, [])
+
+    async def testWhenSubmissionFailsAndDeletingIsOnThenJobIsDeleted(self):
+        client = FakeSmartlingClient(estimate_status='FAILED')
+
+        result = await self.run_submit(client, delete_job_on_failure=True)
+
+        self.assertTrue(result.failed)
+        self.assertEqual((result.job_id, result.job_name), ('', ''))
+        self.assertIn('rerun starts over', result.reason)
+        self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
+
+    async def testWhenDeletingTheFailedJobFailsThenItIsKeptAndReported(self):
+        client = FakeSmartlingClient(estimate_status='FAILED', cancellation_state='FAILED')
+
+        result = await self.run_submit(client, delete_job_on_failure=True)
+
+        self.assertTrue(result.failed)
+        self.assertEqual(result.job_id, 'job-123')
+        self.assertIn('delete it before a rerun', result.reason)
+        self.assertEqual(client.operations, ['cancel:job-123'])
 
     async def testWhenEstimateTimesOutThenReviewIsRequired(self):
         client = FakeSmartlingClient(estimate_status='PROCESSING')

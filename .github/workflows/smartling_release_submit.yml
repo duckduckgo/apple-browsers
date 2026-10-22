@@ -73,6 +73,10 @@ jobs:
     timeout-minutes: 45
     # A failed submission is reported on the release task instead of failing the code freeze run.
     continue-on-error: true
+    # Runs for the same release wait for each other, so they can't both create the job.
+    concurrency:
+      group: smartling-release-${{ inputs.platform }}-${{ inputs.branch }}
+      cancel-in-progress: false
 
     env:
       PLATFORM: ${{ inputs.platform }}
@@ -166,6 +170,7 @@ jobs:
 
       # Using the job name as the pending prefix means a rerun of code freeze finds this release's own job
       # (awaiting authorization or not) and doesn't create a second one, while other releases' jobs are ignored.
+      # A job left half-submitted by a failure is deleted, so that a rerun starts over instead of finding it.
       - name: Submit ${{ inputs.platform }} release strings to Smartling
         id: submit
         if: ${{ !inputs.dry_run }}
@@ -177,7 +182,8 @@ jobs:
             --job-name "$JOB_NAME" \
             --pending-job-prefix "$JOB_NAME" \
             --file-uri-prefix "$FILE_URI_PREFIX" \
-            --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD"
+            --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD" \
+            --delete-job-on-failure
 
       - name: Print dry run result
         if: inputs.dry_run
@@ -253,4 +259,4 @@ jobs:
             ✋ Reason: ${{ steps.submit.outputs.failed == 'true' && steps.submit.outputs.reason || 'The localization export, Smartling submission or review task failed. See the workflow logs.' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            🔁 To retry, run the "Smartling - Release Submission" workflow for ${{ inputs.platform }} with branch ${{ inputs.branch }}. A rerun skips any existing job named "${{ steps.job.outputs.job_name }}", so if the failed run left one in Smartling, cancel and delete it there first.
+            🔁 To retry, run the "Smartling - Release Submission" workflow for ${{ inputs.platform }} with branch ${{ inputs.branch }}.

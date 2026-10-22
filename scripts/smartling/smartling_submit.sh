@@ -8,8 +8,8 @@ set -euo pipefail
 # to GITHUB_OUTPUT.
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --job-name <name> --pending-job-prefix <prefix> --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>]" >&2
-	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --pending-job-prefix 'Release iOS ' --file-uri-prefix release/ios/7.200.0" >&2
+	echo "Usage: $0 <iOS|macOS> --job-name <name> --pending-job-prefix <prefix> --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>] [--delete-job-on-failure]" >&2
+	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --pending-job-prefix 'Release iOS 7.200.0' --file-uri-prefix release/ios/7.200.0 --delete-job-on-failure" >&2
 	exit 1
 }
 
@@ -20,6 +20,7 @@ JOB_NAME=""
 PENDING_JOB_PREFIX=""
 FILE_URI_PREFIX=""
 AUTO_AUTHORIZE_MAX_USD="500.00"
+EXTRA_ARGS=()
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -27,6 +28,7 @@ while [ $# -gt 0 ]; do
 		--pending-job-prefix) PENDING_JOB_PREFIX="${2:-}"; shift 2 ;;
 		--file-uri-prefix) FILE_URI_PREFIX="${2:-}"; shift 2 ;;
 		--auto-authorize-max-usd) AUTO_AUTHORIZE_MAX_USD="${2:-}"; shift 2 ;;
+		--delete-job-on-failure) EXTRA_ARGS+=(--delete-job-on-failure); shift ;;
 		*) usage ;;
 	esac
 done
@@ -58,7 +60,8 @@ RESULT_FILE="${RUNNER_TEMP:-/tmp}/smartling-submit-${PLATFORM}.json"
 	--file-uri-prefix "$FILE_URI_PREFIX" \
 	--files "${FILES[@]}" \
 	--auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD" \
-	--result-file "$RESULT_FILE"
+	--result-file "$RESULT_FILE" \
+	${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
 
 outcome="$(jq -r '.outcome' "$RESULT_FILE")"
 job_id="$(jq -r '.job_id' "$RESULT_FILE")"

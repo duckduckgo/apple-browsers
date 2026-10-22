@@ -605,6 +605,7 @@ class TabViewController: UIViewController {
     }
 
     private let rulesCompilationMonitor = RulesCompilationMonitor.shared
+    private lazy var navigationDelay = AppDependencyProvider.shared.navigationDelayInstrumentation.makeTracker()
     
     private var lastRenderedURL: URL?
 
@@ -1491,6 +1492,7 @@ class TabViewController: UIViewController {
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         cancelWebExtensionNavigationWait()
+        navigationDelay.webViewAttached()
         instrumentation.willPrepareWebView()
         pageContextNavigationID = UUID()
         pageContextLoadedNavigationID = nil
@@ -2572,6 +2574,7 @@ class TabViewController: UIViewController {
             freezeMonitor.end(.closed)
         }
         rulesCompilationMonitor.tabWillClose(tabModel.uid)
+        navigationDelay.tabClosed()
         eventHub.onTabClosed(tabID: eventHubTabID)
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
@@ -3580,6 +3583,12 @@ extension TabViewController: WKNavigationDelegate {
             sitePermissionsState.cancelContentBlockingWaits()
         }
 
+        // Starts before any hold, so every wait between here and the decision counts towards the total.
+        let delayID = webView === self.webView && navigationAction.isTargetingMainFrame
+            ? navigationDelay.navigationRequested(navigationType: navigationAction.navigationType,
+                                                  url: navigationAction.request.url)
+            : nil
+
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
         // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
         // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
@@ -3594,6 +3603,9 @@ extension TabViewController: WKNavigationDelegate {
                 }
                 self?.navigationPixelResponder.willStart(navigationAction)
             }
+            if let delayID {
+                self?.navigationDelay.decisionDelivered(delayID)
+            }
             decisionHandler(decision.webKitPolicy)
         }
 
@@ -3603,17 +3615,26 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.isTargetingMainFrame,
            [.http, .https].contains(navigationAction.request.url?.navigationalScheme),
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
-            webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
+            webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate, navigationDelay] in
                 guard !Task.isCancelled else {
                     wrappedHandler(.cancel)
                     return
+                }
+                if let delayID {
+                    navigationDelay.webExtensionWaitStarted(delayID)
                 }
                 await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isTargetingMainFrame,
                                                               url: navigationAction.request.url,
                                                               initialLoadWaiter: initialLoadWaiter)
                 guard !Task.isCancelled, let self, webView === self.webView else {
+                    if let delayID {
+                        navigationDelay.webExtensionWaitEnded(delayID, outcome: .cancelled)
+                    }
                     wrappedHandler(.cancel)
                     return
+                }
+                if let delayID {
+                    navigationDelay.webExtensionWaitEnded(delayID, outcome: .ready)
                 }
                 webExtensionNavigationTask = nil
                 decidePolicyAfterWebExtensionInitialLoad(webView,
@@ -3889,7 +3910,7 @@ extension TabViewController: WKNavigationDelegate {
             isDuckDuckGoSearch: url.isDuckDuckGoSearch
         )
         if !shouldWait {
-
+            navigationDelay.contentBlockingDidNotWait(isMainFrame: isMainFrame)
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
         }
@@ -3899,12 +3920,16 @@ extension TabViewController: WKNavigationDelegate {
             if isMainFrame {
                 startContentBlockingWaitTimeoutPixel(until: userContentController.$contentBlockingAssets.filter { $0 != nil })
             }
+            let delayID = navigationDelay.contentBlockingWaitStarted(path: .legacy, isMainFrame: isMainFrame)
             // Retains the tab until assets install: tab deinit stops asset delivery and would strand WebKit's decision.
             Task {
                 rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
                 showProgressIndicator()
                 await userContentController.awaitContentBlockingAssetsInstalled()
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                if let delayID {
+                    navigationDelay.contentBlockingWaitEnded(delayID, outcome: .ready)
+                }
                 completion(true)
             }
             return true
@@ -3912,6 +3937,7 @@ extension TabViewController: WKNavigationDelegate {
 
         // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
         // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
+        let delayID = navigationDelay.contentBlockingWaitStarted(path: .sitePermissions, isMainFrame: isMainFrame)
         rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
@@ -3921,13 +3947,21 @@ extension TabViewController: WKNavigationDelegate {
         if isMainFrame {
             startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
         }
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, navigationDelay, tabID = tabModel.uid] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
+            }
+            // Report before completing: success re-enters the navigation policy delegate, which would otherwise
+            // report a zero wait first and discard this one.
+            @MainActor func finish(_ shouldContinue: Bool, outcome: NavigationDelayTracker.WaitOutcome) {
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
+                if let delayID {
+                    navigationDelay.contentBlockingWaitEnded(delayID, outcome: outcome)
+                }
+                completion(shouldContinue)
             }
             guard !Task.isCancelled else {
-                completion(false)
+                finish(false, outcome: .cancelled)
                 return
             }
             // Only readiness may reset the deadline; unrelated asset updates must not extend it.
@@ -3942,7 +3976,7 @@ extension TabViewController: WKNavigationDelegate {
             // Remove before completion: success re-enters the navigation policy delegate.
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
             guard !Task.isCancelled, isCurrentWait else {
-                completion(false)
+                finish(false, outcome: .cancelled)
                 return
             }
             if isMainFrame {
@@ -3951,7 +3985,7 @@ extension TabViewController: WKNavigationDelegate {
             if !isReady, isMainFrame {
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
-            completion(isReady)
+            finish(isReady, outcome: isReady ? .ready : .timedOut)
         }
         return true
     }

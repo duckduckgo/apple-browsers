@@ -1,0 +1,93 @@
+{
+    "m_ios_wide_navigation_delay": {
+        "description": "Wide pixel sent when the app finishes deciding a main-frame http(s) navigation: how long the decision was held before WebKit could start loading the page, split by what held it. Sent for the first navigation of each launch, the first in each new web view, and any later navigation held for at least 100ms.",
+        "owners": ["samsymons"],
+        "triggers": ["page_load", "startup", "new_tab"],
+        "suffixes": ["daily"],
+        "parameters": [
+            // Standard wide event parameters
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+
+            // Wide event type identifier
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-navigation-delay"]
+            },
+
+            // Feature identifier
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["navigation-delay"]
+            },
+
+            // Feature data
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "Why the navigation did not end in SUCCESS. FAILURE uses assets_timeout; CANCELLED uses navigation_replaced, navigation_cancelled, tab_closed or app_backgrounded; UNKNOWN uses app_terminated when an in-flight decision is recovered at the next launch.",
+                "enum": [
+                    "assets_timeout",
+                    "navigation_replaced",
+                    "navigation_cancelled",
+                    "tab_closed",
+                    "app_backgrounded",
+                    "app_terminated"
+                ]
+            },
+            {
+                "key": "feature.data.ext.navigation_scope",
+                "type": "string",
+                "description": "first_in_launch: the first main-frame http(s) navigation since launch. first_in_web_view: the first in a newly created web view. later_held: any other navigation, sent only when held for at least 100ms.",
+                "enum": ["first_in_launch", "first_in_web_view", "later_held"]
+            },
+            {
+                "key": "feature.data.ext.navigation_type",
+                "type": "string",
+                "description": "WebKit's WKNavigationType for the navigation, mapped one to one. unrecognized: a value added by a newer WebKit.",
+                "enum": ["link_activated", "form_submitted", "back_forward", "reload", "form_resubmitted", "other", "unrecognized"]
+            },
+            {
+                "key": "feature.data.ext.is_duckduckgo_search",
+                "type": "boolean",
+                "description": "True when the navigation is a DuckDuckGo search, which skips the content blocking wait by design."
+            },
+            {
+                "key": "feature.data.ext.app_state",
+                "type": "string",
+                "description": "Whether onboarding had been completed when the navigation started.",
+                "enum": ["onboarding", "regular"]
+            },
+            {
+                "keyPattern": "^feature\\.data\\.ext\\.(hold|web_extension_wait|content_blocking_wait|unattributed)_ms_bucketed$",
+                "type": "string",
+                "description": "Durations within the hold (lower end of bucket, in ms). hold: the total. web_extension_wait: the Web Extension startup hold, absent when it does not apply. content_blocking_wait: waiting for content blocking assets, 0 when no wait was needed. unattributed: the total minus the named waits.",
+                "enum": ["0", "100", "250", "500", "1000", "2500", "5000", "10000"]
+            },
+            {
+                "key": "feature.data.ext.content_blocking_wait_path",
+                "type": "string",
+                "description": "Which content blocking wait ran: legacy (site permissions off) or site_permissions (waiting for assets that include the geolocation script). Present only when a wait ran.",
+                "enum": ["legacy", "site_permissions"]
+            },
+            {
+                "key": "feature.data.ext.primary_cause",
+                "type": "string",
+                "description": "The longest part of the hold. none: the hold was under 100ms.",
+                "enum": ["none", "web_extension", "content_blocking", "unattributed"]
+            }
+        ]
+    }
+}

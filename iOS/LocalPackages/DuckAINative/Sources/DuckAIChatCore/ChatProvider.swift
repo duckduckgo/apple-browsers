@@ -120,6 +120,10 @@ public struct ProviderTurn: Equatable, Sendable {
     /// Lets the UI show "reading ~N tokens" for providers that cannot measure.
     public let estimatedInputTokens: Int
 
+    public var hasImages: Bool {
+        !attachments.isEmpty || history.contains { !$0.attachments.isEmpty }
+    }
+
     public init(conversation: ConversationID, instructions: String, history: [ProviderMessage], input: String, maxOutputTokens: Int, estimatedInputTokens: Int, attachments: [Attachment] = []) {
         self.conversation = conversation
         self.instructions = instructions

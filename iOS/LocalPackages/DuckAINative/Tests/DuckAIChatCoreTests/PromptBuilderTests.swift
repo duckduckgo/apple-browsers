@@ -39,6 +39,7 @@ import Testing
         #expect(turn.history.isEmpty)
         #expect(turn.maxOutputTokens == 512)
         #expect(turn.estimatedInputTokens > 0)
+        #expect(!turn.hasImages)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -116,6 +117,7 @@ import Testing
         var state = ChatState(conversation: Fixture.conversation, context: context, budget: Fixture.budget, availability: .ready)
         _ = state.apply(.opened(at: Fixture.time(0)))
         #expect(state.liveReply?.turn.attachments == [image])
+        #expect(state.liveReply?.turn.hasImages == true)
         let first = try #require(state.liveReply)
         _ = state.apply(.provider(first.id, .textDelta("Seen"), at: Fixture.time(1)))
         _ = state.apply(.provider(first.id, .finished(nil), at: Fixture.time(2)))
@@ -128,6 +130,20 @@ import Testing
         _ = state.apply(.providerEnded(second.id, at: Fixture.time(4)))
         _ = state.apply(.redo(at: Fixture.time(5)))
         #expect(state.liveReply?.turn == second.turn)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func textFollowupStillRequiresImagesFromHistory() throws {
+        let image = Attachment(id: "image", kind: .image(format: "jpeg"), data: Data([1]))
+        let messages: [Message] = [
+            .user(UserMessage(id: .id(1), createdAt: Fixture.time(0), parts: [.attachment(image)])),
+            .assistant(AssistantMessage(id: .id(2), createdAt: Fixture.time(1), parts: [.text("Seen")], ending: .completed(nil))),
+            .user(UserMessage(id: .id(3), createdAt: Fixture.time(2), parts: [.text("Describe it again")]))
+        ]
+        let turn = try PromptBuilder.turn(conversation: Fixture.conversation, messages: messages, budget: Fixture.budget).get()
+        #expect(turn.attachments.isEmpty)
+        #expect(turn.hasImages)
     }
 
     @available(iOS 16, macOS 13, *)

@@ -25,6 +25,7 @@ import MLXVLM
 import CoreImage
 import MLXLMCommon
 import Tokenizers
+import OSLog
 
 public final class MLXProvider: ChatProvider, Sendable {
     public let descriptor: ProviderDescriptor
@@ -69,7 +70,8 @@ public final class MLXProvider: ChatProvider, Sendable {
 
     public func prepare() async {
         guard availability == .ready, let directory = store.directory(for: model) else { return }
-        _ = try? await worker.load(model, at: directory)
+        // Keep warmup draining under the worker gate even if the caller cancels.
+        await Task { await worker.prepare(model, at: directory) }.value
     }
 
     public func unload() {
@@ -81,32 +83,8 @@ public final class MLXProvider: ChatProvider, Sendable {
             Task {
                 await worker.acquire()
                 do {
-                    try descriptor.capabilities.validate(turn: turn)
-                    guard !stop.isRaised else {
-                        continuation.finish()
-                        await worker.release()
-                        return
-                    }
-                    #if targetEnvironment(simulator)
-                    throw ChatError.modelUnavailable(reason: "MLX requires a device.")
-                    #else
-                    guard let directory = store.directory(for: model) else { throw ChatError.modelNotDownloaded }
-                    let started = ContinuousClock.now
-                    let wasLoaded = await worker.isLoaded
-                    if !wasLoaded { continuation.yield(.stage(.loadingModel(fraction: nil))) }
-                    let container = try await worker.load(model, at: directory)
-                    let loadTime = wasLoaded ? Duration.zero : started.duration(to: .now)
-                    guard !stop.isRaised else {
-                        continuation.finish()
-                        await worker.release()
-                        return
-                    }
-                    continuation.yield(.stage(.readingInput(estimatedTokens: turn.estimatedInputTokens, fraction: nil)))
-                    let stats = try await Self.generate(container: container, turn: turn, stop: stop,
-                                                        continuation: continuation, loadTime: loadTime)
-                    continuation.yield(.finished(stats))
+                    try await performReply(to: turn, stop: stop, continuation: continuation)
                     continuation.finish()
-                    #endif
                 } catch {
                     let mapped = (error as? ChatError) ?? .unknown(error.localizedDescription)
                     continuation.finish(throwing: mapped)
@@ -116,6 +94,28 @@ public final class MLXProvider: ChatProvider, Sendable {
             // A consumer disappearing must also drain prefill before stopping MLX.
             continuation.onTermination = { _ in stop.raise() }
         }
+    }
+
+    private func performReply(to turn: ProviderTurn, stop: StopSignal,
+                              continuation: AsyncThrowingStream<ProviderEvent, Error>.Continuation) async throws {
+        try descriptor.capabilities.validate(turn: turn)
+        guard !stop.isRaised else { return }
+#if targetEnvironment(simulator)
+        throw ChatError.modelUnavailable(reason: "MLX requires a device.")
+#else
+        guard let directory = store.directory(for: model) else { throw ChatError.modelNotDownloaded }
+        let family: Model.InferenceFamily = turn.hasImages ? model.inferenceFamily : .language
+        let started = ContinuousClock.now
+        let wasLoaded = await worker.isLoaded(for: family)
+        if !wasLoaded { continuation.yield(.stage(.loadingModel(fraction: nil))) }
+        let container = try await worker.load(model, family: family, at: directory)
+        let loadTime = wasLoaded ? Duration.zero : started.duration(to: .now)
+        guard !stop.isRaised else { return }
+        continuation.yield(.stage(.readingInput(estimatedTokens: turn.estimatedInputTokens, fraction: nil)))
+        let stats = try await Self.generate(container: container, turn: turn, stop: stop,
+                                            continuation: continuation, loadTime: loadTime)
+        continuation.yield(.finished(stats))
+#endif
     }
 
     private static func images(_ attachments: [DuckAIChatCore.Attachment]) throws -> [UserInput.Image] {
@@ -162,13 +162,27 @@ public final class MLXProvider: ChatProvider, Sendable {
 }
 
 private actor ModelWorker {
-    private var container: ModelContainer?
-    private var loading: Task<ModelContainer, Error>?
+    private struct LoadedModel {
+        let family: Model.InferenceFamily
+        let container: ModelContainer
+    }
+
+    private var loaded: LoadedModel?
+    private let logger = Logger(subsystem: "com.duckduckgo.nativechat", category: "MLXModel")
     private var busy = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
     private var unloadRequested = false
 
-    var isLoaded: Bool { container != nil }
+    func isLoaded(for family: Model.InferenceFamily) -> Bool {
+        guard let loaded else { return false }
+        return loaded.family == .vision || loaded.family == family
+    }
+
+    func prepare(_ model: Model, at directory: URL) async {
+        await acquire()
+        _ = try? await load(model, family: .language, at: directory)
+        release()
+    }
 
     func acquire() async {
         if busy {
@@ -187,14 +201,16 @@ private actor ModelWorker {
         }
     }
 
-    func load(_ model: Model, at directory: URL) async throws -> ModelContainer {
-        if let container { return container }
-        if let loading { return try await loading.value }
+    func load(_ model: Model, family: Model.InferenceFamily, at directory: URL) async throws -> ModelContainer {
+        if isLoaded(for: family), let loaded { return loaded.container }
+        loaded = nil
+        MLX.Memory.clearCache()
         MLX.Memory.cacheLimit = 20 * 1024 * 1024
-        let task = Task {
+        logMemory("load-start", model: model, family: family)
+        do {
             let configuration = ModelConfiguration(directory: directory, extraEOSTokens: model.extraEOSTokens)
             let container: ModelContainer
-            switch model.inferenceFamily {
+            switch family {
             case .vision:
                 container = try await VLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
                     using: TransformersTokenizerLoader(), configuration: configuration)
@@ -202,31 +218,31 @@ private actor ModelWorker {
                 container = try await LLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
                     using: TransformersTokenizerLoader(), configuration: configuration)
             }
+            logMemory("warmup-start", model: model, family: family)
             let warmUp = MLXLMCommon.ChatSession(container, generateParameters: GenerateParameters(maxTokens: 1),
                                                  additionalContext: ["enable_thinking": false])
             for try await _ in warmUp.streamDetails(to: "Hi", images: [], videos: []) {}
+            logMemory("warmup-end", model: model, family: family)
+            loaded = LoadedModel(family: family, container: container)
+            logMemory("load-end", model: model, family: family)
             return container
-        }
-        loading = task
-        do {
-            let loaded = try await task.value
-            container = loaded
-            loading = nil
-            if unloadRequested && !busy { unload() }
-            return loaded
         } catch {
-            loading = nil
-            if unloadRequested && !busy { unload() }
+            logMemory("load-failed", model: model, family: family)
             throw error
         }
     }
 
+    private func logMemory(_ phase: String, model: Model, family: Model.InferenceFamily) {
+        let memory = MLX.Memory.snapshot()
+        logger.notice("\(phase, privacy: .public) model=\(model.id, privacy: .public) family=\(String(describing: family), privacy: .public) active=\(memory.activeMemory) cache=\(memory.cacheMemory) peak=\(memory.peakMemory)")
+    }
+
     func unload() {
-        guard !busy && loading == nil else {
+        guard !busy else {
             unloadRequested = true
             return
         }
-        container = nil
+        loaded = nil
         unloadRequested = false
         MLX.Memory.clearCache()
     }

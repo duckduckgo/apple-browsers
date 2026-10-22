@@ -207,6 +207,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var nudgeHoverCancellable: AnyCancellable?
     private var nudgeAutoOpenWorkItem: DispatchWorkItem?
     private var nudgePopover: DuckAINudgePopover?
+    private var nudgePopoverClosedAt: Date?
     private let bookmarkManager: BookmarkManager
 
     var controllerMode: AddressBarViewController.Mode? {
@@ -1527,9 +1528,9 @@ final class AddressBarButtonsViewController: NSViewController {
     @objc func aiChatButtonAction(_ sender: Any) {
         guard let tab = tabViewModel?.tab else { return }
 
-        if aiChatButton == sender as? AddressBarMenuButton, nudgePopover == nil,
-           let nudge = tab.pageContext?.currentNudge, !aiChatCoordinator.isSidebarOpen(for: tab.uuid) {
-            showNudgePopover(nudge)
+        if aiChatButton == sender as? AddressBarMenuButton, tab.pageContext?.currentNudge != nil,
+           !aiChatCoordinator.isSidebarOpen(for: tab.uuid) {
+            _ = showNudgeIfAvailable()
             return
         }
         closeNudgePopover()
@@ -3419,8 +3420,12 @@ extension AddressBarButtonsViewController {
 
     /// Called by the tab bar's Duck.ai button before its own action.
     func showNudgeIfAvailable() -> Bool {
-        guard nudgePopover == nil, let tab = tabViewModel?.tab, let nudge = tab.pageContext?.currentNudge,
+        guard let tab = tabViewModel?.tab, let nudge = tab.pageContext?.currentNudge,
               !aiChatCoordinator.isSidebarOpen(for: tab.uuid) else { return false }
+        if nudgePopover != nil || nudgePopoverJustClosed {
+            closeNudgePopover()
+            return true
+        }
         showNudgePopover(nudge)
         return nudgePopover != nil
     }
@@ -3438,7 +3443,7 @@ extension AddressBarButtonsViewController {
             .removeDuplicates()
             .debounce(for: .milliseconds(350), scheduler: DispatchQueue.main)
             .sink { [weak self] isMouseOver in
-                guard let self, isMouseOver, self.nudgePopover == nil,
+                guard let self, isMouseOver, self.nudgePopover == nil, !self.nudgePopoverRecentlyClosed,
                       let tab = self.tabViewModel?.tab, let nudge = tab.pageContext?.currentNudge,
                       !self.aiChatCoordinator.isSidebarOpen(for: tab.uuid) else { return }
                 self.showNudgePopover(nudge)
@@ -3473,16 +3478,33 @@ extension AddressBarButtonsViewController {
             self?.runNudgePrompt(prompt, nudge: nudge)
         }, onDismiss: { [weak self] in
             DuckAINudgeRestraint.shared.recordDismissal(nudge.kind)
-            self?.tabViewModel?.tab.pageContext?.clearNudge()
             self?.closeNudgePopover()
         })
+        popover.onClose = { [weak self, weak popover] in
+            guard let self, self.nudgePopover === popover else { return }
+            self.nudgePopover = nil
+            self.nudgePopoverClosedAt = Date()
+        }
         nudgePopover = popover
         popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
     }
 
     private func closeNudgePopover() {
-        nudgePopover?.close()
+        guard let popover = nudgePopover else { return }
         nudgePopover = nil
+        nudgePopoverClosedAt = Date()
+        popover.close()
+    }
+
+    /// A click on the button while the callout is open first closes the callout (it's semitransient, and the
+    /// close notification arrives after the animation), so treat that click as "close" rather than reopening it.
+    private var nudgePopoverJustClosed: Bool {
+        nudgePopoverClosedAt.map { Date().timeIntervalSince($0) < 0.3 } ?? false
+    }
+
+    /// Closing the callout makes the button see the mouse enter again, which would reopen it on hover.
+    private var nudgePopoverRecentlyClosed: Bool {
+        nudgePopoverClosedAt.map { Date().timeIntervalSince($0) < 1 } ?? false
     }
 
     private func runNudgePrompt(_ prompt: DuckAINudge.Prompt, nudge: DuckAINudge) {

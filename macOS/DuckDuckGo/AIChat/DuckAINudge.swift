@@ -549,6 +549,9 @@ struct DuckAINudgeCalloutView: View {
 final class DuckAINudgePopover: NSPopover {
 
     let nudge: DuckAINudge
+    var onClose: (() -> Void)?
+    private var closeObserver: NSObjectProtocol?
+    private var escapeMonitor: Any?
 
     init(nudge: DuckAINudge, onPrompt: @escaping (DuckAINudge.Prompt) -> Void, onDismiss: @escaping () -> Void) {
         self.nudge = nudge
@@ -557,6 +560,19 @@ final class DuckAINudgePopover: NSPopover {
         animates = true
         let view = DuckAINudgeCalloutView(nudge: nudge, onPrompt: onPrompt, onDismiss: onDismiss)
         contentViewController = DuckAINudgeCalloutViewController(rootView: view)
+        closeObserver = NotificationCenter.default.addObserver(forName: NSPopover.didCloseNotification, object: self, queue: .main) { [weak self] _ in
+            self?.onClose?()
+        }
+        // The callout never becomes key, so Escape would otherwise go to the page.
+        escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.isShown, event.keyCode == 53 else { return event }
+            self.close()
+            return nil
+        }
+    }
+
+    deinit {
+        escapeMonitor.map(NSEvent.removeMonitor)
     }
 
     required init?(coder: NSCoder) {

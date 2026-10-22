@@ -27,147 +27,16 @@ concurrency:
   group: smartling-nightly
   cancel-in-progress: false
 
-env:
-  AUTO_AUTHORIZE_MAX_USD: ${{ inputs.auto_authorize_max_usd || '500.00' }}
-
 jobs:
   smartling:
-    name: ${{ matrix.platform }} nightly translation job
-    runs-on: macos-26
-    timeout-minutes: 45
+    name: ${{ matrix.platform }} nightly
     strategy:
       fail-fast: false
       matrix:
         platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
-
-    steps:
-      - name: Register SSH keys for private repos
-        uses: webfactory/ssh-agent@v0.10.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
-
-      - name: Check out the code
-        uses: actions/checkout@v6
-        with:
-          submodules: recursive
-
-      - name: Validate Smartling write branch
-        id: write_branch_check
-        env:
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-        run: |
-          if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
-            echo "Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
-            exit 1
-          fi
-
-      - name: Resolve platform configuration
-        env:
-          PLATFORM: ${{ matrix.platform }}
-        run: |
-          case "$PLATFORM" in
-            iOS)
-              {
-                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
-                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
-                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
-                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
-                echo "ASANA_INCOMING_SECTION_NAME=Incoming"
-                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210869535563575"
-                echo "REVIEW_TASK_GITHUB_ASSIGNEE=pballart"
-              } >> "$GITHUB_ENV"
-              ;;
-            macOS)
-              {
-                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
-                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
-                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
-                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
-                echo "ASANA_INCOMING_SECTION_NAME=Incoming: Dev Related Issues"
-                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210871971126998"
-                echo "REVIEW_TASK_GITHUB_ASSIGNEE=andremartingo"
-              } >> "$GITHUB_ENV"
-              ;;
-            *)
-              echo "Unknown platform: $PLATFORM" >&2
-              exit 1
-              ;;
-          esac
-
-      - name: Select Xcode
-        uses: ./.github/actions/select-xcode-version
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.11'
-
-      - name: Install Python dependencies
-        run: pip install aiohttp
-
-      - name: Install xmlstarlet
-        if: matrix.platform == 'macOS'
-        run: brew install xmlstarlet
-
-      - name: Export localizations
-        id: export
-        run: |
-          set -e -o pipefail
-          ./${{ matrix.platform }}/scripts/loc_export.sh | xcbeautify
-
-      - name: Submit ${{ matrix.platform }} strings to Smartling
-        id: submit
-        env:
-          PLATFORM: ${{ matrix.platform }}
-        run: |
-          ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
-            --job-name "Nightly $PLATFORM - $(date -u +%Y-%m-%d)" \
-            --pending-job-prefix "Nightly $PLATFORM - " \
-            --file-uri-prefix main \
-            --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD"
-
-      # For now the review task goes to a fixed person per platform while the automation beds in.
-      # Remove this step and --assignee below to assign the platform's triage DRI instead.
-      - name: Resolve ${{ matrix.platform }} review task assignee
-        id: review-assignee
-        if: >-
-          always() &&
-          steps.write_branch_check.outcome != 'failure' &&
-          (failure() || steps.submit.outputs.outcome == 'review_required')
-        continue-on-error: true  # Fall back to the triage DRI if the lookup fails.
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
-        with:
-          action: get-asana-user-id
-          github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
-          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
-
-      # Due today in the app project's incoming section (named differently per project), assigned to the platform's triage DRI
-      # from the Asana triage rotation (on weekends, the next week's DRI), unless an assignee was resolved above.
-      - name: Open ${{ matrix.platform }} Smartling review task
-        if: >-
-          always() &&
-          steps.write_branch_check.outcome != 'failure' &&
-          (failure() || steps.submit.outputs.outcome == 'review_required')
-        env:
-          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          ASSIGNEE: ${{ steps.review-assignee.outputs.asanaUserId }}
-          TASK_NAME: "Smartling job needs review: ${{ steps.submit.outputs.job_name || format('Nightly {0} (no job created)', matrix.platform) }}"
-          TASK_NOTES: |
-            🌍 The ${{ matrix.platform }} nightly Smartling job could not be automatically authorized.
-
-            🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
-            💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}
-            📝 String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}
-            ✋ Reason: ${{ steps.submit.outputs.reason || 'Localization export or Smartling submission failed' }}
-            🔖 Commit: ${{ github.sha }}
-            ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          assignee_args=()
-          [ -z "$ASSIGNEE" ] || assignee_args=(--assignee "$ASSIGNEE")
-          python3 ./scripts/smartling/asana_review_task.py \
-            --project "$ASANA_PROJECT_ID" \
-            --section-name "$ASANA_INCOMING_SECTION_NAME" \
-            --rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID" \
-            --name "$TASK_NAME" \
-            --notes "$TASK_NOTES" \
-            "${assignee_args[@]}"
+    uses: ./.github/workflows/smartling_submit.yml
+    with:
+      kind: nightly
+      platform: ${{ matrix.platform }}
+      auto_authorize_max_usd: ${{ inputs.auto_authorize_max_usd || '500.00' }}
+    secrets: inherit

@@ -127,8 +127,9 @@ jobs:
     # Set the IOS_SMARTLING_RELEASE_SUBMISSION repository variable to 0 to stop submitting at code freeze.
     needs: create_release_branch
     if: vars.IOS_SMARTLING_RELEASE_SUBMISSION != '0'
-    uses: ./.github/workflows/smartling_release_submit.yml
+    uses: ./.github/workflows/smartling_submit.yml
     with:
+      kind: release
       platform: iOS
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
       asana_task_url: ${{ needs.create_release_branch.outputs.asana_task_url }}

@@ -40,7 +40,7 @@ final class HoveredLinkTooltipPresenter {
     private var windowObservers = [NSObjectProtocol]()
     private var appearanceObservation: NSKeyValueObservation?
 
-    init(hostView: NSView, backgroundColor: NSColor,
+    init(hostView: NSView, backgroundColor: NSColor, isAccessibilityIdentifierEnabled: Bool = false,
          makeWindow: () -> NSWindow = { HoveredLinkTooltipWindow(contentRect: .zero, styleMask: .borderless, backing: .buffered, defer: true) },
          mouseLocation: @escaping () -> NSPoint = { NSEvent.mouseLocation },
          animate: @escaping (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void = { window, opacity, duration, completion in
@@ -97,7 +97,9 @@ final class HoveredLinkTooltipPresenter {
         window.isReleasedWhenClosed = false
         window.animationBehavior = .none
         window.collectionBehavior = [.transient, .ignoresCycle, .fullScreenAuxiliary]
-        window.setAccessibilityIdentifier("HoveredLinkTooltip.window")
+        if isAccessibilityIdentifierEnabled {
+            window.setAccessibilityIdentifier("HoveredLinkTooltip.window")
+        }
     }
 
     deinit {

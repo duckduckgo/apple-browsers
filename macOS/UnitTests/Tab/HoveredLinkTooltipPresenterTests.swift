@@ -272,6 +272,18 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         }
     }
 
+    func testWhenAccessibilityIdentifierIsNotEnabledThenWindowHasNoTestIdentifier() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        XCTAssertEqual(harness.tooltip?.accessibilityIdentifier(), "")
+    }
+
+    func testWhenAccessibilityIdentifierIsEnabledThenWindowExposesTestIdentifier() {
+        let harness = TooltipHarness(isAccessibilityIdentifierEnabled: true)
+        harness.showFirstLink()
+        XCTAssertEqual(harness.tooltip?.accessibilityIdentifier(), "HoveredLinkTooltip.window")
+    }
+
     func testWhenReturningToNonLinkThenWebKitExitCancelsRestoration() {
         let harness = TooltipHarness()
         harness.showFirstLink()
@@ -407,7 +419,7 @@ private final class TooltipHarness {
     var tooltip: NSWindow? { parent.childWindows?.first }
     var label: NSTextField? { (tooltip?.contentView as? NSBox)?.contentView?.subviews.first as? NSTextField }
 
-    init() {
+    init(isAccessibilityIdentifierEnabled: Bool = false) {
         _ = NSApplication.shared
         parent = TooltipParentWindow(contentRect: NSRect(x: 100, y: 200, width: 700, height: 400),
                                      styleMask: .borderless, backing: .buffered, defer: false)
@@ -418,6 +430,7 @@ private final class TooltipHarness {
         let scheduler = scheduler
         let animator = animator
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
+                                               isAccessibilityIdentifierEnabled: isAccessibilityIdentifierEnabled,
                                                makeWindow: { TooltipTestWindow() }, mouseLocation: { pointer.location },
                                                animate: animator.animate, move: animator.move, schedule: scheduler.schedule)
     }

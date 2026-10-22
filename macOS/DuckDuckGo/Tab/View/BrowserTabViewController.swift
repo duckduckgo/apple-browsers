@@ -50,7 +50,11 @@ final class BrowserTabViewController: NSViewController {
 
     private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground))
     private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
-    private lazy var hoveredLinkTooltip = HoveredLinkTooltipPresenter(hostView: view, backgroundColor: NSColor(resource: .browserTabBackground))
+    private lazy var hoveredLinkTooltip = HoveredLinkTooltipPresenter(
+        hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
+        isAccessibilityIdentifierEnabled: [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)
+            && featureFlagger.isFeatureOn(.hoveredLinkTooltipAccessibilityIdentifier)
+    )
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager

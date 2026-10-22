@@ -1,0 +1,203 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "Sent when the app finishes deciding a main-frame http(s) navigation: how long the decision was held before WebKit could start loading the page, from decidePolicyFor until the decision reached WebKit, split by what held it. Sent only when the navigation was held: a wait ran and the hold lasted at least 1ms. Covers the first navigation of each launch, the first in each new web view, and any later navigation held for more than 100ms.",
+    "$comment": "{\"owners\":[\"samsymons\"]}",
+    "type": "object",
+    "required": ["meta", "global", "feature", "app"],
+    "additionalProperties": false,
+    "properties": {
+        "meta": {
+            "type": "object",
+            "required": ["type", "version"],
+            "additionalProperties": false,
+            "properties": { "type": { "const": "ios-navigation-delay" }, "version": { "const": "1.0.0" } }
+        },
+        "app": {
+            "type": "object",
+            "required": ["name", "version"],
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "description": "The name of the application",
+                    "enum": ["DuckDuckGo", "DuckDuckGo-Alpha", "DuckDuckGo-Experimental", "PacketTunnelProvider"]
+                },
+                "version": { "type": "string", "description": "The version of the application", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+                "form_factor": { "type": "string", "description": "The form factor of the device", "enum": ["phone", "tablet"] }
+            }
+        },
+        "global": {
+            "type": "object",
+            "required": ["platform", "type", "sample_rate"],
+            "additionalProperties": false,
+            "properties": {
+                "platform": { "type": "string", "description": "The platform the app is running on", "enum": ["iOS"] },
+                "type": { "type": "string", "description": "The type of application", "enum": ["app"] },
+                "sample_rate": { "type": "number", "description": "Sample rate for this event", "minimum": 0, "maximum": 1 },
+                "is_first_daily_occurrence": {
+                    "type": "boolean",
+                    "description": "Whether this is the first occurrence of this event today. Only included when true."
+                }
+            }
+        },
+        "feature": {
+            "type": "object",
+            "required": ["name", "status", "data"],
+            "additionalProperties": false,
+            "properties": {
+                "name": { "type": "string", "description": "The feature name for this event", "enum": ["navigation-delay"] },
+                "status": {
+                    "type": "string",
+                    "description": "The overall status of the operation",
+                    "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+                },
+                "data": {
+                    "type": "object",
+                    "required": ["ext"],
+                    "additionalProperties": false,
+                    "properties": {
+                        "ext": {
+                            "type": "object",
+                            "additionalProperties": false,
+                            "properties": {
+                                "status_reason": {
+                                    "type": "string",
+                                    "description": "Why the navigation did not end in SUCCESS. assets_timeout (FAILURE): the site permissions wait timed out and an error page was shown. navigation_replaced (CANCELLED): another main-frame navigation or a new web view replaced this one during the decision. navigation_cancelled (CANCELLED): a hold was cancelled, for example by Stop or a web content process termination. tab_closed (CANCELLED): the tab closed during the decision. app_backgrounded (CANCELLED): the app moved to the background during the decision. app_terminated (UNKNOWN): the process ended during the decision; completed at the next launch, without durations.",
+                                    "enum": [
+                                        "assets_timeout",
+                                        "navigation_replaced",
+                                        "navigation_cancelled",
+                                        "tab_closed",
+                                        "app_backgrounded",
+                                        "app_terminated"
+                                    ]
+                                },
+                                "navigation_scope": {
+                                    "type": "string",
+                                    "description": "Which navigation this is. first_in_launch: the first main-frame http(s) navigation since launch, in any tab. first_in_web_view: the first in a newly created web view, such as a new tab or a replacement after a web content process termination. later_held: any other navigation, sent only when held for more than 100ms.",
+                                    "enum": ["first_in_launch", "first_in_web_view", "later_held"]
+                                },
+                                "navigation_type": {
+                                    "type": "string",
+                                    "description": "WebKit's WKNavigationType for the navigation, mapped one to one. unrecognized: a value added by a newer WebKit.",
+                                    "enum": [
+                                        "link_activated",
+                                        "form_submitted",
+                                        "back_forward",
+                                        "reload",
+                                        "form_resubmitted",
+                                        "other",
+                                        "unrecognized"
+                                    ]
+                                },
+                                "is_duckduckgo_search": {
+                                    "type": "boolean",
+                                    "description": "True when the navigation is a DuckDuckGo search, which skips the content blocking wait by design."
+                                },
+                                "app_state": {
+                                    "type": "string",
+                                    "description": "Whether onboarding had been completed when the navigation started.",
+                                    "enum": ["onboarding", "regular"]
+                                },
+                                "hold_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Total time from decidePolicyFor until the decision reached WebKit (upper end of bucket, in ms; 10000+ above 10s). Absent for app_terminated.",
+                                    "enum": [
+                                        "0",
+                                        "100",
+                                        "200",
+                                        "300",
+                                        "400",
+                                        "500",
+                                        "600",
+                                        "700",
+                                        "800",
+                                        "900",
+                                        "1000",
+                                        "2500",
+                                        "5000",
+                                        "10000",
+                                        "10000+"
+                                    ]
+                                },
+                                "web_extension_wait_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Time held by the Web Extension startup hold (upper end of bucket, in ms; 10000+ above 10s). Absent when the hold does not apply, such as below iOS 18.4.",
+                                    "enum": [
+                                        "0",
+                                        "100",
+                                        "200",
+                                        "300",
+                                        "400",
+                                        "500",
+                                        "600",
+                                        "700",
+                                        "800",
+                                        "900",
+                                        "1000",
+                                        "2500",
+                                        "5000",
+                                        "10000",
+                                        "10000+"
+                                    ]
+                                },
+                                "content_blocking_wait_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Time waiting for content blocking assets, including the geolocation script when site permissions is on (upper end of bucket, in ms; 10000+ above 10s). 0 when the check passed without waiting. Absent when the check did not run.",
+                                    "enum": [
+                                        "0",
+                                        "100",
+                                        "200",
+                                        "300",
+                                        "400",
+                                        "500",
+                                        "600",
+                                        "700",
+                                        "800",
+                                        "900",
+                                        "1000",
+                                        "2500",
+                                        "5000",
+                                        "10000",
+                                        "10000+"
+                                    ]
+                                },
+                                "content_blocking_wait_path": {
+                                    "type": "string",
+                                    "description": "Which content blocking wait ran. legacy: site permissions off. site_permissions: site permissions on, waiting for assets that include the geolocation script. Present only when a wait ran.",
+                                    "enum": ["legacy", "site_permissions"]
+                                },
+                                "unattributed_ms_bucketed": {
+                                    "type": "string",
+                                    "description": "Total hold minus the named waits (upper end of bucket, in ms; 10000+ above 10s). A value other than 0 points to a hold that is not instrumented.",
+                                    "enum": [
+                                        "0",
+                                        "100",
+                                        "200",
+                                        "300",
+                                        "400",
+                                        "500",
+                                        "600",
+                                        "700",
+                                        "800",
+                                        "900",
+                                        "1000",
+                                        "2500",
+                                        "5000",
+                                        "10000",
+                                        "10000+"
+                                    ]
+                                },
+                                "primary_cause": {
+                                    "type": "string",
+                                    "description": "The longest part of the hold.",
+                                    "enum": ["web_extension", "content_blocking", "unattributed"]
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

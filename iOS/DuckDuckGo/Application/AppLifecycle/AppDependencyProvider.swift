@@ -67,6 +67,7 @@ protocol DependencyProvider {
     var connectionErrorObserver: ConnectionErrorObserver { get }
     var vpnSettings: VPNSettings { get }
     var wideEvent: WideEventManaging { get }
+    var navigationDelayInstrumentation: NavigationDelayInstrumentation { get }
     var freeTrialConversionService: FreeTrialConversionInstrumentationService { get }
     var subscriptionManager: any SubscriptionManager { get }
     var tokenHandlerProvider: any SubscriptionTokenHandling { get }
@@ -161,6 +162,7 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let wideEvent: WideEventManaging
+    let navigationDelayInstrumentation: NavigationDelayInstrumentation
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
@@ -272,6 +274,7 @@ final class AppDependencyProvider: DependencyProvider {
             }(),
             featureFlagProvider: WideEventFeatureFlagAdapter(featureFlagger: featureFlagger)
         )
+        navigationDelayInstrumentation = NavigationDelayInstrumentation(wideEvent: wideEvent)
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)
 

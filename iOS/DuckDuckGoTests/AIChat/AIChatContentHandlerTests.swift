@@ -31,6 +31,7 @@ import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 @testable import Core
 
+@MainActor
 final class AIChatContentHandlerTests: XCTestCase {
 
     var handler: AIChatContentHandler!
@@ -311,6 +312,85 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(url, mockSettings.aiChatURL)
     }
 
+    func testBuildQueryURLWithNilQueryOmitsAutoSendFlowAndTools() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+
+        let url = handler.buildQueryURL(query: nil, autoSend: true, flowType: .mobileAppOnboarding, tools: [.webSearch, .newsSearch])
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.promptQueryName })
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.flowQueryName })
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.toolChoiceName })
+    }
+
+    func testOpeningQueryPreservesNilAndEmptyURLSemanticsWithAttachments() {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+        var urls: [URL] = []
+        let queries: [String?] = [nil, ""]
+        for query in queries {
+            let opening = AIChatOpeningRequest.Query(query: query, autoSend: true, flowType: .mobileAppOnboarding,
+                                                      tools: tools, modelId: nil, reasoningEffort: nil,
+                                                      attachments: AIChatPromptAttachments(images: [.init(data: "image", format: "png")]), termsAccepted: false)
+            XCTAssertNotNil(opening.sharedPrompt)
+            let url = opening.url(using: handler)
+            XCTAssertEqual(url, handler.buildQueryURL(query: query, autoSend: true, flowType: .mobileAppOnboarding, tools: tools))
+            urls.append(url)
+        }
+        XCTAssertNotEqual(urls[0], urls[1])
+    }
+
+    func testBuildQueryURLWithEmptyQueryPreservesAutoSendFlowAndTools() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+
+        let url = handler.buildQueryURL(query: "", autoSend: true, flowType: .mobileAppOnboarding, tools: tools)
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.promptQueryName })
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.autoSubmitPromptQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.autoSubmitPromptQueryName, value: AIChatURLParameters.autoSubmitPromptQueryValue)
+        ])
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.flowQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.flowQueryName, value: AIChatURLParameters.mobileAppOnboardingFlowQueryValue)
+        ])
+        let toolItems = queryItems.filter { $0.name == AIChatURLParameters.toolChoiceName }
+        XCTAssertEqual(toolItems.count, tools.count)
+        XCTAssertEqual(toolItems.compactMap(\.value).sorted(), tools.map(\.rawValue).sorted())
+    }
+
+    func testBuildQueryURLWithoutAutoSendPreservesQueryFlowAndTools() throws {
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
+        mockUnifiedToggleInputFeature.isAvailable = false
+        mockIPadDuckAIControlsFeature.isAvailable = false
+        let query = "hello world"
+        let tools: [AIChatRAGTool] = [.webSearch, .newsSearch]
+
+        let url = handler.buildQueryURL(query: query, autoSend: false, flowType: .mobileAppOnboarding, tools: tools)
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let queryItems = components.queryItems ?? []
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.promptQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.promptQueryName, value: query)
+        ])
+        XCTAssertNil(queryItems.first { $0.name == AIChatURLParameters.autoSubmitPromptQueryName })
+        XCTAssertEqual(queryItems.filter { $0.name == AIChatURLParameters.flowQueryName }, [
+            URLQueryItem(name: AIChatURLParameters.flowQueryName, value: AIChatURLParameters.mobileAppOnboardingFlowQueryValue)
+        ])
+        let toolItems = queryItems.filter { $0.name == AIChatURLParameters.toolChoiceName }
+        XCTAssertEqual(toolItems.count, tools.count)
+        XCTAssertEqual(toolItems.compactMap(\.value).sorted(), tools.map(\.rawValue).sorted())
+    }
+
     func testBuildQueryURLWithNativeInputAvailableAddsNativeInputParameter() throws {
         mockSettings.aiChatURL = URL(string: "https://duck.ai")!
         mockUnifiedToggleInputFeature.isAvailable = true
@@ -462,14 +542,104 @@ final class AIChatContentHandlerTests: XCTestCase {
     
     // MARK: - Submit Actions
 
-    func testReplacingUserScriptCancelsPreviousPendingTabSubmission() {
+    func testReplacingRealScriptPreservesDeliveryAndInvalidatesOldBridge() async throws {
+        let session = AIChatInitialPromptSession()
+        let previous = connectedScript(session)
+        let webView = WKWebView()
+        handler.setup(with: previous, webView: webView, displayMode: .fullTab)
+        let prompt = AIChatNativePrompt.queryPrompt("preserved", autoSubmit: true)
+        session.install(AIChatInitialPromptDelivery(prompt: prompt) {})
+        let oldPull = try XCTUnwrap(previous.handler(forMethodNamed: "getAIChatNativePrompt"))
+
+        let replacement = connectedScript(session)
+        handler.setup(with: replacement, webView: webView, displayMode: .fullTab)
+        let stale = try await oldPull([:], .mock())
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+
+        XCTAssertNil(stale)
+        XCTAssertEqual(actual, prompt)
+        XCTAssertNil(previous.webView)
+    }
+
+    func testExplicitCancellationOfRealScriptCancelsSession() {
+        let session = AIChatInitialPromptSession()
+        let script = connectedScript(session)
+        handler.setup(with: script, webView: WKWebView(), displayMode: .fullTab)
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("cancelled", autoSubmit: true)) {}
+        session.install(delivery)
+
+        handler.cancelPendingTabContextSubmission()
+
+        XCTAssertNil(delivery.consume())
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
+    }
+
+    func testRepeatedSetupOfSameScriptPreservesConnection() async throws {
+        let session = AIChatInitialPromptSession()
+        let script = connectedScript(session)
+        let webView = WKWebView()
+        handler.setup(with: script, webView: webView, displayMode: .fullTab)
+        let prompt = AIChatNativePrompt.queryPrompt("preserved", autoSubmit: true)
+        session.install(AIChatInitialPromptDelivery(prompt: prompt) {})
+
+        handler.setup(with: script, webView: webView, displayMode: .fullTab)
+        script.connectInitialPromptSession(session)
+        let pull = try XCTUnwrap(script.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+
+        XCTAssertEqual(actual, prompt)
+        XCTAssertTrue(script.webView === webView)
+    }
+
+    func testNewChatCancelsRealSessionBeforeAwaitingPageContext() async {
+        let session = AIChatInitialPromptSession()
+        let script = connectedScript(session)
+        let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("cancelled", autoSubmit: true)) {}
+        session.install(delivery)
+        var didRequestContext = false
+        let contentHandler = AIChatContentHandler(
+            aiChatSettings: MockAIChatSettingsProvider(isAutomaticContextAttachmentEnabled: true),
+            payloadHandler: mockPayloadHandler,
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery(),
+            productSurfaceTelemetry: mockProductSurfaceTelemetry,
+            freeTrialConversionService: mockFreeTrialConversionService,
+            onboardingActivationRecorder: mockOnboardingActivationRecorder,
+            statisticsLoader: StatisticsLoader(fireSearchExperimentPixels: {}),
+            getPageContext: { _ in
+                didRequestContext = true
+                XCTAssertFalse(session.isProtectedFromCacheEviction)
+                XCTAssertNil(delivery.consume())
+                return nil
+            })
+        contentHandler.setup(with: script, webView: WKWebView(), displayMode: .fullTab)
+
+        await contentHandler.submitStartChatAction()
+
+        XCTAssertTrue(didRequestContext)
+        XCTAssertFalse(session.isProtectedFromCacheEviction)
+    }
+
+    private func connectedScript(_ session: AIChatInitialPromptSession) -> AIChatUserScript {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs])
+        let nativeHandler = AIChatUserScriptHandler(
+            experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+        let script = AIChatUserScript(handler: nativeHandler, debugSettings: MockAIChatDebugSettingsForTests())
+        script.connectInitialPromptSession(session)
+        return script
+    }
+
+    func testReplacingUserScriptCleansUpPreviousPendingTabSubmission() {
         let previous = MockAIChatUserScript()
         let webView = WKWebView()
         handler.setup(with: previous, webView: webView, displayMode: .contextual)
 
         handler.setup(with: MockAIChatUserScript(), webView: webView, displayMode: .contextual)
 
-        XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 1)
+        XCTAssertEqual(previous.cleanUpForReplacementCallCount, 1)
+        XCTAssertEqual(previous.cancelPendingTabContextSubmissionCallCount, 0)
     }
 
     func testCancellationIsForwardedToUserScript() {
@@ -681,8 +851,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         )
 
         handler.submitPrompt("Summarize queued page",
-                             images: nil,
-                             files: nil,
+                             attachments: .none,
                              modelId: nil,
                              tools: nil,
                              pageContext: pageContext,
@@ -692,6 +861,34 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "Summarize queued page")
         XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.title, "Queued Page")
         XCTAssertEqual(mockUserScript.lastSubmittedPageContext?.url, "https://example.com/queued")
+    }
+
+    func testSubmitPasteOnlyRichPromptForwardsThePasteWithEmptyText() {
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)
+        let paste = AIChatNativePrompt.NativePromptPastedText(content: String(repeating: "a", count: 4_000))
+
+        handler.submitPrompt("", attachments: AIChatPromptAttachments(textPasted: [paste]), modelId: nil, tools: nil, pageContext: nil, reasoningEffort: nil)
+
+        XCTAssertEqual(mockUserScript.lastSubmittedPrompt, "")
+        XCTAssertEqual(mockUserScript.lastSubmittedAttachments?.textPasted, [paste])
+    }
+
+    func testBuildQueryURLWithEmptyQueryCarriesNoPromptParameter() throws {
+        let url = handler.buildQueryURL(query: "", autoSend: true, flowType: .default, tools: nil)
+
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertNil(components.queryItems?.first { $0.name == AIChatURLParameters.promptQueryName }, "A paste-only prompt travels in the payload, never in the URL")
+    }
+
+    func testSubmitRichPromptForwardsAttachmentsUnchanged() {
+        let mockUserScript = MockAIChatUserScript()
+        handler.setup(with: mockUserScript, webView: WKWebView(), displayMode: .contextual)
+        let file = AIChatNativePrompt.NativePromptFile(data: "ZmlsZQ==", fileName: "a.pdf", mimeType: "application/pdf")
+
+        handler.submitPrompt("Read this", attachments: AIChatPromptAttachments(images: [], files: [file]), modelId: nil, tools: nil, pageContext: nil, reasoningEffort: nil)
+
+        XCTAssertEqual(mockUserScript.lastSubmittedAttachments, AIChatPromptAttachments(images: [], files: [file]))
     }
     
     // MARK: - Delegate Notifications
@@ -876,8 +1073,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var submitPromptCallCount = 0
     var lastSubmittedPrompt: String?
     var lastSubmittedPageContext: AIChatPageContextData?
+    var lastSubmittedAttachments: AIChatPromptAttachments?
     var submitStartChatActionCallCount = 0
     var cancelPendingTabContextSubmissionCallCount = 0
+    var cleanUpForReplacementCallCount = 0
     var submitOpenSettingsActionCallCount = 0
     var submitToggleSidebarActionCallCount = 0
     var submitOpenChatProtectionActionCallCount = 0
@@ -927,8 +1126,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     }
 
     func submitPrompt(_ prompt: String,
-                      images: [AIChatNativePrompt.NativePromptImage]?,
-                      files: [AIChatNativePrompt.NativePromptFile]?,
+                      attachments: AIChatPromptAttachments,
                       modelId: String?,
                       tools: [AIChatRAGTool]?,
                       pageContext: AIChatPageContextData?,
@@ -939,6 +1137,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitPromptCallCount += 1
         lastSubmittedPrompt = prompt
         lastSubmittedPageContext = pageContext
+        lastSubmittedAttachments = attachments
     }
 
     func submitStartChatAction() {
@@ -947,6 +1146,10 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
 
     func cancelPendingTabContextSubmission() {
         cancelPendingTabContextSubmissionCallCount += 1
+    }
+
+    func cleanUpForReplacement() {
+        cleanUpForReplacementCallCount += 1
     }
 
     func submitOpenSettingsAction() {
@@ -1006,7 +1209,11 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getAIChats(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
-    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    @MainActor func connectInitialPromptSession(_ session: AIChatInitialPromptSession) {}
+    @MainActor func disconnectInitialPromptSession() {}
+    @MainActor func captureInitialPromptWait() -> (@MainActor () async -> Bool)? { nil }
+    @MainActor func cancelInitialPrompt() {}
     func termsAcceptedMarker(for prompt: AIChatNativePrompt) -> Bool? { nil }
     func responseReceived(params: Any, message: any UserScriptMessage) async -> (any Encodable)? { nil }
     func voiceSessionStarted(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

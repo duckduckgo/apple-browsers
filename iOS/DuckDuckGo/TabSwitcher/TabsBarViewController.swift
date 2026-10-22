@@ -1163,13 +1163,14 @@ extension MainViewController: TabsBarDelegate {
         
         selectTab(tab)
         if switchesTab {
+            recordDirectTabSelection(of: tab)
             showKeyboardOnNewTabPageIfAllowed()
         }
     }
     
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int) {
         if let tab = tabManager.currentTabsModel.get(tabAt: index) {
-            closeTab(tab, refreshInPlace: true)
+            closeTabOnUserRequest(tab, refreshInPlace: true)
         }
     }
 
@@ -1216,6 +1217,7 @@ extension MainViewController: TabsBarDelegate {
     }
 
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController) {
+        recordUserOpenedTab()
         newTab()
     }
     
@@ -1236,18 +1238,21 @@ extension MainViewController: TabsBarDelegate {
 
     func tabsBarDidRequestNewFireTab(_ controller: TabsBarViewController) {
         recordDuckAISessionPendingExit(.fireTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.fire, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewNormalTab(_ controller: TabsBarViewController) {
         recordDuckAISessionPendingExit(.newTabOpened)
+        recordUserOpenedTab()
         tabManager.setBrowsingMode(.normal, source: .longPressTabsIcon)
         newTab()
     }
 
     func tabsBarDidRequestNewChat(_ controller: TabsBarViewController) {
-        newChatLongPressMenuAction()
+        recordUserOpenedTab()
+        openNewChatTabFromLongPressMenu()
     }
 
     func tabsBarDidRequestAIChat(_ controller: TabsBarViewController) {

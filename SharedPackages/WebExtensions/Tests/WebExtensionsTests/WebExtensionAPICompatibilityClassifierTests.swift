@@ -141,15 +141,24 @@ final class WebExtensionAPICompatibilityClassifierTests: XCTestCase {
 
     func testWhenWebKitDropsAPermission_ThenItIsListed() {
         let manifest: [String: Any] = [
-            "permissions": ["storage", "privacy", "idle", "https://*/*", "<all_urls>"],
-            "optional_permissions": ["notifications", "*://example.com/*"],
+            "permissions": ["storage", "tabGroups", "https://*/*", "<all_urls>"],
+            "optional_permissions": ["debugger", "*://example.com/*"],
             "host_permissions": ["https://example.com/*"]
         ]
 
         let dropped = WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: manifest,
-                                                                                webKitPermissions: ["storage", "idle"])
+                                                                                webKitPermissions: ["storage"])
 
-        XCTAssertEqual(dropped, ["notifications", "privacy"])
+        XCTAssertEqual(dropped, ["debugger", "tabGroups"])
+    }
+
+    /// `notifications` only has an inert stub, so it is still listed.
+    func testWhenTheScriptOrAppImplementsADroppedPermission_ThenItIsNotListed() {
+        let manifest: [String: Any] = ["permissions": ["idle", "offscreen", "privacy", "notifications"]]
+
+        XCTAssertEqual(
+            WebExtensionAPICompatibilityClassifier.droppedPermissions(inManifest: manifest, webKitPermissions: []),
+            ["notifications"])
     }
 
     func testWhenWebKitKeepsEveryPermission_ThenNothingIsListed() {

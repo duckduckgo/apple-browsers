@@ -233,6 +233,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         return selection
     }
 
+    @MainActor
     func testSubmittingWithAttachedSelectionsConsumesThem() {
         let userScript = makeConnectedUserScript()
         var consumedIDs: [String] = []
@@ -243,16 +244,18 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         XCTAssertEqual(consumedIDs, [selection.id])
     }
 
+    @MainActor
     func testMultiModalSubmitAlsoConsumesAttachedSelections() {
         let userScript = makeConnectedUserScript()
         var didConsume = false
         attach(userScript) { _ in didConsume = true }
 
-        userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
+        userScript.submitPrompt("hello", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
 
         XCTAssertTrue(didConsume)
     }
 
+    @MainActor
     func testSubmittingWithNothingAttachedDoesNotConsume() {
         let userScript = makeConnectedUserScript()
         var didConsume = false
@@ -265,6 +268,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
     }
 
     /// Consuming a dropped push would clear the chips for a prompt that was never sent.
+    @MainActor
     func testSubmittingWithoutABridgeDoesNotConsume() {
         let userScript = makeTestUserScript()
         var didConsume = false
@@ -275,12 +279,13 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         XCTAssertFalse(didConsume)
     }
 
+    @MainActor
     func testMultiModalSubmitWithoutABridgeDoesNotConsume() {
         let userScript = makeTestUserScript()
         var didConsume = false
         attach(userScript) { _ in didConsume = true }
 
-        userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
+        userScript.submitPrompt("hello", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
 
         XCTAssertFalse(didConsume)
     }

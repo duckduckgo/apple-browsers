@@ -37,7 +37,7 @@ struct NewTabPageSearchInputView: View {
                     .padding(.horizontal, Metrics.cardPadding)
             }
             NewTabPageRestingSearchField(textEntryMode: model.textEntryMode,
-                                        isAIChatButtonShown: model.settings.isAIChatEnabled && !model.settings.isModeToggleShown,
+                                        isAIChatButtonShown: model.isAIChatButtonShown,
                                         isVoiceSearchEnabled: model.settings.isVoiceSearchEnabled,
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch)
@@ -91,6 +91,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         // Give the non-editable placeholder a VoiceOver action without intercepting trailing buttons.
         let activateButton = context.coordinator.activateButton
         activateButton.searchView = view
+        activateButton.accessibilityIdentifier = "searchEntry"
         view.addSubview(activateButton)
         activateButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -103,6 +104,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         view.aiChatButton.addTarget(context.coordinator, action: #selector(Coordinator.activateAIChat), for: .touchUpInside)
         view.voiceSearchButton.addTarget(context.coordinator, action: #selector(Coordinator.activateVoiceSearch), for: .touchUpInside)
         view.aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        view.aiChatButton.accessibilityIdentifier = "Browser.OmniBar.Button.AIChat"
         view.voiceSearchButton.accessibilityLabel = UserText.settingsVoiceSearch
         return view
     }
@@ -165,7 +167,7 @@ private enum Metrics {
 
 #Preview("Toggle shown") {
     NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
-        .init(isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+        .init(isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
     }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })
@@ -175,7 +177,7 @@ private enum Metrics {
 
 #Preview("Search only") {
     NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
-        .init(isModeToggleShown: false, isAIChatEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
+        .init(isModeToggleShown: false, isAIChatShortcutEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
     }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })

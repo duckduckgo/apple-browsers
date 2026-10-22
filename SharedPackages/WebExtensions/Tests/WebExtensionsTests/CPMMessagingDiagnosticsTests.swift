@@ -26,49 +26,24 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
 
     typealias Name = CPMMessagingDiagnostics.ParameterName
 
-    func testEmptyDiagnosticsOnlyCarryDefaults() {
-        let parameters = CPMMessagingDiagnostics().pixelParameters
-
-        XCTAssertEqual(parameters, [
-            Name.memoryPressureCritical: "none",
-            Name.extensionContextErrors: "none"
-        ])
-    }
-
     func testWhenRecorderIsRecreatedThenAppLaunchAgeDoesNotReset() {
         var date = Date(timeIntervalSince1970: 1000)
         let session = CPMAppSessionDiagnostics(appVersionChange: nil, launchDate: date)
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date }, appSession: session)
-        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "30s")
+        XCTAssertEqual(recorder.snapshot().secondsSinceAppLaunch, 0)
         date += 60
         let replacement = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date }, appSession: session)
-        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "2m")
-        XCTAssertEqual(replacement.snapshot().pixelParameters["app_launch_age"], "2m")
-        XCTAssertNil(replacement.snapshot().pixelParameters["app_version_change"])
+        XCTAssertEqual(recorder.snapshot().secondsSinceAppLaunch, 60)
+        XCTAssertEqual(replacement.snapshot().secondsSinceAppLaunch, 60)
+        XCTAssertNil(replacement.snapshot().appVersionChange)
     }
 
-    func testWhenAppWasUpdatedThenSnapshotIncludesOnlyVersionChangeAndBucket() {
+    func testWhenAppWasUpdatedThenSnapshotKeepsSessionFacts() {
         let date = Date(timeIntervalSince1970: 1000)
         let session = CPMAppSessionDiagnostics(appVersionChange: .updated, launchDate: date)
         let recorder = CPMMessagingDiagnosticsRecorder(tabResolver: { _ in nil }, observesMemoryPressure: false, now: { date }, appSession: session)
-        XCTAssertEqual(recorder.snapshot().pixelParameters["app_version_change"], "updated")
-        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "30s")
-    }
-
-    func testWhenParameterNamesAreSerializedThenUsesCompactKeys() {
-        XCTAssertEqual([
-            Name.extensionContextLoaded, Name.memoryPressureCritical, Name.networkProcessRestarted,
-            Name.extensionContextErrors, Name.backgroundViewCreateCount, Name.backgroundViewAlive,
-            Name.backgroundViewLeakedCount, Name.backgroundWebProcessAlive, Name.tabKnownToWebKit,
-            Name.nativeMessageHandlerRegistered, Name.tabControllerMatchesContext, Name.tabHasExtensionUserScripts,
-            Name.backgroundWebProcessResponsive, Name.backgroundGraveyardTreatmentEnabled, Name.backgroundEvents
-        ], [
-            "context_loaded", "critical_memory_age", "network_restarted",
-            "context_errors", "bg_view_creations", "bg_view_alive",
-            "bg_view_leaked_count", "bg_process_alive", "tab_in_context",
-            "handler_registered", "tab_controller_match", "tab_has_ext_scripts",
-            "bg_process_responsive", "background_graveyard_enabled", "bg_events"
-        ])
+        XCTAssertEqual(recorder.snapshot().appVersionChange, .updated)
+        XCTAssertEqual(recorder.snapshot().secondsSinceAppLaunch, 0)
     }
 
     func testBackgroundEventsDropOldestEntriesToFitTheCap() {
@@ -113,67 +88,34 @@ final class CPMMessagingDiagnosticsTests: XCTestCase {
         XCTAssertEqual(value, "view@30s,died_crash@30s,view@30s")
     }
 
-    func testMemoryPressureIsBucketed() {
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(nil), "none")
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(0), "1m")
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(59.9), "1m")
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(60), "5m")
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(299), "5m")
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(300), "30m")
-        XCTAssertEqual(CPMMessagingDiagnostics.memoryPressureBucket(1800), "over_30")
+    func testBackgroundReadinessBucketsCoverTheGraceAndUnloadBoundaries() {
+        let times: [TimeInterval] = [0, 0.999, 1, 3.999, 4, 9.999, 10, 29.999, 30]
+        XCTAssertEqual(times.map { CPMMessagingDiagnostics.readinessValue(.loaded(secondsAfterViewCreation: $0)) },
+                       ["under_1s", "under_1s", "1s_to_4s", "1s_to_4s", "4s_to_10s", "4s_to_10s", "10s_to_30s", "10s_to_30s", "over_30s"])
+        XCTAssertEqual([CPMBackgroundReadiness.noBackground, .pending, .failed].map(CPMMessagingDiagnostics.readinessValue),
+                       ["none", "pending", "failed"])
     }
 
-    func testCountsAreBucketed() {
-        XCTAssertEqual(CPMMessagingDiagnostics.countBucket(0), "0")
-        XCTAssertEqual(CPMMessagingDiagnostics.countBucket(1), "1")
-        XCTAssertEqual(CPMMessagingDiagnostics.countBucket(2), "2")
-        XCTAssertEqual(CPMMessagingDiagnostics.countBucket(3), "3_to_5")
-        XCTAssertEqual(CPMMessagingDiagnostics.countBucket(5), "3_to_5")
-        XCTAssertEqual(CPMMessagingDiagnostics.countBucket(6), "over_5")
+    func testBackgroundAgeAndLoadErrorBucketsAtEveryBoundary() {
+        XCTAssertEqual([0, 3.999, 4, 7.999, 8, 29.999, 30, 119.999, 120].map(CPMMessagingDiagnostics.backgroundViewAgeBucket),
+                       ["under_4s", "under_4s", "4s_to_8s", "4s_to_8s", "8s_to_30s", "8s_to_30s", "30s_to_2m", "30s_to_2m", "over_2m"])
+        XCTAssertEqual([0, 4.999, 5, 24.999, 25, 34.999, 35].map(CPMMessagingDiagnostics.loadErrorDelayBucket),
+                       ["under_5s", "under_5s", "5s_to_25s", "5s_to_25s", "25s_to_35s", "25s_to_35s", "over_35s"])
     }
 
-    func testFullDiagnosticsRenderEveryParameter() {
+    func testLoadErrorFieldsRequireAnAttributedErrorAndOmitUnknownFacts() {
         var diagnostics = CPMMessagingDiagnostics()
-        diagnostics.extensionContextLoaded = true
-        diagnostics.secondsSinceCriticalMemoryPressure = 30
-        diagnostics.networkProcessRestarted = true
-        diagnostics.extensionContextErrors = ["background_failed_to_load:NSURLErrorDomain:-1100"]
-        diagnostics.backgroundWebViewCreateCount = 4
-        diagnostics.backgroundWebViewAlive = true
-        diagnostics.leakedBackgroundWebViewCount = 1
-        diagnostics.backgroundWebProcessAlive = false
-        diagnostics.tabKnownToWebKit = false
-        diagnostics.nativeMessageHandlerRegistered = false
-        diagnostics.tabControllerMatchesContext = false
-        diagnostics.tabHasExtensionUserScripts = false
-        diagnostics.backgroundWebProcessResponsive = false
-        diagnostics.backgroundGraveyardTreatmentEnabled = true
-        diagnostics.backgroundEvents = [
-            .init(token: "load", secondsBeforeSnapshot: 600.4),
-            .init(token: "view", secondsBeforeSnapshot: 599),
-            .init(token: "died_crash", secondsBeforeSnapshot: 42),
-            .init(token: "error_background_failed_to_load:NSURLErrorDomain:-1100", secondsBeforeSnapshot: 41.6),
-        ]
-
-        XCTAssertEqual(diagnostics.pixelParameters, [
-            Name.backgroundWebProcessResponsive: "false",
-            Name.backgroundGraveyardTreatmentEnabled: "true",
-            Name.backgroundEvents: "load@15m,view@15m,died_crash@1m,error_background_failed_to_load:nsurlerrordomain:-1100@1m",
-            Name.extensionContextLoaded: "true",
-            Name.memoryPressureCritical: "1m",
-            Name.networkProcessRestarted: "true",
-            Name.extensionContextErrors: "background_failed_to_load:NSURLErrorDomain:-1100",
-            Name.backgroundViewCreateCount: "3_to_5",
-            Name.backgroundViewAlive: "true",
-            Name.backgroundViewLeakedCount: "1",
-            Name.backgroundWebProcessAlive: "false",
-            Name.tabKnownToWebKit: "false",
-            Name.nativeMessageHandlerRegistered: "false",
-            Name.tabControllerMatchesContext: "false",
-            Name.tabHasExtensionUserScripts: "false"
-        ])
+        diagnostics.backgroundLoadErrorAppState = .background
+        diagnostics.secondsFromBackgroundViewToLoadError = 30
+        for errorPresent in [nil, false, true] as [Bool?] {
+            diagnostics.hasBackgroundLoadError = errorPresent
+            let expected = errorPresent == true ? [Name.backgroundLoadErrorAppState: "background", Name.backgroundLoadErrorAfter: "25s_to_35s"] : [:]
+            XCTAssertEqual(diagnostics.backgroundLoadParameters, expected)
+        }
+        diagnostics.backgroundLoadErrorAppState = nil
+        diagnostics.secondsFromBackgroundViewToLoadError = nil
+        XCTAssertTrue(diagnostics.backgroundLoadParameters.isEmpty)
     }
-
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -191,13 +133,13 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         recorder.extensionDidUpdate(type: .embedded)
         let context = try await makeContext()
         recorder.contextWillLoad(context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters["bg_events"], "extension_updated@30s,load@30s")
-        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "2m")
+        XCTAssertEqual(episodeParameters(recorder.snapshot())["bg_events"], "extension_updated@30s,load@30s")
+        XCTAssertEqual(recorder.snapshot().secondsSinceAppLaunch, 60)
 
         date += 60
         recorder.contextWillLoad(context)
-        XCTAssertEqual(recorder.snapshot().pixelParameters["bg_events"], "extension_updated@2m,load@30s")
-        XCTAssertEqual(recorder.snapshot().pixelParameters["app_launch_age"], "5m")
+        XCTAssertEqual(episodeParameters(recorder.snapshot())["bg_events"], "extension_updated@2m,load@30s")
+        XCTAssertEqual(recorder.snapshot().secondsSinceAppLaunch, 120)
     }
 
     func testWhenOtherExtensionUpdatesOrCPMReloadsThenNoUpdateEventIsAdded() async throws {
@@ -223,7 +165,7 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         let replacement = try await makeContext()
         replacement.baseURL = try XCTUnwrap(URL(string: "webkit-extension://second/"))
         recorder.contextWillLoad(replacement)
-        XCTAssertEqual(recorder.snapshot().pixelParameters["bg_events"], "load@30s,base_url_changed@30s")
+        XCTAssertEqual(episodeParameters(recorder.snapshot())["bg_events"], "load@30s,base_url_changed@30s")
 
         recorder.contextWillLoad(replacement)
         XCTAssertEqual(recorder.snapshot().backgroundEvents.map(\.token), ["load"])
@@ -353,7 +295,7 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         let snapshot = recorder.snapshot()
         XCTAssertEqual(snapshot.backgroundEvents.last?.token, "extension_files_remove_failed_FilesError:13")
         XCTAssertEqual(snapshot.extensionContextLoaded, false)
-        let payload = snapshot.pixelParameters.values.joined()
+        let payload = episodeParameters(snapshot).values.joined()
         XCTAssertFalse(payload.contains("private"))
     }
 
@@ -514,4 +456,9 @@ final class CPMMessagingDiagnosticsRecorderTests: XCTestCase {
         context.uniqueIdentifier = "cpm-diagnostics-test"
         return context
     }
+}
+
+private func episodeParameters(_ diagnostics: CPMMessagingDiagnostics) -> [String: String] {
+    CPMMessagingEpisodeReport(reason: .other, wasStuck: false, outcome: .failedMeasurementResponse,
+                              reloadState: .none, secondsToResponse: 0, diagnostics: diagnostics, failedTabCount: 1, repeatedFailureCount: 0, wasInterrupted: false).pixelParameters
 }

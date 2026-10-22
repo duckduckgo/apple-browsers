@@ -31,6 +31,8 @@ import XCTest
 @MainActor
 final class AIChatUserScriptMultiTabTests: XCTestCase {
     private let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs])
+    private weak var releasedScript: AIChatUserScript?
+    private let initialPromptSession = AIChatInitialPromptSession()
     private let webView = PromptRecordingWebView()
     private let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
     private let pixelKitMock = PixelKitMock()
@@ -151,7 +153,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Legacy prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
 
         XCTAssertTrue(submitted, "Legacy submission remains synchronous")
         await fulfillment(of: [delivered], timeout: 1)
@@ -169,7 +171,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
         featureFlagger.enabledFeatureFlags = []
         gate.resume([context(tabId: "other")])
@@ -193,7 +195,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Prompt dispatched without additional contexts")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         featureFlagger.enabledFeatureFlags = []
         await fulfillment(of: [delivered], timeout: 1)
 
@@ -221,7 +223,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Rich prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("hello", images: images, files: files, modelId: "model", tools: [.webSearch], reasoningEffort: .high)
+        script.submitPrompt("hello", attachments: AIChatPromptAttachments(images: images, files: files), modelId: "model", tools: [.webSearch], reasoningEffort: .high)
         await fulfillment(of: [gate.started], timeout: 1)
         XCTAssertFalse(consumed)
         XCTAssertFalse(submitted)
@@ -232,7 +234,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         await fulfillment(of: [delivered], timeout: 1)
 
         XCTAssertEqual(webView.prompts.last, .queryPrompt(
-            "hello", autoSubmit: true, toolChoice: [AIChatRAGTool.webSearch.rawValue], images: images, files: files,
+            "hello", autoSubmit: true, toolChoice: [AIChatRAGTool.webSearch.rawValue], attachments: AIChatPromptAttachments(images: images, files: files),
             modelId: "model", pageContext: .multiple([page, tab]), selections: [selection], reasoningEffort: .high))
         XCTAssertEqual(consumedSelections, [selection.id])
         XCTAssertTrue(consumed)
@@ -266,9 +268,9 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         delivered.expectedFulfillmentCount = 2
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("first", images: nil, modelId: nil)
+        script.submitPrompt("first", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
-        script.submitPrompt("second", images: nil, modelId: nil)
+        script.submitPrompt("second", attachments: .none, modelId: nil)
         XCTAssertTrue(webView.prompts.isEmpty)
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
         gate.resume([])
@@ -286,7 +288,9 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
     }
 
     func testFrontendNewChatDropsLateResult() async {
-        await assertLateResultIsDropped { _ = $0.handler(forMethodNamed: AIChatUserScriptMessages.newChatStarted.rawValue) }
+        await assertLateResultIsDropped(waitForCancellation: true) { script in
+            _ = script.handler(forMethodNamed: AIChatUserScriptMessages.newChatStarted.rawValue)
+        }
     }
 
     func testNewChatDiscardsQueuedPromptsAndDoesNotWaitForOldProvider() async {
@@ -303,9 +307,9 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
                 return []
             }, didConsume: { XCTFail("Queued request consumed") })
         }
-        script.submitPrompt("old", images: nil, modelId: nil)
+        script.submitPrompt("old", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
-        script.submitPrompt("queued", images: nil, modelId: nil)
+        script.submitPrompt("queued", attachments: .none, modelId: nil)
 
         script.submitStartChatAction()
         requestProvider = nil
@@ -330,7 +334,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         requestProvider = {
             MultiTabAttachmentRequest(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() })
         }
-        script?.submitPrompt("old", images: nil, modelId: nil)
+        script?.submitPrompt("old", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
 
         script = nil
@@ -364,7 +368,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
             }, didConsume: { unexpected.fulfill() })
         }
 
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         await fulfillment(of: [provided], timeout: 1)
         await fulfillment(of: [unexpected], timeout: 0.1)
 
@@ -416,18 +420,14 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertTrue(submissions.isEmpty)
 
         let original = makeScript()
-        original.setInitialTabAttachmentPrompt(delivery)
-        original.detachInitialTabAttachmentPromptForUserScriptReplacement()
-        original.cancelPendingTabContextSubmission()
+        initialPromptSession.install(delivery)
+        original.cleanUpForReplacement()
 
         let intermediate = makeScript()
-        intermediate.setInitialTabAttachmentPrompt(delivery)
-        intermediate.detachInitialTabAttachmentPromptForUserScriptReplacement()
-        intermediate.cancelPendingTabContextSubmission()
+        intermediate.cleanUpForReplacement()
 
         let replacement = makeScript()
         defer { replacement.cancelPendingTabContextSubmission() }
-        replacement.setInitialTabAttachmentPrompt(delivery)
         let handler = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
         let result = try await handler([:], .mock()) as? AIChatNativePrompt
         let duplicate = try await handler([:], .mock())
@@ -471,14 +471,12 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         var consumptionCount = 0
         let delivery = AIChatInitialPromptDelivery(prompt: prompt) { consumptionCount += 1 }
         let script = makeScript()
-        script.setInitialTabAttachmentPrompt(delivery)
+        initialPromptSession.install(delivery)
         let handler = try XCTUnwrap(script.handler(forMethodNamed: "getAIChatNativePrompt"))
         let result = try await handler([:], .mock()) as? AIChatNativePrompt
 
-        script.detachInitialTabAttachmentPromptForUserScriptReplacement()
-        script.cancelPendingTabContextSubmission()
+        script.cleanUpForReplacement()
         let replacement = makeScript()
-        replacement.setInitialTabAttachmentPrompt(delivery)
         let replacementHandler = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
         let duplicate = try await replacementHandler([:], .mock())
 
@@ -495,7 +493,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("captured", autoSubmit: true)) {
             XCTFail("Stopped prompt must not be consumed")
         }
-        script.setInitialTabAttachmentPrompt(delivery)
+        initialPromptSession.install(delivery)
         let cancelled = expectation(description: "Stop cancels prepared delivery")
         let waiter = Task {
             let result = await delivery.waitUntilConsumed()
@@ -548,14 +546,14 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         var initialWasConsumed = false
         let first = AIChatNativePrompt.queryPrompt("first", autoSubmit: true, pageContext: .multiple([context(tabId: "submitted")]))
         let delivery = AIChatInitialPromptDelivery(prompt: first) { initialWasConsumed = true }
-        script.setInitialTabAttachmentPrompt(delivery)
+        initialPromptSession.install(delivery)
         defer { script.cancelPendingTabContextSubmission() }
         let unexpected = expectation(description: "Subsequent prompt does not push before initial pull")
         unexpected.isInverted = true
         webView.onPrompt = { _ in unexpected.fulfill() }
         let collected = expectation(description: "Subsequent prompt collects contexts after initial pull")
 
-        script.submitPrompt("second", images: nil, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
+        script.submitPrompt("second", attachments: .none, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
             XCTAssertTrue(initialWasConsumed)
             collected.fulfill()
             return []
@@ -580,14 +578,14 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("first", autoSubmit: true), consumptionTimeout: 0.05) {
             XCTFail("Timed-out initial prompt must not be consumed")
         }
-        script.setInitialTabAttachmentPrompt(delivery)
+        initialPromptSession.install(delivery)
         defer { script.cancelPendingTabContextSubmission() }
         let pushed = expectation(description: "Queued prompts dispatched after initial pull times out")
         pushed.expectedFulfillmentCount = 2
         webView.onPrompt = { _ in pushed.fulfill() }
 
-        script.submitPrompt("second", images: nil, modelId: nil, tools: nil, tabAttachmentRequest: nil)
-        script.submitPrompt("third", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("second", attachments: .none, modelId: nil, tools: nil, tabAttachmentRequest: nil)
+        script.submitPrompt("third", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [] }, didConsume: {}))
 
         await fulfillment(of: [pushed], timeout: 1)
@@ -610,13 +608,12 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let unexpected = expectation(description: "Cancelled ordinary submission does not dispatch or consume")
         unexpected.isInverted = true
         webView.onPrompt = { _ in unexpected.fulfill() }
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() },
                                                         cancel: { released.fulfill() }))
         await fulfillment(of: [gate.started], timeout: 1)
 
-        script.detachInitialTabAttachmentPromptForUserScriptReplacement()
-        script.cancelPendingTabContextSubmission()
+        script.cleanUpForReplacement()
         await fulfillment(of: [released], timeout: 1)
         gate.resume([context(tabId: "submitted")])
         await fulfillment(of: [unexpected], timeout: 0.1)
@@ -630,7 +627,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         requestProvider = { XCTFail("Submitted request must not read a later draft"); return nil }
         let delivered = expectation(description: "Captured prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [attached] }, didConsume: {}))
         await fulfillment(of: [delivered], timeout: 1)
         XCTAssertEqual(webView.prompts.last?.pageContext, .multiple([attached]))
@@ -646,7 +643,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let delivered = expectation(description: "Current tab prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
 
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [currentTab] }, didConsume: {},
                                                         didDispatch: reporter.makeTabSubmissionReporter(requestedTabCount: 1)))
         await fulfillment(of: [delivered], timeout: 1)
@@ -662,7 +659,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let attached = context(tabId: "submitted")
         let delivered = expectation(description: "Prompt dispatched without invalidated context")
         webView.onPrompt = { _ in delivered.fulfill() }
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [attached] }, didConsume: {}, validate: { _ in [] }))
         await fulfillment(of: [delivered], timeout: 1)
         XCTAssertNil(webView.prompts.last?.pageContext)
@@ -672,7 +669,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let script = makeScript()
         script.broker = nil
         let released = expectation(description: "Unavailable dispatch releases request")
-        script.submitPrompt("captured", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("captured", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { [self.context(tabId: "other")] },
                                                         didConsume: { XCTFail("Missing broker must not consume") },
                                                         cancel: { released.fulfill() }))
@@ -684,7 +681,7 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         let gate = ContextGate(started: expectation(description: "Provider started"))
         let released = expectation(description: "Provider cancelled")
         released.assertForOverFulfill = false
-        script.submitPrompt("cancelled", images: nil, modelId: nil, tools: nil,
+        script.submitPrompt("cancelled", attachments: .none, modelId: nil, tools: nil,
                             tabAttachmentRequest: .init(contexts: { await gate.wait() },
                                                         didConsume: { XCTFail("Cancelled request must not consume") },
                                                         cancel: { released.fulfill() }))
@@ -741,8 +738,225 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
+    func testDestroyingOriginalScriptPreservesSessionDelivery() async throws {
+        var original: AIChatUserScript? = makeScript()
+        releasedScript = original
+        initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("survives", autoSubmit: true)) {})
+        original = nil
+        XCTAssertNil(releasedScript)
+
+        let replacement = makeScript()
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+
+        XCTAssertEqual(actual, .queryPrompt("survives", autoSubmit: true))
+    }
+
+    func testStaleScriptCannotCancelOrConsumeReplacementPrompt() async throws {
+        let old = makeScript()
+        let oldPull = try XCTUnwrap(old.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let replacement = makeScript()
+        initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("replacement", autoSubmit: true)) {})
+
+        old.cancelPendingTabContextSubmission()
+        old.cleanUpForReplacement()
+        let stale = try await oldPull([:], .mock())
+        XCTAssertNil(stale)
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+        XCTAssertEqual(actual, .queryPrompt("replacement", autoSubmit: true))
+    }
+
+    func testReplacementDropsQueuedFollowUpWithoutDiscardingInitialPrompt() async throws {
+        let old = makeScript()
+        initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("first", autoSubmit: true)) {})
+        let unexpected = expectation(description: "Old queued message is dropped")
+        unexpected.isInverted = true
+        webView.onPrompt = { _ in unexpected.fulfill() }
+        old.submitPrompt("cancelled follow-up", attachments: .none, modelId: nil)
+        old.cleanUpForReplacement()
+
+        let replacement = makeScript()
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+        await fulfillment(of: [unexpected], timeout: 0.1)
+
+        XCTAssertEqual(actual, .queryPrompt("first", autoSubmit: true))
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
+    func testNavigationFailureCancelsQueuedFollowUpButPreservesInitialPromptForReplacement() async throws {
+        let script = makeScript()
+        let waitStarted = expectation(description: "Follow-up waits for initial prompt")
+        let waitFinished = expectation(description: "Cancelled follow-up stops waiting")
+        let unexpected = expectation(description: "Cancelled follow-up is not dispatched")
+        unexpected.isInverted = true
+        webView.onPrompt = { _ in unexpected.fulfill() }
+        var consumptionCount = 0
+        let initial = AIChatNativePrompt.queryPrompt("initial", autoSubmit: true)
+        let delivery = AIChatInitialPromptDelivery(prompt: initial, waitUntilReady: { gate, timeout in
+            let ready = await gate.waitUntilReady(timeout: timeout, onWaitStarted: { waitStarted.fulfill() })
+            waitFinished.fulfill()
+            return ready
+        }, onConsumed: { consumptionCount += 1 })
+        initialPromptSession.install(delivery)
+        let navigation = DummyWKNavigation()
+        initialPromptSession.didStartNavigation(navigation)
+        script.submitPrompt("cancelled follow-up", attachments: .none, modelId: nil)
+        await fulfillment(of: [waitStarted], timeout: 1)
+
+        XCTAssertTrue(initialPromptSession.didFailNavigation(navigation))
+        script.cancelQueuedTabContextSubmissions()
+        await fulfillment(of: [waitFinished], timeout: 1)
+
+        XCTAssertTrue(delivery.hasPendingPrompt)
+        XCTAssertTrue(initialPromptSession.willRetryFailedNavigation())
+        XCTAssertFalse(initialPromptSession.didStartNavigation(DummyWKNavigation()))
+        script.cleanUpForReplacement()
+        let replacement = makeScript()
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let received = try await pull([:], .mock()) as? AIChatNativePrompt
+        let duplicate = try await pull([:], .mock()) as? AIChatNativePrompt
+        await fulfillment(of: [unexpected], timeout: 0.1)
+
+        XCTAssertEqual(received, initial)
+        XCTAssertNil(duplicate)
+        XCTAssertEqual(consumptionCount, 1)
+        XCTAssertTrue(webView.prompts.isEmpty)
+    }
+
+    func testReplacementStartsWaitingBeforeOldWaitingSubmissionFinishes() async throws {
+        let old = makeScript()
+        let oldWaitStarted = expectation(description: "Old script is waiting on delivery")
+        let replacementWaitStarted = expectation(description: "Replacement script is waiting on the same delivery")
+        let oldResultGate = InitialPromptWaitResultGate(started: expectation(description: "Old wait result is held"))
+        let oldSubmissionFinished = expectation(description: "Old submission finishes after replacement starts waiting")
+        var didFinishOldSubmission = false
+        var waitsStarted = 0
+        var consumptionCount = 0
+        let initialPrompt = AIChatNativePrompt.queryPrompt("initial", autoSubmit: true)
+        let delivery = AIChatInitialPromptDelivery(prompt: initialPrompt, waitUntilReady: { gate, timeout in
+            waitsStarted += 1
+            let isOldWait = waitsStarted == 1
+            let ready = await gate.waitUntilReady(timeout: timeout, onWaitStarted: {
+                if isOldWait {
+                    oldWaitStarted.fulfill()
+                } else {
+                    XCTAssertFalse(didFinishOldSubmission)
+                    replacementWaitStarted.fulfill()
+                }
+            })
+            if isOldWait {
+                await oldResultGate.wait()
+            }
+            return ready
+        }, onConsumed: { consumptionCount += 1 })
+        initialPromptSession.install(delivery)
+        defer {
+            old.cancelPendingTabContextSubmission()
+            oldResultGate.open()
+        }
+        old.submitPrompt("old follow-up", attachments: .none, modelId: nil, tools: nil, tabAttachmentRequest: .init(contexts: {
+            XCTFail("Cancelled old submission must not collect contexts")
+            return []
+        }, didConsume: { XCTFail("Cancelled old submission must not consume attachments") }, cancel: {
+            guard !didFinishOldSubmission else { return }
+            didFinishOldSubmission = true
+            oldSubmissionFinished.fulfill()
+        }))
+        await fulfillment(of: [oldWaitStarted], timeout: 1)
+
+        old.cleanUpForReplacement()
+        let replacement = makeScript()
+        defer { replacement.cancelPendingTabContextSubmission() }
+        let unexpected = expectation(description: "Replacement does not dispatch before initial pull")
+        unexpected.isInverted = true
+        webView.onPrompt = { _ in unexpected.fulfill() }
+        replacement.submitPrompt("replacement follow-up", attachments: .none, modelId: nil)
+        await fulfillment(of: [replacementWaitStarted, oldResultGate.started], timeout: 1)
+        XCTAssertFalse(didFinishOldSubmission)
+        XCTAssertEqual(waitsStarted, 2)
+
+        oldResultGate.open()
+        await fulfillment(of: [oldSubmissionFinished], timeout: 1)
+        await fulfillment(of: [unexpected], timeout: 0.1)
+        XCTAssertTrue(delivery.hasPendingPrompt)
+        XCTAssertTrue(initialPromptSession.isProtectedFromCacheEviction)
+        XCTAssertEqual(consumptionCount, 0)
+
+        let dispatched = expectation(description: "Only replacement follow-up dispatches after initial pull")
+        webView.onPrompt = { _ in dispatched.fulfill() }
+        let pull = try XCTUnwrap(replacement.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+        await fulfillment(of: [dispatched], timeout: 1)
+        let duplicate = try await pull([:], .mock())
+
+        XCTAssertEqual(actual, initialPrompt)
+        XCTAssertNil(duplicate)
+        XCTAssertEqual(consumptionCount, 1)
+        XCTAssertEqual(webView.prompts, [.queryPrompt("replacement follow-up", autoSubmit: true)])
+        XCTAssertFalse(initialPromptSession.isProtectedFromCacheEviction)
+    }
+
+    func testQueuedSendKeepsOriginalDeliveryWhileWaitingForPreviousSend() async throws {
+        let script = makeScript()
+        let gate = ContextGate(started: expectation(description: "Earlier send collecting context"))
+        let pushed = expectation(description: "Earlier send dispatched")
+        webView.onPrompt = { _ in pushed.fulfill() }
+        script.submitPrompt("earlier", attachments: .none, modelId: nil, tools: nil,
+                            tabAttachmentRequest: .init(contexts: { await gate.wait() }, didConsume: {}))
+        await fulfillment(of: [gate.started], timeout: 1)
+        initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("old initial", autoSubmit: true)) {})
+        script.submitPrompt("must stay with old initial", attachments: .none, modelId: nil)
+        initialPromptSession.install(AIChatInitialPromptDelivery(prompt: .queryPrompt("new initial", autoSubmit: true)) {})
+        gate.resume([])
+        await fulfillment(of: [pushed], timeout: 1)
+        let pull = try XCTUnwrap(script.handler(forMethodNamed: "getAIChatNativePrompt"))
+        let actual = try await pull([:], .mock()) as? AIChatNativePrompt
+        let drained = expectation(description: "Queue drained")
+        webView.onPrompt = { _ in drained.fulfill() }
+        script.submitPrompt("last", attachments: .none, modelId: nil)
+        await fulfillment(of: [drained], timeout: 1)
+
+        XCTAssertEqual(actual, .queryPrompt("new initial", autoSubmit: true))
+        XCTAssertEqual(webView.prompts, [.queryPrompt("earlier", autoSubmit: true), .queryPrompt("last", autoSubmit: true)])
+    }
+
+    func testIncomingConversationEndMessagesScheduleSessionPromptCancellation() async {
+        for message in [AIChatUserScriptMessages.newChatStarted, .newImageGenerationChatStarted, .closeAIChat] {
+            let script = makeScript()
+            let delivery = AIChatInitialPromptDelivery(prompt: .queryPrompt("cancelled", autoSubmit: true)) {}
+            initialPromptSession.install(delivery)
+            var didReceiveMessage = false
+            let delegate = ConversationMessageObserver { received in
+                XCTAssertEqual(received, message)
+                XCTAssertTrue(delivery.hasPendingPrompt)
+                didReceiveMessage = true
+            }
+            script.delegate = delegate
+            let receive = script.handler(forMethodNamed: message.rawValue)
+
+            XCTAssertTrue(didReceiveMessage)
+            XCTAssertTrue(delivery.hasPendingPrompt)
+            if message == .newImageGenerationChatStarted {
+                XCTAssertNotNil(receive)
+            } else {
+                XCTAssertNil(receive)
+            }
+
+            let result = await delivery.waitUntilConsumed()
+            XCTAssertEqual(result, .cancelled)
+            XCTAssertNil(delivery.consume())
+            XCTAssertFalse(initialPromptSession.isProtectedFromCacheEviction)
+        }
+    }
+
     private func makeScript() -> AIChatUserScript {
-        let script = makeTestUserScript()
+        let handler = AIChatUserScriptHandler(
+            experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+        let script = AIChatUserScript(handler: handler, debugSettings: MockAIChatDebugSettingsForTests())
+        script.connectInitialPromptSession(initialPromptSession)
         let feature = AIChatContextualAttachMoreTabsFeature(
             featureFlagger: featureFlagger, aiChatSettings: MockAIChatSettingsProvider())
         script.attachedTabContextsProvider = { [weak self] in
@@ -770,33 +984,71 @@ final class AIChatUserScriptMultiTabTests: XCTestCase {
     private func dispatch(_ script: AIChatUserScript) async -> AIChatNativePrompt? {
         let delivered = expectation(description: "Prompt dispatched")
         webView.onPrompt = { _ in delivered.fulfill() }
-        script.submitPrompt("hello", images: nil, modelId: nil)
+        script.submitPrompt("hello", attachments: .none, modelId: nil)
         await fulfillment(of: [delivered], timeout: 1)
         return webView.prompts.last
     }
 
-    private func assertLateResultIsDropped(_ invalidate: (AIChatUserScript) -> Void) async {
+    private func assertLateResultIsDropped(
+        waitForCancellation: Bool = false,
+        _ invalidate: @MainActor (AIChatUserScript) async throws -> Void
+    ) async rethrows {
         let script = makeScript()
         let gate = ContextGate(started: expectation(description: "Provider started"))
+        defer {
+            script.cancelPendingTabContextSubmission()
+            gate.resume([])
+        }
         let unexpected = expectation(description: "Cancelled request neither dispatches nor consumes")
         unexpected.isInverted = true
+        let cancelled = waitForCancellation ? expectation(description: "Request cancelled before provider resumes") : nil
+        cancelled?.assertForOverFulfill = false
         webView.onPrompt = { _ in unexpected.fulfill() }
         script.onPromptSubmitted = { unexpected.fulfill() }
         let selection = AIChatSelectionContextBuilder.makeSelection(text: "selected", url: nil)
         script.attachedSelectionsProvider = { [selection] }
         script.onAttachedSelectionsConsumed = { _ in unexpected.fulfill() }
         requestProvider = {
-            MultiTabAttachmentRequest(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() })
+            MultiTabAttachmentRequest(contexts: { await gate.wait() }, didConsume: { unexpected.fulfill() },
+                                      cancel: { cancelled?.fulfill() })
         }
-        script.submitPrompt("cancelled", images: nil, modelId: nil)
+        script.submitPrompt("cancelled", attachments: .none, modelId: nil)
         await fulfillment(of: [gate.started], timeout: 1)
 
-        invalidate(script)
+        try await invalidate(script)
+        if let cancelled {
+            await fulfillment(of: [cancelled], timeout: 1)
+        }
         gate.resume([context(tabId: "other")])
         await fulfillment(of: [unexpected], timeout: 0.1)
 
         XCTAssertTrue(webView.prompts.isEmpty)
         XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+    }
+}
+
+@MainActor
+private final class InitialPromptWaitResultGate {
+    let started: XCTestExpectation
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var isOpen = false
+
+    init(started: XCTestExpectation) {
+        self.started = started
+    }
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { continuation in
+            self.continuation = continuation
+            started.fulfill()
+        }
+    }
+
+    func open() {
+        isOpen = true
+        continuation?.resume()
+        continuation = nil
     }
 }
 
@@ -873,4 +1125,18 @@ private final class MultiTabInputBox: AIChatInputBoxHandling {
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
     @Published var attachmentUsage: AIChatAttachmentUsage?
     var attachmentUsagePublisher: Published<AIChatAttachmentUsage?>.Publisher { $attachmentUsage }
+}
+
+private final class ConversationMessageObserver: AIChatUserScriptDelegate {
+    private let receive: (AIChatUserScriptMessages) -> Void
+
+    init(receive: @escaping (AIChatUserScriptMessages) -> Void) {
+        self.receive = receive
+    }
+
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
+        receive(message)
+    }
+
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {}
 }

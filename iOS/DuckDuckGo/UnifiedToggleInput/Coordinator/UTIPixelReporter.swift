@@ -205,6 +205,10 @@ final class UTIPixelReporter {
         }
     }
 
+    func reportPastedText(_ action: UnifiedToggleInputPastedTextPixel.Action) {
+        withContext { firing.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: $0.surface), frequency: .dailyAndCount) }
+    }
+
     // MARK: - Model / reasoning / tools
 
     func reportModelSelected(modelId: String) {
@@ -278,13 +282,14 @@ final class UTIPixelReporter {
         }
     }
 
-    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode, queryType: UnifiedToggleInputQueryType) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
                 surface: $0.surface,
                 pageType: $0.pageType,
                 isToggleVisible: $0.isToggleVisible,
                 defaultMode: defaultOmnibarMode,
+                queryType: queryType,
                 firing: firing
             )
         }

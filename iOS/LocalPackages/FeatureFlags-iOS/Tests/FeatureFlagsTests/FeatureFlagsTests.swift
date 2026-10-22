@@ -40,6 +40,22 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
+    func testPastedTextUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.unifiedToggleInputPastedText
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputPastedText)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "unifiedToggleInputPastedText")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testIPadAttachmentPrivacyUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.aiChatAttachmentPrivacyIPad
         guard case let .remoteReleasable(subfeature) = flag.source else {

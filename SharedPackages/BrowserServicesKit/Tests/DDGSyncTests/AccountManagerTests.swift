@@ -1719,7 +1719,7 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
                                           accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
-                                          pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> RegisteredDeviceMappingResult {
+                                          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
         registeredDevicesHandler?()
         registeredDevicesCallEntryIDs = entries.map(\.id)
         unifiedReadEnabledValues.append(isUnifiedReadEnabled)

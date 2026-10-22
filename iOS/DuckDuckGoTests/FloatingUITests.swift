@@ -96,6 +96,47 @@ final class FloatingUIFeatureFlagTests: XCTestCase {
     }
 }
 
+final class StatusBackgroundScrollEdgeTests: XCTestCase {
+
+    func testScrollEdgeRegionDrawsNoContentAndDoesNotInterceptTouches() throws {
+        let background = MainViewFactory.StatusBackgroundView(effect: nil)
+        background.frame = CGRect(x: 0, y: 0, width: 402, height: 62)
+        background.addScrollEdgeRegion()
+        let region = try XCTUnwrap(background.contentView.subviews.first as? UIImageView)
+        let image = try XCTUnwrap(region.image?.cgImage)
+        var pixels = [UInt8](repeating: 255, count: image.width * image.height * 4)
+        try pixels.withUnsafeMutableBytes { bytes in
+            let context = try XCTUnwrap(CGContext(data: bytes.baseAddress,
+                                                 width: image.width,
+                                                 height: image.height,
+                                                 bitsPerComponent: 8,
+                                                 bytesPerRow: image.width * 4,
+                                                 space: CGColorSpaceCreateDeviceRGB(),
+                                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+
+        XCTAssertTrue(stride(from: 3, to: pixels.count, by: 4).allSatisfy { pixels[$0] == 0 })
+        XCTAssertNil(region.hitTest(CGPoint(x: 200, y: 30), with: nil))
+        XCTAssertFalse(region.isAccessibilityElement)
+        XCTAssertFalse(region.isHidden)
+        XCTAssertEqual(region.alpha, 1)
+    }
+
+    func testScrollEdgeRegionFollowsStatusBackgroundBounds() throws {
+        let background = MainViewFactory.StatusBackgroundView(effect: nil)
+        background.addScrollEdgeRegion()
+        let region = try XCTUnwrap(background.contentView.subviews.first)
+
+        for size in [CGSize(width: 402, height: 62), CGSize(width: 874, height: 0), CGSize(width: 402, height: 62)] {
+            background.frame.size = size
+            background.layoutIfNeeded()
+            XCTAssertEqual(region.frame, background.contentView.bounds)
+        }
+    }
+}
+
 final class FloatingUIManagerTests: XCTestCase {
 
     func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
@@ -904,6 +945,312 @@ final class FloatingUILayoutPolicyTests: XCTestCase {
     }
 }
 
+final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
+
+    func testWhenGlassHostIsTransformedThenPreviewTargetsOriginalFieldGeometry() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, hostTransform: CGAffineTransform(scaleX: 0.9, y: 0.9))
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let container = try XCTUnwrap(menu.barView.searchContainer)
+            let frame = container.convert(container.bounds, to: menu.window)
+            let targetCenter = preview.target.container.convert(preview.target.center, to: menu.window)
+
+            XCTAssertTrue(preview.view === container)
+            XCTAssertTrue(preview.target.container === container.superview)
+            XCTAssertEqual(targetCenter.x, frame.midX, accuracy: 0.001)
+            XCTAssertEqual(targetCenter.y, frame.midY, accuracy: 0.001)
+            XCTAssertEqual(preview.target.transform, container.transform)
+            XCTAssertEqual(preview.size, container.bounds.size)
+        }
+    }
+
+    func testWhenMenuDisplaysThenGlassIsDisabledWithoutHidingTheLiveField() throws {
+        for withAnimator in [false, true] {
+            let menu = try makeDisplayedMenu(displayAnimator: withAnimator ? MenuDismissAnimator() : nil)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let glass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertFalse(preview.view.isHidden)
+            XCTAssertEqual(preview.view.alpha, 1)
+            XCTAssertNil(glass.effect)
+
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+
+            XCTAssertTrue(preview.view.window === menu.window)
+            XCTAssertFalse(preview.view.isHidden)
+            let restoredGlass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+            if #available(iOS 26.0, *) {
+                XCTAssertNotNil(restoredGlass.effect)
+            }
+        }
+    }
+
+    func testWhenAppearanceChangesDuringMenuThenPreviewKeepsLiveContentAndAdaptiveFill() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+            let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+            let darkTraits = UITraitCollection(userInterfaceStyle: .dark)
+            XCTAssertNotEqual(fill.resolvedColor(with: lightTraits), fill.resolvedColor(with: darkTraits))
+
+            menu.window.overrideUserInterfaceStyle = .dark
+            menu.window.layoutIfNeeded()
+            menu.barView.refreshMaterialAppearance()
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertEqual(preview.view.traitCollection.userInterfaceStyle, .dark)
+            XCTAssertEqual(menu.barView.searchContainer.backgroundColor, .clear)
+            XCTAssertTrue(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.allSatisfy { $0.effect == nil })
+
+            let dismissal = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                            previewForDismissingMenuWithConfiguration: menu.configuration))
+            XCTAssertTrue(dismissal.view === preview.view)
+            XCTAssertEqual(dismissal.parameters.backgroundColor?.resolvedColor(with: darkTraits), fill.resolvedColor(with: darkTraits))
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+        }
+    }
+
+    func testWhenMovingAddressBarThenWaitsForDismissalAndRestoresGlassBeforeMoving() throws {
+        for actionAfterWillEnd in [false, true] {
+            let menu = try makeDisplayedMenu()
+            defer { menu.window.isHidden = true }
+            let animator = MenuDismissAnimator()
+            var moves = 0
+            let move = {
+                XCTAssertFalse(menu.barView.searchContainer.isHidden)
+                let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+                if #available(iOS 26.0, *) {
+                    XCTAssertNotNil(glass?.effect)
+                }
+                moves += 1
+            }
+
+            if !actionAfterWillEnd {
+                menu.barView.performAfterLongPressMenuDismissal(move)
+            }
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+            if actionAfterWillEnd {
+                menu.barView.performAfterLongPressMenuDismissal(move)
+            }
+
+            XCTAssertEqual(moves, 0)
+            XCTAssertFalse(menu.barView.searchContainer.isHidden)
+            animator.complete()
+
+            XCTAssertEqual(moves, 1)
+            menu.barView.performAfterLongPressMenuDismissal(move)
+            XCTAssertEqual(moves, 2)
+        }
+    }
+
+    func testWhenLandscapeMenuDismissesThenFieldStaysVisibleUntilGlassRestores() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, windowSize: CGSize(width: 844, height: 390))
+            defer { menu.window.isHidden = true }
+            let field = try XCTUnwrap(menu.barView.searchContainer)
+            let parent = field.superview
+            let animator = MenuDismissAnimator()
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+            animator.complete()
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+        }
+    }
+
+    func testWhenMenuIsRemovedDuringDismissalThenPendingMoveIsCancelled() throws {
+        let menu = try makeDisplayedMenu()
+        defer { menu.window.isHidden = true }
+        let animator = MenuDismissAnimator()
+        var didMove = false
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+        menu.barView.longPressMenuProvider = nil
+        animator.complete()
+
+        XCTAssertFalse(didMove)
+        XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+        if #available(iOS 26.0, *) {
+            XCTAssertNotNil(glass?.effect)
+        }
+    }
+
+    func testWhenAddressBarLeavesWindowThenPendingMoveIsCancelled() throws {
+        let menu = try makeDisplayedMenu()
+        defer { menu.window.isHidden = true }
+        let animator = MenuDismissAnimator()
+        var didMove = false
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+        menu.barView.removeFromSuperview()
+        animator.complete()
+
+        XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        XCTAssertFalse(didMove)
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        XCTAssertTrue(didMove)
+    }
+
+    func testWhenMenuIsNotDisplayedThenMoveRunsImmediately() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        var didMove = false
+
+        barView.performAfterLongPressMenuDismissal { didMove = true }
+
+        XCTAssertTrue(didMove)
+    }
+
+    private struct DisplayedMenu {
+        let barView: DefaultOmniBarView
+        let window: UIWindow
+        let interaction: UIContextMenuInteraction
+        let configuration: UIContextMenuConfiguration
+    }
+
+    private func makeDisplayedMenu(isBottom: Bool = false,
+                                   hostTransform: CGAffineTransform = .identity,
+                                   displayAnimator: UIContextMenuInteractionAnimating? = nil,
+                                   windowSize: CGSize = CGSize(width: 390, height: 800)) throws -> DisplayedMenu {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = isBottom
+        barView.frame = CGRect(x: 0, y: 100, width: windowSize.width, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(origin: .zero, size: windowSize))
+        let host = UIView(frame: window.bounds.insetBy(dx: 10, dy: 20))
+        window.addSubview(host)
+        host.addSubview(barView)
+        host.transform = hostTransform
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+        _ = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: displayAnimator)
+        return DisplayedMenu(barView: barView, window: window, interaction: interaction, configuration: configuration)
+    }
+
+    private final class MenuDismissAnimator: NSObject, UIContextMenuInteractionAnimating {
+        var previewViewController: UIViewController? { nil }
+        private var completions: [() -> Void] = []
+
+        func addAnimations(_ animations: @escaping () -> Void) {
+            animations()
+        }
+
+        func addCompletion(_ completion: @escaping () -> Void) {
+            completions.append(completion)
+        }
+
+        func complete() {
+            let callbacks = completions
+            completions.removeAll()
+            callbacks.forEach { $0() }
+        }
+    }
+
+    func testWhenFloatingMenuHighlightsAndDismissesThenPreviewIncludesWholeFieldWithoutMovingControls() throws {
+        for isBottom in [false, true] {
+            let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+            barView.isUsingSmallTopSpacing = isBottom
+            barView.frame = CGRect(x: 0, y: 100, width: 390, height: barView.expectedHeight)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            barView.layoutIfNeeded()
+            barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+
+            let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+                .first { $0.delegate === barView })
+            let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+            let container = try XCTUnwrap(barView.searchContainer)
+            let fieldParent = barView.textField.superview
+            let containerParent = container.superview
+            let contentHost = try XCTUnwrap(container.subviews.first { $0 is DefaultOmniBarView.FloatingGlassContentHostView
+                || $0 is UIVisualEffectView })
+            let contentParent = contentHost.superview
+            let windowSubviews = window.subviews
+
+            let highlight = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+            XCTAssertTrue(highlight.view === container)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            XCTAssertFalse(container.isHidden)
+            barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
+            let dismissal = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+            XCTAssertTrue(highlight.view === dismissal.view)
+            XCTAssertTrue(barView.textField.superview === fieldParent)
+            XCTAssertTrue(container.superview === containerParent)
+            XCTAssertTrue(contentHost.superview === contentParent)
+
+            for preview in [highlight, dismissal] {
+                XCTAssertEqual(preview.view.bounds.size, container.bounds.size)
+                XCTAssertGreaterThan(preview.view.bounds.width, barView.textField.bounds.width)
+                let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+                XCTAssertEqual(fill.resolvedColor(with: barView.traitCollection).cgColor.alpha, 1)
+                let previewBounds = try XCTUnwrap(preview.parameters.visiblePath).bounds
+                XCTAssertEqual(previewBounds.minX, container.bounds.minX, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.minY, container.bounds.minY, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.width, container.bounds.width, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.height, container.bounds.height, accuracy: 0.001)
+            }
+
+            barView.contextMenuInteraction(interaction, willEndFor: configuration, animator: nil)
+            XCTAssertFalse(container.isHidden)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            barView.longPressMenuProvider = nil
+            XCTAssertFalse(barView.textField.interactions.contains { $0 === interaction })
+        }
+    }
+
+    func testWhenFloatingUIIsDisabledThenMenuUsesDefaultPreviews() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+
+    func testWhenInteractionBelongsToAnotherControlThenMenuUsesDefaultPreviews() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = UIContextMenuInteraction(delegate: barView)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+}
+
 final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
 
     private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {
@@ -1264,6 +1611,68 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
                        UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
     }
 
+    func testWhenFireModeStackConstraintsAreLostThenFieldInsetsAreRestored() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.isUsingSmallTopSpacing = true
+        barView.refreshFireMode(fireMode: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let stackView = try XCTUnwrap(firstSubview(of: DefaultOmniBarView.TopLevelStackView.self, in: barView))
+        NSLayoutConstraint.deactivate(stackView.constraints.filter { $0.identifier?.hasPrefix("UISV-") == true })
+        let host = UIView(frame: window.bounds)
+        window.addSubview(host)
+        host.addSubview(barView)
+        barView.frame.size.width = 430
+        barView.setNeedsLayout()
+        barView.layoutIfNeeded()
+
+        let fieldFrame = searchContainer.convert(searchContainer.bounds, to: barView)
+        XCTAssertEqual(fieldFrame.minX, 16, accuracy: 0.01)
+        XCTAssertEqual(barView.bounds.maxX - fieldFrame.maxX, 16, accuracy: 0.01)
+    }
+
+    func testWhenFireModeFieldReturnsFromLandscapeThenPortraitGeometryIsRestored() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.isUsingSmallTopSpacing = true
+        barView.refreshFireMode(fireMode: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let portraitFrame = searchContainer.frame
+        let portraitCornerRadius = searchContainer.layer.cornerRadius
+
+        barView.isExpandedPhoneLayout = true
+        barView.setFloatingMinimalChromeBar(true)
+        barView.setLayoutMode(.expandedPhone)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isExpandedPhoneLayout = false
+        barView.setFloatingMinimalChromeBar(false)
+        barView.setLayoutMode(.compact)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.restoreFloatingFieldAppearance()
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(searchContainer.frame, portraitFrame)
+        XCTAssertEqual(searchContainer.layer.cornerRadius, portraitCornerRadius)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+        XCTAssertEqual(barView.fieldContainerLayoutGuide.layoutFrame, contentHost.bounds)
+        let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: barView))
+        XCTAssertEqual(searchView.center.y, contentHost.bounds.midY, accuracy: 0.01)
+    }
+
     func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
         let barView = makeBarView(isFloatingUIEnabled: true)
         barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
@@ -1362,6 +1771,30 @@ final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
         barView.layoutIfNeeded()
 
         XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
+    }
+
+    func testWhenFloatingAddressBarMovesToBottomThenFirstLayoutUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isUsingSmallTopSpacing = true
+        barView.frame.size.height = barView.expectedHeight
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
+    }
+
+    func testWhenBottomFloatingSwipeFieldIsFirstLaidOutThenItUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
     }
 
     func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {
@@ -1773,7 +2206,221 @@ final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
     }
 }
 
+@MainActor
+final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
+
+    private let webView = FakeSnapshottingWebView()
+    private var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] { webView.snapshots }
+    private var results: [(UIImage?, WebContentHealthPixel.SnapshotResult)] = []
+
+    func testWhenFirstSnapshotAnswersThenItIsUsedWithoutSecondSnapshot() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        snapshots[0].completion(image)
+        waitPastTimeouts()
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .success)
+    }
+
+    func testWhenFirstSnapshotTimesOutThenSnapshotWithoutWaitingIsUsedAndLateFirstAnswerIgnored() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[0].completion(UIImage()) // Late, so ignored.
+        snapshots[1].completion(image)
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true, false])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .retryImage)
+    }
+
+    func testWhenSnapshotWithoutWaitingAnswersWithoutImageThenResultSaysSo() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[1].completion(nil)
+
+        XCTAssertEqual(results.map(\.1), [.retryNoImage])
+    }
+
+    func testWhenBothSnapshotsTimeOutThenCompletionRunsOnceWithoutImage() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { !self.results.isEmpty }
+        waitPastTimeouts()
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertNil(results[0].0)
+        XCTAssertEqual(results[0].1, .retryTimeout)
+    }
+
+    func testWhenNotWaitingForScreenUpdatesThenOnlyTheSnapshotThatDoesNotWaitIsTaken() {
+        capture(waitForScreenUpdates: false)
+        snapshots[0].completion(UIImage())
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [false])
+        XCTAssertEqual(results.map(\.1), [.retryImage])
+    }
+
+    func testWhenFirstSnapshotNeverAnswersThenItsPendingCallbackDoesNotKeepTheWebViewAlive() {
+        var webView: FakeSnapshottingWebView? = FakeSnapshottingWebView()
+        weak var releasedWebView = webView
+        WebViewPreviewSnapshotCapturer().capture(webView: webView!,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 60,
+                                                 waitForScreenUpdates: true) { _, _ in }
+        // The fake keeps the callback, as WebKit does for a frozen page that never answers.
+        webView = nil
+
+        XCTAssertNil(releasedWebView)
+    }
+
+    private func capture(waitForScreenUpdates: Bool) {
+        WebViewPreviewSnapshotCapturer().capture(webView: webView,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 0.05,
+                                                 waitForScreenUpdates: waitForScreenUpdates) { [weak self] image, result in
+            self?.results.append((image, result))
+        }
+    }
+
+    private func waitUntil(_ condition: @escaping () -> Bool) {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition() && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+        XCTAssertTrue(condition())
+    }
+
+    private func waitPastTimeouts() {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+    }
+}
+
+/// Records each snapshot request and answers only when the test calls its completion.
+@MainActor
+private final class FakeSnapshottingWebView: WebViewSnapshotting {
+
+    let window: UIWindow? = nil
+    private(set) var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] = []
+
+    func takeSnapshot(with snapshotConfiguration: WKSnapshotConfiguration?,
+                      completionHandler: @escaping @MainActor @Sendable (UIImage?, (any Error)?) -> Void) {
+        snapshots.append((snapshotConfiguration?.afterScreenUpdates ?? true, { completionHandler($0, nil) }))
+    }
+}
+
+final class BrowserKeyboardLayoutTests: XCTestCase {
+
+    func testHardwareKeyboardAccessoryUsesLayoutGuideWhenNotificationReportsNoKeyboard() {
+        let frame = BrowserKeyboardLayout.webInputFrame(notificationFrame: CGRect(x: 0, y: 874, width: 402, height: 0),
+                                                        layoutGuideFrame: CGRect(x: 0, y: 806, width: 402, height: 68),
+                                                        viewBounds: CGRect(x: 0, y: 0, width: 402, height: 874),
+                                                        safeAreaFrame: CGRect(x: 0, y: 62, width: 402, height: 778))
+        XCTAssertEqual(frame, CGRect(x: 0, y: 806, width: 402, height: 68))
+    }
+
+    func testKeyboardDismissalIgnoresLayoutGuideWithinBottomSafeArea() {
+        let bounds = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let safeArea = CGRect(x: 0, y: 62, width: 402, height: 778)
+        for notificationFrame in [CGRect.zero, CGRect(x: 0, y: 874, width: 402, height: 338)] {
+            let frame = BrowserKeyboardLayout.webInputFrame(notificationFrame: notificationFrame,
+                                                            layoutGuideFrame: CGRect(x: 0, y: 840, width: 402, height: 34),
+                                                            viewBounds: bounds,
+                                                            safeAreaFrame: safeArea)
+            XCTAssertEqual(frame, .zero)
+        }
+    }
+
+    func testWebInputFrameCoversKeyboardDuringLayoutGuideTransitionAndIgnoresUndockedKeyboard() {
+        let bounds = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let safeArea = CGRect(x: 0, y: 62, width: 402, height: 778)
+        let keyboard = CGRect(x: 0, y: 536, width: 402, height: 338)
+        let restingGuide = CGRect(x: 0, y: 840, width: 402, height: 34)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: keyboard,
+                                                           layoutGuideFrame: restingGuide,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), keyboard)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: .zero,
+                                                           layoutGuideFrame: keyboard,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), keyboard)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: CGRect(x: 40, y: 300, width: 300, height: 250),
+                                                           layoutGuideFrame: restingGuide,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), .zero)
+    }
+
+    func testKeyboardOverlapReplacesCoveredChromeAndRestoresItAfterDismissal() {
+        let bounds = CGRect(x: 0, y: 0, width: 400, height: 900)
+        let chromeInsets = UIEdgeInsets(top: 100, left: 0, bottom: 140, right: 0)
+
+        let visible = BrowserKeyboardLayout.obscuredInsets(
+            chromeInsets: chromeInsets,
+            keyboardFrame: CGRect(x: 0, y: 550, width: 400, height: 350),
+            viewBounds: bounds
+        )
+        XCTAssertEqual(visible, UIEdgeInsets(top: 100, left: 0, bottom: 350, right: 0))
+        for dismissedFrame in [CGRect.zero, CGRect(x: 0, y: 900, width: 400, height: 350)] {
+            XCTAssertEqual(BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                              keyboardFrame: dismissedFrame,
+                                                              viewBounds: bounds), chromeInsets)
+        }
+    }
+
+    func testKeyboardOverlapUsesViewBoundsInsteadOfKeyboardHeight() {
+        let insets = BrowserKeyboardLayout.obscuredInsets(
+            chromeInsets: UIEdgeInsets(top: 60, left: 0, bottom: 40, right: 0),
+            keyboardFrame: CGRect(x: 0, y: 500, width: 400, height: 400),
+            viewBounds: CGRect(x: 0, y: 100, width: 400, height: 600)
+        )
+        XCTAssertEqual(insets, UIEdgeInsets(top: 60, left: 0, bottom: 200, right: 0))
+    }
+
+    func testUndockedAndNonOverlappingKeyboardsKeepChromeInsets() {
+        let chromeInsets = UIEdgeInsets(top: 60, left: 0, bottom: 140, right: 0)
+        let bounds = CGRect(x: 0, y: 0, width: 400, height: 900)
+        for frame in [CGRect(x: 40, y: 300, width: 300, height: 250),
+                      CGRect(x: 500, y: 550, width: 400, height: 350),
+                      CGRect(x: 0, y: 850, width: 400, height: 50)] {
+            XCTAssertEqual(BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                              keyboardFrame: frame,
+                                                              viewBounds: bounds), chromeInsets)
+        }
+    }
+}
+
 final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    @available(iOS 26, *)
+    func testKeyboardLayoutUpdatesInsetsDuringChromeTransitionOnlyWithFloatingUIEnabled() {
+        for isEnabled in [false, true] {
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
+            tab.floatingUIManager = FloatingUIManager(
+                isFloatingUIFeatureEnabled: isEnabled,
+                isPadProvider: { false },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            )
+            tab.loadViewIfNeeded()
+            let chrome = DuckPlayerBrowserChromeDelegateMock()
+            tab.chromeDelegate = chrome
+            chrome.obscuredContentInsets = UIEdgeInsets(top: 90, left: 0, bottom: 140, right: 0)
+            tab.updateWebViewBottomAnchor(for: 1)
+            let restingInsets = tab.webView.obscuredContentInsets
+            chrome.currentBarsVisibilityOverride = 0.5
+            let keyboardInsets = UIEdgeInsets(top: 90, left: 0, bottom: 350, right: 0)
+            chrome.obscuredContentInsets = keyboardInsets
+
+            tab.updateWebViewLayoutForKeyboard()
+
+            XCTAssertEqual(tab.webView.obscuredContentInsets, isEnabled ? keyboardInsets : restingInsets)
+            if isEnabled {
+                XCTAssertEqual(tab.webView.scrollView.contentInset, keyboardInsets)
+            }
+        }
+    }
 
     @available(iOS 26, *)
     func testFloatingChromeKeepsWebKitAndScrollInsetsStableUntilEachEndpoint() {

@@ -29,6 +29,8 @@ final class AIChatInitialPromptDelivery {
         case cancelled
     }
 
+    let promptInfo: AIChatOpeningPromptInfo
+
     private var prompt: AIChatNativePrompt?
     private var onConsumed: (() -> Void)?
     private let consumptionGate = AIChatFrontendReadinessGate()
@@ -48,6 +50,7 @@ final class AIChatInitialPromptDelivery {
          },
          onConsumed: @escaping () -> Void) {
         self.prompt = prompt
+        self.promptInfo = AIChatOpeningPromptInfo(prompt: prompt)
         self.consumptionTimeout = consumptionTimeout
         self.waitUntilReady = waitUntilReady
         self.evictionProtectionDeadline = now().addingTimeInterval(evictionProtectionDuration)

@@ -41,7 +41,13 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// Nil for bundled extensions, manual installations, and records saved before this field existed.
     public let storeIdentity: WebExtensionStoreIdentity?
 
-    /// CPM's private origin after a data clear. Nil preserves the installation UUID for existing records.
+    /// Whether the extension is disabled, by the user or by remote configuration. A disabled extension
+    /// stays on disk and keeps its permissions, but it is not loaded until the user enables it again.
+    /// False for records saved before this field existed.
+    public var isDisabled: Bool
+
+    /// CPM's private origin after data clearing, rollback or a background-load failure.
+    /// Nil preserves the installation UUID for existing records.
     public let cpmOriginIdentifier: UUID?
 
     public var id: String { uniqueIdentifier }
@@ -58,6 +64,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         version: String?,
         embeddedType: DuckDuckGoWebExtensionType? = nil,
         storeIdentity: WebExtensionStoreIdentity? = nil,
+        isDisabled: Bool = false,
         cpmOriginIdentifier: UUID? = nil
     ) {
         self.uniqueIdentifier = uniqueIdentifier
@@ -66,7 +73,20 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         self.version = version
         self.embeddedType = embeddedType
         self.storeIdentity = storeIdentity
+        self.isDisabled = isDisabled
         self.cpmOriginIdentifier = cpmOriginIdentifier
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        uniqueIdentifier = try container.decode(String.self, forKey: .uniqueIdentifier)
+        filename = try container.decode(String.self, forKey: .filename)
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        version = try container.decodeIfPresent(String.self, forKey: .version)
+        embeddedType = try container.decodeIfPresent(DuckDuckGoWebExtensionType.self, forKey: .embeddedType)
+        storeIdentity = try container.decodeIfPresent(WebExtensionStoreIdentity.self, forKey: .storeIdentity)
+        cpmOriginIdentifier = try container.decodeIfPresent(UUID.self, forKey: .cpmOriginIdentifier)
+        isDisabled = try container.decodeIfPresent(Bool.self, forKey: .isDisabled) ?? false
     }
 }
 

@@ -27,6 +27,39 @@
         "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
         "examples": ["7.175.1"]
     },
+    "crashAppVersion": {
+        "key": "appVersion",
+        "type": "string",
+        "description": "Version the crash happened on, with the build number from MetricKit appended.",
+        "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(\\.[0-9]+)?$",
+        "examples": ["7.240.1.0", "7.240.1"]
+    },
+    "crashFirst": {
+        "key": "first",
+        "type": "string",
+        "description": "Set to '1' when this is the first crash ever reported for this install",
+        "enum": ["1"]
+    },
+    "crashCode": {
+        "key": "code",
+        "type": "string",
+        "description": "MXCrashDiagnostic exception code; '-1' when unavailable"
+    },
+    "crashType": {
+        "key": "type",
+        "type": "string",
+        "description": "MXCrashDiagnostic Mach exception type; '-1' when unavailable"
+    },
+    "crashSignal": {
+        "key": "signal",
+        "type": "string",
+        "description": "MXCrashDiagnostic POSIX signal number; '-1' when unavailable"
+    },
+    "crashTerminationReason": {
+        "key": "terminationReason",
+        "type": "string",
+        "description": "MXCrashDiagnostic termination reason reduced to '<namespace>_<code>', e.g. 'springboard_0x8badf00d' for a watchdog kill; '-1' when the crash has none, 'unknown' when it can't be parsed"
+    },
     "ui_version": {
         "key": "ui_version",
         "type": "string",
@@ -85,6 +118,7 @@
             "duck_ai_new_chat",
             "tab_switcher",
             "tabs_bar_button",
+            "new_tab_long_press_menu",
             "chat_history_new_chat",
             "chat_history_open_chat",
             "chat_history_view_all",

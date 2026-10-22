@@ -555,10 +555,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) -> Encodable? {
         guard !Task.isCancelled else { return nil }
         let prompt: AIChatNativePrompt?
-        switch initialPromptConnection?.consumeInitialPrompt() ?? .shared {
-        case .shared:
+        switch initialPromptConnection?.consumeInitialPrompt() ?? .sharedHandler {
+        case .sharedHandler:
             prompt = promptHandler.consumeData() as? AIChatNativePrompt
-        case .recipient(let initialPrompt):
+        case .tabSession(let initialPrompt):
             prompt = initialPrompt
         }
         return prompt.map { $0.withTermsAccepted(termsAcceptedMarker(for: $0)) }

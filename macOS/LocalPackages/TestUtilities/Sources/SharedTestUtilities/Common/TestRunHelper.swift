@@ -234,9 +234,18 @@ public final class TestRunHelper: NSObject {
                       || window.className == "_NSFunctionRowPanel"
                       || window.className == "NSStatusBarWindow")
                 }
+                // `NSApp.windows` returns autoreleased windows. Drain them right away: otherwise they stay
+                // retained by the outer autorelease pool (not drained until the test observation callbacks
+                // return) and the app's DEBUG deallocation checks (`ensureObjectDeallocated(do: .interrupt)`)
+                // raise SIGINT for windows (e.g. the address bar suggestion window) closed during the cleanup.
+                let containsWindow = { (predicate: (NSWindow) -> Bool) in
+                    autoreleasepool {
+                        NSApp.windows.contains(where: predicate)
+                    }
+                }
 
                 let hasIntegrationTestUI = self.loadedViews.contains(where: { $0.view != nil })
-                    || NSApp.windows.contains(where: shouldCloseWindow)
+                    || containsWindow(shouldCloseWindow)
 
                 guard hasIntegrationTestUI else { return }
 
@@ -262,7 +271,7 @@ public final class TestRunHelper: NSObject {
 
                 let deadline = Date().addingTimeInterval(2)
                 while Date() < deadline,
-                      NSApp.windows.contains(where: { shouldCloseWindow($0) && $0.isVisible }) {
+                      containsWindow({ shouldCloseWindow($0) && $0.isVisible }) {
                     RunLoop.main.run(until: Date().addingTimeInterval(0.05))
                 }
 

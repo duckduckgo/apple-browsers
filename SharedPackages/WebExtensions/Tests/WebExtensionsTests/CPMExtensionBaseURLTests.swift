@@ -202,6 +202,27 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         XCTAssertEqual(store.installedExtensions.first?.uniqueIdentifier, identifier)
     }
 
+    func testOriginRotationPreservesDisabledStateAndDecodesSavedOrigin() async throws {
+        let store = InstalledWebExtensionStoringMock()
+        store.add(InstalledWebExtension(uniqueIdentifier: identifier, filename: "test", name: "CPM", version: "1",
+                                       embeddedType: .embedded, isDisabled: true))
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        let context = WKWebExtensionContext(for: try await webExtension())
+        context.uniqueIdentifier = identifier
+        for isBackgroundFailure in [true, false] {
+            if isBackgroundFailure {
+                policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+            } else {
+                policy.prepareForDataClearingReload(of: context)
+            }
+            let record = try XCTUnwrap(store.installedExtension(withUniqueIdentifier: identifier))
+            XCTAssertTrue(record.isDisabled)
+            XCTAssertNotNil(record.cpmOriginIdentifier)
+            let restored = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(record))
+            XCTAssertEqual(restored, record)
+        }
+    }
+
     func testHealthyReloadAndUnrelatedErrorsKeepOrigin() async throws {
         let policy = CPMExtensionBaseURLPolicy(installationStore: registry(), isEnabled: { true })
         let webExtension = try await webExtension()

@@ -36,6 +36,9 @@ private final class MockUserAuthenticator: UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
         result(.success)
     }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        false
+    }
 }
 
 class MockSyncFeatureFlagger: FeatureFlagger {

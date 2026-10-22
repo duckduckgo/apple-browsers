@@ -80,6 +80,35 @@ public final class MockWebExtensionManaging: WebExtensionManaging {
     public func unloadAllExtensions() {}
 
     public func reloadExtension(identifier: String) async throws {}
+    /// Records returned by `installedExtension(identifier:)`. Disabling and enabling update `isDisabled`.
+    public var installedExtensions: [InstalledWebExtension] = []
+    public private(set) var disabledIdentifiers: [String] = []
+    public private(set) var enabledIdentifiers: [String] = []
+    public var disableExtensionError: Error?
+    public var disableExtensionHandler: ((String) -> Void)?
+
+    public func disableExtension(identifier: String) async throws {
+        disabledIdentifiers.append(identifier)
+        defer { disableExtensionHandler?(identifier) }
+        if let disableExtensionError {
+            throw disableExtensionError
+        }
+        setDisabled(true, for: identifier)
+    }
+
+    public func enableExtension(identifier: String) async throws {
+        enabledIdentifiers.append(identifier)
+        setDisabled(false, for: identifier)
+    }
+
+    public func installedExtension(identifier: String) -> InstalledWebExtension? {
+        installedExtensions.first { $0.uniqueIdentifier == identifier }
+    }
+
+    private func setDisabled(_ isDisabled: Bool, for identifier: String) {
+        guard let index = installedExtensions.firstIndex(where: { $0.uniqueIdentifier == identifier }) else { return }
+        installedExtensions[index].isDisabled = isDisabled
+    }
 
     public func extensionName(for identifier: String) -> String? { nil }
     public func extensionVersion(for identifier: String) -> String? { nil }

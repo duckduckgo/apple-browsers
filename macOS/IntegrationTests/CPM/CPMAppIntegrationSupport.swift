@@ -173,7 +173,7 @@ final class CPMAppInstallationStore: InstalledWebExtensionStoring {
         for record in installedExtensions {
             update(InstalledWebExtension(uniqueIdentifier: record.uniqueIdentifier, filename: record.filename,
                                         name: record.name, version: "2000.1.1", embeddedType: record.embeddedType,
-                                        storeIdentity: record.storeIdentity, cpmOriginIdentifier: record.cpmOriginIdentifier))
+                                        storeIdentity: record.storeIdentity, isDisabled: record.isDisabled, cpmOriginIdentifier: record.cpmOriginIdentifier))
         }
     }
 

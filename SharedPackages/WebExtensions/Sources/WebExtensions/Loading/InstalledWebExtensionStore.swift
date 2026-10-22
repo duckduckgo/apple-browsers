@@ -25,19 +25,13 @@ public protocol InstalledWebExtensionStoring: AnyObject {
     var installedExtensions: [InstalledWebExtension] { get }
     func add(_ extension: InstalledWebExtension)
     func remove(uniqueIdentifier: String)
+    /// Replaces the stored record that has the same unique identifier.
     func update(_ extension: InstalledWebExtension)
     func installedExtension(withUniqueIdentifier uniqueIdentifier: String) -> InstalledWebExtension?
 }
 
 @available(macOS 15.4, iOS 18.4, *)
 public extension InstalledWebExtensionStoring {
-    /// Compatibility for custom stores; the persistent store overrides this with one atomic array update.
-    func update(_ extension: InstalledWebExtension) {
-        guard installedExtension(withUniqueIdentifier: `extension`.uniqueIdentifier) != nil else { return }
-        remove(uniqueIdentifier: `extension`.uniqueIdentifier)
-        add(`extension`)
-    }
-
     /// Returns all matching installations because old and new versions can coexist during an update.
     func installedExtensions(withStoreIdentity identity: WebExtensionStoreIdentity) -> [InstalledWebExtension] {
         installedExtensions.filter { $0.storeIdentity == identity }
@@ -88,14 +82,18 @@ public final class InstalledWebExtensionStore: InstalledWebExtensionStoring {
         storage.extensions = current
     }
 
-    public func installedExtension(withUniqueIdentifier uniqueIdentifier: String) -> InstalledWebExtension? {
-        installedExtensions.first { $0.uniqueIdentifier == uniqueIdentifier }
-    }
-
     public func update(_ extension: InstalledWebExtension) {
         var current = installedExtensions
-        guard let index = current.firstIndex(where: { $0.uniqueIdentifier == `extension`.uniqueIdentifier }) else { return }
+        guard let index = current.firstIndex(where: { $0.uniqueIdentifier == `extension`.uniqueIdentifier }) else {
+            Logger.webExtensions.error("❌ Extension not found: \(`extension`.uniqueIdentifier)")
+            return
+        }
+
         current[index] = `extension`
         storage.extensions = current
+    }
+
+    public func installedExtension(withUniqueIdentifier uniqueIdentifier: String) -> InstalledWebExtension? {
+        installedExtensions.first { $0.uniqueIdentifier == uniqueIdentifier }
     }
 }

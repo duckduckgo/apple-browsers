@@ -93,7 +93,17 @@ final class WebExtensionsDebugMenu: NSMenu {
             for identifier in webExtensionManager.webExtensionIdentifiers {
                 let name = webExtensionManager.extensionName(for: identifier)
                 let version = webExtensionManager.extensionVersion(for: identifier)
-                let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name, version: version)
+                let installedExtension = webExtensionManager.installedExtension(identifier: identifier)
+                // Embedded extensions can't be disabled, so they get no enabled state.
+                let isDisabled = installedExtension.flatMap { $0.isEmbedded ? nil : $0.isDisabled }
+                let isRemotelyDisabled = installedExtension.map {
+                    (webExtensionManager as? WebExtensionManager)?.remoteDisableEnforcer?.isRemotelyDisabled($0) == true
+                } ?? false
+                let menuItem = WebExtensionMenuItem(identifier: identifier,
+                                                    webExtensionName: name,
+                                                    version: version,
+                                                    isDisabled: isDisabled,
+                                                    isRemotelyDisabled: isRemotelyDisabled)
                 self.addItem(menuItem)
             }
         }
@@ -220,11 +230,22 @@ final class WebExtensionMenuItem: NSMenuItem {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(identifier: String, webExtensionName: String?, version: String?, submenu: NSMenu? = nil) {
+    /// - Parameters:
+    ///   - isDisabled: The extension's enabled state, or `nil` when it can't be disabled.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so it can't be enabled.
+    init(identifier: String,
+         webExtensionName: String?,
+         version: String?,
+         isDisabled: Bool? = nil,
+         isRemotelyDisabled: Bool = false,
+         submenu: NSMenu? = nil) {
         let displayName = webExtensionName ?? identifier
-        let title = version.map { "\(displayName) v\($0)" } ?? displayName
+        let versionedName = version.map { "\(displayName) v\($0)" } ?? displayName
+        let title = isDisabled == true ? "\(versionedName) (disabled)" : versionedName
         super.init(title: title, action: nil, keyEquivalent: "")
-        self.submenu = submenu ?? WebExtensionSubMenu(extensionIdentifier: identifier)
+        self.submenu = submenu ?? WebExtensionSubMenu(extensionIdentifier: identifier,
+                                                      isDisabled: isDisabled,
+                                                      isRemotelyDisabled: isRemotelyDisabled)
     }
 }
 
@@ -237,12 +258,30 @@ final class WebExtensionSubMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(extensionIdentifier: String) {
+    /// - Parameters:
+    ///   - isDisabled: The extension's enabled state, or `nil` to leave out the enable and disable item.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so the enable item is unavailable.
+    init(extensionIdentifier: String, isDisabled: Bool? = nil, isRemotelyDisabled: Bool = false) {
         self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
 
+        let loadStateMenuItem = isDisabled.map { isDisabled in
+            switch (isDisabled, isRemotelyDisabled) {
+            case (true, true):
+                // An item without an action is disabled.
+                NSMenuItem(title: "Enable the extension (disabled remotely)", action: nil)
+            case (true, false):
+                NSMenuItem(title: "Enable the extension", action: #selector(enableExtension), target: self)
+            case (false, _):
+                NSMenuItem(title: "Disable the extension", action: #selector(disableExtension), target: self)
+            }
+        }
+
         buildItems {
             NSMenuItem(title: "Open Folder in Finder", action: #selector(openFolderInFinder), target: self)
+            if let loadStateMenuItem {
+                loadStateMenuItem
+            }
             NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
@@ -255,6 +294,34 @@ final class WebExtensionSubMenu: NSMenu {
 
         let folder = webExtensionManager.extensionsDirectory.appendingPathComponent(extensionIdentifier, isDirectory: true)
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
+    }
+
+    @objc func disableExtension() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                try await webExtensionManager.disableExtension(identifier: extensionIdentifier)
+            } catch {
+                Logger.webExtensions.error("Failed to disable extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func enableExtension() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                try await webExtensionManager.enableExtension(identifier: extensionIdentifier)
+            } catch {
+                Logger.webExtensions.error("Failed to enable extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
+            }
+        }
     }
 
     @objc func uninstallExtension() {

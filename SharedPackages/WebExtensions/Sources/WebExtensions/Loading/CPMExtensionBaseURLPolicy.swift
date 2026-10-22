@@ -78,7 +78,8 @@ final class CPMExtensionBaseURLPolicy {
     private func rotateOrigin(of installed: InstalledWebExtension) {
         installationStore.update(InstalledWebExtension(
             uniqueIdentifier: installed.uniqueIdentifier, filename: installed.filename, name: installed.name, version: installed.version,
-            embeddedType: installed.embeddedType, storeIdentity: installed.storeIdentity, cpmOriginIdentifier: UUID()
+            embeddedType: installed.embeddedType, storeIdentity: installed.storeIdentity,
+            isDisabled: installed.isDisabled, cpmOriginIdentifier: UUID()
         ))
     }
 

@@ -460,6 +460,16 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("JSON.stringify(permissionsLog.request) === '[{\"permissions\":[\"nativeMessaging\"]}]'")
     }
 
+    func testWhenOffscreenIsAskedAbout_ThenTheVirtualPermissionIsGrantedWithoutAskingTheHost() throws {
+        try installFakePermissions()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['offscreen'] })")
+
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+    }
+
     // MARK: - App Permissions
 
     func testWhenPrivacyIsAskedAbout_ThenTheAppAnswersAndTheHostIsNotAsked() throws {
@@ -1512,8 +1522,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
     /// rejects the whole call with its validation error as soon as one name is not among them.
-    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy` and `idle` are
-    /// unknown — the stub script handles those itself, so `downloads` stands in for a truly unknown name.
+    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy`, `idle` and
+    /// `offscreen` are unknown but handled by the stub script, so `downloads` stands in for a truly unknown name.
     private func installFakePermissions() throws {
         context.evaluateScript("""
         var unknownPermissions = ['privacy', 'idle', 'offscreen', 'downloads'];

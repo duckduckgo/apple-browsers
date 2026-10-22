@@ -49,6 +49,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
+    private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
     private var isEntranceAnimationPending = false
@@ -184,6 +185,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        customizationStateReporter.fireDailyState()
         finishRestoringScrollPosition()
         if presentedViewController?.isBeingDismissed ?? true {
             onboardingCoordinator?.pageDidAppear()

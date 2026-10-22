@@ -54,6 +54,9 @@ final class AppleTabOrganizer: TabOrganizing {
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
             let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
+            if response.forEachGroup {
+                return try await eachGroup(tabs, action: response.actionForMatching)
+            }
             if let criterion = response.groupBy {
                 return try await split(response, by: criterion, tabs: tabs)
             }
@@ -89,6 +92,24 @@ final class AppleTabOrganizer: TabOrganizing {
             groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: response.actionForOthers))
         }
         return TabOrganizerProposal(groups: groups)
+    }
+
+    /// The window's tab groups with `action`; without tab groups, the topics from group by topic.
+    private func eachGroup(_ tabs: [TabSnapshot], action: TabGroupAction) async throws -> TabOrganizerProposal {
+        let labels: TopicResponse
+        if tabs.contains(where: { $0.groupName != nil }) {
+            labels = TopicResponse(labels: tabs.enumerated().compactMap { index, tab in
+                tab.groupName.map { TopicResponse.Label(tabNumber: index + 1, topic: $0) }
+            })
+        } else {
+            labels = try await topicLabels(for: tabs)
+        }
+        var proposal = TabOrganizerProposalBuilder.proposal(from: labels, tabs: tabs)
+        for index in proposal.groups.indices where proposal.groups[index].name != TabOrganizerProposalBuilder.otherGroupName {
+            proposal.groups[index].action = action
+        }
+        proposal.actionForEachGroup = action
+        return proposal
     }
 
     static let topicBatchSize = 10
@@ -299,6 +320,8 @@ struct GeneratedTopicResponse {
 @available(macOS 26.0, *)
 @Generable
 struct GeneratedInstructionResponse {
+    @Guide(description: "true when the request asks to do something for each tab group or each topic, like 'a bookmark folder for each group' or 'move every group to its own window'")
+    var forEachGroup: Bool
     @Guide(description: "Short name for the matching tabs, 1 to 3 words")
     var name: String
     @Guide(description: "Numbers of the tabs the request is about")
@@ -316,6 +339,7 @@ struct GeneratedInstructionResponse {
                                    matchingTabNumbers: matchingTabNumbers,
                                    actionForMatching: actionForMatching.contract,
                                    actionForOthers: actionForOthers.contract,
-                                   groupBy: criterion.isEmpty ? nil : criterion)
+                                   groupBy: criterion.isEmpty ? nil : criterion,
+                                   forEachGroup: forEachGroup)
     }
 }

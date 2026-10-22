@@ -56,6 +56,8 @@ struct ProposedGroup: Identifiable, Equatable {
 
 struct TabOrganizerProposal: Equatable {
     var groups: [ProposedGroup]
+    /// Set for requests like "a bookmark folder for each group": on top of existing results only the action changes.
+    var actionForEachGroup: TabGroupAction?
 }
 
 enum TabOrganizerError: Error {
@@ -85,4 +87,6 @@ struct InstructionResponse: Codable {
     let actionForOthers: TabGroupAction
     /// Set when the request asks to split the matching tabs, e.g. "breed" for "separate dogs by breed".
     var groupBy: String?
+    /// "A bookmark folder for each group", "close every group": the action applies per group, not to one match.
+    var forEachGroup = false
 }

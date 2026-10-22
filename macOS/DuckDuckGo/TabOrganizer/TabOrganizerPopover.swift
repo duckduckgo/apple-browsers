@@ -205,7 +205,14 @@ final class TabOrganizerViewModel: ObservableObject {
                 let proposal = try await AppleTabOrganizer().organize(snapshotsForModel, request: request)
                 guard !Task.isCancelled else { return }
                 tabs = snapshots
-                if case .instruction = request, !groups.isEmpty {
+                if case .instruction = request, !groups.isEmpty, let action = proposal.actionForEachGroup {
+                    // Leftover tabs aren't a group anyone asked about.
+                    let leftovers = [TabOrganizerProposalBuilder.otherGroupName, TabOrganizerProposalBuilder.everythingElseGroupName]
+                    for index in groups.indices where !leftovers.contains(groups[index].name) {
+                        groups[index].action = action
+                    }
+                    notice = nil
+                } else if case .instruction = request, !groups.isEmpty {
                     refine(with: proposal)
                 } else {
                     groups = proposal.groups

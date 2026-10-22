@@ -192,74 +192,85 @@ actor EncryptedHistoryStore: HistoryStoring {
     }
 
     func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        try await save(entries: [entry])[entry.identifier] ?? []
+    }
+
+    func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]] {
         try await withCheckedThrowingContinuation { continuation in
             context.perform {
-
-                // Check for existence
-                let fetchRequest = HistoryEntryManagedObject.fetchRequest() as NSFetchRequest<HistoryEntryManagedObject>
-                fetchRequest.returnsObjectsAsFaults = false
-                fetchRequest.fetchLimit = 1
-                fetchRequest.predicate = NSPredicate(format: "identifier == %@", entry.identifier as CVarArg)
-                let fetchedObjects: [HistoryEntryManagedObject]
+                let visitMOsByEntry: [UUID: [VisitManagedObject]]
                 do {
-                    fetchedObjects = try self.context.fetch(fetchRequest)
+                    let storedEntries = try self.fetchEntries(identifiedBy: entries.map(\.identifier), in: self.context)
+                    visitMOsByEntry = try Dictionary(entries.map {
+                        ($0.identifier, try self.insertOrUpdate($0, storedEntry: storedEntries[$0.identifier], in: self.context))
+                    }, uniquingKeysWith: { first, second in first + second })
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
-                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
+                    Self.fireSaveFailedPixels(error: error)
+                    self.context.reset()
                     continuation.resume(throwing: error)
                     return
                 }
 
-                assert(fetchedObjects.count <= 1, "More than 1 history entry with the same identifier")
-
-                let historyEntryManagedObject: HistoryEntryManagedObject
-                if let fetchedObject = fetchedObjects.first {
-                    // Update existing
-                    fetchedObject.update(with: entry)
-                    historyEntryManagedObject = fetchedObject
-                } else {
-                    // Add new
-                    let insertedObject = NSEntityDescription.insertNewObject(forEntityName: HistoryEntryManagedObject.className(), into: self.context)
-                    guard let historyEntryMO = insertedObject as? HistoryEntryManagedObject else {
-                        continuation.resume(throwing: HistoryStoreError.savingFailed)
-                        return
-                    }
-                    historyEntryMO.update(with: entry, afterInsertion: true)
-                    historyEntryManagedObject = historyEntryMO
+                do {
+                    try self.context.save()
+                    Logger.history.debug("HistoryStore: saved \(entries.count) entries")
+                } catch {
+                    Self.fireSaveFailedPixels(error: error)
+                    self.context.reset()
+                    continuation.resume(throwing: HistoryStoreError.savingFailed)
+                    return
                 }
 
-                let insertionResult = self.insertNewVisits(of: entry,
-                                                           into: historyEntryManagedObject,
-                                                           context: self.context)
-                switch insertionResult {
-                case .failure(let error):
-                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
-                    PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
-                    self.context.reset()
-                    continuation.resume(throwing: error)
-                case .success(let visitMOs):
-                    do {
-                        try self.context.save()
-                        Logger.history.debug("HistoryStore: saved entry \(entry.url.shortDescription)")
-                    } catch {
-                        PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
-                        PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
-                        self.context.reset()
-                        continuation.resume(throwing: HistoryStoreError.savingFailed)
-                        return
+                continuation.resume(returning: visitMOsByEntry.mapValues { visitMOs in
+                    visitMOs.compactMap { visitMO in
+                        visitMO.date.map { (id: visitMO.objectID.uriRepresentation(), date: $0) }
                     }
+                })
+            }
+        }
+    }
 
-                    let result = visitMOs.compactMap {
-                        if let date = $0.date {
-                            return (id: $0.objectID.uriRepresentation(), date: date)
-                        } else {
-                            return nil
-                        }
-                    }
-                    continuation.resume(returning: result)
+    /// Fetches the stored entries up front: fetching them one by one while inserting would also scan every pending insert.
+    nonisolated private func fetchEntries(identifiedBy identifiers: [UUID], in context: NSManagedObjectContext) throws -> [UUID: HistoryEntryManagedObject] {
+        var storedEntries = [UUID: HistoryEntryManagedObject]()
+        for chunk in identifiers.chunked(into: 500) {
+            let fetchRequest = HistoryEntryManagedObject.fetchRequest() as NSFetchRequest<HistoryEntryManagedObject>
+            fetchRequest.returnsObjectsAsFaults = false
+            fetchRequest.predicate = NSPredicate(format: "identifier IN %@", chunk)
+            for storedEntry in try context.fetch(fetchRequest) {
+                if let identifier = storedEntry.identifier {
+                    storedEntries[identifier] = storedEntry
                 }
             }
         }
+        return storedEntries
+    }
+
+    /// Stages the entry and its unsaved visits in the context without saving it.
+    nonisolated private func insertOrUpdate(
+        _ entry: HistoryEntry,
+        storedEntry: HistoryEntryManagedObject?,
+        in context: NSManagedObjectContext
+    ) throws -> [VisitManagedObject] {
+        let historyEntryManagedObject: HistoryEntryManagedObject
+        if let storedEntry {
+            storedEntry.update(with: entry)
+            historyEntryManagedObject = storedEntry
+        } else {
+            let insertedObject = NSEntityDescription.insertNewObject(forEntityName: HistoryEntryManagedObject.className(), into: context)
+            guard let historyEntryMO = insertedObject as? HistoryEntryManagedObject else {
+                throw HistoryStoreError.savingFailed
+            }
+            historyEntryMO.update(with: entry, afterInsertion: true)
+            historyEntryManagedObject = historyEntryMO
+        }
+
+        return try insertNewVisits(of: entry, into: historyEntryManagedObject, context: context).get()
+    }
+
+    private static func fireSaveFailedPixels(error: Error) {
+        PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
+        PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
     }
 
     nonisolated private func insertNewVisits(of historyEntry: HistoryEntry,

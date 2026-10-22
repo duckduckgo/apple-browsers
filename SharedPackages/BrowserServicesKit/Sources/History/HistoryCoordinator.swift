@@ -157,31 +157,98 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return visit
     }
 
-    /// Adds imported visits in a batch, publishing history once, and returns after each changed entry has been saved once.
+    /// Saves imported visits in one transaction, then adds them to history and publishes it once.
     ///
+    /// If saving fails, neither history nor the store changes, so a retry imports every visit again.
     /// An imported title replaces the entry's title only when its visit is the entry's newest, or the entry has no title.
     @MainActor
     public func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
-        guard isHistoryLoaded, var historyDictionary else {
+        guard isHistoryLoaded, let historyDictionary else {
             throw HistoryImport.Error.historyNotLoaded
         }
 
-        var changedEntries = [URL: HistoryEntry]()
-        for importedVisit in visits.sorted(by: { $0.date < $1.date }) {
-            let entry = historyDictionary[importedVisit.url] ?? HistoryEntry(url: importedVisit.url)
-            _ = entry.addVisit(at: importedVisit.date, tabID: nil)
-            if let title = importedVisit.title, !title.isEmpty,
-               importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
-                entry.title = title
+        let visitsByURL = Dictionary(grouping: visits.sorted(by: { $0.date < $1.date }), by: \.url)
+        var drafts = [URL: HistoryEntry]()
+        for (url, importedVisits) in visitsByURL {
+            let draft = makeImportDraft(of: historyDictionary[url], url: url)
+            for importedVisit in importedVisits {
+                _ = draft.addVisit(at: importedVisit.date, tabID: nil)
+                Self.applyTitle(of: importedVisit, to: draft)
             }
-            historyDictionary[importedVisit.url] = entry
-            changedEntries[importedVisit.url] = entry
+            drafts[url] = draft
+        }
+        guard !drafts.isEmpty else { return }
+
+        let newURLs = Set(drafts.keys.filter { historyDictionary[$0] == nil })
+        let storedVisitIDs = try await historyStoring.save(entries: Array(drafts.values))
+        merge(drafts, of: visitsByURL, newURLs: newURLs, storedVisitIDs: storedVisitIDs)
+    }
+
+    /// A copy to save the imported visits through, so history only changes once the save succeeds.
+    private func makeImportDraft(of entry: HistoryEntry?, url: URL) -> HistoryEntry {
+        guard let draft = entry?.copy() as? HistoryEntry else {
+            return HistoryEntry(url: url)
+        }
+        // Visits that were already there are saved through the entry in history, not again through the draft.
+        draft.visits.forEach { $0.savingState = .saved }
+        return draft
+    }
+
+    private static func applyTitle(of importedVisit: HistoryImport.Visit, to entry: HistoryEntry) {
+        if let title = importedVisit.title, !title.isEmpty,
+           importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
+            entry.title = title
+        }
+    }
+
+    @MainActor
+    private func merge(
+        _ drafts: [URL: HistoryEntry],
+        of visitsByURL: [URL: [HistoryImport.Visit]],
+        newURLs: Set<URL>,
+        storedVisitIDs: [UUID: [(id: Visit.ID, date: Date)]]
+    ) {
+        guard var historyDictionary else { return }
+
+        var duplicateDrafts = [HistoryEntry]()
+        for (url, draft) in drafts {
+            let visitIDs = storedVisitIDs[draft.identifier] ?? []
+            guard let entry = historyDictionary[url] else {
+                // A draft of an entry that was burned during the save would bring its burned visits back.
+                if newURLs.contains(url) {
+                    updateVisitIdentifiers(visitIDs, in: draft)
+                    historyDictionary[url] = draft
+                }
+                continue
+            }
+
+            // Browsing can create an entry for a new URL while the draft is being saved; the draft's row is then
+            // folded into that entry, which saves the imported visits again.
+            let isDraftOfEntry = entry.identifier == draft.identifier
+            let visitIDsByDate = Dictionary(visitIDs.map { ($0.date, $0.id) }, uniquingKeysWith: { first, _ in first })
+            for importedVisit in visitsByURL[url] ?? [] {
+                let visit = entry.addVisit(at: importedVisit.date, tabID: nil)
+                if isDraftOfEntry {
+                    visit.savingState = .saved
+                    visit.identifier = visitIDsByDate[importedVisit.date]
+                }
+                Self.applyTitle(of: importedVisit, to: entry)
+            }
+            if !isDraftOfEntry {
+                duplicateDrafts.append(draft)
+                save(entry: entry)
+            }
         }
 
         self.historyDictionary = historyDictionary
-        for entry in changedEntries.values {
-            guard let entryCopy = copyForSaving(entry) else { continue }
-            try await store(entryCopy, of: entry)
+        if !duplicateDrafts.isEmpty {
+            Task {
+                do {
+                    try await historyStoring.removeEntries(duplicateDrafts)
+                } catch {
+                    Logger.history.error("Removing duplicate imported history entries failed: \(error.localizedDescription)")
+                }
+            }
         }
     }
 

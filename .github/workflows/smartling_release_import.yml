@@ -16,7 +16,7 @@ on:
         type: string
         default: ""
       dry_run:
-        description: "Import into the working tree only: no commit, push or pull request"
+        description: "Import into the working tree only: no commit, push or pull request (the release files in Smartling are still refreshed)"
         type: boolean
         default: false
       reimport:
@@ -166,6 +166,10 @@ jobs:
         if: steps.script.outputs.available == 'true'
         run: pip install aiohttp
 
+      - name: Install xmlstarlet
+        if: steps.script.outputs.available == 'true' && matrix.platform == 'macOS'
+        run: brew install xmlstarlet
+
       - name: Import ${{ matrix.platform }} release translations
         id: import
         if: steps.script.outputs.available == 'true'
@@ -219,6 +223,7 @@ jobs:
             🔗 Job: ${{ steps.import.outputs.job_url || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }})
             📝 String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}
             🌍 Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}
+            ⏸️ Jobs awaiting authorization, which keep their strings out of other jobs: ${{ steps.import.outputs.jobs_awaiting_authorization || 'none' }}
             ✋ Reason: ${{ steps.import.outputs.reason || 'A step failed before the import ran. See the workflow logs.' }}
             🌿 Release branch: ${{ steps.release.outputs.branch || 'not found' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

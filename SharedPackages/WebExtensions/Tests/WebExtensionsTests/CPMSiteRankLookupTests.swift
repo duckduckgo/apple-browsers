@@ -98,6 +98,7 @@ final class CPMSiteRankLookupTests: XCTestCase {
         XCTAssertNil(CPMSiteRankLookup.decode(count: -1, base64: data))
     }
 
+#if os(macOS)
     func testBundledDataLoads() throws {
         let data = try XCTUnwrap(CPMSiteRankLookup.loadBundledData())
         XCTAssertGreaterThan(data.hashes.count, 5000)
@@ -108,7 +109,7 @@ final class CPMSiteRankLookupTests: XCTestCase {
     /// `site-buckets.json` must be the list the bundled extension was built with, which esbuild inlines into its background script.
     func testBundledDataMatchesTheBundledExtension() throws {
         let file = try XCTUnwrap(CPMSiteRankLookup.loadBundledFile())
-        guard #available(macOS 15.4, iOS 18.4, *) else { throw XCTSkip("The embedded extension needs macOS 15.4 or iOS 18.4") }
+        guard #available(macOS 15.4, *) else { throw XCTSkip("The embedded extension needs macOS 15.4") }
         let zipURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
         let archive = try Archive(url: zipURL, accessMode: .read)
         let entry = try XCTUnwrap(archive["public/js/background-embedded.js"])
@@ -117,6 +118,7 @@ final class CPMSiteRankLookupTests: XCTestCase {
         let source = try XCTUnwrap(String(data: script, encoding: .utf8))
         XCTAssertTrue(source.contains("\"\(file.data)\""), "site-buckets.json differs from the list in the bundled extension")
     }
+#endif
 
     private static func makeLookup(_ domains: [String]) -> CPMSiteRankLookup {
         let (count, data) = encode(domains)

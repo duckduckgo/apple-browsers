@@ -33,6 +33,7 @@ import WebKit
 @_spi(Testing) import PixelKit
 
 // swiftlint:disable inclusive_language
+@MainActor
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
@@ -318,6 +319,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
         XCTAssertEqual(configValues?.supportsCanonicalChatFormat, true)
+        // Native prompt flows on iPad complete from `responseState`, which the page sends only on request.
+        XCTAssertEqual(configValues?.supportsResponseStateReporting, true)
     }
     
     func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndNotInFireModeThenSupportsNativeStorageIsTrue() {
@@ -481,7 +484,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     func testWhenFlagOnAndParamsValidThenEditPromptForwardsDecodedRequestAndReturnsInputBoxReply() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
         let inputBox = MockAIChatInputBox()
-        inputBox.editPromptResult = .submit(prompt: "edited", images: nil, files: nil)
+        inputBox.editPromptResult = .submit(prompt: "edited", attachments: .none)
         aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
 
         let params: [String: Any] = ["prompt": "original", "hasResponsesToLose": true]
@@ -490,7 +493,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(inputBox.receivedRequest?.prompt, "original")
         XCTAssertEqual(inputBox.receivedRequest?.hasResponsesToLose, true)
-        guard case .submit(let prompt, _, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
+        guard case .submit(let prompt, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
         XCTAssertEqual(prompt, "edited")
     }
 
@@ -1378,6 +1381,7 @@ extension AIChatUserScriptHandlerTests {
         DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
     }
 
+    @MainActor
     private func pullPrompt() -> AIChatNativePrompt? {
         aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
     }
@@ -1464,6 +1468,7 @@ extension AIChatUserScriptHandlerTests {
     }
 
     /// The page-loading path: the FE pulls the prompt, so it is stamped on the way out.
+    @MainActor
     func testWhenAskPromptIsPulledThenItCarriesTermsAccepted() {
         enableNativeTermsOfService()
         recordAcceptedInNativeInput()
@@ -1472,6 +1477,7 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(pullPrompt()?.termsAccepted, true)
     }
 
+    @MainActor
     func testWhenPromptSentWithoutAskIsPulledThenItCarriesTermsAcceptedFalse() {
         enableNativeTermsOfService()
         recordAcceptedInNativeInput()
@@ -1480,6 +1486,7 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(pullPrompt()?.termsAccepted, false)
     }
 
+    @MainActor
     func testWhenNativeTermsOfServiceIsOffThenPulledPromptCarriesNoMarker() {
         mockFeatureFlagger.enabledFeatureFlags = []
         AIChatPromptHandler.shared.setData(askPrompt)
@@ -1683,5 +1690,114 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     private(set) var cancelEditCallCount = 0
     func cancelEdit() {
         cancelEditCallCount += 1
+    }
+}
+
+@MainActor
+extension AIChatUserScriptHandlerTests {
+    func testOrdinaryPromptUsesSharedHandlerWithAttachmentFeatureOffAndOn() {
+        let prompts: [(name: String, prompt: AIChatNativePrompt)] = [
+            ("text", .queryPrompt("ordinary", autoSubmit: true)),
+            ("draft with model and reasoning", .queryPrompt("Review before sending", autoSubmit: false,
+                                                           modelId: "gpt-5.2", reasoningEffort: .medium)),
+            ("image", .queryPrompt("Describe this image", autoSubmit: true,
+                                   attachments: AIChatPromptAttachments(images: [.init(data: "image-data", format: "png")]))),
+            ("file", .queryPrompt("Summarize this file", autoSubmit: true,
+                                  attachments: AIChatPromptAttachments(files: [.init(data: "file-data", fileName: "document.pdf", mimeType: "application/pdf")])))
+        ]
+        defer { AIChatPromptHandler.shared.reset() }
+        let flagStates: [[FeatureFlag]] = [[], [.aiChatContextualAttachMoreTabs]]
+        for flags in flagStates {
+            mockFeatureFlagger.enabledFeatureFlags = flags
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+            let session = AIChatInitialPromptSession()
+            aiChatUserScriptHandler.connectInitialPromptSession(session)
+            for (name, prompt) in prompts {
+                AIChatPromptHandler.shared.reset()
+                AIChatPromptHandler.shared.setData(prompt)
+
+                XCTAssertEqual(pullPrompt(), prompt, "\(name) prompt must preserve its payload with flags: \(flags)")
+                XCTAssertNil(pullPrompt(), "\(name) prompt must be consumed once with flags: \(flags)")
+            }
+        }
+    }
+
+    func testRecipientConsumptionNeverFallsBackToSharedPrompt() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualAttachMoreTabs]
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        let recipient = AIChatNativePrompt.queryPrompt("recipient", autoSubmit: true)
+        let ordinary = AIChatNativePrompt.queryPrompt("ordinary", autoSubmit: true)
+        session.install(AIChatInitialPromptDelivery(prompt: recipient) {})
+        AIChatPromptHandler.shared.setData(ordinary)
+
+        XCTAssertEqual(pullPrompt(), recipient)
+        XCTAssertNil(pullPrompt())
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), ordinary)
+    }
+
+    func testRecipientCancellationNeverFallsBackToSharedPrompt() {
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk) {})
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        aiChatUserScriptHandler.cancelInitialPrompt()
+
+        XCTAssertNil(pullPrompt())
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), askPrompt)
+    }
+
+    func testRecipientTimeoutNeverFallsBackToSharedPrompt() async throws {
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk, consumptionTimeout: 0) {})
+        AIChatPromptHandler.shared.setData(askPrompt)
+        let wait = try XCTUnwrap(aiChatUserScriptHandler.captureInitialPromptWait())
+
+        let maySubmit = await wait()
+
+        XCTAssertTrue(maySubmit)
+        XCTAssertNil(pullPrompt())
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), askPrompt)
+    }
+
+    func testRecipientPromptStillUsesTermsAcceptedMarker() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: askPrompt) {})
+
+        XCTAssertEqual(pullPrompt()?.termsAccepted, true)
+    }
+
+    func testReplacedHandlerCannotConsumeOrCancelRecipientOrSharedPrompt() {
+        let session = AIChatInitialPromptSession()
+        let old = aiChatUserScriptHandler!
+        old.connectInitialPromptSession(session)
+        let current = makeAIChatUserScriptHandler()
+        current.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk) {})
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        old.cancelInitialPrompt()
+        old.disconnectInitialPromptSession()
+        XCTAssertNil(old.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])))
+        let actual = current.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertEqual(actual as? AIChatNativePrompt, promptSentWithoutAsk)
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), askPrompt)
+    }
+
+    func testNavigationResetAllowsOrdinaryPromptAgain() {
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk) {})
+        _ = pullPrompt()
+        session.didStartNavigation(DummyWKNavigation())
+        session.didStartNavigation(DummyWKNavigation())
+        AIChatPromptHandler.shared.setData(promptSentWithoutAsk)
+
+        XCTAssertEqual(pullPrompt(), promptSentWithoutAsk)
     }
 }

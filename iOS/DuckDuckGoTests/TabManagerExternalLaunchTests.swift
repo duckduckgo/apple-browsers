@@ -253,6 +253,7 @@ final class TabManagerExternalLaunchTests {
             voiceSearchHelper: MockVoiceSearchHelper(),
             launchSourceManager: launchSourceManager,
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+            usageContextProvider: UsageContextProvider(),
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub()
         )

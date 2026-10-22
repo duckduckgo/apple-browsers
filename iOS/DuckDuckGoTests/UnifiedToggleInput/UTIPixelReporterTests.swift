@@ -341,6 +341,7 @@ final class UTIPixelReporterTests: XCTestCase {
             "has_image_attachment": "false",
             "has_file_attachment": "false",
             "has_tab_attachment": "false",
+            "has_pasted_text": "false",
             "has_text": "true",
             "surface": "duck_ai",
             "page_type": "duck_ai",
@@ -413,13 +414,14 @@ final class UTIPixelReporterTests: XCTestCase {
     func testReportQuerySubmittedFiresDailyWithResolvedSurfacePageTypeAndToggleVisibility() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .serp) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI, queryType: .search)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "surface": "address_bar",
             "page_type": "serp",
             "toggle_visible": "true",
+            "query_type": "search",
             "default_mode": "duckAI"
         ])
     }
@@ -427,7 +429,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testWhenQuerySubmittedWithToggleHiddenThenToggleVisibleIsFalse() {
         let reporter = makeReporter { self.context(isToggleVisible: false) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search, queryType: .search)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["toggle_visible"], "false")
     }
@@ -435,7 +437,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search, queryType: .search)
         let queryParams = pixelKitMock.actualFireCalls.last?.additionalParameters ?? [:]
 
         reporter.reportPromptSubmitted(hasText: true,
@@ -472,6 +474,50 @@ final class UTIPixelReporterTests: XCTestCase {
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileAttached.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "file_picker"])
+    }
+
+    func testPastedTextPixelsReportNamesSurfacesAndFrequency() {
+        let actions: [(UnifiedToggleInputPastedTextPixel.Action, String)] = [
+            (.attached, "aichat_unified_input_pasted_text_attached"),
+            (.removed, "aichat_unified_input_pasted_text_removed"),
+            (.edited, "aichat_unified_input_pasted_text_edited"),
+            (.sheetOpened, "aichat_unified_input_pasted_text_sheet_opened")
+        ]
+        for surface in [UnifiedToggleInputPixelSurface.addressBar, .duckAI, .contextualChat] {
+            let reporter = makeReporter { self.context(surface: surface) }
+            for (action, name) in actions {
+                reporter.reportPastedText(action)
+                let call = pixelKitMock.actualFireCalls.last
+                XCTAssertEqual(call?.pixel.name, name)
+                XCTAssertEqual(call?.pixel.parameters, ["surface": surface.rawValue])
+                XCTAssertEqual(call?.frequency, .dailyAndCount)
+            }
+        }
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 12)
+    }
+
+    func testRemovingAPastedTextChipReportsThePastedTextRemovedPixel() {
+        let reporter = makeReporter { self.context(surface: .duckAI) }
+
+        reporter.reportAttachmentRemoved(.pastedText(AIChatPastedText(content: "pasted")))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["aichat_unified_input_pasted_text_removed"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["surface": "duck_ai"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
+    func testPromptSubmittedReportsWhetherPastedTextWasPresent() {
+        let reporter = makeReporter { self.context(surface: .addressBar) }
+
+        reporter.reportPromptSubmitted(hasText: false, selectedTool: nil, attachments: [.pastedText(AIChatPastedText(content: "pasted"))],
+                                       reasoningMode: nil, modelId: nil, defaultOmnibarMode: .search, isFirstPromptNewInstall: false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_pasted_text"], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_file_attachment"], "false")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_image_attachment"], "false")
+
+        reporter.reportPromptSubmitted(hasText: true, selectedTool: nil, attachments: [], reasoningMode: nil, modelId: nil,
+                                       defaultOmnibarMode: .search, isFirstPromptNewInstall: false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_pasted_text"], "false")
     }
 
     func testReportImageAttachedFiresDailyWithResolvedSurface() {

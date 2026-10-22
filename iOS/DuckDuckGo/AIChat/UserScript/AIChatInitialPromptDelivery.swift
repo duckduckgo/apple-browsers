@@ -29,10 +29,13 @@ final class AIChatInitialPromptDelivery {
         case cancelled
     }
 
+    let promptInfo: AIChatOpeningPromptInfo
+
     private var prompt: AIChatNativePrompt?
     private var onConsumed: (() -> Void)?
     private let consumptionGate = AIChatFrontendReadinessGate()
     private let consumptionTimeout: TimeInterval
+    private let waitUntilReady: @MainActor (AIChatFrontendReadinessGate, TimeInterval) async -> Bool
     private let evictionProtectionDeadline: Date
     private let now: () -> Date
     private var isCancelled = false
@@ -42,9 +45,14 @@ final class AIChatInitialPromptDelivery {
          consumptionTimeout: TimeInterval = 5,
          evictionProtectionDuration: TimeInterval = 30,
          now: @escaping () -> Date = Date.init,
+         waitUntilReady: @escaping @MainActor (AIChatFrontendReadinessGate, TimeInterval) async -> Bool = { gate, timeout in
+             await gate.waitUntilReady(timeout: timeout)
+         },
          onConsumed: @escaping () -> Void) {
         self.prompt = prompt
+        self.promptInfo = AIChatOpeningPromptInfo(prompt: prompt)
         self.consumptionTimeout = consumptionTimeout
+        self.waitUntilReady = waitUntilReady
         self.evictionProtectionDeadline = now().addingTimeInterval(evictionProtectionDuration)
         self.now = now
         self.onConsumed = onConsumed
@@ -54,7 +62,7 @@ final class AIChatInitialPromptDelivery {
         prompt != nil
     }
 
-    /// The prompt lives only in the recipient's controller, so evicting it loses the prompt. The protection
+    /// The prompt belongs to the recipient's session, so evicting its controller loses the prompt. The protection
     /// is bounded so a page that never pulls the prompt doesn't pin its tab in the cache.
     var protectsRecipientFromEviction: Bool {
         prompt != nil && now() < evictionProtectionDeadline
@@ -75,7 +83,7 @@ final class AIChatInitialPromptDelivery {
         guard !isCancelled, !Task.isCancelled else { return .cancelled }
         guard !didTimeOut else { return .timedOut }
         guard !consumptionGate.isReady else { return .consumed }
-        let completionSignalled = await consumptionGate.waitUntilReady(timeout: consumptionTimeout)
+        let completionSignalled = await waitUntilReady(consumptionGate, consumptionTimeout)
         if isCancelled || Task.isCancelled { return .cancelled }
         if didTimeOut { return .timedOut }
         if completionSignalled || consumptionGate.isReady { return .consumed }

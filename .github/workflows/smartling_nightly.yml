@@ -1,0 +1,144 @@
+name: Smartling - Nightly Jobs
+
+# Manual only for now. A follow-up adds `schedule:` (every day, weekends included);
+# the platform matrix and the limit below already handle scheduled runs, which have no inputs.
+# To test without authorizing anything, run it with auto_authorize_max_usd set to 0.
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        default: both
+        options:
+          - both
+          - iOS
+          - macOS
+      auto_authorize_max_usd:
+        description: "Authorize jobs whose maximum USD estimate is at most this (0 never authorizes)"
+        type: string
+        default: "500.00"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smartling-nightly
+  cancel-in-progress: false
+
+env:
+  AUTO_AUTHORIZE_MAX_USD: ${{ inputs.auto_authorize_max_usd || '500.00' }}
+
+jobs:
+  smartling:
+    name: ${{ matrix.platform }} nightly translation job
+    runs-on: [image:osx-tahoe-27, m4pro]
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON((github.event_name == 'schedule' || inputs.platform == 'both') && '["iOS","macOS"]' || format('["{0}"]', inputs.platform)) }}
+
+    steps:
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check out the code
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Validate Smartling write branch
+        id: write_branch_check
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
+            echo "Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
+            exit 1
+          fi
+
+      - name: Resolve platform configuration
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
+              } >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unknown platform: $PLATFORM" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Set up Python
+        if: runner.environment != 'self-hosted'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install aiohttp
+
+      - name: Install xmlstarlet
+        if: matrix.platform == 'macOS'
+        run: brew install xmlstarlet
+
+      - name: Export localizations
+        id: export
+        run: |
+          set -e -o pipefail
+          ./${{ matrix.platform }}/scripts/loc_export.sh | xcbeautify
+
+      - name: Submit ${{ matrix.platform }} strings to Smartling
+        id: submit
+        env:
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
+            --job-name "Nightly $PLATFORM - $(date -u +%Y-%m-%d)" \
+            --pending-job-prefix "Nightly $PLATFORM - " \
+            --file-uri-prefix main \
+            --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD"
+
+      # TODO: Assign the task to this week's maintenance DRI once we know where to look them up.
+      # Until then it lands unassigned in the platform's app project.
+      - name: Open ${{ matrix.platform }} Smartling review task
+        if: >-
+          always() &&
+          steps.write_branch_check.outcome != 'failure' &&
+          (failure() || steps.submit.outputs.outcome == 'review_required')
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ env.ASANA_PROJECT_ID }}
+          asana-task-name: "Smartling job needs review: ${{ steps.submit.outputs.job_name || format('Nightly {0} (no job created)', matrix.platform) }}"
+          asana-task-description: >-
+            The ${{ matrix.platform }} nightly Smartling job could not be automatically authorized.
+            Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}.
+            Maximum USD estimate: ${{ steps.submit.outputs.max_usd || 'unavailable' }}.
+            String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}.
+            Reason: ${{ steps.submit.outputs.reason || 'Localization export or Smartling submission failed' }}.
+            Authorized automatically up to: $${{ env.AUTO_AUTHORIZE_MAX_USD }}.
+            Commit: ${{ github.sha }}.
+            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

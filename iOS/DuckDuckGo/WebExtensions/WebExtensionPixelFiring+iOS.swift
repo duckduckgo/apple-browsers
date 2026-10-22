@@ -85,31 +85,37 @@ private extension DuckDuckGoWebExtensionType {
 @available(iOS 18.4, *)
 struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
 
+    private let pixelFiring: (any PixelKitFiring)?
+
+    init(pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        self.pixelFiring = pixelFiring
+    }
+
     func fire(_ event: WebExtensionPixelEvent) {
         switch event {
         case .installed:
-            PixelKit.fire(Pixel.Event.webExtensionInstalled,
+            pixelFiring?.fire(Pixel.Event.webExtensionInstalled,
                           frequency: .dailyAndStandard)
-        case .installError(let error):
-            PixelKit.fire(Pixel.Event.webExtensionInstallError.withError(error),
+        case .installError(_, let error):
+            pixelFiring?.fire(Pixel.Event.webExtensionInstallError.withError(error),
                           frequency: .dailyAndStandard)
         case .uninstalled:
-            PixelKit.fire(Pixel.Event.webExtensionUninstalled,
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstalled,
                           frequency: .dailyAndStandard)
         case .uninstallError(let error):
-            PixelKit.fire(Pixel.Event.webExtensionUninstallError.withError(error),
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstallError.withError(error),
                           frequency: .dailyAndStandard)
         case .uninstalledAll:
-            PixelKit.fire(Pixel.Event.webExtensionUninstalledAll,
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstalledAll,
                           frequency: .dailyAndStandard)
         case .uninstallAllError(let error):
-            PixelKit.fire(Pixel.Event.webExtensionUninstallAllError.withError(error),
+            pixelFiring?.fire(Pixel.Event.webExtensionUninstallAllError.withError(error),
                           frequency: .dailyAndStandard)
         case .loaded:
-            PixelKit.fire(Pixel.Event.webExtensionLoaded,
+            pixelFiring?.fire(Pixel.Event.webExtensionLoaded,
                           frequency: .dailyAndStandard)
         case .loadError(let error):
-            PixelKit.fire(Pixel.Event.webExtensionLoadError.withError(error),
+            pixelFiring?.fire(Pixel.Event.webExtensionLoadError.withError(error),
                           frequency: .dailyAndStandard)
         case .reloadError(let type, let trigger, let phase, let error):
             let metadata = WebExtensionReloadErrorPixelMetadata(
@@ -118,9 +124,9 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
                 phase: phase,
                 error: error
             )
-            PixelKit.fire(WebExtensionReloadErrorPixel(metadata: metadata), frequency: .dailyAndCount)
+            pixelFiring?.fire(WebExtensionReloadErrorPixel(metadata: metadata), frequency: .dailyAndCount)
         case .embeddedInstalled(let type):
-            PixelKit.fire(type.installedPixel,
+            pixelFiring?.fire(type.installedPixel,
                           frequency: .dailyAndStandard)
         case .embeddedUpgraded(let type, let fromVersion, let toVersion):
             var params: [String: String] = [:]
@@ -130,61 +136,60 @@ struct iOSWebExtensionPixelFiring: WebExtensionPixelFiring {
             if let toVersion {
                 params["to_version"] = toVersion
             }
-            PixelKit.fire(type.upgradedPixel,
+            pixelFiring?.fire(type.upgradedPixel,
                           frequency: .dailyAndStandard,
                           options: .parameters(params))
         case .embeddedInstallError(let type, let error):
-            PixelKit.fire(type.installErrorPixel.withError(error),
+            pixelFiring?.fire(type.installErrorPixel.withError(error),
                           frequency: .dailyAndStandard)
         case .scriptletFetchSuccess(let type, let version, let count):
-            PixelKit.fire(Pixel.Event.webExtensionScriptletFetchSuccess,
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletFetchSuccess,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_type": type.rawValue, "version": version, "count": "\(count)"]))
         case .scriptletFetchError(let type, let error):
-            PixelKit.fire(Pixel.Event.webExtensionScriptletFetchError.withError(error),
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletFetchError.withError(error),
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_type": type.rawValue]))
         case .scriptletValidationError(let type, let error):
-            PixelKit.fire(Pixel.Event.webExtensionScriptletValidationError.withError(error),
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletValidationError.withError(error),
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_type": type.rawValue]))
         case .scriptletInstalled(let type, let version):
-            PixelKit.fire(Pixel.Event.webExtensionScriptletInstalled,
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletInstalled,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_type": type.rawValue, "version": version]))
         case .scriptletInstallError(let type, let error):
-            PixelKit.fire(Pixel.Event.webExtensionScriptletInstallError.withError(error),
+            pixelFiring?.fire(Pixel.Event.webExtensionScriptletInstallError.withError(error),
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_type": type.rawValue]))
         case .stateChecked:
-            PixelKit.fire(Pixel.Event.webExtensionStateChecked,
+            pixelFiring?.fire(Pixel.Event.webExtensionStateChecked,
                           frequency: .dailyAndStandard)
         case .expectedExtensionNotLoaded(let type):
-            PixelKit.fire(type.notLoadedPixel,
+            pixelFiring?.fire(type.notLoadedPixel,
                           frequency: .dailyAndStandard)
         case .adBlockingScriptletsNotFetched(let extensionLoaded):
-            PixelKit.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
+            pixelFiring?.fire(Pixel.Event.webExtensionAdBlockingScriptletsNotFetched,
                           frequency: .dailyAndStandard,
                           options: .parameters(["extension_loaded": extensionLoaded ? "true" : "false"]))
-        case .cpmInitializationFailed,
-             .cpmMessagingStuck,
-             .cpmMessagingRecoveredWithoutExtensionReload,
-             .cpmMessagingRecoveredAfterExtensionReload,
-             .cpmMessagingExtensionReloadFailed:
+        case .cpmMessagingEpisode, .cpmNetworkProcessRecoveryApplied, .cpmRecovery, .cpmStartupResponseMissing:
             fireCPMPixel(event)
+        case .defaultPasswordManagerSet, .bitwardenDailyActive, .apiCompatibilityGaps:
+            // Chrome extensions, and so password manager extensions, are only supported on macOS, so
+            // these are only sent there.
+            assertionFailure("\(event) is only sent on macOS")
         }
     }
 
     private func fireCPMPixel(_ event: WebExtensionPixelEvent) {
         guard let metadata = CPMWebExtensionPixelMetadata(event: event) else { return }
-        PixelKit.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
+        pixelFiring?.fire(CPMWebExtensionPixel(metadata: metadata), frequency: metadata.frequency.pixelKitFrequency)
     }
 }
 
 private extension CPMWebExtensionPixelFrequency {
     var pixelKitFrequency: PixelKit.Frequency {
         switch self {
-        case .daily: return .daily
         case .dailyAndCount: return .dailyAndCount
         }
     }

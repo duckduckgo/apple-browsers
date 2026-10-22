@@ -143,6 +143,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                     voiceSearchHelper: MockVoiceSearchHelper(),
                                     launchSourceManager: MockLaunchSourceManager(),
                                     darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
+                                    usageContextProvider: UsageContextProvider(),
                                     adBlockingAvailability: StubAdBlockingAvailability(),
                                     eventHub: StubEventHub()
         )
@@ -224,6 +225,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                 whatsNewRepository: MockWhatsNewMessageRepository(scheduledRemoteMessage: nil),
                 darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
                 onboardingManager: OnboardingManagerMock(),
+                usageContextProvider: UsageContextProvider(),
                 promptExposureReporter: MockPromptExposureReporter()
             )
         }

@@ -56,11 +56,13 @@ public class Tab: NSObject, NSCoding {
         static let selectedReasoningMode = "selectedReasoningMode"
         static let selectedTool = "selectedTool"
         static let duckAIEntrySource = "duckAIEntrySource"
+        static let linkPreviewDomains = "linkPreviewDomains"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
     
     let uid: String
+    private(set) var linkPreviewDomains = Set<String>()
     let favoritesExpansionState = FavoritesExpansionState()
     /// Set only for decoded tabs and cleared when their restoring main-frame navigation commits.
     ///
@@ -157,7 +159,23 @@ public class Tab: NSObject, NSCoding {
 
     @MainActor lazy var iPadOmnibarDraft = IPadOmnibarDraft()
 
-    var duckAIEntrySource: AIChatEntryPointSource?
+    var duckAIEntrySource: AIChatEntryPointSource? {
+        didSet { isDuckAIEntrySourceAwaitingPageLoad = duckAIEntrySource != nil }
+    }
+
+    /// True between a door stamping `duckAIEntrySource` and the next page load, which takes it.
+    private var isDuckAIEntrySourceAwaitingPageLoad = false
+
+    /// A load that failed before committing leaves its door unused.
+    func discardDuckAIEntrySourceAwaitingPageLoad() {
+        isDuckAIEntrySourceAwaitingPageLoad = false
+    }
+
+    /// The door stamped for the page now loading, if any. Each stamp attributes one page load only.
+    func takeDuckAIEntrySourceForPageLoad() -> AIChatEntryPointSource? {
+        defer { isDuckAIEntrySourceAwaitingPageLoad = false }
+        return isDuckAIEntrySourceAwaitingPageLoad ? duckAIEntrySource : nil
+    }
 
     /// Type of tab: web or AI Chat, derived from the current URL
     var type: TabType {
@@ -233,6 +251,9 @@ public class Tab: NSObject, NSCoding {
 
         self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
         hasPendingSessionRestoration = true
+        if decoder.containsValue(forKey: NSCodingKeys.linkPreviewDomains) {
+            linkPreviewDomains = Set(decoder.decodeObject(forKey: NSCodingKeys.linkPreviewDomains) as? [String] ?? [])
+        }
     }
 
     /// Ends session-restoration attribution for this tab, once a restoring navigation has committed.
@@ -244,6 +265,7 @@ public class Tab: NSObject, NSCoding {
         Logger.daxEasterEgg.debug("Tab encode - Saving logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
 
         coder.encode(uid, forKey: NSCodingKeys.uid)
+        coder.encode(Array(linkPreviewDomains), forKey: NSCodingKeys.linkPreviewDomains)
         coder.encode(link, forKey: NSCodingKeys.link)
         coder.encode(viewed, forKey: NSCodingKeys.viewed)
         coder.encode(isDesktop, forKey: NSCodingKeys.desktop)
@@ -262,17 +284,24 @@ public class Tab: NSObject, NSCoding {
 
     /// Returns a frozen deep copy containing only the fields that are persisted via NSCoding.
     func archivalSnapshot() -> Tab {
-        Tab(uid: uid,
-            link: link?.copy() as? Link,
-            viewed: viewed,
-            desktop: isDesktop,
-            lastViewedDate: lastViewedDate,
-            daxEasterEggLogoURL: daxEasterEggLogoURL,
-            contextualChatURL: contextualChatURL,
-            supportsTabHistory: supportsTabHistory,
-            fireTab: fireTab,
-            unifiedInputState: unifiedInputState,
-            duckAIEntrySource: duckAIEntrySource)
+        let snapshot = Tab(uid: uid,
+                           link: link?.copy() as? Link,
+                           viewed: viewed,
+                           desktop: isDesktop,
+                           lastViewedDate: lastViewedDate,
+                           daxEasterEggLogoURL: daxEasterEggLogoURL,
+                           contextualChatURL: contextualChatURL,
+                           supportsTabHistory: supportsTabHistory,
+                           fireTab: fireTab,
+                           unifiedInputState: unifiedInputState,
+                           duckAIEntrySource: duckAIEntrySource)
+        snapshot.linkPreviewDomains = linkPreviewDomains
+        return snapshot
+    }
+
+    func recordLinkPreviewDomain(for url: URL?) {
+        guard let host = url?.host, linkPreviewDomains.insert(host).inserted else { return }
+        notifyObservers()
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

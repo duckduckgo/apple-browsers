@@ -114,6 +114,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextConsumedPublisher: AnyPublisher<Void, Never> { get }
     var pageContextRemovedPublisher: AnyPublisher<Void, Never> { get }
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> { get }
     var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
     var syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never> { get }
 
@@ -186,6 +187,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
     public let pageContextConsumedPublisher: AnyPublisher<Void, Never>
     public let pageContextRemovedPublisher: AnyPublisher<Void, Never>
+    public let pageContextAddedPublisher: AnyPublisher<Void, Never>
     public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
     public let syncStatusPublisher: AnyPublisher<AIChatSyncHandler.SyncStatus, Never>
 
@@ -195,6 +197,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     private let pageContextConsumedSubject = PassthroughSubject<Void, Never>()
     private let pageContextRemovedSubject = PassthroughSubject<Void, Never>()
+    private let pageContextAddedSubject = PassthroughSubject<Void, Never>()
     private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
     private var syncObserverCancellable: AnyCancellable?
@@ -301,6 +304,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
         self.pageContextConsumedPublisher = pageContextConsumedSubject.eraseToAnyPublisher()
         self.pageContextRemovedPublisher = pageContextRemovedSubject.eraseToAnyPublisher()
+        self.pageContextAddedPublisher = pageContextAddedSubject.eraseToAnyPublisher()
         self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
         self.syncStatusPublisher = syncStatusSubject.eraseToAnyPublisher()
 
@@ -804,15 +808,18 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return nil
         }
         hasAttachedPageContext = payload.enabled
+        let automaticEnabled = featureFlagger.isFeatureOn(.aiChatPageContextAutoAttach) || storage.shouldAutomaticallySendPageContext
         let pixel: PixelKit.Event = {
             if payload.enabled {
-                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+                return AIChatPixel.aiChatPageContextAdded(automaticEnabled: automaticEnabled)
             }
-            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: storage.shouldAutomaticallySendPageContext)
+            return AIChatPixel.aiChatPageContextRemoved(automaticEnabled: automaticEnabled)
         }()
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
 
-        if !payload.enabled {
+        if payload.enabled {
+            pageContextAddedSubject.send()
+        } else {
             pageContextRemovedSubject.send()
         }
 

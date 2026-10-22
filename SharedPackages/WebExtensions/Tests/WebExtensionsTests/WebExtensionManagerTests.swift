@@ -106,6 +106,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                              storageProvider: WebExtensionStorageProviding? = nil,
+                             now: @escaping () -> Date = Date.init,
                              bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { _ in
                                  XCTFail("Unexpected bundled extension lookup")
                                  return nil
@@ -125,7 +126,8 @@ final class WebExtensionManagerTests: XCTestCase {
             isApplicationInBackground: isApplicationInBackground,
             isCPMLateBackgroundDocumentRecoveryEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
             isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
-            bundledExtensionURL: bundledExtensionURL
+            bundledExtensionURL: bundledExtensionURL,
+            now: now
         )
         manager.unloadGuard = WebExtensionUnloadGuard(
             now: { [unowned self] in currentDate },
@@ -166,8 +168,9 @@ final class WebExtensionManagerTests: XCTestCase {
     private func loadRealContext(identifier: String,
                                  into controller: WKWebExtensionController,
                                  permissions: [String] = [],
-                                 optionalPermissions: [String] = []) async throws -> WKWebExtensionContext {
-        let dir = try makeTestExtensionDirectory(permissions: permissions, optionalPermissions: optionalPermissions)
+                                 optionalPermissions: [String] = [],
+                                 embeddedType: DuckDuckGoWebExtensionType? = nil) async throws -> WKWebExtensionContext {
+        let dir = try makeTestExtensionDirectory(permissions: permissions, optionalPermissions: optionalPermissions, embeddedType: embeddedType)
         let webExtension = try await WKWebExtension(resourceBaseURL: dir)
         let context = WKWebExtensionContext(for: webExtension)
         context.uniqueIdentifier = identifier
@@ -1416,6 +1419,51 @@ final class WebExtensionManagerTests: XCTestCase {
                        ["gaps bitwarden 1.0.0: 2 apis, 1 urls", "gaps lastPass 1.0.0: 0 apis, 0 urls"])
     }
 
+    @MainActor
+    func testWhenNativeAPIsAreUnsupportedThenGapCountsAreDistinctAndExcludeEmbeddedExtensions() async throws {
+        let extensionTypes: [DuckDuckGoWebExtensionType?] = [nil, .embedded]
+        for embeddedType in extensionTypes {
+            let firstStoreID = String(repeating: "a", count: 32)
+            let secondStoreID = String(repeating: "b", count: 32)
+            installedExtensionStoringMock.installedExtensions = [
+                InstalledWebExtension(uniqueIdentifier: "first", filename: "first", name: nil, version: "1",
+                                      storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: firstStoreID)),
+                InstalledWebExtension(uniqueIdentifier: "second", filename: "second", name: nil, version: "1",
+                                      storeIdentity: WebExtensionStoreIdentity(store: .chromeWebStore, id: secondStoreID))
+            ]
+            let pixels = EventCapturingPixelFiring()
+            var date = Date(timeIntervalSince1970: 0)
+            let manager = makeManager(pixelFiring: pixels, now: { date })
+            manager.chromeWebStore = CatalogNamingWebStore(entries: [firstStoreID: .onePassword, secondStoreID: .bitwarden])
+            let firstContext = try await loadRealContext(identifier: "first", into: manager.controller, embeddedType: embeddedType)
+            let secondContext = try await loadRealContext(identifier: "second", into: manager.controller)
+
+            _ = WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.setZoom", in: firstContext)
+            _ = WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.setZoom", in: firstContext)
+            _ = WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.duplicate", in: firstContext)
+            _ = WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.setZoom", in: secondContext)
+            date += 60 * 60
+            manager.eventsListener.onBrowsingActivity?()
+
+            let firstCount = embeddedType == nil ? 2 : 0
+            XCTAssertEqual(Set(pixels.events.filter { $0.hasPrefix("gaps") }),
+                           ["gaps onePassword 1.0.0: \(firstCount) apis, 0 urls", "gaps bitwarden 1.0.0: 1 apis, 0 urls"])
+        }
+    }
+
+    @MainActor
+    func testWhenUnsupportedAPIContextIsNotLoadedThenItStillReturnsAnError() async throws {
+        let directory = try makeTestExtensionDirectory()
+        let context = WKWebExtensionContext(for: try await WKWebExtension(resourceBaseURL: directory))
+        XCTAssertNil(context.webExtensionController)
+
+        let error = WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.setZoom", in: context)
+
+        XCTAssertEqual(error.domain, "WebExtensionUnsupportedAPI")
+        XCTAssertEqual(error.code, 1)
+        XCTAssertEqual(error.localizedDescription, "Unsupported extension API: tabs.setZoom")
+    }
+
     // MARK: - Autofill Takeover Flag
 
     /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
@@ -1600,6 +1648,62 @@ final class WebExtensionManagerTests: XCTestCase {
         let version = manager.extensionVersion(for: "ext-1")
 
         XCTAssertNil(version)
+    }
+
+    // MARK: - Extension Origin Tests
+
+    @MainActor
+    func testWhenChromeWebStoreExtensionIsInstalledAndReloaded_ThenOriginUsesStoreIdentifier() async throws {
+        let extensionURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: String(repeating: "b", count: 32))
+        let manager = makeManagerWithRealLoader()
+
+        try await manager.installExtension(from: extensionURL, storeIdentity: identity)
+
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+        let context = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        let expectedURL = URL(string: "webkit-extension://\(identity.id)/")
+        XCTAssertEqual(context.baseURL, expectedURL)
+        XCTAssertEqual(context.uniqueIdentifier, installed.uniqueIdentifier)
+        XCTAssertNotEqual(context.uniqueIdentifier, identity.id)
+
+        manager.unloadAllExtensions()
+        await manager.reloadInstalledExtensions()
+
+        let restoredContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertEqual(restoredContext.baseURL, expectedURL)
+        XCTAssertEqual(restoredContext.uniqueIdentifier, installed.uniqueIdentifier)
+        manager.unloadAllExtensions()
+    }
+
+    @MainActor
+    func testWhenChromeWebStoreReplacementFails_ThenExistingExtensionIsRestored() async throws {
+        let extensionURL = try createTestWebExtension()
+        storageProvidingMock.resolvedExtensionURL = extensionURL
+        storageProvidingMock.mockCopyResult = extensionURL
+        let identity = WebExtensionStoreIdentity(store: .chromeWebStore, id: String(repeating: "b", count: 32))
+        let manager = makeManagerWithRealLoader()
+        try await manager.installExtension(from: extensionURL, storeIdentity: identity)
+        let installed = try XCTUnwrap(installedExtensionStoringMock.installedExtensions.first)
+        let originalContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        storageProvidingMock.shouldReturnNilForResolve = true
+
+        do {
+            try await manager.installExtension(from: extensionURL, storeIdentity: identity, replacing: installed.uniqueIdentifier)
+            XCTFail("Expected replacement loading to fail")
+        } catch WebExtensionError.failedToLoadWebExtension {
+            // Expected: the new installation cannot be resolved.
+        }
+
+        let restoredContext = try XCTUnwrap(manager.context(for: installed.uniqueIdentifier))
+        XCTAssertTrue(restoredContext === originalContext)
+        XCTAssertEqual(restoredContext.baseURL, URL(string: "webkit-extension://\(identity.id)/"))
+        XCTAssertEqual(manager.contexts.count, 1)
+        XCTAssertEqual(installedExtensionStoringMock.installedExtensions.map(\.uniqueIdentifier), [installed.uniqueIdentifier])
+        XCTAssertTrue(manager.installingStoreIdentities.isEmpty)
+        manager.unloadAllExtensions()
     }
 
     // MARK: - Configuration Tests

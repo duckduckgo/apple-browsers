@@ -55,6 +55,29 @@ extension WebExtensionManager {
     static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
     }
+
+    /// Start after installed extensions load, so enforcement can't race the initial load.
+    @MainActor
+    func startRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        guard remoteDisableEnforcer == nil else { return }
+        let enforcer = WebExtensionRemoteDisableEnforcer(
+            manager: self,
+            configurationManager: configurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                var disabledIDs: Set<String> = []
+                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
+                    disabledIDs.insert(ChromeWebStoreID.bitwarden.rawValue)
+                }
+                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
+                    disabledIDs.insert(ChromeWebStoreID.onePassword.rawValue)
+                }
+                return disabledIDs
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+        )
+        remoteDisableEnforcer = enforcer
+        enforcer.start()
+    }
 }
 
 // MARK: - Factory

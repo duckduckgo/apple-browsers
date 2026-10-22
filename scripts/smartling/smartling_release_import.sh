@@ -160,6 +160,14 @@ else
 fi
 
 if [ -z "$(git status --porcelain -- ':(glob)**/*.strings' ':(glob)**/*.stringsdict' ':(glob)**/*.xcstrings')" ]; then
+	if [ -n "$OPEN_PR_URL" ]; then
+		PR_URL="$OPEN_PR_URL"
+		if [ "$DRY_RUN" = "true" ]; then
+			finish no_changes "Dry run: the release branch already has every translation, so the open translations pull request would be closed"
+		fi
+		gh pr close "$OPEN_PR_URL" --comment "Closed by the Smartling release import: the release branch already has every translation from Smartling, so this pull request is out of date."
+		finish pr_closed "The release branch already has every translation, so the open translations pull request was closed"
+	fi
 	finish no_changes "The release branch already has every translation"
 fi
 

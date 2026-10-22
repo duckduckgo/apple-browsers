@@ -210,6 +210,40 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertNotIn('Task/Issue URL', self.body(0))
         self.assertIn('Tech Design URL', self.body(0))
 
+    def testWhenReimportFindsNothingNewThenTheSupersededOpenPullRequestIsClosed(self):
+        first = self.run_import(imported='"a" = "A";\n"b" = "B2";\n')
+        self.assertEqual(first['outcome'], 'pr_opened')
+
+        second = self.run_import('--reimport', existing_pr=f"OPEN {first['pr_url']}", imported='"a" = "A";\n"b" = "B";\n')
+
+        self.assertEqual(second['outcome'], 'pr_closed')
+        self.assertEqual(second['pr_url'], first['pr_url'])
+        calls = self.gh_calls()
+        self.assertTrue(any(call.startswith(f"pr close {first['pr_url']} --comment") for call in calls))
+        self.assertEqual(sum(call.startswith('pr create') for call in calls), 1)
+        self.assertFalse(any(call.startswith('pr edit') for call in calls))
+
+    def testWhenADryRunReimportFindsNothingNewThenTheOpenPullRequestIsLeftAlone(self):
+        outputs = self.run_import(
+            '--reimport', '--dry-run',
+            existing_pr='OPEN https://github.com/duckduckgo/apple-browsers/pull/100',
+            imported='"a" = "A";\n"b" = "B";\n'
+        )
+
+        self.assertEqual(outputs['outcome'], 'no_changes')
+        self.assertIn('would be closed', outputs['reason'])
+        self.assertFalse(any(call.startswith('pr close') for call in self.gh_calls()))
+
+    def testWhenReimportAfterAMergedPullRequestFindsNothingNewThenNothingIsClosed(self):
+        outputs = self.run_import(
+            '--reimport',
+            existing_pr='MERGED https://github.com/duckduckgo/apple-browsers/pull/1',
+            imported='"a" = "A";\n"b" = "B";\n'
+        )
+
+        self.assertEqual(outputs['outcome'], 'no_changes')
+        self.assertFalse(any(call.startswith('pr close') for call in self.gh_calls()))
+
 
 if __name__ == '__main__':
     unittest.main()

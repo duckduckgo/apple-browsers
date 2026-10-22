@@ -57,13 +57,11 @@ final class AppleTabOrganizer: TabOrganizing {
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
             let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
-            if shape.wantsSeveralGroups {
-                if shape.namedCategories.count >= 2 {
-                    return try await sort(tabs, into: shape.namedCategories, response: response)
-                }
-                if let criterion = response.groupBy {
-                    return try await split(response, by: criterion, tabs: tabs)
-                }
+            if shape.mentionedCategories.count >= 2 {
+                return try await sort(tabs, into: shape.mentionedCategories, response: response)
+            }
+            if shape.dividesIntoGroups, let criterion = response.groupBy {
+                return try await split(response, by: criterion, tabs: tabs)
             }
             return TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs)
         }
@@ -75,18 +73,20 @@ final class AppleTabOrganizer: TabOrganizing {
     Never name a single site or brand. Use a different category for each suggestion.
     """
 
-    private static let shapeInstructions = """
-    You read what a person asks about their open browser tabs and say how many separate groups of tabs they want.
-    """
+    private static let shapeInstructions = "You read what a person asks about their open browser tabs."
 
-    private func requestShape(_ text: String) async throws -> (wantsSeveralGroups: Bool, namedCategories: [String]) {
-        let session = LanguageModelSession(instructions: Self.shapeInstructions)
-        let shape = try await session.respond(to: "Request: \(text)", generating: GeneratedRequestShape.self).content
+    /// Two tiny questions, asked separately: combined into one answer the yes/no was much less reliable.
+    private func requestShape(_ text: String) async throws -> (dividesIntoGroups: Bool, mentionedCategories: [String]) {
+        let prompt = "Request: \(text)"
+        async let divides = LanguageModelSession(instructions: Self.shapeInstructions)
+            .respond(to: prompt, generating: GeneratedRequestDivides.self)
+        async let mentioned = LanguageModelSession(instructions: Self.shapeInstructions)
+            .respond(to: prompt, generating: GeneratedRequestCategories.self)
         var seen = Set<String>()
-        let categories = shape.namedCategories
+        let categories = try await mentioned.content.mentionedCategories
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty && seen.insert($0.lowercased()).inserted }
-        return (shape.wantsSeveralGroups, categories)
+        return (try await divides.content.dividesIntoGroups, categories)
     }
 
     /// "find AI safety and shopping tabs": the person's own categories become the groups.
@@ -287,11 +287,16 @@ struct GeneratedSuggestions {
 
 @available(macOS 26.0, *)
 @Generable
-struct GeneratedRequestShape {
-    @Guide(description: "true only when the request asks for more than one separate group of tabs, like 'find news and shopping tabs' or 'separate dogs by breed'")
-    var wantsSeveralGroups: Bool
-    @Guide(description: "The categories of tabs the request names, like news and shopping. Empty when it names fewer than two")
-    var namedCategories: [String]
+struct GeneratedRequestDivides {
+    @Guide(description: "true only when the request explicitly asks to divide tabs into several groups by some property, like 'separate dogs by breed' or 'group shopping by store'. false for a single action on one kind of tab, like 'move streaming tabs to a new window' or 'close shopping tabs'")
+    var dividesIntoGroups: Bool
+}
+
+@available(macOS 26.0, *)
+@Generable
+struct GeneratedRequestCategories {
+    @Guide(description: "Every kind of tab the request mentions, each as 1 to 3 words. 'find news and shopping tabs' gives news, shopping. 'close travel tabs' gives travel. 'separate dogs by breed' gives dogs")
+    var mentionedCategories: [String]
 }
 
 @available(macOS 26.0, *)

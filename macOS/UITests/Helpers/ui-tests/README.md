@@ -8,7 +8,9 @@ Sync and Performance each have one workload per environment, so they build nativ
 own job before executing them.
 
 Each native compiler resolves its package graph from the packages' versioned manifests;
-the app compiler's lockfile can describe different dependencies.
+the app compiler's lockfile can describe different dependencies. On Xcode <27, build.sh
+temporarily saves the project/local package lockfiles and restores their original contents
+after success or failure; surplus pins can crash those Xcode versions during resolution.
 
 CI pins Xcode using the existing select-xcode-version action. UI uses macOS 14 / Xcode 16.2,
 macOS 15 / Xcode 26.2 and macOS 27 / Xcode 27.0. Sync also uses macOS 26 / Xcode 26.6.

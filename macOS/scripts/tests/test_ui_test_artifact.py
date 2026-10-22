@@ -7,6 +7,9 @@ import json
 import os
 from pathlib import Path
 import plistlib
+import shutil
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -45,6 +48,45 @@ class PortableTests(unittest.TestCase):
                                                            '__xctestrun_metadata__': {'FormatVersion': 2}})
         (self.root / 'Plans').mkdir()
         (self.root / 'Plans/UI Tests.xctestplan').write_text(json.dumps({'testTargets': [{'target': {'name': 'UI Tests'}}]}))
+
+    def test_native_build_restores_caller_lockfiles_after_success_and_failure(self):
+        for version, exit_code in [('16.2', 0), ('26.2', 65), ('27.0', 0)]:
+            with self.subTest(version=version, exit_code=exit_code), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary) / 'workspace with spaces'
+                helper = root / 'macOS/UITests/Helpers/ui-tests/build.sh'
+                helper.parent.mkdir(parents=True)
+                shutil.copy2(SCRIPTS / 'build.sh', helper)
+                locks = [root / 'SharedPackages/Example/Package.resolved',
+                         root / 'macOS/Example.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved']
+                for lock in locks:
+                    lock.parent.mkdir(parents=True)
+                    lock.write_text('committed pins')
+                subprocess.run(['git', 'init', '-q', str(root)], check=True)
+                subprocess.run(['git', '-C', str(root), 'add', '.'], check=True)
+                for lock in locks:
+                    lock.write_text('caller uncommitted pins')
+                tools = root / 'bin'
+                tools.mkdir()
+                stub = tools / 'xcrun'
+                stub.write_text('#!' + sys.executable + '\n' + '''import json, os, sys
+from pathlib import Path
+if sys.argv[1:] == ['xcodebuild', '-version']:
+    print('Xcode ' + os.environ['PROBE_XCODE'])
+    raise SystemExit(0)
+locks = [Path(p) for p in json.loads(os.environ['PROBE_LOCKS'])]
+modern = int(os.environ['PROBE_XCODE'].split('.')[0]) >= 27
+assert all(p.exists() == modern for p in locks), 'Wrong lockfiles exposed to Xcode'
+if not modern:
+    locks[-1].write_text('new compiler-specific pins')
+raise SystemExit(int(os.environ['PROBE_EXIT']))
+''')
+                stub.chmod(0o755)
+                environment = dict(os.environ, PATH=str(tools) + os.pathsep + os.environ['PATH'],
+                                   PROBE_XCODE=version, PROBE_EXIT=str(exit_code), PROBE_LOCKS=json.dumps(list(map(str, locks))))
+                result = subprocess.run(['bash', str(helper), 'dmg', str(root / 'DerivedData')], env=environment,
+                                        text=True, capture_output=True)
+                self.assertEqual(result.returncode, exit_code, result.stderr)
+                self.assertEqual([p.read_text() for p in locks], ['caller uncommitted pins'] * 2)
 
     def test_runtime_honors_selected_developer_directory(self):
         developer = self.root / 'Xcode.app/Contents/Developer'

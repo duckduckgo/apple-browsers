@@ -32,6 +32,7 @@ final class CreditCardAutofillUITests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
+        app.dismissAddressBarEditing()
         let menu = app.buttons["Browser.Toolbar.Button.Menu"]
         XCTAssertTrue(menu.wait(for: NSPredicate(format: "isHittable == true"), timeout: UITestTimeouts.navigation))
         menu.press(forDuration: 1)

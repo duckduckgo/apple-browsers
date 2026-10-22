@@ -115,7 +115,7 @@ struct WebExtensionBackgroundPagePatcher {
         // install changes with its manifest.
         let sourceURL = isArchive ? installedExtensionURL : installedExtensionURL.appendingPathComponent(Self.manifestFilename)
         let sourceDate = try fileManager.attributesOfItem(atPath: sourceURL.path)[.modificationDate] as? Date
-        let dateStamp = (sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? "") + "-background-page-v1"
+        let dateStamp = sourceDate.map { String($0.timeIntervalSinceReferenceDate) } ?? ""
         let stampURL = loadableURL.appendingPathComponent(Self.sourceDateFilename)
         if let copiedStamp = try? String(contentsOf: stampURL, encoding: .utf8), copiedStamp == dateStamp {
             return

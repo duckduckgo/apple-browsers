@@ -36,11 +36,12 @@ concurrency:
 jobs:
   create-notarized-app:
     name: Build Notarized Review app
-    # Skip pushes to release branches by the release automation (GHA_ELEVATED_PERMISSIONS_TOKEN_USER)
+    # Skip pushes to release branches by the release automation (GHA_ELEVATED_PERMISSIONS_TOKEN_USER), except its merges
     if: >
       !(github.event_name == 'push' &&
       startsWith(github.ref, 'refs/heads/release/') &&
-      github.actor == vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER)
+      github.actor == vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER &&
+      !startsWith(github.event.head_commit.message, 'Merge '))
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: review

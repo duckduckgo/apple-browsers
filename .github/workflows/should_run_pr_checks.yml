@@ -4,7 +4,8 @@ name: Should Run PR Checks
 # This workflow can be called by other workflows using workflow_call trigger
 #
 # Logic:
-# - Skips pushes to release branches by the release automation (GHA_ELEVATED_PERMISSIONS_TOKEN_USER), as the release workflows already run these checks
+# - Skips pushes to release branches by the release automation (GHA_ELEVATED_PERMISSIONS_TOKEN_USER), as the release workflows already run these checks.
+#   Merges made by the release automation (e.g. a hotfix merged into the release branch) still run, as nothing else tests them.
 # - Always runs for other non-PR events (push, schedule, workflow_call)
 # - Always runs when a PR is unmarked as draft (ready_for_review action)
 # - Always runs for PRs that are not in draft state
@@ -59,8 +60,10 @@ jobs:
     steps:
       - name: Evaluate run conditions
         id: check
+        env:
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/heads/release/* && "${{ github.actor }}" == "${{ vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER }}" ]]; then
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/heads/release/* && "${{ github.actor }}" == "${{ vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER }}" && "$HEAD_COMMIT_MESSAGE" != "Merge "* ]]; then
             echo "should_run=false" >> $GITHUB_OUTPUT
             echo "Push to a release branch by the release automation (${{ github.actor }}), skipping checks"
           elif [[ "${{ github.event_name }}" != "pull_request" ]]; then

@@ -1840,7 +1840,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         collectionView.scrollToBeginning()
     }
 
+    /// Group changes reload the collection view on the next run loop pass; a selection change in between
+    /// would scroll with a stale item count and crash, so reload first when the counts differ.
+    private func reloadIfItemCountIsStale() {
+        if collectionView.numberOfItems(inSection: 0) != displayItems.count {
+            collectionView.reloadData()
+        }
+    }
+
     private func reloadSelection() {
+        reloadIfItemCountIsStale()
         let isPinnedTab = tabCollectionViewModel.selectionIndex?.isPinnedTab == true
 
         let collectionView: TabBarCollectionView? = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
@@ -2599,6 +2608,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
     }
 
     func tabCollectionViewModel(_ tabCollectionViewModel: TabCollectionViewModel, didSelectAt selectionIndex: Int?) {
+        reloadIfItemCountIsStale()
         clearSelection(animated: true)
         if let selectionIndex = selectionIndex,
            let tab = tabCollectionViewModel.tabCollection.tabs[safe: selectionIndex],

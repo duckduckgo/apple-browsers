@@ -1277,6 +1277,9 @@ extension TabBarViewItem: NSMenuDelegate {
             addPinMenuItem(to: menu)
         }
         addMuteUnmuteMenuItem(to: menu)
+        if !isPinned {
+            addTabGroupsMenuItem(to: menu)
+        }
         menu.addItem(.separator())
 
         // Bookmark/Fireproof Section
@@ -1297,9 +1300,6 @@ extension TabBarViewItem: NSMenuDelegate {
         // Close Section
         addCloseMenuItem(to: menu)
 
-        // Tab Groups Section
-        menu.addItem(.separator())
-        addTabGroupsMenuItem(to: menu)
         if !isPinned {
             addCloseOtherSubmenu(to: menu, tabBarItemState: otherItemsState)
             if !isBurner {

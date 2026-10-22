@@ -1049,7 +1049,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         case .aiChatLimitExtensionPromo:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo), supportsLocalOverriding: true)
         }
     }
 

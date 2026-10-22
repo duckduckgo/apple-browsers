@@ -127,6 +127,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     private let devicePlatform: DevicePlatformProviding.Type
     private let handler: AIChatUserScriptHandling
+    private let bonusMessageLog: AIChatBonusMessageLog
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
@@ -161,9 +162,11 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     init(handler: AIChatUserScriptHandling,
          debugSettings: AIChatDebugSettingsHandling,
-         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self,
+         bonusMessageLog: AIChatBonusMessageLog = .shared) {
         self.devicePlatform = devicePlatform
         self.handler = handler
+        self.bonusMessageLog = bonusMessageLog
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         super.init()
@@ -675,7 +678,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         guard let host = webView?.url?.host,
               messageDestinationPolicy.isAllowed(host) else { return }
 
-        push(.bonusRecordChanged(payload))
+        guard push(.bonusRecordChanged(payload)) else { return }
+        bonusMessageLog.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
     }
 
     // MARK: - Private Helper

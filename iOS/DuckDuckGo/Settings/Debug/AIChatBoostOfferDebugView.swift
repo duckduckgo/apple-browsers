@@ -18,8 +18,10 @@
 //
 
 import AIChat
+import AIChatDebugServer
 import PrivacyConfig
 import Core
+import DebugServer
 import FeatureFlags_iOS
 import FoundationExtensions
 import SwiftUI
@@ -27,8 +29,11 @@ import SwiftUI
 /// Shows what Duck.ai receives for the bonus offer and changes the inputs, to test each state without waiting.
 struct AIChatBoostOfferDebugView: View {
     @StateObject private var viewModel: AIChatBoostOfferDebugViewModel
+    @ObservedObject private var serverState = AIChatBonusDebugServerState.shared
+    private let featureFlagger: FeatureFlagger?
 
     init(featureFlagger: FeatureFlagger?) {
+        self.featureFlagger = featureFlagger
         _viewModel = StateObject(wrappedValue: AIChatBoostOfferDebugViewModel(featureFlagger: featureFlagger))
     }
 
@@ -37,6 +42,33 @@ struct AIChatBoostOfferDebugView: View {
             Section {
                 Text(verbatim: "Changes here aren't pushed to open Duck.ai tabs. Reload Duck.ai to see them.")
                     .foregroundColor(.red)
+            }
+
+            Section(header: Text(verbatim: "Message Server"),
+                    footer: Text(verbatim: "Shows the state and the messages exchanged with Duck.ai in a browser on the same network. Messages are recorded only while it runs.")) {
+                if serverState.isRunning {
+                    Text(verbatim: "Server running")
+                        .foregroundColor(.green)
+                    if let ip = serverState.localIPAddress {
+                        Text(verbatim: "http://\(ip):\(AIChatBonusDebugServerState.port)")
+                            .font(.system(.body, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
+                    Button(role: .destructive, action: serverState.stop) {
+                        Text(verbatim: "Stop Server")
+                    }
+                } else {
+                    if let error = serverState.errorMessage {
+                        Text(verbatim: error)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                    Button {
+                        serverState.start(featureFlagger: featureFlagger)
+                    } label: {
+                        Text(verbatim: "Start Server")
+                    }
+                }
             }
 
             Section(header: Text(verbatim: "State")) {
@@ -155,7 +187,12 @@ final class AIChatBoostOfferDebugViewModel: ObservableObject {
 
         if let installDate = statisticsStore.installDate {
             installDateDescription = installDate.formatted(date: .abbreviated, time: .shortened)
-            daysSinceInstallDescription = Calendar.current.numberOfDaysBetween(installDate, and: Date()).map(String.init) ?? "-"
+            let daysSinceInstall = Calendar.current.numberOfDaysBetween(installDate, and: Date())
+            daysSinceInstallDescription = daysSinceInstall.map(String.init) ?? "-"
+            // Start the stepper from the stored date, so reopening the screen shows what was set.
+            if let daysSinceInstall {
+                installDaysAgo = min(max(daysSinceInstall, 0), 14)
+            }
         } else {
             installDateDescription = "None"
             daysSinceInstallDescription = "-"
@@ -250,5 +287,82 @@ final class AIChatBoostOfferDebugViewModel: ObservableObject {
         }
         let expiry = Date(timeIntervalSince1970: terms.expiresAt).formatted(date: .abbreviated, time: .shortened)
         return terms.expiresAt > Date().timeIntervalSince1970 ? "Active until \(expiry)" : "Expired \(expiry)"
+    }
+}
+
+/// The bonus offer state for the Duck.ai storage debug dashboard, with the Bonus ID masked.
+enum AIChatBoostOfferDebugState {
+
+    static func snapshot(featureFlagger: FeatureFlagger?) -> [String: Any] {
+        let statisticsStore = StatisticsUserDefaults()
+        let facts = AIChatBonusFactsProvider(statisticsStore: statisticsStore, aiChatSettings: AIChatSettings())
+        let isFlagOn = featureFlagger?.isFeatureOn(.aiChatLimitExtensionPromo)
+
+        var state: [String: Any] = [
+            "isNewInstall": facts.isNewInstall,
+            "aiChatEnabled": facts.isAIChatEnabled,
+            "installWindowDays": AIChatBonusFactsProvider.defaultInstallWindowDays,
+            "isReturningUser": statisticsStore.variant == VariantIOS.returningUser.name
+        ]
+        // Native sends the flag's value as `supportsBonusOffer`.
+        state["supportsBonusOffer"] = isFlagOn ?? NSNull()
+        if let installDate = statisticsStore.installDate {
+            state["installDate"] = ISO8601DateFormatter().string(from: installDate)
+            state["daysSinceInstall"] = Calendar.current.numberOfDaysBetween(installDate, and: Date()) ?? NSNull()
+        } else {
+            state["installDate"] = NSNull()
+        }
+        do {
+            let record = try AIChatBonusStore().read()
+            state["record"] = record.flatMap(AIChatBonusMessageLog.maskedJSONObject(encoding:)) ?? NSNull()
+        } catch {
+            state["recordError"] = String(describing: error)
+        }
+        return state
+    }
+}
+
+/// Owns the bonus offer debug server for the app session.
+@MainActor
+private final class AIChatBonusDebugServerState: ObservableObject {
+    /// A singleton keeps the server running after the debug view closes, like the storage debug server.
+    static let shared = AIChatBonusDebugServerState()
+    static let port: UInt16 = 8474
+
+    @Published private(set) var errorMessage: String?
+    @Published private(set) var localIPAddress: String?
+    @Published private var server: AIChatBonusDebugServer?
+
+    var isRunning: Bool { server != nil }
+
+    private init() {}
+
+    func start(featureFlagger: FeatureFlagger?) {
+        do {
+            let server = AIChatBonusDebugServer(
+                stateProvider: { AIChatBoostOfferDebugState.snapshot(featureFlagger: featureFlagger) },
+                port: Self.port
+            )
+            server.stateDidChange = { [weak self] state in
+                DispatchQueue.main.async {
+                    guard case .failed(let message) = state else { return }
+                    self?.errorMessage = message
+                    self?.server = nil
+                    self?.localIPAddress = nil
+                }
+            }
+            try server.start()
+            self.server = server
+            errorMessage = nil
+            localIPAddress = DebugServerNetworkInterface.wiFiAddress()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stop() {
+        server?.stop()
+        server = nil
+        localIPAddress = nil
     }
 }

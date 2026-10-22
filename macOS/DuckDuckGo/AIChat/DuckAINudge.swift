@@ -593,8 +593,9 @@ enum DuckAIPageActionPerformer {
         guard #available(macOS 14, *), try await eventStore.requestFullAccessToEvents() else { throw ActionError.accessDenied("Calendar") }
 
         let window = eventStore.predicateForEvents(withStart: start.addingTimeInterval(-86400), end: start.addingTimeInterval(86400), calendars: nil)
-        if let existing = eventStore.events(matching: window).first(where: { $0.title == title }) {
-            Logger.aiChat.notice("[Nudge] event already in Calendar: \(existing.title ?? "", privacy: .public) at \(existing.startDate, privacy: .public) in \(existing.calendar.title, privacy: .public)")
+        let matches = eventStore.events(matching: window).filter { $0.title == title }
+        if let existing = matches.first {
+            Logger.aiChat.notice("[Nudge] event already in Calendar (\(matches.count) copies): \(existing.title ?? "", privacy: .public) at \(existing.startDate, privacy: .public) in \(existing.calendar.title, privacy: .public)")
             return "“\(title)” is already in Calendar."
         }
 
@@ -635,7 +636,12 @@ enum DuckAIPageActionPerformer {
         guard let list = list ?? eventStore.defaultCalendarForNewReminders() else {
             throw ActionError.invalid("No Reminders list available.")
         }
-        for item in items {
+        let existingTitles = Set(await withCheckedContinuation { continuation in
+            eventStore.fetchReminders(matching: eventStore.predicateForIncompleteReminders(withDueDateStarting: nil, ending: nil, calendars: [list])) {
+                continuation.resume(returning: ($0 ?? []).compactMap(\.title))
+            }
+        })
+        for item in items where !existingTitles.contains(item) {
             let reminder = EKReminder(eventStore: eventStore)
             reminder.title = item
             reminder.calendar = list

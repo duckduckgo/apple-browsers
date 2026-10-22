@@ -175,7 +175,8 @@ private actor ModelWorker {
 
     func isLoaded(for family: Model.InferenceFamily) -> Bool {
         guard let loaded else { return false }
-        return loaded.family == .vision || loaded.family == family
+        // Text-only turns need the language model's chunked prefill, even after a vision turn.
+        return loaded.family == family
     }
 
     func prepare(_ model: Model, at directory: URL) async {

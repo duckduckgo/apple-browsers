@@ -881,7 +881,7 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
 
         XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.promptTooLong])
-        XCTAssertEqual(view.visibleFooterMessages.first?.message.subtitle, "16100/16000")
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Text exceeds the character limit 16100/16000.")
         XCTAssertFalse(view.aiChatSendButton.isEnabled)
         XCTAssertTrue(view.attachmentsStripView.showsPromptLengthError)
         XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle, "Ask stays while the error hides the disclaimer")
@@ -895,6 +895,26 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.termsConsent])
         XCTAssertFalse(view.attachmentsStripView.showsPromptLengthError)
         XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+    }
+
+    func testTooLongErrorReadsTheSameWhetherTheExcessIsPastedOrTyped() throws {
+        let (pastedController, pastedView) = try makeController()
+        expand(pastedController, pastedView)
+        XCTAssertFalse(paste(text(length: 16_100), into: pastedController, pastedView))
+        XCTAssertEqual(pastedView.attachmentsStripView.attachments.count, 1)
+
+        let (typedController, typedView) = try makeController()
+        expand(typedController, typedView)
+        enter(text(length: 16_100), in: typedController, typedView)
+        XCTAssertTrue(typedView.attachmentsStripView.attachments.isEmpty)
+
+        let pasted = try XCTUnwrap(pastedView.visibleFooterMessages.first)
+        let typed = try XCTUnwrap(typedView.visibleFooterMessages.first)
+        XCTAssertEqual(pasted.id, .promptTooLong)
+        XCTAssertEqual(pasted.message, typed.message)
+        XCTAssertEqual(typed.message.title, "Text exceeds the character limit 16100/16000.")
+        XCTAssertEqual(typed.message.subtitle, "Reduce or remove text to continue chat.")
+        XCTAssertNil(typed.message.primaryAction, "No Edit action, pasted or not")
     }
 
     func testOverLimitWithTermsAcceptedBlocksReturnAndSend() throws {
@@ -920,7 +940,7 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertTrue(view.visibleFooterMessages.isEmpty)
 
         enter(String(repeating: "a", count: 101), in: controller, view)
-        XCTAssertEqual(view.visibleFooterMessages.first?.message.subtitle, "16001/16000")
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Text exceeds the character limit 16001/16000.")
         XCTAssertFalse(view.aiChatSendButton.isEnabled)
 
         enter(String(repeating: "a", count: 100), in: controller, view)

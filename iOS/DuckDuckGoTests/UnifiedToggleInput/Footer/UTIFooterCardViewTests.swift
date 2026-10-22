@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 import XCTest
@@ -97,6 +98,36 @@ final class UTIFooterCardViewTests: XCTestCase {
                 }
             }
         }
+    }
+
+    func testTooLongErrorShowsARedCountLineOverTheSecondaryHintWithoutAnAction() throws {
+        let sut = UTIFooterCardView()
+
+        sut.configure(with: UTIFooterMessageMapper().promptTooLongMessage(count: 17_002, limit: 16_000), animateIcon: false)
+
+        let title = try XCTUnwrap(titleLabel(in: sut))
+        let subtitle = try XCTUnwrap(subtitleLabel(in: sut))
+        XCTAssertEqual(title.text, "Text exceeds the character limit 17002/16000.")
+        XCTAssertEqual(title.font, .daxCaption1())
+        XCTAssertEqual(light(title.textColor), light(UIColor(designSystemColor: .destructivePrimary)))
+        XCTAssertEqual(subtitle.text, "Reduce or remove text to continue chat.")
+        XCTAssertEqual(subtitle.font, .daxCaption1())
+        XCTAssertEqual(light(subtitle.textColor), light(UIColor(designSystemColor: .textSecondary)))
+        XCTAssertEqual(actionButton(in: sut)?.isHidden, true)
+        XCTAssertEqual(dismissButton(in: sut)?.isHidden, true)
+    }
+
+    func testReusingTheTooLongCardForAnotherMessageRestoresTheStandardTitle() throws {
+        let sut = UTIFooterCardView()
+        sut.configure(with: UTIFooterMessageMapper().promptTooLongMessage(count: 17_002, limit: 16_000), animateIcon: false)
+
+        sut.configure(with: makeMessage(), animateIcon: false)
+
+        let reference = UTIFooterCardView()
+        reference.configure(with: makeMessage(), animateIcon: false)
+        let title = try XCTUnwrap(titleLabel(in: sut))
+        XCTAssertEqual(title.font, try XCTUnwrap(titleLabel(in: reference)).font)
+        XCTAssertEqual(light(title.textColor), light(UIColor(designSystemColor: .textPrimary)))
     }
 
     func testStackedTermsAndPrivacyHaveTheSameTextGapAsBottomPadding() throws {
@@ -569,6 +600,10 @@ final class UTIFooterCardViewTests: XCTestCase {
     }
 
     /// The first arranged subview of the card's text stack.
+    private func light(_ color: UIColor?) -> UIColor? {
+        color?.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+    }
+
     private func titleLabel(in card: UTIFooterCardView) -> UILabel? {
         textStack(in: card)?.arrangedSubviews.first as? UILabel
     }

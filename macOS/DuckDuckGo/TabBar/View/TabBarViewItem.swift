@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Combine
 import CombineExtensions
@@ -622,6 +623,8 @@ final class TabBarViewItem: NSCollectionViewItem {
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
+    private let duckAIOpenedTabs: BrowserToolOpenedTabs = NSApp.delegateTyped.aiChatBrowserToolsService.openedTabs
+
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
         guard let representedObject else { return nil }
@@ -1098,7 +1101,14 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private func displayTabTitle(_ title: String, isLoading: Bool) {
         let url = tabViewModel?.url
-        cell.displayTabTitleIfNeeded(title: title, url: url, isLoading: isLoading)
+        cell.displayTabTitleIfNeeded(title: markedIfOpenedByDuckAI(title), url: url, isLoading: isLoading)
+    }
+
+    /// Marks tabs Duck.ai opened in the tab bar only, so bookmarks, sharing and the window title keep
+    /// the page's own title. English only while Duck.ai's browser tools are a proof of concept.
+    private func markedIfOpenedByDuckAI(_ title: String) -> String {
+        guard !title.isEmpty, let tabID = tabViewModel?.uuid, duckAIOpenedTabs.contains(tabID) else { return title }
+        return "Duck.ai · " + title
     }
 
     private func startSpinnerIfNeeded(isLoading: Bool, error: WKError?) {

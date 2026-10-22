@@ -216,7 +216,8 @@ final class TabOrganizerViewModel: ObservableObject {
                     refine(with: proposal)
                 } else {
                     groups = proposal.groups
-                    selectedTabIDs = Set(proposal.groups.flatMap(\.tabIDs))
+                    showsLeftovers = false
+                    selectedTabIDs = Set(proposal.groups.flatMap { group in group.tabIDs.filter { !isUnchanged($0, in: group) } })
                     notice = proposal.groups.first?.name == TabOrganizerProposalBuilder.everythingElseGroupName ? "No matching tabs" : nil
                 }
                 state = .results
@@ -323,13 +324,77 @@ final class TabOrganizerViewModel: ObservableObject {
             .filter { selectedTabIDs.contains($0) && tab(withID: $0)?.isPinned != true }
     }
 
-    var applySummary: String? {
-        let counts: [(TabGroupAction, String)] = [(.moveToNewWindow, "move"), (.close, "close"), (.bookmark, "bookmark"), (.addToFavorites, "favorite"), (.createTabGroup, "group")]
-        let parts = counts.compactMap { action, verb in
-            let count = selectedTabIDs(for: action).count
-            return count > 0 ? "\(verb) \(count)" : nil
+    // MARK: Changes
+
+    @Published var showsLeftovers = false
+
+    /// With the Tab group action, a tab already in that tab group doesn't change.
+    func isUnchanged(_ tabID: String, in group: ProposedGroup) -> Bool {
+        group.action == .createTabGroup && tab(withID: tabID)?.groupName.map { Self.sameName($0, group.name) } == true
+    }
+
+    func changeLabel(for tabID: String, in group: ProposedGroup) -> String? {
+        guard group.action == .createTabGroup, !isUnchanged(tabID, in: group), let tab = tab(withID: tabID) else { return nil }
+        return tab.groupName.map { "+ from \($0)" } ?? "+ joins"
+    }
+
+    func isNewTabGroup(_ group: ProposedGroup) -> Bool {
+        group.action == .createTabGroup && existingGroupColor(named: group.name) == nil
+    }
+
+    func existingGroupColor(named name: String) -> NSColor? {
+        tabCollectionViewModel.tabGroupManager.groups.first { Self.sameName($0.name, name) }?.color.nsColor
+    }
+
+    /// "Other" and "Everything else" left as Keep fold into one line.
+    func isLeftover(_ group: ProposedGroup) -> Bool {
+        group.action == .keep
+            && [TabOrganizerProposalBuilder.otherGroupName, TabOrganizerProposalBuilder.everythingElseGroupName].contains(group.name)
+    }
+
+    private func changedTabIDs(in group: ProposedGroup) -> [String] {
+        guard group.action != .keep else { return [] }
+        return group.tabIDs.filter { selectedTabIDs.contains($0) && !isUnchanged($0, in: group) && tab(withID: $0)?.isPinned != true }
+    }
+
+    var changeCount: Int {
+        groups.reduce(0) { $0 + changedTabIDs(in: $1).count }
+    }
+
+    var isCloseOnly: Bool {
+        let actions = Set(groups.filter { !changedTabIDs(in: $0).isEmpty }.map(\.action))
+        return actions == [.close]
+    }
+
+    var applyTitle: String {
+        let count = changeCount
+        guard count > 0 else { return "Apply" }
+        if isCloseOnly {
+            return count == 1 ? "Close 1 tab" : "Close \(count) tabs"
         }
-        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+        return count == 1 ? "Apply 1 change" : "Apply \(count) changes"
+    }
+
+    /// Existing tab groups that every one of their tabs would leave.
+    var summary: String? {
+        var leavingTabIDs = Set<String>()
+        for group in groups where [.close, .moveToNewWindow, .createTabGroup].contains(group.action) {
+            leavingTabIDs.formUnion(changedTabIDs(in: group))
+        }
+        var emptied: [String] = []
+        for name in tabs.compactMap(\.groupName) where !emptied.contains(name) {
+            let members = tabs.filter { $0.groupName == name }.map(\.id)
+            if !members.isEmpty, members.allSatisfy(leavingTabIDs.contains) {
+                emptied.append(name)
+            }
+        }
+        guard !emptied.isEmpty else { return nil }
+        let names = emptied.count == 1 ? emptied[0] : emptied.dropLast().joined(separator: ", ") + " and " + emptied.last!
+        return "\(names) will be empty and removed."
+    }
+
+    private static func sameName(_ lhs: String, _ rhs: String) -> Bool {
+        lhs.caseInsensitiveCompare(rhs) == .orderedSame
     }
 
     func apply() {
@@ -518,19 +583,24 @@ struct TabOrganizerView: View {
                 }
                 ForEach(viewModel.groups) { group in
                     VStack(alignment: .leading, spacing: 4) {
-                        groupHeader(group)
-                        ForEach(group.tabIDs, id: \.self) { tabID in
-                            if let tab = viewModel.tab(withID: tabID) {
-                                HStack(spacing: 6) {
-                                    Toggle("", isOn: Binding(get: { viewModel.isSelected(tabID) },
-                                                             set: { _ in viewModel.toggleTab(tabID) }))
-                                        .toggleStyle(.checkbox)
-                                        .labelsHidden()
-                                    TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
-                                        .onTapGesture { viewModel.switchToTab(tabID) }
+                        if viewModel.isLeftover(group) && !viewModel.showsLeftovers {
+                            Button {
+                                viewModel.showsLeftovers = true
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "chevron.right").font(.system(size: 9, weight: .semibold))
+                                    Text("\(group.name) · \(group.tabIDs.count) tabs unchanged")
                                 }
-                                .padding(.leading, 20)
-                                .onDrag { NSItemProvider(object: tabID as NSString) }
+                                .foregroundColor(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.top, 10)
+                        } else {
+                            groupHeader(group)
+                            ForEach(group.tabIDs, id: \.self) { tabID in
+                                if let tab = viewModel.tab(withID: tabID) {
+                                    resultRow(tab: tab, in: group)
+                                }
                             }
                         }
                     }
@@ -566,13 +636,52 @@ struct TabOrganizerView: View {
         return true
     }
 
+    private func resultRow(tab: TabSnapshot, in group: ProposedGroup) -> some View {
+        let isUnchanged = viewModel.isUnchanged(tab.id, in: group)
+        return HStack(spacing: 6) {
+            Toggle("", isOn: Binding(get: { viewModel.isSelected(tab.id) },
+                                     set: { _ in viewModel.toggleTab(tab.id) }))
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+                .disabled(isUnchanged)
+            TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
+                .onTapGesture { viewModel.switchToTab(tab.id) }
+            if let label = viewModel.changeLabel(for: tab.id, in: group) {
+                Text(label)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.accentColor.opacity(0.15)))
+                    .foregroundColor(.accentColor)
+            } else if group.action != .createTabGroup, let groupName = tab.groupName {
+                TabOrganizerGroupPill(name: groupName, color: Color(viewModel.existingGroupColor(named: groupName) ?? .gray))
+                    .font(.caption)
+            }
+        }
+        .padding(.leading, 20)
+        .opacity(isUnchanged ? 0.45 : 1)
+        .onDrag { NSItemProvider(object: tab.id as NSString) }
+    }
+
     private func groupHeader(_ group: ProposedGroup) -> some View {
         HStack(spacing: 6) {
             Toggle("", isOn: Binding(get: { viewModel.isGroupSelected(group) },
                                      set: { _ in viewModel.toggleGroup(group) }))
                 .toggleStyle(.checkbox)
                 .labelsHidden()
-            Text(group.name).font(.headline)
+            if group.action == .createTabGroup, let color = viewModel.existingGroupColor(named: group.name) {
+                TabOrganizerGroupPill(name: group.name, color: Color(color))
+            } else {
+                Text(group.name).font(.headline)
+            }
+            if viewModel.isNewTabGroup(group) {
+                Text("new group")
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 1)
+                    .background(Capsule().fill(Color.green.opacity(0.18)))
+                    .foregroundColor(.green)
+            }
             Text("\(group.tabIDs.count)").foregroundColor(.secondary)
             Spacer()
             Picker("", selection: Binding(get: { group.action },
@@ -589,12 +698,18 @@ struct TabOrganizerView: View {
     }
 
     private var footer: some View {
-        HStack {
-            Button("Start over", action: viewModel.startOver)
-            Spacer()
-            Button(viewModel.applySummary.map { "Apply · \($0)" } ?? "Apply", action: viewModel.apply)
-                .keyboardShortcut(.defaultAction)
-                .disabled(viewModel.applySummary == nil)
+        VStack(alignment: .leading, spacing: 8) {
+            if let summary = viewModel.summary {
+                Text(summary).font(.caption).foregroundColor(.secondary)
+            }
+            HStack {
+                Button("Start over", action: viewModel.startOver)
+                Spacer()
+                Button(viewModel.applyTitle, action: viewModel.apply)
+                    .keyboardShortcut(.defaultAction)
+                    .tint(viewModel.isCloseOnly ? .red : .accentColor)
+                    .disabled(viewModel.changeCount == 0)
+            }
         }
     }
 

@@ -1,6 +1,6 @@
 # CPM stable-origin app integration tests (review only)
 
-Production branch: `alex/cpm-p3-stable-base-url`, based on `main` (`6854231870`).
+Production branch: `alex/cpm-p3-stable-base-url`, based on `main` (`a657145363`).
 This integration branch includes that rebased production head. The macOS 27 results below
 were collected before this base update; they are historical results, not validation of the merged branch.
 This branch adds the app fixture, schemes and DEBUG hooks only; do not merge it into main.

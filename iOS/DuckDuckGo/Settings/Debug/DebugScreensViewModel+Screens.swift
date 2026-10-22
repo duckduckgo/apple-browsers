@@ -299,7 +299,7 @@ extension DebugScreensViewModel {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(
-                        pixelReporter: OnboardingPixelReporter(),
+                        pixelReporter: OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,

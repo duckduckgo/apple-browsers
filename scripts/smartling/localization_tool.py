@@ -58,6 +58,7 @@ class SubmitResult:
             'locales': self.locales,
             'max_usd': self.max_usd,
             'reason': self.reason,
+            'failed': self.failed,
         }
 
 
@@ -427,14 +428,22 @@ async def run_submit(client: SmartlingClient,
                      pending_job_prefix: str,
                      file_uri_prefix: str,
                      auto_authorize_max_usd: Decimal,
+                     delete_job_on_failure: bool = False,
                      sleep=asyncio.sleep) -> SubmitResult:
-    """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd."""
+    """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd.
+
+    With a pending_job_prefix, nothing is submitted while a job whose name starts with it awaits authorization.
+    Without one, only a job named exactly job_name stops a new submission.
+    With delete_job_on_failure, a job this run created is deleted if the submission fails before authorizing it,
+    so a rerun with the same job name starts over instead of finding a half-submitted job.
+    """
     job_id = ""
+    unauthorized_job_id = ""
     try:
         pending_jobs = await client.list_jobs(
             pending_job_prefix,
             ['AWAITING_AUTHORIZATION']
-        )
+        ) if pending_job_prefix else []
         pending_job = next(
             (
                 job for job in pending_jobs
@@ -467,7 +476,10 @@ async def run_submit(client: SmartlingClient,
                 reason=f"A job named '{job_name}' already exists"
             )
 
-        log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        if pending_job_prefix:
+            log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        else:
+            log(f"🔍 No job named '{job_name}'")
 
         locales = await client.get_project_locales()
         job_id = await client.create_job(
@@ -475,6 +487,7 @@ async def run_submit(client: SmartlingClient,
             locales,
             "Created by localization automation"
         )
+        unauthorized_job_id = job_id
         log(f"✅ Created job '{job_name}' ({job_id}) for {len(locales)} locales: {job_url(client, job_id)}")
         file_uris = [f"{file_uri_prefix}/{file_path.name}" for file_path in files]
         batch_id = await client.create_batch(job_id, file_uris)
@@ -493,6 +506,7 @@ async def run_submit(client: SmartlingClient,
         )
 
         if total_strings == 0:
+            unauthorized_job_id = ""
             process_id = await client.cancel_job(job_id)
             await wait_for_job_cancellation(client, job_id, process_id, sleep)
             await client.delete_job(job_id)
@@ -505,6 +519,7 @@ async def run_submit(client: SmartlingClient,
                 locales=len(locales)
             )
         if auto_authorize_max_usd > 0 and max_usd <= auto_authorize_max_usd:
+            unauthorized_job_id = ""
             await client.authorize_job(job_id)
             log("✅ Authorized")
             return SubmitResult(
@@ -532,11 +547,23 @@ async def run_submit(client: SmartlingClient,
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
         traceback.print_exc()
+        reason = str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+        if delete_job_on_failure and unauthorized_job_id:
+            try:
+                process_id = await client.cancel_job(unauthorized_job_id)
+                await wait_for_job_cancellation(client, unauthorized_job_id, process_id, sleep)
+                await client.delete_job(unauthorized_job_id)
+                log(f"🗑️ Cancelled and deleted job {unauthorized_job_id}, so a rerun starts over")
+                job_id = ""
+                reason += ". The job was deleted, so a rerun starts over"
+            except Exception as cleanup_error:  # pylint: disable=broad-except
+                log(f"❌ Could not delete job {unauthorized_job_id}: {cleanup_error}")
+                reason += f". Deleting the job also failed ({cleanup_error}), so delete it before a rerun"
         return SubmitResult(
             outcome='review_required',
             job_id=job_id,
             job_name=job_name if job_id else "",
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            reason=reason,
             failed=True
         )
 
@@ -625,7 +652,8 @@ async def submit_command(args):
                 args.job_name,
                 args.pending_job_prefix,
                 args.file_uri_prefix,
-                auto_authorize_max_usd
+                auto_authorize_max_usd,
+                args.delete_job_on_failure
             )
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
@@ -767,13 +795,15 @@ def main():
     # Submit
     submit_parser = subparsers.add_parser('submit')
     submit_parser.add_argument('--job-name', required=True)
-    submit_parser.add_argument('--pending-job-prefix', required=True,
+    submit_parser.add_argument('--pending-job-prefix', default='',
                                help='Skip submission while a job with this name prefix awaits authorization')
     submit_parser.add_argument('--file-uri-prefix', required=True,
                                help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
     submit_parser.add_argument('--files', nargs='+', required=True)
     submit_parser.add_argument('--auto-authorize-max-usd', default='500.00',
                                help='Authorize the job when its maximum USD estimate is at most this amount')
+    submit_parser.add_argument('--delete-job-on-failure', action='store_true',
+                               help='Delete the job this run created if the submission fails before authorizing it')
     submit_parser.add_argument('--result-file', default='submit_result.json')
 
     # Status

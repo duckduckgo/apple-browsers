@@ -54,7 +54,7 @@ public enum FeatureFlag: String, CaseIterable {
     case fireDialogSimplified
 
     /// Burn closing windows using a snapshot and show cleanup progress in an independent window.
-    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219776515330316?focus=true
+    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219776515330316
     case fireWindowSnapshotAnimation
 
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981

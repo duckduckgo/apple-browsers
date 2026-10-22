@@ -203,6 +203,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private let popovers: NavigationBarPopovers?
+    private var nudgeCancellable: AnyCancellable?
+    private var nudgeHoverCancellable: AnyCancellable?
+    private var nudgeAutoOpenWorkItem: DispatchWorkItem?
+    private var nudgePopover: DuckAINudgePopover?
     private let bookmarkManager: BookmarkManager
 
     var controllerMode: AddressBarViewController.Mode? {
@@ -650,6 +654,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToThemeChanges()
         subscribeToTabRemovals()
         subscribeToAIChatVoiceChatPermissionRequests()
+        subscribeToNudgeHover()
 
         applyThemeStyle()
 
@@ -872,6 +877,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToPermissions()
             subscribeToPrivacyEntryPointIconUpdateTrigger()
             subscribeToVideoPlayback()
+            subscribeToNudge()
 
             updatePrivacyEntryPointIcon()
             updateAIChatButtonState()
@@ -1521,6 +1527,13 @@ final class AddressBarButtonsViewController: NSViewController {
     @objc func aiChatButtonAction(_ sender: Any) {
         guard let tab = tabViewModel?.tab else { return }
 
+        if aiChatButton == sender as? AddressBarMenuButton, nudgePopover == nil,
+           let nudge = tab.pageContext?.currentNudge, !aiChatCoordinator.isSidebarOpen(for: tab.uuid) {
+            showNudgePopover(nudge)
+            return
+        }
+        closeNudgePopover()
+
         if aiChatCoordinator.isChatFloating(for: tab.uuid) {
             aiChatCoordinator.focusFloatingWindow(for: tab.uuid)
             return
@@ -1747,7 +1760,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonDetachIndicator(for tabID: TabIdentifier) {
-        aiChatButton.isNotificationVisible = aiChatCoordinator.isChatFloating(for: tabID)
+        aiChatButton.isNotificationVisible = aiChatCoordinator.isChatFloating(for: tabID) || tabViewModel?.tab.pageContext?.currentNudge != nil
         configureAIChatButtonTooltip()
     }
 
@@ -3341,5 +3354,178 @@ extension TabViewModel {
                 || (isUnfocusedAndIdle && mustDisplayAutoplayPolicy)
                 || (isUnfocusedAndIdle && isPermissionCenterPopoverShown))
         && !isShowingErrorPage
+    }
+}
+
+// MARK: - Duck.ai page nudges
+
+extension AddressBarButtonsViewController {
+
+    private func subscribeToNudge() {
+        nudgeAutoOpenWorkItem?.cancel()
+        closeNudgePopover()
+        nudgeCancellable = tabViewModel?.tab.pageContext?.nudgePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] nudge in
+                self?.handleNudgeChange(nudge)
+            }
+    }
+
+    private var nudgeAnchor: NSView? {
+        if !aiChatButton.isHidden, aiChatButton.window != nil { return aiChatButton }
+        return tabBarDuckAIButton
+    }
+
+    private var tabBarDuckAIButton: MouseOverButton? {
+        guard let contentView = view.window?.contentView else { return nil }
+        func find(_ view: NSView) -> MouseOverButton? {
+            if let button = view as? MouseOverButton,
+               button.accessibilityIdentifier() == "TabBarViewController.duckAIChromeTitleButton",
+               !button.isHiddenOrHasHiddenAncestor {
+                return button
+            }
+            for subview in view.subviews {
+                if let found = find(subview) { return found }
+            }
+            return nil
+        }
+        return find(contentView.superview ?? contentView)
+    }
+
+    private func updateNudgeDot(visible: Bool) {
+        guard let button = tabBarDuckAIButton, let layer = button.layer else { return }
+        let name = "duckai.nudge.dot"
+        layer.sublayers?.filter { $0.name == name }.forEach { $0.removeFromSuperlayer() }
+        guard visible else { return }
+        let dot = CALayer()
+        dot.name = name
+        let side: CGFloat = 8
+        dot.frame = CGRect(x: 10, y: button.isFlipped ? 3 : button.bounds.height - side - 3, width: side, height: side)
+        dot.cornerRadius = side / 2
+        dot.backgroundColor = NSColor.controlAccentColor.cgColor
+        dot.borderColor = NSColor.windowBackgroundColor.cgColor
+        dot.borderWidth = 1.5
+        layer.addSublayer(dot)
+    }
+
+    /// Called by the tab bar's Duck.ai button before its own action.
+    func showNudgeIfAvailable() -> Bool {
+        guard nudgePopover == nil, let tab = tabViewModel?.tab, let nudge = tab.pageContext?.currentNudge,
+              !aiChatCoordinator.isSidebarOpen(for: tab.uuid) else { return false }
+        showNudgePopover(nudge)
+        return nudgePopover != nil
+    }
+
+    private func subscribeToNudgeHover() {
+        let tabBarHover: AnyPublisher<Bool, Never> = Just(())
+            .delay(for: .seconds(1), scheduler: DispatchQueue.main)
+            .flatMap { [weak self] _ -> AnyPublisher<Bool, Never> in
+                guard let button = self?.tabBarDuckAIButton else { return Empty().eraseToAnyPublisher() }
+                return button.publisher(for: \.isMouseOver).eraseToAnyPublisher()
+            }
+            .eraseToAnyPublisher()
+        nudgeHoverCancellable = aiChatButton.publisher(for: \.isMouseOver)
+            .merge(with: tabBarHover)
+            .removeDuplicates()
+            .debounce(for: .milliseconds(350), scheduler: DispatchQueue.main)
+            .sink { [weak self] isMouseOver in
+                guard let self, isMouseOver, self.nudgePopover == nil,
+                      let tab = self.tabViewModel?.tab, let nudge = tab.pageContext?.currentNudge,
+                      !self.aiChatCoordinator.isSidebarOpen(for: tab.uuid) else { return }
+                self.showNudgePopover(nudge)
+            }
+    }
+
+    private func handleNudgeChange(_ nudge: DuckAINudge?) {
+        guard let tab = tabViewModel?.tab else { return }
+        updateAIChatButtonDetachIndicator(for: tab.uuid)
+        updateNudgeDot(visible: nudge != nil)
+        nudgeAutoOpenWorkItem?.cancel()
+        guard let nudge else {
+            closeNudgePopover()
+            return
+        }
+        guard nudge.isConfident else { return }
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, self.nudgePopover == nil, self.view.window?.isKeyWindow == true,
+                  tab.pageContext?.currentNudge == nudge,
+                  !self.aiChatCoordinator.isSidebarOpen(for: tab.uuid),
+                  DuckAINudgeRestraint.shared.claimAutoOpen(for: nudge.url) else { return }
+            self.showNudgePopover(nudge)
+        }
+        nudgeAutoOpenWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: workItem)
+    }
+
+    private func showNudgePopover(_ nudge: DuckAINudge) {
+        guard let anchor = nudgeAnchor else { return }
+        closeNudgePopover()
+        let popover = DuckAINudgePopover(nudge: nudge, onPrompt: { [weak self] prompt in
+            self?.runNudgePrompt(prompt, nudge: nudge)
+        }, onDismiss: { [weak self] in
+            DuckAINudgeRestraint.shared.recordDismissal(nudge.kind)
+            self?.tabViewModel?.tab.pageContext?.clearNudge()
+            self?.closeNudgePopover()
+        })
+        nudgePopover = popover
+        popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxY)
+    }
+
+    private func closeNudgePopover() {
+        nudgePopover?.close()
+        nudgePopover = nil
+    }
+
+    private func runNudgePrompt(_ prompt: DuckAINudge.Prompt, nudge: DuckAINudge) {
+        guard let tab = tabViewModel?.tab else { return }
+        DuckAINudgeRestraint.shared.recordUse(nudge.kind)
+        tab.pageContext?.clearNudge()
+        closeNudgePopover()
+
+        let loadedTabs: [Tab] = tabCollectionViewModel.tabs.compactMap {
+            if case .loaded(let tab) = $0 { return tab }
+            return nil
+        }
+        let otherTabs: [Tab]
+        if nudge.kind == .compare {
+            otherTabs = nudge.compareTabIDs.compactMap { id in loadedTabs.first { $0.uuid == id } }
+        } else if prompt.includesOtherTabs {
+            otherTabs = loadedTabs.filter { other in
+                guard other.uuid != tab.uuid, case .url(let url, _, _) = other.content else { return false }
+                return ["http", "https"].contains(url.scheme?.lowercased())
+            }.prefix(3).map { $0 }
+        } else {
+            otherTabs = []
+        }
+
+        Task { @MainActor [weak self] in
+            var contexts = [nudge.pageContext.withFavicons([])]
+            for other in otherTabs {
+                if let context = await AIChatUserScriptHandler.extractPageContext(from: other) {
+                    contexts.append(context.withTabID(other.uuid))
+                }
+            }
+            let payload: AIChatPageContextPayload = contexts.count == 1 ? .single(contexts[0]) : .multiple(contexts)
+            let nativePrompt = AIChatNativePrompt.queryPrompt(prompt.text, autoSubmit: prompt.autoSubmit, pageContext: payload)
+            guard let self else { return }
+            NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.addressBar)
+            tab.pageContext?.suppressAutoPageContextForSelectionAction()
+            self.aiChatCoordinator.revealChat(for: nativePrompt)
+        }
+    }
+}
+
+private extension AIChatPageContextData {
+
+    func withTabID(_ tabID: String) -> AIChatPageContextData {
+        AIChatPageContextData(title: title, favicon: favicon, url: url, content: content, truncated: truncated,
+                              fullContentLength: fullContentLength, attachable: attachable, tabId: tabID,
+                              pageTypeSignals: pageTypeSignals, attached: attached, mimeType: mimeType, data: data)
+    }
+
+    func withFavicons(_ favicons: [PageContextFavicon]) -> AIChatPageContextData {
+        AIChatPageContextData(title: title, favicon: favicons, url: url, content: content, truncated: truncated,
+                              fullContentLength: fullContentLength, attachable: attachable, tabId: tabId,
+                              pageTypeSignals: pageTypeSignals, attached: attached, mimeType: mimeType, data: data)
     }
 }

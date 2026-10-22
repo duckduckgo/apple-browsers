@@ -95,6 +95,7 @@ protocol AIChatUserScriptHandling: AnyObject {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func aiChatPerformAction(params: Any, message: UserScriptMessage) async -> Encodable?
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
     @MainActor func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -338,6 +339,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
         let isFireWindow = isFireWindowProvider?() ?? false
         return messageHandling.getNativeConfigValues(isFireWindow: isFireWindow)
+    }
+
+    @MainActor
+    func aiChatPerformAction(params: Any, message: UserScriptMessage) async -> Encodable? {
+        await DuckAIPageActionPerformer.perform(params: params)
     }
 
     @MainActor

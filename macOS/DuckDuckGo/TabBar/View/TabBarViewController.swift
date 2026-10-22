@@ -1275,6 +1275,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAITitlebarButtonAction(_ sender: NSButton) {
+        if (parent as? MainViewController)?.navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.showNudgeIfAvailable() == true {
+            return
+        }
         // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
         // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {

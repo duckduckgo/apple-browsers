@@ -284,11 +284,81 @@ public struct AIChatPageTypeSignals: Codable, Equatable {
     public let ogType: String?
     /// The page's declared language (e.g. <html lang>); "" if none.
     public let lang: String
+    public let wordCount: Int?
+    public let readMinutes: Int?
+    public let codeRatio: Double?
+    public let codeBlockCount: Int?
+    public let jsonLd: JSONLDSummary?
+    public let legalHint: String?
+    public let sensitive: Sensitive?
+    public let youtube: YouTube?
 
-    public init(jsonLdType: [String], ogType: String?, lang: String) {
+    public struct JSONLDSummary: Codable, Equatable {
+        public let recipe: Recipe?
+        public let event: Event?
+        public let product: Product?
+        public let reservation: Reservation?
+
+        public struct Recipe: Codable, Equatable {
+            public let name: String?
+            public let yield: String?
+            public let ingredientCount: Int?
+        }
+
+        public struct Event: Codable, Equatable {
+            public let name: String?
+            public let startDate: String?
+            public let endDate: String?
+            public let location: String?
+        }
+
+        public struct Product: Codable, Equatable {
+            public let name: String?
+            public let brand: String?
+            public let price: String?
+            public let currency: String?
+            public let rating: Double?
+        }
+
+        public struct Reservation: Codable, Equatable {
+            public let type: String?
+            public let name: String?
+            public let start: String?
+            public let end: String?
+            public let location: String?
+        }
+    }
+
+    public struct Sensitive: Codable, Equatable {
+        public let password: Bool?
+        public let payment: Bool?
+        public let banking: Bool?
+
+        public var any: Bool { password == true || payment == true || banking == true }
+    }
+
+    public struct YouTube: Codable, Equatable {
+        public let videoId: String?
+        public let title: String?
+        public let channel: String?
+        public let durationSec: Int?
+        public let transcript: String?
+    }
+
+    public init(jsonLdType: [String], ogType: String?, lang: String,
+                wordCount: Int? = nil, readMinutes: Int? = nil, codeRatio: Double? = nil, codeBlockCount: Int? = nil,
+                jsonLd: JSONLDSummary? = nil, legalHint: String? = nil, sensitive: Sensitive? = nil, youtube: YouTube? = nil) {
         self.jsonLdType = jsonLdType
         self.ogType = ogType
         self.lang = lang
+        self.wordCount = wordCount
+        self.readMinutes = readMinutes
+        self.codeRatio = codeRatio
+        self.codeBlockCount = codeBlockCount
+        self.jsonLd = jsonLd
+        self.legalHint = legalHint
+        self.sensitive = sensitive
+        self.youtube = youtube
     }
 }
 

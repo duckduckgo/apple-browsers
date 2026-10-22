@@ -261,6 +261,7 @@ final class AIChatUserScriptTests: XCTestCase {
 
 // swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
+    func aiChatPerformAction(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     var didOpenSettings = false
     var didGetConfigValues = false
     var didCloseChat = false

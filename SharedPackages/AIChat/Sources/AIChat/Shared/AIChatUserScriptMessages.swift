@@ -36,6 +36,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openTranslationSourceLink
     case openAIChatLink
     case responseReceived
+    case aiChatPerformAction
 
     /// FE→native, once per prompt composition, before the file-upload disclosure would show.
     /// Native spends a display if any remain and answers whether to show it.

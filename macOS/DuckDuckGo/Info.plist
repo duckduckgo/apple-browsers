@@ -536,6 +536,10 @@
 	<string>Copyright © 2025 DuckDuckGo. All rights reserved.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Lets websites ask permission to use your location to improve search results, provide weather and directions, or show nearby map locations.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Lets you add events to your calendar from Duck.ai answers.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Lets you add lists to Reminders from Duck.ai answers.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Lets websites ask permission to use your microphone for audio and video calls or for recording and uploading audio.</string>
 	<key>NSDownloadsFolderUsageDescription</key>

@@ -101,6 +101,10 @@ final class PageContextTabExtension {
     /// text selection (the selection is the context they asked about).
     private var autoAttachSuppression = AutoPageContextSuppression()
 
+    @Published private var nudge: DuckAINudge?
+    private var nudgeTask: Task<Void, Never>?
+    private var nudgeEvaluatedURL: URL?
+
     private weak var webView: WKWebView?
     private weak var pageContextUserScript: PageContextUserScript? {
         didSet {
@@ -177,6 +181,11 @@ final class PageContextTabExtension {
                     self.extractionResolver.reset()
                     self.didReportExtractionForCurrentNavigation = false
                     self.didReportSidebarOpenOutcomeForCurrentNavigation = false
+                    if previousContent.urlForWebView != tabContent.urlForWebView {
+                        self.resetNudge()
+                        // Same-document navigations (e.g. YouTube) never reach `navigationDidFinish`.
+                        self.scheduleNudgeEvaluation(delay: 3, onlyIfNotEvaluated: true)
+                    }
                 }
                 self.updateSidebarPageContextOnNavigation(from: previousContent, to: tabContent)
                 self.sendNonAttachableContextIfNeeded()
@@ -952,6 +961,10 @@ struct MainFrameMIMECache {
 }
 
 protocol PageContextProtocol: AnyObject, NavigationResponder {
+    var nudgePublisher: AnyPublisher<DuckAINudge?, Never> { get }
+    var currentNudge: DuckAINudge? { get }
+    @MainActor func clearNudge()
+
     /// Appends a user text selection to the sidebar's selection-context list. See the
     /// implementation in `PageContextTabExtension` for buffering/lifecycle semantics.
     @MainActor func appendSelectionContext(_ selection: AIChatSelectionContextData)
@@ -965,8 +978,67 @@ protocol PageContextProtocol: AnyObject, NavigationResponder {
     @MainActor func requestPageContextAttachment()
 }
 
+extension PageContextProtocol {
+    var nudgePublisher: AnyPublisher<DuckAINudge?, Never> { Just(nil).eraseToAnyPublisher() }
+    var currentNudge: DuckAINudge? { nil }
+    func clearNudge() {}
+}
+
 extension PageContextTabExtension: PageContextProtocol, TabExtension {
     func getPublicProtocol() -> PageContextProtocol { self }
+
+    var nudgePublisher: AnyPublisher<DuckAINudge?, Never> { $nudge.eraseToAnyPublisher() }
+    var currentNudge: DuckAINudge? { nudge }
+
+    @MainActor func clearNudge() {
+        nudge = nil
+    }
+}
+
+extension PageContextTabExtension {
+
+    fileprivate func resetNudge() {
+        nudgeTask?.cancel()
+        nudgeTask = nil
+        nudgeEvaluatedURL = nil
+        nudge = nil
+    }
+
+    fileprivate func scheduleNudgeEvaluation(delay: TimeInterval, onlyIfNotEvaluated: Bool) {
+        guard case .url(let url, _, _) = content, ["http", "https"].contains(url.scheme?.lowercased()) else { return }
+        if onlyIfNotEvaluated, nudgeEvaluatedURL == url { return }
+        if !onlyIfNotEvaluated, nudgeEvaluatedURL == url, nudge != nil { return }
+        nudgeTask?.cancel()
+        nudgeTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+            guard let self, !Task.isCancelled, self.isCurrentURL(url) else { return }
+            if onlyIfNotEvaluated, self.nudgeEvaluatedURL == url { return }
+            self.nudgeEvaluatedURL = url
+            Logger.aiChat.notice("[Nudge] evaluating \(url.absoluteString, privacy: .public) script=\(self.pageContextUserScript != nil)")
+            guard let pageContextUserScript = self.pageContextUserScript,
+                  let context = await pageContextUserScript.collectAndWait(timeout: 5),
+                  !Task.isCancelled, self.isCurrentURL(url) else { return }
+            Logger.aiChat.notice("[Nudge] collected \(context.content.count) chars signals=\(String(describing: context.pageTypeSignals), privacy: .public)")
+            let nudge = await DuckAINudgeEngine.shared.nudge(for: context, url: url, otherTabs: self.otherOpenTabs())
+            guard !Task.isCancelled, self.isCurrentURL(url) else { return }
+            self.nudge = nudge
+        }
+    }
+
+    private func isCurrentURL(_ url: URL) -> Bool {
+        if case .url(let current, _, _) = content { return current == url }
+        return false
+    }
+
+    @MainActor
+    private func otherOpenTabs() -> [DuckAINudgeEngine.OpenTab] {
+        let tabs = Application.appDelegate.windowControllersManager.allTabCollectionViewModels
+            .first { $0.tabs.contains { $0.uuid == tabID } }?.tabs ?? []
+        return tabs.compactMap { tab in
+            guard tab.uuid != tabID, case .url(let url, _, _) = tab.content else { return nil }
+            return .init(id: tab.uuid, url: url)
+        }
+    }
 }
 
 extension PageContextTabExtension: NavigationResponder {
@@ -1000,6 +1072,7 @@ extension PageContextTabExtension: NavigationResponder {
         pendingSettledNavigationURL = nil
         collectPageContextIfNeeded(trigger: .navigation)
         requestSignalsOnlyCollectionIfNeeded()
+        scheduleNudgeEvaluation(delay: 0.8, onlyIfNotEvaluated: false)
     }
 
     private func runPendingSettledNavigationReCollectIfNeeded() {

@@ -1034,34 +1034,36 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     @MainActor
     func testGetConfigIncludesSuggestedPromptsStateFromProvider() async throws {
         configProvider.showSuggestedPrompts = true
-        configProvider.suggestedPromptsSubmitCount = 3
+        configProvider.suggestedPromptsPromptCount = 3
+        configProvider.suggestedPromptsPromptLimit = 7
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.showSuggestedPrompts, true)
-        XCTAssertEqual(config.suggestedPromptsSubmitCount, 3)
+        XCTAssertEqual(config.suggestedPromptsPromptCount, 3)
+        XCTAssertEqual(config.suggestedPromptsPromptLimit, 7)
     }
 
     @MainActor
-    func testWhenSetConfigRaisesSuggestedPromptsSubmitCountThenItIsPersisted() async throws {
-        configProvider.suggestedPromptsSubmitCount = 2
+    func testWhenSetConfigRaisesSuggestedPromptsPromptCountThenItIsPersisted() async throws {
+        configProvider.suggestedPromptsPromptCount = 2
         var newConfig = makeSetConfig()
-        newConfig.suggestedPromptsSubmitCount = 3
+        newConfig.suggestedPromptsPromptCount = 3
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
-        XCTAssertEqual(configProvider.suggestedPromptsSubmitCount, 3)
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 3)
     }
 
     @MainActor
-    func testWhenSetConfigEchoesALowerSuggestedPromptsSubmitCountThenItIsIgnored() async throws {
-        configProvider.suggestedPromptsSubmitCount = 4
+    func testWhenSetConfigEchoesALowerSuggestedPromptsPromptCountThenItIsIgnored() async throws {
+        configProvider.suggestedPromptsPromptCount = 4
         var newConfig = makeSetConfig()
-        newConfig.suggestedPromptsSubmitCount = 1
+        newConfig.suggestedPromptsPromptCount = 1
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
 
-        XCTAssertEqual(configProvider.suggestedPromptsSubmitCount, 4)
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 4)
     }
 
     @MainActor

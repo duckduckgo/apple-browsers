@@ -23,6 +23,7 @@ import XCTest
 @_spi(Testing) import Persistence
 import PixelKit
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import NewTabPage
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -1018,15 +1019,40 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     }
 
     @MainActor
+    func testSuggestedPromptsPromptLimit_comesFromRemoteSettings() throws {
+        let privacyConfig = MockPrivacyConfiguration()
+        privacyConfig.subfeatureSettings = #"{ "promptLimit": 3 }"#
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig), searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.suggestedPromptsPromptLimit, 3)
+
+        provider.suggestedPromptsPromptCount = 3
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testSuggestedPromptsPromptLimit_fallsBackToFiveWithoutValidSettings() throws {
+        let privacyConfig = MockPrivacyConfiguration()
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig), searchPreferences: makeSearchPreferences())
+
+        XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
+
+        privacyConfig.subfeatureSettings = #"{ "promptLimit": 0 }"#
+        XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
+    }
+
+    @MainActor
     func testShowSuggestedPrompts_isFalseOnceFivePromptsWereSent() throws {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences())
 
-        provider.suggestedPromptsSubmitCount = 4
+        provider.suggestedPromptsPromptCount = 4
         XCTAssertTrue(provider.showSuggestedPrompts)
 
-        provider.suggestedPromptsSubmitCount = 5
+        provider.suggestedPromptsPromptCount = 5
         XCTAssertFalse(provider.showSuggestedPrompts)
     }
 
@@ -1034,11 +1060,11 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     func testSuggestedPromptsState_persistsAcrossProviders() throws {
         let store = try makeStore()
         let first = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
-        first.suggestedPromptsSubmitCount = 3
+        first.suggestedPromptsPromptCount = 3
 
         let second = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), searchPreferences: makeSearchPreferences())
 
-        XCTAssertEqual(second.suggestedPromptsSubmitCount, 3)
+        XCTAssertEqual(second.suggestedPromptsPromptCount, 3)
     }
 
     @MainActor
@@ -1047,8 +1073,8 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         var events = 0
         let cancellable = provider.suggestedPromptsPublisher.sink { events += 1 }
 
-        provider.suggestedPromptsSubmitCount = 1
-        provider.suggestedPromptsSubmitCount = 2
+        provider.suggestedPromptsPromptCount = 1
+        provider.suggestedPromptsPromptCount = 2
 
         cancellable.cancel()
         XCTAssertEqual(events, 2)
@@ -1061,14 +1087,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
         let provider = NewTabPageOmnibarConfigProvider(keyValueStore: store, aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, searchPreferences: makeSearchPreferences(), notificationCenter: notificationCenter)
-        provider.suggestedPromptsSubmitCount = 5
+        provider.suggestedPromptsPromptCount = 5
         var events = 0
         let cancellable = provider.suggestedPromptsPublisher.sink { events += 1 }
 
         NewTabPageOmnibarConfigProvider.resetSuggestedPrompts(in: store, notificationCenter: notificationCenter)
 
         cancellable.cancel()
-        XCTAssertEqual(provider.suggestedPromptsSubmitCount, 0)
+        XCTAssertEqual(provider.suggestedPromptsPromptCount, 0)
         XCTAssertTrue(provider.showSuggestedPrompts)
         XCTAssertEqual(events, 1)
     }

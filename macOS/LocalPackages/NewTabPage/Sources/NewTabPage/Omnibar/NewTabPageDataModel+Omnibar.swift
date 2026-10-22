@@ -313,9 +313,11 @@ public extension NewTabPageDataModel {
         /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
         var showSuggestedPrompts: Bool?
         /// How many Duck.ai prompts the user has sent from the NTP while the chips were offered, from
-        /// the chips or typed. The web increments it and hides the chips at 5; native persists it and
-        /// never lets an echo lower it.
-        var suggestedPromptsSubmitCount: Int?
+        /// the chips or typed. The web increments it and hides the chips at `suggestedPromptsPromptLimit`;
+        /// native persists it and never lets an echo lower it.
+        var suggestedPromptsPromptCount: Int?
+        /// How many Duck.ai prompts can be sent before the chips hide for good, from remote config.
+        var suggestedPromptsPromptLimit: Int?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {

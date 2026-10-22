@@ -197,7 +197,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
-            suggestedPromptsSubmitCount: configProvider.suggestedPromptsSubmitCount
+            suggestedPromptsPromptCount: configProvider.suggestedPromptsPromptCount,
+            suggestedPromptsPromptLimit: configProvider.suggestedPromptsPromptLimit
         )
     }
 
@@ -236,8 +237,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
     /// bring the chips back.
     @MainActor
     private func persistSuggestedPrompts(from config: NewTabPageDataModel.OmnibarConfig) {
-        if let count = config.suggestedPromptsSubmitCount, count > configProvider.suggestedPromptsSubmitCount {
-            configProvider.suggestedPromptsSubmitCount = count
+        if let count = config.suggestedPromptsPromptCount, count > configProvider.suggestedPromptsPromptCount {
+            configProvider.suggestedPromptsPromptCount = count
         }
     }
 
@@ -298,7 +299,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
             showSuggestedPrompts: configProvider.showSuggestedPrompts,
-            suggestedPromptsSubmitCount: configProvider.suggestedPromptsSubmitCount
+            suggestedPromptsPromptCount: configProvider.suggestedPromptsPromptCount,
+            suggestedPromptsPromptLimit: configProvider.suggestedPromptsPromptLimit
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }

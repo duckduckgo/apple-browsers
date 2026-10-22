@@ -79,11 +79,16 @@ final class NewTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSet
 final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
-        case newTabPageSuggestedPromptsSubmitCount
+        case newTabPageSuggestedPromptsPromptCount
     }
 
-    /// The suggested-prompt chips hide for good once this many Duck.ai prompts have been sent. Matches the web.
-    static let maxSubmittedSuggestedPrompts = 5
+    /// Prompts allowed before the suggested-prompt chips hide for good, when remote config sets none. Matches the web.
+    static let defaultSuggestedPromptsPromptLimit = 5
+
+    /// `settings` of the `ntpSuggestedPrompts` AIChat subfeature, e.g. `{ "promptLimit": 5 }`.
+    private struct SuggestedPromptsSettings: Decodable {
+        let promptLimit: Int
+    }
 
     private enum LegacyKey: String {
         /// Previously-used per-NTP key. Migrated into `AIChatPreferencesPersisting.selectedModelId`
@@ -98,6 +103,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging?
     private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
@@ -124,6 +130,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging? = nil,
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
@@ -139,6 +146,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
@@ -660,16 +668,26 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var showSuggestedPrompts: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts)
-            && suggestedPromptsSubmitCount < Self.maxSubmittedSuggestedPrompts
+            && suggestedPromptsPromptCount < suggestedPromptsPromptLimit
     }
 
-    var suggestedPromptsSubmitCount: Int {
+    var suggestedPromptsPromptLimit: Int {
+        guard let settingsJSON = privacyConfigurationManager?.privacyConfig.settings(for: AIChatSubfeature.ntpSuggestedPrompts),
+              let jsonData = settingsJSON.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(SuggestedPromptsSettings.self, from: jsonData),
+              settings.promptLimit > 0 else {
+            return Self.defaultSuggestedPromptsPromptLimit
+        }
+        return settings.promptLimit
+    }
+
+    var suggestedPromptsPromptCount: Int {
         get {
-            (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue) as? Int) ?? 0
+            (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue) as? Int) ?? 0
         }
         set {
             do {
-                try keyValueStore.set(newValue, forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue)
+                try keyValueStore.set(newValue, forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue)
             } catch {
                 Logger.newTabPageOmnibar.error("Failed to set suggested prompts submit count in keyValueStore: \(error.localizedDescription)")
             }
@@ -689,7 +707,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     /// Static so it can run without a provider; open NTPs pick it up through the notification.
     static func resetSuggestedPrompts(in keyValueStore: ThrowingKeyValueStoring, notificationCenter: NotificationCenter = .default) {
         do {
-            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsSubmitCount.rawValue)
+            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue)
         } catch {
             Logger.newTabPageOmnibar.error("Failed to reset suggested prompts in keyValueStore: \(error.localizedDescription)")
         }

@@ -707,24 +707,24 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func subscribeToTabGroupChanges() {
         let tabGroupManager = tabCollectionViewModel.tabGroupManager
 
-        // Reload collection view when tab-to-group mapping changes
-        // (headers may need to be added/removed, items may move)
-        tabGroupManager.$tabToGroup
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.collectionView.reloadData()
-                self?.reloadSelection()
+        // One reload once group changes settle: applying a proposal changes many tabs and moves them,
+        // and reloads in the middle of that, while the tab bar animates, can leave stale items behind.
+        Publishers.Merge3(tabGroupManager.$tabToGroup.map { _ in () },
+                          tabGroupManager.$collapsedGroups.map { _ in () },
+                          tabGroupManager.$groups.map { _ in () })
+            .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.reloadForTabGroupChange()
             }
             .store(in: &cancellables)
+    }
 
-        // Reload collection view when collapsed state changes
-        tabGroupManager.$collapsedGroups
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.collectionView.reloadData()
-                self?.reloadSelection()
-            }
-            .store(in: &cancellables)
+    private func reloadForTabGroupChange() {
+        collectionView.reloadData()
+        collectionView.collectionViewLayout?.invalidateLayout()
+        reloadSelection()
+        updateTabMode()
+        enableScrollButtons()
     }
 
     private func refreshTabGroupBackgrounds() {

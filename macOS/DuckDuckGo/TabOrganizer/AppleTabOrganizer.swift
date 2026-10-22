@@ -54,11 +54,17 @@ final class AppleTabOrganizer: TabOrganizing {
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
             let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
-            if response.forEachGroup {
+            // The small model over-reports "each group", so it also has to be in the words.
+            if response.forEachGroup, Self.mentionsEveryGroup(text) {
                 return try await eachGroup(tabs, action: response.actionForMatching)
             }
             if let criterion = response.groupBy {
                 return try await split(response, by: criterion, tabs: tabs)
+            }
+            // "the shopping group": a named tab group is matched in code, not left to the model.
+            let namedGroups = Self.groupNames(mentionedIn: text, tabs: tabs)
+            if !namedGroups.isEmpty, response.actionForMatching != .keep {
+                return Self.proposal(for: namedGroups, action: response.actionForMatching, tabs: tabs)
             }
             return TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs)
         }
@@ -90,6 +96,35 @@ final class AppleTabOrganizer: TabOrganizing {
         let others = tabs.map(\.id).filter { id in !matchingTabs.contains { $0.id == id } }
         if !others.isEmpty {
             groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: response.actionForOthers))
+        }
+        return TabOrganizerProposal(groups: groups)
+    }
+
+    static func mentionsEveryGroup(_ text: String) -> Bool {
+        let words = Set(text.lowercased().components(separatedBy: CharacterSet.letters.inverted))
+        return !words.isDisjoint(with: ["each", "every", "all"])
+    }
+
+    /// Existing tab group names that appear in the request, whole words, ignoring case.
+    static func groupNames(mentionedIn text: String, tabs: [TabSnapshot]) -> [String] {
+        let request = " " + text.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: " ") + " "
+        var names: [String] = []
+        for name in tabs.compactMap(\.groupName) where !names.contains(name) {
+            let normalized = name.lowercased().components(separatedBy: CharacterSet.alphanumerics.inverted).joined(separator: " ")
+            if request.contains(" \(normalized) ") {
+                names.append(name)
+            }
+        }
+        return names
+    }
+
+    static func proposal(for groupNames: [String], action: TabGroupAction, tabs: [TabSnapshot]) -> TabOrganizerProposal {
+        var groups = groupNames.map { name in
+            ProposedGroup(name: name, tabIDs: tabs.filter { $0.groupName == name }.map(\.id), action: action)
+        }
+        let others = tabs.filter { tab in !groupNames.contains { $0 == tab.groupName } }.map(\.id)
+        if !others.isEmpty {
+            groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: .keep))
         }
         return TabOrganizerProposal(groups: groups)
     }

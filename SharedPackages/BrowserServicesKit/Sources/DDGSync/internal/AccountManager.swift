@@ -259,10 +259,10 @@ struct AccountManager: AccountManaging {
             }
         }
         let pageKeyProvider = accountInfoKeys.map { PageScopedAccountInfoKeys(manager: $0) }
-        let pageScopedThirdPartyPasswordRecovery = PageScopedThirdPartyPasswordRecovery()
+        let pagePasswordRecoveryCache = ThirdPartyPasswordRecoveryCache()
         let decoder = AuditLogEntryDecoder(accountInfoKeys: pageKeyProvider,
                                            deviceMapper: registeredDeviceMapper,
-                                           pageScopedThirdPartyPasswordRecovery: pageScopedThirdPartyPasswordRecovery)
+                                           thirdPartyPasswordRecoveryCache: pagePasswordRecoveryCache)
         var entries = [AuditLogEntryDecodingResult]()
         entries.reserveCapacity(response.auditLog.entries.count)
         for entry in response.auditLog.entries {

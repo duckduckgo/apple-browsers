@@ -46,9 +46,11 @@ public protocol BrowserToolPermissionStoring: AnyObject {
 
 public extension BrowserToolPermissionStoring {
 
-    /// An `auto` tool is always allowed; only `ask` tools have a stored decision.
+    /// An `auto` tool is always allowed; only `ask` tools have a stored decision. A tool approved
+    /// call by call never has one.
     func effectiveState(for tool: any BrowserTool) -> BrowserToolPermissionState {
-        tool.permissionMode == .auto ? .allow : state(forToolNamed: tool.name)
+        if tool.approvesEachCall { return .ask }
+        return tool.permissionMode == .auto ? .allow : state(forToolNamed: tool.name)
     }
 }
 
@@ -120,6 +122,18 @@ public enum BrowserToolPermissionElicitation {
             "choice": [
                 "type": "string",
                 "enum": ["allowOnce", "alwaysAllow", "neverAllow"]
+            ]
+        ],
+        "required": ["choice"]
+    ]
+
+    /// For a tool approved call by call: there is nothing to remember, so Once is the only choice.
+    public static let allowOnceSchema: JSONValue = [
+        "type": "object",
+        "properties": [
+            "choice": [
+                "type": "string",
+                "enum": ["allowOnce"]
             ]
         ],
         "required": ["choice"]

@@ -103,6 +103,24 @@ final class AIChatElicitationCoordinatorTests: XCTestCase {
         XCTAssertTrue(coordinator.pendingPrompts.isEmpty)
     }
 
+    func testWhenMetaIsGivenThenItIsPushedWithThePrompt() async throws {
+        let coordinator = coordinator!
+        let pusher = pusher!
+        let task = Task {
+            await coordinator.elicit(toolName: "alpha",
+                                     message: "m",
+                                     requestedSchema: BrowserToolPermissionElicitation.allowOnceSchema,
+                                     meta: ["formPreview": ["site": "Acme"]],
+                                     ownerTabID: "tab",
+                                     pusher: pusher)
+        }
+        try await waitForPending(count: 1)
+
+        XCTAssertEqual(pusher.pushed.first?.meta, ["formPreview": ["site": "Acme"]])
+        coordinator.complete(id: "id-1", result: .cancel)
+        _ = await task.value
+    }
+
     func testWhenThereIsNoPusherThenElicitResolvesAsCancelWithoutPushing() async {
         let result = await coordinator.elicit(toolName: "alpha",
                                               message: "m",

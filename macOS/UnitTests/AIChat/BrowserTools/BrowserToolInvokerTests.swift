@@ -403,6 +403,116 @@ final class BrowserToolInvokerTests: XCTestCase {
         XCTAssertFalse(tool.didExecute)
     }
 
+    // MARK: - Approved call by call
+
+    func testWhenToolIsApprovedEachCallThenItPromptsWithItsOwnPromptEvenWithAStoredAllow() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "Duck.ai wants to submit a form on Acme.", meta: ["formPreview": ["site": "Acme"]]))
+        permissions.setState(.allow, forToolNamed: "alpha")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success([:]))
+        XCTAssertTrue(tool.didExecute)
+        XCTAssertEqual(pusher.pushedParams?.message, "Duck.ai wants to submit a form on Acme.")
+        XCTAssertEqual(pusher.pushedParams?.meta, ["formPreview": ["site": "Acme"]])
+        XCTAssertEqual(pusher.pushedParams?.requestedSchema, BrowserToolPermissionElicitation.allowOnceSchema)
+    }
+
+    /// An earlier Never must not decide a call the user has not seen, and neither may an Always.
+    func testWhenToolIsApprovedEachCallThenAStoredDenyIsIgnored() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        permissions.setState(.deny, forToolNamed: "alpha")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success([:]))
+        XCTAssertNotNil(pusher.pushedParams)
+    }
+
+    func testWhenAnApprovedEachCallToolIsListedThenItsStateIsAlwaysAsk() {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        permissions.setState(.allow, forToolNamed: "alpha")
+
+        XCTAssertEqual(permissions.effectiveState(for: tool), .ask)
+    }
+
+    func testWhenTheApprovalIsAlwaysAllowThenTheCallIsRefusedAndNothingIsStored() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "alwaysAllow"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.invalidPermissionChoice))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    func testWhenTheApprovalIsDeclinedThenTheCallIsDeniedAndNothingIsStored() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .decline)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.denied))
+        XCTAssertFalse(tool.didExecute)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    func testWhenTheApprovalIsCancelledOrHasNoChoiceThenTheCallFails() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let cancelled = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(),
+                                             elicitationPusher: ScriptedPusher(elicitations: elicitations, answer: .cancel))
+        let noChoice = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(),
+                                            elicitationPusher: ScriptedPusher(elicitations: elicitations, answer: MCPElicitationResult(action: .accept)))
+
+        XCTAssertEqual(cancelled, .failure(.cancelled))
+        XCTAssertEqual(noChoice, .failure(.invalidArguments))
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenTheToolRefusesBeforeAskingThenNoPromptIsShown() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .refuse(.restricted))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.restricted))
+        XCTAssertNil(pusher.pushedParams)
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenTheFrontEndCannotShowPromptsThenAnApprovedEachCallToolIsUnsupported() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(supportsElicitationForm: false), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.elicitationUnsupported))
+        XCTAssertNil(pusher.pushedParams)
+    }
+
+    func testWhenAnApprovedEachCallToolIsCalledInAFireWindowThenItIsUnavailableWithoutAPrompt() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .ask(message: "m", meta: nil))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(isBurner: true), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.unavailable))
+        XCTAssertNil(pusher.pushedParams)
+        XCTAssertFalse(tool.didPreparePrompt)
+    }
+
     // MARK: - Cancellation
 
     func testWhenACallIsCancelledWhileItsPromptIsPendingThenItIsCancelledAndTheToolDoesNotRun() async throws {
@@ -568,6 +678,35 @@ private final class SpyBrowserTool: BrowserTool {
         receivedArguments = arguments
         receivedContext = context
         return result
+    }
+}
+
+/// Builds its own prompt for every call, like `submitForm`.
+private final class ApprovedEachCallTool: BrowserTool {
+    let name: String
+    var title: String { "Approved each call" }
+    var description: String { "Approved each call" }
+    let permissionMode = BrowserToolPermissionMode.ask
+    let approvesEachCall = true
+    var inputSchema: JSONValue { ["type": "object"] }
+
+    private let prompt: BrowserToolApprovalPrompt
+    private(set) var didPreparePrompt = false
+    private(set) var didExecute = false
+
+    init(name: String, prompt: BrowserToolApprovalPrompt) {
+        self.name = name
+        self.prompt = prompt
+    }
+
+    func approvalPrompt(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolApprovalPrompt {
+        didPreparePrompt = true
+        return prompt
+    }
+
+    func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
+        didExecute = true
+        return .success([:])
     }
 }
 

@@ -233,6 +233,10 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .highlightInPage: .aiChatBrowserToolHighlightInPage
         case .openTab: .aiChatBrowserToolOpenTab
         case .closeTab: .aiChatBrowserToolCloseTab
+        case .getPageSnapshot: .aiChatBrowserToolGetPageSnapshot
+        case .fillForm: .aiChatBrowserToolFillForm
+        case .clickElement: .aiChatBrowserToolClickElement
+        case .submitForm: .aiChatBrowserToolSubmitForm
         }
     }
 }

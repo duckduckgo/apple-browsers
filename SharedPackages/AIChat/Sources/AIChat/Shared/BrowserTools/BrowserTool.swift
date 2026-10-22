@@ -51,6 +51,14 @@ public protocol BrowserTool: AnyObject {
     /// Duck.ai picked those pages itself, so reading them skips the prompt; a stored Never still applies.
     var skipsPromptForDuckAIOpenedTabs: Bool { get }
 
+    /// The user approves every call, from a prompt the tool builds for that call. Stored decisions
+    /// never apply, and none are made.
+    var approvesEachCall: Bool { get }
+
+    /// Called before every call of an `approvesEachCall` tool. Refusing here fails the call
+    /// without asking the user.
+    func approvalPrompt(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolApprovalPrompt
+
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
     /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
@@ -61,6 +69,11 @@ public extension BrowserTool {
     var permissionReason: String { "Duck.ai wants to use a browser tool." }
     var annotations: MCPToolAnnotations? { nil }
     var skipsPromptForDuckAIOpenedTabs: Bool { false }
+    var approvesEachCall: Bool { false }
+
+    func approvalPrompt(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolApprovalPrompt {
+        .refuse(.unavailable)
+    }
 
     /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and
     /// current decision; release builds keep the wire MCP-clean.
@@ -118,6 +131,13 @@ public struct BrowserToolCallContext: Equatable, Sendable {
         self.isBurner = isBurner
         self.supportsElicitationForm = supportsElicitationForm
     }
+}
+
+/// What the user is asked before an `approvesEachCall` tool runs.
+public enum BrowserToolApprovalPrompt: Equatable, Sendable {
+    /// `meta` reaches the front end as the prompt's `_meta`.
+    case ask(message: String, meta: JSONValue?)
+    case refuse(BrowserToolFailure)
 }
 
 /// Outcome of an invocation, before it is mapped onto the MCP `CallToolResult` envelope.

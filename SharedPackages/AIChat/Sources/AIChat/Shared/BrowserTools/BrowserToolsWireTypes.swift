@@ -254,11 +254,20 @@ public struct MCPElicitationCreateParams: Encodable, Equatable, Sendable {
     public let message: String
     public let requestedSchema: JSONValue
 
-    public init(id: String, message: String, requestedSchema: JSONValue) {
+    /// Extra content the front end draws in the prompt, such as a form preview. Omitted when nil.
+    public let meta: JSONValue?
+
+    public init(id: String, message: String, requestedSchema: JSONValue, meta: JSONValue? = nil) {
         self.id = id
         self.mode = "form"
         self.message = message
         self.requestedSchema = requestedSchema
+        self.meta = meta
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, mode, message, requestedSchema
+        case meta = "_meta"
     }
 }
 
@@ -362,6 +371,14 @@ public enum BrowserToolFailure: String, Equatable, Sendable, CaseIterable {
 
     /// A page could not be loaded: a navigation error or an HTTP error response.
     case blocked
+
+    /// Native will not act on this page or field: a login or checkout page, or a password, card,
+    /// file or hidden field.
+    case restricted
+
+    /// `clickElement` was pointed at a submit button. Submitting goes through `submitForm`, which
+    /// asks the user first.
+    case useSubmitForm = "use_submit_form"
 
     /// The user refused, now or by a stored decision.
     case denied

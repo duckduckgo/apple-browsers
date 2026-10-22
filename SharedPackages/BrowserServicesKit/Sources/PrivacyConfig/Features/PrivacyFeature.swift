@@ -616,6 +616,18 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Closes a tab that `openTab` opened.
     case closeTab
+
+    /// Describes the forms on a tab Duck.ai opened.
+    case getPageSnapshot
+
+    /// Fills form fields on a tab Duck.ai opened. Never submits.
+    case fillForm
+
+    /// Clicks a non-submit button on a tab Duck.ai opened.
+    case clickElement
+
+    /// Submits a form on a tab Duck.ai opened, after the user approves it.
+    case submitForm
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

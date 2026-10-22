@@ -685,6 +685,22 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolCloseTab
 
+    /// Gates the `getPageSnapshot` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolGetPageSnapshot
+
+    /// Gates the `fillForm` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolFillForm
+
+    /// Gates the `clickElement` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolClickElement
+
+    /// Gates the `submitForm` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolSubmitForm
+
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
@@ -1131,6 +1147,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.openTab), category: .duckAI)
         case .aiChatBrowserToolCloseTab:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.closeTab), category: .duckAI)
+        case .aiChatBrowserToolGetPageSnapshot:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.getPageSnapshot), category: .duckAI)
+        case .aiChatBrowserToolFillForm:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.fillForm), category: .duckAI)
+        case .aiChatBrowserToolClickElement:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.clickElement), category: .duckAI)
+        case .aiChatBrowserToolSubmitForm:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.submitForm), category: .duckAI)
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))

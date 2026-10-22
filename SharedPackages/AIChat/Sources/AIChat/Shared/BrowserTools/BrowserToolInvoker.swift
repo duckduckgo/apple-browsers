@@ -104,23 +104,29 @@ public final class BrowserToolInvoker {
         // call that can never succeed here cannot persist a decision.
         guard !context.isBurner else { return .failure(.unavailable) }
 
-        switch permissions.effectiveState(for: tool) {
-        case .allow:
-            break
-        case .deny:
-            return .failure(.denied)
-        case .ask:
-            if targetsTabOpenedByThisChat(tool, arguments: arguments, context: context) {
-                break
-            }
-            guard context.supportsElicitationForm else { return .failure(.elicitationUnsupported) }
-            let answer = await elicitations.elicit(toolName: tool.name,
-                                                   message: tool.permissionReason,
-                                                   requestedSchema: BrowserToolPermissionElicitation.choiceSchema,
-                                                   ownerTabID: context.ownerTabID,
-                                                   pusher: elicitationPusher)
-            if let refusal = apply(answer, forToolNamed: tool.name) {
+        if tool.approvesEachCall {
+            if let refusal = await approveThisCall(of: tool, arguments: arguments, context: context, elicitationPusher: elicitationPusher) {
                 return .failure(refusal)
+            }
+        } else {
+            switch permissions.effectiveState(for: tool) {
+            case .allow:
+                break
+            case .deny:
+                return .failure(.denied)
+            case .ask:
+                if targetsTabOpenedByThisChat(tool, arguments: arguments, context: context) {
+                    break
+                }
+                guard context.supportsElicitationForm else { return .failure(.elicitationUnsupported) }
+                let answer = await elicitations.elicit(toolName: tool.name,
+                                                       message: tool.permissionReason,
+                                                       requestedSchema: BrowserToolPermissionElicitation.choiceSchema,
+                                                       ownerTabID: context.ownerTabID,
+                                                       pusher: elicitationPusher)
+                if let refusal = apply(answer, forToolNamed: tool.name) {
+                    return .failure(refusal)
+                }
             }
         }
 
@@ -128,6 +134,40 @@ public final class BrowserToolInvoker {
         let result = await tool.execute(arguments: arguments, context: context)
         // A tool that finished without noticing still answers as cancelled: the front end asked to stop.
         return Task.isCancelled ? .failure(.cancelled) : result
+    }
+
+    /// Asks with the tool's own prompt, offering Once only. The store is neither read nor written:
+    /// an earlier Always or Never must not decide a call the user has not seen.
+    private func approveThisCall(of tool: any BrowserTool,
+                                 arguments: JSONValue?,
+                                 context: BrowserToolCallContext,
+                                 elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolFailure? {
+        let message: String
+        let meta: JSONValue?
+        switch await tool.approvalPrompt(arguments: arguments, context: context) {
+        case .refuse(let failure):
+            return failure
+        case .ask(let promptMessage, let promptMeta):
+            message = promptMessage
+            meta = promptMeta
+        }
+        guard context.supportsElicitationForm else { return .elicitationUnsupported }
+
+        let answer = await elicitations.elicit(toolName: tool.name,
+                                               message: message,
+                                               requestedSchema: BrowserToolPermissionElicitation.allowOnceSchema,
+                                               meta: meta,
+                                               ownerTabID: context.ownerTabID,
+                                               pusher: elicitationPusher)
+        switch MCPElicitationAction(rawValue: answer.action) {
+        case .decline:
+            return .denied
+        case .cancel, .none:
+            return .cancelled
+        case .accept:
+            guard let choice = answer.content?["choice"]?.stringValue, !choice.isEmpty else { return .invalidArguments }
+            return choice == BrowserToolPermissionChoice.allowOnce.rawValue ? nil : .invalidPermissionChoice
+        }
     }
 
     private func targetsTabOpenedByThisChat(_ tool: any BrowserTool, arguments: JSONValue?, context: BrowserToolCallContext) -> Bool {

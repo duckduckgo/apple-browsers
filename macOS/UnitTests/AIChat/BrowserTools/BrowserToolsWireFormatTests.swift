@@ -47,6 +47,30 @@ final class BrowserToolsWireFormatTests: XCTestCase {
         """)
     }
 
+    /// The front end draws a form preview from `_meta`; without one the key is left out entirely.
+    func testWhenElicitationCreateParamsCarryMetaThenItIsWrittenAsUnderscoreMeta() throws {
+        let params = MCPElicitationCreateParams(id: "e2",
+                                                message: "Duck.ai wants to submit a form on Acme.",
+                                                requestedSchema: BrowserToolPermissionElicitation.allowOnceSchema,
+                                                meta: ["formPreview": ["site": "Acme", "fields": [["label": "Name", "value": "Pat"]]]])
+        let withoutMeta = MCPElicitationCreateParams(id: "e3", message: "m", requestedSchema: [:])
+
+        try assertEncodes(params, to: """
+        {
+          "id": "e2",
+          "mode": "form",
+          "message": "Duck.ai wants to submit a form on Acme.",
+          "requestedSchema": {
+            "type": "object",
+            "properties": { "choice": { "type": "string", "enum": ["allowOnce"] } },
+            "required": ["choice"]
+          },
+          "_meta": { "formPreview": { "site": "Acme", "fields": [{ "label": "Name", "value": "Pat" }] } }
+        }
+        """)
+        XCTAssertNil(try encoded(withoutMeta)["_meta"])
+    }
+
     func testWhenElicitationResponseIsDecodedThenItCarriesTheIdActionAndChoice() throws {
         let response = try decodeElicitationResponse("""
         { "id": "e1", "result": { "action": "accept", "content": { "choice": "alwaysAllow" } } }
@@ -261,6 +285,8 @@ final class BrowserToolsWireFormatTests: XCTestCase {
         XCTAssertEqual(BrowserToolFailure.notFound.rawValue, "not_found")
         XCTAssertEqual(BrowserToolFailure.unavailable.rawValue, "unavailable")
         XCTAssertEqual(BrowserToolFailure.blocked.rawValue, "blocked")
+        XCTAssertEqual(BrowserToolFailure.restricted.rawValue, "restricted")
+        XCTAssertEqual(BrowserToolFailure.useSubmitForm.rawValue, "use_submit_form")
         XCTAssertEqual(BrowserToolFailure.denied.rawValue, "denied")
         XCTAssertEqual(BrowserToolFailure.cancelled.rawValue, "cancelled")
         XCTAssertEqual(BrowserToolFailure.elicitationUnsupported.rawValue, "elicitation_unsupported")

@@ -64,11 +64,12 @@ public final class AIChatElicitationCoordinator {
     public func elicit(toolName: String,
                        message: String,
                        requestedSchema: JSONValue,
+                       meta: JSONValue? = nil,
                        ownerTabID: String,
                        pusher: (any AIChatElicitationPushing)?) async -> MCPElicitationResult {
         guard let pusher, !Task.isCancelled else { return .cancel }
         let id = makeID()
-        let params = MCPElicitationCreateParams(id: id, message: message, requestedSchema: requestedSchema)
+        let params = MCPElicitationCreateParams(id: id, message: message, requestedSchema: requestedSchema, meta: meta)
         let info = PendingElicitation(id: id, ownerTabID: ownerTabID, toolName: toolName, message: message)
 
         return await withTaskCancellationHandler {

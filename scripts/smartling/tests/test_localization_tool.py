@@ -37,6 +37,11 @@ class FakeSmartlingClient:
                  file_statuses=None,
                  list_jobs_error=None,
                  failing_downloads=None,
+                 awaiting_jobs=None,
+                 awaiting_jobs_error=None,
+                 file_status_error=None,
+                 upload_code='SUCCESS',
+                 polls_until_processed=0,
                  authorize_error=None):
         self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
         self.report = report or {}
@@ -50,6 +55,13 @@ class FakeSmartlingClient:
         self.file_statuses = file_statuses or {}
         self.list_jobs_error = list_jobs_error
         self.failing_downloads = failing_downloads or set()
+        self.awaiting_jobs = awaiting_jobs or []
+        self.awaiting_jobs_error = awaiting_jobs_error
+        self.file_status_error = file_status_error
+        self.awaiting_jobs_calls = 0
+        self.upload_code = upload_code
+        self.polls_until_processed = polls_until_processed
+        self.refreshed = []
         self.downloaded = []
         self.authorize_error = authorize_error
         self.authorized_jobs = []
@@ -102,9 +114,33 @@ class FakeSmartlingClient:
         return ['feature/en.xliff']
 
     async def get_file_status(self, file_uri):
+        if self.file_status_error:
+            raise self.file_status_error
         if file_uri not in self.file_statuses:
             raise RuntimeError('HTTP 404: File not found')
-        return self.file_statuses[file_uri]
+        status = self.file_statuses[file_uri]
+        if status.get('processing_polls_left'):
+            status['processing_polls_left'] -= 1
+            if not status['processing_polls_left']:
+                status['lastUploaded'] = status.pop('pending_upload')
+        return status
+
+    async def upload_file(self, file_path, file_uri):
+        self.refreshed.append((file_path.name, file_uri))
+        status = self.file_statuses.setdefault(file_uri, {})
+        upload_time = f'upload-{len(self.refreshed)}'
+        if self.upload_code == 'ACCEPTED' and self.polls_until_processed:
+            status['pending_upload'] = upload_time
+            status['processing_polls_left'] = self.polls_until_processed
+        elif self.upload_code != 'ACCEPTED':
+            status['lastUploaded'] = upload_time
+        return {'code': self.upload_code, 'data': {'stringCount': 42}}
+
+    async def list_jobs_awaiting_authorization(self):
+        self.awaiting_jobs_calls += 1
+        if self.awaiting_jobs_error:
+            raise self.awaiting_jobs_error
+        return self.awaiting_jobs
 
     async def download_file(self, file_uri, locale):
         if (file_uri, locale) in self.failing_downloads:
@@ -502,6 +538,136 @@ class ProjectLocalesTests(unittest.IsolatedAsyncioTestCase):
         locales = await client.get_project_locales()
 
         self.assertEqual(locales, ['de-DE', 'it-IT'])
+
+
+class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCase):
+
+    async def release_status(self, client):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return await LOCALIZATION_TOOL.run_release_status(
+                client=client,
+                job_name='Release iOS 7.200.0',
+                file_uris=[XLIFF_URI]
+            )
+
+    async def testWhenNotReadyThenJobsAwaitingAuthorizationAreListedOldestFirst(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: file_status(10, de_DE=(3, 0))},
+            awaiting_jobs=[
+                {'jobName': 'pau/feature-2026-10-20', 'createdDate': '2026-10-20T10:00:00Z'},
+                {'jobName': 'keyChange', 'createdDate': '2025-04-04T14:23:00Z'},
+            ]
+        )
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'not_ready')
+        self.assertEqual(result.jobs_awaiting_authorization, [
+            'keyChange (created 2025-04-04)',
+            'pau/feature-2026-10-20 (created 2026-10-20)',
+        ])
+
+    async def testWhenReadyThenJobsAwaitingAuthorizationAreNotLookedUp(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: file_status(10, de_DE=(10, 0))},
+            awaiting_jobs=[{'jobName': 'keyChange', 'createdDate': '2025-04-04T14:23:00Z'}]
+        )
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'ready')
+        self.assertEqual(result.jobs_awaiting_authorization, [])
+        self.assertEqual(client.awaiting_jobs_calls, 0)
+
+    async def testWhenStringsAreNotAuthorizedThenTheyAreCountedAcrossLocales(self):
+        status = file_status(10, de_DE=(3, 0), fr_FR=(9, 1))
+        status['items'][0]['authorizedStringCount'] = 4
+        client = FakeSmartlingClient(locales=['de-DE', 'fr-FR', 'it-IT'], file_statuses={XLIFF_URI: status})
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'not_ready')
+        self.assertEqual(result.strings_left, 17)
+        self.assertEqual(result.strings_awaiting_authorization, 13)
+
+    async def testWhenListingJobsAwaitingAuthorizationFailsThenTheStatusIsStillReported(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: file_status(10, de_DE=(3, 0))},
+            awaiting_jobs_error=RuntimeError('HTTP 500: Server error')
+        )
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'not_ready')
+        self.assertEqual(result.strings_left, 7)
+        self.assertEqual(result.jobs_awaiting_authorization, [])
+
+
+class RefreshTests(unittest.IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        export_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(export_dir.cleanup)
+        self.xliff = Path(export_dir.name) / 'en.xliff'
+        self.stringsdict = Path(export_dir.name) / 'Localizable.stringsdict'
+        self.xliff.write_text('<xliff/>', encoding='utf-8')
+        self.stringsdict.write_text('<plist/>', encoding='utf-8')
+
+    async def refresh(self, client):
+        with contextlib.redirect_stdout(io.StringIO()):
+            return await LOCALIZATION_TOOL.run_refresh(
+                client, [self.xliff, self.stringsdict], 'release/ios/7.200.0', sleep=no_sleep
+            )
+
+    async def testWhenRefreshingThenEachFileReplacesTheReleaseFileWithTheSameName(self):
+        client = FakeSmartlingClient()
+
+        file_uris = await self.refresh(client)
+
+        self.assertEqual(file_uris, [XLIFF_URI, STRINGSDICT_URI])
+        self.assertEqual(client.refreshed, [('en.xliff', XLIFF_URI), ('Localizable.stringsdict', STRINGSDICT_URI)])
+        self.assertEqual(client.created_jobs, [])
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenSmartlingIsStillProcessingAnUploadThenTheRefreshWaitsForIt(self):
+        client = FakeSmartlingClient(
+            upload_code='ACCEPTED',
+            polls_until_processed=3,
+            file_statuses={
+                XLIFF_URI: {'lastUploaded': 'code-freeze'},
+                STRINGSDICT_URI: {'lastUploaded': 'code-freeze'},
+            }
+        )
+
+        await self.refresh(client)
+
+        self.assertEqual(client.file_statuses[XLIFF_URI]['lastUploaded'], 'upload-1')
+        self.assertEqual(client.file_statuses[STRINGSDICT_URI]['lastUploaded'], 'upload-2')
+
+    async def testWhenThePreviousUploadCannotBeReadThenNothingIsUploaded(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: {'lastUploaded': 'code-freeze'}},
+            file_status_error=RuntimeError('HTTP 500: Server error')
+        )
+
+        with self.assertRaisesRegex(RuntimeError, 'HTTP 500'):
+            await self.refresh(client)
+        self.assertEqual(client.refreshed, [])
+
+    async def testWhenSmartlingRejectsAnUploadThenTheRefreshFails(self):
+        client = FakeSmartlingClient(upload_code='VALIDATION_ERROR')
+
+        with self.assertRaisesRegex(RuntimeError, 'VALIDATION_ERROR'):
+            await self.refresh(client)
+
+    async def testWhenSmartlingNeverFinishesProcessingThenTheRefreshFails(self):
+        client = FakeSmartlingClient(
+            upload_code='ACCEPTED',
+            file_statuses={XLIFF_URI: {'lastUploaded': 'code-freeze'}}
+        )
+
+        with self.assertRaisesRegex(RuntimeError, 'did not finish processing'):
+            await self.refresh(client)
 
 
 class DownloadCommandTests(unittest.IsolatedAsyncioTestCase):

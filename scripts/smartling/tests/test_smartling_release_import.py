@@ -11,8 +11,12 @@ from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).parents[1] / 'smartling_release_import.sh'
 RELEASE_BRANCH = 'release/ios/0.1.0'
+REFRESH_PREFIX = 'release/ios/0.1.0/current'
 IMPORT_BRANCH = 'smartling/release-ios-0.1.0'
 STRINGS_PATH = 'iOS/App/de.lproj/Localizable.strings'
+ENGLISH_STRINGS_PATH = 'iOS/App/en.lproj/Localizable.strings'
+EXPORTED_XLIFF = './iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff'
+ENGLISH_STRINGSDICT = './iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict'
 
 READY = {
     'outcome': 'ready', 'job_id': 'job-1', 'job_url': 'https://dashboard.smartling.com/app/projects/p/account-jobs/p:job-1',
@@ -49,12 +53,26 @@ exit 0
 """
 
 LOC_TOOL_STUB = """#!/bin/bash
-if [ "$1" = "download" ] && [ -e "$STUB_DIR/download_fails" ]; then
-	exit 1
-fi
-if [ "$1" = "release-status" ]; then
-	while [ $# -gt 0 ]; do [ "$1" = "--result-file" ] && cp "$STUB_DIR/release_status.json" "$2"; shift; done
-fi
+printf '%s\\n' "$*" >> "$STUB_DIR/loc_tool.log"
+case "$1" in
+	refresh-files) exit "$(cat "$STUB_DIR/refresh_exit_code")" ;;
+	download) [ ! -e "$STUB_DIR/download_fails" ] || exit 1 ;;
+	release-status)
+		while [ $# -gt 0 ]; do [ "$1" = "--result-file" ] && cp "$STUB_DIR/release_status.json" "$2"; shift; done
+		;;
+esac
+"""
+
+EXPORT_STUB = """#!/bin/bash
+echo "export" >> "$STUB_DIR/loc_tool.log"
+[ ! -e "$STUB_DIR/export_fails" ] || exit 0
+mkdir -p "iOS/scripts/assets/loc/en.xcloc/Localized Contents"
+echo '<xliff/>' > "iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff"
+echo '"regenerated" = "Regenerated";' >> iOS/App/en.lproj/Localizable.strings
+"""
+
+XCBEAUTIFY_STUB = """#!/bin/bash
+cat
 """
 
 IMPORT_STUB = """#!/bin/bash
@@ -62,6 +80,7 @@ cp "$STUB_DIR/imported.strings" iOS/App/de.lproj/Localizable.strings
 """
 
 INTEGRITY_STUB = """#!/bin/bash
+echo "integrity $*" >> "$STUB_DIR/loc_tool.log"
 exit "$(cat "$STUB_DIR/integrity_exit_code")"
 """
 
@@ -89,6 +108,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.origin = root / 'origin.git'
         self.stub_dir.mkdir()
         write_executable(self.stub_dir / 'gh', GH_STUB)
+        write_executable(self.stub_dir / 'xcbeautify', XCBEAUTIFY_STUB)
 
         git(root, 'init', '-q', '--bare', str(self.origin))
         git(root, 'init', '-q', '-b', RELEASE_BRANCH, str(self.repo))
@@ -98,6 +118,13 @@ class ReleaseImportScriptTests(unittest.TestCase):
         write_executable(smartling_dir / 'loc_tool.sh', LOC_TOOL_STUB)
         write_executable(smartling_dir / 'smartling_import.sh', IMPORT_STUB)
         write_executable(smartling_dir / 'check_translation_integrity.py', INTEGRITY_STUB)
+        (self.repo / 'iOS' / 'scripts').mkdir(parents=True)
+        write_executable(self.repo / 'iOS' / 'scripts' / 'loc_export.sh', EXPORT_STUB)
+        (self.repo / 'iOS' / '.gitignore').write_text('scripts/assets\n', encoding='utf-8')
+        (self.repo / ENGLISH_STRINGSDICT).parent.mkdir(parents=True)
+        (self.repo / ENGLISH_STRINGSDICT).write_text('<plist/>\n', encoding='utf-8')
+        (self.repo / 'iOS' / 'App' / 'en.lproj').mkdir(parents=True)
+        (self.repo / ENGLISH_STRINGS_PATH).write_text('"a" = "A";\n', encoding='utf-8')
         (self.repo / 'iOS' / 'App' / 'de.lproj').mkdir(parents=True)
         (self.repo / STRINGS_PATH).write_text('"a" = "A";\n"b" = "B";\n', encoding='utf-8')
         (self.repo / 'iOS' / 'App' / 'de.lproj' / 'Localizable.stringsdict').write_text('<plist/>\n', encoding='utf-8')
@@ -107,10 +134,12 @@ class ReleaseImportScriptTests(unittest.TestCase):
         git(self.repo, 'remote', 'add', 'origin', str(self.origin))
         git(self.repo, 'push', '-q', 'origin', 'HEAD')
 
-    def run_import(self, *args, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n', integrity_passes=True,
-                   expected_exit_code=0):
+    def run_import(self, *args, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
+                   integrity_passes=True, release_status=None, refresh_passes=True, expected_exit_code=0):
         (self.stub_dir / 'existing_pr').write_text(existing_pr, encoding='utf-8')
-        (self.stub_dir / 'release_status.json').write_text(json.dumps(READY), encoding='utf-8')
+        (self.stub_dir / 'release_status.json').write_text(json.dumps(release_status or READY), encoding='utf-8')
+        (self.stub_dir / 'refresh_exit_code').write_text('0' if refresh_passes else '1', encoding='utf-8')
+        (self.stub_dir / 'loc_tool.log').write_text('', encoding='utf-8')
         (self.stub_dir / 'imported.strings').write_text(imported, encoding='utf-8')
         (self.stub_dir / 'integrity_exit_code').write_text('0' if integrity_passes else '1', encoding='utf-8')
         output_file = self.stub_dir / 'github_output'
@@ -135,6 +164,9 @@ class ReleaseImportScriptTests(unittest.TestCase):
             line.split('=', 1) for line in output_file.read_text(encoding='utf-8').splitlines() if '=' in line
         )
         return outputs
+
+    def tool_calls(self):
+        return (self.stub_dir / 'loc_tool.log').read_text(encoding='utf-8').splitlines()
 
     def gh_calls(self):
         log = self.stub_dir / 'gh.log'
@@ -188,6 +220,65 @@ class ReleaseImportScriptTests(unittest.TestCase):
             git(self.repo, '--git-dir', str(self.origin), 'show', f'{IMPORT_BRANCH}:{STRINGS_PATH}'),
             '"a" = "A";'
         )
+
+    def testWhenImportingThenTheReleaseFilesAreRefreshedFromTheExportBeforeTheStatusIsRead(self):
+        outputs = self.run_import()
+
+        self.assertEqual(outputs['outcome'], 'pr_opened')
+        calls = self.tool_calls()
+        self.assertEqual([call.split(' ')[0] for call in calls[:3]], ['export', 'refresh-files', 'release-status'])
+        self.assertEqual(
+            calls[1],
+            f'refresh-files --file-uri-prefix {REFRESH_PREFIX} --files {EXPORTED_XLIFF} {ENGLISH_STRINGSDICT}'
+        )
+        self.assertIn(f'--file-uris {REFRESH_PREFIX}/en.xliff {REFRESH_PREFIX}/Localizable.stringsdict', calls[2])
+        self.assertTrue(any(call.startswith('integrity') for call in calls))
+
+    def testWhenTheExportChangesTrackedFilesThenOnlyTheImportedTranslationsAreCommitted(self):
+        outputs = self.run_import()
+
+        self.assertEqual(outputs['outcome'], 'pr_opened')
+        self.assertEqual(git(self.repo, 'show', '--name-only', '--format=', IMPORT_BRANCH), STRINGS_PATH)
+        self.assertEqual((self.repo / ENGLISH_STRINGS_PATH).read_text(encoding='utf-8'), '"a" = "A";\n')
+
+    def testWhenTheRefreshFailsThenItIsAStatusErrorAndNothingIsImported(self):
+        outputs = self.run_import(refresh_passes=False, expected_exit_code=1)
+
+        self.assertEqual(outputs['outcome'], 'status_error')
+        self.assertIn('Could not refresh', outputs['reason'])
+        self.assertFalse(any(call.startswith('release-status') for call in self.tool_calls()))
+
+    def testWhenTheExportProducesNoXliffThenItIsAnErrorAndNothingIsRefreshed(self):
+        stale_xliff = self.repo / EXPORTED_XLIFF
+        stale_xliff.parent.mkdir(parents=True)
+        stale_xliff.write_text('<xliff/>', encoding='utf-8')
+        (self.stub_dir / 'export_fails').touch()
+
+        outputs = self.run_import(expected_exit_code=1)
+
+        self.assertEqual(outputs['outcome'], 'error')
+        self.assertIn('did not produce', outputs['reason'])
+        self.assertEqual(self.tool_calls(), ['export'])
+
+    def testWhenTheWorkingTreeHasChangesThenNothingIsExported(self):
+        (self.repo / STRINGS_PATH).write_text('"local" = "Local";\n', encoding='utf-8')
+
+        outputs = self.run_import(expected_exit_code=1)
+
+        self.assertEqual(outputs['outcome'], 'error')
+        self.assertEqual(self.tool_calls(), [])
+        self.assertEqual((self.repo / STRINGS_PATH).read_text(encoding='utf-8'), '"local" = "Local";\n')
+
+    def testWhenNotReadyThenTheJobsAwaitingAuthorizationAreReported(self):
+        outputs = self.run_import(release_status={
+            **READY, 'outcome': 'not_ready', 'strings_left': 120, 'incomplete_locales': ['de-DE'],
+            'strings_awaiting_authorization': 96,
+            'jobs_awaiting_authorization': ['keyChange (created 2025-04-04)'],
+        })
+
+        self.assertEqual(outputs['outcome'], 'not_ready')
+        self.assertEqual(outputs['strings_awaiting_authorization'], '96')
+        self.assertEqual(outputs['jobs_awaiting_authorization'], 'keyChange (created 2025-04-04)')
 
     def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):
         (self.stub_dir / 'download_fails').touch()

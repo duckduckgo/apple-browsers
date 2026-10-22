@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Entry point for localization workflows
-# Subcommands: upload | submit | release-status | approve | status | download
+# Subcommands: upload | submit | refresh-files | release-status | approve | status | download
 
 # Location of the script
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -16,6 +16,7 @@ usage() {
 	Usage:
 		$0 upload --job-name <name> --files <file1> [<file2> ...]
 		$0 submit --job-name <name> [--pending-job-prefix <prefix>] --file-uri-prefix <prefix> --files <file1> [<file2> ...] [--auto-authorize-max-usd <usd>] [--delete-job-on-failure] [--result-file <path>]
+		$0 refresh-files --file-uri-prefix <prefix> --files <file1> [<file2> ...]
 		$0 release-status --job-name <name> --file-uris <uri1> [<uri2> ...] [--result-file <path>]
 		$0 approve --job-id <id>
 		$0 status --job-id <id>
@@ -92,6 +93,9 @@ case "$cmd" in
 		;;
 	submit)
 		python3 "$PYTHON_TOOL" submit "$@"
+		;;
+	refresh-files)
+		python3 "$PYTHON_TOOL" refresh-files "$@"
 		;;
 	release-status)
 		python3 "$PYTHON_TOOL" release-status "$@"

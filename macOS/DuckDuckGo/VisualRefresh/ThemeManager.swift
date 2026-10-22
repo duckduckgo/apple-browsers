@@ -20,7 +20,6 @@ import Foundation
 import Combine
 import AppKit
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import PrivacyConfig
 import FeatureFlags_macOS
 
@@ -35,7 +34,6 @@ protocol ThemeManaging {
 final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
-    private let featureFlagger: FeatureFlagger
 
     @Published private(set) var appearance: ThemeAppearance
 
@@ -55,9 +53,8 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
     @Published private(set) var designColorPalette: DesignResourcesKit.ColorPalette
 
-    init(appearancePreferences: AppearancePreferences, featureFlagger: FeatureFlagger, displaysTabsAnimations: Bool = false) {
+    init(appearancePreferences: AppearancePreferences, displaysTabsAnimations: Bool = false) {
         self.appearancePreferences = appearancePreferences
-        self.featureFlagger = featureFlagger
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName)
         self.appearance = appearancePreferences.themeAppearance
         self.designColorPalette = appearancePreferences.themeName.designColorPalette

@@ -2008,7 +2008,7 @@ extension BrowserTabViewController {
             if let webView = self.webView, webView.convert(webView.bounds, to: nil).contains(event.locationInWindow) {
                 self.hoveredLinkTooltip.mouseDidMove()
             } else {
-                self.hoveredLinkTooltip.reset()
+                self.hoveredLinkTooltip.mouseDidExit()
             }
             return event
         }.store(in: &cancellables)

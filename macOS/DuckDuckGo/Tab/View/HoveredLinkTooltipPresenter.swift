@@ -30,6 +30,7 @@ final class HoveredLinkTooltipPresenter {
     private let move: (NSWindow, NSRect, TimeInterval) -> Void
     private var targetFrame: NSRect?
     private var hoveredURL: URL?
+    private var isMouseInside = true
     private var hasShownTooltip = false
     private var isFadingOut = false
     private var visibilityUpdateID = UUID()
@@ -114,6 +115,7 @@ final class HoveredLinkTooltipPresenter {
     func update(url: URL?) {
         cancelPendingUpdates()
         hoveredURL = url
+        guard isMouseInside else { return }
 
         guard let url else {
             guard window.isVisible else { return }
@@ -186,6 +188,14 @@ final class HoveredLinkTooltipPresenter {
     }
 
     func mouseDidMove() {
+        let isReturning = !isMouseInside
+        isMouseInside = true
+        if isReturning, hoveredURL != nil, !window.isVisible {
+            // WebKit may still consider the same link hovered and send no new URL.
+            // Give its hover update a chance to cancel a stale URL before restoring it.
+            scheduleVisibilityUpdate(after: hasShownTooltip ? 0.05 : 0.5) { $0.show() }
+            return
+        }
         guard hoveredURL != nil, window.isVisible, positionWorkItem == nil else { return }
         let updateID = positionUpdateID
         // The native monitor runs before WebKit receives the event. Allow its hover-exit
@@ -197,10 +207,18 @@ final class HoveredLinkTooltipPresenter {
         }
     }
 
+    func mouseDidExit() {
+        guard isMouseInside else { return }
+        isMouseInside = false
+        cancelPendingUpdates()
+        hide()
+    }
+
     private func show() {
-        guard hoveredURL != nil else { return }
+        guard let hoveredURL, isMouseInside else { return }
         hide()
         guard let hostView, let parent = hostView.window, parent.isKeyWindow, parent.isVisible else { return }
+        label.stringValue = hoveredURL.absoluteString
         layout()
         window.alphaValue = 1
         parent.addChildWindow(window, ordered: .above)

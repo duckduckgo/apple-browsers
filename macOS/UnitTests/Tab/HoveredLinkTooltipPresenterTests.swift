@@ -255,6 +255,66 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         XCTAssertNil(harness.tooltip)
     }
 
+    func testWhenPointerLeavesContentThenSameLinkReturnsWithoutAnotherURLUpdate() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        let url = harness.label!.stringValue
+        for _ in 0..<5 {
+            harness.presenter.mouseDidExit()
+            XCTAssertNil(harness.tooltip)
+            harness.presenter.mouseDidMove()
+            let reveal = harness.scheduler.actions.count - 1
+            XCTAssertNil(harness.tooltip, "Wait for WebKit to invalidate the old hover before restoring it")
+            harness.scheduler.run(at: reveal)
+            XCTAssertTrue(harness.tooltip?.isVisible == true)
+            XCTAssertEqual(harness.label?.stringValue, url)
+            XCTAssertEqual(harness.tooltip?.alphaValue, 1)
+        }
+    }
+
+    func testWhenReturningToNonLinkThenWebKitExitCancelsRestoration() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        harness.presenter.mouseDidExit()
+        harness.presenter.mouseDidMove()
+        harness.presenter.update(url: nil)
+        harness.scheduler.run(at: 1)
+        XCTAssertNil(harness.tooltip)
+    }
+
+    func testWhenHoverUpdateArrivesOutsideThenTooltipWaitsForReentry() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        harness.presenter.mouseDidExit()
+        let url = URL(string: "https://example.com/second")!
+        harness.presenter.update(url: url)
+        XCTAssertNil(harness.tooltip)
+        harness.presenter.mouseDidMove()
+        harness.scheduler.run(at: 1)
+        XCTAssertTrue(harness.tooltip?.isVisible == true)
+        XCTAssertEqual(harness.label?.stringValue, url.absoluteString)
+    }
+
+    func testWhenPointerExitsAgainThenQueuedRestorationCannotShowTooltip() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        harness.presenter.mouseDidExit()
+        harness.presenter.mouseDidMove()
+        harness.presenter.mouseDidExit()
+        harness.scheduler.run(at: 1)
+        XCTAssertNil(harness.tooltip)
+    }
+
+    func testWhenTabResetsOutsideThenPreviousLinkIsNotRestored() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        harness.presenter.mouseDidExit()
+        harness.presenter.reset()
+        harness.presenter.mouseDidMove()
+        XCTAssertNil(harness.tooltip)
+        XCTAssertEqual(harness.scheduler.actions.count, 1)
+    }
+
     func testWhenAppearanceChangesThenVisibleTooltipFollowsHostWithoutMouseMovement() {
         let harness = TooltipHarness()
         let host = harness.parent.contentView!

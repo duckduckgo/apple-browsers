@@ -76,9 +76,9 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     private var iconSize: CGFloat {
         guard usesCompactLayout else { return iconFrameSize }
         switch attachment {
-        case .tab, .pastedText:
+        case .tab:
             return Constants.faviconSize
-        case .image, .file, .invalidFile:
+        case .image, .file, .invalidFile, .pastedText:
             return iconFrameSize
         }
     }

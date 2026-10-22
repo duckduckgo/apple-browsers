@@ -342,7 +342,7 @@ public struct AIChatPageTypeSignals: Codable, Equatable {
         public let title: String?
         public let channel: String?
         public let durationSec: Int?
-        public let transcript: String?
+        public let hasTranscript: Bool?
     }
 
     public init(jsonLdType: [String], ogType: String?, lang: String,

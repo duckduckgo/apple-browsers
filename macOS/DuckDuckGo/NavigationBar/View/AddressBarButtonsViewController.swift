@@ -3499,7 +3499,10 @@ extension AddressBarButtonsViewController {
         }
 
         Task { @MainActor [weak self] in
-            var contexts = [nudge.pageContext.withFavicons([])]
+            // Re-collect: content scripts can deliver more after the nudge was evaluated (e.g. a YouTube transcript).
+            let current = await AIChatUserScriptHandler.extractPageContext(from: tab) ?? nudge.pageContext
+            Logger.aiChat.notice("[Nudge] sending \(current.content.count) chars: \(String(current.content.prefix(300)), privacy: .public)")
+            var contexts = [current.withFavicons([])]
             for other in otherTabs {
                 if let context = await AIChatUserScriptHandler.extractPageContext(from: other) {
                     contexts.append(context.withTabID(other.uuid))

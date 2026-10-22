@@ -277,7 +277,7 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatMenuConfig: MockAIChatConfig()
         )
-        let themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        let themeManager = ThemeManager(appearancePreferences: appearancePreferences)
         let draftStore = EphemeralPromptDraftStore()
 
         let omnibarController = AIChatOmnibarController(

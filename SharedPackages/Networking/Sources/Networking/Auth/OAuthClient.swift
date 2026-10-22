@@ -517,7 +517,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    /// Checks that the session is still the one a backup restore started from.
+    /// Checks that the session is still the one a backup restore started from. When it isn't, the restore is discarded, and `backup`,
+    /// whose refresh token the fork already spent, is deleted if it is still the stored backup.
     /// - Parameters:
     ///   - backup: The backup the restore forked.
     ///   - generationBeforeRestore: The session generation when the restore started.
@@ -530,6 +531,25 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                                         generationBeforeRestore: Int,
                                         currentBeforeRestore: TokenContainer?,
                                         backupStore: TokenBackupStore) throws {
+        do {
+            try checkSessionUnchanged(backup: backup,
+                                      generationBeforeRestore: generationBeforeRestore,
+                                      currentBeforeRestore: currentBeforeRestore,
+                                      backupStore: backupStore)
+        } catch {
+            if backupStore.isStored(backup) {
+                Logger.OAuthClient.log("Deleting the backup token spent by the discarded restore")
+                backupStore.remove()
+            }
+            throw error
+        }
+    }
+
+    /// Throws `TokenBackupError.sessionChanged` in the cases listed on `ensureSessionUnchanged`.
+    private func checkSessionUnchanged(backup: TokenContainer,
+                                       generationBeforeRestore: Int,
+                                       currentBeforeRestore: TokenContainer?,
+                                       backupStore: TokenBackupStore) throws {
         guard sessionGeneration.current == generationBeforeRestore, backupStore.isStored(backup) else {
             Logger.OAuthClient.log("The session was ended or replaced during the backup restore, discarding the restored tokens")
             throw TokenBackupError.sessionChanged

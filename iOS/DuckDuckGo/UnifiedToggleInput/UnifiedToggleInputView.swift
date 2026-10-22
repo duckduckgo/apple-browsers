@@ -1640,6 +1640,7 @@ final class UnifiedToggleInputView: UIView {
     func setInlineVoiceListening(_ listening: Bool) {
         guard listening != isInlineVoiceListening else { return }
         isInlineVoiceListening = listening
+        textEntryView.isListeningForSpeech = listening
         textEntryView.setVoiceButtonAppearance(listening ? .hidden : restingVoiceButtonAppearance(for: currentLayout))
         updateSubmitButtonAvailability()
 

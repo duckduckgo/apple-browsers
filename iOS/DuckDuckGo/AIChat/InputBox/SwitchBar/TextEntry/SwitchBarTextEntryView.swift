@@ -160,6 +160,14 @@ class SwitchBarTextEntryView: UIView {
         }
     }
 
+    /// Speech is being transcribed into the field, so Search mode's placeholder asks for speech rather than typing.
+    var isListeningForSpeech = false {
+        didSet {
+            guard isListeningForSpeech != oldValue else { return }
+            setPlaceholderText(placeholderText(for: currentMode))
+        }
+    }
+
     private func restoreSoftwareKeyboardOnTouchIfNeeded() {
         guard softwareKeyboardSuppression == .suppressedUntilTouch else { return }
         softwareKeyboardSuppression = .none
@@ -612,7 +620,7 @@ class SwitchBarTextEntryView: UIView {
     private func placeholderText(for mode: TextEntryMode) -> String {
         switch mode {
         case .search:
-            return UserText.searchDuckDuckGo
+            return isListeningForSpeech ? UserText.inlineVoiceToTextSearchPlaceholder : UserText.searchDuckDuckGo
         case .aiChat:
             if handler.hasSubmittedPrompt {
                 return UserText.aiChatFollowUpPlaceholder

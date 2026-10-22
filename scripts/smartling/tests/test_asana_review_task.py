@@ -23,11 +23,11 @@ ROTATION = [
 ]
 
 
-def review_task_args():
+def review_task_args(rotation_section='apple-ios-triage'):
     return Namespace(
         project='ios-app-development',
         section_name='Incoming: Dev Related Issues',
-        rotation_section='apple-ios-triage',
+        rotation_section=rotation_section,
         name='Smartling job needs review: Nightly iOS - 2026-10-21',
         notes='Details',
         assignee=None
@@ -118,9 +118,9 @@ class NotesHTMLTests(unittest.TestCase):
 
 class ReviewTaskTests(unittest.TestCase):
 
-    def review_task(self, client):
+    def review_task(self, client, args=None):
         with contextlib.redirect_stdout(io.StringIO()):
-            return ASANA_REVIEW_TASK.review_task(client, review_task_args(), date(2026, 10, 21))
+            return ASANA_REVIEW_TASK.review_task(client, args or review_task_args(), date(2026, 10, 21))
 
     def testTaskIsDueTodayInTheIncomingSectionAndAssignedToTheDRI(self):
         client = FakeAsanaClient(
@@ -150,6 +150,14 @@ class ReviewTaskTests(unittest.TestCase):
             'projects': ['ios-app-development'],
             'due_on': '2026-10-21',
         })
+
+    def testWhenNoRotationSectionIsGivenThenTheTaskIsNotAssignedToTheDRI(self):
+        client = FakeAsanaClient(rotation=ROTATION)
+        args = review_task_args(rotation_section=None)
+
+        task = self.review_task(client, args)
+
+        self.assertNotIn('assignee', task)
 
 
 if __name__ == '__main__':

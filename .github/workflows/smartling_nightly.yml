@@ -1,7 +1,7 @@
 name: Smartling - Nightly Jobs
 
 # Runs every night, weekends included, for both platforms with the default limit.
-# To test without authorizing anything, run it manually with auto_authorize_max_usd set to 0.
+# To test without authorizing anything or opening a review task, run it manually with auto_authorize_max_usd set to 0.
 on:
   schedule:
     - cron: '17 3 * * *'

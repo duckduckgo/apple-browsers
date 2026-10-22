@@ -16,6 +16,8 @@ elif [[ "$distribution" != dmg ]]; then
     exit 1
 fi
 cd "$macos_dir"
+# Native compilers select versioned package manifests with different dependencies.
+# Let SwiftPM resolve that graph instead of forcing the app compiler's lockfile.
 xcrun xcodebuild build-for-testing \
     -project DuckDuckGo-macOS.xcodeproj \
     -scheme "$scheme" \
@@ -23,7 +25,6 @@ xcrun xcodebuild build-for-testing \
     -derivedDataPath "$derived_data" \
     -destination 'platform=macOS' \
     -enableCodeCoverage NO \
-    -onlyUsePackageVersionsFromResolvedFile \
     -skipPackagePluginValidation -skipMacroValidation \
     TEST_TARGET_NAME= ONLY_ACTIVE_ARCH=YES \
     ${extra[@]+"${extra[@]}"} "$@"

@@ -20,7 +20,7 @@
 @_exported import DuckAIChatCore
 @_exported import DuckAIChatUI
 #if canImport(UIKit)
-import SwiftUI
+import Observation
 import UIKit
 
 public protocol NativeChatDelegate: AnyObject {
@@ -29,34 +29,55 @@ public protocol NativeChatDelegate: AnyObject {
 }
 
 public enum DuckAINative {
-
-    /// The only entry point the app uses. The chat preloads the model and sends the session's opening when it appears.
-    /// Pass `showsComposer: false` when the app's own input drives `session`.
     @MainActor
     public static func makeChatViewController(session: ChatSession,
                                               surface: ChatSurface,
-                                              showsComposer: Bool = true,
                                               emptyState: ChatEmptyState? = nil,
                                               delegate: NativeChatDelegate) -> UIViewController {
         let actions = ChatActions(close: { [weak delegate] in delegate?.nativeChatDidRequestClose() },
-                                  continueInWeb: { [weak delegate] in delegate?.nativeChatDidRequestContinueInWeb($0) })
-        let view = ChatView(session: session, surface: surface, actions: actions, showsComposer: showsComposer,
-                            emptyState: emptyState)
-        return NativeChatHostingController(session: session, rootView: view)
+                                  continueInWeb: { [weak delegate] in delegate?.nativeChatDidRequestContinueInWeb($0) },
+                                  redo: { session.redo() }, download: { session.download() })
+        let name = session.descriptor.modelName.isEmpty ? session.descriptor.displayName : session.descriptor.modelName
+        let transcript = ChatViewController(surface: surface, metadata: ChatDisplayMetadata(title: name),
+                                            emptyState: emptyState, actions: actions)
+        return NativeChatSessionController(session: session, transcript: transcript)
     }
 }
 
-private final class NativeChatHostingController: UIHostingController<ChatView> {
+private final class NativeChatSessionController: UIViewController {
     private let session: ChatSession
+    private let transcript: ChatViewController
 
-    init(session: ChatSession, rootView: ChatView) {
+    init(session: ChatSession, transcript: ChatViewController) {
         self.session = session
-        super.init(rootView: rootView)
+        self.transcript = transcript
+        super.init(nibName: nil, bundle: nil)
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        addChild(transcript)
+        view.addSubview(transcript.view)
+        transcript.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            transcript.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            transcript.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            transcript.view.topAnchor.constraint(equalTo: view.topAnchor),
+            transcript.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        transcript.didMove(toParent: self)
+        observeSession()
+    }
+
+    private func observeSession() {
+        withObservationTracking {
+            transcript.apply(snapshot: session.state)
+        } onChange: { [weak self] in
+            Task { @MainActor [weak self] in self?.observeSession() }
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -66,9 +87,7 @@ private final class NativeChatHostingController: UIHostingController<ChatView> {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        if isBeingDismissed || isMovingFromParent || parent == nil {
-            session.close()
-        }
+        if isBeingDismissed || isMovingFromParent || parent == nil { session.close() }
     }
 }
 #endif

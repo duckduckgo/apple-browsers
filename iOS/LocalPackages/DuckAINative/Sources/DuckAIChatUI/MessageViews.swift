@@ -17,273 +17,164 @@
 //  limitations under the License.
 //
 
+#if canImport(UIKit)
 import DuckAIChatCore
-import SwiftUI
+import UIKit
 
-struct UserMessageView: View {
-    let message: UserMessage
-
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            VStack(alignment: .leading, spacing: 4) {
-                if !prompt.isEmpty {
-                    Text(linkedPrompt)
-                        .font(DuckAIChatTokens.Typography.body.font)
-                        .lineSpacing(DuckAIChatTokens.Typography.body.lineSpacing)
-                        .padding(.vertical, DuckAIChatTokens.Typography.body.lineSpacing / 2)
-                        .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                ForEach(Array(contexts.enumerated()), id: \.offset) { _, context in
-                    BubbleContextView(context: context)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 12)
-            .padding(.horizontal, 20)
-            .background(DuckAIChatTokens.Color.userBubble, in: bubbleShape)
-            .overlay(alignment: .topTrailing) {
-                if contexts.isEmpty {
-                    BubbleTail()
-                        .fill(DuckAIChatTokens.Color.userBubble)
-                        .frame(width: 12, height: 21)
-                        .offset(x: 12)
-                }
-            }
-            ChatCopyButton(text: prompt)
-                .accessibilityIdentifier("NativeChat.UserCopy")
-        }
-        .padding(.trailing, 12)
-        .padding(.top, 12)
-    }
-
-    private var bubbleShape: UnevenRoundedRectangle {
-        UnevenRoundedRectangle(topLeadingRadius: 24, bottomLeadingRadius: 24,
-                               bottomTrailingRadius: 24, topTrailingRadius: contexts.isEmpty ? 0 : 24)
-    }
-
-    private var contexts: [ContextPart] {
-        message.parts.compactMap {
-            guard case .context(let context) = $0 else { return nil }
-            if case .request = context { return nil }
-            return context
-        }
-    }
-
-    private var linkedPrompt: AttributedString {
-        var attributed = AttributedString(prompt)
-        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return attributed }
-        for match in detector.matches(in: prompt, range: NSRange(prompt.startIndex..., in: prompt)) {
-            if let range = Range(match.range, in: prompt), let attributedRange = Range(range, in: attributed) {
-                attributed[attributedRange].link = match.url
-            }
-        }
-        return attributed
-    }
-
-    private var prompt: String {
-        let text = message.parts.compactMap { if case .text(let text) = $0 { text } else { nil } }.joined(separator: "\n")
-        if !text.isEmpty { return text }
+final class UserMessageView: UIStackView {
+    init(message: UserMessage) {
+        super.init(frame: .zero)
+        axis = .vertical
+        spacing = 4
+        let bubble = UIStackView()
+        bubble.axis = .vertical
+        bubble.spacing = 8
+        bubble.backgroundColor = DuckAIChatTokens.Color.userBubble
+        bubble.layer.cornerRadius = 24
+        bubble.isLayoutMarginsRelativeArrangement = true
+        bubble.layoutMargins = UIEdgeInsets(top: 12, left: 20, bottom: 12, right: 20)
+        var copyText: [String] = []
         for part in message.parts {
-            if case .context(.request(let request)) = part {
-                switch request {
-                case .summarize: return "Summarize"
-                case .translate: return "Translate"
-                }
-            }
-        }
-        return text
-    }
-}
-
-private struct BubbleTail: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: 3.072, y: 9.154))
-        path.addCurve(to: CGPoint(x: 12, y: 21), control1: CGPoint(x: 12, y: 10.127), control2: CGPoint(x: 12, y: 15.564))
-        path.addLine(to: CGPoint(x: 12.001, y: 0))
-        path.addCurve(to: CGPoint(x: 1.465, y: 6.297), control1: CGPoint(x: 7.219, y: 0), control2: CGPoint(x: 3.707, y: 2.859))
-        path.addCurve(to: CGPoint(x: 3.072, y: 9.154), control1: CGPoint(x: 0.675, y: 7.51), control2: CGPoint(x: 1.634, y: 8.997))
-        path.closeSubpath()
-        return path.applying(CGAffineTransform(a: -rect.width / 12, b: 0, c: 0, d: rect.height / 21, tx: rect.width, ty: 0))
-    }
-}
-
-private struct BubbleContextView: View {
-    let context: ContextPart
-    @State private var isExpanded = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Image(systemName: symbol)
-                    .font(.system(size: 12))
-                    .frame(width: 16, height: 16)
-                Text(subtitle)
-                    .font(DuckAIChatTokens.Typography.caption.font)
-                    .lineSpacing(DuckAIChatTokens.Typography.caption.lineSpacing)
-                    .tint(DuckAIChatTokens.Color.textPrimary)
-            }
-            .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-            if let selectionText {
-                Button(isExpanded ? "Show less" : "Show more") { isExpanded.toggle() }
-                    .font(DuckAIChatTokens.Typography.subtitle.font.weight(.medium))
-                    .foregroundStyle(DuckAIChatTokens.Color.accent)
-                    .buttonStyle(.plain)
-                if isExpanded {
-                    HStack(alignment: .top, spacing: 16) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(DuckAIChatTokens.Color.controlTertiary)
-                            .frame(width: 4)
-                        Text(selectionText)
-                            .font(DuckAIChatTokens.Typography.body.font)
-                            .lineSpacing(DuckAIChatTokens.Typography.body.lineSpacing)
-                            .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-                            .textSelection(.enabled)
-                    }
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.vertical, 16)
-                }
-            }
-        }
-    }
-
-    private var subtitle: AttributedString {
-        var result = AttributedString(prefix)
-        var title = AttributedString(sourceTitle)
-        title.foregroundColor = DuckAIChatTokens.Color.textPrimary
-        title.underlineStyle = .single
-        title.link = sourceURL
-        result.append(title)
-        return result
-    }
-
-    private var prefix: String {
-        switch context {
-        case .page: "Page content from "
-        case .selection: "Selected text from "
-        case .pastedText: "Pasted text"
-        case .request: ""
-        }
-    }
-
-    private var sourceTitle: String {
-        switch context {
-        case .page(let page): page.title
-        case .selection(let selection): selection.title
-        default: ""
-        }
-    }
-
-    private var sourceURL: URL? {
-        switch context {
-        case .page(let page): page.url
-        case .selection(let selection): selection.url
-        default: nil
-        }
-    }
-
-    private var selectionText: String? {
-        switch context {
-        case .selection(let selection): selection.content
-        case .pastedText(let text): text
-        default: nil
-        }
-    }
-
-    private var symbol: String {
-        switch context {
-        case .page: "globe"
-        case .selection: "text.quote"
-        default: "doc.on.clipboard"
-        }
-    }
-}
-
-struct AssistantPartsView: View {
-    let parts: [AssistantPart]
-    let isStreaming: Bool
-    let modelName: String
-    let isActive: Bool
-    @State private var isReasoningExpanded = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 0) {
-                AssistantHeading(title: headingTitle, isActive: isActive, isLoading: isStreaming)
-                Spacer(minLength: 0)
-                if let reasoning {
-                    reasoningButton(reasoning)
-                        .padding(.trailing, -8)
-                }
-            }
-            VStack(alignment: .leading, spacing: 8) {
-                if let reasoning, isReasoningExpanded || reasoning.displaySeconds == nil {
-                    Text(reasoning.text)
-                        .font(DuckAIChatTokens.Typography.subtitle.font)
-                        .lineSpacing(DuckAIChatTokens.Typography.subtitle.lineSpacing)
-                        .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-                        .textSelection(.enabled)
-                }
-                ForEach(Array(parts.enumerated()), id: \.offset) { index, part in
-                    switch part {
-                    case .text(let text):
-                        MarkdownView(markdown: text, isStreaming: isStreaming && index == parts.count - 1)
-                    case .refusal:
-                        Text("This model can't help with this request.")
-                            .font(DuckAIChatTokens.Typography.body.font)
-                            .lineSpacing(DuckAIChatTokens.Typography.body.lineSpacing)
-                            .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-                    case .reasoning, .toolCall, .toolResult, .source:
-                        EmptyView()
+            let text: String
+            switch part {
+            case .text(let value): text = value
+            case .context(let context):
+                switch context {
+                case .page(let page): text = "Page content from [\(page.title)](\(page.url?.absoluteString ?? ""))"
+                case .selection(let selection): text = "Selected text from [\(selection.title)](\(selection.url?.absoluteString ?? ""))\n\n\(selection.content)"
+                case .pastedText(let value): text = value
+                case .request(let request):
+                    switch request {
+                    case .summarize: text = "Summarize"
+                    case .translate: text = "Translate"
                     }
                 }
-            }
-            .padding(.top, 2)
-            .padding(.bottom, 12)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-    }
-
-    private var headingTitle: String {
-        guard isStreaming else { return modelName }
-        return parts.contains { if case .text = $0 { true } else { false } } ? "Generating response" : "Thinking"
-    }
-
-    private var reasoning: Reasoning? {
-        parts.compactMap { if case .reasoning(let reasoning) = $0 { reasoning } else { nil } }.last
-    }
-
-    private func reasoningButton(_ reasoning: Reasoning) -> some View {
-        Button {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { isReasoningExpanded.toggle() }
-        } label: {
-            HStack(spacing: 6) {
-                if let seconds = reasoning.displaySeconds {
-                    Text("\(seconds)s")
-                } else {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text("\(elapsedSeconds(reasoning, at: context.date))s")
-                    }
+            case .attachment(let attachment):
+                switch attachment.kind {
+                case .image: text = "Image"
+                case .file(let name, _): text = name
                 }
-                Image(systemName: "chevron.down")
-                    .rotationEffect(.degrees(isReasoningExpanded ? 180 : 0))
             }
-            .font(DuckAIChatTokens.Typography.modelName.font)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 16)
+            copyText.append(text)
+            let view = InlineTextView()
+            view.update(text, markdown: { if case .context = part { true } else { false } }())
+            bubble.addArrangedSubview(view)
         }
-        .buttonStyle(ChatGhostButtonStyle())
-        .accessibilityLabel("Reasoning")
-        .accessibilityValue(isReasoningExpanded ? "Expanded" : "Collapsed")
+        addArrangedSubview(bubble)
+        let copy = chatButton("Copy", symbol: "doc.on.doc") { UIPasteboard.general.string = copyText.joined(separator: "\n") }
+        copy.accessibilityIdentifier = "NativeChat.UserCopy"
+        let actions = UIStackView(arrangedSubviews: [UIView(), copy])
+        addArrangedSubview(actions)
     }
 
-    private func elapsedSeconds(_ reasoning: Reasoning, at date: Date) -> Int {
-        guard case .thinking(let since) = reasoning.timing else { return reasoning.displaySeconds ?? 1 }
-        return max(1, Int(date.timeIntervalSince(since).rounded(.up)))
+    @available(*, unavailable)
+    required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
+
+final class AssistantMessageView: UIStackView {
+    private let heading = chatLabel("", style: ChatTypography.modelName)
+    private let content = UIStackView()
+    private let controls = UIStackView()
+    private var blocks: [String: MarkdownBlockView] = [:]
+    private var otherParts: [Int: UIStackView] = [:]
+    private var previous = PresentedReply()
+    private var previousLatest = false
+    private var previousCanRedo = false
+    private var expandedReasoning = Set<Int>()
+
+    init() {
+        super.init(frame: .zero)
+        axis = .vertical
+        spacing = 12
+        content.axis = .vertical
+        content.spacing = 12
+        controls.spacing = 4
+        addArrangedSubview(heading)
+        addArrangedSubview(content)
+        addArrangedSubview(controls)
+    }
+
+    @available(*, unavailable)
+    required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    func apply(_ reply: PresentedReply, metadata: ChatDisplayMetadata, latest: Bool, canRedo: Bool,
+               actions: ChatActions, context: ChatContext) {
+        guard reply != previous || latest != previousLatest || canRedo != previousCanRedo else { return }
+        heading.text = reply.isRevealing ? "Generating response" : metadata.title
+        heading.isHidden = reply.parts.isEmpty
+        var ordered: [UIView] = []
+        var keys = Set<String>()
+        for (index, part) in reply.parts.enumerated() {
+            if case .text = part {
+                for block in reply.documents[index] ?? [] {
+                    let key = "\(index):\(block.id)"
+                    keys.insert(key)
+                    let view = blocks[key] ?? MarkdownBlockView()
+                    blocks[key] = view
+                    view.update(block.block)
+                    ordered.append(view)
+                }
+            } else {
+                let container = otherParts[index] ?? UIStackView()
+                container.axis = .vertical
+                container.spacing = 8
+                otherParts[index] = container
+                if !previous.parts.indices.contains(index) || previous.parts[index] != part {
+                    updatePart(part, index: index, container: container)
+                }
+                ordered.append(container)
+            }
+        }
+        for key in Array(blocks.keys) where !keys.contains(key) { blocks.removeValue(forKey: key)?.removeFromSuperview() }
+        for view in content.arrangedSubviews where !ordered.contains(where: { $0 === view }) { view.removeFromSuperview() }
+        for (index, view) in ordered.enumerated() {
+            if content.arrangedSubviews.indices.contains(index), content.arrangedSubviews[index] === view { continue }
+            content.removeArrangedSubview(view)
+            content.insertArrangedSubview(view, at: index)
+        }
+        updateControls(reply, latest: latest, canRedo: canRedo, actions: actions, context: context)
+        previous = reply
+        previousLatest = latest
+        previousCanRedo = canRedo
+    }
+
+    private func updateControls(_ reply: PresentedReply, latest: Bool, canRedo: Bool, actions: ChatActions, context: ChatContext) {
+        if reply.isRevealing != previous.isRevealing || latest != previousLatest || canRedo != previousCanRedo {
+            controls.arrangedSubviews.forEach { $0.removeFromSuperview() }
+            if latest, !reply.isRevealing {
+                let text = reply.parts.compactMap { if case .text(let value) = $0 { value } else { nil } }.joined(separator: "\n\n")
+                controls.addArrangedSubview(chatButton("Copy", symbol: "doc.on.doc") { UIPasteboard.general.string = text })
+                if canRedo { controls.addArrangedSubview(chatButton("Redo", symbol: "arrow.clockwise", action: actions.redo)) }
+                controls.addArrangedSubview(chatButton("Continue in Duck.ai") { actions.continueInWeb(context) })
+            }
+        }
+        controls.isHidden = controls.arrangedSubviews.isEmpty
+    }
+
+    private func updatePart(_ part: AssistantPart, index: Int, container: UIStackView) {
+        container.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        switch part {
+        case .reasoning(let reasoning):
+            let text = InlineTextView()
+            text.update(reasoning.text, style: ChatTypography.subtitle)
+            text.isHidden = reasoning.displaySeconds != nil && !expandedReasoning.contains(index)
+            let title = reasoning.displaySeconds.map { "Reasoning (\($0)s)" } ?? "Reasoning"
+            container.addArrangedSubview(chatButton(title, symbol: "chevron.down") { [weak self, weak text] in
+                guard let self, let text else { return }
+                if expandedReasoning.contains(index) { expandedReasoning.remove(index) } else { expandedReasoning.insert(index) }
+                text.isHidden.toggle()
+            })
+            container.addArrangedSubview(text)
+        case .source(let source):
+            container.addArrangedSubview(chatButton(source.title, symbol: "link") { UIApplication.shared.open(source.url) })
+        case .refusal: container.addArrangedSubview(chatLabel("This model can't help with this request."))
+        case .toolCall(let call): container.addArrangedSubview(chatLabel("Using \(call.name)", style: ChatTypography.subtitle))
+        case .toolResult(let result):
+            let text = InlineTextView()
+            text.update(result.result, style: ChatTypography.subtitle)
+            container.addArrangedSubview(text)
+        case .text: break
+        }
     }
 }
+#endif

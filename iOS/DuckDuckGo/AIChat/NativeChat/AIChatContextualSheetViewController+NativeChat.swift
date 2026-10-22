@@ -35,6 +35,7 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
 
     /// Summarize / Translate chips and other suggestions. Returns false to fall back to the web path.
     func deliverSuggestionNatively(_ suggestion: ContextualSuggestedPrompt, actsOnSelection: Bool) async -> Bool {
+        guard persistentUTIHost != nil else { return false }
         if !actsOnSelection {
             await delegate?.aiChatContextualSheetViewControllerAttachContextForSuggestion(self)
         }
@@ -55,7 +56,8 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
 
     /// The first prompt typed into the sheet. Returns false to let the web chat take it.
     func startNativeChatIfEnabled(prompt: String, page: AIChatPageContextData?) -> Bool {
-        guard !bypassesNativeChat,
+        guard persistentUTIHost != nil,
+              !bypassesNativeChat,
               DuckAINativeSettings.shared.opensNewChatsNatively,
               let context = NativeChatContextFactory.context(prompt: prompt, page: page, selections: sessionState.attachedSelections) else {
             return false
@@ -99,10 +101,8 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
 
     private func showNativeChat(_ context: ChatContext, task: DuckAINativeSettings.LocalTask, origin: NativeChatOrigin) {
         let session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: task))
-        // The sheet's own input drives the native chat when it has one.
         let chat = DuckAINative.makeChatViewController(session: session,
                                                        surface: .contextualSheet,
-                                                       showsComposer: persistentUTIHost == nil,
                                                        delegate: self)
         nativeChatBinding = persistentUTIHost.map { NativeChatInputBinding(host: $0, session: session) }
         removeCurrentChildViewController()

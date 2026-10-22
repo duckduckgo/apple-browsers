@@ -17,12 +17,8 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 #if canImport(UIKit)
 import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
 
 /// Mirrors the Duck.ai web frontend's own tokens so the native chat matches it; these are not DRK colors.
 public enum DuckAIChatTokens {
@@ -45,29 +41,18 @@ public enum DuckAIChatTokens {
         public static let modelIconActive = adaptive(light: 0x000000, lightAlpha: 0.84, dark: 0xFFFFFF, darkAlpha: 0.80)
         public static let modelIconPrevious = adaptive(light: 0x484848, dark: 0xAAAAAA)
         public static let destructive = adaptive(light: 0xD83544, dark: 0xE44D55)
-        public static let codeLanguage = SwiftUI.Color(red: 136 / 255, green: 136 / 255, blue: 136 / 255)
+        public static let codeLanguage = UIColor(red: 136 / 255, green: 136 / 255, blue: 136 / 255, alpha: 1)
         public static let listMarker = textTertiary
 
-        private static func adaptive(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1) -> SwiftUI.Color {
-#if canImport(UIKit)
-            return SwiftUI.Color(uiColor: UIColor { traits in
+        private static func adaptive(light: UInt32, lightAlpha: CGFloat = 1, dark: UInt32, darkAlpha: CGFloat = 1) -> UIColor {
+            UIColor { traits in
                 let isDark = traits.userInterfaceStyle == .dark
                 let hex = isDark ? dark : light
                 return UIColor(red: CGFloat((hex >> 16) & 0xFF) / 255,
                                green: CGFloat((hex >> 8) & 0xFF) / 255,
                                blue: CGFloat(hex & 0xFF) / 255,
                                alpha: isDark ? darkAlpha : lightAlpha)
-            })
-#elseif canImport(AppKit)
-            return SwiftUI.Color(nsColor: NSColor(name: nil) { appearance in
-                let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-                let hex = isDark ? dark : light
-                return NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255,
-                               green: CGFloat((hex >> 8) & 0xFF) / 255,
-                               blue: CGFloat(hex & 0xFF) / 255,
-                               alpha: isDark ? darkAlpha : lightAlpha)
-            })
-#endif
+            }
         }
     }
 
@@ -84,8 +69,7 @@ public enum DuckAIChatTokens {
     }
 
     public enum Radius {
-        public static let userBubble = UnevenRoundedRectangle(topLeadingRadius: 24, bottomLeadingRadius: 24,
-                                                             bottomTrailingRadius: 24, topTrailingRadius: 0)
+        public static let userBubble: CGFloat = 24
         public static let input: CGFloat = 24
         public static let codeOuter: CGFloat = 16
         public static let codeInner: CGFloat = 12
@@ -120,33 +104,21 @@ public enum DuckAIChatTokens {
         public struct Style {
             public let size: CGFloat
             public let lineHeight: CGFloat
-            public let weight: Font.Weight
+            public let weight: UIFont.Weight
             public let tracking: CGFloat
             private let monospaced: Bool
 
-#if canImport(UIKit)
-            private var nativeFont: UIFont {
+            public var font: UIFont {
                 if monospaced { return .monospacedSystemFont(ofSize: size, weight: .regular) }
                 let name = weight == .bold ? "DuckSansProduct-Bold" : "DuckSansProduct-Regular"
-                return UIFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: weight == .bold ? .bold : .regular)
+                return UIFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: weight)
             }
 
-            public var font: Font { Font(nativeFont) }
-            public var naturalLineHeight: CGFloat { nativeFont.lineHeight }
-#elseif canImport(AppKit)
-            private var nativeFont: NSFont {
-                if monospaced { return .monospacedSystemFont(ofSize: size, weight: .regular) }
-                let name = weight == .bold ? "DuckSansProduct-Bold" : "DuckSansProduct-Regular"
-                return NSFont(name: name, size: size) ?? .systemFont(ofSize: size, weight: weight == .bold ? .bold : .regular)
-            }
-
-            public var font: Font { Font(nativeFont) }
-            public var naturalLineHeight: CGFloat { NSLayoutManager().defaultLineHeight(for: nativeFont) }
-#endif
+            public var naturalLineHeight: CGFloat { font.lineHeight }
 
             public var lineSpacing: CGFloat { lineHeight - naturalLineHeight }
 
-            fileprivate init(size: CGFloat, lineHeight: CGFloat, weight: Font.Weight = .regular,
+            fileprivate init(size: CGFloat, lineHeight: CGFloat, weight: UIFont.Weight = .regular,
                              tracking: CGFloat = 0, monospaced: Bool = false) {
                 self.size = size
                 self.lineHeight = lineHeight
@@ -157,3 +129,5 @@ public enum DuckAIChatTokens {
         }
     }
 }
+
+#endif

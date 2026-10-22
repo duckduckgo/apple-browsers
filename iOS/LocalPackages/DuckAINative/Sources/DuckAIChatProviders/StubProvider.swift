@@ -27,6 +27,7 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
     public struct Configuration: Sendable {
         public var reply: String
         public var wordsPerSecond: Double
+        public var unevenBursts: Bool
         public var loadTime: Duration
         public var readTime: Duration
         /// Thrown after the first half of `reply` has streamed.
@@ -35,12 +36,14 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
 
         public init(reply: String = StubProvider.sampleReply,
                     wordsPerSecond: Double = 25,
+                    unevenBursts: Bool = false,
                     loadTime: Duration = .milliseconds(600),
                     readTime: Duration = .milliseconds(400),
                     failure: ChatError? = nil,
                     availability: ProviderAvailability = .ready) {
             self.reply = reply
             self.wordsPerSecond = wordsPerSecond
+            self.unevenBursts = unevenBursts
             self.loadTime = loadTime
             self.readTime = readTime
             self.failure = failure
@@ -147,13 +150,14 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
                     }
                     let words = try configuration.reply.ranges(of: Regex("\\s*\\S+\\s*|\\s+")).map { String(configuration.reply[$0]) }
                     let started = ContinuousClock.now
-                    for word in words {
+                    for (index, word) in words.enumerated() {
                         guard !stop.isRaised else { break }
                         if let failure = configuration.failure, emitted >= words.count / 2 {
                             throw failure
                         }
                         let rate = configuration.wordsPerSecond > 0 ? configuration.wordsPerSecond : 25
-                        try await Task.sleep(for: .seconds(1 / rate))
+                        let delay = configuration.unevenBursts ? (index % 12 == 0 ? 0.65 : index % 5 == 0 ? 0.18 : 0.005) : 1 / rate
+                        try await Task.sleep(for: .seconds(delay))
                         guard !stop.isRaised else { break }
                         continuation.yield(.textDelta(word))
                         if word.contains(where: { !$0.isWhitespace }) { emitted += 1 }

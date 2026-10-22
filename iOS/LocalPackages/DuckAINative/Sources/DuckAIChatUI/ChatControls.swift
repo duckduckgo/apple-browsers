@@ -17,115 +17,83 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 #if canImport(UIKit)
+import DuckAIChatCore
 import UIKit
-#elseif canImport(AppKit)
-import AppKit
-#endif
 
-struct ChatGhostButtonStyle: ButtonStyle {
-    @Environment(\.isEnabled) private var isEnabled
+typealias ChatTypography = DuckAIChatTokens.Typography
 
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-            .background(configuration.isPressed ? DuckAIChatTokens.Color.controlSecondary : .clear, in: Capsule())
-            .opacity(isEnabled ? 1 : 0.4)
-            .contentShape(Capsule())
-    }
+@MainActor
+func chatLabel(_ text: String, style: ChatTypography.Style = ChatTypography.body) -> UILabel {
+    let label = UILabel()
+    label.numberOfLines = 0
+    label.text = text
+    label.font = style.font
+    label.textColor = DuckAIChatTokens.Color.textPrimary
+    return label
 }
 
-struct ChatIconButton: View {
-    let symbol: String
-    let label: String
-    let action: () -> Void
-    var size: CGFloat = 36
+@MainActor
+func chatButton(_ title: String, symbol: String? = nil, action: @escaping () -> Void) -> UIButton {
+    var configuration = UIButton.Configuration.plain()
+    configuration.title = title
+    configuration.image = symbol.flatMap { UIImage(systemName: $0) }
+    configuration.imagePadding = 6
+    configuration.baseForegroundColor = DuckAIChatTokens.Color.textSecondary
+    let button = UIButton(configuration: configuration, primaryAction: UIAction { _ in action() })
+    button.accessibilityIdentifier = "NativeChat." + title.replacingOccurrences(of: " ", with: "")
+    button.titleLabel?.font = ChatTypography.subtitle.font
+    return button
+}
 
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 16))
-                .frame(width: 16, height: 16)
-                .frame(width: size, height: size)
+final class ChatProgressView: UIStackView {
+    init(stage: LoadingStage, availability: ProviderAvailability, download: @escaping () -> Void) {
+        super.init(frame: .zero)
+        axis = .vertical
+        spacing = 8
+        accessibilityIdentifier = "NativeChat.Status"
+        let title: String
+        var fraction: Double?
+        switch (stage, availability) {
+        case (.waitingForModel, .needsDownload(let bytes)):
+            title = "Download model (" + ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file) + ")"
+            addArrangedSubview(chatButton("Download", action: download))
+        case (.waitingForModel, .downloading(let value)):
+            title = "Downloading model"
+            fraction = value
+        case (.provider(.loadingModel(let value)), _): title = "Loading model"; fraction = value
+        case (.provider(.readingInput(let tokens, let value)), _): title = "Reading \(tokens) tokens"; fraction = value
+        default: title = "Thinking"
         }
-        .buttonStyle(ChatGhostButtonStyle())
-        .accessibilityLabel(label)
-    }
-}
-
-struct ChatCopyButton: View {
-    let text: String
-    var size: CGFloat = 36
-    @State private var isCopied = false
-    @State private var resetTask: Task<Void, Never>?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        ChatIconButton(symbol: isCopied ? "checkmark" : "square.on.square", label: isCopied ? "Copied" : "Copy", action: {
-#if canImport(UIKit)
-            UIPasteboard.general.string = text
-#elseif canImport(AppKit)
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.setString(text, forType: .string)
-#endif
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { isCopied = true }
-            resetTask?.cancel()
-            resetTask = Task { @MainActor in
-                do {
-                    try await Task.sleep(for: .seconds(2))
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) { isCopied = false }
-                } catch { }
-            }
-        }, size: size)
-        .contentTransition(.opacity)
-        .onDisappear { resetTask?.cancel() }
-    }
-}
-
-struct AssistantHeading: View {
-    let title: String
-    var isActive = true
-    var isLoading = false
-    var isError = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: isError ? "exclamationmark.circle.fill" : "sparkles")
-                .font(.system(size: 16))
-                .foregroundStyle(iconColor)
-                .frame(width: 16, height: 16)
-                .symbolEffect(.pulse, options: .repeating, isActive: isLoading && !reduceMotion)
-            if isLoading && !reduceMotion {
-                TimelineView(.animation) { context in
-                    let phase = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 2) / 2
-                    headingText.foregroundStyle(
-                        LinearGradient(stops: [
-                            .init(color: DuckAIChatTokens.Color.textPrimary, location: 0),
-                            .init(color: DuckAIChatTokens.Color.textPrimary, location: 0.3),
-                            .init(color: DuckAIChatTokens.Color.textSecondary, location: 0.5),
-                            .init(color: DuckAIChatTokens.Color.textPrimary, location: 0.7),
-                            .init(color: DuckAIChatTokens.Color.textPrimary, location: 1)
-                        ], startPoint: UnitPoint(x: phase * 2 - 1, y: 0.5), endPoint: UnitPoint(x: phase * 2, y: 0.5))
-                    )
-                }
-            } else {
-                headingText.foregroundStyle(isError ? DuckAIChatTokens.Color.destructive :
-                                            isActive ? DuckAIChatTokens.Color.textPrimary : DuckAIChatTokens.Color.textSecondary)
-            }
+        insertArrangedSubview(chatLabel(title, style: ChatTypography.subtitle), at: 0)
+        if let fraction {
+            let progress = UIProgressView(progressViewStyle: .default)
+            progress.progress = Float(fraction)
+            addArrangedSubview(progress)
+        } else if case .needsDownload = availability {
+        } else {
+            let spinner = UIActivityIndicatorView(style: .medium)
+            spinner.startAnimating()
+            addArrangedSubview(spinner)
         }
-        .frame(height: 36)
     }
 
-    private var headingText: some View {
-        Text(title)
-            .font(DuckAIChatTokens.Typography.modelName.font)
-            .lineSpacing(DuckAIChatTokens.Typography.modelName.lineSpacing)
-    }
+    @available(*, unavailable)
+    required init(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+}
 
-    private var iconColor: Color {
-        if isError { return DuckAIChatTokens.Color.destructive }
-        return isActive ? DuckAIChatTokens.Color.modelIconActive : DuckAIChatTokens.Color.modelIconPrevious
+extension ChatError {
+    var chatDescription: String {
+        switch self {
+        case .modelNotDownloaded: "The model isn't downloaded."
+        case .modelUnavailable(let reason): reason
+        case .inputTooLong: "That's too much text for this model."
+        case .conversationTooLong: "This chat is too long. Start a new chat."
+        case .emptyResponse: "No response was generated."
+        case .network: "Check your connection and try again."
+        case .rateLimited: "Too many requests. Try again later."
+        case .unknown: "Something went wrong."
+        }
     }
 }
+#endif

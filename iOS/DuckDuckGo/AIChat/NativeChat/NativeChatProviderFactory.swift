@@ -38,7 +38,7 @@ enum NativeChatProviderFactory {
         switch model {
         case .automatic, .stub:
             if task == .suggestedPrompts { return suggestionsStub() }
-            return StubProvider()
+            return StubProvider(configuration: .init(unevenBursts: UserDefaults.standard.bool(forKey: "duckAINative.stub.unevenBursts")))
         case .foundationModels:
             return foundationModels() ?? StubProvider()
         case .mlx(let id):

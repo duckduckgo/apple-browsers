@@ -48,34 +48,58 @@ public enum MarkdownParser {
     ///   an unclosed fence is a code block holding what has arrived; in the last block, unmatched trailing `**`, `*`,
     ///   `__`, `_`, `~~` and backticks are closed, and a trailing unfinished link `[text](url` shows as its text.
     public static func blocks(from markdown: String, isStreaming: Bool = false) -> [MarkdownBlock] {
-        let lines = markdown.replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n").components(separatedBy: "\n")
-        var result: [MarkdownBlock] = []
+        scan(normalize(markdown), isStreaming: isStreaming).map(\.block)
+    }
+
+    struct ParsedBlock {
+        let start: Int
+        let end: Int
+        let block: MarkdownBlock
+        let isStable: Bool
+    }
+
+    static func normalize(_ source: String) -> String {
+        source.replacingOccurrences(of: "\r\n", with: "\n").replacingOccurrences(of: "\r", with: "\n")
+    }
+
+    private static let boundaryLookaheadLines = 2
+
+    static func scan(_ source: String, isStreaming: Bool) -> [ParsedBlock] {
+        let lines = source.components(separatedBy: "\n")
+        var offsets = [0]
+        for line in lines { offsets.append(offsets.last! + line.utf8.count + 1) }
+        var result: [ParsedBlock] = []
         var index = 0
         while index < lines.count {
+            let start = index
             let line = lines[index]
+            let block: MarkdownBlock
             if trimmed(line).isEmpty {
                 index += 1
+                continue
             } else if let fence = fenceOpening(line) {
-                result.append(parseCode(lines, index: &index, fence: fence))
+                block = parseCode(lines, index: &index, fence: fence)
             } else if let heading = heading(line) {
-                result.append(.heading(level: heading.level, text: heading.text))
+                block = .heading(level: heading.level, text: heading.text)
                 index += 1
             } else if isThematicBreak(line) {
-                result.append(.thematicBreak)
+                block = .thematicBreak
                 index += 1
             } else if quoteContent(line) != nil {
-                result.append(parseQuote(lines, index: &index))
+                block = parseQuote(lines, index: &index)
             } else if isTableStart(lines, at: index) {
-                result.append(parseTable(lines, index: &index))
+                block = parseTable(lines, index: &index)
             } else if let first = listItem(line) {
-                result.append(parseList(lines, index: &index, first: first))
+                block = parseList(lines, index: &index, first: first)
             } else {
-                result.append(parseParagraph(lines, index: &index))
+                block = parseParagraph(lines, index: &index)
             }
+            let stable = !isStreaming || index + boundaryLookaheadLines < lines.count
+            result.append(ParsedBlock(start: offsets[start], end: min(offsets[index], source.utf8.count),
+                                      block: block, isStable: stable))
         }
         if isStreaming, let last = result.popLast() {
-            result.append(repair(last))
+            result.append(ParsedBlock(start: last.start, end: last.end, block: repair(last.block), isStable: false))
         }
         return result
     }
@@ -261,15 +285,24 @@ public enum MarkdownParser {
             if open.last?.first != "`", character == "[",
                let labelEnd = text[next...].firstIndex(of: "]") {
                 let afterLabel = text.index(after: labelEnd)
-                if afterLabel < text.endIndex, text[afterLabel] == "(", !text[afterLabel...].contains(")") {
+                if afterLabel == text.endIndex || (text[afterLabel] == "(" && !text[afterLabel...].contains(")")) {
                     result += text[next..<labelEnd]
                     break
                 }
             }
+            if character == "[", open.last?.first != "`", !text[next...].contains("]") {
+                result += text[next...]
+                break
+            }
             if "*_~`".contains(character) {
                 let run = text[index...].prefix { $0 == character }
                 let token = String(run)
+                let previous = open
                 updateDelimiters(token, open: &open)
+                if text.index(index, offsetBy: run.count) == text.endIndex, open.count > previous.count {
+                    open = previous
+                    break
+                }
                 result += token
                 index = text.index(index, offsetBy: run.count)
             } else {

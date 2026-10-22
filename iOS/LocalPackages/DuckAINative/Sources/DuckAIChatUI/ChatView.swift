@@ -17,379 +17,291 @@
 //  limitations under the License.
 //
 
+#if canImport(UIKit)
 import DuckAIChatCore
-import SwiftUI
+import UIKit
 
 public enum ChatSurface: Sendable {
     case contextualSheet
     case fullScreen
-    /// Inside a browser tab, whose own chrome supplies the title and input.
     case tab
 }
 
-/// What the chat asks of the screen that hosts it.
-public struct ChatActions {
-    public var close: () -> Void
-    public var continueInWeb: (ChatContext) -> Void
-
-    public init(close: @escaping () -> Void, continueInWeb: @escaping (ChatContext) -> Void) {
-        self.close = close
-        self.continueInWeb = continueInWeb
-    }
-}
-
-/// What a chat with no messages yet shows, like the frontend's welcome.
 public struct ChatEmptyState {
-    public var image: Image
+    public var image: UIImage
     public var title: String
 
-    public init(image: Image, title: String) {
+    public init(image: UIImage, title: String) {
         self.image = image
         self.title = title
     }
 }
 
-public struct ChatView: View {
-    @Bindable var session: ChatSession
-    let surface: ChatSurface
-    let actions: ChatActions
-    let showsComposer: Bool
-    let emptyState: ChatEmptyState?
-    @State private var draft = ""
+/// Display metadata belongs to the host, independently of the provider transport.
+public struct ChatDisplayMetadata {
+    public var title: String
+    public var subtitle: String?
 
-    /// `showsComposer` is false when the host app drives the session from its own input.
-    public init(session: ChatSession, surface: ChatSurface, actions: ChatActions, showsComposer: Bool = true,
-                emptyState: ChatEmptyState? = nil) {
-        self.session = session
+    public init(title: String, subtitle: String? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+    }
+}
+
+public struct ChatActions {
+    public var close: () -> Void
+    public var continueInWeb: (ChatContext) -> Void
+    public var redo: () -> Void
+    public var download: () -> Void
+
+    public init(close: @escaping () -> Void, continueInWeb: @escaping (ChatContext) -> Void,
+                redo: @escaping () -> Void, download: @escaping () -> Void) {
+        self.close = close
+        self.continueInWeb = continueInWeb
+        self.redo = redo
+        self.download = download
+    }
+}
+
+/// A transcript renderer. The host supplies state; this controller never loads a model or sends a request.
+public final class ChatViewController: UIViewController, UIScrollViewDelegate {
+    private let surface: ChatSurface
+    private let metadata: ChatDisplayMetadata
+    private let emptyState: ChatEmptyState?
+    private let actions: ChatActions
+    private let scrollView = UIScrollView()
+    private let transcript = UIStackView()
+    private let status = UIStackView()
+    private var welcome: UIView?
+    private var state: ChatState?
+    private var pendingState: ChatState?
+    private var rows: [MessageID: UIView] = [:]
+    private var replies: [MessageID: ReplyPresentation] = [:]
+    private var followsBottom = true
+    private var lastUserID: MessageID?
+    private var displayLink: CADisplayLink?
+    private var previousTimestamp: CFTimeInterval = 0
+
+    public init(surface: ChatSurface, metadata: ChatDisplayMetadata, emptyState: ChatEmptyState? = nil, actions: ChatActions) {
         self.surface = surface
-        self.actions = actions
-        self.showsComposer = showsComposer
+        self.metadata = metadata
         self.emptyState = emptyState
+        self.actions = actions
+        super.init(nibName: nil, bundle: nil)
     }
 
-    public var body: some View {
-        VStack(spacing: 0) {
-            if surface == .fullScreen {
-                header
-            }
-            if let emptyState, session.state.messages.isEmpty, session.state.liveReply == nil {
-                welcome(emptyState)
-            } else {
-                transcript
-            }
-            if showsComposer {
-                composer
-            }
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = DuckAIChatTokens.Color.pageBackground
+        scrollView.delegate = self
+        scrollView.keyboardDismissMode = .interactive
+        scrollView.alwaysBounceVertical = true
+        scrollView.accessibilityIdentifier = "NativeChat.Transcript"
+        let layout = UIStackView()
+        layout.axis = .vertical
+        layout.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(layout)
+        NSLayoutConstraint.activate([
+            layout.leadingAnchor.constraint(equalTo: view.leadingAnchor), layout.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            layout.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor), layout.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        if surface == .fullScreen {
+            let header = UIStackView(arrangedSubviews: [chatButton("Close", symbol: "xmark", action: actions.close), chatLabel("Duck.ai")])
+            header.spacing = 12
+            layout.addArrangedSubview(header)
         }
-        .background(DuckAIChatTokens.Color.pageBackground)
+        layout.addArrangedSubview(scrollView)
+        transcript.axis = .vertical
+        transcript.spacing = 16
+        transcript.isLayoutMarginsRelativeArrangement = true
+        transcript.layoutMargins = UIEdgeInsets(top: 16, left: 24, bottom: 57, right: 24)
+        transcript.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.addSubview(transcript)
+        NSLayoutConstraint.activate([
+            transcript.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            transcript.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            transcript.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            transcript.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            transcript.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+        ])
+        status.axis = .vertical
+        status.spacing = 8
+        transcript.addArrangedSubview(status)
     }
 
-    private var header: some View {
-        HStack {
-            Button(action: actions.close) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("Close")
-            .accessibilityIdentifier("NativeChat.Close")
-            Spacer()
-            VStack(spacing: 0) {
-                Text("Duck.ai")
-                    .font(DuckAIChatTokens.Typography.h3.font)
-                Text("On device · \(session.descriptor.displayName)")
-                    .font(DuckAIChatTokens.Typography.tableCell.font)
-                    .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-            }
-            Spacer()
-            Color.clear.frame(width: 44, height: 44)
-        }
-        .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-        .padding(.horizontal, DuckAIChatTokens.Spacing.s8)
-    }
-
-    private func welcome(_ emptyState: ChatEmptyState) -> some View {
-        VStack(spacing: DuckAIChatTokens.Spacing.s12) {
-            Spacer()
-            emptyState.image
-                .resizable()
-                .scaledToFit()
-                .frame(width: 72, height: 72)
-            Text(emptyState.title)
-                .font(DuckAIChatTokens.Typography.h3.font)
-                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-            Text("Answered on this device by \(modelName)")
-                .font(DuckAIChatTokens.Typography.subtitle.font)
-                .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-            Spacer()
-            Spacer()
-        }
-        .multilineTextAlignment(.center)
-        .padding(.horizontal, DuckAIChatTokens.Spacing.s16)
-        .frame(maxWidth: .infinity)
-        .accessibilityIdentifier("NativeChat.Welcome")
-    }
-
-    private var transcript: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(spacing: 0) {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(Array(turns.enumerated()), id: \.offset) { index, messages in
-                            VStack(alignment: .leading, spacing: 0) {
-                                ForEach(messages) { message in
-                                    messageView(message)
-                                }
-                                if index == turns.count - 1 {
-                                    currentReply
-                                }
-                            }
-                        }
-                        if turns.isEmpty {
-                            currentReply
-                        }
-                    }
-                    Color.clear.frame(height: 57).id(bottomID)
-                }
-                .padding(.horizontal, 12)
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .onChange(of: session.state) {
-                proxy.scrollTo(bottomID, anchor: .bottom)
-            }
+    public func apply(snapshot: ChatState) {
+        guard snapshot != pendingState, snapshot != state else { return }
+        pendingState = snapshot
+        loadViewIfNeeded()
+        if view.window == nil {
+            consumePendingState(settle: true)
+            renderReplies()
+        } else {
+            startClock()
         }
     }
 
-    @ViewBuilder
-    private func messageView(_ message: Message) -> some View {
-        switch message {
-        case .user(let user):
-            UserMessageView(message: user)
-        case .assistant(let assistant):
-            VStack(alignment: .leading, spacing: 0) {
-                AssistantPartsView(parts: assistant.parts, isStreaming: false, modelName: modelName,
-                                   isActive: assistant.id == session.state.messages.last?.id && session.state.liveReply == nil)
-                if assistant.id == lastAssistantID, session.state.liveReply == nil {
-                    ReplyActions(text: plainText(assistant.parts), canRedo: session.state.canRedo, redo: session.redo,
-                                 continueInWeb: { actions.continueInWeb(session.state.context) })
-                        .padding(.horizontal, 12)
-                }
+    public override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        startClock()
+    }
+
+    public override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        displayLink?.invalidate()
+        displayLink = nil
+        previousTimestamp = 0
+        consumePendingState(settle: true)
+        for id in Array(replies.keys) { replies[id]?.flush() }
+        renderReplies()
+    }
+
+    public override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        followBottom()
+    }
+
+    private func startClock() {
+        guard displayLink == nil else { return }
+        let link = CADisplayLink(target: ChatDisplayLinkTarget(controller: self), selector: #selector(ChatDisplayLinkTarget.tick(_:)))
+        link.preferredFrameRateRange = CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        link.add(to: .main, forMode: .common)
+        displayLink = link
+    }
+
+    fileprivate func tick(_ link: CADisplayLink) {
+        let elapsed = previousTimestamp == 0 ? 1.0 / 60 : link.timestamp - previousTimestamp
+        previousTimestamp = link.timestamp
+        consumePendingState(settle: UIAccessibility.isReduceMotionEnabled)
+        for id in Array(replies.keys) { replies[id]?.advance(by: elapsed) }
+        renderReplies()
+        view.layoutIfNeeded()
+        followBottom()
+        if pendingState == nil && !replies.values.contains(where: \.needsFrame) {
+            displayLink?.invalidate()
+            displayLink = nil
+            previousTimestamp = 0
+        }
+    }
+
+    private func consumePendingState(settle: Bool) {
+        guard let snapshot = pendingState else { return }
+        pendingState = nil
+        state = snapshot
+        let userID = snapshot.messages.last { if case .user = $0 { true } else { false } }?.id
+        if userID != lastUserID { followsBottom = true; lastUserID = userID }
+        var ids = snapshot.messages.map(\.id)
+        if let live = snapshot.liveReply { ids.append(live.id) }
+        for id in Array(rows.keys) where !ids.contains(id) {
+            rows.removeValue(forKey: id)?.removeFromSuperview()
+            replies.removeValue(forKey: id)
+        }
+        for message in snapshot.messages {
+            switch message {
+            case .user(let user):
+                if rows[user.id] == nil { insert(UserMessageView(message: user), id: user.id) }
+            case .assistant(let reply):
+                receive(AssistantReplySnapshot(id: reply.id, parts: reply.parts, phase: .ended(reply.ending)),
+                        settle: settle || reply.id != ids.last)
             }
         }
-    }
-
-    @ViewBuilder
-    private var currentReply: some View {
-        if let live = session.state.liveReply {
-            if live.parts.isEmpty {
-                StatusLine(stage: live.stage, availability: session.state.availability, download: session.download)
-            } else {
-                AssistantPartsView(parts: live.parts, isStreaming: true, modelName: modelName, isActive: true)
-            }
+        if let live = snapshot.liveReply {
+            receive(AssistantReplySnapshot(id: live.id, parts: live.parts, phase: .receiving(live.stage)), settle: settle)
         }
-        if case .error(let error) = session.state.status {
-            ErrorRow(error: error, canRedo: session.state.canRedo, redo: session.redo)
+        updateStatus(snapshot)
+        updateWelcome(isEmpty: ids.isEmpty)
+    }
+
+    private func insert(_ row: UIView, id: MessageID) {
+        rows[id] = row
+        transcript.insertArrangedSubview(row, at: max(0, transcript.arrangedSubviews.count - 1))
+    }
+
+    private func receive(_ reply: AssistantReplySnapshot, settle: Bool) {
+        if replies[reply.id] == nil {
+            replies[reply.id] = ReplyPresentation(reply)
+            insert(AssistantMessageView(), id: reply.id)
+        }
+        replies[reply.id]?.receive(reply, settle: settle)
+    }
+
+    private func renderReplies() {
+        guard let state else { return }
+        let latest = state.liveReply?.id ?? state.messages.last?.id
+        for (id, reply) in replies {
+            (rows[id] as? AssistantMessageView)?.apply(reply.rendered, metadata: metadata, latest: id == latest,
+                                                     canRedo: state.canRedo, actions: actions, context: state.context)
         }
     }
 
-    private var turns: [[Message]] {
-        var groups: [[Message]] = []
-        for message in session.state.messages {
-            if case .user = message {
-                groups.append([message])
-            } else if groups.isEmpty {
-                groups.append([message])
-            } else {
-                groups[groups.count - 1].append(message)
-            }
+    private func updateWelcome(isEmpty: Bool) {
+        if isEmpty, welcome != nil { return }
+        welcome?.removeFromSuperview()
+        welcome = nil
+        guard isEmpty, let emptyState else { return }
+        let image = UIImageView(image: emptyState.image)
+        image.contentMode = .scaleAspectFit
+        image.heightAnchor.constraint(equalToConstant: 72).isActive = true
+        let stack = UIStackView(arrangedSubviews: [image, chatLabel(emptyState.title, style: ChatTypography.h3)])
+        stack.axis = .vertical
+        stack.spacing = 12
+        if let subtitle = metadata.subtitle { stack.addArrangedSubview(chatLabel(subtitle, style: ChatTypography.subtitle)) }
+        stack.accessibilityIdentifier = "NativeChat.Welcome"
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -50),
+            stack.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24)
+        ])
+        welcome = stack
+    }
+
+    private func followBottom() {
+        guard followsBottom, !scrollView.isDragging, !scrollView.isDecelerating else { return }
+        let bottom = max(-scrollView.adjustedContentInset.top,
+                         scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
+        if abs(scrollView.contentOffset.y - bottom) > 0.5 { scrollView.contentOffset.y = bottom }
+    }
+
+    public func scrollViewWillBeginDragging(_ scrollView: UIScrollView) { followsBottom = false }
+
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        guard scrollView.isDragging || scrollView.isDecelerating else { return }
+        let distance = scrollView.contentSize.height - scrollView.contentOffset.y - scrollView.bounds.height
+            + scrollView.adjustedContentInset.bottom
+        followsBottom = distance < 24
+    }
+
+    public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if !decelerate { followBottom() }
+    }
+
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) { followBottom() }
+
+    private func updateStatus(_ state: ChatState) {
+        status.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        if case .error(let error) = state.status {
+            status.addArrangedSubview(chatLabel(error.chatDescription))
+            if state.canRedo { status.addArrangedSubview(chatButton("Redo", symbol: "arrow.clockwise", action: actions.redo)) }
+        } else if let live = state.liveReply, live.parts.isEmpty {
+            let progress = ChatProgressView(stage: live.stage, availability: state.availability, download: actions.download)
+            status.addArrangedSubview(progress)
         }
-        return groups
-    }
-
-    private var composer: some View {
-        HStack(alignment: .bottom, spacing: DuckAIChatTokens.Spacing.s8) {
-            TextField("Ask anything", text: $draft, axis: .vertical)
-                .font(DuckAIChatTokens.Typography.body.font)
-                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-                .tint(DuckAIChatTokens.Color.accent)
-                .lineLimit(1...6)
-                .padding(.vertical, DuckAIChatTokens.Spacing.s12)
-                .padding(.leading, DuckAIChatTokens.Spacing.s16)
-                .accessibilityIdentifier("NativeChat.Composer")
-                .onSubmit(send)
-            if session.state.canStop {
-                Button(action: session.stop) {
-                    Image(systemName: "stop.circle.fill").font(.system(size: 32))
-                }
-                .foregroundStyle(DuckAIChatTokens.Color.accent)
-                .accessibilityLabel("Stop")
-                .accessibilityIdentifier("NativeChat.Stop")
-            } else {
-                Button(action: send) {
-                    Image(systemName: "arrow.up.circle.fill").font(.system(size: 32))
-                }
-                .foregroundStyle(DuckAIChatTokens.Color.accent)
-                .disabled(!canSend)
-                .accessibilityLabel("Send")
-                .accessibilityIdentifier("NativeChat.Send")
-            }
-        }
-        .padding(.trailing, DuckAIChatTokens.Spacing.s8)
-        .padding(.vertical, DuckAIChatTokens.Spacing.s4)
-        .background(DuckAIChatTokens.Color.inputBackground, in: RoundedRectangle(cornerRadius: DuckAIChatTokens.Radius.input))
-        .overlay(RoundedRectangle(cornerRadius: DuckAIChatTokens.Radius.input).stroke(DuckAIChatTokens.Color.inputBorder))
-        .padding(DuckAIChatTokens.Spacing.s12)
-    }
-
-    private var canSend: Bool {
-        session.state.canSend && !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    private func send() {
-        guard canSend else { return }
-        session.send(draft)
-        draft = ""
-    }
-
-    private var modelName: String {
-        session.descriptor.modelName.isEmpty ? session.descriptor.displayName : session.descriptor.modelName
-    }
-
-    private var lastAssistantID: MessageID? {
-        session.state.messages.last { if case .assistant = $0 { true } else { false } }?.id
-    }
-
-    private func plainText(_ parts: [AssistantPart]) -> String {
-        parts.compactMap { if case .text(let text) = $0 { text } else { nil } }.joined(separator: "\n\n")
-    }
-
-    private let bottomID = "bottom"
-}
-
-private struct StatusLine: View {
-    let stage: LoadingStage
-    let availability: ProviderAvailability
-    let download: () -> Void
-
-    var body: some View {
-        switch (stage, availability) {
-        case (.waitingForModel, .needsDownload(let bytes)):
-            DownloadCard(bytes: bytes, download: download)
-        case (.waitingForModel, .downloading(let fraction)):
-            ProgressRow(title: "Downloading model", fraction: fraction)
-        case (.provider(.loadingModel(let fraction)), _):
-            ProgressRow(title: "Loading model", fraction: fraction)
-        case (.provider(.readingInput(let tokens, let fraction)), _):
-            ProgressRow(title: "Reading \(tokens.formatted()) tokens", fraction: fraction)
-        default:
-            ProgressRow(title: "Thinking", fraction: nil)
-        }
+        status.isHidden = status.arrangedSubviews.isEmpty
     }
 }
 
-private struct ProgressRow: View {
-    let title: String
-    let fraction: Double?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            AssistantHeading(title: "Thinking", isLoading: true)
-            if title != "Thinking" {
-                Text(title)
-                    .font(DuckAIChatTokens.Typography.subtitle.font)
-                    .lineSpacing(DuckAIChatTokens.Typography.subtitle.lineSpacing)
-                    .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-            }
-            if let fraction {
-                ProgressView(value: fraction)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 4)
-        .padding(.bottom, 12)
-        .accessibilityIdentifier("NativeChat.Status")
+@MainActor
+private final class ChatDisplayLinkTarget {
+    weak var controller: ChatViewController?
+    init(controller: ChatViewController) { self.controller = controller }
+    @objc func tick(_ link: CADisplayLink) {
+        guard let controller else { link.invalidate(); return }
+        controller.tick(link)
     }
 }
-
-private struct DownloadCard: View {
-    let bytes: Int64
-    let download: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: DuckAIChatTokens.Spacing.s12) {
-            Text("Download the on-device model")
-                .font(DuckAIChatTokens.Typography.h3.font)
-            Text("Chats are answered on this device. The model is \(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)).")
-                .font(DuckAIChatTokens.Typography.body.font)
-                .foregroundStyle(DuckAIChatTokens.Color.textSecondary)
-            Button("Download", action: download)
-                .buttonStyle(.borderedProminent)
-                .tint(DuckAIChatTokens.Color.accent)
-                .accessibilityIdentifier("NativeChat.Download")
-        }
-        .padding(DuckAIChatTokens.Spacing.s16)
-        .background(DuckAIChatTokens.Color.surfaceTertiary, in: RoundedRectangle(cornerRadius: DuckAIChatTokens.Radius.codeOuter))
-    }
-}
-
-private struct ErrorRow: View {
-    let error: ChatError
-    let canRedo: Bool
-    let redo: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            AssistantHeading(title: "Something went wrong", isError: true)
-            Text(message)
-                .font(DuckAIChatTokens.Typography.body.font)
-                .lineSpacing(DuckAIChatTokens.Typography.body.lineSpacing)
-                .foregroundStyle(DuckAIChatTokens.Color.textPrimary)
-                .padding(.bottom, 12)
-            if canRedo {
-                ChatIconButton(symbol: "arrow.clockwise", label: "Redo", action: redo)
-                    .accessibilityIdentifier("NativeChat.Redo")
-                    .padding(.leading, -8)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.top, 8)
-    }
-
-    private var message: String {
-        switch error {
-        case .modelNotDownloaded: "The on-device model isn't downloaded."
-        case .modelUnavailable(let reason): reason
-        case .inputTooLong: "That's too much text for the on-device model."
-        case .conversationTooLong: "This chat is too long. Start a new chat."
-        case .emptyResponse: "No response was generated."
-        case .network: "Check your connection and try again."
-        case .rateLimited: "Too many requests. Try again later."
-        case .unknown: "Something went wrong."
-        }
-    }
-}
-
-private struct ReplyActions: View {
-    let text: String
-    let canRedo: Bool
-    let redo: () -> Void
-    let continueInWeb: () -> Void
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ChatCopyButton(text: text)
-            if canRedo {
-                ChatIconButton(symbol: "arrow.clockwise", label: "Redo", action: redo)
-                    .accessibilityIdentifier("NativeChat.Redo")
-            }
-            Spacer(minLength: 0)
-            Button("Continue in Duck.ai", action: continueInWeb)
-                .font(DuckAIChatTokens.Typography.subtitle.font)
-                .padding(.horizontal, 8)
-                .frame(minHeight: 36)
-                .buttonStyle(ChatGhostButtonStyle())
-                .accessibilityIdentifier("NativeChat.ContinueInWeb")
-        }
-        .padding(.leading, -8)
-    }
-}
+#endif

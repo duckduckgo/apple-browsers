@@ -21,7 +21,6 @@ import AIChat
 import Combine
 import DuckAINative
 import Observation
-import SwiftUI
 import UIKit
 
 /// A native chat shown in a Duck.ai tab in place of its web view. The tab keeps its normal AI-tab chrome; while the
@@ -30,8 +29,8 @@ import UIKit
 final class NativeTabChat: NativeChatDelegate {
     let session: ChatSession
     private(set) lazy var viewController: UIViewController = DuckAINative.makeChatViewController(
-        session: session, surface: .tab, showsComposer: false,
-        emptyState: ChatEmptyState(image: Image(.duckAIDefault), title: "All chats are private"), delegate: self)
+        session: session, surface: .tab,
+        emptyState: ChatEmptyState(image: UIImage(resource: .duckAIDefault), title: "All chats are private"), delegate: self)
     var onContinueInWeb: (() -> Void)?
 
     private weak var input: UnifiedToggleInputCoordinator?

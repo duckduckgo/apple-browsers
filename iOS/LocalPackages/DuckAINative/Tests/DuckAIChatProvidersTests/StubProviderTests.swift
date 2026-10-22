@@ -41,6 +41,19 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func bothPacingModesPreserveWhitespaceAndUnicode() async throws {
+        let reply = "  # Ducks\r\n\r\n\t🦆 e\u{301}  \n"
+        for uneven in [false, true] {
+            let provider = StubProvider(configuration: .init(reply: reply, wordsPerSecond: 10_000, unevenBursts: uneven,
+                                                            loadTime: .zero, readTime: .zero))
+            let events = try await collect(provider.reply(to: turn, stop: StopSignal()))
+            let actual = events.compactMap { if case .textDelta(let text) = $0 { text } else { nil } }.joined()
+            #expect(Array(actual.utf8) == Array(reply.utf8))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func streamsStagesThenTheWholeReplyThenFinishes() async throws {
         let events = try await collect(fast().reply(to: turn, stop: StopSignal()))
 

@@ -4911,6 +4911,8 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
+        pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
+
         if #available(iOS 16.0, *) {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction

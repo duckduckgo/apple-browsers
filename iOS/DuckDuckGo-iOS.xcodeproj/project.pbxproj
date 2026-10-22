@@ -183,6 +183,7 @@
 		627245DC3F2A4454A5C45C67 /* MultiTabAttachmentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 401C74C51B7044B4AD76B9BC /* MultiTabAttachmentTests.swift */; };
 		64C0847679ED02196F3D425D /* WideEvent in Frameworks */ = {isa = PBXBuildFile; productRef = 3D0759507C5E488826CC23DC /* WideEvent */; };
 		652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */; };
+		586DE183A09495820D56CFE1 /* TabViewControllerFindInPageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C1B79A6F0FEF318078C85A /* TabViewControllerFindInPageTests.swift */; };
 		652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 652CEDE52D89B70C00235B4C /* FaviconsHelperTests.swift */; };
 		65D748412D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65D748402D9D34C900554B1D /* DuckPlayerNativeUIPresenterTests.swift */; };
 		65F436172D9AD4610034CC36 /* NativeDuckPlayerNavigationHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65F436132D9AD4610034CC36 /* NativeDuckPlayerNavigationHandlerTests.swift */; };
@@ -1779,6 +1780,7 @@
 		BD7008D32E1F1EED00CF9C3E /* DataBrokerProtection-iOS.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = "DataBrokerProtection-iOS.xctestplan"; path = "LocalPackages/DataBrokerProtection-iOS/Tests/DataBrokerProtection-iOS.xctestplan"; sourceTree = "<group>"; };
 		BDE219E92C457B46005D5884 /* SubscriptionDataReporterTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SubscriptionDataReporterTests.swift; sourceTree = "<group>"; };
 		BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewInputAccessoryTests.swift; sourceTree = "<group>"; };
+		67C1B79A6F0FEF318078C85A /* TabViewControllerFindInPageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerFindInPageTests.swift; sourceTree = "<group>"; };
 		C0DE52010000000000000001 /* MediaCapturePermissionLegacyMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCapturePermissionLegacyMatrixTests.swift; sourceTree = "<group>"; };
 		C0DE53010000000000000001 /* MediaCapturePermissionRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaCapturePermissionRoutingTests.swift; sourceTree = "<group>"; };
 		C0DE54010000000000000003 /* SitePermissionsPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SitePermissionsPixelHandlerTests.swift; sourceTree = "<group>"; };
@@ -3106,6 +3108,7 @@
 				F17843E81F36226700390DCD /* MockFiles */,
 				84E341AC1E2F7EFB00BDBA6F /* Info.plist */,
 				BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */,
+				67C1B79A6F0FEF318078C85A /* TabViewControllerFindInPageTests.swift */,
 				CB6EF0502FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift */,
 				CB27DAE82FFFE6BC00EEEADB /* WebViewTransitionGeometryTests.swift */,
 				A8452A0101C0DE0000000003 /* HomeScreenTransitionGeometryTests.swift */,
@@ -5601,6 +5604,7 @@
 				9F7CFF7D2C89B69A0012833E /* AppIconPickerViewModelTests.swift in Sources */,
 				F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */,
 				652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */,
+				586DE183A09495820D56CFE1 /* TabViewControllerFindInPageTests.swift in Sources */,
 				C163DC962DC92FDC0026852D /* OnboardingSubscriptionPromotionHelpingTests.swift in Sources */,
 				CB596FF12ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,

@@ -83,7 +83,7 @@ struct AIChatScreenRecordingPermissionDialog: ModalView {
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
         }
-        .buttonStyle(StandardButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true))
+        .buttonStyle(DismissActionButtonStyle(topPadding: 0, bottomPadding: 0, pillShape: true, stateColors: .themedDismissButton))
         .keyboardShortcut(.cancelAction)
     }
 
@@ -96,7 +96,7 @@ struct AIChatScreenRecordingPermissionDialog: ModalView {
                 .frame(maxWidth: .infinity)
                 .frame(height: 28)
         }
-        .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, pillShape: true))
+        .buttonStyle(DefaultActionButtonStyle(enabled: true, topPadding: 0, bottomPadding: 0, stateColors: .themedActionButton, pillShape: true))
         .keyboardShortcut(.defaultAction)
     }
 }

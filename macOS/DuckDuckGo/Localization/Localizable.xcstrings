@@ -61,8 +61,68 @@
         }
       }
     },
-    "duckai.dax-pet.compare.leave-out" : {
-      "comment" : "Tooltip of a tab's icon in the prompt field of Dax, the DuckDuckGo mascot; clicking it leaves the tab out of the comparison sent to Duck.ai. %@ is the tab's title",
+    "duckai.dax-pet.compare.ready" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he picked the open tabs to send to Duck.ai for a comparison. They show in a card above him, each with a button to leave it out",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I'll send these tabs along. Press Return when you're ready."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.context.file" : {
+      "comment" : "Under a dropped file in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question. %@ is its size, e.g. 2 MB",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "File · %@"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.context.header" : {
+      "comment" : "Heading of the card above Dax, the DuckDuckGo mascot, listing what will be sent to Duck.ai with the question: tabs, dropped text, links, images or files",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Going along with your question:"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.context.image" : {
+      "comment" : "Under an image or screenshot in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Image"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.context.link" : {
+      "comment" : "Under a dropped link in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Link"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.context.remove" : {
+      "comment" : "Tooltip of the ✕ beside a tab, text, link, image or file in the card above Dax, the DuckDuckGo mascot; it leaves it out of what goes to Duck.ai. %@ is its name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -73,14 +133,14 @@
         }
       }
     },
-    "duckai.dax-pet.compare.ready" : {
-      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he picked the open tabs to send to Duck.ai for a comparison. They show as icons in his prompt field",
+    "duckai.dax-pet.context.text" : {
+      "comment" : "Under dropped text in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "I'll send these tabs along. Press Return, or click one to leave it out."
+            "value" : "Text"
           }
         }
       }
@@ -34555,18 +34615,6 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Ask Dax"
-          }
-        }
-      }
-    },
-    "duckai.dax-pet.attachments.remove" : {
-      "comment" : "Tooltip of the button that removes the items dropped on Dax, the DuckDuckGo mascot, from the question being typed",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Remove Attachments"
           }
         }
       }

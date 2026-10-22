@@ -1640,4 +1640,50 @@ final class DaxPetViewModelTests: XCTestCase {
                        "github.com · " + UserText.daxPetFoundOpenInATab)
         XCTAssertTrue(DaxPetFindings.Item.visit(visit).detail(relativeTo: now, amongPagesSeenBefore: true).hasPrefix("food.example · "))
     }
+
+    // MARK: - What goes along
+
+    func testTheTabsToCompareAndWhatWasDroppedShowAsRowsSayingWhatTheyAre() async throws {
+        let (model, intelligence, _, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["o"], daysBack: 0)
+        intelligence.picks = [0, 2]
+        await ask(model, "which is best?")
+
+        XCTAssertEqual(model.contextItems.map(\.title), ["Google Flights", "Hotel Adlon"])
+        XCTAssertEqual(model.contextItems.map(\.detail), ["google.com", "booking.com"])
+        XCTAssertEqual(model.contextItems.map(\.kind), [.tab, .tab])
+    }
+
+    func testDroppedThingsSayWhatTheyAre() async throws {
+        submitter.capabilities = Self.imageCapabilities
+        model.startComposing()
+        await model.receive([.text("First line of a note\nand more"), .link(try XCTUnwrap(URL(string: "https://www.example.com/a")))])
+
+        XCTAssertEqual(model.contextItems.map(\.title), ["First line of a note", "example.com/a"])
+        XCTAssertEqual(model.contextItems.map(\.detail), [UserText.daxPetContextText, UserText.daxPetContextLink])
+    }
+
+    func testEachThingCanBeLeftOutOnItsOwn() async throws {
+        let (model, intelligence, _, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["o"], daysBack: 0)
+        intelligence.picks = [0, 1, 2]
+        await ask(model, "which is best?")
+
+        model.removeContext(Self.github.id)
+
+        XCTAssertEqual(model.comparedTabs, [Self.flights, Self.hotel])
+    }
+
+    func testLeavingOutTheLastDroppedThingPutsItsSuggestionsAway() async throws {
+        let (model, _) = makeModel(suggesting: ["Summarize it"])
+        model.startComposing()
+        await model.receive([.text("Some text")])
+        XCTAssertEqual(model.suggestions, ["Summarize it"])
+
+        model.removeContext(try XCTUnwrap(model.contextItems.first).id)
+
+        XCTAssertTrue(model.attachments.isEmpty)
+        XCTAssertTrue(model.suggestions.isEmpty)
+        XCTAssertTrue(model.isComposing)
+    }
 }

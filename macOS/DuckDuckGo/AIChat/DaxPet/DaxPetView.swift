@@ -33,18 +33,15 @@ struct DaxPetView: View {
         static let toolbarSize = CGSize(width: 106, height: 32)
         static let composingWidth: CGFloat = 320
         static let promptLeadingInset: CGFloat = 14
-        static let attachmentChipSize: CGFloat = 22
-        static let maxVisibleAttachments = 3
+        static let contextIconSize: CGFloat = 20
+        static let contextIconOverlap: CGFloat = 7
+        static let maxPillIcons = 3
 
-        /// Room the attachment chips take before the prompt text.
-        static func attachmentsWidth(count: Int) -> CGFloat {
+        /// Room the pill of attached things takes before the prompt text.
+        static func contextPillWidth(count: Int) -> CGFloat {
             guard count > 0 else { return 0 }
-            return CGFloat(min(count, maxVisibleAttachments) + 1) * (attachmentChipSize + 2)
-        }
-
-        /// Room the chips of the tabs to compare take before the prompt text.
-        static func tabChipsWidth(count: Int) -> CGFloat {
-            CGFloat(count) * (attachmentChipSize + 2)
+            let icons = CGFloat(min(count, maxPillIcons))
+            return icons * contextIconSize - (icons - 1) * contextIconOverlap + 14
         }
 
         static let windowSize = CGSize(width: composingWidth + padding * 2,
@@ -79,7 +76,14 @@ struct DaxPetView: View {
         VStack(spacing: Metrics.spacing) {
             ZStack(alignment: .bottom) {
                 Group {
-                if let offer = model.dropOffer {
+                if model.isComposing, model.dropOffer == nil, model.findings == nil, !model.contextItems.isEmpty {
+                    ContextCard(header: model.speech ?? UserText.daxPetContextHeader,
+                                items: model.contextItems,
+                                suggestions: model.suggestions,
+                                onRemove: model.removeContext,
+                                onSuggestion: model.useSuggestion)
+                        .transition(.scale(scale: 0.85, anchor: .bottom).combined(with: .opacity))
+                } else if let offer = model.dropOffer {
                     DropOfferBubble(speech: model.speech, offer: offer, suggestions: model.suggestions,
                                     onGoToTab: model.goToDroppedTab,
                                     onRecap: { Task { await model.recapDrop() } },
@@ -143,6 +147,7 @@ struct DaxPetView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.glance)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.findings)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.dropOffer)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.contextItems)
     }
 }
 
@@ -511,53 +516,155 @@ private struct ChipRows: Layout {
     }
 }
 
-/// What was dropped on Dax, one icon each (named in its tooltip), and a button to drop them all.
-private struct AttachmentChips: View {
-    let attachments: [DaxPetAttachment]
-    let onRemove: () -> Void
+/// What goes along with the question, a row each with a glimpse of it and an ✕ to leave it out; Dax's line
+/// heads it, and any suggestions follow.
+private struct ContextCard: View {
+    let header: String
+    let items: [DaxPetContextItem]
+    let suggestions: [String]
+    let onRemove: (String) -> Void
+    let onSuggestion: (String) -> Void
+
+    /// Three rows of two-line titles fit, or two with suggestions below; more scroll.
+    private var rowsWithoutScrolling: Int { suggestions.isEmpty ? 3 : 2 }
+    private var scrollingHeight: CGFloat { suggestions.isEmpty ? 150 : 104 }
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(attachments.prefix(DaxPetView.Metrics.maxVisibleAttachments)) { attachment in
-                chip(for: attachment)
-                    .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
-                    .help(attachment.name)
-                    .accessibilityLabel(attachment.name)
+        VStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(header)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 6)
+                    .padding(.bottom, 2)
+                if items.count > rowsWithoutScrolling {
+                    ScrollView(.vertical) {
+                        VStack(spacing: 2) { rows }
+                            .padding(.bottom, 14)
+                    }
+                    .frame(height: scrollingHeight)
+                    .overlay(alignment: .bottom) {
+                        LinearGradient(colors: [Color(designSystemColor: .surfacePrimary).opacity(0), Color(designSystemColor: .surfacePrimary)],
+                                       startPoint: .top, endPoint: .bottom)
+                            .frame(height: 22)
+                            .allowsHitTesting(false)
+                    }
+                } else {
+                    rows
+                }
             }
+            .padding(8)
+            .frame(width: DaxPetView.Metrics.composingWidth)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(designSystemColor: .surfacePrimary))
+                    .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+
+            if !suggestions.isEmpty {
+                ChipList(suggestions: suggestions, maximumRows: 1, onSelect: onSuggestion)
+                    .frame(width: DaxPetView.Metrics.composingWidth)
+            }
+        }
+    }
+
+    private var rows: some View {
+        ForEach(items) { item in
+            ContextRow(item: item) { onRemove(item.id) }
+                .transition(.asymmetric(insertion: .opacity, removal: .scale(scale: 0.9).combined(with: .opacity)))
+        }
+    }
+}
+
+/// One thing going along: its favicon, thumbnail or kind, its name, what it is, and an ✕.
+private struct ContextRow: View {
+    let item: DaxPetContextItem
+    let onRemove: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            preview
+                .frame(width: 28, height: 28)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.title)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(item.detail)
+                    .font(.system(size: 11))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
             Button(action: onRemove) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
                     .renderingMode(.template)
-                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
-                    .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
-                    .contentShape(Rectangle())
+                    .foregroundColor(Color(designSystemColor: isHovered ? .iconsPrimary : .iconsSecondary))
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)).opacity(isHovered ? 1 : 0))
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
-            .help(UserText.daxPetRemoveAttachments)
-            .accessibilityLabel(UserText.daxPetRemoveAttachments)
+            .help(UserText.daxPetContextRemove(item.title))
+            .accessibilityLabel(UserText.daxPetContextRemove(item.title))
         }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color(designSystemColor: .controlsFillPrimary)).opacity(isHovered ? 0.6 : 0))
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.15)) { isHovered = hovering }
+        }
+        .help(item.title)
     }
 
     /// Images show what they are, which matters most for a screenshot about to be sent.
     @ViewBuilder
-    private func chip(for attachment: DaxPetAttachment) -> some View {
-        if case .image(let image) = attachment {
-            Image(nsImage: image.image)
+    private var preview: some View {
+        if item.kind == .image, let image = item.image {
+            Image(nsImage: image)
                 .resizable()
                 .scaledToFill()
-                .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
-                .clipShape(RoundedRectangle(cornerRadius: 5))
-                .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+                .frame(width: 28, height: 28)
+                .clipShape(RoundedRectangle(cornerRadius: 7))
+                .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
         } else {
-            Image(nsImage: icon(for: attachment))
+            ContextIcon(item: item, size: 16)
+                .frame(width: 28, height: 28)
+                .background(RoundedRectangle(cornerRadius: 7).fill(Color(designSystemColor: .controlsFillPrimary)))
+        }
+    }
+}
+
+/// A favicon as it is, or the kind's glyph in the icon colour.
+private struct ContextIcon: View {
+    let item: DaxPetContextItem
+    let size: CGFloat
+
+    var body: some View {
+        if let image = item.image {
+            Image(nsImage: image)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+        } else {
+            Image(nsImage: glyph)
                 .renderingMode(.template)
+                .resizable()
+                .scaledToFit()
                 .foregroundColor(Color(designSystemColor: .iconsPrimary))
-                .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
-                .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+                .frame(width: size, height: size)
         }
     }
 
-    private func icon(for attachment: DaxPetAttachment) -> NSImage {
-        switch attachment {
+    private var glyph: NSImage {
+        switch item.kind {
+        case .tab: return DesignSystemImages.Glyphs.Size16.globe
         case .text: return DesignSystemImages.Glyphs.Size16.note
         case .link: return DesignSystemImages.Glyphs.Size16.link
         case .image: return DesignSystemImages.Glyphs.Size16.image
@@ -566,28 +673,30 @@ private struct AttachmentChips: View {
     }
 }
 
-/// The tabs going along for a comparison, by their icons; clicking one leaves it out.
-private struct TabChips: View {
-    let tabs: [DaxPetTab]
-    let onLeaveOut: (DaxPetTab) -> Void
+/// A glimpse in the prompt field of what goes along: the first few, overlapping, like a little stack.
+private struct ContextPill: View {
+    let items: [DaxPetContextItem]
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(tabs) { tab in
-                Button { onLeaveOut(tab) } label: {
-                    Image(nsImage: tab.favicon ?? DesignSystemImages.Glyphs.Size16.globe)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 14, height: 14)
-                        .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
-                        .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
-                        .contentShape(Circle())
+        HStack(spacing: -DaxPetView.Metrics.contextIconOverlap) {
+            ForEach(items.prefix(DaxPetView.Metrics.maxPillIcons)) { item in
+                Group {
+                    if item.kind == .image, let image = item.image {
+                        Image(nsImage: image).resizable().scaledToFill()
+                    } else {
+                        ContextIcon(item: item, size: 12)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(designSystemColor: .surfacePrimary))
+                    }
                 }
-                .buttonStyle(.plain)
-                .help(UserText.daxPetCompareLeaveOut(tab.title))
-                .accessibilityLabel(UserText.daxPetCompareLeaveOut(tab.title))
+                .frame(width: DaxPetView.Metrics.contextIconSize, height: DaxPetView.Metrics.contextIconSize)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
             }
         }
+        .padding(.leading, 10)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(items.map(\.title).joined(separator: ", "))
     }
 }
 
@@ -835,13 +944,8 @@ private struct PromptField: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            if !model.attachments.isEmpty {
-                AttachmentChips(attachments: model.attachments, onRemove: model.removeAttachments)
-                    .padding(.leading, 8)
-            }
-            if !model.comparedTabs.isEmpty {
-                TabChips(tabs: model.comparedTabs, onLeaveOut: model.leaveOut)
-                    .padding(.leading, 8)
+            if !model.contextItems.isEmpty {
+                ContextPill(items: model.contextItems)
             }
             TextField(model.promptPlaceholder, text: $model.prompt)
                 .textFieldStyle(.plain)
@@ -849,7 +953,7 @@ private struct PromptField: View {
                 .focused($isFocused)
                 .onSubmit { model.submit() }
                 .onExitCommand { model.endComposing() }
-                .padding(.leading, model.attachments.isEmpty && model.comparedTabs.isEmpty ? DaxPetView.Metrics.promptLeadingInset : 0)
+                .padding(.leading, model.contextItems.isEmpty ? DaxPetView.Metrics.promptLeadingInset : 0)
 
             Button(action: model.submit) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.arrowUp)

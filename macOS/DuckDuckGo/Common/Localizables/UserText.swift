@@ -746,7 +746,6 @@ struct UserText {
     static let daxPetSummarizeNoPage = NSLocalizedString("duckai.dax-pet.summarize.no-page", value: "Open a page in the browser and I'll summarize it.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, when he's asked to summarize a page but no web page is open in the browser")
     static let daxPetContinueNoChat = NSLocalizedString("duckai.dax-pet.continue.no-chat", value: "No chats yet. Ask me something!", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, when he's asked to continue the last Duck.ai chat but there are none")
     static let daxPetDropQuestion = NSLocalizedString("duckai.dax-pet.drop.question", value: "Ooh! What would you like to know about this?", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, when text, a link, an image or a file is dropped on him, before the user types a question about it")
-    static let daxPetRemoveAttachments = NSLocalizedString("duckai.dax-pet.attachments.remove", value: "Remove Attachments", comment: "Tooltip of the button that removes the items dropped on Dax, the DuckDuckGo mascot, from the question being typed")
     static let daxPetMenuOutfit = NSLocalizedString("duckai.dax-pet.menu.outfit", value: "Outfit", comment: "Submenu next to Dax, the DuckDuckGo mascot, for choosing what he wears")
     static let daxPetOutfitSeasonal = NSLocalizedString("duckai.dax-pet.outfit.seasonal", value: "Dress for the Season", comment: "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: he wears a hat for Halloween, December and New Year, and nothing otherwise")
     static let daxPetOutfitNone = NSLocalizedString("duckai.dax-pet.outfit.none", value: "Nothing", comment: "Option in the Outfit submenu next to Dax, the DuckDuckGo mascot: he wears no outfit")
@@ -816,10 +815,7 @@ struct UserText {
         String(format: NSLocalizedString("duckai.dax-pet.permission.finding", value: "Duck.ai would like to look for “%@” on the page. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to search a web page. %@ is the text it looks for. Clicking Dax brings the chat forward"), words)
     }
     static let daxPetPermissionAny = NSLocalizedString("duckai.dax-pet.permission.any", value: "Duck.ai needs your OK in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to use the browser. Clicking Dax brings the chat forward")
-    static let daxPetCompareReady = NSLocalizedString("duckai.dax-pet.compare.ready", value: "I'll send these tabs along. Press Return, or click one to leave it out.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, after he picked the open tabs to send to Duck.ai for a comparison. They show as icons in his prompt field")
-    static func daxPetCompareLeaveOut(_ title: String) -> String {
-        String(format: NSLocalizedString("duckai.dax-pet.compare.leave-out", value: "Leave Out “%@”", comment: "Tooltip of a tab's icon in the prompt field of Dax, the DuckDuckGo mascot; clicking it leaves the tab out of the comparison sent to Duck.ai. %@ is the tab's title"), title)
-    }
+    static let daxPetCompareReady = NSLocalizedString("duckai.dax-pet.compare.ready", value: "I'll send these tabs along. Press Return when you're ready.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, after he picked the open tabs to send to Duck.ai for a comparison. They show in a card above him, each with a button to leave it out")
     static let daxPetShowWhere = NSLocalizedString("duckai.dax-pet.show-where", value: "Show Me Where", comment: "Button under the speech bubble where Dax, the DuckDuckGo mascot, sums up the page open in the browser; it highlights on the page the sentence his summary comes from")
     static let daxPetShowWhereFound = NSLocalizedString("duckai.dax-pet.show-where.found", value: "Right there!", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, after he highlighted on the page the sentence his summary comes from")
     static let daxPetShowWhereMissed = NSLocalizedString("duckai.dax-pet.show-where.missed", value: "Hmm, I can't spot it on the page anymore.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, when he couldn't find on the page the sentence his summary comes from, e.g. because the page changed")
@@ -832,6 +828,16 @@ struct UserText {
     static let daxPetDropRecap = NSLocalizedString("duckai.dax-pet.drop.recap", value: "Recap It", comment: "Button by Dax, the DuckDuckGo mascot, that asks Duck.ai to recap the page of a link dropped on him")
     static let daxPetRecapPrompt = NSLocalizedString("duckai.dax-pet.recap.prompt", value: "Recap this page", comment: "Prompt sent to Duck.ai with a page the user dropped on Dax, the DuckDuckGo mascot, and asked him to recap")
     static let daxPetFoundOpenInATab = NSLocalizedString("duckai.dax-pet.found.open-in-a-tab", value: "Open in a tab", comment: "Under the title of a tab Dax, the DuckDuckGo mascot, found for the user, after the site's name: the page is open in a browser tab right now")
+    static let daxPetContextHeader = NSLocalizedString("duckai.dax-pet.context.header", value: "Going along with your question:", comment: "Heading of the card above Dax, the DuckDuckGo mascot, listing what will be sent to Duck.ai with the question: tabs, dropped text, links, images or files")
+    static let daxPetContextText = NSLocalizedString("duckai.dax-pet.context.text", value: "Text", comment: "Under dropped text in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question")
+    static let daxPetContextLink = NSLocalizedString("duckai.dax-pet.context.link", value: "Link", comment: "Under a dropped link in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question")
+    static let daxPetContextImage = NSLocalizedString("duckai.dax-pet.context.image", value: "Image", comment: "Under an image or screenshot in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question")
+    static func daxPetContextFile(_ size: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.context.file", value: "File · %@", comment: "Under a dropped file in the card above Dax, the DuckDuckGo mascot, listing what goes to Duck.ai with the question. %@ is its size, e.g. 2 MB"), size)
+    }
+    static func daxPetContextRemove(_ title: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.context.remove", value: "Leave Out “%@”", comment: "Tooltip of the ✕ beside a tab, text, link, image or file in the card above Dax, the DuckDuckGo mascot; it leaves it out of what goes to Duck.ai. %@ is its name"), title)
+    }
     static let daxPetPromptPlaceholder = NSLocalizedString("duckai.dax-pet.prompt.placeholder", value: "Ask Dax anything…", comment: "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetAsk = NSLocalizedString("duckai.dax-pet.ask", value: "Ask Dax", comment: "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetSend = NSLocalizedString("duckai.dax-pet.send", value: "Send", comment: "Tooltip of the button that sends the question typed for Dax to Duck.ai")

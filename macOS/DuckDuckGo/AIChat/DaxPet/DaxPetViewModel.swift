@@ -58,6 +58,25 @@ struct DaxPetPageContent: Equatable {
     let text: String
 }
 
+/// Something going along with the question, shown as a row in the card above Dax.
+struct DaxPetContextItem: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case tab
+        case text
+        case link
+        case image
+        case file
+    }
+
+    let id: String
+    let kind: Kind
+    let title: String
+    /// What it is, and where from.
+    let detail: String
+    /// A tab's favicon or an image's thumbnail; the others show their kind's icon.
+    let image: NSImage?
+}
+
 /// A dropped link the browser already knows: open in a tab, or visited before.
 enum DaxPetDropOffer: Equatable {
     case openTab(DaxPetTab)
@@ -785,6 +804,45 @@ final class DaxPetViewModel: ObservableObject {
         updateLookTarget()
     }
 
+    /// The tabs to compare, then what was dropped or captured, as they show above Dax.
+    var contextItems: [DaxPetContextItem] {
+        comparedTabs.map { tab in
+            DaxPetContextItem(id: tab.id, kind: .tab, title: tab.title, detail: Self.site(of: tab.url), image: tab.favicon)
+        } + attachments.map(Self.contextItem)
+    }
+
+    /// Leaves one tab or attachment out of the question.
+    func removeContext(_ id: String) {
+        if let tab = comparedTabs.first(where: { $0.id == id }) {
+            return leaveOut(tab)
+        }
+        attachments.removeAll { $0.id.uuidString == id }
+        if attachments.isEmpty {
+            clearSuggestions()
+        }
+        updateLookTarget()
+    }
+
+    private static func contextItem(for attachment: DaxPetAttachment) -> DaxPetContextItem {
+        let id = attachment.id.uuidString
+        switch attachment {
+        case .text(_, let text):
+            let firstLine = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? text
+            return DaxPetContextItem(id: id, kind: .text, title: String(firstLine.prefix(80)), detail: UserText.daxPetContextText, image: nil)
+        case .link(_, let url):
+            return DaxPetContextItem(id: id, kind: .link, title: site(of: url) + url.path, detail: UserText.daxPetContextLink, image: nil)
+        case .image(let image):
+            return DaxPetContextItem(id: id, kind: .image, title: image.fileName, detail: UserText.daxPetContextImage, image: image.image)
+        case .file(let file):
+            let size = ByteCountFormatter.string(fromByteCount: Int64(file.fileSizeBytes), countStyle: .file)
+            return DaxPetContextItem(id: id, kind: .file, title: file.fileName, detail: UserText.daxPetContextFile(size), image: nil)
+        }
+    }
+
+    static func site(of url: URL) -> String {
+        url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? url.absoluteString
+    }
+
     /// A single dropped link that's open in a tab, or that was visited, as long as Dax may look at the history.
     private func offer(for attachments: [DaxPetAttachment]) -> DaxPetDropOffer? {
         guard let browsing, attachments.count == 1, case .link(_, let url) = attachments[0] else { return nil }
@@ -996,8 +1054,7 @@ final class DaxPetViewModel: ObservableObject {
 
     private func updateLookTarget() {
         let width = (prompt as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13)]).width
-        character.lookTarget = caretLocation?(width + DaxPetView.Metrics.attachmentsWidth(count: attachments.count)
-                                              + DaxPetView.Metrics.tabChipsWidth(count: comparedTabs.count))
+        character.lookTarget = caretLocation?(width + DaxPetView.Metrics.contextPillWidth(count: attachments.count + comparedTabs.count))
     }
 
     private func showHearts() {

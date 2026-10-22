@@ -295,6 +295,52 @@ final class TabOrganizerViewModel: ObservableObject {
         tabCollectionViewModel.select(at: index)
     }
 
+    // MARK: Group menus
+
+    /// Acts on an existing tab group straight away, then refreshes the list.
+    func perform(_ operation: TabGroupOperations.Operation, onExistingGroupNamed name: String) {
+        guard let group = tabCollectionViewModel.tabGroupManager.groups.first(where: { $0.name == name }) else { return }
+        TabGroupOperations(tabCollectionViewModel: tabCollectionViewModel).perform(operation, on: group)
+        tabs = TabSnapshotProvider.snapshots(in: tabCollectionViewModel)
+    }
+
+    func isExistingGroupCollapsed(named name: String) -> Bool {
+        tabCollectionViewModel.tabGroupManager.groups.first { $0.name == name }
+            .map(tabCollectionViewModel.tabGroupManager.isCollapsed) ?? false
+    }
+
+    func renameProposedGroup(_ group: ProposedGroup) {
+        guard let name = TabGroupOperations.askForName(current: group.name)?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !name.isEmpty, let index = groups.firstIndex(where: { $0.id == group.id }) else { return }
+        groups[index].name = name
+    }
+
+    func merge(_ group: ProposedGroup, into target: ProposedGroup) {
+        guard let targetIndex = groups.firstIndex(where: { $0.id == target.id }) else { return }
+        groups[targetIndex].tabIDs += group.tabIDs.filter { !groups[targetIndex].tabIDs.contains($0) }
+        groups.removeAll { $0.id == group.id }
+    }
+
+    func moveTabToNewGroup(_ tabID: String) {
+        let action = groups.first { $0.tabIDs.contains(tabID) }?.action ?? .createTabGroup
+        for index in groups.indices {
+            groups[index].tabIDs.removeAll { $0 == tabID }
+        }
+        groups.append(ProposedGroup(name: "New group", tabIDs: [tabID], action: action == .keep ? .createTabGroup : action))
+    }
+
+    /// Takes a tab out of whatever its group would do.
+    func keepTab(_ tabID: String) {
+        if let index = groups.firstIndex(where: { isLeftover($0) }) {
+            moveTab(tabID, toGroupWithID: groups[index].id)
+        } else {
+            for index in groups.indices {
+                groups[index].tabIDs.removeAll { $0 == tabID }
+            }
+            groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: [tabID], action: .keep))
+        }
+    }
+
     /// Drag and drop between groups. Empty groups stay so a tab can be dragged back.
     func moveTab(_ tabID: String, toGroupWithID groupID: UUID) {
         guard groups.contains(where: { $0.id == groupID }), groups.contains(where: { $0.tabIDs.contains(tabID) }) else { return }
@@ -529,6 +575,10 @@ struct TabOrganizerView: View {
                                     Text(name).font(.headline)
                                 }
                                 Text("\(section.tabs.count)").foregroundColor(.secondary)
+                                Spacer()
+                                if section.color != nil {
+                                    existingGroupMenu(named: name)
+                                }
                             }
                             .padding(.top, 10)
                             .padding(.bottom, 2)
@@ -661,6 +711,18 @@ struct TabOrganizerView: View {
         .padding(.leading, 20)
         .opacity(isUnchanged ? 0.45 : 1)
         .onDrag { NSItemProvider(object: tab.id as NSString) }
+        .contextMenu {
+            Menu("Move to") {
+                ForEach(viewModel.groups.filter { $0.id != group.id }) { other in
+                    Button(other.name) { viewModel.moveTab(tab.id, toGroupWithID: other.id) }
+                }
+                Divider()
+                Button("New group") { viewModel.moveTabToNewGroup(tab.id) }
+            }
+            if !viewModel.isLeftover(group) {
+                Button("Keep this tab") { viewModel.keepTab(tab.id) }
+            }
+        }
     }
 
     private func groupHeader(_ group: ProposedGroup) -> some View {
@@ -693,8 +755,39 @@ struct TabOrganizerView: View {
             .labelsHidden()
             .pickerStyle(.menu)
             .fixedSize()
+            Menu {
+                Button("Rename…") { viewModel.renameProposedGroup(group) }
+                let others = viewModel.groups.filter { $0.id != group.id }
+                if !others.isEmpty {
+                    Menu("Merge into") {
+                        ForEach(others) { other in
+                            Button(other.name) { viewModel.merge(group, into: other) }
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
         }
         .padding(.top, 8)
+    }
+
+    private func existingGroupMenu(named name: String) -> some View {
+        Menu {
+            ForEach(TabGroupOperations.Operation.allCases, id: \.self) { operation in
+                Button(operation.title(isCollapsed: viewModel.isExistingGroupCollapsed(named: name))) {
+                    viewModel.perform(operation, onExistingGroupNamed: name)
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
     }
 
     private var footer: some View {

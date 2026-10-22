@@ -459,6 +459,7 @@
 		5B00B8E09E208BA016D88554 /* TabOrganizerDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */; };
 		D554A5E8E9EECD58A507D0E9 /* TabOrganizerPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */; };
 		FB8B56EE351EA6527EA3C8F5 /* TabOrganizerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */; };
+		A9361E52E13F779F10CBBCEF /* TabGroupOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */; };
 		9A5E22049423068CB0691679 /* TabOrganizerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5273963E8AABCE4D3382A5 /* TabOrganizerModels.swift */; };
 		C19D608D6BB5148A49931EBC /* TabOrganizerProposalBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F62C3A7DDBF1C4550C7E170 /* TabOrganizerProposalBuilder.swift */; };
 		DF88409E633D91C839952C70 /* TabSnapshotProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30BA6E9AD0574ACDE19C5A51 /* TabSnapshotProvider.swift */; };
@@ -466,6 +467,7 @@
 		A8A9D4496E78CB9C385CB66C /* TabOrganizerDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */; };
 		EDE153711096A09910B621A7 /* TabOrganizerPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */; };
 		24F66710724640D5FBB2DCDA /* TabOrganizerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */; };
+		15AAF6BF937BD4B21FC28382 /* TabGroupOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */; };
 		31A2FD172BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */; };
 		31A2FD182BAB43BA00D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */; };
 		31A83FB52BE28D7D00F74E67 /* UserText+DBP.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A83FB42BE28D7D00F74E67 /* UserText+DBP.swift */; };
@@ -5477,6 +5479,7 @@
 		043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerDebugMenu.swift; sourceTree = "<group>"; };
 		228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerPopover.swift; sourceTree = "<group>"; };
 		25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerActions.swift; sourceTree = "<group>"; };
+		D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabGroupOperations.swift; sourceTree = "<group>"; };
 		31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionFeatureGatekeeperTests.swift; sourceTree = "<group>"; };
 		31A83FB42BE28D7D00F74E67 /* UserText+DBP.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UserText+DBP.swift"; sourceTree = "<group>"; };
 		31AA6B962B960B870025014E /* DataBrokerProtectionLoginItemPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionLoginItemPixels.swift; sourceTree = "<group>"; };
@@ -12450,6 +12453,7 @@
 				043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */,
 				228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */,
 				25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */,
+				D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */,
 			);
 			path = TabOrganizer;
 			sourceTree = "<group>";
@@ -16447,6 +16451,7 @@
 				A8A9D4496E78CB9C385CB66C /* TabOrganizerDebugMenu.swift in Sources */,
 				EDE153711096A09910B621A7 /* TabOrganizerPopover.swift in Sources */,
 				24F66710724640D5FBB2DCDA /* TabOrganizerActions.swift in Sources */,
+				15AAF6BF937BD4B21FC28382 /* TabGroupOperations.swift in Sources */,
 				3706FB4C293F65D500E42796 /* SharingMenu.swift in Sources */,
 				3706FB4D293F65D500E42796 /* GrammarFeaturesManager.swift in Sources */,
 				37E3E8022DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */,
@@ -19429,6 +19434,7 @@
 				5B00B8E09E208BA016D88554 /* TabOrganizerDebugMenu.swift in Sources */,
 				D554A5E8E9EECD58A507D0E9 /* TabOrganizerPopover.swift in Sources */,
 				FB8B56EE351EA6527EA3C8F5 /* TabOrganizerActions.swift in Sources */,
+				A9361E52E13F779F10CBBCEF /* TabGroupOperations.swift in Sources */,
 				EE098E772C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
 				25FCC6C5DD9571F521AA50F2 /* AutofillImportPromoObserver.swift in Sources */,
 				3199AF6F2C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,

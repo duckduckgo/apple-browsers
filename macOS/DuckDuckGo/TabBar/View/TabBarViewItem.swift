@@ -126,6 +126,13 @@ protocol TabBarViewItemDelegate: AnyObject {
     // Tab Groups
     @MainActor func tabBarViewItemCurrentTabGroup(_ tabBarViewItem: TabBarViewItem) -> TabGroup?
     @MainActor func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem)
+    @MainActor func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, perform operation: TabGroupOperations.Operation)
+    @MainActor func tabBarViewItemIsGroupCollapsed(_ tabBarViewItem: TabBarViewItem) -> Bool
+}
+
+extension TabBarViewItemDelegate {
+    func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, perform operation: TabGroupOperations.Operation) {}
+    func tabBarViewItemIsGroupCollapsed(_ tabBarViewItem: TabBarViewItem) -> Bool { false }
 }
 
 final class TabBarItemCellView: NSView {
@@ -1284,6 +1291,21 @@ extension TabBarViewItem: NSMenuDelegate {
 
         // Initial setup
         menu.removeAllItems()
+
+        // A group header gets the group's menu instead of the tab menu.
+        if currentHeaderGroup != nil {
+            let isCollapsed = delegate?.tabBarViewItemIsGroupCollapsed(self) ?? false
+            for operation in TabGroupOperations.Operation.allCases {
+                if operation == .moveToNewWindow || operation == .close {
+                    menu.addItem(.separator())
+                }
+                let item = NSMenuItem(title: operation.title(isCollapsed: isCollapsed), action: #selector(groupOperationAction(_:)), keyEquivalent: "")
+                item.target = self
+                item.representedObject = operation
+                menu.addItem(item)
+            }
+            return
+        }
         let otherItemsState = delegate?.otherTabBarViewItemsState(for: self) ?? .init(hasItemsToTheLeft: true,
                                                                                       hasItemsToTheRight: true)
         let areThereOtherTabs = otherItemsState.hasItemsToTheLeft || otherItemsState.hasItemsToTheRight
@@ -1533,6 +1555,11 @@ extension TabBarViewItem {
         let tabGroupsMenuItem = NSMenuItem(title: title, action: #selector(manageTabGroupsAction(_:)), keyEquivalent: "")
         tabGroupsMenuItem.target = self
         menu.addItem(tabGroupsMenuItem)
+    }
+
+    @objc fileprivate func groupOperationAction(_ sender: NSMenuItem) {
+        guard let operation = sender.representedObject as? TabGroupOperations.Operation else { return }
+        delegate?.tabBarViewItem(self, perform: operation)
     }
 
     @objc private func manageTabGroupsAction(_ sender: NSMenuItem) {

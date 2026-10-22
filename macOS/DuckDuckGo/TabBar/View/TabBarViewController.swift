@@ -3635,6 +3635,15 @@ extension TabBarViewController: TabBarViewItemDelegate {
         return tabCollectionViewModel.tabGroupManager.group(for: tab)
     }
 
+    func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, perform operation: TabGroupOperations.Operation) {
+        guard let group = tabBarViewItem.currentHeaderGroup else { return }
+        TabGroupOperations(tabCollectionViewModel: tabCollectionViewModel).perform(operation, on: group)
+    }
+
+    func tabBarViewItemIsGroupCollapsed(_ tabBarViewItem: TabBarViewItem) -> Bool {
+        tabBarViewItem.currentHeaderGroup.map(tabCollectionViewModel.tabGroupManager.isCollapsed) ?? false
+    }
+
     func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem) {
         guard let tab = tab(for: tabBarViewItem),
               let window = view.window else { return }

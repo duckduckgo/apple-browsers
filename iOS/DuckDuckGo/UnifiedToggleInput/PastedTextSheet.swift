@@ -19,6 +19,7 @@
 
 import AIChat
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import UIKit
 
@@ -31,6 +32,13 @@ enum PastedTextSheetMode: Equatable {
 enum PastedTextSheetOutcome: Equatable {
     case saved(AIChatPastedText)
     case unchanged
+}
+
+struct PastedTextSheetSubtitle: Equatable {
+    let count: Int
+    let limit: Int
+
+    var isOverLimit: Bool { count > limit }
 }
 
 struct PastedTextSheetRules: Equatable {
@@ -50,6 +58,14 @@ struct PastedTextSheetRules: Equatable {
     }
 
     var opensWithKeyboard: Bool { mode != .viewOnly }
+
+    var title: String { mode == .viewOnly ? UserText.aiChatPastedTextSheetTitle : UserText.aiChatPastedTextEditSheetTitle }
+
+    /// The view-only sheet has no limit to count against, so it carries no subtitle.
+    func subtitle(for text: String) -> PastedTextSheetSubtitle? {
+        guard case .editable(let limit) = mode else { return nil }
+        return PastedTextSheetSubtitle(count: count(of: text), limit: limit)
+    }
 
     func hasUnsavedEdits(_ text: String) -> Bool {
         mode != .viewOnly && text != original.content
@@ -84,64 +100,141 @@ struct PastedTextSheetView: View {
     private var isViewOnly: Bool { rules.mode == .viewOnly }
 
     var body: some View {
-        NavigationView {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(UserText.aiChatPastedTextFormattingNote)
-                    .daxFootnoteRegular()
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-
-                Group {
-                    if isViewOnly {
-                        PastedTextReadOnlyView(text: text)
-                    } else {
-                        TextEditor(text: $text)
-                            .daxBodyRegular()
-                            .focused($isTextFocused)
-                    }
-                }
-                .accessibilityIdentifier("PastedTextSheet.TextView")
-                .overlay(RoundedRectangle(cornerRadius: 8).stroke(Color(designSystemColor: .lines)))
-
-                Text(countLine)
-                    .daxFootnoteRegular()
-                    .accessibilityIdentifier("PastedTextSheet.Count")
-            }
-            .padding(16)
-            .onAppear { isTextFocused = rules.opensWithKeyboard }
-            .onChange(of: text) { onUnsavedEditsChanged(rules.hasUnsavedEdits($0)) }
-            .navigationTitle(UserText.aiChatPastedTextSheetTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(isViewOnly ? UserText.navigationTitleDone : UserText.actionCancel, action: onCancel)
-                        .accessibilityIdentifier("PastedTextSheet.Cancel")
-                }
-                if !isViewOnly {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(UserText.actionSave) { onSave(text) }
-                            .disabled(!rules.canSave(text))
-                            .accessibilityIdentifier("PastedTextSheet.Save")
-                    }
+        VStack(spacing: 0) {
+            header
+            Group {
+                if isViewOnly {
+                    PastedTextReadOnlyView(text: text)
+                } else {
+                    TextEditor(text: $text)
+                        .font(Font(PastedTextSheetMetrics.bodyFont()))
+                        .lineSpacing(PastedTextSheetMetrics.bodyLineSpacing())
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .modifier(HiddenScrollContentBackground())
+                        .focused($isTextFocused)
                 }
             }
+            .accessibilityIdentifier("PastedTextSheet.TextView")
+            .padding(.horizontal, PastedTextSheetMetrics.bodyHorizontalPadding)
+            .padding(.top, PastedTextSheetMetrics.bodyTopPadding)
         }
-        .navigationViewStyle(.stack)
+        .background(Color(designSystemColor: .backgroundTertiary).ignoresSafeArea())
+        .onAppear { isTextFocused = rules.opensWithKeyboard }
+        .onChange(of: text) { onUnsavedEditsChanged(rules.hasUnsavedEdits($0)) }
     }
 
-    private var countLine: AttributedString {
-        let count = rules.count(of: text)
-        let secondary = Color(designSystemColor: .textSecondary)
-        guard case .editable(let limit) = rules.mode, rules.isOverLimit(text) else {
-            var line = AttributedString(UserText.aiChatPastedTextCharacterCount(count))
-            line.foregroundColor = secondary
-            return line
+    /// A solid header of its own rather than a navigation bar, so the text never scrolls under a blurred bar.
+    private var header: some View {
+        ZStack(alignment: .top) {
+            HStack {
+                PastedTextSheetCircleButton(glyph: DesignSystemImages.Glyphs.Size24.close, style: .plain, action: onCancel)
+                    .accessibilityLabel(isViewOnly ? UserText.navigationTitleDone : UserText.actionCancel)
+                    .accessibilityIdentifier("PastedTextSheet.Cancel")
+                Spacer()
+                if !isViewOnly {
+                    PastedTextSheetCircleButton(glyph: DesignSystemImages.Glyphs.Size24.check, style: .prominent) { onSave(text) }
+                        .disabled(!rules.canSave(text))
+                        .accessibilityLabel(UserText.actionSave)
+                        .accessibilityIdentifier("PastedTextSheet.Save")
+                }
+            }
+            VStack(spacing: 0) {
+                Text(rules.title)
+                    .daxButton()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .accessibilityAddTraits(.isHeader)
+                if let subtitle = rules.subtitle(for: text) {
+                    Text(Self.attributed(subtitle))
+                        .daxCaption1()
+                        .accessibilityIdentifier("PastedTextSheet.Count")
+                }
+            }
+            .lineLimit(1)
+            .padding(.top, PastedTextSheetMetrics.titleTopPadding)
         }
-        var line = AttributedString(UserText.aiChatPastedTextOverLimitCount(count: count, limit: limit))
-        line.foregroundColor = secondary
-        if let range = line.range(of: String(count)) {
-            line[range].foregroundColor = Color(designSystemColor: .destructivePrimary)
+        .padding(.horizontal, PastedTextSheetMetrics.headerHorizontalPadding)
+        .padding(.top, PastedTextSheetMetrics.grabberHeight)
+        .padding(.bottom, PastedTextSheetMetrics.headerBottomPadding)
+    }
+
+    static func attributed(_ subtitle: PastedTextSheetSubtitle) -> AttributedString {
+        let countText = String(subtitle.count)
+        var line = AttributedString(String(format: UserText.aiChatPastedTextCountFormat, subtitle.count, subtitle.limit))
+        line.foregroundColor = Color(designSystemColor: .textSecondary)
+        if let range = line.range(of: countText) {
+            line[range].foregroundColor = Color(designSystemColor: subtitle.isOverLimit ? .destructivePrimary : .textPrimary)
         }
         return line
+    }
+}
+
+private enum PastedTextSheetMetrics {
+    static let grabberHeight: CGFloat = 16
+    static let headerHorizontalPadding: CGFloat = 16
+    static let headerBottomPadding: CGFloat = 10
+    static let titleTopPadding: CGFloat = 5
+    static let buttonSize: CGFloat = 44
+    /// UITextView pads 8pt above the first line and 5pt before each line, so these land the text 16pt below the header and 32pt from the edges.
+    static let bodyHorizontalPadding: CGFloat = 27
+    static let bodyTopPadding: CGFloat = 8
+    static let bodyFontSize: CGFloat = 16
+    static let bodyLineHeight: CGFloat = 24
+
+    static func bodyFont() -> UIFont {
+        let font = UIFont(name: "DuckSansProduct-Regular", size: bodyFontSize) ?? .systemFont(ofSize: bodyFontSize)
+        return UIFontMetrics(forTextStyle: .body).scaledFont(for: font)
+    }
+
+    static func bodyLineSpacing() -> CGFloat {
+        max(0, UIFontMetrics(forTextStyle: .body).scaledValue(for: bodyLineHeight) - bodyFont().lineHeight)
+    }
+}
+
+private struct HiddenScrollContentBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.scrollContentBackground(.hidden)
+        } else {
+            content
+        }
+    }
+}
+
+private struct PastedTextSheetCircleButton: View {
+    enum Style {
+        case plain
+        case prominent
+    }
+
+    let glyph: UIImage
+    let style: Style
+    let action: () -> Void
+    @Environment(\.isEnabled) private var isEnabled
+
+    private var isProminent: Bool { style == .prominent && isEnabled }
+
+    var body: some View {
+        Button(action: action) {
+            Image(uiImage: glyph)
+                .renderingMode(.template)
+                .foregroundColor(Color(designSystemColor: isProminent ? .accentContentPrimary : (isEnabled ? .icons : .iconsTertiary)))
+                .frame(width: PastedTextSheetMetrics.buttonSize, height: PastedTextSheetMetrics.buttonSize)
+                .modifier(PastedTextSheetCircleBackground(isProminent: isProminent))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct PastedTextSheetCircleBackground: ViewModifier {
+    let isProminent: Bool
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(isProminent ? .regular.tint(Color(designSystemColor: .accentPrimary)).interactive() : .regular.interactive(),
+                                in: Circle())
+        } else {
+            content.background(Circle().fill(Color(designSystemColor: isProminent ? .accentPrimary : .controlsFillPrimary)))
+        }
     }
 }
 
@@ -153,16 +246,19 @@ private struct PastedTextReadOnlyView: UIViewRepresentable {
         let textView = UITextView()
         textView.isEditable = false
         textView.isSelectable = true
-        textView.font = .daxBodyRegular()
-        textView.adjustsFontForContentSizeCategory = true
         textView.backgroundColor = .clear
         return textView
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        if textView.text != text {
-            textView.text = text
-        }
+        guard textView.text != text else { return }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineSpacing = PastedTextSheetMetrics.bodyLineSpacing()
+        textView.attributedText = NSAttributedString(string: text, attributes: [
+            .font: PastedTextSheetMetrics.bodyFont(),
+            .foregroundColor: UIColor(designSystemColor: .textPrimary),
+            .paragraphStyle: paragraph
+        ])
     }
 }
 

@@ -141,6 +141,19 @@ final class UTIPromptLengthGateTests: XCTestCase {
         XCTAssertEqual(gate.sheetLimit(for: paste), 0, "Clamped for display; Save stays off above it")
     }
 
+    func testSheetCountsThePasteAgainstTheLowerLimitWhileAnImageIsAttached() {
+        let gate = makeGate()
+        attachmentLimits = makeLimits(maxInputCharsWithAttachments: 4_500)
+        let paste = AIChatPastedText(content: text(4_000))
+        attachments = [.pastedText(paste), .image(AIChatImageAttachment(image: UIImage(), fileName: "a.jpg"))]
+        promptText = text(100)
+
+        let rules = PastedTextSheetRules(original: paste, mode: .editable(limit: gate.sheetLimit(for: paste)))
+
+        XCTAssertEqual(rules.subtitle(for: paste.content), PastedTextSheetSubtitle(count: 4_000, limit: 4_400))
+        XCTAssertEqual(rules.subtitle(for: text(4_401))?.isOverLimit, true)
+    }
+
     private func makeLimits(maxInputCharsWithAttachments: Int) -> AIChatAttachmentTierLimits {
         AIChatAttachmentTierLimits(
             files: AIChatAttachmentFileLimits(maxPerConversation: 3, maxFileSizeMB: 5, maxTotalFileSizeBytes: 5_242_880, maxPagesPerFile: 8),

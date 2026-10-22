@@ -77,7 +77,6 @@ final class NavigationDelayWideEventData: WideEventData {
     }
 
     enum PrimaryCause: String, Codable, CaseIterable {
-        case none
         case webExtension = "web_extension"
         case contentBlocking = "content_blocking"
         case unattributed
@@ -139,12 +138,19 @@ final class NavigationDelayWideEventData: WideEventData {
 
 extension NavigationDelayWideEventData {
 
-    static let durationThresholds = [0, 100, 250, 500, 1_000, 2_500, 5_000, 10_000]
+    static let bucketUpperBounds = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1_000, 2_500, 5_000, 10_000]
+    static let overflowBucket = "10000+"
 
-    /// Below this a hold isn't perceptible, so a `later_held` navigation is dropped rather than sent.
-    static let heldThresholdMs = 100
+    /// Later navigations in the same web view are only worth sending above this, so ordinary page loads aren't sent.
+    static let laterHeldThresholdMs = 100
 
     var holdMs: Int? { holdInterval.durationMilliseconds }
+
+    /// A wait ran and took measurable time. A decision made without waiting isn't a delay, so it isn't sent.
+    var wasHeld: Bool {
+        guard webExtensionWait != nil || contentBlockingWait != nil, let holdMs else { return false }
+        return holdMs > 0
+    }
     var webExtensionWaitMs: Int? { webExtensionWait?.durationMilliseconds }
 
     var contentBlockingWaitMs: Int? {
@@ -159,8 +165,7 @@ extension NavigationDelayWideEventData {
     }
 
     var primaryCause: PrimaryCause? {
-        guard let holdMs else { return nil }
-        guard holdMs >= Self.heldThresholdMs else { return PrimaryCause.none }
+        guard holdMs != nil else { return nil }
         let candidates: [(PrimaryCause, Int)] = [
             (.webExtension, webExtensionWaitMs ?? 0),
             (.contentBlocking, contentBlockingWaitMs ?? 0),
@@ -169,9 +174,12 @@ extension NavigationDelayWideEventData {
         return candidates.max(by: { $0.1 < $1.1 })?.0
     }
 
-    /// The lower end of the bucket `ms` falls in.
+    /// The upper end of the bucket `ms` falls in, so any delay at all reads as at least `100`. `0` means no time.
     private func bucketed(_ ms: Int?) -> String? {
-        ms.map { ms in String(Self.durationThresholds.last(where: { $0 <= ms }) ?? 0) }
+        ms.map { ms in
+            guard ms > 0 else { return "0" }
+            return Self.bucketUpperBounds.first(where: { ms <= $0 }).map(String.init) ?? Self.overflowBucket
+        }
     }
 
     func jsonParameters() -> [String: Encodable] {

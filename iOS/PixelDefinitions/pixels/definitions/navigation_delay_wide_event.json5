@@ -1,6 +1,6 @@
 {
     "m_ios_wide_navigation_delay": {
-        "description": "Wide pixel sent when the app finishes deciding a main-frame http(s) navigation: how long the decision was held before WebKit could start loading the page, split by what held it. Sent for the first navigation of each launch, the first in each new web view, and any later navigation held for at least 100ms.",
+        "description": "Wide pixel sent when the app finishes deciding a main-frame http(s) navigation: how long the decision was held before WebKit could start loading the page, split by what held it. Sent only when the navigation was held: a wait ran and the hold lasted at least 1ms. Covers the first navigation of each launch, the first in each new web view, and any later navigation held for more than 100ms.",
         "owners": ["samsymons"],
         "triggers": ["page_load", "startup", "new_tab"],
         "suffixes": ["daily"],
@@ -50,7 +50,7 @@
             {
                 "key": "feature.data.ext.navigation_scope",
                 "type": "string",
-                "description": "first_in_launch: the first main-frame http(s) navigation since launch. first_in_web_view: the first in a newly created web view. later_held: any other navigation, sent only when held for at least 100ms.",
+                "description": "first_in_launch: the first main-frame http(s) navigation since launch. first_in_web_view: the first in a newly created web view. later_held: any other navigation, sent only when held for more than 100ms.",
                 "enum": ["first_in_launch", "first_in_web_view", "later_held"]
             },
             {
@@ -73,8 +73,8 @@
             {
                 "keyPattern": "^feature\\.data\\.ext\\.(hold|web_extension_wait|content_blocking_wait|unattributed)_ms_bucketed$",
                 "type": "string",
-                "description": "Durations within the hold (lower end of bucket, in ms). hold: the total. web_extension_wait: the Web Extension startup hold, absent when it does not apply. content_blocking_wait: waiting for content blocking assets, 0 when no wait was needed. unattributed: the total minus the named waits.",
-                "enum": ["0", "100", "250", "500", "1000", "2500", "5000", "10000"]
+                "description": "Durations within the hold (upper end of bucket, in ms; 10000+ above 10s). hold: the total. web_extension_wait: the Web Extension startup hold, absent when it does not apply. content_blocking_wait: waiting for content blocking assets, 0 when no wait was needed. unattributed: the total minus the named waits.",
+                "enum": ["0", "100", "200", "300", "400", "500", "600", "700", "800", "900", "1000", "2500", "5000", "10000", "10000+"]
             },
             {
                 "key": "feature.data.ext.content_blocking_wait_path",
@@ -85,8 +85,8 @@
             {
                 "key": "feature.data.ext.primary_cause",
                 "type": "string",
-                "description": "The longest part of the hold. none: the hold was under 100ms.",
-                "enum": ["none", "web_extension", "content_blocking", "unattributed"]
+                "description": "The longest part of the hold.",
+                "enum": ["web_extension", "content_blocking", "unattributed"]
             }
         ]
     }

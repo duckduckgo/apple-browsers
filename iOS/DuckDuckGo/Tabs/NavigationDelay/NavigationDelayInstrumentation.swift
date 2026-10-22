@@ -71,6 +71,10 @@ final class NavigationDelayInstrumentation {
         wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
     }
 
+    fileprivate func discard(_ data: NavigationDelayWideEventData) {
+        wideEvent.discardFlow(data)
+    }
+
     private func completeOrphanedFlowsFromPreviousAppSession() {
         for orphan in wideEvent.getAllFlowData(NavigationDelayWideEventData.self) {
             wideEvent.completeFlow(orphan,
@@ -93,8 +97,8 @@ final class NavigationDelayTracker {
     private struct Measurement {
         let id: UUID
         let data: NavigationDelayWideEventData
-        /// First navigations are saved when they start, so one cut short by termination is sent as UNKNOWN next launch.
-        /// Later ones are only worth sending if they turn out to be held, so they stay in memory until then.
+        /// First navigations are saved when they start, so one cut short by termination is sent as UNKNOWN next launch,
+        /// and discarded if they turn out not to be held. Later ones stay in memory until they're known to be held.
         let isPersisted: Bool
         var timedOut = false
         var holdCancelled = false
@@ -214,8 +218,14 @@ final class NavigationDelayTracker {
         data.webExtensionWait?.completeIfOpen()
         data.contentBlockingWait?.completeIfOpen()
 
+        guard data.wasHeld else {
+            if measurement.isPersisted {
+                instrumentation.discard(data)
+            }
+            return
+        }
         if !measurement.isPersisted {
-            guard let holdMs = data.holdMs, holdMs >= NavigationDelayWideEventData.heldThresholdMs else { return }
+            guard let holdMs = data.holdMs, holdMs > NavigationDelayWideEventData.laterHeldThresholdMs else { return }
             instrumentation.start(data)
         }
         instrumentation.complete(data, status: status)

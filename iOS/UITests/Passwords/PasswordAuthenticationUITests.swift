@@ -27,6 +27,7 @@ final class PasswordAuthenticationUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        app.dismissAddressBarEditing()
         app.resetPasswords()
     }
 

@@ -85,6 +85,54 @@
         }
       }
     },
+    "duckai.dax-pet.drop.go-to-tab" : {
+      "comment" : "Button by Dax, the DuckDuckGo mascot, that brings forward the tab where a link dropped on him is already open",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Go to the Tab"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.drop.open-tab" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when a link dropped on him is already open in a browser tab. Buttons below go to the tab or recap it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "That's open in a tab already!"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.drop.recap" : {
+      "comment" : "Button by Dax, the DuckDuckGo mascot, that asks Duck.ai to recap the page of a link dropped on him",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recap It"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.drop.visited" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when a link dropped on him was visited before. %@ says when, relative to now, e.g. yesterday or 3 days ago",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You visited this %@. Want a recap?"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.found.ask-duck-ai" : {
       "comment" : "Button next to the tabs or pages Dax, the DuckDuckGo mascot, found for the user; it sends their question to Duck.ai instead",
       "extractionState" : "extracted_with_value",
@@ -261,6 +309,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai would like to see your open tabs. Answer it in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.recap.prompt" : {
+      "comment" : "Prompt sent to Duck.ai with a page the user dropped on Dax, the DuckDuckGo mascot, and asked him to recap",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Recap this page"
           }
         }
       }

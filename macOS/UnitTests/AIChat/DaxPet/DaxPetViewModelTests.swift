@@ -69,6 +69,12 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
         return showOnPageResult
     }
 
+    var askedAbout: [(request: String, tab: DaxPetTab)] = []
+    func ask(_ request: String, about tab: DaxPetTab) async -> Bool {
+        askedAbout.append((request, tab))
+        return true
+    }
+
     var canCompareTabs = true
     var compareResult = true
     var comparisons: [(prompt: String, tabs: [DaxPetTab])] = []
@@ -164,6 +170,11 @@ private final class StubDaxPetBrowser: DaxPetBrowsing {
 
     func open(_ url: URL) {
         opened.append(url)
+    }
+
+    var lastVisits: [URL: DaxPetVisit] = [:]
+    func lastVisit(to url: URL) -> DaxPetVisit? {
+        lastVisits[url]
     }
 }
 
@@ -1522,5 +1533,74 @@ final class DaxPetViewModelTests: XCTestCase {
 
         XCTAssertTrue(intelligence.screenTexts.isEmpty)
         XCTAssertEqual(browser.switchedTo, [Self.flights])
+    }
+
+    // MARK: - Dropped links the browser knows
+
+    func testWhenADroppedLinkIsOpenInATabThenDaxOffersToGoThere() async throws {
+        let (model, _, browser, _) = makeLookingModel()
+        let link = try XCTUnwrap(URL(string: "https://booking.com/adlon/"))
+
+        await model.receive([.link(link)])
+
+        XCTAssertEqual(model.dropOffer, .openTab(Self.hotel))
+        XCTAssertEqual(model.speech, UserText.daxPetDropOpenTab)
+
+        model.goToDroppedTab()
+
+        XCTAssertEqual(browser.switchedTo, [Self.hotel])
+        XCTAssertFalse(model.isComposing)
+    }
+
+    func testRecappingAnOpenTabSendsItsPageToDuckAI() async throws {
+        let (model, _, _, _) = makeLookingModel()
+        await model.receive([.link(try XCTUnwrap(URL(string: "https://www.booking.com/adlon")))])
+
+        await model.recapDrop()
+
+        XCTAssertEqual(submitter.askedAbout.map(\.request), [UserText.daxPetRecapPrompt])
+        XCTAssertEqual(submitter.askedAbout.first?.tab, Self.hotel)
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testWhenADroppedLinkWasVisitedThenDaxSaysWhenAndOffersARecap() async throws {
+        let (model, _, browser, _) = makeLookingModel()
+        let now = Date()
+        model.now = { now }
+        let link = try XCTUnwrap(URL(string: "https://food.example/carbonara"))
+        let visit = DaxPetVisit(title: "Carbonara", url: link, date: now.addingTimeInterval(-86_400))
+        browser.lastVisits = [link: visit]
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+
+        await model.receive([.link(link)])
+
+        XCTAssertEqual(model.dropOffer, .visited(visit))
+        XCTAssertEqual(model.speech, DaxPetViewModel.speech(for: .visited(visit), now: now))
+
+        await model.recapDrop()
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(submitter.submittedPrompts, [UserText.daxPetRecapPrompt + "\n\n" + link.absoluteString])
+    }
+
+    func testWithoutLeaveToSearchTheHistoryAVisitedLinkIsJustADrop() async throws {
+        let (model, _, browser, _) = makeLookingModel(consent: nil)
+        let link = try XCTUnwrap(URL(string: "https://food.example/carbonara"))
+        browser.lastVisits = [link: DaxPetVisit(title: "Carbonara", url: link, date: Date())]
+
+        await model.receive([.link(link)])
+
+        XCTAssertNil(model.dropOffer)
+        XCTAssertEqual(model.speech, UserText.daxPetDropQuestion)
+    }
+
+    func testTypingAQuestionPutsTheOfferAway() async throws {
+        let (model, _, _, _) = makeLookingModel()
+        await model.receive([.link(try XCTUnwrap(URL(string: "https://booking.com/adlon")))])
+
+        model.prompt = "Is it near the station?"
+
+        XCTAssertNil(model.dropOffer)
     }
 }

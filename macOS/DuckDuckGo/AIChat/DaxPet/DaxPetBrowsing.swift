@@ -41,6 +41,8 @@ protocol DaxPetBrowsing {
     func switchTo(_ tab: DaxPetTab)
     /// Pages whose title or address has any of `terms`, the most matching and most recent first.
     func history(matching terms: [String], limit: Int) -> [DaxPetVisit]
+    /// The latest visit to the page at `url`, if there was one.
+    func lastVisit(to url: URL) -> DaxPetVisit?
     func open(_ url: URL)
 }
 
@@ -75,6 +77,10 @@ final class DaxPetBrowser: DaxPetBrowsing {
         Self.rank(historyCoordinator.allHistoryVisits ?? [], matching: terms, limit: limit)
     }
 
+    func lastVisit(to url: URL) -> DaxPetVisit? {
+        Self.lastVisit(to: url, in: historyCoordinator.allHistoryVisits ?? [])
+    }
+
     func open(_ url: URL) {
         windowControllersManager.show(url: url, tabId: nil, source: .historyEntry, newTab: true, selected: true)
         NSApp.activate(ignoringOtherApps: true)
@@ -98,6 +104,25 @@ final class DaxPetBrowser: DaxPetBrowsing {
             .sorted { $0.score != $1.score ? $0.score > $1.score : $0.visit.date > $1.visit.date }
             .prefix(limit)
             .map(\.visit)
+    }
+
+    static func lastVisit(to url: URL, in visits: [Visit]) -> DaxPetVisit? {
+        let page = samePageKey(url)
+        return visits
+            .filter { $0.historyEntry.map { samePageKey($0.url) == page } ?? false }
+            .max { $0.date < $1.date }
+            .flatMap { visit in
+                visit.historyEntry.map { DaxPetVisit(title: SearchHistoryBrowserTool.displayTitle(title: $0.title, url: $0.url), url: $0.url, date: visit.date) }
+            }
+    }
+
+    /// Two addresses are the same page when only the scheme, a "www.", a trailing slash or a fragment tell them apart.
+    static func samePageKey(_ url: URL) -> String {
+        var host = url.host?.lowercased() ?? ""
+        if host.hasPrefix("www.") { host.removeFirst(4) }
+        var path = url.path
+        while path.hasSuffix("/") { path.removeLast() }
+        return host + path + (url.query.map { "?" + $0 } ?? "")
     }
 
     /// Whether `text` has every word of `term`, in any order, ignoring case and accents.

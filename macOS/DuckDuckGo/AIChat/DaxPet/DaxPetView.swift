@@ -76,7 +76,13 @@ struct DaxPetView: View {
     var body: some View {
         VStack(spacing: Metrics.spacing) {
             ZStack(alignment: .bottom) {
-                if !model.suggestions.isEmpty {
+                if let offer = model.dropOffer {
+                    DropOfferBubble(speech: model.speech, offer: offer, suggestions: model.suggestions,
+                                    onGoToTab: model.goToDroppedTab,
+                                    onRecap: { Task { await model.recapDrop() } },
+                                    onSuggestion: model.useSuggestion)
+                        .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
+                } else if !model.suggestions.isEmpty {
                     SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let findings = model.findings {
@@ -125,6 +131,7 @@ struct DaxPetView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.suggestions)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.glance)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.findings)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.dropOffer)
     }
 }
 
@@ -187,6 +194,48 @@ private struct ChipLabel: View {
             .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
             .overlay(Capsule().stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
             .contentShape(Capsule())
+    }
+}
+
+/// For a dropped link the browser knows: Dax's line, then going to its tab and a recap, then any suggestions.
+private struct DropOfferBubble: View {
+    let speech: String?
+    let offer: DaxPetDropOffer
+    let suggestions: [String]
+    let onGoToTab: () -> Void
+    let onRecap: () -> Void
+    let onSuggestion: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            if let speech {
+                SpeechBubble(text: speech)
+            }
+            Group {
+                if #available(macOS 13, *) {
+                    ChipRows(spacing: 6, maximumRows: 2) { chips }
+                } else {
+                    HStack(spacing: 6) { chips }
+                }
+            }
+            .frame(width: DaxPetView.Metrics.composingWidth)
+            .shadow(color: .black.opacity(0.12), radius: 4, y: 1)
+        }
+    }
+
+    @ViewBuilder
+    private var chips: some View {
+        if case .openTab = offer {
+            Button(action: onGoToTab) { ChipLabel(text: UserText.daxPetDropGoToTab, isAccented: true) }
+                .buttonStyle(.plain)
+        }
+        Button(action: onRecap) { ChipLabel(text: UserText.daxPetDropRecap, isAccented: true) }
+            .buttonStyle(.plain)
+        ForEach(suggestions, id: \.self) { suggestion in
+            Button { onSuggestion(suggestion) } label: { ChipLabel(text: suggestion) }
+                .buttonStyle(.plain)
+                .help(suggestion)
+        }
     }
 }
 

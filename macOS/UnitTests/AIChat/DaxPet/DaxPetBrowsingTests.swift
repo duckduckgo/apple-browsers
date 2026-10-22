@@ -75,6 +75,26 @@ final class DaxPetBrowsingTests: XCTestCase {
         XCTAssertFalse(DaxPetBrowser.mentions("Anything", " "))
     }
 
+    func testAddressesThatOnlyDifferInSchemeWwwSlashOrFragmentAreTheSamePage() throws {
+        let key = DaxPetBrowser.samePageKey(try XCTUnwrap(URL(string: "https://www.example.com/a/?q=1#top")))
+
+        XCTAssertEqual(DaxPetBrowser.samePageKey(try XCTUnwrap(URL(string: "http://example.com/a?q=1"))), key)
+        XCTAssertNotEqual(DaxPetBrowser.samePageKey(try XCTUnwrap(URL(string: "https://example.com/a?q=2"))), key)
+    }
+
+    func testTheLatestVisitToAPageIsFound() throws {
+        let visits = [
+            visit("https://a.example/page", title: "Page", at: 100),
+            visit("https://a.example/page/", title: "Page", at: 300),
+            visit("https://b.example/", title: "Other", at: 500)
+        ]
+
+        let found = DaxPetBrowser.lastVisit(to: try XCTUnwrap(URL(string: "https://a.example/page")), in: visits)
+
+        XCTAssertEqual(found?.date, Date(timeIntervalSince1970: 300))
+        XCTAssertNil(DaxPetBrowser.lastVisit(to: try XCTUnwrap(URL(string: "https://c.example/")), in: visits))
+    }
+
     private func visit(_ url: String, title: String, at seconds: TimeInterval) -> Visit {
         let date = Date(timeIntervalSince1970: seconds)
         let entry = HistoryEntry(identifier: UUID(), url: URL(string: url)!, title: title, failedToLoad: false,

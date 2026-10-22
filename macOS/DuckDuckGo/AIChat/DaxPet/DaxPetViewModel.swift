@@ -39,6 +39,8 @@ protocol DaxPetPromptSubmitting {
     var canCompareTabs: Bool { get }
     /// Sends `prompt` to Duck.ai with the pages of `tabs`; `false` when none of them could be read.
     func compare(_ prompt: String, tabs: [DaxPetTab]) async -> Bool
+    /// Sends `request` to Duck.ai with the page of `tab`; `false` when it couldn't be read.
+    func ask(_ request: String, about tab: DaxPetTab) async -> Bool
 
     /// What the selected Duck.ai model accepts, to check items dropped on Dax against.
     func attachmentCapabilities() async -> DaxPetAttachmentCapabilities
@@ -53,6 +55,12 @@ struct DaxPetPageContent: Equatable {
     let url: String
     let title: String
     let text: String
+}
+
+/// A dropped link the browser already knows: open in a tab, or visited before.
+enum DaxPetDropOffer: Equatable {
+    case openTab(DaxPetTab)
+    case visited(DaxPetVisit)
 }
 
 /// What Dax found in the browser for a request, offered as chips, with Duck.ai as the way on.
@@ -115,6 +123,8 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var findings: DaxPetFindings?
     /// Tabs Dax chose to send along for a comparison, shown as chips in the prompt field.
     @Published private(set) var comparedTabs: [DaxPetTab] = []
+    /// What Dax offers for a dropped link the browser already knows.
+    @Published private(set) var dropOffer: DaxPetDropOffer?
 
     /// Dax won't sum up the same page again for this long.
     var glanceCooldown: TimeInterval = 600
@@ -686,6 +696,9 @@ final class DaxPetViewModel: ObservableObject {
         }
         if let rejection {
             say(rejection, for: 5)
+        } else if let offer = offer(for: attachments) {
+            dropOffer = offer
+            say(Self.speech(for: offer, now: now()))
         } else if !accepted.isEmpty {
             say(line(UserText.daxPetDropQuestion))
         }
@@ -698,6 +711,53 @@ final class DaxPetViewModel: ObservableObject {
         attachments = []
         clearSuggestions()
         updateLookTarget()
+    }
+
+    /// A single dropped link that's open in a tab, or that was visited, as long as Dax may look at the history.
+    private func offer(for attachments: [DaxPetAttachment]) -> DaxPetDropOffer? {
+        guard let browsing, attachments.count == 1, case .link(_, let url) = attachments[0] else { return nil }
+        let page = DaxPetBrowser.samePageKey(url)
+        if let tab = browsing.openTabs.first(where: { DaxPetBrowser.samePageKey($0.url) == page }) {
+            return .openTab(tab)
+        }
+        guard historyConsent?.canSearchHistory == true, let visit = browsing.lastVisit(to: url) else { return nil }
+        return .visited(visit)
+    }
+
+    static func speech(for offer: DaxPetDropOffer, now: Date) -> String {
+        switch offer {
+        case .openTab:
+            return UserText.daxPetDropOpenTab
+        case .visited(let visit):
+            let formatter = RelativeDateTimeFormatter()
+            formatter.dateTimeStyle = .named
+            return UserText.daxPetDropVisited(formatter.localizedString(for: visit.date, relativeTo: now))
+        }
+    }
+
+    func goToDroppedTab() {
+        guard case .openTab(let tab) = dropOffer, let browsing else { return }
+        browsing.switchTo(tab)
+        endComposing()
+        character.hop()
+        say(UserText.daxPetFoundHere, for: 3)
+    }
+
+    /// An open tab is recapped with its page as it is now; a page visited before goes to Duck.ai as the link.
+    func recapDrop() async {
+        switch dropOffer {
+        case .openTab(let tab):
+            endComposing()
+            if await submitter.ask(UserText.daxPetRecapPrompt, about: tab) {
+                character.hop()
+            } else {
+                say(UserText.daxPetAnswerFailed, for: 4)
+            }
+        case .visited:
+            useSuggestion(UserText.daxPetRecapPrompt)
+        case nil:
+            break
+        }
     }
 
     /// Sends a suggested request as the prompt, with what was dropped.
@@ -718,13 +778,15 @@ final class DaxPetViewModel: ObservableObject {
         guard isComposing, self.attachments.map(\.id) == attachments.map(\.id) else { return }
         dropAction = DaxPetDropAction.guess(for: attachments, kind: guessedKind)
         guard prompt.isEmpty, !suggested.isEmpty else { return }
-        self.suggestions = Array(suggested.prefix(3))
-        say(nil)
+        // With an offer up, its line stays and the suggestions join its chips.
+        self.suggestions = Array(suggested.prefix(dropOffer == nil ? 3 : 2))
+        if dropOffer == nil { say(nil) }
     }
 
     private func clearSuggestions() {
         suggestions = []
         dropAction = nil
+        dropOffer = nil
     }
 
     // MARK: - Page glance
@@ -842,7 +904,10 @@ final class DaxPetViewModel: ObservableObject {
     private func promptDidChange(from oldValue: String) {
         guard isComposing, prompt != oldValue else { return }
         if !prompt.isEmpty, speech != nil { say(nil) }
-        if !prompt.isEmpty { suggestions = [] }
+        if !prompt.isEmpty {
+            suggestions = []
+            dropOffer = nil
+        }
         findings = nil
         pendingHistorySearch = nil
         updateLookTarget()

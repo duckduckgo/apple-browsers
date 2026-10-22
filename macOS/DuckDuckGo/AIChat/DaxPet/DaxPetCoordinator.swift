@@ -299,7 +299,7 @@ final class DaxPetCoordinator: NSObject {
         let characterFrame = DaxPetView.Metrics.characterFrame().offsetBy(dx: model.character.strollOffset, dy: 0)
         let isOverCharacter = characterFrame.contains(point)
         var interactiveFrames = [characterFrame, DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
-        if model.speech != nil || !model.suggestions.isEmpty || model.glance != nil || model.findings != nil {
+        if model.speech != nil || !model.suggestions.isEmpty || model.glance != nil || model.findings != nil || model.dropOffer != nil {
             interactiveFrames.append(DaxPetView.Metrics.bubbleFrame())
         }
         // A press in progress (e.g. dragging Dax) keeps its window.
@@ -521,7 +521,21 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
     }
 
     func compare(_ prompt: String, tabs: [DaxPetTab]) async -> Bool {
-        guard let origin = windowControllersManager.allTabCollectionViewModels.first(where: { !$0.isBurner }) else { return false }
+        let contexts = await pageContexts(of: tabs)
+        guard !contexts.isEmpty else { return false }
+        submit(prompt: prompt, payload: .queryPrompt(prompt, autoSubmit: true, pageContext: .multiple(contexts)))
+        return true
+    }
+
+    func ask(_ request: String, about tab: DaxPetTab) async -> Bool {
+        guard let context = await pageContexts(of: [tab]).first else { return false }
+        submit(prompt: request, payload: .queryPrompt(request, autoSubmit: true, pageContext: .single(context)))
+        return true
+    }
+
+    /// The pages that could be read, loading any that were unloaded.
+    private func pageContexts(of tabs: [DaxPetTab]) async -> [AIChatPageContextData] {
+        guard let origin = windowControllersManager.allTabCollectionViewModels.first(where: { !$0.isBurner }) else { return [] }
         var contexts: [AIChatPageContextData] = []
         for tab in tabs {
             if let context = await AIChatUserScriptHandler.extractPageContext(forTabId: tab.id, origin: origin, in: windowControllersManager),
@@ -529,9 +543,7 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
                 contexts.append(context)
             }
         }
-        guard !contexts.isEmpty else { return false }
-        submit(prompt: prompt, payload: .queryPrompt(prompt, autoSubmit: true, pageContext: .multiple(contexts)))
-        return true
+        return contexts
     }
 
     func askAboutCurrentPage(_ request: String) async -> Bool {

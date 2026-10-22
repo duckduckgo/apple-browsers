@@ -62,6 +62,15 @@ private final class RecordingDaxPetPromptSubmitter: DaxPetPromptSubmitting {
         page
     }
 
+    var canCompareTabs = true
+    var compareResult = true
+    var comparisons: [(prompt: String, tabs: [DaxPetTab])] = []
+    func compare(_ prompt: String, tabs: [DaxPetTab]) async -> Bool {
+        comparisons.append((prompt, tabs))
+        if compareResult { onSubmit?() }
+        return compareResult
+    }
+
     var continueResult = true
     var continueCount = 0
     func continueLastChat() async -> Bool {
@@ -1289,5 +1298,85 @@ final class DaxPetViewModelTests: XCTestCase {
         model.browserToolActivity(activity("listOpenTabs", .started))
 
         XCTAssertEqual(model.speech, UserText.daxPetToolTabs)
+    }
+
+    // MARK: - Comparing tabs
+
+    func testWhenAskedToCompareThenTheChosenTabsJoinThePromptAndNothingIsSentYet() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["hotel"], daysBack: 0)
+        intelligence.picks = [0, 2]
+
+        await ask(model, "compare these")
+
+        XCTAssertEqual(model.comparedTabs, [Self.flights, Self.hotel])
+        XCTAssertEqual(model.speech, UserText.daxPetCompareReady)
+        XCTAssertTrue(model.isComposing)
+        XCTAssertTrue(submitter.comparisons.isEmpty)
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testTheNextReturnSendsTheQuestionWithTheTabsThatAreLeft() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["o"], daysBack: 0)
+        intelligence.picks = [0, 1, 2]
+        await ask(model, "which is best?")
+
+        model.leaveOut(Self.github)
+        model.submit()
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(intelligence.lookups.count, 1)
+        XCTAssertEqual(submitter.comparisons.map(\.prompt), ["which is best?"])
+        XCTAssertEqual(submitter.comparisons.first?.tabs, [Self.flights, Self.hotel])
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+        XCTAssertTrue(model.comparedTabs.isEmpty)
+    }
+
+    func testWhenTheTabsCannotBeReadThenTheQuestionGoesToDuckAIOnItsOwn() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        submitter.compareResult = false
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["o"], daysBack: 0)
+        intelligence.picks = [0, 2]
+        await ask(model, "which is best?")
+
+        model.submit()
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(submitter.submittedPrompts, ["which is best?"])
+        XCTAssertEqual(submitter.submittedPayloads.first ?? nil, nil)
+    }
+
+    func testWithFewerThanTwoTabsToCompareTheQuestionGoesToDuckAI() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["hotel"], daysBack: 0)
+        intelligence.picks = [2]
+
+        await ask(model, "compare these hotels")
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertEqual(submitter.submittedPrompts, ["compare these hotels"])
+        XCTAssertTrue(model.comparedTabs.isEmpty)
+    }
+
+    func testWhereSeveralPagesCannotGoInOnePromptTheQuestionGoesStraightToDuckAI() async {
+        let (model, intelligence, _, _) = makeLookingModel()
+        let submitted = expectation(description: "submitted")
+        submitter.onSubmit = { submitted.fulfill() }
+        submitter.canCompareTabs = false
+        intelligence.lookup = DaxPetLookup(kind: .compareTabs, terms: ["hotel"], daysBack: 0)
+        intelligence.picks = [0, 2]
+
+        await ask(model, "compare these hotels")
+
+        await fulfillment(of: [submitted], timeout: 1)
+        XCTAssertTrue(intelligence.pickedFrom.isEmpty)
+        XCTAssertEqual(submitter.submittedPrompts, ["compare these hotels"])
     }
 }

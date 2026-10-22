@@ -42,6 +42,11 @@ struct DaxPetView: View {
             return CGFloat(min(count, maxVisibleAttachments) + 1) * (attachmentChipSize + 2)
         }
 
+        /// Room the chips of the tabs to compare take before the prompt text.
+        static func tabChipsWidth(count: Int) -> CGFloat {
+            CGFloat(count) * (attachmentChipSize + 2)
+        }
+
         static let windowSize = CGSize(width: composingWidth + padding * 2,
                                        height: padding * 2 + bubbleAreaHeight + spacing * 2
                                        + DaxCharacterView.preferredSize.height + controlsHeight)
@@ -365,6 +370,31 @@ private struct AttachmentChips: View {
     }
 }
 
+/// The tabs going along for a comparison, by their icons; clicking one leaves it out.
+private struct TabChips: View {
+    let tabs: [DaxPetTab]
+    let onLeaveOut: (DaxPetTab) -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(tabs) { tab in
+                Button { onLeaveOut(tab) } label: {
+                    Image(nsImage: tab.favicon ?? DesignSystemImages.Glyphs.Size16.globe)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 14, height: 14)
+                        .frame(width: DaxPetView.Metrics.attachmentChipSize, height: DaxPetView.Metrics.attachmentChipSize)
+                        .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .help(UserText.daxPetCompareLeaveOut(tab.title))
+                .accessibilityLabel(UserText.daxPetCompareLeaveOut(tab.title))
+            }
+        }
+    }
+}
+
 /// A handful of hearts floating up out of a happily petted Dax.
 private struct HeartBurst: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -579,13 +609,17 @@ private struct PromptField: View {
                 AttachmentChips(attachments: model.attachments, onRemove: model.removeAttachments)
                     .padding(.leading, 8)
             }
+            if !model.comparedTabs.isEmpty {
+                TabChips(tabs: model.comparedTabs, onLeaveOut: model.leaveOut)
+                    .padding(.leading, 8)
+            }
             TextField(model.promptPlaceholder, text: $model.prompt)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($isFocused)
                 .onSubmit { model.submit() }
                 .onExitCommand { model.endComposing() }
-                .padding(.leading, model.attachments.isEmpty ? DaxPetView.Metrics.promptLeadingInset : 0)
+                .padding(.leading, model.attachments.isEmpty && model.comparedTabs.isEmpty ? DaxPetView.Metrics.promptLeadingInset : 0)
 
             Button(action: model.submit) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.arrowUp)

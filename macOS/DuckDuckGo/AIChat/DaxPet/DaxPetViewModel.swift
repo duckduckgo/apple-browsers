@@ -35,6 +35,11 @@ protocol DaxPetPromptSubmitting {
     /// Reopens the most recent Duck.ai chat; `false` when there are none.
     func continueLastChat() async -> Bool
 
+    /// Whether several tabs' pages can go to Duck.ai with one prompt.
+    var canCompareTabs: Bool { get }
+    /// Sends `prompt` to Duck.ai with the pages of `tabs`; `false` when none of them could be read.
+    func compare(_ prompt: String, tabs: [DaxPetTab]) async -> Bool
+
     /// What the selected Duck.ai model accepts, to check items dropped on Dax against.
     func attachmentCapabilities() async -> DaxPetAttachmentCapabilities
 
@@ -106,6 +111,8 @@ final class DaxPetViewModel: ObservableObject {
     @Published private(set) var glance: DaxPetPageGlance?
     /// Tabs or pages Dax found on the Mac for the request, before anything goes to Duck.ai.
     @Published private(set) var findings: DaxPetFindings?
+    /// Tabs Dax chose to send along for a comparison, shown as chips in the prompt field.
+    @Published private(set) var comparedTabs: [DaxPetTab] = []
 
     /// Dax won't sum up the same page again for this long.
     var glanceCooldown: TimeInterval = 600
@@ -231,6 +238,7 @@ final class DaxPetViewModel: ObservableObject {
         screenCheckedPrompt = nil
         lookedUpPrompt = nil
         findings = nil
+        comparedTabs = []
         clearSuggestions()
         character.mood = isAwaitingAnswer ? .thinking : .idle
         character.lookTarget = nil
@@ -258,9 +266,11 @@ final class DaxPetViewModel: ObservableObject {
         lookedUpPrompt = nil
         findings = nil
         let (query, payload) = DaxPetAttachmentLoader.prompt(prompt, attachments: attachments, capabilities: attachmentCapabilities)
+        let tabs = comparedTabs
         isComposing = false
         self.prompt = ""
         attachments = []
+        comparedTabs = []
         clearSuggestions()
         character.lookTarget = nil
         character.mood = .thinking
@@ -268,7 +278,16 @@ final class DaxPetViewModel: ObservableObject {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + submissionDelay) { [weak self] in
             guard let self else { return }
-            submitter.submit(prompt: query, payload: payload)
+            if tabs.isEmpty {
+                submitter.submit(prompt: query, payload: payload)
+            } else {
+                // Tabs that can't be read leave the question to Duck.ai on its own.
+                Task { [submitter] in
+                    if await !submitter.compare(query, tabs: tabs) {
+                        submitter.submit(prompt: query, payload: nil)
+                    }
+                }
+            }
             say(nil)
             // He keeps thinking until Duck.ai is done, or gives up if it never says it started.
             isAwaitingAnswer = true
@@ -280,7 +299,7 @@ final class DaxPetViewModel: ObservableObject {
 
     /// Typed requests only, with the on-device model to tell what they are, and only once each.
     private func shouldLookUp(_ prompt: String) -> Bool {
-        browsing != nil && intelligence.isOnDevice && attachments.isEmpty && lookedUpPrompt != prompt
+        browsing != nil && intelligence.isOnDevice && attachments.isEmpty && comparedTabs.isEmpty && lookedUpPrompt != prompt
     }
 
     /// Tabs and pages Dax can find on the Mac he finds at once; anything else, or nothing found, goes on to Duck.ai.
@@ -297,6 +316,10 @@ final class DaxPetViewModel: ObservableObject {
         switch (lookup.kind, historyConsent?.canSearchHistory) {
         case (.openTab, _):
             await findTab(for: prompt, lookup, in: browsing)
+        case (.compareTabs, _) where submitter.canCompareTabs:
+            await chooseTabsToCompare(for: prompt, lookup, in: browsing)
+        case (.compareTabs, _):
+            submit()
         case (.history, true?):
             await findPage(for: prompt, lookup, in: browsing)
         case (.history, nil) where historyConsent != nil:
@@ -328,6 +351,30 @@ final class DaxPetViewModel: ObservableObject {
         default:
             show(found.map(DaxPetFindings.Item.tab), headline: UserText.daxPetFoundTabs)
         }
+    }
+
+    /// A comparison takes this many tabs at most.
+    static let maximumComparedTabs = 5
+
+    /// The tabs to compare join the prompt as chips, and the next Return sends them along.
+    private func chooseTabsToCompare(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
+        let tabs = browsing.openTabs
+        let matching = tabs.filter { tab in lookup.terms.contains { Self.page(tab.title, tab.url, contains: $0) } }
+        let candidates = Array((matching.count >= 2 ? matching : tabs).prefix(Self.maximumCandidates))
+        character.mood = .thinking
+        let picks = await intelligence.pick(prompt, from: candidates.map { "\($0.title) — \($0.url.host ?? "")" },
+                                            maximum: Self.maximumComparedTabs)
+        guard isStillAsking(prompt) else { return }
+        character.mood = .listening
+        guard picks.count >= 2 else { return submit() }
+        comparedTabs = picks.map { candidates[$0] }
+        updateLookTarget()
+        say(UserText.daxPetCompareReady)
+    }
+
+    func leaveOut(_ tab: DaxPetTab) {
+        comparedTabs.removeAll { $0.id == tab.id }
+        updateLookTarget()
     }
 
     private func findPage(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
@@ -401,7 +448,7 @@ final class DaxPetViewModel: ObservableObject {
 
     /// Only typed questions, with the user's say-so and the on-device model to judge them, and only once each.
     private func shouldCheckScreen(for prompt: String) -> Bool {
-        canSeeForegroundApp() && intelligence.isOnDevice && attachments.isEmpty && screenCheckedPrompt != prompt
+        canSeeForegroundApp() && intelligence.isOnDevice && attachments.isEmpty && comparedTabs.isEmpty && screenCheckedPrompt != prompt
     }
 
     /// When the question is about the app in front, a screenshot of it joins the prompt as a chip, and Dax
@@ -739,7 +786,8 @@ final class DaxPetViewModel: ObservableObject {
 
     private func updateLookTarget() {
         let width = (prompt as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13)]).width
-        character.lookTarget = caretLocation?(width + DaxPetView.Metrics.attachmentsWidth(count: attachments.count))
+        character.lookTarget = caretLocation?(width + DaxPetView.Metrics.attachmentsWidth(count: attachments.count)
+                                              + DaxPetView.Metrics.tabChipsWidth(count: comparedTabs.count))
     }
 
     private func showHearts() {

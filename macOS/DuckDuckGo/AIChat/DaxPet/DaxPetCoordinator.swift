@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import Combine
 import ConcurrencyExtensions
+import PrivacyConfig
 import SwiftUI
 
 /// Puts Dax on the desktop while the setting is on, and keeps him standing where he was left.
@@ -451,17 +452,20 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
     private let windowControllersManager: WindowControllersManagerProtocol
     private let makeSuggestionsReader: () -> AIChatSuggestionsReading
     private let capabilitiesProvider: DaxPetAttachmentCapabilitiesProviding
+    private let featureFlagger: FeatureFlagger
     private let promptHandler: AIChatPromptHandler
 
     init(aiChatTabOpener: AIChatTabOpening,
          windowControllersManager: WindowControllersManagerProtocol,
          makeSuggestionsReader: @escaping () -> AIChatSuggestionsReading,
          capabilitiesProvider: DaxPetAttachmentCapabilitiesProviding,
+         featureFlagger: FeatureFlagger,
          promptHandler: AIChatPromptHandler = .shared) {
         self.aiChatTabOpener = aiChatTabOpener
         self.windowControllersManager = windowControllersManager
         self.makeSuggestionsReader = makeSuggestionsReader
         self.capabilitiesProvider = capabilitiesProvider
+        self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
     }
 
@@ -503,6 +507,24 @@ final class DaxPetPromptSubmitter: DaxPetPromptSubmitting {
     }
 
     var canSummarizeCurrentPage: Bool { currentPage != nil }
+
+    var canCompareTabs: Bool {
+        featureFlagger.isFeatureOn(.aiChatPageContext) && featureFlagger.isFeatureOn(.aiChatMultiplePageContexts)
+    }
+
+    func compare(_ prompt: String, tabs: [DaxPetTab]) async -> Bool {
+        guard let origin = windowControllersManager.allTabCollectionViewModels.first(where: { !$0.isBurner }) else { return false }
+        var contexts: [AIChatPageContextData] = []
+        for tab in tabs {
+            if let context = await AIChatUserScriptHandler.extractPageContext(forTabId: tab.id, origin: origin, in: windowControllersManager),
+               context.attachable != false {
+                contexts.append(context)
+            }
+        }
+        guard !contexts.isEmpty else { return false }
+        submit(prompt: prompt, payload: .queryPrompt(prompt, autoSubmit: true, pageContext: .multiple(contexts)))
+        return true
+    }
 
     func askAboutCurrentPage(_ request: String) async -> Bool {
         guard let (windowController, tab) = currentPage else { return false }

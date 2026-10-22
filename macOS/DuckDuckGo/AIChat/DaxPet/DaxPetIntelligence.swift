@@ -53,6 +53,8 @@ struct DaxPetLookup: Equatable {
     enum Kind: Equatable {
         case openTab
         case history
+        /// Weighing up what's open in several tabs.
+        case compareTabs
     }
 
     let kind: Kind
@@ -226,6 +228,7 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
     enum LookupAction {
         case findOpenTab
         case findPageFromHistory
+        case compareOpenTabs
         case askAssistant
     }
 
@@ -249,6 +252,8 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             "go to github", "switch to the tab with the recipe", "which tab has my email?".
             findPageFromHistory: find a page they visited before, like "what was that article about rust I read \
             last week?", "find the recipe I looked at yesterday", "that hotel site from Monday".
+            compareOpenTabs: compare or weigh up things they have open in several tabs, like "compare these hotels", \
+            "which of these laptops is best?", "compare the flights I have open".
             askAssistant: anything else, which an AI assistant answers: questions, writing, and anything about \
             the page they're on, like "what's the capital of France?", "summarize this page", \
             "write a poem about tabs", "explain this", "how do I clear my history?".
@@ -260,6 +265,7 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         switch intent.action {
         case .findOpenTab: kind = .openTab
         case .findPageFromHistory: kind = .history
+        case .compareOpenTabs: kind = .compareTabs
         case .askAssistant: return nil
         }
         return DaxPetLookup(kind: kind, terms: terms, daysBack: max(intent.daysBack, 0))

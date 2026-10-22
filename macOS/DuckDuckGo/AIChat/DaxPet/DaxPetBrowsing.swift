@@ -24,6 +24,7 @@ struct DaxPetTab: Equatable, Identifiable {
     let id: String
     let title: String
     let url: URL
+    var favicon: NSImage?
 }
 
 /// A page from the browsing history, at its latest visit.
@@ -61,7 +62,7 @@ final class DaxPetBrowser: DaxPetBrowsing {
             .flatMap { ($0.pinnedTabsCollection?.tabs ?? []) + $0.tabCollection.tabs }
             .compactMap { tab -> DaxPetTab? in
                 guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL, seen.insert(tab.uuid).inserted else { return nil }
-                return DaxPetTab(id: tab.uuid, title: tab.title ?? url.host ?? url.absoluteString, url: url)
+                return DaxPetTab(id: tab.uuid, title: tab.title ?? url.host ?? url.absoluteString, url: url, favicon: tab.favicon)
             }
     }
 

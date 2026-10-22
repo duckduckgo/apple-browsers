@@ -61,6 +61,30 @@
         }
       }
     },
+    "duckai.dax-pet.compare.leave-out" : {
+      "comment" : "Tooltip of a tab's icon in the prompt field of Dax, the DuckDuckGo mascot; clicking it leaves the tab out of the comparison sent to Duck.ai. %@ is the tab's title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Leave Out “%@”"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.compare.ready" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he picked the open tabs to send to Duck.ai for a comparison. They show as icons in his prompt field",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I'll send these tabs along. Press Return, or click one to leave it out."
+          }
+        }
+      }
+    },
     "duckai.dax-pet.found.ask-duck-ai" : {
       "comment" : "Button next to the tabs or pages Dax, the DuckDuckGo mascot, found for the user; it sends their question to Duck.ai instead",
       "extractionState" : "extracted_with_value",

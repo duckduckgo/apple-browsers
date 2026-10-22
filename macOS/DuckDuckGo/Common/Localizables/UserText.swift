@@ -812,6 +812,10 @@ struct UserText {
         String(format: NSLocalizedString("duckai.dax-pet.permission.finding", value: "Duck.ai would like to look for “%@” on the page. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to search a web page. %@ is the text it looks for. Clicking Dax brings the chat forward"), words)
     }
     static let daxPetPermissionAny = NSLocalizedString("duckai.dax-pet.permission.any", value: "Duck.ai needs your OK in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to use the browser. Clicking Dax brings the chat forward")
+    static let daxPetCompareReady = NSLocalizedString("duckai.dax-pet.compare.ready", value: "I'll send these tabs along. Press Return, or click one to leave it out.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, after he picked the open tabs to send to Duck.ai for a comparison. They show as icons in his prompt field")
+    static func daxPetCompareLeaveOut(_ title: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.compare.leave-out", value: "Leave Out “%@”", comment: "Tooltip of a tab's icon in the prompt field of Dax, the DuckDuckGo mascot; clicking it leaves the tab out of the comparison sent to Duck.ai. %@ is the tab's title"), title)
+    }
     static let daxPetPromptPlaceholder = NSLocalizedString("duckai.dax-pet.prompt.placeholder", value: "Ask Dax anything…", comment: "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetAsk = NSLocalizedString("duckai.dax-pet.ask", value: "Ask Dax", comment: "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetSend = NSLocalizedString("duckai.dax-pet.send", value: "Send", comment: "Tooltip of the button that sends the question typed for Dax to Duck.ai")

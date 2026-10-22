@@ -2861,7 +2861,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 capabilitiesProvider: DaxPetAttachmentCapabilitiesProvider(
                                                     subscriptionManager: subscriptionManager,
                                                     preferences: aiChatPreferencesPersistor
-                                                )),
+                                                ),
+                                                featureFlagger: featureFlagger),
                                             browsing: DaxPetBrowser(windowControllersManager: windowControllersManager,
                                                                     historyCoordinator: historyCoordinator),
                                             browserToolActivity: aiChatBrowserToolsService.activity,

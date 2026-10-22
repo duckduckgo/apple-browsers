@@ -37,10 +37,17 @@ import WebKit
 @available(macOS 15.4, *)
 final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessageHandlerWithReply {
 
+    /// Finds the tab a frame that asks to open the action popup belongs to.
+    private weak var windowControllersManager: WindowControllersManagerProtocol?
+
+    init(windowControllersManager: WindowControllersManagerProtocol) {
+        self.windowControllersManager = windowControllersManager
+    }
+
     /// Third-party extensions can only be installed by internal users, so nobody else needs the
     /// script.
-    static func make(isInternalUser: Bool) -> WebExtensionPageStubUserScript? {
-        isInternalUser ? WebExtensionPageStubUserScript() : nil
+    static func make(isInternalUser: Bool, windowControllersManager: WindowControllersManagerProtocol) -> WebExtensionPageStubUserScript? {
+        isInternalUser ? WebExtensionPageStubUserScript(windowControllersManager: windowControllersManager) : nil
     }
 
     /// The same scripts, in the same order, as `WebExtensionLoader` installs on the controller.
@@ -86,7 +93,7 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
         } else if message.name == WebExtensionAPIStubScript.permissionsMessageHandlerName {
             manager.handlePermissionsMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName {
-            let tab = NSApp.delegateTyped.windowControllersManager.tab(for: message.webView)
+            let tab = windowControllersManager?.tab(for: message.webView)
             manager.handleActionOpenPopupMessage(message, tab: tab, replyHandler: replyHandler)
         } else {
             manager.handleAPICompatibilityMessage(message)

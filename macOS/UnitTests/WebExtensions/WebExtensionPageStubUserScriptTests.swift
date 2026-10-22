@@ -21,17 +21,21 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 15.4, *)
+@MainActor
 final class WebExtensionPageStubUserScriptTests: XCTestCase {
 
+    private var windowControllersManager: WindowControllersManagerMock!
     private var script: WebExtensionPageStubUserScript!
 
     override func setUp() {
         super.setUp()
-        script = WebExtensionPageStubUserScript()
+        windowControllersManager = WindowControllersManagerMock()
+        script = WebExtensionPageStubUserScript(windowControllersManager: windowControllersManager)
     }
 
     override func tearDown() {
         script = nil
+        windowControllersManager = nil
         super.tearDown()
     }
 
@@ -62,10 +66,10 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
     }
 
     func testThatScriptIsCreatedForInternalUsers() {
-        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true))
+        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true, windowControllersManager: windowControllersManager))
     }
 
     func testThatScriptIsNotCreatedForOtherUsers() {
-        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false))
+        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false, windowControllersManager: windowControllersManager))
     }
 }

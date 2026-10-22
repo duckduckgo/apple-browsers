@@ -26,6 +26,42 @@ import XCTest
 
 final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
 
+    func testWhenDialogBurnKeepsTabsOpen_thenFireAnimationIsEnabledWithoutPrivacyFeedDelay() {
+        let decider = MockVisualizeFireAnimationDecider()
+        for scope in [Fire.BurningScope.tab, .window, .allWindows, .visits] {
+            let burn = Fire.BurningData.specificDomains([], closesTabs: false, scope: scope)
+            XCTAssertTrue(burn.shouldPlayFireAnimation(decider: decider))
+            XCTAssertFalse(burn.shouldDelayShowingDialog(decider: decider))
+        }
+    }
+
+    func testWhenPrivacyFeedBurns_thenOnlyInPageAnimationPlaysBeforeDelayedProgress() {
+        let decider = MockVisualizeFireAnimationDecider()
+        let burn = Fire.BurningData.specificDomains([], closesTabs: false, scope: .none)
+        XCTAssertFalse(burn.shouldPlayFireAnimation(decider: decider))
+        XCTAssertTrue(burn.shouldDelayShowingDialog(decider: decider))
+    }
+
+    @MainActor
+    func testWhenSnapshotFireLoads_thenOriginalAssetWipesWithoutRestoringBurnedAreas() async throws {
+        let loaded = await DefaultFireAnimationLoader.shared.load()
+        let fire = try XCTUnwrap(loaded)
+        XCTAssertEqual(DefaultFireAnimationLoader.assetName, "02_Fire_rebranded")
+        XCTAssertEqual(fire.animation.duration, 40.0 / 30.0)
+        XCTAssertEqual(fire.burnFronts.count, 41)
+        let first = try XCTUnwrap(fire.burnFronts.first)
+        let last = try XCTUnwrap(fire.burnFronts.last)
+        XCTAssertTrue(first.allSatisfy { $0 < 0 }, "The complete snapshot and shadow must be visible before the fire arrives")
+        XCTAssertTrue(last.allSatisfy { $0 == 1 }, "No snapshot or shadow may remain after the fire")
+        XCTAssertTrue(fire.burnFronts.dropFirst().dropLast().contains { front in
+            front.contains { $0 > 0 && $0 < 1 }
+        }, "The wipe must advance through the window with the original flames")
+        for (previous, next) in zip(fire.burnFronts, fire.burnFronts.dropFirst()) {
+            XCTAssertEqual(previous.count, next.count)
+            XCTAssertTrue(zip(previous, next).allSatisfy { $0 <= $1 }, "Burned areas must stay transparent as the flames recede")
+        }
+    }
+
     @MainActor
     func testWhenFeatureFlagIsOff_thenShouldShowFireAnimationIsTrue() {
         let persistor = MockFireButtonPreferencesPersistor()

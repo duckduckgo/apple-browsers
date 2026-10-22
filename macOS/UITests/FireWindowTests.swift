@@ -25,7 +25,7 @@ class FireWindowTests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: ["maliciousSiteProtection": false])
 
         settingsGeneralButton = app.buttons["PreferencesSidebar.generalButton"]
         reopenAllWindowsFromLastSessionPreference = app.radioButtons["PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession"]

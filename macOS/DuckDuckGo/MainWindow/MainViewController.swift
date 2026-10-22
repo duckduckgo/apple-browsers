@@ -98,6 +98,11 @@ final class MainViewController: NSViewController {
     }
 
     private(set) var allowsUserInteraction: Bool = true
+    private struct ContentChangeState {
+        weak var tab: Tab?
+        let wasEnabled: Bool
+    }
+    private var contentChangeStates = [ObjectIdentifier: ContentChangeState]()
 
     var shouldShowBookmarksBar: Bool {
         return !isInPopUpWindow
@@ -384,6 +389,7 @@ final class MainViewController: NSViewController {
         addAndLayoutChild(navigationBarViewController, into: mainView.navigationBarContainerView)
         addAndLayoutChild(browserTabViewController, into: mainView.webContainerView)
         addAndLayoutChild(fireViewController, into: mainView.fireContainerView)
+        mainView.fireContainerView.isHidden = !fireViewController.fireViewModel.isBurning
         addAndLayoutChild(aiChatOmnibarContainerViewController, into: mainView.aiChatOmnibarContainerView)
         addAndLayoutChild(aiChatOmnibarTextContainerViewController, into: mainView.aiChatOmnibarTextContainerView)
     }
@@ -813,6 +819,9 @@ final class MainViewController: NSViewController {
     private func subscribeToSelectedTabViewModel() {
         selectedTabViewModelCancellable = tabCollectionViewModel.$selectedTabViewModel.sink { [weak self] tabViewModel in
             guard let self, let tabViewModel else { return }
+            if !allowsUserInteraction {
+                preventContentChanges(in: tabViewModel.tab)
+            }
 
             tabViewModelCancellables.removeAll(keepingCapacity: true)
             subscribeToCanGoBackForward(of: tabViewModel)
@@ -1050,6 +1059,10 @@ final class MainViewController: NSViewController {
     // MARK: - First responder
 
     func adjustFirstResponder(selectedTabViewModel: TabViewModel? = nil, tabContent: Tab.TabContent? = nil, force: Bool = false) {
+        guard !fireViewController.fireViewModel.isBurning else {
+            view.makeMeFirstResponder()
+            return
+        }
         guard let selectedTabViewModel = selectedTabViewModel ?? tabCollectionViewModel.selectedTabViewModel else {
             return
         }
@@ -1266,10 +1279,23 @@ extension MainViewController {
 
 extension MainViewController {
 
+    private func preventContentChanges(in tab: Tab) {
+        let identifier = ObjectIdentifier(tab)
+        if contentChangeStates[identifier]?.tab !== tab {
+            contentChangeStates[identifier] = ContentChangeState(tab: tab, wasEnabled: tab.contentChangeEnabled)
+        }
+        tab.contentChangeEnabled = false
+    }
+
     func userInteraction(prevented: Bool) {
         allowsUserInteraction = !prevented
         tabCollectionViewModel.changesEnabled = !prevented
-        tabCollectionViewModel.selectedTabViewModel?.tab.contentChangeEnabled = !prevented
+        if prevented, let tab = tabCollectionViewModel.selectedTabViewModel?.tab {
+            preventContentChanges(in: tab)
+        } else if !prevented {
+            contentChangeStates.values.forEach { $0.tab?.contentChangeEnabled = $0.wasEnabled }
+            contentChangeStates.removeAll()
+        }
 
         tabBarViewController.fireButton.isEnabled = !prevented
         tabBarViewController.isInteractionPrevented = prevented
@@ -1354,27 +1380,24 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.highlightPrivacyShield()
     }
 
-    /// Closes the window if it has no more regular tabs and its pinned tabs are available in other windows
+    /// Shared by tab closing and the fire presentation when deciding whether a window will survive.
+    var shouldCloseWindowWithoutRegularTabs: Bool {
+        let noPinnedTabs = tabCollectionViewModel.isBurner || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.isEmpty != false
+        let areOtherWindowsWithPinnedTabsAvailable = Application.appDelegate.windowControllersManager.mainWindowControllers
+            .contains { windowController in
+                windowController.mainViewController !== self
+                    && !windowController.mainViewController.isBurner
+                    && !windowController.mainViewController.isInPopUpWindow
+            }
+        return noPinnedTabs || (tabsPreferences.pinnedTabsMode == .shared && areOtherWindowsWithPinnedTabsAvailable)
+    }
+
+    /// Closes the window if it has no more regular tabs and its pinned tabs are available in other windows.
     func closeWindowIfNeeded() -> Bool {
         guard let window = view.window,
               tabCollectionViewModel.tabCollection.tabs.isEmpty else { return false }
 
-        let noPinnedTabs = tabCollectionViewModel.isBurner || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.isEmpty != false
-
-        var isSharedPinnedTabsMode: Bool {
-            tabsPreferences.pinnedTabsMode == .shared
-        }
-
-        lazy var areOtherWindowsWithPinnedTabsAvailable: Bool = {
-            Application.appDelegate.windowControllersManager.mainWindowControllers
-                .contains { mainWindowController -> Bool in
-                    mainWindowController.mainViewController !== self
-                    && mainWindowController.mainViewController.isBurner == false
-                    && !mainWindowController.mainViewController.isInPopUpWindow
-                }
-        }()
-
-        if noPinnedTabs || (isSharedPinnedTabsMode && areOtherWindowsWithPinnedTabsAvailable) {
+        if shouldCloseWindowWithoutRegularTabs {
             // A Fire Window vanishing because its last tab closed still owes the user the fire animation,
             // and `NSWindow.close()` would skip it.
             if tabCollectionViewModel.isBurner,

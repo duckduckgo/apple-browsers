@@ -32,7 +32,7 @@ extension Fire.BurningData {
      */
     func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
-        case .specificDomains(_, false, _):
+        case .specificDomains(_, false, .none):
             return decider.shouldShowFireAnimation
         default:
             return false
@@ -65,13 +65,38 @@ final class FireViewModel {
     let fire: FireProtocol
 
     @Published private(set) var isAnimationPlaying = false
+    private(set) var isDataClearingAnimationPlaying = false
+    private var closingWindowAnimationCount = 0
+    private var hasPresentedCurrentBurn = false
+    private var burningPresentationCancellable: AnyCancellable?
 
-    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
-        guard self.isAnimationPlaying != isAnimationPlaying else { return }
-        self.isAnimationPlaying = isAnimationPlaying
+    /// A synchronous completion must not let another window present the same published burn.
+    @MainActor
+    func claimFirePresentation() -> Bool {
+        guard !hasPresentedCurrentBurn else { return false }
+        hasPresentedCurrentBurn = true
+        return true
+    }
+
+    func setAnimationPlaying(_ isPlaying: Bool, isFireWindow: Bool) {
+        if isFireWindow {
+            if isPlaying {
+                closingWindowAnimationCount += 1
+            } else {
+                guard closingWindowAnimationCount > 0 else { return }
+                closingWindowAnimationCount -= 1
+            }
+        } else {
+            guard isDataClearingAnimationPlaying != isPlaying else { return }
+            isDataClearingAnimationPlaying = isPlaying
+        }
+        let isAnyAnimationPlaying = isDataClearingAnimationPlaying || closingWindowAnimationCount > 0
+        if isAnimationPlaying != isAnyAnimationPlaying {
+            isAnimationPlaying = isAnyAnimationPlaying
+        }
 
         if !isFireWindow {
-            if isAnimationPlaying {
+            if isPlaying {
                 fire.fireAnimationDidStart()
             } else {
                 fire.fireAnimationDidFinish()
@@ -97,11 +122,16 @@ final class FireViewModel {
     @MainActor
     init(fire: FireProtocol) {
         self.fire = fire
+        burningPresentationCancellable = fire.burningDataPublisher.sink { [weak self] burningData in
+            if burningData == nil {
+                self?.hasPresentedCurrentBurn = false
+            }
+        }
     }
 
     @MainActor
-    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
-        fire = Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+    convenience init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
+        self.init(fire: Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider))
     }
 
     var isBurning: Bool {

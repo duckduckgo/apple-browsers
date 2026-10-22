@@ -79,38 +79,42 @@ final class NavigationBarBadgeAnimator: NSObject {
 
         animateButtonsFade(.start,
                            buttonsContainer: buttonsContainer,
-                           notificationBadgeContainer: notificationBadgeContainer) {
+                           notificationBadgeContainer: notificationBadgeContainer) { [weak self, weak buttonsContainer, weak notificationBadgeContainer] in
+            guard let self, animationID == newAnimationID,
+                  let buttonsContainer, let notificationBadgeContainer else { return }
 
-            notificationBadgeContainer.startAnimation { [weak self] in
-                if self?.animationID == newAnimationID {
-                    self?.animateButtonsFade(.end,
-                                       buttonsContainer: buttonsContainer,
-                                       notificationBadgeContainer: notificationBadgeContainer) {
-                        // Tear down the just-finished badge view now (the end-fade has completed,
-                        // so it's at alpha 0). This must happen before the delegate callback or
-                        // auto-processing below, either of which can synchronously start — and
-                        // prepare — the next queued animation on this same shared container.
-                        // Removing afterwards would destroy that newly prepared view instead.
-                        notificationBadgeContainer.removeAnimation()
+            notificationBadgeContainer.startAnimation { [weak self, weak buttonsContainer, weak notificationBadgeContainer] in
+                guard let self, animationID == newAnimationID,
+                      let buttonsContainer, let notificationBadgeContainer else { return }
+                self.animateButtonsFade(.end,
+                                        buttonsContainer: buttonsContainer,
+                                        notificationBadgeContainer: notificationBadgeContainer) { [weak self, weak notificationBadgeContainer] in
+                    guard let self, animationID == newAnimationID, let notificationBadgeContainer else { return }
+                    // Tear down the just-finished badge view now (the end-fade has completed,
+                    // so it's at alpha 0). This must happen before the delegate callback or
+                    // auto-processing below, either of which can synchronously start — and
+                    // prepare — the next queued animation on this same shared container.
+                    // Removing afterwards would destroy that newly prepared view instead.
+                    notificationBadgeContainer.removeAnimation()
 
-                        // Capture the type before clearing state
-                        let finishedType = self?.currentAnimationType
-                        self?.isAnimating = false
-                        self?.currentAnimationPriority = nil
-                        self?.currentAnimationType = nil
-                        self?.currentButtonsContainer = nil
-                        self?.currentNotificationContainer = nil
-                        if let finishedType = finishedType {
-                            self?.delegate?.didFinishAnimating(type: finishedType)
-                        }
-
-                        // Only auto-process next animation if flag is set
-                        // (tracker notifications will manually process after shield animation)
-                        if self?.shouldAutoProcessNextAnimation == true {
-                            self?.processNextAnimation()
-                        }
-                        self?.shouldAutoProcessNextAnimation = true  // Reset for next animation
+                    // Capture the type before clearing state
+                    let finishedType = currentAnimationType
+                    isAnimating = false
+                    animationID = nil
+                    currentAnimationPriority = nil
+                    currentAnimationType = nil
+                    currentButtonsContainer = nil
+                    currentNotificationContainer = nil
+                    if let finishedType = finishedType {
+                        delegate?.didFinishAnimating(type: finishedType)
                     }
+
+                    // Only auto-process next animation if flag is set
+                    // (tracker notifications will manually process after shield animation)
+                    if shouldAutoProcessNextAnimation {
+                        processNextAnimation()
+                    }
+                    shouldAutoProcessNextAnimation = true  // Reset for next animation
                 }
             }
         }
@@ -120,7 +124,7 @@ final class NavigationBarBadgeAnimator: NSObject {
                                     buttonsContainer: NSView,
                                     notificationBadgeContainer: NavigationBarBadgeAnimationView,
                                     completionHandler: @escaping (() -> Void)) {
-
+        guard let expectedAnimationID = animationID else { return }
         let animationDuration: CGFloat = 0.25
 
         NSAnimationContext.runAnimationGroup { context in
@@ -130,7 +134,9 @@ final class NavigationBarBadgeAnimator: NSObject {
             } else if fadeType == .end {
                 notificationBadgeContainer.animator().alphaValue = 0
             }
-        } completionHandler: {
+        } completionHandler: { [weak self, weak buttonsContainer, weak notificationBadgeContainer] in
+            guard self?.animationID == expectedAnimationID,
+                  let buttonsContainer, let notificationBadgeContainer else { return }
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = animationDuration
                 if fadeType == .start {
@@ -138,7 +144,8 @@ final class NavigationBarBadgeAnimator: NSObject {
                 } else if fadeType == .end {
                     buttonsContainer.animator().alphaValue = 1
                 }
-            } completionHandler: {
+            } completionHandler: { [weak self] in
+                guard self?.animationID == expectedAnimationID else { return }
                 completionHandler()
             }
         }
@@ -193,6 +200,8 @@ final class NavigationBarBadgeAnimator: NSObject {
     }
 
     func cancelPendingAnimations() {
+        // Invalidate callbacks before cancellation, which may synchronously finish an animation.
+        animationID = nil
         // Clear the queue
         animationQueue.removeAll()
 

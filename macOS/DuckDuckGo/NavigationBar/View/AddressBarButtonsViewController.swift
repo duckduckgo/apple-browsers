@@ -780,6 +780,9 @@ final class AddressBarButtonsViewController: NSViewController {
         for case let .some(animationView) in [shieldDotAnimationView, shieldAnimationView] {
             animationView.stop()
         }
+        if isLazyVar(named: "buttonsBadgeAnimator", initializedIn: self) {
+            buttonsBadgeAnimator.cancelPendingAnimations()
+        }
         notificationAnimationView?.removeAnimation()
     }
 

@@ -32,7 +32,16 @@ final class FireMock: FireProtocol {
     let visualizeFireAnimationDecider: VisualizeFireSettingsDecider
 
     private let burningSubject = PassthroughSubject<Fire.BurningData?, Never>()
-    var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { burningSubject.eraseToAnyPublisher() }
+    private var usesExplicitBurningState = false
+    var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> {
+        burningSubject.prepend(burningData).eraseToAnyPublisher()
+    }
+
+    func publishBurningData(_ data: Fire.BurningData?) {
+        usesExplicitBurningState = true
+        burningData = data
+        burningSubject.send(data)
+    }
 
     init(fireproofDomains: FireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = MockVisualizeFireAnimationDecider()) {
@@ -53,11 +62,13 @@ final class FireMock: FireProtocol {
 
     // MARK: - Fire animation hooks
     func fireAnimationDidStart() {
+        guard !usesExplicitBurningState else { return }
         // simulate start by emitting non-nil value
         burningSubject.send(.all)
     }
 
     func fireAnimationDidFinish() {
+        guard !usesExplicitBurningState else { return }
         // simulate finish by emitting nil
         burningSubject.send(nil)
     }

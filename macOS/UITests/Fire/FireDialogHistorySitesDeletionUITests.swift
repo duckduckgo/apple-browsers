@@ -199,11 +199,14 @@ final class FireDialogHistorySitesDeletionUITests: UITestCase, FireDialogUITests
 
         // Verify sites are gone from history menu
         app.historyMenu.click()
-        XCTAssertFalse(app.menuItems.element(matching: .keyPath(\.title, contains: "Local Storage")).exists,
-                       "privacy-test-pages.site should not be in history menu")
-        XCTAssertFalse(app.menuItems.element(matching: .keyPath(\.title, contains: "GitHub")).exists,
-                       "github.com should not be in history menu")
-        XCTAssertTrue(app.menuItems.element(matching: .keyPath(\.title, contains: "DuckDuckGo")).exists,
+        let historyMenuItems = app.historyMenu.menuItems
+        XCTAssertTrue(historyMenuItems.element(matching: .keyPath(\.title, contains: "Local Storage"))
+            .waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "privacy-test-pages.site should not be in history menu: \(app.historyMenu.debugDescription)")
+        XCTAssertTrue(historyMenuItems.element(matching: .keyPath(\.title, contains: "GitHub"))
+            .waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+                      "github.com should not be in history menu: \(app.historyMenu.debugDescription)")
+        XCTAssertTrue(historyMenuItems.element(matching: .keyPath(\.title, contains: "DuckDuckGo")).exists,
                       "duckduckgo.com should still be in history menu")
         app.historyMenu.typeKey(.escape, modifierFlags: [])
 

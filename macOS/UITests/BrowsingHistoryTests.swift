@@ -73,7 +73,7 @@ class BrowsingHistoryTests: UITestCase {
 
         // Wait for fire animation to complete
         XCTAssertTrue(
-            app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
+            app.waitForDataClearingToFinish(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
     }

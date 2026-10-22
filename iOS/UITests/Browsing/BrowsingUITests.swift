@@ -51,6 +51,7 @@ final class BrowsingUITests: UITestCase {
     }
 
     func testSettingsCanBeOpenedFromNewTabMenu() {
+        app.dismissAddressBarEditing()
         app.openSettings()
         app.dismissSettings()
     }

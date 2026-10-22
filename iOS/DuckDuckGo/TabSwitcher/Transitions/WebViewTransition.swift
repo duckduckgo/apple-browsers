@@ -437,9 +437,8 @@ class ToWebViewTransition: WebViewTransition {
         // A web view just attached for a different tab hasn't been laid out yet; its frame and insets
         // would place the preview off from where the page will actually draw.
         mainViewController.view.layoutIfNeeded()
-        // With the address bar at the bottom the page runs under the status bar, which the stored preview leaves out.
         let statusAreaColor = mainViewController.appSettings.currentAddressBarPosition.isBottom
-            ? Self.topEdgeColor(of: preview) ?? backgroundColor
+            ? Self.statusAreaColor(of: webView, preview: preview) ?? backgroundColor
             : mainViewController.viewCoordinator.statusBackground.backgroundColor ?? backgroundColor
 
         let webViewFrame = webView.convert(webView.bounds, to: containerView)
@@ -464,7 +463,17 @@ class ToWebViewTransition: WebViewTransition {
                        whenPageReady: { self.whenRendered(webView, $0) })
     }
 
-    /// The average colour of the image's top edge, to fill the strip the stored preview leaves out.
+    /// With the address bar at the bottom the page runs under the status bar, which the stored preview leaves out.
+    /// At the top of the page that strip shows the page's overscroll colour; further down it shows content, whose
+    /// best guess is the preview's top edge.
+    private static func statusAreaColor(of webView: WKWebView, preview: UIImage) -> UIColor? {
+        let scrollView = webView.scrollView
+        if scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top + 1 {
+            return webView.underPageBackgroundColor
+        }
+        return topEdgeColor(of: preview)
+    }
+
     private static func topEdgeColor(of image: UIImage) -> UIColor? {
         guard let cgImage = image.cgImage, cgImage.width > 0, cgImage.height > 0,
               let strip = cgImage.cropping(to: CGRect(x: 0, y: 0, width: cgImage.width, height: min(4, cgImage.height))) else { return nil }

@@ -39,7 +39,7 @@ concurrency:
 jobs:
   import:
     name: ${{ matrix.platform }} release translations
-    runs-on: macos-26
+    runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 60
     strategy:
       fail-fast: false

@@ -2218,7 +2218,11 @@ class MainViewController: UIViewController {
            let ntp = self.newTabPageViewController,
            !ntp.isShowingLogo {
             let restingBottomInset = newTabPageBottomAdditionalSafeAreaInset(for: .bottom)
-            self.newTabPageViewController?.additionalSafeAreaInsets.bottom = max(restingBottomInset, containerHeight)
+            if isFloatingUIEnabled, ntp.restingContentIsFavorites, let page = ntp as? NewTabPageViewController {
+                page.setKeyboardContentInset(containerHeight, restingBottomInset: restingBottomInset)
+            } else {
+                ntp.additionalSafeAreaInsets.bottom = max(restingBottomInset, containerHeight)
+            }
         }
 
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {

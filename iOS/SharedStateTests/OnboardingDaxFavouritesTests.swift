@@ -243,6 +243,24 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
         try super.tearDownWithError()
     }
 
+    func testKeyboardClearanceChangesScrollContentWithoutShrinkingTheRestingViewport() throws {
+        let host = try XCTUnwrap(sut)
+        host.newTab(allowingKeyboard: false)
+        let page = try XCTUnwrap(host.newTabPageViewController as? NewTabPageViewController)
+        let viewport = page.view.bounds
+        for keyboardInset: CGFloat in [0, 350, 500, 200, 0] {
+            page.setKeyboardContentInset(keyboardInset, restingBottomInset: 100)
+            page.view.layoutIfNeeded()
+
+            XCTAssertEqual(page.additionalSafeAreaInsets.bottom, 100)
+            XCTAssertEqual(page.scrollContentBottomInset, max(0, keyboardInset - 100))
+            XCTAssertEqual(page.view.bounds, viewport)
+        }
+        page.setKeyboardContentInset(350, restingBottomInset: 100)
+        page.dismiss()
+        XCTAssertEqual(page.scrollContentBottomInset, 0, "A retained page must not restore stale keyboard clearance after a tab switch")
+    }
+
     func testWhenSuggestionTrayActivatesThenPromoPreparationRespectsCoordinationMode() throws {
         let websiteURL = try XCTUnwrap(URL(string: "https://example.com"))
         let message = RemoteMessageModel(

@@ -763,9 +763,10 @@ extension MainViewFactory {
         let topAnchor: NSLayoutYAxisAnchor = floatingUIManager.isFloatingUIEnabled
             ? superview.topAnchor
             : superview.safeAreaLayoutGuide.topAnchor
+        let bottomAnchor = floatingUIManager.isFloatingUIEnabled ? superview.bottomAnchor : toolbar.topAnchor
         NSLayoutConstraint.activate([
             container.topAnchor.constraint(equalTo: topAnchor),
-            container.bottomAnchor.constraint(equalTo: toolbar.topAnchor),
+            container.bottomAnchor.constraint(equalTo: bottomAnchor),
             container.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
         ])

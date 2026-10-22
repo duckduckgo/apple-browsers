@@ -19,6 +19,7 @@
 
 import Combine
 import XCTest
+import UIKit
 @testable import DuckDuckGo
 
 @MainActor
@@ -124,6 +125,35 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertEqual(activeSubscriptions, 1)
         host = nil
         XCTAssertEqual(activeSubscriptions, 0)
+    }
+
+    func testLegacyFavoritesKeepFullHeightWhileInputClearanceChanges() throws {
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+        let parent = UIViewController()
+        parent.view.frame = CGRect(x: 0, y: 0, width: 400, height: 800)
+        host.start(in: parent.view, parentViewController: parent, isFloatingUIEnabled: true, textPublisher: Just(""))
+        defer { host.tearDown() }
+        let hosted = try XCTUnwrap(parent.children.first)
+
+        for inputHeight: CGFloat in [0, 180, 220, 100, 0] {
+            host.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: inputHeight, right: 0))
+            parent.view.layoutIfNeeded()
+
+            XCTAssertEqual(hosted.view.bounds.height, parent.view.bounds.height)
+            XCTAssertEqual(hosted.additionalSafeAreaInsets.bottom, 0)
+        }
+
+        inputs.send(.init(mode: .search, isTyping: true, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        host.setContentInsets(UIEdgeInsets(top: 0, left: 0, bottom: 180, right: 0))
+        XCTAssertEqual(hosted.additionalSafeAreaInsets.bottom, 180)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        parent.view.layoutIfNeeded()
+        XCTAssertEqual(hosted.view.bounds.height, parent.view.bounds.height)
+        XCTAssertEqual(hosted.additionalSafeAreaInsets.bottom, 0)
+
+        host.setUsesRedesignedNewTabPageLayout(true)
+        XCTAssertEqual(hosted.additionalSafeAreaInsets.bottom, 180)
     }
 
     private func makeHost(inputsPublisher: AnyPublisher<UnifiedSuggestionsInputs, Never>) -> UnifiedSuggestionsHost {

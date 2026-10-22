@@ -19,6 +19,7 @@
 
 import UIKit
 import XCTest
+@_spi(Testing) import Persistence
 @testable import DuckDuckGo
 
 final class NewTabPageInputPresentationTests: XCTestCase {
@@ -104,6 +105,35 @@ final class NewTabPageInputPresentationTests: XCTestCase {
 
 @MainActor
 final class NewTabPageInputCoordinatorTests: XCTestCase {
+
+    func testFocusedFloatingContentReachesTheRestingPageFloorBehindTheToolbar() {
+        for floating in [false, true] {
+            let parent = UIViewController()
+            parent.view.frame = CGRect(x: 0, y: 0, width: 400, height: 800)
+            let featureFlagger = MockFeatureFlagger()
+            let settings = MockAIChatSettingsProvider()
+            let manager = FloatingUIManager(isFloatingUIFeatureEnabled: floating,
+                                            isPadProvider: { false },
+                                            isSupportedOSProvider: { true },
+                                            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true))
+            let coordinator = MainViewFactory.createViewHierarchy(
+                parent,
+                aiChatSettings: settings,
+                aiChatAddressBarExperience: AIChatAddressBarExperience(featureFlagger: featureFlagger, aiChatSettings: settings),
+                voiceSearchHelper: MockVoiceSearchHelper(),
+                featureFlagger: featureFlagger,
+                floatingUIManager: manager,
+                appSettings: AppSettingsMock(),
+                mobileCustomization: MobileCustomization(keyValueStore: MockThrowingKeyValueStore()))
+            parent.view.layoutIfNeeded()
+
+            let contentBottom = coordinator.unifiedInputContentContainer.frame.maxY
+            XCTAssertEqual(contentBottom, floating ? parent.view.bounds.maxY : coordinator.toolbar.frame.minY, accuracy: 0.01)
+            if floating {
+                XCTAssertGreaterThan(contentBottom, coordinator.toolbar.frame.minY)
+            }
+        }
+    }
 
     func testOnboardingRevealsChromeInputAndRestoresInlinePresentationAfterDismissal() {
         for usesUnifiedInput in [false, true] {

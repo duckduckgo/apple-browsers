@@ -33,11 +33,13 @@ struct NewTabPageView: View {
     let isFocussedState: Bool
     let narrowLayoutInLandscape: Bool
     let dismissKeyboardOnScroll: Bool
+    let isFloatingUIEnabled: Bool
     let layoutConfiguration: NewTabPageLayoutConfiguration
 
     init(isFocussedState: Bool = false,
          narrowLayoutInLandscape: Bool = false,
          dismissKeyboardOnScroll: Bool = true,
+         isFloatingUIEnabled: Bool = false,
          layoutConfiguration: NewTabPageLayoutConfiguration = .standard,
          viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
@@ -48,6 +50,7 @@ struct NewTabPageView: View {
         self.favoritesViewModel = favoritesViewModel
         self.narrowLayoutInLandscape = narrowLayoutInLandscape
         self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
+        self.isFloatingUIEnabled = isFloatingUIEnabled
         self.layoutConfiguration = layoutConfiguration
 
         self.messagesModel.load()
@@ -138,7 +141,7 @@ private extension NewTabPageView {
                         .opacity(viewModel.isFavoritesHidden ? 0 : 1)
                 }
                 .padding(.top, contentTopInset(in: proxy))
-                .padding(.bottom, sectionsViewPadding(in: proxy))
+                .padding(.bottom, sectionsViewPadding(in: proxy) + viewModel.scrollContentBottomInset)
                 .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
@@ -146,10 +149,8 @@ private extension NewTabPageView {
                 $0.scrollDismissesKeyboardIfAvailable()
             })
         }
-        .if(dismissKeyboardOnScroll, transform: {
-            // Prevent recreating geometry reader when keyboard is shown/hidden.
-            $0.ignoresSafeArea(.keyboard)
-        })
+        // Keyboard clearance belongs inside scroll content so moving it never clips the grid early.
+        .ignoresSafeArea(dismissKeyboardOnScroll || isFloatingUIEnabled ? .keyboard : [])
     }
 
     @ViewBuilder

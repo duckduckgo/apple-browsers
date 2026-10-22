@@ -106,6 +106,7 @@ extension MainViewController {
         let bottomInset = newTabPageBottomAdditionalSafeAreaInset(for: addressBarPosition)
         switch addressBarPosition {
         case .top:
+            (newTabPageViewController as? NewTabPageViewController)?.setScrollContentBottomInset(0)
             // Reserve space for visible floating chrome while allowing content to scroll behind it.
             let topInset = isFloatingTopContentBehindBar && viewCoordinator.newTabPageInputPresentation.reservesAddressBarSpace
                 ? viewCoordinator.omniBar.barView.expectedHeight * currentBarsVisibility

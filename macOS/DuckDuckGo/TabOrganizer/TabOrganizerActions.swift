@@ -37,9 +37,7 @@ struct TabOrganizerActions {
             case .keep, .close, .moveToNewWindow: break
             }
         }
-        for group in groups where group.action == .moveToNewWindow {
-            moveToNewWindow(group.tabIDs)
-        }
+        moveToNewWindow(groups.filter { $0.action == .moveToNewWindow })
         close(groups.filter { $0.action == .close }.flatMap(\.tabIDs))
     }
 
@@ -93,12 +91,26 @@ struct TabOrganizerActions {
         }
     }
 
-    private func moveToNewWindow(_ ids: [String]) {
-        let tabs = unpinnedTabs(withIDs: ids)
+    /// All "New window" groups go into one new window; with more than one, each becomes a tab group there.
+    private func moveToNewWindow(_ groups: [ProposedGroup]) {
+        let groupedTabs = groups.map { (group: $0, tabs: unpinnedTabs(withIDs: $0.tabIDs)) }.filter { !$0.tabs.isEmpty }
+        let tabs = groupedTabs.flatMap(\.tabs)
         guard !tabs.isEmpty else { return }
 
         let burnerMode = tabCollectionViewModel.burnerMode
         let newCollection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs, isPopup: false), burnerMode: burnerMode)
+        if groupedTabs.count > 1 {
+            for (index, entry) in groupedTabs.enumerated() {
+                let color = TabGroupColor.allCases[index % TabGroupColor.allCases.count]
+                let tabGroup = newCollection.tabGroupManager.createGroup(name: entry.group.name, color: color)
+                for tab in entry.tabs {
+                    newCollection.tabGroupManager.setGroup(tabGroup.id, for: tab)
+                }
+            }
+        }
+        for tab in tabs {
+            tabCollectionViewModel.tabGroupManager.setGroup(nil, for: tab)
+        }
         windowControllersManager.openNewWindow(with: newCollection, burnerMode: burnerMode, showWindow: true)
 
         let indices = tabs.compactMap { tabCollectionViewModel.indexInAllTabs(of: $0) }.sorted(by: >)

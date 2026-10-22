@@ -84,8 +84,8 @@ struct TopicResponse: Codable {
 struct InstructionResponse: Codable {
     let name: String
     let matchingTabNumbers: [Int]
-    let actionForMatching: TabGroupAction
-    let actionForOthers: TabGroupAction
+    var actionForMatching: TabGroupAction
+    var actionForOthers: TabGroupAction
     /// Set when the request asks to split the matching tabs, e.g. "breed" for "separate dogs by breed".
     var groupBy: String?
 }

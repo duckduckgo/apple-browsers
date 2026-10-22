@@ -53,8 +53,9 @@ final class AppleTabOrganizer: TabOrganizing {
         case .instruction(let text):
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
-            let response = try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract
-            if let criterion = response.groupBy {
+            let response = Self.applyingKeepOnly(text, to: try await session.respond(to: prompt, generating: GeneratedInstructionResponse.self).content.contract)
+            // The small model invents criteria, so only split when the request asks for it.
+            if let criterion = response.groupBy, Self.asksToSplit(text) {
                 return try await split(response, by: criterion, tabs: tabs)
             }
             // "the shopping group": a tab group named in the request is matched in code, not by the model.
@@ -94,6 +95,24 @@ final class AppleTabOrganizer: TabOrganizing {
             groups.append(ProposedGroup(name: TabOrganizerProposalBuilder.everythingElseGroupName, tabIDs: others, action: response.actionForOthers))
         }
         return TabOrganizerProposal(groups: groups)
+    }
+
+    static func asksToSplit(_ text: String) -> Bool {
+        let words = Set(text.lowercased().components(separatedBy: CharacterSet.letters.inverted))
+        return !words.isDisjoint(with: ["separate", "split", "by"])
+    }
+
+    /// "keep only X" and "close everything except X" mean: X stays, the rest closes. The small model tends to
+    /// keep the rest, or to close X, so these phrasings are read in code.
+    static func applyingKeepOnly(_ text: String, to response: InstructionResponse) -> InstructionResponse {
+        let words = Set(text.lowercased().components(separatedBy: CharacterSet.letters.inverted))
+        let isKeepOnly = !words.isDisjoint(with: ["only", "just"]) && response.actionForMatching == .keep
+        let isCloseExcept = !words.isDisjoint(with: ["except", "but"]) && !words.isDisjoint(with: ["close", "delete", "remove"])
+        guard isKeepOnly || isCloseExcept else { return response }
+        var response = response
+        response.actionForMatching = .keep
+        response.actionForOthers = .close
+        return response
     }
 
     /// Existing tab group names that appear in the request, whole words, ignoring case.

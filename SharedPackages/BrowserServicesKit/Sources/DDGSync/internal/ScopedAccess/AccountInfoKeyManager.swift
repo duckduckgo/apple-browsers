@@ -37,6 +37,13 @@ enum AccountInfoKeyManagerError: Error, Equatable {
 protocol AccountInfoKeyProviding {
     func loadKey(for account: SyncAccount) async throws -> AccountInfoKey
     func refreshKey(for account: SyncAccount) async throws -> AccountInfoKey
+    func cachedKey(matching keyID: String) -> AccountInfoKey?
+}
+
+extension AccountInfoKeyProviding {
+    func cachedKey(matching keyID: String) -> AccountInfoKey? {
+        nil
+    }
 }
 
 protocol AccountInfoKeyManaging: AccountInfoKeyProviding {

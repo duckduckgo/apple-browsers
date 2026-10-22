@@ -330,3 +330,13 @@ jobs:
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
             🔁 To retry, run the "Smartling - Submit" workflow with kind release, platform ${{ inputs.platform }} and branch ${{ inputs.branch }}.
+
+      # The submit script exits successfully even when Smartling fails, so the nightly run fails here, after the
+      # review task is open. Release runs report on the release task instead.
+      - name: Fail the nightly run if the submission failed
+        if: ${{ !cancelled() && inputs.kind == 'nightly' && steps.submit.outputs.failed == 'true' }}
+        env:
+          REASON: ${{ steps.submit.outputs.reason }}
+        run: |
+          echo "::error::Smartling submission failed: $REASON"
+          exit 1

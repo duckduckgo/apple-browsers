@@ -168,6 +168,7 @@
     "fire_single-tab-burn_requested": {
         "description": "Single-tab burn reached the executor, including requests dropped because another burn is in progress. Sent with either optimization flag state.",
         "owners": ["brindy"],
+        "expires": "2027-01-22",
         "triggers": ["user_interaction", "feature_lifecycle"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [
@@ -187,6 +188,7 @@
     "fire_single-tab-burn_finished": {
         "description": "Single-tab executor finished all requested cleanup and delegate callbacks. Completion does not imply every cleanup operation succeeded. Sent with either optimization flag state.",
         "owners": ["brindy"],
+        "expires": "2027-01-22",
         "triggers": ["feature_lifecycle"],
         "suffixes": ["platform", "form_factor"],
         "parameters": [

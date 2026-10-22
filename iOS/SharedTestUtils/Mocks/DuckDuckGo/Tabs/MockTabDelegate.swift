@@ -65,6 +65,8 @@ final class MockTabDelegate: TabDelegate {
         didRequestAppRatingPromptCallCount += 1
     }
 
+    func tab(_ tab: TabViewController, didShowPrompt id: PromptExposureID) {}
+
     private(set) var didRequestLoadQueryCalled = false
     private(set) var capturedQuery: String?
     private(set) var didRequestLoadURLCalled = false
@@ -258,6 +260,7 @@ extension TabViewController {
             voiceSearchHelper: MockVoiceSearchHelper(),
             darkReaderFeatureSettings: MockDarkReaderFeatureSettings(),
             autoplaySettings: MockAutoplaySettings(),
+            usageContextProvider: UsageContextProvider(),
             adBlockingAvailability: StubAdBlockingAvailability(),
             eventHub: StubEventHub(),
             webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,

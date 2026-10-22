@@ -42,6 +42,23 @@ final class ToolbarVisibilityDecisionTests: XCTestCase {
         XCTAssertFalse(decide().isHidden)
     }
 
+    func testWebInputEditingHidesToolbarAndRestoresItsLayoutVisibilityAfterEditing() {
+        for isLargeWidth in [false, true] {
+            for isInMinimalChromeLayout in [false, true] {
+                var inputs = ToolbarVisibilityDecision.Inputs(
+                    isCurrentTabUsingUnifiedInputAIChrome: false,
+                    isLargeWidth: isLargeWidth,
+                    isInMinimalChromeLayout: isInMinimalChromeLayout,
+                    isFloatingWebInputEditing: true)
+                XCTAssertTrue(ToolbarVisibilityDecision.resolve(inputs).isHidden)
+
+                inputs.isFloatingWebInputEditing = false
+
+                XCTAssertEqual(ToolbarVisibilityDecision.resolve(inputs).isHidden, isLargeWidth || isInMinimalChromeLayout)
+            }
+        }
+    }
+
     // MARK: - Helper
 
     private func decide(

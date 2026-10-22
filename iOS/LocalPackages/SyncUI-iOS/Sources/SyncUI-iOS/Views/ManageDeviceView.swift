@@ -118,7 +118,7 @@ struct ManageDeviceView: View {
                 }
                 .accessibility(identifier: "deviceName")
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var syncToggleSection: some View {
@@ -138,7 +138,7 @@ struct ManageDeviceView: View {
         } footer: {
             Text(turnOffFooter)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         .removeDeviceConfirmationAlert(isPresented: $model.isThisDeviceTurnOffConfirmationVisible,
                                        deviceName: editModel.name,
                                        isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
@@ -183,7 +183,7 @@ struct ManageDeviceView: View {
         } footer: {
             Text(removeFooter)
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
         .removeDeviceConfirmationAlert(isPresented: $isShowingRemoveConfirmation,
                                        deviceName: device.name,
                                        isImprovedPairingFlowEnabled: model.isImprovedPairingFlowEnabled) {
@@ -223,46 +223,38 @@ private extension SyncSettingsViewModel {
 }
 
 #Preview("Other Device – Desktop") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(),
-                device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(),
+            device: .init(id: "2", name: "macOS Ventura", type: "desktop", isThisDevice: false)
+        )
     }
 }
 
 #Preview("Other Device – Mobile") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(),
-                device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(),
+            device: .init(id: "3", name: "Pixel 8", type: "phone", isThisDevice: false)
+        )
     }
 }
 
 #Preview("This Device – Sync On") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(isSyncEnabled: true),
-                device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(isSyncEnabled: true),
+            device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+        )
     }
 }
 
 #Preview("This Device – Sync Off") {
-    RebrandedPreview(isRebranded: true) {
-        NavigationView {
-            ManageDeviceView(
-                model: .managePreview(isSyncEnabled: false),
-                device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
-            )
-        }
+    NavigationView {
+        ManageDeviceView(
+            model: .managePreview(isSyncEnabled: false),
+            device: .init(id: "1", name: "iPhone 15 Pro", type: "phone", isThisDevice: true)
+        )
     }
 }
 

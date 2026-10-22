@@ -21,7 +21,6 @@ import UIKit
 import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
-import PixelKit
 
 /// The floating ("liquid glass") tab switcher chrome. It uses system bars to render liquid glass
 /// on iOS 26+ and falls back to solid bar backgrounds on earlier versions.
@@ -56,7 +55,7 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
     /// collection view (which scrolls vertically), not the horizontally-paging `contentView`.
     private weak var scrollEdgeScrollView: UIScrollView?
     private weak var centerView: UIView?
-    private var glassCenterContainer: UIVisualEffectView?
+    private var glassCenterContainer: UIView?
     private var layoutConstraints: [NSLayoutConstraint] = []
     private var isFireModeEnabled = false
     private var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
@@ -240,26 +239,33 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         glassCenterContainer = nil
     }
 
-    /// Wraps the mode switcher in a glass capsule on iOS 26 so it stays legible over the
-    /// glass navigation bar (otherwise it washes out). Below iOS 26 the raw view is used.
+    /// Places a glass capsule behind the mode switcher on iOS 26 so it stays legible over the
+    /// navigation bar. Below iOS 26 the raw view is used.
     private func centerTitleView() -> UIView? {
         guard let centerView else { return nil }
         guard #available(iOS 26.0, *) else { return centerView }
 
         if let glassCenterContainer { return glassCenterContainer }
 
+        let containerView = UIView()
         let effectView = UIVisualEffectView(effect: UIGlassEffect())
         effectView.cornerConfiguration = .capsule()
+        effectView.translatesAutoresizingMaskIntoConstraints = false
         centerView.translatesAutoresizingMaskIntoConstraints = false
-        effectView.contentView.addSubview(centerView)
+        containerView.addSubview(effectView)
+        containerView.addSubview(centerView)
         NSLayoutConstraint.activate([
-            centerView.topAnchor.constraint(equalTo: effectView.contentView.topAnchor),
-            centerView.bottomAnchor.constraint(equalTo: effectView.contentView.bottomAnchor),
-            centerView.leadingAnchor.constraint(equalTo: effectView.contentView.leadingAnchor),
-            centerView.trailingAnchor.constraint(equalTo: effectView.contentView.trailingAnchor),
+            effectView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            effectView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            effectView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            effectView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+            centerView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            centerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            centerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            centerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
         ])
-        glassCenterContainer = effectView
-        return effectView
+        glassCenterContainer = containerView
+        return containerView
     }
 
     func setTitle(_ title: String?) {
@@ -275,29 +281,12 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
             return
         }
 
-        plusItem.menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                PixelKit.fire(Pixel.Event.tabLongPressMenuDisplayed, options: .parameters([
-                    PixelParameters.source: "tab_switcher"
-                ]))
-                completion([
-                    UIAction(title: UserText.actionNewFireTab,
-                             image: DesignSystemImages.Glyphs.Size16.fireWindow) { [weak self] _ in
-                        PixelKit.fire(Pixel.Event.tabLongPressMenuNewFireTab, options: .parameters([
-                            PixelParameters.source: "tab_switcher"
-                        ]))
-                        self?.actions.onNewFireTabTapped?()
-                    },
-                    UIAction(title: UserText.actionNewTab,
-                             image: DesignSystemImages.Glyphs.Size16.add) { [weak self] _ in
-                        PixelKit.fire(Pixel.Event.tabLongPressMenuNewNormalTab, options: .parameters([
-                            PixelParameters.source: "tab_switcher"
-                        ]))
-                        self?.actions.onNewNormalTabTapped?()
-                    }
-                ])
-            }
-        ])
+        plusItem.menu = NewTabLongPressMenu.make(source: .tabSwitcher, actions: .init(
+            onNewFireTab: { [weak self] in self?.actions.onNewFireTabTapped?() },
+            onNewTab: { [weak self] in self?.actions.onNewNormalTabTapped?() },
+            onNewChat: { [weak self] in self?.actions.onNewChatTapped?() },
+            isNewChatAvailable: { [weak self] in self?.actions.isNewChatAvailable?() ?? false }
+        ))
     }
 
     func decorate(theme: Theme) {

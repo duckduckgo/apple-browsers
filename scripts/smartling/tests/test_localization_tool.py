@@ -1,0 +1,286 @@
+#!/usr/bin/env python3
+
+import contextlib
+import importlib.util
+import io
+import sys
+import tempfile
+import unittest
+from decimal import Decimal
+from pathlib import Path
+
+
+MODULE_PATH = Path(__file__).parents[1] / 'localization_tool.py'
+SPEC = importlib.util.spec_from_file_location('localization_tool', MODULE_PATH)
+LOCALIZATION_TOOL = importlib.util.module_from_spec(SPEC)
+sys.modules[SPEC.name] = LOCALIZATION_TOOL
+SPEC.loader.exec_module(LOCALIZATION_TOOL)
+
+
+async def no_sleep(_):
+    return None
+
+
+class FakeSmartlingClient:
+
+    def __init__(self,
+                 report=None,
+                 pending_jobs=None,
+                 named_jobs=None,
+                 batch_status='COMPLETED',
+                 estimate_status='COMPLETED',
+                 cancellation_state='COMPLETED',
+                 job_status='CANCELLED'):
+        self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
+        self.report = report or {}
+        self.pending_jobs = pending_jobs or []
+        self.named_jobs = named_jobs or []
+        self.batch_status = batch_status
+        self.estimate_status = estimate_status
+        self.cancellation_state = cancellation_state
+        self.job_status = job_status
+        self.authorized_jobs = []
+        self.deleted_jobs = []
+        self.created_jobs = []
+        self.uploaded_file_uris = []
+        self.operations = []
+
+    async def list_jobs(self, _job_name, statuses):
+        return self.pending_jobs if statuses else self.named_jobs
+
+    async def get_project_locales(self):
+        return ['de-DE']
+
+    async def create_job(self, name, _locales, _description):
+        self.created_jobs.append(name)
+        return 'job-123'
+
+    async def create_batch(self, _job_id, _file_uris):
+        return 'batch-123'
+
+    async def upload_to_batch(self, _batch_id, _file_path, file_uri, _locales):
+        self.uploaded_file_uris.append(file_uri)
+
+    async def get_batch_status(self, _batch_id):
+        return self.batch_status
+
+    async def generate_cost_estimate(self, _job_id):
+        return 'report-123'
+
+    async def get_estimate_status(self, _report_id):
+        return self.estimate_status
+
+    async def get_estimate_report(self, _report_id):
+        return self.report
+
+    async def cancel_job(self, job_id):
+        self.operations.append(f'cancel:{job_id}')
+        return 'process-123'
+
+    async def get_job_process_state(self, _job_id, _process_id):
+        return self.cancellation_state
+
+    async def get_job(self, _job_id):
+        return {'jobStatus': self.job_status}
+
+    async def delete_job(self, job_id):
+        self.operations.append(f'delete:{job_id}')
+        self.deleted_jobs.append(job_id)
+
+    async def authorize_job(self, job_id):
+        self.authorized_jobs.append(job_id)
+
+
+class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
+
+    def setUp(self):
+        export_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(export_dir.cleanup)
+        self.export_file = Path(export_dir.name) / 'en.xliff'
+        self.export_file.write_text('<xliff/>', encoding='utf-8')
+
+    async def run_submit(self, client, auto_authorize_max_usd='500.00'):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return await LOCALIZATION_TOOL.run_submit(
+                client=client,
+                files=[self.export_file],
+                job_name='Nightly iOS - 2026-08-04',
+                pending_job_prefix='Nightly iOS - ',
+                file_uri_prefix='main',
+                auto_authorize_max_usd=Decimal(auto_authorize_max_usd),
+                sleep=no_sleep
+            )
+
+    async def testWhenNoStringsNeedTranslationThenJobIsDeleted(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 0,
+            'priceInformation': None,
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'no_new_strings')
+        self.assertEqual(result.job_id, 'job-123')
+        self.assertEqual(client.deleted_jobs, ['job-123'])
+        self.assertEqual(client.authorized_jobs, [])
+        self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
+
+    async def testWhenEmptyJobCancellationFailsThenJobIsNotDeleted(self):
+        client = FakeSmartlingClient(
+            report={
+                'totalStrings': 0,
+                'priceInformation': None,
+            },
+            cancellation_state='FAILED'
+        )
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('cancellation failed', result.reason)
+        self.assertEqual(client.operations, ['cancel:job-123'])
+
+    async def testWhenMaximumEstimateIsExactlyLimitThenJobIsAuthorized(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 450, 'priceMax': 500},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'authorized')
+        self.assertEqual(result.max_usd, '500')
+        self.assertEqual(client.authorized_jobs, ['job-123'])
+        self.assertEqual(client.uploaded_file_uris, ['main/en.xliff'])
+
+    async def testWhenMaximumEstimateExceedsLimitThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 400, 'priceMax': 500.01},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertEqual(result.job_id, 'job-123')
+        self.assertEqual(result.max_usd, '500.01')
+        self.assertEqual((result.total_strings, result.locales), (10, 1))
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenEstimateHasWarningsThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 80, 'priceMax': 100},
+            ],
+            'warnings': [{'message': 'No rate found for de-DE'}],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('No rate found for de-DE', result.reason)
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenLimitIsZeroThenZeroPricedJobIsNotAuthorized(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 0, 'priceMax': 0},
+            ],
+        })
+
+        result = await self.run_submit(client, auto_authorize_max_usd='0')
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('limit is 0', result.reason)
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenEstimateHasNoUSDPriceThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'EUR', 'priceMin': 100, 'priceMax': 120},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('no maximum USD price', result.reason)
+
+    async def testWhenEstimateHasSeveralUSDPricesThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 200, 'priceMax': 300},
+                {'currencyCode': 'USD', 'priceMin': 250, 'priceMax': 400},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('2 USD prices', result.reason)
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenEstimateFailsThenReviewIsRequired(self):
+        client = FakeSmartlingClient(estimate_status='FAILED')
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('status FAILED', result.reason)
+
+    async def testWhenEstimateTimesOutThenReviewIsRequired(self):
+        client = FakeSmartlingClient(estimate_status='PROCESSING')
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertIn('timed out', result.reason)
+
+    async def testWhenPendingJobWithPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
+        client = FakeSmartlingClient(pending_jobs=[{
+            'jobName': 'Nightly iOS - 2026-08-03',
+            'translationJobUid': 'pending-job',
+        }])
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'pending_review')
+        self.assertEqual(result.job_id, 'pending-job')
+        self.assertEqual(result.job_name, 'Nightly iOS - 2026-08-03')
+        self.assertIsNone(result.total_strings)
+        self.assertIn('Nightly iOS - 2026-08-03', result.reason)
+        self.assertEqual(client.created_jobs, [])
+
+    async def testWhenJobWithSameNameExistsThenNoJobIsCreated(self):
+        client = FakeSmartlingClient(named_jobs=[
+            {'jobName': 'Nightly iOS - 2026-08-04 (copy)', 'translationJobUid': 'other-job'},
+            {'jobName': 'Nightly iOS - 2026-08-04', 'translationJobUid': 'todays-job'},
+        ])
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'skipped_existing_job')
+        self.assertEqual(result.job_id, 'todays-job')
+        self.assertEqual(client.created_jobs, [])
+
+    async def testWhenBatchCompletesWithErrorsThenReviewIsRequired(self):
+        client = FakeSmartlingClient(batch_status='COMPLETED_WITH_ERRORS')
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertEqual(result.job_id, 'job-123')
+        self.assertIn('COMPLETED_WITH_ERRORS', result.reason)
+        self.assertEqual(client.authorized_jobs, [])
+
+
+if __name__ == '__main__':
+    unittest.main()

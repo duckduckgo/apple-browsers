@@ -141,6 +141,10 @@ final class LocalBookmarkManager: BookmarkManager {
         bookmarkStore.bookmarksCount()
     }
 
+    func hasTopLevelEntities() -> Bool {
+        bookmarkStore.hasTopLevelEntities()
+    }
+
     func loadBookmarks() {
         bookmarkStore.loadAll(type: .topLevelEntities) { [weak self] (topLevelEntities, error) in
             guard error == nil, let topLevelEntities = topLevelEntities else {
@@ -164,7 +168,11 @@ final class LocalBookmarkManager: BookmarkManager {
                     }
 
                     self.isLoading = false
+                    let hadTopLevelEntities = self.list?.topLevelEntities.isEmpty == false
                     self.list = BookmarkList(entities: bookmarks, topLevelEntities: topLevelEntities, favorites: favorites)
+                    if hadTopLevelEntities, topLevelEntities.isEmpty {
+                        NotificationCenter.default.post(name: .bookmarksBecameEmpty, object: nil)
+                    }
                 }
             }
         }

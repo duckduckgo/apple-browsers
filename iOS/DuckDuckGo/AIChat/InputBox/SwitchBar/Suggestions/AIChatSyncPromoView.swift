@@ -25,7 +25,6 @@ import SwiftUI
 
 #if DEBUG
 import PreviewSnapshots
-import UIComponents
 #endif
 
 struct AIChatSyncPromoView: View {
@@ -80,7 +79,6 @@ struct AIChatSyncPromoView_Previews: PreviewProvider {
 
     static let snapshots = PreviewSnapshots {
         AIChatSyncPromoView(onCTATap: {}, onCloseTap: {})
-            .applyRebranding()
     }
 }
 #endif

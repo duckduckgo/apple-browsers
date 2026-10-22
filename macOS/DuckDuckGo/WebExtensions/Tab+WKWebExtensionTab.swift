@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import WebExtensions
 import WebKit
 
 @available(macOS 15.4, *)
@@ -54,12 +55,11 @@ extension Tab: WKWebExtensionTab {
     }
 
     func setParentTab(_ parentTab: (any WKWebExtensionTab)?, for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionTabError.notSupported
+        throw WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.update.openerTabId", in: context)
     }
 
     func webView(for context: WKWebExtensionContext) -> WKWebView? {
-        return webView
+        return webExtensionPageWebView ?? webView
     }
 
     func title(for context: WKWebExtensionContext) -> String? {
@@ -72,14 +72,12 @@ extension Tab: WKWebExtensionTab {
 
     func setPinned(_ pinned: Bool, for context: WKWebExtensionContext) async throws {
         guard let tabIndex = tabCollectionViewModel?.indexInAllTabs(of: self) else {
-            assertionFailure("Tab not found")
             throw WebExtensionTabError.tabNotFound
         }
 
         if pinned {
             switch tabIndex {
             case .pinned:
-                assertionFailure("Tab is already pinned")
                 throw WebExtensionTabError.alreadyPinned
             case .unpinned(let index):
                 tabCollectionViewModel?.pinTab(at: index)
@@ -89,7 +87,6 @@ extension Tab: WKWebExtensionTab {
             case .pinned(let index):
                 tabCollectionViewModel?.unpinTab(at: index)
             case .unpinned:
-                assertionFailure("Tab is not pinned")
                 throw WebExtensionTabError.notPinned
             }
         }
@@ -104,8 +101,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func setReaderModeActive(_ active: Bool, for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionTabError.notSupported
+        throw WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.toggleReaderMode", in: context)
     }
 
     func isPlayingAudio(for context: WKWebExtensionContext) -> Bool {
@@ -119,12 +115,10 @@ extension Tab: WKWebExtensionTab {
     func setMuted(_ muted: Bool, for context: WKWebExtensionContext) async throws {
         if muted {
             guard !audioState.isMuted else {
-                assertionFailure("Tab is not muted")
                 throw WebExtensionTabError.notMuted
             }
         } else {
             guard audioState.isMuted else {
-                assertionFailure("Tab is muted")
                 throw WebExtensionTabError.alreadyMuted
             }
         }
@@ -140,8 +134,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func setZoomFactor(_ zoomFactor: Double, for context: WKWebExtensionContext) async throws {
-        assertionFailure("not supported yet")
-        throw WebExtensionTabError.notSupported
+        throw WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.setZoom", in: context)
     }
 
     func url(for context: WKWebExtensionContext) -> URL? {
@@ -161,8 +154,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     func snapshot(using configuration: WKSnapshotConfiguration, for context: WKWebExtensionContext) async throws -> NSImage? {
-        assertionFailure("not supported yet")
-        throw WebExtensionTabError.notSupported
+        try await webView(for: context)?.takeSnapshot(configuration: configuration)
     }
 
     func loadURL(_ url: URL, for context: WKWebExtensionContext) async throws {
@@ -193,14 +185,12 @@ extension Tab: WKWebExtensionTab {
         if selected {
             tabCollectionViewModel?.select(tab: self)
         } else {
-            assertionFailure("not supported yet")
-            throw WebExtensionTabError.notSupported
+            throw WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.update.highlighted", in: context)
         }
     }
 
     func duplicate(using configuration: WKWebExtension.TabConfiguration, for context: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
-        assertionFailure("not supported yet")
-        throw WebExtensionTabError.notSupported
+        throw WebExtensionAPICompatibilityLog.unsupportedAPI("tabs.duplicate", in: context)
     }
 
     func close(for context: WKWebExtensionContext) async throws {

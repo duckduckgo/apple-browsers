@@ -17,44 +17,38 @@
 //  limitations under the License.
 //
 
+import Combine
 import Foundation
 
 @MainActor
 protocol DaxGreetingProviding {
     func getGreeting() -> String
-    func getNewGreeting() -> String
+}
+
+@MainActor
+protocol DaxGreetingDebugging: AnyObject {
+    var clockOffset: TimeInterval { get }
+    func skipToNextGreeting()
+    func resetGreetingState()
 }
 
 /// Nil values make the corresponding greeting rules ineligible.
 struct DaxGreetingContext {
-    enum Appearance: Equatable {
-        case light, dark
-    }
-
-    var appearance: Appearance?
     var isFirstOpenOfDay: Bool?
     var foregroundOpenCount: Int?
-    var isTrackerProtectionEnabled: Bool?
-    var isCookiePopupProtectionEnabled: Bool?
-    var isAdBlockingEnabled: Bool?
-    var isScamProtectionEnabled: Bool?
+    var isTrackerOrAdBlockingEnabled: Bool?
     var isAIChatEnabled: Bool?
 }
 
 @MainActor
 final class DaxGreetingService {
-    private struct Conditions: Equatable {
-        let eligible: Set<DaxGreeting>
-        let day: Date
-        let calendar: Calendar
-        let appearance: DaxGreetingContext.Appearance?
-        let language: String?
-    }
+    static let greetingLifetime: TimeInterval = 60 * 60
 
     private struct Selection {
         let greeting: DaxGreeting
         let date: Date
-        let conditions: Conditions
+        let day: Date
+        let calendar: Calendar
     }
 
     private let now: () -> Date
@@ -64,6 +58,10 @@ final class DaxGreetingService {
     private let randomIndex: (Range<Int>) -> Int
     private var selection: Selection?
     private var recentGreetings: [DaxGreeting] = []
+    private(set) var clockOffset: TimeInterval = 0
+    private let debugChangesSubject = PassthroughSubject<Void, Never>()
+
+    var debugChanges: AnyPublisher<Void, Never> { debugChangesSubject.eraseToAnyPublisher() }
 
     init(now: @escaping () -> Date = Date.init,
          calendarProvider: @escaping () -> Calendar = { Calendar.current },
@@ -77,110 +75,92 @@ final class DaxGreetingService {
         self.randomIndex = randomIndex
     }
 
-    private func eligibleGroups(date: Date, calendar: Calendar, context: DaxGreetingContext) -> [[DaxGreeting]] {
-        var weekday: [DaxGreeting] = []
+    private func priorityGreetings(context: DaxGreetingContext) -> [DaxGreeting] {
+        (context.foregroundOpenCount ?? 0) >= 3 ? [.youreBack] : []
+    }
+
+    private func regularGreetings(date: Date, calendar: Calendar, context: DaxGreetingContext) -> [DaxGreeting] {
+        let weekday: [DaxGreeting]
         switch calendar.component(.weekday, from: date) {
+        case 1: weekday = [.sunday]
         case 2: weekday = [.monday]
-        case 4: weekday = [.wednesday]
-        case 6: weekday = [.fridaySearch, .fridayDuck]
-        default: break
+        case 6: weekday = [.friday, .fridayDuck]
+        default: weekday = []
         }
 
-        let time: DaxGreeting
-        let meal: [DaxGreeting]
+        let time: [DaxGreeting]
         switch calendar.component(.hour, from: date) {
-        case 3..<12:
-            time = .early
-            meal = [.cookieBreakfast]
-        case 12..<18:
-            time = .afternoon
-            meal = [.cookieLunch]
-        case 18..<22:
-            time = .evening
-            meal = [.cookieDinner]
-        default:
-            time = .late
-            meal = []
+        case 3..<12: time = [.morning]
+        case 12..<22: time = []
+        default: time = [.stillAwake, .nightOwl]
         }
 
-        let appearance: [DaxGreeting]
-        switch context.appearance {
-        case .dark: appearance = [.dark]
-        case .light: appearance = [.light]
-        case nil: appearance = []
-        }
+        let features: [DaxGreeting] = (context.isTrackerOrAdBlockingEnabled == true ? [.goodbyeAds] : []) + [.askMe]
 
-        var features: [DaxGreeting] = []
-        if context.isTrackerProtectionEnabled == true {
-            features += [.trackersQuiet, .trackersSearch, .trackersAsk]
-        }
-        if context.isCookiePopupProtectionEnabled == true { features.append(.cookies) }
-        if context.isAdBlockingEnabled == true { features.append(.ads) }
-        if context.isScamProtectionEnabled == true { features.append(.scams) }
+        let firstOpen: [DaxGreeting] = context.isFirstOpenOfDay == true
+            ? [.whereToToday, .newDayNewTabs, .whereShouldWeStart]
+            : []
 
-        return [
-            weekday,
-            [time],
-            appearance,
-            context.isFirstOpenOfDay == true ? [.firstOpen] : [],
-            (context.foregroundOpenCount ?? 0) >= 3 ? [.frequentHabit, .frequentSearch] : [],
-            features,
-            context.isCookiePopupProtectionEnabled == true ? meal : []
-        ]
+        return weekday + time + firstOpen + features + DaxGreeting.generic
+    }
+
+    private func shouldKeep(_ selection: Selection, date: Date, day: Date, calendar: Calendar,
+                            eligible: [DaxGreeting], unshownPriority: [DaxGreeting]) -> Bool {
+        let isWithinLifetime = date >= selection.date && date < selection.date + Self.greetingLifetime
+        let isSameDay = day == selection.day && calendar == selection.calendar
+        let isStillEligible = eligible.contains(selection.greeting)
+        let isNotReplacedByPriority = unshownPriority.isEmpty || unshownPriority.contains(selection.greeting)
+        return isWithinLifetime && isSameDay && isStillEligible && isNotReplacedByPriority
+    }
+
+    private func leastRecentlyShown(_ pool: [DaxGreeting]) -> [DaxGreeting] {
+        var history = recentGreetings
+        var candidates = pool.filter { !history.contains($0) }
+        while candidates.isEmpty && !history.isEmpty {
+            history.removeFirst()
+            candidates = pool.filter { !history.contains($0) }
+        }
+        return candidates
     }
 }
 
 extension DaxGreetingService: DaxGreetingProviding {
     func getGreeting() -> String {
-        selectGreeting(forceRefresh: false)
-    }
-
-    func getNewGreeting() -> String {
-        selectGreeting(forceRefresh: true)
-    }
-
-    private func selectGreeting(forceRefresh: Bool) -> String {
-        let date = now()
+        let date = now().addingTimeInterval(clockOffset)
         let calendar = calendarProvider()
         let context = contextProvider(date, calendar)
-        let language = languageProvider()
-        let isEnglish = language.map { Locale(identifier: $0).languageCode == "en" } ?? false
+        let isEnglish = languageProvider().map { Locale(identifier: $0).languageCode == "en" } ?? false
         func isEligible(_ greeting: DaxGreeting) -> Bool {
             (isEnglish || !greeting.isEnglishOnly) && (context.isAIChatEnabled == true || !greeting.requiresAIChat)
         }
-        let generic = DaxGreeting.generic.filter(isEligible)
-        let groups = eligibleGroups(date: date, calendar: calendar, context: context).map { group in
-            group.filter(isEligible)
-        }
-        let conditions = Conditions(eligible: Set(groups.flatMap { $0 } + generic),
-                                    day: calendar.startOfDay(for: date),
-                                    calendar: calendar,
-                                    appearance: context.appearance,
-                                    language: language)
-        if !forceRefresh, let selection,
-           date >= selection.date,
-           conditions == selection.conditions {
+        let priority = priorityGreetings(context: context).filter(isEligible)
+        let regular = regularGreetings(date: date, calendar: calendar, context: context).filter(isEligible)
+        let unshownPriority = priority.filter { !recentGreetings.contains($0) }
+        let day = calendar.startOfDay(for: date)
+        if let selection, shouldKeep(selection, date: date, day: day, calendar: calendar,
+                                     eligible: priority + regular, unshownPriority: unshownPriority) {
             return selection.greeting.text
         }
 
-        let availableGroups = groups.map { group in
-            group.filter { !recentGreetings.contains($0) }
-        }.filter { !$0.isEmpty }
-        var candidates: [DaxGreeting]
-        if availableGroups.isEmpty {
-            candidates = generic.filter { !recentGreetings.contains($0) }
-            var history = recentGreetings
-            while candidates.isEmpty {
-                history.removeFirst()
-                candidates = generic.filter { !history.contains($0) }
-            }
-        } else {
-            candidates = availableGroups[randomIndex(availableGroups.indices)]
-        }
+        let candidates = unshownPriority.isEmpty ? leastRecentlyShown(regular) : unshownPriority
         let greeting = candidates[randomIndex(candidates.indices)]
-        selection = Selection(greeting: greeting, date: date, conditions: conditions)
+        selection = Selection(greeting: greeting, date: date, day: day, calendar: calendar)
         recentGreetings.append(greeting)
         recentGreetings = Array(recentGreetings.suffix(5))
         return greeting.text
+    }
+}
+
+extension DaxGreetingService: DaxGreetingDebugging {
+    func skipToNextGreeting() {
+        clockOffset += Self.greetingLifetime
+        debugChangesSubject.send()
+    }
+
+    func resetGreetingState() {
+        clockOffset = 0
+        selection = nil
+        recentGreetings = []
+        debugChangesSubject.send()
     }
 }

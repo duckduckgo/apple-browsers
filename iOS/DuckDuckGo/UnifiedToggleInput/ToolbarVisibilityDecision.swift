@@ -26,6 +26,7 @@ struct ToolbarVisibilityDecision: Equatable {
         let isCurrentTabUsingUnifiedInputAIChrome: Bool
         let isLargeWidth: Bool
         let isInMinimalChromeLayout: Bool
+        var isFloatingWebInputEditing: Bool = false
     }
 
     static func resolve(_ inputs: Inputs) -> ToolbarVisibilityDecision {
@@ -37,5 +38,6 @@ struct ToolbarVisibilityDecision: Equatable {
         inputs.isCurrentTabUsingUnifiedInputAIChrome
             || inputs.isLargeWidth
             || inputs.isInMinimalChromeLayout
+            || inputs.isFloatingWebInputEditing
     }
 }

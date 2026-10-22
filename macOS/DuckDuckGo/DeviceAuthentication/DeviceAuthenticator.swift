@@ -31,6 +31,7 @@ extension NSNotification.Name {
 protocol UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void)
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool
 }
 
 final class DeviceAuthenticator: UserAuthenticating {
@@ -157,18 +158,21 @@ final class DeviceAuthenticator: UserAuthenticating {
         autofillPreferences.isAutoLockEnabled
     }
 
-    func authenticateUser(reason: AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
+    func isAuthenticationPromptNeeded(reason: AuthenticationReason) -> Bool {
         guard AppVersion.runType != .uiTests else {
-            result(.success)
-            return
+            return false
         }
 
         let needsAuthenticationForCreditCardsAutofill = reason == .autofillCreditCards && isCreditCardTimeIntervalExpired()
         let needsAuthenticationForSyncSettings = reason == .syncSettings && isSyncSettingsTimeIntervalExpired()
         let needsAuthenticationForDeleteAllPasswords = reason == .deleteAllPasswords
         let needsAuthenticationForViewAllCredentials = reason == .viewAllCredentials
-        guard needsAuthenticationForCreditCardsAutofill || needsAuthenticationForSyncSettings || needsAuthenticationForDeleteAllPasswords || needsAuthenticationForViewAllCredentials ||
-                requiresAuthentication else {
+        return needsAuthenticationForCreditCardsAutofill || needsAuthenticationForSyncSettings || needsAuthenticationForDeleteAllPasswords || needsAuthenticationForViewAllCredentials ||
+            requiresAuthentication
+    }
+
+    func authenticateUser(reason: AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
+        guard isAuthenticationPromptNeeded(reason: reason) else {
             result(.success)
             return
         }

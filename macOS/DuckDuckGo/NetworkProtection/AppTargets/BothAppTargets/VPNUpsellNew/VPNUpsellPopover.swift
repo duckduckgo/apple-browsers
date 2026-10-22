@@ -66,14 +66,8 @@ struct VPNUpsellPopoverView: View {
 
     var body: some View {
         VStack(spacing: Constants.outerVerticalSpacing) {
-            Group {
-                if viewModel.isAppRebranded {
-                    rebrandHeader
-                } else {
-                    animatedHeader
-                }
-            }
-            .padding(.horizontal, Constants.headerHorizontalPadding)
+            animatedHeader
+                .padding(.horizontal, Constants.headerHorizontalPadding)
 
             VStack(spacing: Constants.innerVerticalSpacing) {
                 titleAndSubtitle
@@ -93,19 +87,6 @@ struct VPNUpsellPopoverView: View {
     }
 
     private var animatedHeader: some View {
-        ZStack {
-            LottieView(animation: .named("sparkleloop_wide_legacy"))
-                .playing(loopMode: .loop)
-                .frame(width: Constants.sparkleSize.width, height: Constants.sparkleSize.height)
-                .clipped()
-            LottieView(animation: .named("privacypro_devices_legacy"))
-                .playing(loopMode: .playOnce)
-                .frame(width: Constants.subscriptionSize.width, height: Constants.subscriptionSize.height)
-                .clipped()
-            }
-    }
-
-    private var rebrandHeader: some View {
         ZStack {
             LottieView(animation: .named("upsell_devices_loop"))
                 .playing(loopMode: .loop)
@@ -162,11 +143,7 @@ struct VPNUpsellPopoverView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
 
-            if viewModel.isAppRebranded {
-                dismissButton.buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: false, stateColors: .themedDismissButton))
-            } else {
-                dismissButton.buttonStyle(StandardButtonStyle(pillShape: true))
-            }
+            dismissButton.buttonStyle(DismissActionButtonStyle(pillShape: true, showsBorder: false, stateColors: .themedDismissButton))
 
             Button {
                 viewModel.showSubscriptionLandingPage()
@@ -176,7 +153,7 @@ struct VPNUpsellPopoverView: View {
             }
             .buttonStyle(DefaultActionButtonStyle(enabled: true,
                                                   shouldBeFixedVertical: false,
-                                                  stateColors: viewModel.isAppRebranded ? .themedActionButton : .legacyActionButton,
+                                                  stateColors: .themedActionButton,
                                                   pillShape: true))
         }
         .frame(height: Constants.actionButtonHeight)

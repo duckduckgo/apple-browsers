@@ -20,6 +20,7 @@
 import Bookmarks
 import Combine
 import Foundation
+import PixelKit
 
 @MainActor
 final class AddFavoriteViewModel: ObservableObject {
@@ -32,9 +33,12 @@ final class AddFavoriteViewModel: ObservableObject {
         return trimmed.isEmpty ? nil : BookmarkUtils.url(from: trimmed)
     }
     private let bookmarks: MenuBookmarksInteracting
+    private let pixelFiring: (any PixelKitFiring)?
 
-    init(bookmarks: MenuBookmarksInteracting) {
+    init(bookmarks: MenuBookmarksInteracting,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.bookmarks = bookmarks
+        self.pixelFiring = pixelFiring
     }
 
     var canSave: Bool { validatedURL != nil }
@@ -44,8 +48,13 @@ final class AddFavoriteViewModel: ObservableObject {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedURL = urlText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard bookmarks.saveFavorite(title: trimmedName.isEmpty ? nil : trimmedName, urlString: trimmedURL) else { return false }
+        pixelFiring?.fire(AddFavoritePixel.saved, frequency: .dailyAndCount)
         onSave?()
         return true
+    }
+
+    func reportOpening() {
+        pixelFiring?.fire(AddFavoritePixel.opened, frequency: .dailyAndCount)
     }
 
 }

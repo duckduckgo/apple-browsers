@@ -79,6 +79,7 @@ extension XCUIApplication {
         static let releaseNotesMenuItem = "Release Notes"
 
         static let settingsScrollView = "Settings.ScrollView"
+        static let preferencesSidebarScrollView = "PreferencesSidebar.scrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
         static let preferencesDataClearingButton = "PreferencesSidebar.dataClearingButton"
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
@@ -130,6 +131,7 @@ extension XCUIApplication {
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["UITEST_MODE"] = "1"
+        app.enforceEnglish()
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
         }
@@ -144,6 +146,11 @@ extension XCUIApplication {
         }
         app.launch()
         return app
+    }
+
+    /// The tests match English text, so run the app in English whatever the Mac's language is.
+    private func enforceEnglish() {
+        launchArguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
     }
 
     /// Terminate the running app and launch it again, preserving environment and arguments from `setUp()`.
@@ -290,18 +297,42 @@ extension XCUIApplication {
     }
 
     /// Activates the address bar if needed and returns its current value
+    /// - Parameter waitingForPageLoad: wait for the page to stop loading before activating the address bar. Use it for pages that
+    ///   take focus when they finish loading. Leave it off in tests that inspect the address bar while a navigation is still in flight.
     /// - Returns: The current value of the address bar as a string
-    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true) -> String? {
+    func addressBarValueActivatingIfNeeded(shouldActivate: Bool = true, waitingForPageLoad: Bool = false) -> String? {
         if shouldActivate {
-            activateAddressBar()
-            // Some web pages handle Cmd+L themselves, leaving the address bar in its passive, non-editable state
-            let passiveAddressBar = windows.firstMatch.staticTexts[AccessibilityIdentifiers.addressBarPassiveTextField]
-            if !addressBar.waitForExistence(timeout: 2), passiveAddressBar.exists {
-                passiveAddressBar.click()
-            }
+            activateAddressBarRetryingIfFocusIsLost(waitingForPageLoad: waitingForPageLoad)
         }
         XCTAssertTrue(addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Address bar should be editable")
         return addressBar.value as? String
+    }
+
+    /// Focuses the address bar with Cmd+L, optionally once the page has stopped loading, retrying when something else takes the focus back.
+    ///
+    /// A page that autofocuses an input when it finishes loading (e.g. duckduckgo.com) or that handles Cmd+L itself
+    /// leaves the address bar in its passive, non-editable state, so activating it while the page is still loading can lose a race.
+    private func activateAddressBarRetryingIfFocusIsLost(waitingForPageLoad: Bool, attempts: Int = 3) {
+        if waitingForPageLoad {
+            waitForPageToFinishLoading()
+        }
+        let passiveAddressBar = windows.firstMatch.staticTexts[AccessibilityIdentifiers.addressBarPassiveTextField]
+        for _ in 0..<attempts {
+            activateAddressBar()
+            if addressBar.waitForExistence(timeout: 2) { return }
+
+            if passiveAddressBar.exists {
+                passiveAddressBar.click()
+                if addressBar.waitForExistence(timeout: 2) { return }
+            }
+        }
+    }
+
+    /// Waits (best effort) for the Reload/Stop button to go back to "Reload Page", i.e. for the current tab to stop loading.
+    /// A timeout is not a failure, because some pages never finish loading.
+    private func waitForPageToFinishLoading(timeout: TimeInterval = UITests.Timeouts.elementExistence) {
+        let notLoading = NSPredicate(format: "title != %@", "Stop")
+        _ = reloadButton.wait(for: notLoading, timeout: timeout)
     }
 
     func navigateToYouTubeVideo(_ videoID: String, file: StaticString = #file, line: UInt = #line) {
@@ -638,16 +669,36 @@ extension XCUIApplication {
 
     /// Selects the General pane in Preferences
     func preferencesGoToGeneralPane() {
-        let prefs = preferencesWindow
-        let general = prefs.buttons[AccessibilityIdentifiers.preferencesGeneralButton]
-        if general.waitForExistence(timeout: UITests.Timeouts.elementExistence) { general.click() }
+        preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesGeneralButton)
     }
 
     /// Selects the Data Clearing pane in Preferences
     func preferencesGoToDataClearingPane() {
-        let prefs = preferencesWindow
-        let dataClearing = prefs.buttons[AccessibilityIdentifiers.preferencesDataClearingButton]
-        if dataClearing.waitForExistence(timeout: UITests.Timeouts.elementExistence) { dataClearing.click() }
+        preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesDataClearingButton)
+    }
+
+    /// Clicks a Settings sidebar item, scrolling the sidebar first if the window is too short to show it
+    private func preferencesClickSidebarButton(_ identifier: String) {
+        let button = preferencesWindow.buttons[identifier]
+        guard button.waitForExistence(timeout: UITests.Timeouts.elementExistence) else { return }
+        scrollIntoViewInPreferencesSidebar(button)
+        button.click()
+    }
+
+    /// Scrolls the Settings sidebar until the item is fully inside the visible area.
+    /// Same approach as `ensureHittable`, which scrolls the Settings content pane.
+    private func scrollIntoViewInPreferencesSidebar(_ element: XCUIElement) {
+        let scrollView = preferencesWindow.scrollViews[AccessibilityIdentifiers.preferencesSidebarScrollView]
+        guard scrollView.exists else { return }
+
+        let padding: CGFloat = 20
+        let distanceBelow = element.frame.maxY - scrollView.frame.maxY + padding
+        let distanceAbove = scrollView.frame.minY - element.frame.minY + padding
+        if distanceBelow > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: -distanceBelow)
+        } else if distanceAbove > 0 {
+            scrollView.scroll(byDeltaX: 0, deltaY: distanceAbove)
+        }
     }
 
     enum StartupType: String, CaseIterable {
@@ -698,6 +749,10 @@ extension XCUIApplication {
         switch state {
         case .restoreLastSession:
             radioButton = prefs.radioButtons[AccessibilityIdentifiers.reopenAllWindowsFromLastSession]
+            // SwiftUI on macOS 12 exposes this radio button's title without its identifier.
+            if !radioButton.exists {
+                radioButton = prefs.radioButtons["Reopen all windows and tabs from last session"]
+            }
         case .fireWindow:
             radioButton = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeFireWindow]
             picker = prefs.radioButtons[AccessibilityIdentifiers.startupWindowTypeRegularWindow]
@@ -1107,7 +1162,7 @@ extension XCUIApplication {
     }
 
     func resetPromo(withID promoID: String) {
-        let promoResetItem = promoQueueMenu
+        promoQueueMenu
             .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.promoMenuItem(promoID)]
             .menuItems[Utilities.AccessibilityIdentifiers.PromoQueue.undismissClearItem]
             .clickAfterExistenceTestSucceeds()

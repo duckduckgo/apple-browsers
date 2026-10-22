@@ -30,6 +30,7 @@ final class UTITextModel {
         let persistDraft: () -> Void
         let updateFloatingReturnKey: () -> Void
         let clearAttachmentValidationErrorIfPossible: () -> Void
+        var onTextChanged: () -> Void = {}
     }
 
     private(set) var currentText: String = ""
@@ -55,6 +56,7 @@ final class UTITextModel {
         sideEffects.applyTextToView(text)
         sideEffects.persistDraft()
         sideEffects.updateFloatingReturnKey()
+        sideEffects.onTextChanged()
     }
 
     /// User typed in the field (from the view delegate); does not push back into the view.
@@ -67,6 +69,7 @@ final class UTITextModel {
         sideEffects.persistDraft()
         sideEffects.clearAttachmentValidationErrorIfPossible()
         sideEffects.updateFloatingReturnKey()
+        sideEffects.onTextChanged()
         textChangeSubject.send(text)
     }
 
@@ -79,6 +82,7 @@ final class UTITextModel {
     func resetToEmpty() {
         currentText = ""
         textState = .empty
+        sideEffects.onTextChanged()
     }
 
     /// Dismiss-time clear: scrub the visible field but keep `currentText` so re-activating the same
@@ -88,6 +92,7 @@ final class UTITextModel {
         textState = .empty
         omnibarPrefilledText = nil
         sideEffects.applyTextToView("")
+        sideEffects.onTextChanged()
         DispatchQueue.main.async { [weak self] in
             self?.isPerformingDismissCleanup = false
         }

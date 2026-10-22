@@ -200,6 +200,32 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
     }
 
+    var tabAttachmentsRequirePromptText: Bool {
+        get { inputBarView.tabAttachmentsRequirePromptText }
+        set { inputBarView.tabAttachmentsRequirePromptText = newValue }
+    }
+
+    var isPreparingInitialPrompt: Bool {
+        get { inputBarView.isPreparingInitialPrompt }
+        set { inputBarView.isPreparingInitialPrompt = newValue }
+    }
+
+    var isInputFrozenForInitialPromptPreparation: Bool {
+        get { inputBarView.isInputFrozenForInitialPromptPreparation }
+        set { inputBarView.isInputFrozenForInitialPromptPreparation = newValue }
+    }
+
+    /// Greys out Send and marks the pasted-text chips in one go.
+    var isPromptOverLimit: Bool {
+        get { inputBarView.isPromptOverLimit }
+        set { inputBarView.isPromptOverLimit = newValue }
+    }
+
+    var onAttachmentTapped: ((UUID) -> Void)? {
+        get { inputBarView.onAttachmentTapped }
+        set { inputBarView.onAttachmentTapped = newValue }
+    }
+
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
     /// controls that would offer one.
     var isInputBlockedByUsageLimit: Bool = false {

@@ -34,11 +34,11 @@ final class MockAppStoreCustomProductPagePresenter: UIViewController, AppStoreCu
         tools: [AIChatRAGTool]?,
         modelId: String?,
         reasoningEffort: AIChat.AIChatReasoningEffort?,
-        images: [AIChatNativePrompt.NativePromptImage]?,
-        files: [AIChat.AIChatNativePrompt.NativePromptFile]?,
+        attachments: AIChatPromptAttachments,
         reportsNewTab: Bool?,
         forcesNewTab: Bool,
         fromDeepLink: Bool,
-        termsAccepted: Bool
+        termsAccepted: Bool,
+        nativePromptFlow: DuckAIPromptFlowStart?
     ) {}
 }

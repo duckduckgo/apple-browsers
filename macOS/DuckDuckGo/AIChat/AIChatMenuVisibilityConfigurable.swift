@@ -161,7 +161,10 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldAutomaticallySendPageContext: Bool {
-        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatPageContext) && storage.shouldAutomaticallySendPageContext
+        guard shouldDisplayAnyAIChatFeature, featureFlagger.isFeatureOn(.aiChatPageContext) else {
+            return false
+        }
+        return featureFlagger.isFeatureOn(.aiChatPageContextAutoAttach) || storage.shouldAutomaticallySendPageContext
     }
 
     var shouldAutomaticallySendPageContextTelemetryValue: Bool? {

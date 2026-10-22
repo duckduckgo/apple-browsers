@@ -25,6 +25,7 @@ import DesignResourcesKit
 struct OmniBarNotification: View {
 
     @ObservedObject var viewModel: OmniBarNotificationViewModel
+    var lozengeHeight: CGFloat = OmniBarMetrics.notificationLozengeHeight
 
     @State var isAnimatingCookie: Bool = false
 
@@ -37,7 +38,7 @@ struct OmniBarNotification: View {
                 icon
                 text
             }
-            .frame(height: OmniBarMetrics.notificationLozengeHeight)
+            .frame(height: lozengeHeight)
             .background(background)
             .padding(.leading, OmniBarMetrics.notificationLozengeInset)
 
@@ -45,19 +46,11 @@ struct OmniBarNotification: View {
         }
     }
 
-    @ViewBuilder
     private var background: some View {
-        if DesignSystemRebrand.isAppRebranded() {
-            Capsule()
-                .foregroundColor(Constants.Colors.background)
-                .offset(x: textOffset)
-                .clipShape(Capsule())
-        } else {
-            RoundedRectangle(cornerRadius: Constants.Radius.background)
-                .foregroundColor(Constants.Colors.background)
-                .offset(x: textOffset)
-                .clipShape(RoundedRectangle(cornerRadius: Constants.Radius.background))
-        }
+        Capsule()
+            .foregroundColor(Constants.Colors.background)
+            .offset(x: textOffset)
+            .clipShape(Capsule())
     }
     
     @ViewBuilder
@@ -174,20 +167,11 @@ private enum Constants {
         static let rowHeight: CGFloat = 76
         static let staticIcon = CGSize(width: 24, height: 24)
     }
-
-    enum Radius {
-        static let background: CGFloat = 12
-    }
 }
 
 #if DEBUG
 private struct OmniBarNotificationGallery: View {
-    @StateObject private var rebrandOverride: RebrandPreviewOverride
     @Environment(\.colorScheme) private var colorScheme
-
-    init(isRebranded: Bool) {
-        _rebrandOverride = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: isRebranded))
-    }
 
     private static let samples: [(name: String, type: OmniBarNotificationType)] = [
         ("Cookies managed (animated cookie)", .cookiePopupManaged),
@@ -197,8 +181,7 @@ private struct OmniBarNotificationGallery: View {
     ]
 
     var body: some View {
-        rebrandOverride.apply()
-        return VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             ForEach(Self.samples, id: \.name) { sample in
                 VStack(alignment: .leading, spacing: 4) {
                     Text(sample.name)
@@ -222,11 +205,7 @@ private struct OmniBarNotificationGallery: View {
     }
 }
 
-#Preview("Notifications / Legacy") {
-    OmniBarNotificationGallery(isRebranded: false)
-}
-
-#Preview("Notifications / Rebranded") {
-    OmniBarNotificationGallery(isRebranded: true)
+#Preview("Notifications") {
+    OmniBarNotificationGallery()
 }
 #endif

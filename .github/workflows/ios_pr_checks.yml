@@ -210,10 +210,13 @@ jobs:
         # so `.when(configuration: .debug)` doesn't fire and the DEBUG-only snapshot tests wouldn't compile.
         # This forces DEBUG on for the package build. Read in SyncUI-iOS/Package.swift.
         SPM_FORCE_DEBUG: "1"
+        TEST_RUNNER_REQUIRE_SNAPSHOT_REFERENCES: "1"
       run: |
         echo "Using iOS simulator: ${{ steps.select-simulator.outputs.ios-version }}"
         echo "Destination: ${{ steps.select-simulator.outputs.destination }}"
 
+        # Avoid Xcode's verbose simulator collection for runtime warnings in passing tests.
+        # Keep the console log, result bundle, and crash reports for failed runs.
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
           -destination "${{ steps.select-simulator.outputs.destination }}" \
@@ -223,6 +226,7 @@ jobs:
           -skipMacroValidation \
           -test-iterations 3 \
           -retry-tests-on-failure \
+          -collect-test-diagnostics never \
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           COMPILATION_CACHE_ENABLE_CACHING=YES \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
@@ -276,6 +280,15 @@ jobs:
           iOS/xcodebuild.log
           iOS/DerivedData/Logs/Test/*.xcresult
         retention-days: 7
+
+    - name: Report snapshot failures
+      if: always() && steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/snapshot-failure-report
+      with:
+        working-directory: iOS
+        xcresult: DerivedData/Logs/Test/iOS-UnitTests.xcresult
+        report-name: ios-snapshot-failures.html
+        title: iOS Snapshot Failures
 
     - name: Upload crash reports
       uses: actions/upload-artifact@v6

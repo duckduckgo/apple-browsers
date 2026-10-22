@@ -75,30 +75,6 @@ protocol SharedColorPaletteDefinition {
     static var accentFireTextSecondary: DynamicColor { get }
     static var accentFireTextTertiary: DynamicColor { get }
 
-    // MARK: - Alert
-    static var alertGreen: DynamicColor { get }
-    static var alertYellow: DynamicColor { get }
-
-    // MARK: - Shield
-    static var shieldPrivacy: DynamicColor { get }
-
-    // MARK: - Buttons/Primary
-    static var buttonsPrimaryDefault: DynamicColor { get }
-    static var buttonsPrimaryPressed: DynamicColor { get }
-    static var buttonsPrimaryDisabled: DynamicColor { get }
-    static var buttonsPrimaryText: DynamicColor { get }
-    static var buttonsPrimaryTextDisabled: DynamicColor { get }
-
-    // MARK: - Buttons/SecondaryFill
-    static var buttonsSecondaryFillDefault: DynamicColor { get }
-    static var buttonsSecondaryFillPressed: DynamicColor { get }
-    static var buttonsSecondaryFillDisabled: DynamicColor { get }
-    static var buttonsSecondaryFillText: DynamicColor { get }
-    static var buttonsSecondaryFillTextDisabled: DynamicColor { get }
-
-    // MARK: - Buttons/Color
-    static var buttonsWhite: DynamicColor { get }
-
     // MARK: - Container Colors
     static var containerFillPrimary: DynamicColor { get }
     static var containerFillSecondary: DynamicColor { get }
@@ -108,6 +84,7 @@ protocol SharedColorPaletteDefinition {
     static var containerBorderTertiary: DynamicColor { get }
 
     // MARK: - Controls Colors
+    static var controlsBase: DynamicColor { get }
     static var controlsBorderPrimary: DynamicColor { get }
     static var controlsBorderSecondary: DynamicColor { get }
     static var controlsBorderTertiary: DynamicColor { get }
@@ -128,7 +105,8 @@ protocol SharedColorPaletteDefinition {
     static var destructiveContentPrimary: DynamicColor { get }
     static var destructiveContentSecondary: DynamicColor { get }
     static var destructiveContentTertiary: DynamicColor { get }
-    static var destructiveGlow: DynamicColor { get }
+    static var destructiveGlowPrimary: DynamicColor { get }
+    static var destructiveGlowSecondary: DynamicColor { get }
     static var destructivePrimary: DynamicColor { get }
     static var destructiveSecondary: DynamicColor { get }
     static var destructiveTertiary: DynamicColor { get }
@@ -160,9 +138,6 @@ protocol SharedColorPaletteDefinition {
     static var unifiedInputFireTextSecondary: DynamicColor { get }
     static var unifiedInputTextPrimary: DynamicColor { get }
     static var unifiedInputTextSecondary: DynamicColor { get }
-
-    // MARK: - System
-    static var lines: DynamicColor { get }
 
     // MARK: - Shadow Colors
     static var shadowPrimary: DynamicColor { get }

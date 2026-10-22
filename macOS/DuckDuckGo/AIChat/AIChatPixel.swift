@@ -268,7 +268,7 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User removes a screenshot chip from the duck.ai omnibar with its ×
     case aiChatAddressBarScreenshotRemoved
 
-    /// Event Trigger: An Add Screenshot capture in the duck.ai omnibar failed or Screen Recording was denied. Never on cancel
+    /// Event Trigger: An Add Screenshot capture in the duck.ai omnibar failed. Never on cancel or a missing Screen Recording permission
     case aiChatAddressBarScreenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: User submits a prompt that includes one or more image attachments
@@ -435,7 +435,7 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User removes a screenshot chip in the New Tab Page omnibar (reported by the page)
     case aiChatNtpScreenshotRemoved
 
-    /// Event Trigger: An Add Screenshot capture for the New Tab Page omnibar failed or Screen Recording was denied, natively or when the page couldn't process the image. Never on cancel
+    /// Event Trigger: An Add Screenshot capture for the New Tab Page omnibar failed, natively or when the page couldn't process the image. Never on cancel or a missing Screen Recording permission
     case aiChatNtpScreenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: An image chip is added to the New Tab Page omnibar (reported by the page)

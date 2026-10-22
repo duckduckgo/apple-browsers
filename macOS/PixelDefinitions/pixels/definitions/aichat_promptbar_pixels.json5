@@ -111,7 +111,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_promptbar_screenshot_failed": {
-        "description": "Fired when an Add Screenshot capture in the Prompt Bar fails or Screen Recording is denied. Not fired when the user cancels",
+        "description": "Fired when an Add Screenshot capture in the Prompt Bar fails. Not fired when the user cancels or Screen Recording is off, which aichat_screenshot_permission_needed_macos_u reports",
         "owners": ["jotaemepereira"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
@@ -122,8 +122,8 @@
             {
                 "key": "reason",
                 "type": "string",
-                "description": "denied: Screen Recording is off; unavailable: capture could not start; failed: the capture or its processing failed, or the image could not be attached",
-                "enum": ["denied", "unavailable", "failed"]
+                "description": "unavailable: capture could not start; failed: the capture or its processing failed, or the image could not be attached",
+                "enum": ["unavailable", "failed"]
             }
         ]
     },

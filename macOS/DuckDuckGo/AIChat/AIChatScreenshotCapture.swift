@@ -36,7 +36,6 @@ enum AIChatScreenshotKind: String {
 
 /// Raw values match the pixel `reason` parameter.
 enum AIChatScreenshotFailureReason: String {
-    case denied
     case unavailable
     case failed
 }
@@ -61,11 +60,11 @@ enum AIChatScreenshotCaptureResult {
     case permissionDenied
     case failed(AIChatScreenshotFailureReason)
 
-    /// The `screenshot_failed` reason; `nil` for an image or a cancel, which fire no failure.
+    /// The `screenshot_failed` reason; `nil` for an image, a cancel, or a missing permission, which the
+    /// permission funnel reports instead.
     var failureReason: AIChatScreenshotFailureReason? {
         switch self {
-        case .image, .cancelled: nil
-        case .permissionDenied: .denied
+        case .image, .cancelled, .permissionDenied: nil
         case .failed(let reason): reason
         }
     }

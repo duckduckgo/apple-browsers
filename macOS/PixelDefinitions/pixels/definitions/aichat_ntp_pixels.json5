@@ -40,7 +40,7 @@
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_ntp_screenshot_failed": {
-        "description": "Fired when an Add Screenshot capture for the New Tab Page omnibar fails or Screen Recording is denied, or when the page can't process the returned image. Not fired when the user cancels",
+        "description": "Fired when an Add Screenshot capture for the New Tab Page omnibar fails, or when the page can't process the returned image. Not fired when the user cancels or Screen Recording is off, which aichat_screenshot_permission_needed_macos_u reports",
         "owners": ["jotaemepereira"],
         "triggers": ["exception"],
         "suffixes": ["daily_count"],
@@ -51,8 +51,8 @@
             {
                 "key": "reason",
                 "type": "string",
-                "description": "denied: Screen Recording is off; unavailable: capture could not start; failed: the capture or its processing failed",
-                "enum": ["denied", "unavailable", "failed"]
+                "description": "unavailable: capture could not start; failed: the capture or its processing failed",
+                "enum": ["unavailable", "failed"]
             }
         ]
     },

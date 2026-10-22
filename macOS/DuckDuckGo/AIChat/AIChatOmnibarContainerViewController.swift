@@ -2247,7 +2247,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
     }
 
     private func handleScreenshotResult(_ result: AIChatScreenshotCaptureResult) {
-        // Every capture that isn't cancelled ends as exactly one of taken (in `attachScreenshot`) or failed.
+        // Every capture that isn't cancelled or refused for the permission ends as exactly one of taken (in `attachScreenshot`) or failed.
         if let reason = result.failureReason {
             omnibarController.pixelHandler.fire(.screenshotFailed(reason: reason))
         }

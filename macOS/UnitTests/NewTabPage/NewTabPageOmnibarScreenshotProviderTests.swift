@@ -106,17 +106,15 @@ struct NewTabPageOmnibarScreenshotProviderTests {
     }
 
     @available(macOS 13, *)
-    @Test("A denied capture is a cancel for the page and fires the denied pixel", .timeLimit(.minutes(1)))
-    func deniedCaptureIsACancelAndFiresDenied() async {
+    @Test("A capture without Screen Recording is a cancel for the page and fires no failure", .timeLimit(.minutes(1)))
+    func deniedCaptureIsACancelAndFiresNoFailure() async {
         let pixels = PixelKitMock()
         let provider = NewTabPageOmnibarScreenshotProvider(featureFlagger: makeFeatureFlagger(enabled: true),
                                                            captureService: makeDeniedCaptureService(),
                                                            pixelFiring: pixels)
         let response = await provider.captureScreenshot(mode: "dragToSelect", requestingWebView: nil)
         #expect(response == .cancelled)
-        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_ntp_screenshot_failed"])
-        #expect(pixels.actualFireCalls.first?.pixel.parameters == ["reason": "denied"])
-        #expect(pixels.actualFireCalls.first?.frequency == .dailyAndCount)
+        #expect(pixels.actualFireCalls.isEmpty)
     }
 
     @available(macOS 13, *)
@@ -127,7 +125,8 @@ struct NewTabPageOmnibarScreenshotProviderTests {
             (.omnibarImageRemoved(source: "screenshot"), "aichat_ntp_image_removed", ["source": "screenshot"]),
             (.omnibarScreenshotTaken(kind: "window"), "aichat_ntp_screenshot_taken", ["kind": "window"]),
             (.omnibarScreenshotRemoved, "aichat_ntp_screenshot_removed", [:]),
-            (.omnibarScreenshotFailed(reason: "denied"), "aichat_ntp_screenshot_failed", ["reason": "denied"]),
+            (.omnibarScreenshotFailed(reason: "unavailable"), "aichat_ntp_screenshot_failed", ["reason": "unavailable"]),
+            (.omnibarScreenshotFailed(reason: "denied"), nil, [:]),
             (.omnibarScreenshotFailed(reason: "unknown"), nil, [:]),
             (.omnibarImageAttached(source: "drop"), nil, [:])
         ]

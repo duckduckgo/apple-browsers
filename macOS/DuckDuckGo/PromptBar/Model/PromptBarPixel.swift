@@ -53,7 +53,7 @@ enum PromptBarPixel: PixelKit.Event {
     /// Event Trigger: User removes a screenshot chip with its ×
     case screenshotRemoved
 
-    /// Event Trigger: An Add Screenshot capture failed or Screen Recording was denied. Never on cancel
+    /// Event Trigger: An Add Screenshot capture failed. Never on cancel or a missing Screen Recording permission
     case screenshotFailed(reason: AIChatScreenshotFailureReason)
 
     /// Event Trigger: User attaches a file (PDF etc.) via the file picker

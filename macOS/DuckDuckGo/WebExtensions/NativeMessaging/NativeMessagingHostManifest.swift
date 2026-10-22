@@ -67,10 +67,8 @@ enum NativeMessagingHostManifestLocator {
 
     /// Directories that hold host manifests, in search order.
     ///
-    /// Our own directory comes first. The others follow because a companion app writes one
-    /// file per browser it knows, and no app writes a DuckDuckGo file yet. Bitwarden, for
-    /// example, writes a Chrome file and a Mozilla file. Without the fallbacks the user must
-    /// copy a file by hand.
+    /// Our own directory comes first. The other Chromium browsers' directories follow, because
+    /// a companion app writes one file per browser it knows and may not write one for us.
     ///
     /// A companion app may also install its manifest for all users, under `/Library` rather than
     /// the user's own Library. macOS does this for iCloud Passwords, whose manifest lives in the
@@ -91,7 +89,6 @@ enum NativeMessagingHostManifestLocator {
                 "Application Support/Microsoft Edge",
                 "Application Support/BraveSoftware/Brave-Browser",
                 "Application Support/Vivaldi",
-                "Application Support/Mozilla",
             ]
             directories += hostDirectories(in: userLibrary, relativePaths: userRelativePaths)
         }
@@ -105,7 +102,6 @@ enum NativeMessagingHostManifestLocator {
                 "Microsoft/Edge",
                 "Application Support/BraveSoftware/Brave-Browser",
                 "Application Support/Vivaldi",
-                "Application Support/Mozilla",
             ]
             directories += hostDirectories(in: systemLibrary, relativePaths: systemRelativePaths)
         }

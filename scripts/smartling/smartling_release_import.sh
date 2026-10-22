@@ -59,8 +59,10 @@ INTEGRITY=""
 PR_URL=""
 
 finish() {
+	trap - ERR
 	OUTCOME="$1"
 	REASON="${2:-$REASON}"
+	REASON="$(printf '%s' "$REASON" | tr '\r\n' '  ' | cut -c 1-300)"
 
 	echo "OUTCOME=$OUTCOME"
 	[ -z "$REASON" ] || echo "REASON=$REASON"
@@ -101,6 +103,8 @@ finish() {
 		*) exit 0 ;;
 	esac
 }
+
+trap 'finish error "Failed at line $LINENO: $BASH_COMMAND"' ERR
 
 echo "Release branch: $RELEASE_BRANCH"
 echo "Smartling files: ${FILE_URIS[*]}"
@@ -191,7 +195,6 @@ fi
 
 PR_BODY_FILE="$(mktemp)"
 cat > "$PR_BODY_FILE" <<EOF
-Task/Issue URL: https://app.asana.com/0/0/1219731002148823/f
 Tech Design URL: https://app.asana.com/0/0/1219548238783890/f
 
 ### Description

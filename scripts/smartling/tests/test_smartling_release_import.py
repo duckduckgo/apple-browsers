@@ -39,12 +39,18 @@ case "${args[0]} ${args[1]}" in
 			echo "$state $url"
 		fi
 		;;
-	"pr create") echo "https://github.com/duckduckgo/apple-browsers/pull/100" ;;
+	"pr create")
+		[ ! -e "$STUB_DIR/pr_create_fails" ] || { echo "GraphQL: something went wrong" >&2; exit 1; }
+		echo "https://github.com/duckduckgo/apple-browsers/pull/100"
+		;;
 esac
 exit 0
 """
 
 LOC_TOOL_STUB = """#!/bin/bash
+if [ "$1" = "download" ] && [ -e "$STUB_DIR/download_fails" ]; then
+	exit 1
+fi
 if [ "$1" = "release-status" ]; then
 	while [ $# -gt 0 ]; do [ "$1" = "--result-file" ] && cp "$STUB_DIR/release_status.json" "$2"; shift; done
 fi
@@ -100,7 +106,8 @@ class ReleaseImportScriptTests(unittest.TestCase):
         git(self.repo, 'remote', 'add', 'origin', str(self.origin))
         git(self.repo, 'push', '-q', 'origin', 'HEAD')
 
-    def run_import(self, *args, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n', integrity_passes=True):
+    def run_import(self, *args, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n', integrity_passes=True,
+                   expected_exit_code=0):
         (self.stub_dir / 'existing_pr').write_text(existing_pr, encoding='utf-8')
         (self.stub_dir / 'release_status.json').write_text(json.dumps(READY), encoding='utf-8')
         (self.stub_dir / 'imported.strings').write_text(imported, encoding='utf-8')
@@ -122,7 +129,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
             ['./scripts/smartling/smartling_release_import.sh', 'iOS', '--release-branch', RELEASE_BRANCH, *args],
             cwd=self.repo, env=env, capture_output=True, text=True, check=False
         )
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.returncode, expected_exit_code, result.stdout + result.stderr)
         outputs = dict(
             line.split('=', 1) for line in output_file.read_text(encoding='utf-8').splitlines() if '=' in line
         )
@@ -178,6 +185,30 @@ class ReleaseImportScriptTests(unittest.TestCase):
             git(self.repo, '--git-dir', str(self.origin), 'show', f'{IMPORT_BRANCH}:{STRINGS_PATH}'),
             '"a" = "A";'
         )
+
+    def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):
+        (self.stub_dir / 'download_fails').touch()
+
+        outputs = self.run_import(expected_exit_code=1)
+
+        self.assertEqual(outputs['outcome'], 'error')
+        self.assertIn('loc_tool.sh download', outputs['reason'])
+        self.assertFalse(any(call.startswith('pr create') for call in self.gh_calls()))
+
+    def testWhenOpeningThePullRequestFailsThenTheOutcomeIsAnError(self):
+        (self.stub_dir / 'pr_create_fails').touch()
+
+        outputs = self.run_import(expected_exit_code=1)
+
+        self.assertEqual(outputs['outcome'], 'error')
+        self.assertIn('Failed at line', outputs['reason'])
+        self.assertEqual(outputs['integrity'], 'passed')
+
+    def testWhenThePullRequestIsOpenedThenItsDescriptionLinksOnlyTheTechDesign(self):
+        self.run_import()
+
+        self.assertNotIn('Task/Issue URL', self.body(0))
+        self.assertIn('Tech Design URL', self.body(0))
 
 
 if __name__ == '__main__':

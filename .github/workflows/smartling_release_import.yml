@@ -124,12 +124,14 @@ jobs:
       - name: Check the release branch has the import script
         id: script
         if: steps.release.outputs.branch != ''
+        env:
+          RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
         run: |
           if [ -x ./scripts/smartling/smartling_release_import.sh ]; then
             echo "available=true" >> "$GITHUB_OUTPUT"
           else
             echo "available=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::${{ steps.release.outputs.branch }} was cut before the release import existed, so there is nothing to do."
+            echo "::notice::$RELEASE_BRANCH was cut before the release import existed, so there is nothing to do."
           fi
 
       - name: Select Xcode
@@ -179,4 +181,19 @@ jobs:
             String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}.
             Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}.
             Reason: ${{ steps.import.outputs.reason }}.
+            Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Open ${{ matrix.platform }} release import failure task
+        if: >-
+          failure() && github.event_name == 'schedule' &&
+          steps.import.outputs.outcome != 'status_error'
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: create-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-project: ${{ env.ASANA_PROJECT_ID }}
+          asana-task-name: "Release translations import failed: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
+          asana-task-description: >-
+            The nightly ${{ matrix.platform }} release translations import failed for ${{ steps.release.outputs.branch || 'the release branch' }}.
+            Reason: ${{ steps.import.outputs.reason || 'a workflow step failed before the import ran' }}.
             Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

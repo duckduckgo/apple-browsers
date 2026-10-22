@@ -1,0 +1,17 @@
+name: Skip CI test (temporary)
+
+on:
+  push:
+    branches: [ 'skip-ci-test/**' ]
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print the pushed commits
+        env:
+          HEAD_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_MESSAGES: ${{ join(github.event.commits.*.message, ' | ') }}
+        run: |
+          echo "Head: $HEAD_MESSAGE"
+          echo "All pushed commits: $COMMIT_MESSAGES"

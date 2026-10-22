@@ -95,6 +95,8 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
         photoSelectionLimit: Int,
         canAttachFile: Bool,
         allowedFileTypes: [UTType],
+        showsImageActions: Bool = true,
+        showsFileAction: Bool = true,
         showsPageContextAction: Bool = false,
         pageContextActionHandler: (() -> Void)? = nil,
         attachableTabs: [MultiTabAttachmentCandidate] = [],
@@ -114,7 +116,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             UIAction(
                 title: UserText.aiChatAttachmentOptionTakePhoto,
                 image: DesignSystemImages.Glyphs.Size16.camera,
-                attributes: canTakePhoto ? [] : .disabled
+                attributes: showsImageActions ? (canTakePhoto ? [] : .disabled) : .hidden
             ) { [weak self] _ in
                 guard canTakePhoto else { return }
                 guard let presenter = presenterProvider() else { return }
@@ -123,7 +125,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             UIAction(
                 title: UserText.aiChatAttachmentOptionAttachPhoto,
                 image: DesignSystemImages.Glyphs.Size16.image,
-                attributes: canAttachPhoto ? [] : .disabled
+                attributes: showsImageActions ? (canAttachPhoto ? [] : .disabled) : .hidden
             ) { [weak self] _ in
                 guard canAttachPhoto else { return }
                 guard let presenter = presenterProvider() else { return }
@@ -132,7 +134,7 @@ final class UnifiedToggleInputAttachmentPresenter: NSObject {
             UIAction(
                 title: UserText.aiChatAttachmentOptionAttachFile,
                 image: DesignSystemImages.Glyphs.Size16.folder,
-                attributes: canAttachAllowedFile ? [] : .disabled
+                attributes: showsFileAction ? (canAttachAllowedFile ? [] : .disabled) : .hidden
             ) { [weak self] _ in
                 guard canAttachAllowedFile else { return }
                 guard let presenter = presenterProvider() else { return }

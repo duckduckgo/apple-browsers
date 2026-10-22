@@ -18,10 +18,28 @@
 //
 
 import AIChat
+import DuckAIChatCore
 import XCTest
 @testable import DuckDuckGo
 
 final class UnifiedToggleInputAttachmentEncoderTests: XCTestCase {
+
+    @MainActor
+    func testNativeImageRoundTripAndOpeningPreserveBytes() throws {
+        let payload = try UnifiedToggleInputAttachmentEncoder.encodeNative([.image(makeImageAttachment())], capabilities: .vision)
+        let decoded = try NativeChatContextFactory.decode(payload)
+        let context = try XCTUnwrap(NativeChatContextFactory.context(prompt: "", page: nil, selections: [], attachments: payload))
+        XCTAssertEqual(context.attachments.map(\.data), decoded.map(\.data))
+        XCTAssertEqual(context.opening, .prompt(""))
+        XCTAssertEqual(decoded.count, 1)
+    }
+
+    func testNativeRejectsUnsupportedAndMalformedImages() throws {
+        XCTAssertThrowsError(try UnifiedToggleInputAttachmentEncoder.encodeNative([.image(makeImageAttachment())], capabilities: .textOnly))
+        XCTAssertThrowsError(try NativeChatContextFactory.decode(.init(images: [.init(data: "invalid", format: "jpeg")])))
+        let oversized = String(repeating: "A", count: 3_000_000)
+        XCTAssertThrowsError(try NativeChatContextFactory.decode(.init(images: [.init(data: oversized, format: "jpeg")])))
+    }
 
     func testNothingAttachedEncodesNoKinds() {
         XCTAssertEqual(encode([]), .none)

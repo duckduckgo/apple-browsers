@@ -19,6 +19,7 @@
 
 import AIChat
 import Core
+import DuckAIChatCore
 import UIKit
 import UniformTypeIdentifiers
 import PixelKit
@@ -51,6 +52,7 @@ final class IPadOmnibarAttachmentController {
     private let fallbackDraft = IPadOmnibarDraft()
     private weak var boundDraft: IPadOmnibarDraft?
     private var isRenderingDraft = false
+    var nativeCapabilitiesProvider: () -> InputCapabilities? = { nil }
 
     private var currentDraft: IPadOmnibarDraft { boundDraft ?? fallbackDraft }
 
@@ -80,7 +82,7 @@ final class IPadOmnibarAttachmentController {
 
     func bindDraft(_ draft: IPadOmnibarDraft) {
         boundDraft = draft
-        if store.selectedModel != nil {
+        if nativeCapabilitiesProvider() == nil, store.selectedModel != nil {
             let policy = attachmentPolicy
             draft.attachments.removeAll { !policy.isAttachmentSupported($0) }
         }
@@ -97,12 +99,13 @@ final class IPadOmnibarAttachmentController {
         let generation = draft.generation
         let model = store.selectedModel
         let limits = store.attachmentLimits
+        let nativeCapabilities = nativeCapabilitiesProvider()
         let policy = { [weak self, weak draft] in
             if let self, let draft, self.currentDraft === draft {
                 return self.attachmentPolicy
             }
             return UTIAttachmentPolicy(attachmentLimits: limits, attachmentUsage: nil,
-                                       pendingAttachments: draft?.attachments ?? [], model: model)
+                                       pendingAttachments: draft?.attachments ?? [], model: model, nativeCapabilities: nativeCapabilities)
         }
         return .init(
             onExpandIfNeeded: { [weak self, weak draft] in
@@ -148,11 +151,13 @@ final class IPadOmnibarAttachmentController {
 
     /// Whether the selected model accepts any attachment kind (so the button should be shown at all).
     var isAttachButtonAvailable: Bool {
-        store.selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
+        if let capabilities = nativeCapabilitiesProvider() { return capabilities.imageLimits != nil }
+        return store.selectedModelSupportsImageUpload || !allowedFileUTTypes.isEmpty
     }
 
     var isAttachButtonVisible: Bool {
-        isAttachButtonAvailable || (store.selectedModel != nil && keepsUnavailableAttachmentButtonVisible)
+        if nativeCapabilitiesProvider() != nil { return isAttachButtonAvailable }
+        return isAttachButtonAvailable || (store.selectedModel != nil && keepsUnavailableAttachmentButtonVisible)
     }
 
     /// Whether the current selection still allows attaching more (so the button should be enabled).
@@ -166,7 +171,9 @@ final class IPadOmnibarAttachmentController {
             presenterProvider: { [weak self] in self?.presenterProvider?() },
             photoSelectionLimit: attachmentPolicy.canAttachImages ? attachmentPolicy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
-            allowedFileTypes: allowedFileUTTypes
+            allowedFileTypes: allowedFileUTTypes,
+            showsImageActions: nativeCapabilitiesProvider().map { $0.imageLimits != nil } ?? true,
+            showsFileAction: nativeCapabilitiesProvider() == nil
         )
     }
 
@@ -205,6 +212,11 @@ final class IPadOmnibarAttachmentController {
         UnifiedToggleInputAttachmentEncoder.encode(currentAttachments, imagesSupported: true, filesSupported: true)
     }
 
+    func encodeAttachmentsForSubmission() throws -> AIChatPromptAttachments {
+        guard let capabilities = nativeCapabilitiesProvider() else { return encodedAttachments }
+        return try UnifiedToggleInputAttachmentEncoder.encodeNative(currentAttachments, capabilities: capabilities)
+    }
+
     func resetSelection() {
         currentDraft.clear()
         renderDraft()
@@ -226,12 +238,14 @@ final class IPadOmnibarAttachmentController {
             attachmentLimits: store.attachmentLimits,
             attachmentUsage: nil,
             pendingAttachments: currentAttachments,
-            model: store.selectedModel
+            model: store.selectedModel,
+            nativeCapabilities: nativeCapabilitiesProvider()
         )
     }
 
     private var allowedFileUTTypes: [UTType] {
-        store.selectedModelSupportedFileTypes.compactMap { UTType(mimeType: $0) }
+        guard nativeCapabilitiesProvider() == nil else { return [] }
+        return store.selectedModelSupportedFileTypes.compactMap { UTType(mimeType: $0) }
     }
 
     private var canPresentFilePicker: Bool {
@@ -292,7 +306,7 @@ final class IPadOmnibarAttachmentController {
     }
 
     private func removeUnsupportedAttachmentsForSelectedModel() {
-        guard store.selectedModel != nil else { return }
+        guard nativeCapabilitiesProvider() == nil, store.selectedModel != nil else { return }
         let policy = attachmentPolicy
         let unsupported = currentAttachments.filter { policy.isAttachmentSupported($0) == false }
         currentDraft.attachments.removeAll { attachment in unsupported.contains { $0.id == attachment.id } }

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import DuckAIChatCore
 
 /// A downloadable MLX model.
 public struct Model: Identifiable, Equatable, Sendable {
@@ -33,6 +34,15 @@ public struct Model: Identifiable, Equatable, Sendable {
         if id.contains("Qwen3.5") { return 262_144 }
         return 131_072
     }
+
+    public enum InferenceFamily: Sendable { case language, vision }
+    public var inferenceFamily: InferenceFamily {
+        switch id {
+        case "mlx-community/Qwen3.5-0.8B-4bit", "mlx-community/Qwen3.5-2B-4bit", "mlx-community/Qwen3.5-4B-4bit": .vision
+        default: .language
+        }
+    }
+    public var capabilities: InputCapabilities { inferenceFamily == .vision ? .vision : .textOnly }
 
     /// Below this much physical memory the model is too big to share the browser's budget.
     public let minimumPhysicalMemoryGB: Int

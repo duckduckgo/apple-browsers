@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DuckAIChatCore
 import AVFoundation
 import Bookmarks
 import BrokenSitePrompt
@@ -5091,8 +5092,16 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
-        guard DuckAINativeSettings.shared.opensNewChatsNatively,
-              let context = NativeChatContextFactory.context(for: request) else {
+        let nativeContext: ChatContext?
+        do {
+            nativeContext = DuckAINativeSettings.shared.opensNewChatsNatively ? try NativeChatContextFactory.context(for: request) : nil
+        } catch {
+            let alert = UIAlertController(title: "Unable to send", message: String(describing: error), preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+            return
+        }
+        guard let context = nativeContext else {
             openAIChatOnWeb(request, from: originatingTab)
             return
         }

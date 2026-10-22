@@ -19,6 +19,7 @@
 
 import AIChat
 import Foundation
+import DuckAIChatCore
 import UniformTypeIdentifiers
 
 /// iOS adapter over the shared `AIChatAttachmentValidator`. Keeps the UIKit-bound
@@ -36,6 +37,7 @@ struct UTIAttachmentPolicy {
     var maximumTabAttachmentCount: Int?
     var currentPageTabID: TabUID?
     var isCurrentPageAttached = false
+    var nativeCapabilities: InputCapabilities?
 
     var selectedTabIDs: Set<TabUID> {
         var ids = Set(pendingAttachments.compactMap { $0.tabAttachment?.tabId })
@@ -66,23 +68,27 @@ struct UTIAttachmentPolicy {
     }
 
     var remainingImagesInConversation: Int {
-        validator.remainingImagesInConversation
+        if let nativeCapabilities { return nativeCapabilities.imageLimits?.countPerTurn ?? 0 }
+        return validator.remainingImagesInConversation
     }
 
     var remainingImagesForPicker: Int {
-        validator.remainingImagesForPicker
+        if let nativeCapabilities { return max(0, (nativeCapabilities.imageLimits?.countPerTurn ?? 0) - pendingAttachments.filter(\.isImage).count) }
+        return validator.remainingImagesForPicker
     }
 
     var isConversationImageLimitReached: Bool {
-        validator.isConversationImageLimitReached
+        if nativeCapabilities != nil { return remainingImagesForPicker == 0 }
+        return validator.isConversationImageLimitReached
     }
 
     var canAttachImages: Bool {
-        validator.canAttachImages
+        if nativeCapabilities != nil { return remainingImagesForPicker > 0 }
+        return validator.canAttachImages
     }
 
     var canAttachFiles: Bool {
-        validator.canAttachFiles
+        nativeCapabilities == nil && validator.canAttachFiles
     }
 
     var remainingFileSizeBytes: Int {
@@ -115,15 +121,25 @@ struct UTIAttachmentPolicy {
         if let invalidAttachment = pendingAttachments.first(where: \.isInvalid) {
             return invalidAttachment.validationMessage
         }
+        if nativeCapabilities != nil {
+            return pendingAttachments.contains { $0.fileAttachment != nil } ? "Files are unavailable in local chat." : nil
+        }
         return validator.fileSubmissionValidationMessage()
     }
 
     func imageSubmissionValidationMessage() -> String? {
-        validator.imageSubmissionValidationMessage()
+        if let nativeCapabilities {
+            let count = pendingAttachments.filter(\.isImage).count
+            guard count > 0 else { return nil }
+            guard let limits = nativeCapabilities.imageLimits else { return "This model does not support images." }
+            return count > limits.countPerTurn ? "Attach one image per message." : nil
+        }
+        return validator.imageSubmissionValidationMessage()
     }
 
     func imageCapacityValidationMessage() -> String? {
-        validator.imageCapacityValidationMessage()
+        if nativeCapabilities != nil { return canAttachImages ? nil : "This model cannot accept another image." }
+        return validator.imageCapacityValidationMessage()
     }
 
     func isAttachmentSupported(_ attachment: UnifiedToggleInputAttachment) -> Bool {
@@ -131,7 +147,7 @@ struct UTIAttachmentPolicy {
         case .tab, .pastedText:
             return true
         case .image:
-            return model?.supportsImageUpload == true
+            return nativeCapabilities.map { $0.imageLimits != nil } ?? (model?.supportsImageUpload == true)
         case .file(let fileAttachment):
             return model?.supportedFileTypes.contains(fileAttachment.mimeType) == true
         case .invalidFile(let fileAttachment):
@@ -140,7 +156,8 @@ struct UTIAttachmentPolicy {
     }
 
     func promptValidationMessage(for text: String) -> String? {
-        validator.promptValidationMessage(for: text)
+        if nativeCapabilities != nil { return nil }
+        return validator.promptValidationMessage(for: text)
     }
 }
 

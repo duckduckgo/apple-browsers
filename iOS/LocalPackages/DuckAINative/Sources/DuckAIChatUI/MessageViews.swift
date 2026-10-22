@@ -46,7 +46,17 @@ final class UserMessageView: UIStackView {
             guard case .attachment(let attachment) = part else { continue }
             let name: String
             switch attachment.kind {
-            case .image: name = "Image"
+            case .image:
+                if let image = UIImage(data: attachment.data) {
+                    let thumbnail = UIImageView(image: image)
+                    thumbnail.contentMode = .scaleAspectFit
+                    thumbnail.heightAnchor.constraint(equalToConstant: 160).isActive = true
+                    thumbnail.accessibilityLabel = "Attached image"
+                    thumbnail.isAccessibilityElement = true
+                    bubble.addArrangedSubview(thumbnail)
+                    continue
+                }
+                name = "Image unavailable"
             case .file(let filename, _): name = filename
             }
             bubble.addArrangedSubview(chatLabel(name, style: ChatTypography.subtitle))

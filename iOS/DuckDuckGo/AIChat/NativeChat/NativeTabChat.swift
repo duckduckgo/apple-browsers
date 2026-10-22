@@ -30,7 +30,7 @@ final class NativeTabChat: NativeChatDelegate {
     let session: ChatSession
     private(set) lazy var viewController: UIViewController = DuckAINative.makeChatViewController(
         session: session, surface: .tab,
-        emptyState: ChatEmptyState(image: UIImage(resource: .duckAIDefault), title: "All chats are private"), delegate: self)
+        emptyState: ChatEmptyState(image: UIImage(resource: .duckAIDefault), title: "All chats are local"), delegate: self)
     var onContinueInWeb: (() -> Void)?
 
     private weak var input: UnifiedToggleInputCoordinator?
@@ -57,7 +57,8 @@ final class NativeTabChat: NativeChatDelegate {
         if Self.attached !== self { Self.attached?.detach() }
         Self.attached = self
         input.unbind()
-        input.viewController.isNativeChatMode = true
+        input.nativeSession = session
+        input.refreshNativeInputCapabilities()
         self.input = input
         stopSubscription = input.didPressStopGeneratingButton.sink { [weak self] in self?.session.stop() }
         observeStatus()
@@ -66,7 +67,8 @@ final class NativeTabChat: NativeChatDelegate {
     func detach() {
         stopSubscription = nil
         input?.aiChatStatus = .ready
-        input?.viewController.isNativeChatMode = false
+        input?.nativeSession = nil
+        input?.refreshNativeInputCapabilities()
         input = nil
         if Self.attached === self { Self.attached = nil }
     }
@@ -88,6 +90,7 @@ final class NativeTabChat: NativeChatDelegate {
             Task { @MainActor in self?.observeStatus() }
         }
         guard let input else { return }
+        input.refreshNativeInputCapabilities()
         switch status {
         case .ready: input.aiChatStatus = .ready
         case .loading: input.aiChatStatus = .loading

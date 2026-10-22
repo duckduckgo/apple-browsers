@@ -275,7 +275,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         get { imageButton.isHidden }
         set {
             imageButtonExplicitlyHidden = newValue
-            imageButton.isHidden = newValue || isNativeChatMode
+            imageButton.isHidden = newValue
             setNeedsLayout()
         }
     }
@@ -286,7 +286,7 @@ final class UnifiedToggleInputToolbarView: UIView {
         didSet {
             guard oldValue != isNativeChatMode else { return }
             reasoningButton.isHidden = reasoningButtonExplicitlyHidden || isNativeChatMode
-            imageButton.isHidden = imageButtonExplicitlyHidden || isNativeChatMode
+            imageButton.isHidden = imageButtonExplicitlyHidden
             updateChipVisibility()
             setNeedsLayout()
         }
@@ -804,7 +804,7 @@ private extension UnifiedToggleInputToolbarView {
         let mergesTools = compactLevel >= .mergedTools && selectedTool != nil
         modelChipButton.isHidden = modelChipExplicitlyHidden || isNativeChatMode
         toolsButton.isHidden = toolsButtonExplicitlyHidden || mergesTools || isNativeChatMode
-        selectedToolChipView.isHidden = (selectedTool == nil)
+        selectedToolChipView.isHidden = (selectedTool == nil) || isNativeChatMode
         selectedToolClearButton.isHidden = mergesTools
         selectedToolMenuButton.isHidden = !mergesTools
         selectedToolIconView.image = selectedTool?.toolbarChipIcon

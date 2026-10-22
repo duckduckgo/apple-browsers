@@ -117,7 +117,8 @@ public enum ChatStatus: Equatable, Sendable {
 public enum ChatAction: Equatable, Sendable {
     /// Surface opened. Prepares the provider and sends `context.opening` once. Idempotent.
     case opened(at: Date)
-    case send(String, at: Date)
+    case send(String, attachments: [Attachment] = [], at: Date)
+    case rejected(ChatError)
     case stop(at: Date)
     case redo(at: Date)
     case availabilityChanged(ProviderAvailability)

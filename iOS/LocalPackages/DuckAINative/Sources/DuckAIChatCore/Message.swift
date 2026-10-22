@@ -202,3 +202,9 @@ public struct GenerationStats: Equatable, Sendable {
         self.generateTime = generateTime
     }
 }
+
+public extension UserMessage {
+    var attachments: [Attachment] {
+        parts.compactMap { if case .attachment(let attachment) = $0 { attachment } else { nil } }
+    }
+}

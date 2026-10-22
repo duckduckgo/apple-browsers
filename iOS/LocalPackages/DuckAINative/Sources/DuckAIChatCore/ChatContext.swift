@@ -24,14 +24,16 @@ public struct ChatContext: Equatable, Sendable {
     public let page: PageContext?
     public let selections: [Selection]
     public let opening: Opening?
+    public let attachments: [Attachment]
 
-    public init(page: PageContext?, selections: [Selection], opening: Opening?) throws(ChatContextError) {
+    public init(page: PageContext?, selections: [Selection], opening: Opening?, attachments: [Attachment] = []) throws(ChatContextError) {
         if case .request = opening, page == nil, selections.isEmpty {
             throw .requestWithoutSource
         }
         self.page = page
         self.selections = selections
         self.opening = opening
+        self.attachments = attachments
     }
 
     /// The parts the first user message carries, in frontend order.

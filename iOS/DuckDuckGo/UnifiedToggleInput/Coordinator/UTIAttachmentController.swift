@@ -106,6 +106,22 @@ final class UTIAttachmentController {
     }
 
     private func wirePresenter() {
+        presenter.pickerCallbacksProvider = { [weak self] in
+            guard let self else { return .init() }
+            let identity = pasteContextIdentity
+            let capabilities = environment.policy().nativeCapabilities
+            return .init(
+                onExpandIfNeeded: presenter.onExpandIfNeeded,
+                onImagePicked: { [weak self] image, name in
+                    guard let self, self.pasteContextIdentity == identity,
+                          self.environment.policy().nativeCapabilities == capabilities else { return }
+                    self.addImageAttachment(image: image, fileName: name)
+                },
+                onFilePicked: presenter.onFilePicked,
+                onFileValidationFailed: presenter.onFileValidationFailed,
+                fileMetadataValidationMessage: presenter.fileMetadataValidationMessage
+            )
+        }
         presenter.isFireTabProvider = { [weak self] in
             self?.environment.isFireTab() ?? false
         }
@@ -383,6 +399,7 @@ final class UTIAttachmentController {
     }
 
     func removeUnsupportedAttachmentsForSelectedModel() {
+        guard environment.policy().nativeCapabilities == nil else { return }
         guard environment.hasSelectedModel() else { return }
         let policy = environment.policy()
         let unsupportedAttachments = view.currentAttachments().filter { attachment in
@@ -427,6 +444,8 @@ final class UTIAttachmentController {
             photoSelectionLimit: policy.canAttachImages ? policy.remainingImagesForPicker : 0,
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
+            showsImageActions: policy.nativeCapabilities.map { $0.imageLimits != nil } ?? true,
+            showsFileAction: policy.nativeCapabilities == nil,
             showsPageContextAction: environment.isContextualChatState(),
             pageContextActionHandler: pageContextActionHandler,
             attachableTabs: tabAttachmentCandidates,

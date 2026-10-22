@@ -1430,7 +1430,7 @@ extension MainViewController: UnifiedToggleInputDelegate {
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
         if let nativeChat = currentTab?.nativeChat, tabAttachmentRequest == nil {
-            nativeChat.session.send(prompt)
+            NativeChatContextFactory.send(prompt, attachments: attachments, to: nativeChat.session)
             return
         }
 

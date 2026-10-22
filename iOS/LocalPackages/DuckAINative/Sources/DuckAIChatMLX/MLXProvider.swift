@@ -21,6 +21,8 @@ import DuckAIChatCore
 import Foundation
 import MLX
 import MLXLLM
+import MLXVLM
+import CoreImage
 import MLXLMCommon
 import Tokenizers
 
@@ -34,8 +36,15 @@ public final class MLXProvider: ChatProvider, Sendable {
         self.model = model
         self.store = store
         descriptor = ProviderDescriptor(id: ProviderID(rawValue: model.id), displayName: "MLX",
-                                        modelName: model.displayName, supportsReasoning: false,
-                                        supportsImages: false, contextWindowTokens: model.contextWindowTokens)
+                                        modelName: model.displayName, capabilities: Self.inputCapabilities(for: model), contextWindowTokens: model.contextWindowTokens)
+    }
+
+    public static func inputCapabilities(for model: Model) -> InputCapabilities {
+#if targetEnvironment(simulator)
+        return .textOnly
+#else
+        return model.capabilities
+#endif
     }
 
     public var availability: ProviderAvailability {
@@ -72,6 +81,7 @@ public final class MLXProvider: ChatProvider, Sendable {
             Task {
                 await worker.acquire()
                 do {
+                    try descriptor.capabilities.validate(turn: turn)
                     guard !stop.isRaised else {
                         continuation.finish()
                         await worker.release()
@@ -108,14 +118,25 @@ public final class MLXProvider: ChatProvider, Sendable {
         }
     }
 
+    private static func images(_ attachments: [DuckAIChatCore.Attachment]) throws -> [UserInput.Image] {
+        try attachments.map { attachment in
+            guard let image = CIImage(data: attachment.data, options: [.applyOrientationProperty: true]),
+                  image.extent.width > 0, image.extent.height > 0,
+                  max(image.extent.width, image.extent.height) <= CGFloat(ImageInputLimits.standard.longestDimension) else {
+                throw ChatError.unknown("Invalid or oversized image.")
+            }
+            return .ciImage(image)
+        }
+    }
+
     private static func generate(container: ModelContainer, turn: ProviderTurn, stop: StopSignal,
                                  continuation: AsyncThrowingStream<ProviderEvent, Error>.Continuation,
                                  loadTime: Duration?) async throws -> GenerationStats {
         try await container.perform { context in
-            let history: [Chat.Message] = turn.history.map {
-                $0.role == .user ? .user($0.text) : .assistant($0.text)
+            let history: [Chat.Message] = try turn.history.map {
+                $0.role == .user ? .user($0.text, images: try Self.images($0.attachments)) : .assistant($0.text)
             }
-            let messages = [Chat.Message.system(turn.instructions)] + history + [.user(turn.input)]
+            let messages = [Chat.Message.system(turn.instructions)] + history + [.user(turn.input, images: try Self.images(turn.attachments))]
             let input = try await context.processor.prepare(input: UserInput(chat: messages, additionalContext: ["enable_thinking": false]))
             let parameters = GenerateParameters(maxTokens: turn.maxOutputTokens, temperature: 0.3)
             let iterator = try TokenIterator(input: input, model: context.model, parameters: parameters)
@@ -172,9 +193,15 @@ private actor ModelWorker {
         MLX.Memory.cacheLimit = 20 * 1024 * 1024
         let task = Task {
             let configuration = ModelConfiguration(directory: directory, extraEOSTokens: model.extraEOSTokens)
-            let container = try await LLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
-                                                                           using: TransformersTokenizerLoader(),
-                                                                           configuration: configuration)
+            let container: ModelContainer
+            switch model.inferenceFamily {
+            case .vision:
+                container = try await VLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
+                    using: TransformersTokenizerLoader(), configuration: configuration)
+            case .language:
+                container = try await LLMModelFactory.shared.loadContainer(from: LocalOnlyDownloader(),
+                    using: TransformersTokenizerLoader(), configuration: configuration)
+            }
             let warmUp = MLXLMCommon.ChatSession(container, generateParameters: GenerateParameters(maxTokens: 1),
                                                  additionalContext: ["enable_thinking": false])
             for try await _ in warmUp.streamDetails(to: "Hi", images: [], videos: []) {}

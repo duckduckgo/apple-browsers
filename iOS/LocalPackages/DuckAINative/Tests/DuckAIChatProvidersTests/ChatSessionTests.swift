@@ -79,4 +79,38 @@ import Testing
         guard case .assistant(let stopped) = session.state.messages[1] else { return }
         #expect(stopped.ending == .stopped)
     }
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func imageOnlyOpeningFollowupAndRedoRetainImages() async throws {
+        let image = Attachment(id: "image", kind: .image(format: "jpeg"), data: Data([1, 2, 3]))
+        let provider = StubProvider(configuration: .init(acknowledgesImages: true, wordsPerSecond: 10_000, loadTime: .zero, readTime: .zero))
+        let context = try ChatContext(page: nil, selections: [], opening: .prompt(""), attachments: [image])
+        let session = ChatSession(context: context, provider: provider)
+        session.open()
+        await waitUntil { session.state.messages.count == 2 && session.state.streamInFlight == nil }
+        session.send("", attachments: [image])
+        await waitUntil { session.state.messages.count == 4 && session.state.streamInFlight == nil }
+        session.redo()
+        await waitUntil { session.state.messages.count == 4 && session.state.streamInFlight == nil }
+        guard case .assistant(let reply) = session.state.messages.last else { Issue.record("Missing reply"); return }
+        #expect(reply.parts == [.text("Mock transport receipt (no image recognition): received 1 current image(s) and 1 history image(s).")])
+        let images = session.state.messages.flatMap { message -> [DuckAIChatCore.Attachment] in
+            if case .user(let user) = message { return user.attachments }
+            return []
+        }
+        #expect(images == [image, image])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func unsupportedOpeningAndFollowupDoNotCommitImages() throws {
+        let image = Attachment(id: "image", kind: .image(format: "jpeg"), data: Data([1]))
+        let session = ChatSession(context: try ChatContext(page: nil, selections: [], opening: .prompt(""), attachments: [image]), provider: StubProvider())
+        session.open()
+        #expect(session.state.messages.isEmpty)
+        #expect(session.state.status == .error(.modelUnavailable(reason: "This model does not support images.")))
+        session.send("Image", attachments: [image])
+        #expect(session.state.messages.isEmpty)
+    }
+
 }

@@ -19,8 +19,37 @@
 
 import AIChat
 import UIKit
+import DuckAIChatCore
 
 enum UnifiedToggleInputAttachmentEncoder {
+
+    static func encodeNative(_ attachments: [UnifiedToggleInputAttachment], capabilities: InputCapabilities) throws -> AIChatPromptAttachments {
+        guard !attachments.contains(where: { $0.fileAttachment != nil || $0.isInvalid }) else {
+            throw ChatError.unknown("Files are unavailable in local chat.")
+        }
+        let images = attachments.compactMap { attachment -> UIImage? in
+            if case .image(let value) = attachment { return value.image }
+            return nil
+        }
+        if !images.isEmpty && capabilities.imageLimits == nil { throw ChatError.modelUnavailable(reason: "This model does not support images.") }
+        let limits = ImageInputLimits.standard
+        guard images.count <= limits.countPerTurn else { throw ChatError.unknown("Attach one image per message.") }
+        let encoded = try images.map { image -> AIChatNativePrompt.NativePromptImage in
+            guard image.size.width > 0, image.size.height > 0 else { throw ChatError.unknown("Invalid image.") }
+            let pixels = CGSize(width: image.size.width * image.scale, height: image.size.height * image.scale)
+            let scale = min(1, CGFloat(limits.longestDimension) / max(pixels.width, pixels.height))
+            let size = CGSize(width: max(1, floor(pixels.width * scale)), height: max(1, floor(pixels.height * scale)))
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            format.opaque = true
+            let normalized = UIGraphicsImageRenderer(size: size, format: format).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+            guard let data = normalized.jpegData(compressionQuality: 0.85), data.count <= limits.bytesPerImage else {
+                throw ChatError.unknown("The image exceeds 2 MiB. Choose a smaller image.")
+            }
+            return AIChatNativePrompt.NativePromptImage(data: data.base64EncodedString(), format: "jpeg")
+        }
+        return AIChatPromptAttachments(images: encoded.isEmpty ? nil : encoded, textPasted: encodedPastedText(in: attachments))
+    }
 
     static func encode(_ attachments: [UnifiedToggleInputAttachment],
                        imagesSupported: Bool,

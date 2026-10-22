@@ -39,11 +39,25 @@ enum NativeChatProviderFactory {
         switch model {
         case .automatic, .stub:
             if task == .suggestedPrompts { return suggestionsStub() }
-            return StubProvider(configuration: .init(unevenBursts: UserDefaults.standard.bool(forKey: "duckAINative.stub.unevenBursts")))
+            return StubProvider(configuration: .init(acknowledgesImages: UserDefaults.standard.bool(forKey: "duckAINative.stub.images"), unevenBursts: UserDefaults.standard.bool(forKey: "duckAINative.stub.unevenBursts")))
         case .foundationModels:
             return foundationModels() ?? StubProvider()
         case .mlx(let id):
             return mlxProvider(ModelCatalog.model(withID: id) ?? recommendedMLXModel)
+        }
+    }
+
+    static func inputCapabilities(for task: DuckAINativeSettings.LocalTask) -> InputCapabilities {
+        switch resolvedModel(for: task) {
+        case .automatic, .stub:
+            return UserDefaults.standard.bool(forKey: "duckAINative.stub.images") ? .vision : .textOnly
+        case .foundationModels:
+#if canImport(FoundationModels)
+            if #available(iOS 26, *) { return FoundationModelsProvider.inputCapabilities }
+#endif
+            return .textOnly
+        case .mlx(let id):
+            return MLXProvider.inputCapabilities(for: ModelCatalog.model(withID: id) ?? recommendedMLXModel)
         }
     }
 

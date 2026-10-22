@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DuckAIChatCore
 import Combine
 import UIKit
 import os.log
@@ -55,13 +56,19 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     var onSuggestionAccepted: (() -> Void)?
     var onPromptSubmitted: (() -> Void)?
     /// Demo branch: lets the native Duck.ai chat take the first prompt instead of the web chat.
-    var nativePromptHandler: ((String, AIChatPageContextData?) -> Bool)?
+    var nativePromptHandler: ((String, AIChatPageContextData?, AIChatPromptAttachments) -> Bool)?
     /// Demo branch: set while a native chat is shown; every later prompt and Stop go to it.
-    var nativeChatPromptSink: ((String) -> Void)?
+    var nativeChatPromptSink: ((String, AIChatPromptAttachments) -> Void)?
     var nativeChatStopHandler: (() -> Void)?
+
+    func setNativeSession(_ session: ChatSession?) {
+        coordinator.nativeSession = session
+        coordinator.refreshNativeInputCapabilities()
+    }
 
     func setNativeChatStatus(_ status: AIChatStatusValue) {
         coordinator.aiChatStatus = status
+        coordinator.refreshNativeInputCapabilities()
     }
     /// Counted once per prompt: the user script echoes the first one back as a second delivery.
     var onPromptSent: (() -> Void)?
@@ -628,11 +635,11 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
                                            termsAccepted: Bool) {
         onPromptSent?()
         if let nativeChatPromptSink {
-            nativeChatPromptSink(prompt)
+            nativeChatPromptSink(prompt, attachments)
             return
         }
         guard claimFirstPromptSubmission() else { return }
-        if nativePromptHandler?(prompt, chipViewModel.pendingAttachedContextData) == true { return }
+        if nativePromptHandler?(prompt, chipViewModel.pendingAttachedContextData, attachments) == true { return }
         onPromptSubmitted?()
         contextualChatViewController?.submitPrompt(prompt,
                                                    attachments: attachments,

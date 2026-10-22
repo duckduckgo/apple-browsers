@@ -247,10 +247,16 @@ public final class ChatViewController: UIViewController, UIScrollViewDelegate {
         let image = UIImageView(image: emptyState.image)
         image.contentMode = .scaleAspectFit
         image.heightAnchor.constraint(equalToConstant: 72).isActive = true
-        let stack = UIStackView(arrangedSubviews: [image, chatLabel(emptyState.title, style: ChatTypography.h3)])
+        let title = chatLabel(emptyState.title, style: ChatTypography.h3)
+        title.textAlignment = .center
+        let stack = UIStackView(arrangedSubviews: [image, title])
         stack.axis = .vertical
         stack.spacing = 12
-        if let subtitle = metadata.subtitle { stack.addArrangedSubview(chatLabel(subtitle, style: ChatTypography.subtitle)) }
+        if let subtitle = metadata.subtitle {
+            let label = chatLabel(subtitle, style: ChatTypography.subtitle)
+            label.textAlignment = .center
+            stack.addArrangedSubview(label)
+        }
         stack.accessibilityIdentifier = "NativeChat.Welcome"
         stack.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stack)

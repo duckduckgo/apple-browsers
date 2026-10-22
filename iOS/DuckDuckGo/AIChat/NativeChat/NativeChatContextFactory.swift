@@ -20,6 +20,8 @@
 import AIChat
 import DuckAIChatCore
 import Foundation
+import UIKit
+import ImageIO
 
 /// The only place the app's AIChat context types become the native chat's `ChatContext`.
 /// Returns nil for anything the native chat does not handle, so the caller keeps the web path.
@@ -43,27 +45,56 @@ enum NativeChatContextFactory {
                                                opening: opening)
     }
 
-    static func context(prompt: String, page: AIChatPageContextData?, selections: [AIChatSelectionContextData]) -> DuckAIChatCore.ChatContext? {
-        let text = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return nil }
+    static func context(prompt: String, page: AIChatPageContextData?, selections: [AIChatSelectionContextData], attachments: AIChatPromptAttachments = .none) throws -> DuckAIChatCore.ChatContext? {
+        let text = promptText(prompt, attachments: attachments)
+        let images = try decode(attachments)
+        guard !text.isEmpty || !images.isEmpty else { return nil }
         return try? DuckAIChatCore.ChatContext(page: page.map(PageContext.init),
                                                selections: selections.map(DuckAIChatCore.Selection.init),
-                                               opening: .prompt(text))
+                                               opening: .prompt(text), attachments: images)
     }
 
-    /// Voice, image generation, attachments and tab-attachment sessions stay on the web.
-    static func context(for request: AIChatOpeningRequest) -> DuckAIChatCore.ChatContext? {
+    @MainActor
+    static func context(for request: AIChatOpeningRequest) throws -> DuckAIChatCore.ChatContext? {
         guard case .sharedHandler(let query, _, _) = request.prompt,
               case .query(let nativeQuery)? = query.nativePrompt.tool,
-              nativeQuery.mode == nil,
-              nativeQuery.attachments.isEmpty else { return nil }
-        let text = (query.query ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+              nativeQuery.mode == nil else { return nil }
+        let text = promptText(query.query ?? "", attachments: nativeQuery.attachments)
+        let images = try decode(nativeQuery.attachments)
         let page: AIChatPageContextData? = if case .single(let data)? = query.nativePrompt.pageContext { data } else { nil }
-        let opening: Opening? = text.isEmpty || !query.autoSend ? nil : .prompt(text)
+        let opening: Opening? = (text.isEmpty && images.isEmpty) || !query.autoSend ? nil : .prompt(text)
         return try? DuckAIChatCore.ChatContext(page: page.map(PageContext.init),
                                                selections: (query.nativePrompt.selections ?? []).map(DuckAIChatCore.Selection.init),
-                                               opening: opening)
+                                               opening: opening, attachments: images)
     }
+    static func promptText(_ text: String, attachments: AIChatPromptAttachments) -> String {
+        ([text] + (attachments.textPasted ?? []).map(\.content)).filter { !$0.isEmpty }.joined(separator: "\n\n")
+    }
+
+    static func decode(_ attachments: AIChatPromptAttachments) throws -> [DuckAIChatCore.Attachment] {
+        guard attachments.files?.isEmpty ?? true else { throw ChatError.unknown("Files are unavailable in local chat.") }
+        let limits = ImageInputLimits.standard
+        guard (attachments.images?.count ?? 0) <= limits.countPerTurn else { throw ChatError.unknown("Attach one image per message.") }
+        return try (attachments.images ?? []).map { image in
+            guard image.data.utf8.count <= ((limits.bytesPerImage + 2) / 3) * 4,
+                  let data = Data(base64Encoded: image.data), data.count <= limits.bytesPerImage,
+                  let source = CGImageSourceCreateWithData(data as CFData, nil),
+                  let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+                  let width = properties[kCGImagePropertyPixelWidth] as? Int,
+                  let height = properties[kCGImagePropertyPixelHeight] as? Int,
+                  width > 0, height > 0, max(width, height) <= limits.longestDimension,
+                  CGImageSourceCreateImageAtIndex(source, 0, nil) != nil else {
+                throw ChatError.unknown("Invalid or oversized image. Choose an image again.")
+            }
+            return DuckAIChatCore.Attachment(id: UUID().uuidString, kind: .image(format: image.format), data: data)
+        }
+    }
+
+    @MainActor
+    static func send(_ prompt: String, attachments: AIChatPromptAttachments, to session: ChatSession) {
+        do { session.send(promptText(prompt, attachments: attachments), attachments: try decode(attachments)) } catch { session.reject(error as? ChatError ?? .unknown(error.localizedDescription)) }
+    }
+
 }
 
 private extension PageContext {

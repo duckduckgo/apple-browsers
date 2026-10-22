@@ -24,6 +24,15 @@ import XCTest
 
 final class UTIAttachmentPolicyTests: XCTestCase {
 
+    func testNativeImagePolicyDoesNotUseWebModelLimits() {
+        var policy = makePolicy(includeAttachmentLimits: false)
+        policy.nativeCapabilities = .vision
+        XCTAssertTrue(policy.canAttachImages)
+        XCTAssertEqual(policy.remainingImagesForPicker, 1)
+        policy.nativeCapabilities = .textOnly
+        XCTAssertFalse(policy.canAttachImages)
+    }
+
     func test_remainingImagesInConversation_usesBackendTierLimit() {
         let policy = makePolicy(
             attachmentLimits: makeLimits(maxImagesPerConversation: 10),

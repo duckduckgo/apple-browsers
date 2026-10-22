@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DuckAIChatCore
 import BrowserServicesKit
 import Combine
 import Core
@@ -71,6 +72,23 @@ struct SubscriptionState {
 @MainActor
 final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
 
+    weak var nativeSession: ChatSession? {
+        didSet { attachmentController?.resetPasteConversation() }
+    }
+
+    private var nativeCapabilities: InputCapabilities? {
+        if let nativeSession { return nativeSession.descriptor.capabilities }
+        guard boundUserScript == nil, DuckAINativeSettings.shared.opensNewChatsNatively else { return nil }
+        return NativeChatProviderFactory.inputCapabilities(for: .chat)
+    }
+
+    func refreshNativeInputCapabilities() {
+        viewController.isNativeChatMode = nativeCapabilities != nil
+        if nativeCapabilities != nil { resetToolsSelection() }
+        updateImageButtonVisibility()
+        refreshFooterSuppression()
+    }
+
     private var attachmentPolicy: UTIAttachmentPolicy {
         UTIAttachmentPolicy(
             attachmentLimits: modelStore.attachmentLimits,
@@ -79,7 +97,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             model: modelStore.selectedModel,
             maximumTabAttachmentCount: maximumTabAttachmentCount,
             currentPageTabID: tabAttachmentSource?.currentTabID,
-            isCurrentPageAttached: isCurrentPageSelected?() ?? false
+            isCurrentPageAttached: isCurrentPageSelected?() ?? false,
+            nativeCapabilities: nativeCapabilities
         )
     }
 
@@ -106,7 +125,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var promptSubmissionConfiguration: PromptSubmissionConfiguration {
         PromptSubmissionConfiguration(
             modelId: promptSubmissionModelId,
-            reasoningEffort: persistedReasoningEffort
+            reasoningEffort: nativeCapabilities == nil ? persistedReasoningEffort : nil
         )
     }
     var voicePromptSubmissionConfiguration: (modelId: String?, reasoningEffort: AIChatReasoningEffort?) {
@@ -781,6 +800,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func applyState(_ state: TabInputState) {
+        attachmentController.resetPasteConversation()
         isApplyingState = true
         defer {
             isApplyingState = false
@@ -1197,7 +1217,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func refreshFooterSuppression() {
-        let suppressed = inputMode != .aiChat
+        let suppressed = inputMode != .aiChat || nativeCapabilities != nil
         Logger.duckAIUsageWarnings.debug("[UsageWarnings] suppression inputs: isEditing=\(self.isEditing, privacy: .public) mode=\(String(describing: self.inputMode), privacy: .public) → \(suppressed, privacy: .public)")
         footerController?.setEditing(isEditing)
         footerController?.setSuppressed(suppressed)
@@ -1765,9 +1785,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     var currentModelId: String? { modelStore.currentModelId }
     var persistedReasoningMode: AIChatReasoningMode? { modelStore.selectedReasoningMode }
     var selectedModel: AIChatModel? { modelStore.selectedModel }
-    var selectedModelSupportsImageUpload: Bool { modelStore.selectedModelSupportsImageUpload }
-    var selectedModelSupportsFileUpload: Bool { modelStore.selectedModelSupportsFileUpload }
-    var selectedModelSupportedFileTypes: [String] { modelStore.selectedModelSupportedFileTypes }
+    var selectedModelSupportsImageUpload: Bool { nativeCapabilities.map { $0.imageLimits != nil } ?? modelStore.selectedModelSupportsImageUpload }
+    var selectedModelSupportsFileUpload: Bool { nativeCapabilities == nil && modelStore.selectedModelSupportsFileUpload }
+    var selectedModelSupportedFileTypes: [String] { nativeCapabilities == nil ? modelStore.selectedModelSupportedFileTypes : [] }
     var selectedTool: AIChatRAGTool? { toolsController.selectedTool }
 
     func fetchModels() {
@@ -2098,6 +2118,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func clearAttachments() {
+        attachmentController.resetPasteConversation()
         attachmentsRetainedForDismiss = nil
         attachmentController.clearAttachments()
         persistDraftToStore()
@@ -2127,6 +2148,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func updateImageButtonVisibility() {
+        viewController.isNativeChatMode = nativeCapabilities != nil
         attachmentController.updateAttachButtonPresentation()
         tabMentionController?.refresh()
     }
@@ -2262,7 +2284,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
         let userScript = boundUserScript
-        let tools = toolsController.selectedToolsForSubmission()
+        let tools = nativeCapabilities == nil ? toolsController.selectedToolsForSubmission() : nil
 
         if let validationMessage = attachmentController.submissionValidationMessage(for: text, mode: .aiChat) {
             attachmentController.presentValidationError(validationMessage)
@@ -2310,9 +2332,20 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             attachmentsSelected: !viewController.currentAttachments.isEmpty
         )
 
-        let attachments = UnifiedToggleInputAttachmentEncoder.encode(viewController.currentAttachments,
-                                                                     imagesSupported: selectedModelSupportsImageUpload,
-                                                                     filesSupported: selectedModelSupportsFileUpload)
+        let attachments: AIChatPromptAttachments
+        do {
+            if let nativeCapabilities {
+                attachments = try UnifiedToggleInputAttachmentEncoder.encodeNative(viewController.currentAttachments, capabilities: nativeCapabilities)
+                let images = try NativeChatContextFactory.decode(attachments)
+                try nativeSession?.validateAttachments(images)
+            } else {
+                attachments = UnifiedToggleInputAttachmentEncoder.encode(viewController.currentAttachments,
+                    imagesSupported: selectedModelSupportsImageUpload, filesSupported: selectedModelSupportsFileUpload)
+            }
+        } catch {
+            attachmentController.presentValidationError(String(describing: error))
+            return
+        }
 
         let tabAttachmentRequest = isContextualChatState
             ? userScript?.attachedTabContextsProvider?()
@@ -2752,6 +2785,7 @@ private extension UnifiedToggleInputCoordinator {
     }
 
     func refreshToolsPresentation() {
+        viewController.isNativeChatMode = nativeCapabilities != nil
         let presentation = toolsController.presentation(
             isActive: isActive,
             modelStore: modelStore,

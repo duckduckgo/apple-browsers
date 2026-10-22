@@ -25,7 +25,7 @@ import Observation
 @Observable
 public final class ChatSession {
     public private(set) var state: ChatState
-    public let descriptor: ProviderDescriptor
+    public var descriptor: ProviderDescriptor { provider.descriptor }
 
     @ObservationIgnored private let provider: any ChatProvider
     @ObservationIgnored private let now: () -> Date
@@ -34,7 +34,6 @@ public final class ChatSession {
 
     public init(context: ChatContext, provider: any ChatProvider, now: @escaping () -> Date = Date.init) {
         self.provider = provider
-        self.descriptor = provider.descriptor
         self.now = now
         self.state = ChatState(conversation: ConversationID(),
                                context: context,
@@ -52,11 +51,35 @@ public final class ChatSession {
                 }
             }
         }
+        if state.messages.isEmpty {
+            do { try descriptor.capabilities.validate(attachments: state.context.attachments) } catch {
+                reject(error as? ChatError ?? .unknown(error.localizedDescription))
+                return
+            }
+        }
         dispatch(.opened(at: now()))
     }
 
-    public func send(_ text: String) {
-        dispatch(.send(text, at: now()))
+    public func reject(_ error: ChatError) {
+        guard state.canSend else { return }
+        dispatch(.rejected(error))
+    }
+
+    public func validateAttachments(_ attachments: [Attachment]) throws {
+        let retained = state.messages.reduce(0) { total, message in
+            if case .user(let user) = message { return total + user.attachments.reduce(0) { $0 + $1.data.count } }
+            return total
+        }
+        try descriptor.capabilities.validate(attachments: attachments, retainedBytes: retained)
+    }
+
+    public func send(_ text: String, attachments: [Attachment] = []) {
+        do {
+            try validateAttachments(attachments)
+            dispatch(.send(text, attachments: attachments, at: now()))
+        } catch {
+            reject(error as? ChatError ?? .unknown(error.localizedDescription))
+        }
     }
 
     public func stop() {

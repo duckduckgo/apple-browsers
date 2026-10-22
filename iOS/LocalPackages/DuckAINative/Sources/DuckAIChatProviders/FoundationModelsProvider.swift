@@ -21,12 +21,19 @@
 import DuckAIChatCore
 import Foundation
 import FoundationModels
+import CoreImage
 
 @available(iOS 26, macOS 26, *)
 public final class FoundationModelsProvider: ChatProvider, Sendable {
-    public let descriptor = ProviderDescriptor(id: ProviderID(rawValue: "foundation-models"),
+    public var descriptor: ProviderDescriptor { ProviderDescriptor(id: ProviderID(rawValue: "foundation-models"),
                                                displayName: "Apple Foundation Models", modelName: "System",
-                                               supportsReasoning: false, supportsImages: false, contextWindowTokens: 4_096)
+                                               capabilities: Self.inputCapabilities, contextWindowTokens: 4_096) }
+
+    public static var inputCapabilities: InputCapabilities {
+        guard case .available = SystemLanguageModel.default.availability else { return .textOnly }
+        if #available(iOS 27, macOS 27, *), SystemLanguageModel.default.capabilities.contains(.vision) { return .vision }
+        return .textOnly
+    }
 
     public init() {}
 
@@ -68,10 +75,8 @@ public final class FoundationModelsProvider: ChatProvider, Sendable {
                         group.addTask {
                             if stop.isRaised { return .finished(nil) }
                             let session = LanguageModelSession(instructions: turn.instructions)
-                            let history = turn.history.map { message in
-                                "\(message.role == .user ? "User" : "Assistant"): \(message.text)"
-                            }
-                            let prompt = (history + ["User: " + turn.input]).joined(separator: "\n\n")
+                            try Self.inputCapabilities.validate(turn: turn)
+                            let prompt = try Self.prompt(for: turn)
                             continuation.yield(.stage(.readingInput(estimatedTokens: turn.estimatedInputTokens, fraction: nil)))
                             var emitted = ""
                             do {
@@ -109,6 +114,26 @@ public final class FoundationModelsProvider: ChatProvider, Sendable {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    private static func prompt(for turn: ProviderTurn) throws -> Prompt {
+        var parts: [Prompt] = []
+        for message in turn.history + [ProviderMessage(role: .user, text: turn.input, attachments: turn.attachments)] {
+            parts.append(Prompt("\(message.role == .user ? "User" : "Assistant"): \(message.text)"))
+            for attachment in message.attachments {
+                if #available(iOS 27, macOS 27, *) {
+                    guard let image = CIImage(data: attachment.data, options: [.applyOrientationProperty: true]),
+                          image.extent.width > 0, image.extent.height > 0,
+                          max(image.extent.width, image.extent.height) <= 1_024 else {
+                        throw ChatError.unknown("Invalid or oversized image.")
+                    }
+                    parts.append(Prompt(FoundationModels.Attachment(image)))
+                } else {
+                    throw ChatError.modelUnavailable(reason: "Images require Apple vision support.")
+                }
+            }
+        }
+        return Prompt(parts)
     }
 
     private static func isRefusal(_ error: Error) -> Bool {

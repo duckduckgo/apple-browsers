@@ -82,11 +82,19 @@ final class DefaultOmniBarViewController: OmniBarViewController {
     )
 
     override var iPadDuckAIControlValues: IPadDuckAIControlValues {
+        controlValues(attachments: attachmentController?.encodedAttachments ?? .none)
+    }
+
+    private var usesNativeIPadChat: Bool {
+        DuckAINativeSettings.shared.opensNewChatsNatively && toolPickerController?.selectedTool != .imageGeneration
+    }
+
+    private func controlValues(attachments: AIChatPromptAttachments) -> IPadDuckAIControlValues {
         IPadDuckAIControlValuesSnapshot(
             selectedModelId: modelPickerController?.currentModelId,
-            selectedReasoningEffort: reasoningPickerController?.selectedReasoningEffort,
-            selectedTools: toolPickerController?.selectedToolsForSubmission,
-            selectedAttachments: attachmentController?.encodedAttachments ?? .none,
+            selectedReasoningEffort: usesNativeIPadChat ? nil : reasoningPickerController?.selectedReasoningEffort,
+            selectedTools: usesNativeIPadChat ? nil : toolPickerController?.selectedToolsForSubmission,
+            selectedAttachments: attachments,
             userTier: modelPickerController?.modelStore.subscriptionState.userTier ?? .free
         )
     }
@@ -414,6 +422,11 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     override func consumeAIChatControlValues() -> IPadDuckAIControlValues {
         let values = iPadDuckAIControlValues
+        clearSubmittedDraft()
+        return values
+    }
+
+    private func clearSubmittedDraft() {
         iPadDraft.clear()
         omniBarView.aiChatTextView.text = ""
         omniBarView.textField.text = ""
@@ -422,7 +435,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         toolPickerController?.resetSelection()
         omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
         omniBarView.updateAIChatSendButton(hasText: false)
-        return values
     }
 
     // MARK: - Layout
@@ -584,6 +596,19 @@ extension DefaultOmniBarViewController {
         guard !hasInvalidAttachment, !query.isEmpty || hasValidAttachment else { return }
 
         if selectedTextEntryMode == .aiChat {
+            let attachments: AIChatPromptAttachments
+            do {
+                if URL.isValidAddressBarURLInput(query) {
+                    attachments = .none
+                } else {
+                    attachments = try attachmentController?.encodeAttachmentsForSubmission() ?? .none
+                }
+            } catch {
+                let alert = UIAlertController(title: nil, message: String(describing: error), preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: UserText.actionOK, style: .default))
+                present(alert, animated: true)
+                return
+            }
             textView.text = ""
             modeToggleTextModel.updateText("")
             omniBarView.updateTextFieldPlaceholderVisibility(hasText: false)
@@ -605,7 +630,8 @@ extension DefaultOmniBarViewController {
                 PixelKit.fire(Pixel.Event.aiChatIPadTogglePromptSubmitted, frequency: .dailyAndCount, options: .parameters(firstPromptParameters))
                 fireIPadUnifiedPromptSubmittedPixels(hasText: !query.isEmpty, isFirstPromptNewInstall: isFirstPromptNewInstall)
                 featureDiscovery.markDuckAIPromptSubmitted()
-                let controlValues = consumeAIChatControlValues()
+                let controlValues = controlValues(attachments: attachments)
+                clearSubmittedDraft()
                 /// Collapse and resign instantly so a quick re-tap doesn't race the post-submit
                 /// collapse animation.
                 /// https://app.asana.com/1/137249556945/project/1201011656765697/task/1215084286493408?focus=true
@@ -759,6 +785,10 @@ extension DefaultOmniBarViewController {
             store: controller.modelStore,
             keepsUnavailableAttachmentButtonVisible: isUpdatedCreateImageEnabled
         )
+        attachmentControllerInstance.nativeCapabilitiesProvider = { [weak self] in
+            guard self?.usesNativeIPadChat == true else { return nil }
+            return NativeChatProviderFactory.inputCapabilities(for: .chat)
+        }
         attachmentController = attachmentControllerInstance
         attachmentControllerInstance.attachmentsStripView = omniBarView.attachmentsStripView
         attachmentControllerInstance.bindDraft(iPadDraft)
@@ -784,11 +814,8 @@ extension DefaultOmniBarViewController {
             self.refreshAttachButton()
         }
 
-        omniBarView.isModelPickerEnabled = true
-        omniBarView.aiChatModelName = controller.currentModelLabel
-        omniBarView.isReasoningPickerEnabled = true
-        omniBarView.isToolPickerEnabled = true
         omniBarView.isAttachButtonEnabled = true
+        refreshModelPicker()
         refreshReasoningPicker()
         refreshToolPicker()
         refreshAttachButton()
@@ -866,6 +893,7 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshModelPicker() {
+        omniBarView.isModelPickerEnabled = !usesNativeIPadChat
         guard let controller = modelPickerController else { return }
 
         if let shortName = controller.currentModelLabel {
@@ -890,6 +918,7 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshReasoningPicker() {
+        omniBarView.isReasoningPickerEnabled = !usesNativeIPadChat
         guard let controller = reasoningPickerController else { return }
 
         let hiddenByTool = toolPickerController?.selectedToolHidesReasoningPicker ?? false
@@ -914,6 +943,7 @@ extension DefaultOmniBarViewController {
     }
 
     private func refreshToolPicker() {
+        omniBarView.isToolPickerEnabled = !usesNativeIPadChat
         guard let controller = toolPickerController else { return }
 
         if controller.isToolPickerAvailable {

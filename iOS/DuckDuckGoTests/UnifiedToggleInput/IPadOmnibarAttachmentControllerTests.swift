@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import DuckAIChatCore
 @_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import UIKit
@@ -57,6 +58,106 @@ final class IPadOmnibarAttachmentControllerTests: XCTestCase {
         strip = nil
         preferences = nil
         super.tearDown()
+    }
+
+    func testNativeVisionNormalizesLargePhotoBeforeSubmission() throws {
+        sut.nativeCapabilitiesProvider = { .vision }
+        store.models = [makeModel(id: "text-only", supportsImageUpload: false)]
+        let draft = IPadOmnibarDraft()
+        draft.text = "Describe this"
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 3
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 512, height: 384), format: format).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 512, height: 384))
+        }
+        draft.attachments = [.image(AIChatImageAttachment(image: image, fileName: "photo.jpg"))]
+        sut.bindDraft(draft)
+
+        let payload = try sut.encodeAttachmentsForSubmission()
+        let decoded = try NativeChatContextFactory.decode(payload)
+        let normalized = try XCTUnwrap(UIImage(data: XCTUnwrap(decoded.first).data))
+        XCTAssertEqual(max(normalized.size.width, normalized.size.height), 1024)
+        XCTAssertEqual(normalized.size.height, 768)
+        XCTAssertLessThanOrEqual(try XCTUnwrap(decoded.first).data.count, ImageInputLimits.standard.bytesPerImage)
+        XCTAssertEqual(draft.text, "Describe this")
+        XCTAssertEqual(draft.attachments.count, 1)
+    }
+
+    func testWebSubmissionPreservesProcessedImageEncoding() throws {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 3
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 2048, height: 1536), format: format).image { context in
+            UIColor.blue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 2048, height: 1536))
+        }
+        let draft = IPadOmnibarDraft()
+        let attachment = AIChatImageAttachment(image: image, fileName: "photo.jpg")
+        draft.attachments = [.image(attachment)]
+        sut.bindDraft(draft)
+
+        let payload = try sut.encodeAttachmentsForSubmission()
+        let encoded = try XCTUnwrap(payload.images?.first)
+        let data = try XCTUnwrap(Data(base64Encoded: encoded.data))
+        let decoded = try XCTUnwrap(UIImage(data: data))
+
+        XCTAssertEqual(data, attachment.image.jpegData(compressionQuality: 0.85))
+        XCTAssertEqual(decoded.size.width, attachment.image.size.width * attachment.image.scale)
+        XCTAssertEqual(decoded.size.height, attachment.image.size.height * attachment.image.scale)
+    }
+
+    func testNativeTextOnlyHidesMenuDespiteWebImageSupport() {
+        store.models = [makeModel(id: "vision", supportsImageUpload: true)]
+        sut.nativeCapabilitiesProvider = { .textOnly }
+
+        XCTAssertFalse(sut.isAttachButtonVisible)
+        XCTAssertNil(sut.makeMenu())
+        XCTAssertFalse(sut.canAttachMore)
+    }
+
+    func testNativeProviderChangePreservesDraftAndRejectsImageSubmission() {
+        var capabilities = InputCapabilities.vision
+        sut.nativeCapabilitiesProvider = { capabilities }
+        let draft = IPadOmnibarDraft()
+        draft.text = "Keep my prompt"
+        draft.attachments = [.image(AIChatImageAttachment(image: UIImage(), fileName: "photo.jpg"))]
+        sut.bindDraft(draft)
+        capabilities = .textOnly
+        store.models = [makeModel(id: "text-only", supportsImageUpload: false)]
+
+        sut.handleModelChanged()
+        sut.bindDraft(draft)
+
+        XCTAssertThrowsError(try sut.encodeAttachmentsForSubmission())
+        XCTAssertEqual(draft.text, "Keep my prompt")
+        XCTAssertEqual(draft.attachments.count, 1)
+        XCTAssertEqual(strip.attachments.count, 1)
+    }
+
+    func testNativeVisionAdmitsPickerImageWithoutWebModelLimits() {
+        store.models = [makeModel(id: "text-only", supportsImageUpload: false)]
+        sut.nativeCapabilitiesProvider = { .vision }
+        let draft = IPadOmnibarDraft()
+        sut.bindDraft(draft)
+
+        XCTAssertNotNil(sut.makeMenu())
+        sut.makePickerCallbacks().onImagePicked?(UIImage(), "photo.jpg")
+
+        XCTAssertEqual(draft.attachments.count, 1)
+        XCTAssertFalse(sut.canAttachMore)
+    }
+
+    func testNativePickerRejectsImageAfterCapabilityChanges() {
+        var capabilities = InputCapabilities.vision
+        sut.nativeCapabilitiesProvider = { capabilities }
+        let draft = IPadOmnibarDraft()
+        sut.bindDraft(draft)
+        let callbacks = sut.makePickerCallbacks()
+        capabilities = .textOnly
+
+        callbacks.onImagePicked?(UIImage(), "photo.jpg")
+
+        XCTAssertTrue(draft.attachments.isEmpty)
     }
 
     // MARK: - Availability

@@ -1602,8 +1602,8 @@ extension AIChatContextualSheetViewController {
             self?.setEditMode(isEditing)
         }
 
-        persistentUTIHost.nativePromptHandler = { [weak self] prompt, page in
-            self?.startNativeChatIfEnabled(prompt: prompt, page: page) ?? false
+        persistentUTIHost.nativePromptHandler = { [weak self] prompt, page, attachments in
+            self?.startNativeChatIfEnabled(prompt: prompt, page: page, attachments: attachments) ?? false
         }
         let utiView = persistentUTIHost.mount(in: self)
         persistentUTIHost.onTabMentionVisibilityChanged = { [weak self] isVisible in

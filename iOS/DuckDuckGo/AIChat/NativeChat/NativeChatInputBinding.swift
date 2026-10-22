@@ -31,12 +31,17 @@ final class NativeChatInputBinding {
     init(host: AIChatContextualUTIHost, session: ChatSession) {
         self.host = host
         self.session = session
-        host.nativeChatPromptSink = { [weak session] prompt in session?.send(prompt) }
+        host.setNativeSession(session)
+        host.nativeChatPromptSink = { [weak session] prompt, attachments in
+            guard let session else { return }
+            NativeChatContextFactory.send(prompt, attachments: attachments, to: session)
+        }
         host.nativeChatStopHandler = { [weak session] in session?.stop() }
         observeStatus()
     }
 
     func unbind() {
+        host.setNativeSession(nil)
         host.nativeChatPromptSink = nil
         host.nativeChatStopHandler = nil
         host.setNativeChatStatus(.ready)

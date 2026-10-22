@@ -108,4 +108,58 @@ import Testing
 
         #expect(result == .failure(.conversationTooLong))
     }
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func imagesSurviveOpeningFollowupAndRedo() throws {
+        let image = Attachment(id: "image", kind: .image(format: "jpeg"), data: Data([1, 2, 3]))
+        let context = try ChatContext(page: Fixture.page, selections: [], opening: .prompt(""), attachments: [image])
+        var state = ChatState(conversation: Fixture.conversation, context: context, budget: Fixture.budget, availability: .ready)
+        _ = state.apply(.opened(at: Fixture.time(0)))
+        #expect(state.liveReply?.turn.attachments == [image])
+        let first = try #require(state.liveReply)
+        _ = state.apply(.provider(first.id, .textDelta("Seen"), at: Fixture.time(1)))
+        _ = state.apply(.provider(first.id, .finished(nil), at: Fixture.time(2)))
+        _ = state.apply(.providerEnded(first.id, at: Fixture.time(2)))
+        _ = state.apply(.send("", attachments: [image], at: Fixture.time(3)))
+        #expect(state.liveReply?.turn.history.first?.attachments == [image])
+        #expect(state.liveReply?.turn.attachments == [image])
+        let second = try #require(state.liveReply)
+        _ = state.apply(.stop(at: Fixture.time(4)))
+        _ = state.apply(.providerEnded(second.id, at: Fixture.time(4)))
+        _ = state.apply(.redo(at: Fixture.time(5)))
+        #expect(state.liveReply?.turn == second.turn)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func imageLimitsRejectUnsupportedAndOversizedInputs() throws {
+        let image = Attachment(id: "image", kind: .image(format: "jpeg"), data: Data([1]))
+        #expect(throws: ChatError.self) { try InputCapabilities.textOnly.validate(attachments: [image]) }
+        try InputCapabilities.vision.validate(attachments: [image])
+        #expect(throws: ChatError.self) { try InputCapabilities.vision.validate(attachments: [image, image]) }
+        let huge = Attachment(id: "huge", kind: .image(format: "jpeg"), data: Data(count: 2 * 1_024 * 1_024 + 1))
+        #expect(throws: ChatError.self) { try InputCapabilities.vision.validate(attachments: [huge]) }
+        #expect(throws: ChatError.self) {
+            try InputCapabilities.vision.validate(attachments: [image], retainedBytes: 8 * 1_024 * 1_024)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func trimmingDropsAnImageWithItsExchangeAndKeepsOtherImages() throws {
+        let images = (1...3).map { Attachment(id: "image-\($0)", kind: .image(format: "jpeg"), data: Data([UInt8($0)])) }
+        let messages: [Message] = [
+            .user(UserMessage(id: .id(1), createdAt: Fixture.time(0), parts: [.attachment(images[0])])),
+            .assistant(AssistantMessage(id: .id(2), createdAt: Fixture.time(1), parts: [.text("First")], ending: .completed(nil))),
+            .user(UserMessage(id: .id(3), createdAt: Fixture.time(2), parts: [.attachment(images[1])])),
+            .assistant(AssistantMessage(id: .id(4), createdAt: Fixture.time(3), parts: [.text("Second")], ending: .completed(nil))),
+            .user(UserMessage(id: .id(5), createdAt: Fixture.time(4), parts: [.attachment(images[2])]))
+        ]
+        let turn = try PromptBuilder.turn(conversation: Fixture.conversation, messages: messages,
+                                         budget: PromptBudget(contextWindowTokens: 3_800)).get()
+        #expect(turn.history.flatMap(\.attachments) == [images[0]])
+        #expect(turn.attachments == [images[2]])
+        #expect(turn.history.map(\.role) == [.user, .assistant])
+    }
+
 }

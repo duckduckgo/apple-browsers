@@ -45,7 +45,7 @@ public enum PromptBuilder {
     /// - `instructions`: from the first user message's request part. Summarize and translate get task instructions
     ///   (translate names the target language); otherwise a general assistant instruction.
     /// - `input`: the last user message rendered: request lead line, page as "Title: / URL: / Content:", selections
-    ///   numbered, pasted text, attachments skipped, then typed text.
+    ///   numbered, pasted text, then typed text. Image attachments travel separately on each provider message.
     /// - `history`: earlier messages; user messages rendered the same way, assistant messages as their text parts joined
     ///   (reasoning, tools, sources and refusals never re-enter the prompt).
     /// - `maxOutputTokens`: summarize 512; translate min(4096, max(256, sourceCharacters / 3 + 128)); chat 1024.
@@ -80,24 +80,24 @@ public enum PromptBuilder {
         var history = messages[..<lastIndex].map { message -> ProviderMessage in
             switch message {
             case .user(let user):
-                ProviderMessage(role: .user, text: renderedUser(user))
+                ProviderMessage(role: .user, text: renderedUser(user), attachments: user.attachments)
             case .assistant(let assistant):
                 ProviderMessage(role: .assistant, text: assistant.parts.compactMap { part in
                     if case .text(let text) = part { text } else { nil }
                 }.joined())
             }
         }
-        var estimatedInputTokens = budget.estimatedTokens(instructions + history.map(\.text).joined() + input)
+        var estimatedInputTokens = budget.estimatedTokens(instructions + history.map(\.text).joined() + input) + (history.flatMap(\.attachments).count + last.attachments.count) * 1_024
         while estimatedInputTokens + maxOutputTokens > budget.contextWindowTokens {
             guard let start = history.indices.dropFirst().first(where: { history[$0].role == .user }) else {
                 return .failure(.conversationTooLong)
             }
             let end = history.indices.dropFirst(start + 1).first(where: { history[$0].role == .user }) ?? history.endIndex
             history.removeSubrange(start..<end)
-            estimatedInputTokens = budget.estimatedTokens(instructions + history.map(\.text).joined() + input)
+            estimatedInputTokens = budget.estimatedTokens(instructions + history.map(\.text).joined() + input) + (history.flatMap(\.attachments).count + last.attachments.count) * 1_024
         }
         return .success(ProviderTurn(conversation: conversation, instructions: instructions, history: history,
-                                     input: input, maxOutputTokens: maxOutputTokens, estimatedInputTokens: estimatedInputTokens))
+                                     input: input, maxOutputTokens: maxOutputTokens, estimatedInputTokens: estimatedInputTokens, attachments: last.attachments))
     }
 }
 

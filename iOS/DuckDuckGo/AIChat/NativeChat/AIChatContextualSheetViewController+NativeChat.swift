@@ -55,14 +55,17 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
     }
 
     /// The first prompt typed into the sheet. Returns false to let the web chat take it.
-    func startNativeChatIfEnabled(prompt: String, page: AIChatPageContextData?) -> Bool {
+    func startNativeChatIfEnabled(prompt: String, page: AIChatPageContextData?, attachments: AIChatPromptAttachments = .none) -> Bool {
         guard persistentUTIHost != nil,
               !bypassesNativeChat,
-              DuckAINativeSettings.shared.opensNewChatsNatively,
-              let context = NativeChatContextFactory.context(prompt: prompt, page: page, selections: sessionState.attachedSelections) else {
-            return false
+              DuckAINativeSettings.shared.opensNewChatsNatively else { return false }
+        do {
+            guard let context = try NativeChatContextFactory.context(prompt: prompt, page: page,
+                selections: sessionState.attachedSelections, attachments: attachments) else { return false }
+            showNativeChat(context, task: .chat, origin: NativeChatOrigin(prompt: prompt, isSuggestedPrompt: false))
+        } catch {
+            persistentUTIHost?.presentRejectionBanner(String(describing: error))
         }
-        showNativeChat(context, task: .chat, origin: NativeChatOrigin(prompt: prompt, isSuggestedPrompt: false))
         return true
     }
 

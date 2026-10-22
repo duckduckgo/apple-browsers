@@ -25,6 +25,7 @@ import Foundation
 public final class StubProvider: ChatProvider, @unchecked Sendable {
 
     public struct Configuration: Sendable {
+        public var acknowledgesImages: Bool
         public var reply: String
         public var wordsPerSecond: Double
         public var unevenBursts: Bool
@@ -34,13 +35,14 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
         public var failure: ChatError?
         public var availability: ProviderAvailability
 
-        public init(reply: String = StubProvider.sampleReply,
+        public init(acknowledgesImages: Bool = false, reply: String = StubProvider.sampleReply,
                     wordsPerSecond: Double = 25,
                     unevenBursts: Bool = false,
                     loadTime: Duration = .milliseconds(600),
                     readTime: Duration = .milliseconds(400),
                     failure: ChatError? = nil,
                     availability: ProviderAvailability = .ready) {
+            self.acknowledgesImages = acknowledgesImages
             self.reply = reply
             self.wordsPerSecond = wordsPerSecond
             self.unevenBursts = unevenBursts
@@ -79,12 +81,11 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
     That is the short version.
     """
 
-    public let descriptor = ProviderDescriptor(id: ProviderID(rawValue: "stub"),
+    public var descriptor: ProviderDescriptor { ProviderDescriptor(id: ProviderID(rawValue: "stub"),
                                                displayName: "Stub",
                                                modelName: "stub",
-                                               supportsReasoning: false,
-                                               supportsImages: false,
-                                               contextWindowTokens: 8_192)
+                                               capabilities: configuration.acknowledgesImages ? .vision : .textOnly,
+                                               contextWindowTokens: 8_192) }
 
     private let configuration: Configuration
     private let lock = NSLock()
@@ -139,6 +140,7 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
             let task = Task {
                 var emitted = 0
                 do {
+                    try descriptor.capabilities.validate(turn: turn)
                     let needsLoad = !self.lock.withLock { self.isLoaded }
                     if needsLoad, !stop.isRaised {
                         continuation.yield(.stage(.loadingModel(fraction: nil)))
@@ -148,7 +150,10 @@ public final class StubProvider: ChatProvider, @unchecked Sendable {
                         try await Task.sleep(for: configuration.readTime)
                         continuation.yield(.stage(.readingInput(estimatedTokens: turn.estimatedInputTokens, fraction: nil)))
                     }
-                    let words = try configuration.reply.ranges(of: Regex("\\s*\\S+\\s*|\\s+")).map { String(configuration.reply[$0]) }
+                    let reply = configuration.acknowledgesImages
+                        ? "Mock transport receipt (no image recognition): received \(turn.attachments.count) current image(s) and \(turn.history.flatMap(\.attachments).count) history image(s)."
+                        : configuration.reply
+                    let words = try reply.ranges(of: Regex("\\s*\\S+\\s*|\\s+")).map { String(reply[$0]) }
                     let started = ContinuousClock.now
                     for (index, word) in words.enumerated() {
                         guard !stop.isRaised else { break }

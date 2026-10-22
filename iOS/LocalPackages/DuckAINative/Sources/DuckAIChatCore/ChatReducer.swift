@@ -53,10 +53,13 @@ public extension ChatState {
         let replyAt: Date
         var effects: [ChatEffect] = []
         switch action {
+        case .rejected(let error):
+            phase = .failed(error)
+            return []
         case .opened(let at):
             effects = [.prepareProvider]
             guard messages.isEmpty, let opening = context.opening else { return effects }
-            var parts = context.contextParts.map(UserPart.context)
+            var parts = context.contextParts.map(UserPart.context) + context.attachments.map(UserPart.attachment)
             switch opening {
             case .prompt(let text): parts.append(.text(text))
             case .request: break
@@ -64,12 +67,12 @@ public extension ChatState {
             lastID += 1
             messages.append(.user(UserMessage(id: MessageID(rawValue: lastID), createdAt: at, parts: parts)))
             replyAt = at
-        case .send(let text, let at):
+        case .send(let text, let attachments, let at):
             let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard canSend, !text.isEmpty else { return [] }
+            guard canSend, !text.isEmpty || !attachments.isEmpty else { return [] }
             let parts = messages.isEmpty ? context.contextParts.map(UserPart.context) : []
             lastID += 1
-            messages.append(.user(UserMessage(id: MessageID(rawValue: lastID), createdAt: at, parts: parts + [.text(text)])))
+            messages.append(.user(UserMessage(id: MessageID(rawValue: lastID), createdAt: at, parts: parts + attachments.map(UserPart.attachment) + [.text(text)])))
             replyAt = at
         case .redo(let at):
             guard canRedo else { return [] }

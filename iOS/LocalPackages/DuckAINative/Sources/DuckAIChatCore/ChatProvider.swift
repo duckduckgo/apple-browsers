@@ -62,16 +62,16 @@ public struct ProviderDescriptor: Equatable, Sendable {
     public let id: ProviderID
     public let displayName: String
     public let modelName: String
-    public let supportsReasoning: Bool
-    public let supportsImages: Bool
+    public let capabilities: InputCapabilities
+    public var supportsReasoning: Bool { capabilities.supportsReasoning }
+    public var supportsImages: Bool { capabilities.imageLimits != nil }
     public let contextWindowTokens: Int
 
-    public init(id: ProviderID, displayName: String, modelName: String, supportsReasoning: Bool, supportsImages: Bool, contextWindowTokens: Int) {
+    public init(id: ProviderID, displayName: String, modelName: String, capabilities: InputCapabilities = .textOnly, contextWindowTokens: Int) {
         self.id = id
         self.displayName = displayName
         self.modelName = modelName
-        self.supportsReasoning = supportsReasoning
-        self.supportsImages = supportsImages
+        self.capabilities = capabilities
         self.contextWindowTokens = contextWindowTokens
     }
 }
@@ -115,15 +115,17 @@ public struct ProviderTurn: Equatable, Sendable {
     public let history: [ProviderMessage]
     /// The new user input, rendered with its context.
     public let input: String
+    public let attachments: [Attachment]
     public let maxOutputTokens: Int
     /// Lets the UI show "reading ~N tokens" for providers that cannot measure.
     public let estimatedInputTokens: Int
 
-    public init(conversation: ConversationID, instructions: String, history: [ProviderMessage], input: String, maxOutputTokens: Int, estimatedInputTokens: Int) {
+    public init(conversation: ConversationID, instructions: String, history: [ProviderMessage], input: String, maxOutputTokens: Int, estimatedInputTokens: Int, attachments: [Attachment] = []) {
         self.conversation = conversation
         self.instructions = instructions
         self.history = history
         self.input = input
+        self.attachments = attachments
         self.maxOutputTokens = maxOutputTokens
         self.estimatedInputTokens = estimatedInputTokens
     }
@@ -137,10 +139,12 @@ public struct ProviderMessage: Equatable, Sendable {
 
     public let role: Role
     public let text: String
+    public let attachments: [Attachment]
 
-    public init(role: Role, text: String) {
+    public init(role: Role, text: String, attachments: [Attachment] = []) {
         self.role = role
         self.text = text
+        self.attachments = attachments
     }
 }
 
@@ -176,5 +180,47 @@ public enum ChatError: Error, Equatable, Sendable {
         case .modelUnavailable, .conversationTooLong: false
         default: true
         }
+    }
+}
+
+public struct ImageInputLimits: Equatable, Sendable {
+    public static let standard = ImageInputLimits()
+    public let countPerTurn = 1
+    public let longestDimension = 1_024
+    public let bytesPerImage = 2 * 1_024 * 1_024
+    public let conversationBytes = 8 * 1_024 * 1_024
+}
+
+public struct InputCapabilities: Equatable, Sendable {
+    public let imageLimits: ImageInputLimits?
+    public var supportsTools: Bool { false }
+    public var supportsReasoning: Bool { false }
+    public static let textOnly = InputCapabilities(imageLimits: nil)
+    public static let vision = InputCapabilities(imageLimits: .standard)
+
+    public func validate(attachments: [Attachment], retainedBytes: Int = 0) throws {
+        guard !attachments.isEmpty else { return }
+        guard let limits = imageLimits else {
+            throw ChatError.modelUnavailable(reason: "This model does not support images.")
+        }
+        guard attachments.count <= limits.countPerTurn else { throw ChatError.unknown("Attach one image per message.") }
+        for attachment in attachments {
+            guard case .image = attachment.kind, !attachment.data.isEmpty, attachment.data.count <= limits.bytesPerImage else {
+                throw ChatError.unknown("The image is empty, unsupported, or larger than 2 MiB.")
+            }
+        }
+        guard attachments.reduce(retainedBytes, { $0 + $1.data.count }) <= limits.conversationBytes else {
+            throw ChatError.unknown("This conversation has reached its 8 MiB image limit. Start a new chat.")
+        }
+    }
+
+    public func validate(turn: ProviderTurn) throws {
+        var bytes = 0
+        for message in turn.history {
+            guard message.role == .user || message.attachments.isEmpty else { throw ChatError.unknown("Only user messages can contain images.") }
+            try validate(attachments: message.attachments, retainedBytes: bytes)
+            bytes += message.attachments.reduce(0) { $0 + $1.data.count }
+        }
+        try validate(attachments: turn.attachments, retainedBytes: bytes)
     }
 }

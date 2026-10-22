@@ -10,6 +10,8 @@ on:
     paths:
       - 'SharedPackages/**'
       - 'iOS/**'
+      # Build number bumps by the release automation have nothing new to test
+      - '!iOS/Configuration/BuildNumber.xcconfig'
       - 'scripts/translation-pr-checks/**'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request

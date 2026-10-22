@@ -12,6 +12,8 @@ on:
       - 'SharedPackages/**'
       - 'iOS/**'
       - '!iOS/fastlane/**'
+      # Build number bumps by the release automation must not start another bump
+      - '!iOS/Configuration/BuildNumber.xcconfig'
   workflow_dispatch:
     inputs:
       asana-task-url:

@@ -12,6 +12,8 @@ on:
       - 'SharedPackages/**'
       - 'macOS/**'
       - '!macOS/fastlane/**'
+      # Build number bumps by the release automation must not start another bump
+      - '!macOS/Configuration/BuildNumber.xcconfig'
   workflow_dispatch:
     inputs:
       asana-task-url:

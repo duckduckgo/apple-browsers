@@ -201,7 +201,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     /// Builds the list of display items for the unpinned tabs collection view.
     /// Inserts group headers before each group's first tab and hides tabs in collapsed groups.
     private var displayItems: [TabBarDisplayItem] {
-        let tabGroupManager = NSApp.delegateTyped.tabGroupManager
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
         let tabs = tabCollectionViewModel.tabCollection.tabs
 
         var items: [TabBarDisplayItem] = []
@@ -705,7 +705,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func subscribeToTabGroupChanges() {
-        let tabGroupManager = NSApp.delegateTyped.tabGroupManager
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
 
         // Reload collection view when tab-to-group mapping changes
         // (headers may need to be added/removed, items may move)
@@ -1910,7 +1910,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     /// With groups, collection view items include headers, so incremental updates by tab index are replaced by a reload.
     private var hasTabGroups: Bool {
-        !NSApp.delegateTyped.tabGroupManager.tabToGroup.isEmpty
+        !tabCollectionViewModel.tabGroupManager.tabToGroup.isEmpty
     }
 
     private func displayIndex(forUnpinnedTabIndex tabIndex: Int) -> Int {
@@ -1925,7 +1925,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     /// Selects the next available (visible) tab when the current selection becomes hidden
     private func selectNextAvailableTab() {
-        let tabGroupManager = NSApp.delegateTyped.tabGroupManager
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
 
         // Find the first visible unpinned tab (not in a collapsed group)
         for (index, tab) in tabCollectionViewModel.tabCollection.tabs.enumerated() {
@@ -2024,7 +2024,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
               oldIndex != newIndex else { return }
 
         // Constrain drag & drop to within the same group (like pinned/unpinned constraint)
-        let tabGroupManager = NSApp.delegateTyped.tabGroupManager
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
         let sourceTab = tabCollection.tabs[safe: oldIndex.item]
         let targetTab = tabCollection.tabs[safe: newIndex.item]
 
@@ -3098,7 +3098,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
     func tabBarViewItemSelectTab(_ tabBarViewItem: TabBarViewItem) {
         // Handle group header click - toggle collapsed state
         if let group = tabBarViewItem.currentHeaderGroup {
-            let tabGroupManager = NSApp.delegateTyped.tabGroupManager
+            let tabGroupManager = tabCollectionViewModel.tabGroupManager
             let wasCollapsed = tabGroupManager.isCollapsed(group)
             tabGroupManager.toggleCollapsed(group)
 
@@ -3567,14 +3567,14 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return headerGroup
         }
         guard let tab = tab(for: tabBarViewItem) else { return nil }
-        return NSApp.delegateTyped.tabGroupManager.group(for: tab)
+        return tabCollectionViewModel.tabGroupManager.group(for: tab)
     }
 
     func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem) {
         guard let tab = tab(for: tabBarViewItem),
               let window = view.window else { return }
 
-        let tabGroupManager = NSApp.delegateTyped.tabGroupManager
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
 
         var hostingController: NSHostingController<TabGroupsManagementView>?
 

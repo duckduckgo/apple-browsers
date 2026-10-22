@@ -57,6 +57,8 @@ final class TabCollectionViewModel: NSObject {
 
     /// Local tabs collection
     let tabCollection: TabCollection
+    /// Hack days: this window's tab groups, in memory only. A tab moved to another window leaves its group.
+    let tabGroupManager = TabGroupManager()
 
     var tabs: [AnyTab] { tabCollection.tabs }
     var pinnedTabs: [Tab] { pinnedTabsCollection?.loadedTabs ?? [] }

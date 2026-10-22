@@ -1709,7 +1709,7 @@ extension MainViewController {
         var hostingController: NSHostingController<TabGroupsManagementView>?
 
         let tabGroupsView = TabGroupsManagementView(
-            tabGroupManager: NSApp.delegateTyped.tabGroupManager,
+            tabGroupManager: tabCollectionViewModel.tabGroupManager,
             currentTabUUID: nil,
             onDismiss: {
                 hostingController?.dismiss(nil)

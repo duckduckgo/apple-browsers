@@ -51,9 +51,10 @@ final class ImportSourcePickerViewModel: ObservableObject {
     @Published var typeButtonTitle: String = UserText.importTypeSelectionTitleAll
 
     let shouldShowSyncButton: Bool
+    private let showsTypeSelectorForAllSources: Bool
 
     private let onSourceSelected: (DataImport.Source) -> Void
-    private let onTypeSelected: (DataImport.DataType, Bool) -> Void
+    private let onTypesSelected: (Set<DataImport.DataType>) -> Void
     private let onSyncSelected: () -> Void
 
     init(availableSources: [DataImport.Source],
@@ -61,17 +62,19 @@ final class ImportSourcePickerViewModel: ObservableObject {
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncButton: Bool,
+         showsTypeSelectorForAllSources: Bool = false,
          initialPickerExpanded: Bool = false,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
-         onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
+         onTypesSelected: @escaping (Set<DataImport.DataType>) -> Void,
          onSyncSelected: @escaping () -> Void) {
         self.availableImportSources = availableSources
         self.selectedSource = selectedSource
         self.selectedImportTypes = selectedImportTypes
         self.selectableImportTypes = selectableImportTypes
         self.shouldShowSyncButton = shouldShowSyncButton
+        self.showsTypeSelectorForAllSources = showsTypeSelectorForAllSources
         self.onSourceSelected = onSourceSelected
-        self.onTypeSelected = onTypeSelected
+        self.onTypesSelected = onTypesSelected
         self.onSyncSelected = onSyncSelected
         self.isPickerExpanded = initialPickerExpanded
         typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
@@ -106,6 +109,10 @@ final class ImportSourcePickerViewModel: ObservableObject {
         }
     }
 
+    var shouldShowTypeSelector: Bool {
+        showsTypeSelectorForAllSources || (selectedSource.isBrowser && !selectedSource.isSafari)
+    }
+
     var shouldShowExpandButton: Bool {
         !isPickerExpanded && availableImportSources.count > Constants.minVisibleOptions
     }
@@ -135,10 +142,8 @@ final class ImportSourcePickerViewModel: ObservableObject {
     }
 
     func typeSelectionDone() {
-        importTypeItems.forEach { item in
-            onTypeSelected(item.dataType, item.isSelected)
-        }
         selectedImportTypes = importTypeItems.filter(\.isSelected).map(\.dataType)
+        onTypesSelected(Set(selectedImportTypes))
         isTypePickerSheetVisible = false
     }
 
@@ -152,6 +157,11 @@ final class ImportSourcePickerViewModel: ObservableObject {
     func updateAvailableImportSources(_ newAvailableImportSources: [DataImport.Source]) {
         availableImportSources = newAvailableImportSources
         ensurePickerExpandedIfNeeded()
+    }
+
+    func updateSelectedSource(_ newSelectedSource: DataImport.Source) {
+        guard selectedSource != newSelectedSource else { return }
+        selectedSource = newSelectedSource
     }
 
     func updateSelectedImportTypes(_ newSelectedImportTypes: [DataImport.DataType]) {

@@ -493,61 +493,54 @@ final class DataImportViewModelTests: XCTestCase {
     // MARK: - Source Filter Tests
 
     @MainActor
-    func testVisibleImportSources_userTurnsOffPasswords_hidesPasswordOnlySources() {
+    func testSelectDataTypes_filterOnWithPasswordsOff_hidesPasswordOnlySourcesAndImportsBookmarksOnly() {
         model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
 
-        model.setDataType(.passwords, selected: false)
+        model.selectDataTypes([.bookmarks])
 
         XCTAssertEqual(model.visibleImportSources, [.chrome, .tor, .fileImport])
+        XCTAssertEqual(model.importSource, .chrome)
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
 
     @MainActor
-    func testVisibleImportSources_userTurnsPasswordsBackOn_showsPasswordOnlySourcesAgain() {
-        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
-        model.setDataType(.passwords, selected: false)
+    func testSelectDataTypes_filterHidesSelectedSource_selectsPreferredVisibleSource() {
+        model = sourceFilterModel(importSource: .bitwarden, isFilterOn: true)
 
-        model.setDataType(.passwords, selected: true)
+        model.selectDataTypes([.bookmarks])
 
-        XCTAssertEqual(model.visibleImportSources, sourceFilterSources)
+        XCTAssertEqual(model.importSource, .chrome)
+        XCTAssertEqual(model.dataTypeFilter, [.bookmarks])
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
 
     @MainActor
-    func testVisibleImportSources_sourceNarrowsSelectionByItself_hidesNothing() {
+    func testUpdateWithSource_filterOn_keepsFilterAndImportsItsTypesTheSourceSupports() {
         model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
 
-        model.update(with: .onePassword8)
+        model.update(with: .bitwarden)
 
+        XCTAssertEqual(model.dataTypeFilter, [.bookmarks, .passwords])
+        XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
-        XCTAssertEqual(model.visibleImportSources, model.availableImportSources)
+    }
+
+    func testDataTypesToImport_keepsTypesTheFilterDoesNotCover() {
+        let dataTypes = DataImportViewModel.dataTypesToImport(availableTypes: [.bookmarks, .passwords, .creditCards], filter: [.bookmarks])
+
+        XCTAssertEqual(dataTypes, [.bookmarks, .creditCards])
     }
 
     @MainActor
-    func testVisibleImportSources_userNarrowingSurvivesSourceSwitch() {
-        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
-        model.setDataType(.passwords, selected: false)
-
-        model.update(with: .firefox)
-
-        XCTAssertTrue(model.availableImportSources.contains(.bitwarden))
-        XCTAssertEqual(model.visibleImportSources, model.availableImportSources.filter { $0.supportedDataTypes != [.passwords] })
-    }
-
-    @MainActor
-    func testVisibleImportSources_keepsSelectedSourceWhoseTypesAreAllTurnedOff() {
-        model = sourceFilterModel(importSource: .bitwarden, deselectedDataTypes: [.passwords], isFilterOn: true)
-
-        let visibleSources = model.visibleImportSources
-
-        XCTAssertEqual(visibleSources, [.chrome, .tor, .fileImport, .bitwarden])
-    }
-
-    @MainActor
-    func testVisibleImportSources_filterFlagOff_showsAllSources() {
+    func testSelectDataTypes_filterOff_narrowsSelectionAndShowsAllSources() {
         model = sourceFilterModel(importSource: .chrome, isFilterOn: false)
 
-        model.setDataType(.passwords, selected: false)
+        model.selectDataTypes([.passwords])
 
+        XCTAssertEqual(model.selectedDataTypes, [.passwords])
+        XCTAssertTrue(model.hasUserModifiedDataTypeSelection)
         XCTAssertEqual(model.visibleImportSources, sourceFilterSources)
+        XCTAssertEqual(model.pickerSelectableDataTypes, model.selectableImportTypes)
     }
 
     // MARK: - Button State Tests
@@ -2806,7 +2799,6 @@ final class DataImportViewModelTests: XCTestCase {
 
     private func sourceFilterModel(
         importSource: Source,
-        deselectedDataTypes: Set<DataType> = [],
         isFilterOn: Bool
     ) -> DataImportViewModel {
         let featureFlagger = MockFeatureFlagger()
@@ -2814,7 +2806,6 @@ final class DataImportViewModelTests: XCTestCase {
         return DataImportViewModel(
             importSource: importSource,
             availableImportSources: sourceFilterSources,
-            deselectedDataTypes: deselectedDataTypes,
             syncFeatureVisibility: .hide,
             loadProfiles: { browser in
                 let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)

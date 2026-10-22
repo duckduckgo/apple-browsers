@@ -84,15 +84,16 @@ struct DataImportView: ModalView {
                 ImportSourcePickerView(
                     availableSources: model.visibleImportSources,
                     selectedSource: model.importSource,
-                    selectedImportTypes: Array(model.selectedDataTypes),
-                    selectableImportTypes: Array(model.selectableImportTypes),
+                    selectedImportTypes: Array(model.pickerSelectedDataTypes),
+                    selectableImportTypes: Array(model.pickerSelectableDataTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    showsTypeSelectorForAllSources: model.isSourceFilterEnabled,
                     isPickerExpanded: model.isPickerExpanded,
                     onSourceSelected: { source in
                         model.update(with: source)
                     },
-                    onTypeSelected: { type, isSelected in
-                        model.setDataType(type, selected: isSelected)
+                    onTypesSelected: { types in
+                        model.selectDataTypes(types)
                     },
                     onSyncSelected: {
                         model.launchSync(using: dismiss.callAsFunction) {

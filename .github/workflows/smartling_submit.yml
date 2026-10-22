@@ -2,9 +2,10 @@ name: Smartling - Submit
 
 # Submits one platform's strings to Smartling and authorizes the job up to a limit. Above it, the maintenance DRI
 # gets a review task.
-#   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. Fails the run on errors.
-#   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it.
-#            Errors are reported on the release task instead of failing code freeze.
+#   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml.
+#   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
+#            so a failure doesn't stop the release. Errors are also reported on the release task.
+# Any failure, including a review task that couldn't be created, fails the run.
 # To test without authorizing anything, run it manually with auto_authorize_max_usd set to 0. For a release, use a
 # test branch with a fake 0.x.y version.
 on:
@@ -86,8 +87,6 @@ jobs:
     name: ${{ inputs.platform }} ${{ inputs.kind }} translation job
     runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 45
-    # A failed release submission is reported on the release task instead of failing the code freeze run.
-    continue-on-error: ${{ inputs.kind == 'release' }}
     # Runs for the same job wait for each other, so they can't both create it.
     concurrency:
       group: smartling-submit-${{ inputs.kind }}-${{ inputs.platform }}-${{ inputs.branch }}
@@ -277,6 +276,7 @@ jobs:
       # Due today in the app project's incoming section (named differently per project), assigned to the platform's triage DRI
       # from the Asana triage rotation (on weekends, the next week's DRI), unless an assignee was resolved above.
       - name: Open ${{ inputs.platform }} Smartling review task
+        id: review-task
         if: ${{ !cancelled() && steps.review.outputs.needed == 'true' }}
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -325,17 +325,17 @@ jobs:
           asana-task-comment-pinned: false
           asana-task-comment-is-html: false
           asana-task-comment: |
-            ⚠️ Submitting ${{ inputs.branch }} to Smartling failed, so this release's translations won't be imported automatically.
+            ⚠️ ${{ steps.review-task.outcome == 'failure' && format('The Smartling job for {0} needs authorization, but nobody was asked to review it.', inputs.branch) || format('Submitting {0} to Smartling failed, so this release''s translations won''t be imported automatically.', inputs.branch) }}
 
-            ✋ Reason: ${{ steps.submit.outputs.failed == 'true' && steps.submit.outputs.reason || 'The localization export, Smartling submission or review task failed. See the workflow logs.' }}
+            ✋ Reason: ${{ steps.submit.outputs.failed == 'true' && steps.submit.outputs.reason || steps.review-task.outcome == 'failure' && format('{0} is awaiting authorization, but its Asana review task couldn''t be created. Authorize it in Smartling, or create the review task by hand: a rerun skips the existing job.', steps.submit.outputs.job_name) || 'The localization export or Smartling submission failed. See the workflow logs.' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-            🔁 To retry, run the "Smartling - Submit" workflow with kind release, platform ${{ inputs.platform }} and branch ${{ inputs.branch }}.
+            ${{ steps.review-task.outcome != 'failure' && format('🔁 To retry, run the "Smartling - Submit" workflow with kind release, platform {0} and branch {1}.', inputs.platform, inputs.branch) || '' }}
 
-      # The submit script exits successfully even when Smartling fails, so the nightly run fails here, after the
-      # review task is open. Release runs report on the release task instead.
-      - name: Fail the nightly run if the submission failed
-        if: ${{ !cancelled() && inputs.kind == 'nightly' && steps.submit.outputs.failed == 'true' }}
+      # The submit script exits successfully even when Smartling fails, so the run fails here, after the review task
+      # or release task comment.
+      - name: Fail the run if the submission failed
+        if: ${{ !cancelled() && steps.submit.outputs.failed == 'true' }}
         env:
           REASON: ${{ steps.submit.outputs.reason }}
         run: |

@@ -70,6 +70,147 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A page recovers a historical third-party key once", .timeLimit(.minutes(1)))
+    func testWhenFetchingPageWithHistoricalThirdPartyEntriesThenRecoversScopedPasswordOnce() async throws {
+        let fixture = try makeFixture()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let scopedPassword = Data(repeating: 0x04, count: 32)
+        scopedAccess.recoverScopedPasswordStub = scopedPassword
+        let entries = try ["first", "second"].map {
+            try makeThirdPartyEntry(id: $0, name: "Recovered browser", password: scopedPassword, fixture: fixture)
+        }
+        let mapper = makeMapper(scopedAccess: scopedAccess,
+                                accountInfoKeys: fixture.keyManager,
+                                cachedScopedPassword: { nil })
+        let (accountManager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+
+        let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
+
+        #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
+        #expect(scopedAccess.recoverScopedPasswordCalls.count == 1)
+        guard page.entries.count == 2,
+              case .decoded(let first) = page.entries[0],
+              case .decoded(let second) = page.entries[1] else {
+            Issue.record("Expected both historical entries to decode")
+            return
+        }
+        #expect(first.id == "first")
+        #expect(second.id == "second")
+        #expect(first.device.name == "Recovered browser")
+        #expect(second.device.name == "Recovered browser")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A cached password is checked for each entry and failed recovery is reused", .timeLimit(.minutes(1)))
+    func testWhenCachedPasswordOnlyDecryptsFirstEntryThenKeepsItsDetailsAndMemoizesRecoveryFailure() async throws {
+        let fixture = try makeFixture()
+        let cachedPassword = Data(repeating: 0x05, count: 32)
+        let historicalPassword = Data(repeating: 0x06, count: 32)
+        for recoveryFails in [true, false] {
+            let scopedAccess = ScopedAccessCredentialManagingMock()
+            if recoveryFails {
+                scopedAccess.fetchAccessCredentialsError = AuditLogRecoveryTestError.expected
+            }
+            let entries = [
+                try makeThirdPartyEntry(id: "cached", name: "Native browser", password: cachedPassword, fixture: fixture),
+                try makeThirdPartyEntry(id: "historical-one", name: "Old browser one", password: historicalPassword, fixture: fixture, malformedFields: true),
+                try makeThirdPartyEntry(id: "historical-two", name: "Old browser two", password: historicalPassword, fixture: fixture)
+            ]
+            let mapper = makeMapper(scopedAccess: scopedAccess,
+                                    accountInfoKeys: fixture.keyManager,
+                                    cachedScopedPassword: { cachedPassword })
+            let (accountManager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
+            api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+
+            let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
+
+            #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
+            #expect(scopedAccess.recoverScopedPasswordCalls.count == (recoveryFails ? 0 : 1))
+            guard page.entries.count == 3,
+                  case .decoded(let cached) = page.entries[0],
+                  case .decoded(let historicalOne) = page.entries[1],
+                  case .decoded(let historicalTwo) = page.entries[2] else {
+                Issue.record("Expected audit events to remain present when scoped recovery fails")
+                return
+            }
+            #expect(cached.device.name == "Native browser")
+            #expect(historicalOne.device.name == "Browser")
+            #expect(historicalTwo.device.name == "Browser")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A historical password is recovered without replacing a valid cached password", .timeLimit(.minutes(1)))
+    func testWhenEntriesUseCachedAndHistoricalThirdPartyPasswordsThenBothRemainReadable() async throws {
+        let fixture = try makeFixture()
+        let scopedAccess = ScopedAccessCredentialManagingMock()
+        let cachedPassword = Data(repeating: 0x05, count: 32)
+        let recoveredPassword = Data(repeating: 0x06, count: 32)
+        scopedAccess.recoverScopedPasswordStub = recoveredPassword
+        let entries = [
+            try makeThirdPartyEntry(id: "cached", name: "Current browser", password: cachedPassword, fixture: fixture),
+            try makeThirdPartyEntry(id: "historical", name: "Historical browser", password: recoveredPassword, fixture: fixture)
+        ]
+        let mapper = makeMapper(scopedAccess: scopedAccess,
+                                accountInfoKeys: fixture.keyManager,
+                                cachedScopedPassword: { cachedPassword })
+        let (accountManager, api, endpoint) = makeAccountManager(fixture: fixture, mapper: mapper)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+
+        let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
+
+        #expect(scopedAccess.fetchAccessCredentialsCalls.count == 1)
+        #expect(scopedAccess.recoverScopedPasswordCalls.count == 1)
+        guard page.entries.count == 2,
+              case .decoded(let cached) = page.entries[0],
+              case .decoded(let historical) = page.entries[1] else {
+            Issue.record("Expected cached and recovered password entries to decode")
+            return
+        }
+        #expect(cached.device.name == "Current browser")
+        #expect(historical.device.name == "Historical browser")
+        #expect(historical.device.type == "desktop")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Audit-log entries map before a later account-info key refresh", .timeLimit(.minutes(1)))
+    func testWhenLaterEntryRefreshesAccountInfoKeyThenEarlierDeviceInfoRemainsDecoded() async throws {
+        let firstFixture = try makeFixture()
+        let secondFixture = try AuditLogTestFixture.make(accountSecretKey: Data(repeating: 0x07, count: 32))
+        firstFixture.keyManager.refreshKeyStub = secondFixture.key
+        let codec = DeviceInfoCodec()
+        let firstInfo = try codec.encrypt(DeviceInfo(name: "First key device", type: "desktop"), using: firstFixture.protectedKey)
+        let secondInfo = try codec.encrypt(DeviceInfo(name: "Second key device", type: "desktop"), using: secondFixture.protectedKey)
+        let firstPayload = try auditPayload(device: ["id": "first", "info": firstInfo])
+        let secondPayload = try auditPayload(device: ["id": "second", "info": secondInfo])
+        let entries = [
+            try encryptedAuditEntry(id: "first", payload: firstPayload, key: firstFixture.key),
+            try encryptedAuditEntry(id: "second", payload: secondPayload, key: secondFixture.key)
+        ]
+        let mapper = RegisteredDeviceMapper(crypter: CryptingMock(),
+                                            accountInfoKeys: firstFixture.keyManager,
+                                            deviceInfoCodec: codec,
+                                            isScopedAccessCredentialsEnabled: { false },
+                                            canReadUnifiedDeviceList: { true })
+        let (accountManager, api, endpoint) = makeAccountManager(fixture: firstFixture, mapper: mapper)
+        api.fakeRequests[endpoint] = try makeAuditLogRequest(entries)
+
+        let page = try await accountManager.fetchAuditLog(for: account, cursor: nil)
+
+        #expect(firstFixture.keyManager.loadKeyCalls.count == 1)
+        #expect(firstFixture.keyManager.refreshKeyCalls.count == 1)
+        guard page.entries.count == 2,
+              case .decoded(let first) = page.entries[0],
+              case .decoded(let second) = page.entries[1] else {
+            Issue.record("Expected both account-info key generations to decode")
+            return
+        }
+        #expect(first.device.name == "First key device")
+        #expect(second.device.name == "Second key device")
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Unknown event types remain skippable with future schemas", .timeLimit(.minutes(1)))
     func testWhenEventTypeIsUnknownThenReturnsUnknownEvenIfSchemaHasChanged() async throws {
         let fixture = try makeFixture()
@@ -307,13 +448,80 @@ struct AuditLogEntryDecoderTests {
     private func makeFixture() throws -> AuditLogTestFixture {
         try AuditLogTestFixture.make(accountSecretKey: accountSecretKey)
     }
+
+    private func makeMapper(scopedAccess: ScopedAccessCredentialManagingMock,
+                            accountInfoKeys: AccountInfoKeyManaging,
+                            cachedScopedPassword: @escaping () -> Data?) -> RegisteredDeviceMapper {
+        RegisteredDeviceMapper(crypter: CryptingMock(),
+                               scopedAccess: scopedAccess,
+                               accountInfoKeys: accountInfoKeys,
+                               cachedScopedPassword: cachedScopedPassword,
+                               isScopedAccessCredentialsEnabled: { true },
+                               canReadUnifiedDeviceList: { true })
+    }
+
+    private func makeAccountManager(fixture: AuditLogTestFixture,
+                                    mapper: any RegisteredDeviceMapping) -> (AccountManager, RemoteAPIRequestCreatingMock, URL) {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoint = URL(string: "https://dev.null/sync/account/audit-log")!
+        let accountManager = AccountManager(endpoints: Endpoints(baseURL: URL(string: "https://dev.null")!),
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            registeredDeviceMapper: mapper,
+                                            accountInfoKeys: fixture.keyManager,
+                                            isScopedAccessCredentialsEnabled: { true })
+        return (accountManager, api, endpoint)
+    }
+
+    private func makeThirdPartyEntry(id: String,
+                                     name: String,
+                                     password: Data,
+                                     fixture: AuditLogTestFixture,
+                                     malformedFields: Bool = false) throws -> AuditLogEntry {
+        let key = ScopedAccessKeyDerivation.mainKey(from: password, userID: account.userId)
+        let codec = JWECompactCodec()
+        let encryptedName = try malformedFields ? "not-jwe" : codec.encryptDirect(payload: Data(name.utf8),
+                                                                                    contentEncryptionKey: key,
+                                                                                    kid: SyncCredentialID.thirdParty)
+        let encryptedType = try malformedFields ? "not-jwe" : codec.encryptDirect(payload: Data("desktop".utf8),
+                                                                                    contentEncryptionKey: key,
+                                                                                    kid: SyncCredentialID.thirdParty)
+        return try encryptedAuditEntry(id: id,
+                                       payload: auditPayload(device: ["id": id,
+                                                                      "credential_id": SyncCredentialID.thirdParty,
+                                                                      "name": encryptedName,
+                                                                      "type": encryptedType]),
+                                       key: fixture.key)
+    }
+
+    private func auditPayload(device: [String: String]) throws -> Data {
+        try JSONSerialization.data(withJSONObject: ["type": "login",
+                                                    "occurred_at": "2026-09-02T14:03:11Z",
+                                                    "device": device])
+    }
+
+    private func encryptedAuditEntry(id: String, payload: Data, key: AccountInfoKey) throws -> AuditLogEntry {
+        let encryptedPayload = try JWECompactCodec().encryptRSAOAEP256(payload: payload,
+                                                                       recipientPublicKey: key.publicKey,
+                                                                       kid: key.kid)
+        return AuditLogEntry(id: id, version: "1", payload: encryptedPayload)
+    }
+
+    private func makeAuditLogRequest(_ entries: [AuditLogEntry]) throws -> HTTPRequestingMock {
+        let body = try JSONSerialization.data(withJSONObject: ["audit_log": [
+            "entries": entries.map { ["id": $0.id, "version": $0.version, "payload": $0.payload] },
+            "after": "next-page"
+        ]])
+        return HTTPRequestingMock(result: .init(data: body, response: .init()))
+    }
 }
 
 private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
-                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult {
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
+                                          pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> RegisteredDeviceMappingResult {
         let devices = entries.map { RegisteredDevice(id: $0.id, name: $0.name ?? "Unknown", type: $0.type ?? "unknown") }
         return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)
     }
@@ -324,4 +532,8 @@ private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {
                           encryptedName: String,
                           encryptedType: String?,
                           primaryKey: Data) -> RegisteredDevice? { nil }
+}
+
+private enum AuditLogRecoveryTestError: Error {
+    case expected
 }

@@ -454,11 +454,8 @@
 /* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
 "aichat.pasted.text.sheet.title" = "Pasted Text";
 
-/* Second line of the error shown below the Duck.ai input while the message is longer than allowed, telling the user how to fix it */
-"aichat.prompt.too.long.subtitle" = "Reduce or remove text to continue chat.";
-
-/* First line of the error shown below the Duck.ai input while the message is longer than allowed, e.g. Text exceeds the character limit 17,002/16,000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
-"aichat.prompt.too.long.title.format" = "Text exceeds the character limit %1$d/%2$d.";
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Please try a shorter message. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "For analytical tasks";

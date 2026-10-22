@@ -305,8 +305,8 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     func configurePastedText(_ pastedText: AIChatPastedText) {
         imageView.image = nil
         imageView.isHidden = true
-        fileIconView.image = DesignSystemImages.Glyphs.Size24.documentText.withRenderingMode(.alwaysTemplate)
-        fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
+        fileIconView.image = DesignSystemImages.Color.Size24.fileTXT
+        fileIconView.tintColor = nil
         fileNameLabel.text = pastedText.title
         fileNameLabel.lineBreakMode = .byTruncatingTail
         fileIconView.isHidden = false

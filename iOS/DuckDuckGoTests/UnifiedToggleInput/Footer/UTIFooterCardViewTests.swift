@@ -100,19 +100,16 @@ final class UTIFooterCardViewTests: XCTestCase {
         }
     }
 
-    func testTooLongErrorShowsARedCountLineOverTheSecondaryHintWithoutAnAction() throws {
+    func testTooLongErrorIsOneRedCountLineWithoutAnAction() throws {
         let sut = UTIFooterCardView()
 
         sut.configure(with: UTIFooterMessageMapper().promptTooLongMessage(count: 17_002, limit: 16_000), animateIcon: false)
 
         let title = try XCTUnwrap(titleLabel(in: sut))
-        let subtitle = try XCTUnwrap(subtitleLabel(in: sut))
-        XCTAssertEqual(title.text, "Text exceeds the character limit 17002/16000.")
+        XCTAssertEqual(title.text, "Please try a shorter message. 17002/16000")
         XCTAssertEqual(title.font, .daxCaption1())
         XCTAssertEqual(light(title.textColor), light(UIColor(designSystemColor: .destructivePrimary)))
-        XCTAssertEqual(subtitle.text, "Reduce or remove text to continue chat.")
-        XCTAssertEqual(subtitle.font, .daxCaption1())
-        XCTAssertEqual(light(subtitle.textColor), light(UIColor(designSystemColor: .textSecondary)))
+        XCTAssertEqual(subtitleLabel(in: sut)?.isHidden ?? true, true)
         XCTAssertEqual(actionButton(in: sut)?.isHidden, true)
         XCTAssertEqual(dismissButton(in: sut)?.isHidden, true)
     }

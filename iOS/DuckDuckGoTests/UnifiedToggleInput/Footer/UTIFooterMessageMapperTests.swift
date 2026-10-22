@@ -58,8 +58,8 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         let message = sut.promptTooLongMessage(count: 17_002, limit: 16_000)
 
         XCTAssertEqual(message.icon, .alert)
-        XCTAssertEqual(message.title, "Text exceeds the character limit 17002/16000.")
-        XCTAssertEqual(message.subtitle, "Reduce or remove text to continue chat.")
+        XCTAssertEqual(message.title, "Please try a shorter message. 17002/16000")
+        XCTAssertNil(message.subtitle)
         XCTAssertEqual(message.titleStyle, .error)
         XCTAssertNil(message.primaryAction)
         XCTAssertNil(message.link)

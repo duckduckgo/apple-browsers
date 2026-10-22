@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "Document-Text-24.pdf",
+      "filename" : "File-TXT-Color-24.pdf",
       "idiom" : "universal"
     }
   ],
@@ -10,6 +10,6 @@
     "version" : 1
   },
   "properties" : {
-    "template-rendering-intent" : "template"
+    "preserves-vector-representation" : true
   }
 }

@@ -2513,8 +2513,7 @@ public struct UserText {
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
 
-    public static let aiChatPromptTooLongTitleFormat = NSLocalizedString("aichat.prompt.too.long.title.format", value: "Text exceeds the character limit %1$d/%2$d.", comment: "First line of the error shown below the Duck.ai input while the message is longer than allowed, e.g. Text exceeds the character limit 17,002/16,000. %1$d is the number of characters in the message, %2$d is the most characters allowed")
-    public static let aiChatPromptTooLongSubtitle = NSLocalizedString("aichat.prompt.too.long.subtitle", value: "Reduce or remove text to continue chat.", comment: "Second line of the error shown below the Duck.ai input while the message is longer than allowed, telling the user how to fix it")
+    public static let aiChatPromptTooLongFormat = NSLocalizedString("aichat.prompt.too.long.format", value: "Please try a shorter message. %1$d/%2$d", comment: "Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed")
 
     public static let aiChatPastedTextAccessibilityLabel = NSLocalizedString("aichat.pasted.text.accessibility.label", value: "Pasted text", comment: "VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted")
     public static let aiChatPastedTextRemoveAction = NSLocalizedString("aichat.pasted.text.remove", value: "Remove", comment: "VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message")

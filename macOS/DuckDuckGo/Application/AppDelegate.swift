@@ -2864,7 +2864,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                 ),
                                                 featureFlagger: featureFlagger),
                                             browsing: DaxPetBrowser(windowControllersManager: windowControllersManager,
-                                                                    historyCoordinator: historyCoordinator),
+                                                                    historyCoordinator: historyCoordinator,
+                                                                    faviconManager: faviconManager),
                                             browserToolActivity: aiChatBrowserToolsService.activity,
                                             isInternalUser: { [internalUserDecider] in internalUserDecider.isInternalUser })
         coordinator.start()

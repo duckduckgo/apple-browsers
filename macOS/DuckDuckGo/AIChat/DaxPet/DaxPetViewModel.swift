@@ -90,6 +90,26 @@ struct DaxPetFindings: Equatable {
             case .visit(let visit): return visit.url
             }
         }
+
+        var favicon: NSImage? {
+            switch self {
+            case .tab(let tab): return tab.favicon
+            case .visit(let visit): return visit.favicon
+            }
+        }
+
+        /// Where it is: the site, and whether it's open now or when it was seen.
+        func detail(relativeTo now: Date) -> String {
+            let site = url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? url.absoluteString
+            switch self {
+            case .tab:
+                return site + " · " + UserText.daxPetFoundOpenInATab
+            case .visit(let visit):
+                let formatter = RelativeDateTimeFormatter()
+                formatter.dateTimeStyle = .named
+                return site + " · " + formatter.localizedString(for: visit.date, relativeTo: now)
+            }
+        }
     }
 
     enum Content: Equatable {
@@ -147,6 +167,9 @@ final class DaxPetViewModel: ObservableObject {
 
     /// How long Dax shows he's on it before Duck.ai takes over the screen.
     var submissionDelay: TimeInterval = 0.7
+    /// How tall the bubble above Dax is now, as laid out, so only it takes clicks.
+    var bubbleContentHeight: CGFloat?
+
     /// How long he waits for Duck.ai to start answering, and then to finish, before he stops thinking.
     var answerStartTimeout: TimeInterval = 15
     var answerFinishTimeout: TimeInterval = 120

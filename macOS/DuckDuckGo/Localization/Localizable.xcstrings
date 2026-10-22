@@ -181,6 +181,18 @@
         }
       }
     },
+    "duckai.dax-pet.found.open-in-a-tab" : {
+      "comment" : "Under the title of a tab Dax, the DuckDuckGo mascot, found for the user, after the site's name: the page is open in a browser tab right now",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open in a tab"
+          }
+        }
+      }
+    },
     "duckai.dax-pet.found.tabs" : {
       "comment" : "Shown by Dax, the DuckDuckGo mascot, above the open tabs that match what the user asked him to find. Each tab is a button below",
       "extractionState" : "extracted_with_value",

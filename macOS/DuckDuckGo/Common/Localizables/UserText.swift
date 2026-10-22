@@ -827,6 +827,7 @@ struct UserText {
     static let daxPetDropGoToTab = NSLocalizedString("duckai.dax-pet.drop.go-to-tab", value: "Go to the Tab", comment: "Button by Dax, the DuckDuckGo mascot, that brings forward the tab where a link dropped on him is already open")
     static let daxPetDropRecap = NSLocalizedString("duckai.dax-pet.drop.recap", value: "Recap It", comment: "Button by Dax, the DuckDuckGo mascot, that asks Duck.ai to recap the page of a link dropped on him")
     static let daxPetRecapPrompt = NSLocalizedString("duckai.dax-pet.recap.prompt", value: "Recap this page", comment: "Prompt sent to Duck.ai with a page the user dropped on Dax, the DuckDuckGo mascot, and asked him to recap")
+    static let daxPetFoundOpenInATab = NSLocalizedString("duckai.dax-pet.found.open-in-a-tab", value: "Open in a tab", comment: "Under the title of a tab Dax, the DuckDuckGo mascot, found for the user, after the site's name: the page is open in a browser tab right now")
     static let daxPetPromptPlaceholder = NSLocalizedString("duckai.dax-pet.prompt.placeholder", value: "Ask Dax anything…", comment: "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetAsk = NSLocalizedString("duckai.dax-pet.ask", value: "Ask Dax", comment: "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetSend = NSLocalizedString("duckai.dax-pet.send", value: "Send", comment: "Tooltip of the button that sends the question typed for Dax to Duck.ai")

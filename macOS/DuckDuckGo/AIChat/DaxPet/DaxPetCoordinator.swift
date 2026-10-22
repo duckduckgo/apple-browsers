@@ -300,7 +300,7 @@ final class DaxPetCoordinator: NSObject {
         let isOverCharacter = characterFrame.contains(point)
         var interactiveFrames = [characterFrame, DaxPetView.Metrics.controlsFrame(isComposing: model.isComposing)]
         if model.speech != nil || !model.suggestions.isEmpty || model.glance != nil || model.findings != nil || model.dropOffer != nil {
-            interactiveFrames.append(DaxPetView.Metrics.bubbleFrame())
+            interactiveFrames.append(DaxPetView.Metrics.bubbleFrame(contentHeight: model.bubbleContentHeight))
         }
         // A press in progress (e.g. dragging Dax) keeps its window.
         let isInteractive = NSEvent.pressedMouseButtons != 0 && !window.ignoresMouseEvents

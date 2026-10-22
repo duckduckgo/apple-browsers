@@ -32,6 +32,7 @@ struct DaxPetVisit: Equatable {
     let title: String
     let url: URL
     let date: Date
+    var favicon: NSImage?
 }
 
 /// The user's tabs and history, read on the Mac for Dax's quick lookups. Fire Windows are left out.
@@ -51,10 +52,13 @@ final class DaxPetBrowser: DaxPetBrowsing {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let historyCoordinator: HistoryCoordinating
+    private let faviconManager: FaviconManagement?
 
-    init(windowControllersManager: WindowControllersManagerProtocol, historyCoordinator: HistoryCoordinating) {
+    init(windowControllersManager: WindowControllersManagerProtocol, historyCoordinator: HistoryCoordinating,
+         faviconManager: FaviconManagement? = nil) {
         self.windowControllersManager = windowControllersManager
         self.historyCoordinator = historyCoordinator
+        self.faviconManager = faviconManager
     }
 
     var openTabs: [DaxPetTab] {
@@ -74,11 +78,18 @@ final class DaxPetBrowser: DaxPetBrowsing {
     }
 
     func history(matching terms: [String], limit: Int) -> [DaxPetVisit] {
-        Self.rank(historyCoordinator.allHistoryVisits ?? [], matching: terms, limit: limit)
+        Self.rank(historyCoordinator.allHistoryVisits ?? [], matching: terms, limit: limit).map(withFavicon)
     }
 
     func lastVisit(to url: URL) -> DaxPetVisit? {
-        Self.lastVisit(to: url, in: historyCoordinator.allHistoryVisits ?? [])
+        Self.lastVisit(to: url, in: historyCoordinator.allHistoryVisits ?? []).map(withFavicon)
+    }
+
+    private func withFavicon(_ visit: DaxPetVisit) -> DaxPetVisit {
+        var visit = visit
+        visit.favicon = faviconManager?.getCachedFavicon(for: visit.url, sizeCategory: .small, fallBackToSmaller: true)?.image
+            ?? visit.url.host.flatMap { faviconManager?.getCachedFavicon(for: $0, sizeCategory: .small, fallBackToSmaller: true)?.image }
+        return visit
     }
 
     func open(_ url: URL) {

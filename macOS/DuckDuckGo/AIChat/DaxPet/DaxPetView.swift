@@ -27,8 +27,8 @@ struct DaxPetView: View {
     enum Metrics {
         static let padding: CGFloat = 8
         static let spacing: CGFloat = 6
-        /// Room for the page gist and two rows of follow-ups, the tallest thing Dax says.
-        static let bubbleAreaHeight: CGFloat = 118
+        /// Room for three findings with two-line titles, the tallest thing Dax shows.
+        static let bubbleAreaHeight: CGFloat = 220
         static let controlsHeight: CGFloat = 36
         static let toolbarSize = CGSize(width: 106, height: 32)
         static let composingWidth: CGFloat = 320
@@ -66,8 +66,10 @@ struct DaxPetView: View {
                           width: size.width, height: size.height)
         }
 
-        static func bubbleFrame() -> CGRect {
-            CGRect(x: padding, y: characterFrame().maxY + spacing, width: composingWidth, height: bubbleAreaHeight)
+        /// Bubbles sit on the bottom of their area, so only the part they fill takes clicks.
+        static func bubbleFrame(contentHeight: CGFloat? = nil) -> CGRect {
+            let height = min(contentHeight ?? bubbleAreaHeight, bubbleAreaHeight)
+            return CGRect(x: padding, y: characterFrame().maxY + spacing, width: composingWidth, height: height)
         }
     }
 
@@ -76,6 +78,7 @@ struct DaxPetView: View {
     var body: some View {
         VStack(spacing: Metrics.spacing) {
             ZStack(alignment: .bottom) {
+                Group {
                 if let offer = model.dropOffer {
                     DropOfferBubble(speech: model.speech, offer: offer, suggestions: model.suggestions,
                                     onGoToTab: model.goToDroppedTab,
@@ -85,9 +88,12 @@ struct DaxPetView: View {
                 } else if !model.suggestions.isEmpty {
                     SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
+                } else if let findings = model.findings, case .items(let items) = findings.content {
+                    FindingsCard(headline: findings.headline, items: items, now: model.now(),
+                                 onOpen: model.openFinding, onAskDuckAI: model.askDuckAIInstead)
+                        .transition(.scale(scale: 0.85, anchor: .bottom).combined(with: .opacity))
                 } else if let findings = model.findings {
                     FindingsBubble(findings: findings,
-                                   onOpen: model.openFinding,
                                    onAllowHistory: model.allowHistorySearch,
                                    onAskDuckAI: model.askDuckAIInstead)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
@@ -101,8 +107,13 @@ struct DaxPetView: View {
                         .id(speech)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 }
+                }
+                .background(GeometryReader { proxy in
+                    Color.clear.preference(key: BubbleHeightKey.self, value: proxy.size.height)
+                })
             }
             .frame(width: Metrics.composingWidth, height: Metrics.bubbleAreaHeight, alignment: .bottom)
+            .onPreferenceChange(BubbleHeightKey.self) { model.bubbleContentHeight = $0 }
             // Over the tip of a hat.
             .zIndex(1)
 
@@ -132,6 +143,13 @@ struct DaxPetView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.glance)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.findings)
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: model.dropOffer)
+    }
+}
+
+private struct BubbleHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
@@ -180,7 +198,6 @@ private struct ChipList: View {
 private struct ChipLabel: View {
     let text: String
     var isAccented = false
-    var maxWidth: CGFloat?
 
     var body: some View {
         Text(text)
@@ -188,7 +205,6 @@ private struct ChipLabel: View {
             .foregroundColor(Color(designSystemColor: isAccented ? .accentPrimary : .textPrimary))
             .lineLimit(1)
             .truncationMode(.tail)
-            .frame(maxWidth: maxWidth)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .background(Capsule().fill(Color(designSystemColor: .surfacePrimary)))
@@ -239,11 +255,115 @@ private struct DropOfferBubble: View {
     }
 }
 
-/// What Dax found on the Mac, a chip each, and Duck.ai as the way on; or his question before he first
-/// searches the history.
+/// What Dax found on the Mac, a row each with its icon, full title and where it is, and Duck.ai as the way on.
+private struct FindingsCard: View {
+    let headline: String
+    let items: [DaxPetFindings.Item]
+    let now: Date
+    let onOpen: (DaxPetFindings.Item) -> Void
+    let onAskDuckAI: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hasAppeared = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Text(headline)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                Button(action: onAskDuckAI) {
+                    HStack(spacing: 4) {
+                        Image(nsImage: DesignSystemImages.Glyphs.Size12.aiChat)
+                            .renderingMode(.template)
+                        Text(UserText.daxPetFindingsAskDuckAI)
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(Color(designSystemColor: .accentPrimary))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(Color(designSystemColor: .controlsFillPrimary)))
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.leading, 6)
+            .padding(.bottom, 2)
+
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                FindingRow(item: item, detail: item.detail(relativeTo: now)) { onOpen(item) }
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared || reduceMotion ? 0 : 6)
+                    .animation(.spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.06), value: hasAppeared)
+            }
+        }
+        .padding(8)
+        .frame(width: DaxPetView.Metrics.composingWidth)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(designSystemColor: .surfacePrimary))
+                .shadow(color: .black.opacity(0.18), radius: 8, y: 3)
+        )
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
+        .onAppear { hasAppeared = true }
+    }
+}
+
+/// One tab or page: its icon, its title in full on up to two lines, and where it is.
+private struct FindingRow: View {
+    let item: DaxPetFindings.Item
+    let detail: String
+    let onOpen: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: onOpen) {
+            HStack(spacing: 10) {
+                Image(nsImage: item.favicon ?? DesignSystemImages.Glyphs.Size16.globe)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16, height: 16)
+                    .frame(width: 28, height: 28)
+                    .background(RoundedRectangle(cornerRadius: 7).fill(Color(designSystemColor: .controlsFillPrimary)))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(item.title)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color(designSystemColor: .textPrimary))
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(detail)
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(nsImage: DesignSystemImages.Glyphs.Size12.arrowRight)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: .iconsSecondary))
+                    .opacity(isHovered ? 1 : 0)
+                    .offset(x: isHovered ? 0 : -4)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 10).fill(Color(designSystemColor: .controlsFillPrimary)).opacity(isHovered ? 1 : 0))
+            .contentShape(RoundedRectangle(cornerRadius: 10))
+        }
+        .buttonStyle(.plain)
+        .help(item.url.absoluteString)
+        .accessibilityLabel(item.title)
+        .accessibilityHint(detail)
+        .onHover { hovering in
+            withAnimation(.easeOut(duration: 0.15)) { isHovered = hovering }
+        }
+    }
+}
+
+/// Dax's question before he first searches the history, with Duck.ai as the other way on.
 private struct FindingsBubble: View {
     let findings: DaxPetFindings
-    let onOpen: (DaxPetFindings.Item) -> Void
     let onAllowHistory: () -> Void
     let onAskDuckAI: () -> Void
 
@@ -284,16 +404,7 @@ private struct FindingsBubble: View {
             ChipLabel(text: UserText.daxPetFindingsAskDuckAI, isAccented: true)
         }
         .buttonStyle(.plain)
-        switch findings.content {
-        case .items(let items):
-            ForEach(items) { item in
-                Button { onOpen(item) } label: {
-                    ChipLabel(text: item.title, maxWidth: 130)
-                }
-                .buttonStyle(.plain)
-                .help(item.url.host ?? item.url.absoluteString)
-            }
-        case .askingToSearchHistory:
+        if findings.content == .askingToSearchHistory {
             Button(action: onAllowHistory) {
                 ChipLabel(text: UserText.daxPetHistoryAllow)
             }

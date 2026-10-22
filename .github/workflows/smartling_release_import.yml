@@ -137,7 +137,7 @@ jobs:
         uses: ./.github/actions/select-xcode-version
 
       - name: Set up Python
-        if: steps.script.outputs.available == 'true'
+        if: steps.script.outputs.available == 'true' && runner.environment != 'self-hosted'
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'

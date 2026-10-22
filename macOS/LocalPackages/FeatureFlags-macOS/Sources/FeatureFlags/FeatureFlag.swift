@@ -994,13 +994,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .aiChatNtpAttachMoreTabs:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
         case .aiChatOmnibarScreenshot:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
         case .aiChatNtpScreenshot:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
         case .aiChatPasteImages:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
         case .aiChatNtpPasteImages:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:

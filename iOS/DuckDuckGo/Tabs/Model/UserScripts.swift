@@ -354,12 +354,6 @@ private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDevic
             diagnostics["Memory"] = "\(used) used, \(total) total"
         }
 
-        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
-        if let values = try? homeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
-           let freeBytes = values.volumeAvailableCapacityForImportantUsage {
-            diagnostics["Disk"] = "\(Self.string(fromByteCount: freeBytes, countStyle: .file)) free"
-        }
-
         return diagnostics
     }
 

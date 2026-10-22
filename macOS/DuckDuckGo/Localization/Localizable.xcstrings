@@ -158,13 +158,13 @@
       }
     },
     "duckai.dax-pet.found.here" : {
-      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he brings forward the tab or opens the page the user asked him to find",
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, after he brings forward the tab or opens the page the user asked him to find. %@ is its title",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Here it is!"
+            "value" : "Here's “%@”!"
           }
         }
       }
@@ -177,6 +177,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "You visited these:"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.found.no-tabs" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, when the user asked which tabs they have open and there are none",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You don't have any tabs open right now."
           }
         }
       }
@@ -201,6 +213,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Found these in your tabs:"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.found.your-tabs" : {
+      "comment" : "Shown by Dax, the DuckDuckGo mascot, above the list of tabs open in the browser, when the user asked him which tabs they have open. The number of tabs is shown beside it",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your open tabs"
           }
         }
       }

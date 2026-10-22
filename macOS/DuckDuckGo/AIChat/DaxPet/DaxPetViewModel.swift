@@ -98,12 +98,13 @@ struct DaxPetFindings: Equatable {
             }
         }
 
-        /// Where it is: the site, and whether it's open now or when it was seen.
-        func detail(relativeTo now: Date) -> String {
+        /// Where it is: the site, and whether it's open now or when it was seen. Among tabs alone, being
+        /// open goes without saying.
+        func detail(relativeTo now: Date, amongPagesSeenBefore: Bool) -> String {
             let site = url.host.map { $0.hasPrefix("www.") ? String($0.dropFirst(4)) : $0 } ?? url.absoluteString
             switch self {
             case .tab:
-                return site + " · " + UserText.daxPetFoundOpenInATab
+                return amongPagesSeenBefore ? site + " · " + UserText.daxPetFoundOpenInATab : site
             case .visit(let visit):
                 let formatter = RelativeDateTimeFormatter()
                 formatter.dateTimeStyle = .named
@@ -120,6 +121,8 @@ struct DaxPetFindings: Equatable {
 
     let headline: String
     let content: Content
+    /// How many there are in all, shown beside the headline.
+    var total: Int?
 }
 
 @MainActor
@@ -350,6 +353,8 @@ final class DaxPetViewModel: ObservableObject {
 
         guard let lookup, let browsing else { return submit() }
         switch lookup.kind {
+        case .listTabs:
+            listTabs(in: browsing)
         case .compareTabs:
             guard submitter.canCompareTabs else { return submit() }
             await chooseTabsToCompare(for: prompt, lookup, in: browsing)
@@ -425,6 +430,14 @@ final class DaxPetViewModel: ObservableObject {
         character.mood = .listening
         say(nil)
         submit()
+    }
+
+    /// Every open tab, to pick from; no model needed.
+    private func listTabs(in browsing: DaxPetBrowsing) {
+        let tabs = browsing.openTabs
+        guard !tabs.isEmpty else { return say(UserText.daxPetNoTabs, for: 4) }
+        say(nil)
+        findings = DaxPetFindings(headline: UserText.daxPetYourTabs, content: .items(tabs.map(DaxPetFindings.Item.tab)), total: tabs.count)
     }
 
     /// Tabs open at most this long go to the on-device model to choose from.
@@ -503,7 +516,7 @@ final class DaxPetViewModel: ObservableObject {
         }
         endComposing()
         character.hop()
-        say(UserText.daxPetFoundHere, for: 3)
+        say(UserText.daxPetFoundHere(Self.shortened(item.title) ?? item.url.host ?? ""), for: 4)
     }
 
     /// The user would rather Duck.ai answered; turning down the history search also means not asking again.
@@ -763,7 +776,7 @@ final class DaxPetViewModel: ObservableObject {
         browsing.switchTo(tab)
         endComposing()
         character.hop()
-        say(UserText.daxPetFoundHere, for: 3)
+        say(UserText.daxPetFoundHere(Self.shortened(tab.title) ?? tab.url.host ?? ""), for: 4)
     }
 
     /// An open tab is recapped with its page as it is now; a page visited before goes to Duck.ai as the link.

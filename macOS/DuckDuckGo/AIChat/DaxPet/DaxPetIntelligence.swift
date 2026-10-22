@@ -108,6 +108,8 @@ enum DaxPetPageQuote {
 /// Something Dax can find in the browser himself, without asking Duck.ai.
 struct DaxPetLookup: Equatable {
     enum Kind: Equatable {
+        /// Seeing which tabs are open, without naming one.
+        case listTabs
         case openTab
         case history
         /// Weighing up what's open in several tabs.
@@ -287,6 +289,7 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
 
     @Generable
     enum LookupAction {
+        case listOpenTabs
         case findOpenTab
         case findPageFromHistory
         case compareOpenTabs
@@ -309,7 +312,9 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
     func lookup(_ prompt: String) async -> DaxPetLookup? {
         let session = LanguageModelSession(instructions: """
             The user asks Dax, a helper in their web browser, for something. Decide what they want.
-            findOpenTab: go to or find a tab they already have open, like "where's my flights tab?", \
+            listOpenTabs: see which tabs they have open, without naming one, like "what tabs do I have open?", \
+            "show me my tabs", "list my open tabs", "how many tabs do I have?".
+            findOpenTab: go to or find a particular tab they already have open, like "where's my flights tab?", \
             "go to github", "switch to the tab with the recipe", "which tab has my email?".
             findPageFromHistory: find a page they visited before, like "what was that article about rust I read \
             last week?", "find the recipe I looked at yesterday", "that hotel site from Monday".
@@ -324,6 +329,7 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
         let terms = intent.searchTerms.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
         let kind: DaxPetLookup.Kind
         switch intent.action {
+        case .listOpenTabs: kind = .listTabs
         case .findOpenTab: kind = .openTab
         case .findPageFromHistory: kind = .history
         case .compareOpenTabs: kind = .compareTabs

@@ -1065,7 +1065,7 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertEqual(intelligence.pickedFrom, [["Google Flights — www.google.com"]])
         XCTAssertEqual(browser.switchedTo, [Self.flights])
         XCTAssertFalse(model.isComposing)
-        XCTAssertEqual(model.speech, UserText.daxPetFoundHere)
+        XCTAssertEqual(model.speech, UserText.daxPetFoundHere("Google Flights"))
         XCTAssertTrue(submitter.submittedPrompts.isEmpty)
     }
 
@@ -1602,5 +1602,42 @@ final class DaxPetViewModelTests: XCTestCase {
         model.prompt = "Is it near the station?"
 
         XCTAssertNil(model.dropOffer)
+    }
+
+    // MARK: - Listing tabs
+
+    func testWhenAskedWhichTabsAreOpenThenDaxListsThemAllWithoutGoingAnywhere() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .listTabs, terms: ["tabs"], daysBack: 0)
+
+        await ask(model, "what tabs do I have opened")
+
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetYourTabs,
+                                                      content: .items([.tab(Self.flights), .tab(Self.github), .tab(Self.hotel)]),
+                                                      total: 3))
+        XCTAssertTrue(intelligence.pickedFrom.isEmpty)
+        XCTAssertTrue(browser.switchedTo.isEmpty)
+        XCTAssertTrue(submitter.submittedPrompts.isEmpty)
+    }
+
+    func testWithNoTabsOpenDaxSaysSo() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        browser.openTabs = []
+        intelligence.lookup = DaxPetLookup(kind: .listTabs, terms: ["tabs"], daysBack: 0)
+
+        await ask(model, "what tabs do I have open?")
+
+        XCTAssertNil(model.findings)
+        XCTAssertEqual(model.speech, UserText.daxPetNoTabs)
+    }
+
+    func testAmongTabsAloneBeingOpenGoesWithoutSaying() throws {
+        let now = Date()
+        let visit = DaxPetVisit(title: "Carbonara", url: try XCTUnwrap(URL(string: "https://www.food.example/c")), date: now.addingTimeInterval(-86_400))
+
+        XCTAssertEqual(DaxPetFindings.Item.tab(Self.github).detail(relativeTo: now, amongPagesSeenBefore: false), "github.com")
+        XCTAssertEqual(DaxPetFindings.Item.tab(Self.github).detail(relativeTo: now, amongPagesSeenBefore: true),
+                       "github.com · " + UserText.daxPetFoundOpenInATab)
+        XCTAssertTrue(DaxPetFindings.Item.visit(visit).detail(relativeTo: now, amongPagesSeenBefore: true).hasPrefix("food.example · "))
     }
 }

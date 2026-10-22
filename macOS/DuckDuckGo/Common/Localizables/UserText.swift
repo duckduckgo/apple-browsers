@@ -778,7 +778,11 @@ struct UserText {
     }
     static let daxPetFoundTabs = NSLocalizedString("duckai.dax-pet.found.tabs", value: "Found these in your tabs:", comment: "Shown by Dax, the DuckDuckGo mascot, above the open tabs that match what the user asked him to find. Each tab is a button below")
     static let daxPetFoundHistory = NSLocalizedString("duckai.dax-pet.found.history", value: "You visited these:", comment: "Shown by Dax, the DuckDuckGo mascot, above pages from the browsing history that match what the user asked him to find. Each page is a button below")
-    static let daxPetFoundHere = NSLocalizedString("duckai.dax-pet.found.here", value: "Here it is!", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, after he brings forward the tab or opens the page the user asked him to find")
+    static func daxPetFoundHere(_ title: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.found.here", value: "Here's “%@”!", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, after he brings forward the tab or opens the page the user asked him to find. %@ is its title"), title)
+    }
+    static let daxPetYourTabs = NSLocalizedString("duckai.dax-pet.found.your-tabs", value: "Your open tabs", comment: "Shown by Dax, the DuckDuckGo mascot, above the list of tabs open in the browser, when the user asked him which tabs they have open. The number of tabs is shown beside it")
+    static let daxPetNoTabs = NSLocalizedString("duckai.dax-pet.found.no-tabs", value: "You don't have any tabs open right now.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, when the user asked which tabs they have open and there are none")
     static let daxPetFindingsAskDuckAI = NSLocalizedString("duckai.dax-pet.found.ask-duck-ai", value: "Ask Duck.ai", comment: "Button next to the tabs or pages Dax, the DuckDuckGo mascot, found for the user; it sends their question to Duck.ai instead")
     static let daxPetHistoryAsk = NSLocalizedString("duckai.dax-pet.history.ask", value: "Want me to look through your history? It stays on your Mac.", comment: "Shown by Dax, the DuckDuckGo mascot, the first time the user asks him to find a page they visited. Buttons below let him search the browsing history, or send the question to Duck.ai")
     static let daxPetHistoryAllow = NSLocalizedString("duckai.dax-pet.history.allow", value: "Look Through History", comment: "Button that lets Dax, the DuckDuckGo mascot, search the browsing history on the Mac, now and from then on")

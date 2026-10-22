@@ -89,7 +89,7 @@ struct DaxPetView: View {
                     SuggestionChips(suggestions: model.suggestions, onSelect: model.useSuggestion)
                         .transition(.scale(scale: 0.7, anchor: .bottom).combined(with: .opacity))
                 } else if let findings = model.findings, case .items(let items) = findings.content {
-                    FindingsCard(headline: findings.headline, items: items, now: model.now(),
+                    FindingsCard(headline: findings.headline, total: findings.total, items: items, now: model.now(),
                                  onOpen: model.openFinding, onAskDuckAI: model.askDuckAIInstead)
                         .transition(.scale(scale: 0.85, anchor: .bottom).combined(with: .opacity))
                 } else if let findings = model.findings {
@@ -258,6 +258,7 @@ private struct DropOfferBubble: View {
 /// What Dax found on the Mac, a row each with its icon, full title and where it is, and Duck.ai as the way on.
 private struct FindingsCard: View {
     let headline: String
+    let total: Int?
     let items: [DaxPetFindings.Item]
     let now: Date
     let onOpen: (DaxPetFindings.Item) -> Void
@@ -273,6 +274,14 @@ private struct FindingsCard: View {
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .lineLimit(1)
+                if let total {
+                    Text(verbatim: "\(total)")
+                        .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color(designSystemColor: .controlsFillPrimary)))
+                }
                 Spacer(minLength: 0)
                 Button(action: onAskDuckAI) {
                     HStack(spacing: 4) {
@@ -292,11 +301,22 @@ private struct FindingsCard: View {
             .padding(.leading, 6)
             .padding(.bottom, 2)
 
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                FindingRow(item: item, detail: item.detail(relativeTo: now)) { onOpen(item) }
-                    .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared || reduceMotion ? 0 : 6)
-                    .animation(.spring(response: 0.35, dampingFraction: 0.8).delay(Double(index) * 0.06), value: hasAppeared)
+            if items.count > Self.rowsWithoutScrolling {
+                ScrollView(.vertical) {
+                    VStack(spacing: 2) { rows }
+                        // Room for the last row to clear the fade.
+                        .padding(.bottom, 14)
+                }
+                .frame(height: Self.scrollingHeight)
+                // Fades the rows out at the bottom, so it's clear there are more to scroll to.
+                .overlay(alignment: .bottom) {
+                    LinearGradient(colors: [Color(designSystemColor: .surfacePrimary).opacity(0), Color(designSystemColor: .surfacePrimary)],
+                                   startPoint: .top, endPoint: .bottom)
+                        .frame(height: 22)
+                        .allowsHitTesting(false)
+                }
+            } else {
+                rows
             }
         }
         .padding(8)
@@ -308,6 +328,20 @@ private struct FindingsCard: View {
         )
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1))
         .onAppear { hasAppeared = true }
+    }
+
+    /// Three rows of two-line titles fill the bubble; more scroll, with the fourth peeking out.
+    static let rowsWithoutScrolling = 3
+    static let scrollingHeight: CGFloat = 160
+
+    private var rows: some View {
+        let amongPagesSeenBefore = items.contains { if case .visit = $0 { true } else { false } }
+        return ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+            FindingRow(item: item, detail: item.detail(relativeTo: now, amongPagesSeenBefore: amongPagesSeenBefore)) { onOpen(item) }
+                .opacity(hasAppeared ? 1 : 0)
+                .offset(y: hasAppeared || reduceMotion ? 0 : 6)
+                .animation(.spring(response: 0.35, dampingFraction: 0.8).delay(Double(min(index, 5)) * 0.06), value: hasAppeared)
+        }
     }
 }
 

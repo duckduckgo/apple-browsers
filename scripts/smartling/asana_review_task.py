@@ -108,17 +108,6 @@ class AsanaClient:
     def create_task(self, body: Dict) -> Dict:
         return self._request('POST', '/tasks', {'opt_fields': 'permalink_url'}, body)
 
-    def find_open_task(self, project_id: str, name: str) -> Optional[Dict]:
-        """Return an incomplete task in the project with exactly this name."""
-        workspace_id = self._request('GET', f'/projects/{project_id}', {'opt_fields': 'workspace'})['workspace']['gid']
-        tasks = self._request('GET', f'/workspaces/{workspace_id}/tasks/search', {
-            'text': name,
-            'projects.any': project_id,
-            'completed': 'false',
-            'opt_fields': 'name,permalink_url',
-        })
-        return next((task for task in tasks if task.get('name') == name), None)
-
 
 def log(message: str):
     print(f"[smartling] {message}", flush=True)
@@ -159,21 +148,6 @@ def review_task(client: AsanaClient, args, today: date) -> Dict:
     return body
 
 
-def open_review_task(client: AsanaClient, args, today: date) -> Dict:
-    """Create the review task unless one with the same name is still open, so a rerun doesn't duplicate it."""
-    try:
-        existing_task = client.find_open_task(args.project, args.name)
-    except Exception as error:  # pylint: disable=broad-except
-        log(f"⚠️ Couldn't look for an open review task, creating one: {error}")
-        existing_task = None
-    if existing_task:
-        log(f"✅ Review task already open: {existing_task.get('permalink_url', existing_task.get('gid'))}")
-        return existing_task
-    task = client.create_task(review_task(client, args, today))
-    log(f"✅ Created review task: {task.get('permalink_url', task.get('gid'))}")
-    return task
-
-
 def main():
     parser = argparse.ArgumentParser(description='Open the Asana task for a Smartling job that needs review')
     parser.add_argument('--project', required=True, help='Asana project to create the task in')
@@ -197,10 +171,11 @@ def main():
         print(json.dumps(body, indent=2, ensure_ascii=False))
         return
     try:
-        open_review_task(client, args, date.today())
+        task = client.create_task(body)
     except RuntimeError as error:
         log(f"❌ {error}")
         sys.exit(1)
+    log(f"✅ Created review task: {task.get('permalink_url', task.get('gid'))}")
 
 
 if __name__ == '__main__':

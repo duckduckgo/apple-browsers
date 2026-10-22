@@ -36,12 +36,10 @@ def review_task_args():
 
 class FakeAsanaClient:
 
-    def __init__(self, sections=None, rotation=None, failing=False, failing_creations=0):
+    def __init__(self, sections=None, rotation=None, failing=False):
         self.project_sections = sections or []
         self.rotation = rotation or []
         self.failing = failing
-        self.failing_creations = failing_creations
-        self.created_tasks = []
 
     def sections(self, _project_id):
         if self.failing:
@@ -52,16 +50,6 @@ class FakeAsanaClient:
         if self.failing:
             raise RuntimeError('HTTP 500')
         return self.rotation
-
-    def find_open_task(self, _project_id, name):
-        return next((task for task in self.created_tasks if task['name'] == name), None)
-
-    def create_task(self, body):
-        if self.failing_creations:
-            self.failing_creations -= 1
-            raise RuntimeError('HTTP 503')
-        self.created_tasks.append(body)
-        return {'gid': f'task-{len(self.created_tasks)}'}
 
 
 class PickDRITests(unittest.TestCase):
@@ -162,25 +150,6 @@ class ReviewTaskTests(unittest.TestCase):
             'projects': ['ios-app-development'],
             'due_on': '2026-10-21',
         })
-
-
-class OpenReviewTaskTests(unittest.TestCase):
-
-    def open_review_task(self, client):
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.suppress(RuntimeError):
-            ASANA_REVIEW_TASK.open_review_task(client, review_task_args(), date(2026, 10, 21))
-
-    def testWhenCreatingTheTaskFailsThenRerunsCreateExactlyOne(self):
-        client = FakeAsanaClient(failing_creations=1)
-        self.open_review_task(client)
-
-        for _ in range(2):
-            self.open_review_task(client)
-
-        self.assertEqual(
-            [task['name'] for task in client.created_tasks],
-            ['Smartling job needs review: Nightly iOS - 2026-10-21']
-        )
 
 
 if __name__ == '__main__':

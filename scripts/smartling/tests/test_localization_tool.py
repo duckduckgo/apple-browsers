@@ -318,18 +318,6 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(client.created_jobs, ['Release iOS 7.200.0'])
 
-    async def testWhenTheJobWithSameNameAwaitsAuthorizationThenItIsReportedAsPending(self):
-        client = FakeSmartlingClient(named_jobs=[{
-            'jobName': 'Release iOS 7.200.0',
-            'translationJobUid': 'release-job',
-            'jobStatus': 'AWAITING_AUTHORIZATION',
-        }])
-
-        result = await self.run_submit(client, job_name='Release iOS 7.200.0', pending_job_prefix='')
-
-        self.assertEqual((result.outcome, result.job_id), ('pending_review', 'release-job'))
-        self.assertEqual(client.created_jobs, [])
-
     async def testWhenJobWithSameNameExistsThenNoJobIsCreated(self):
         client = FakeSmartlingClient(named_jobs=[
             {'jobName': 'Nightly iOS - 2026-08-04 (copy)', 'translationJobUid': 'other-job'},

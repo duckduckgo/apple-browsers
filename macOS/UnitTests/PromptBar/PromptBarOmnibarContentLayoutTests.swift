@@ -271,7 +271,6 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     private func makeContent() -> PromptBarOmnibarContentViewController {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = true
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),

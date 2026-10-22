@@ -513,6 +513,51 @@ final class BrowserToolInvokerTests: XCTestCase {
         XCTAssertFalse(tool.didPreparePrompt)
     }
 
+    // MARK: - Picking one of the tool's choices
+
+    func testWhenTheUserPicksOneOfTheChoicesThenTheToolRunsWithThatChoice() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .choose(message: "Share a saved identity with Duck.ai?", choices: ["1", "2"],
+                                                                        meta: ["kind": "identityPicker"]))
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "2"))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success(["choice": "2"]))
+        XCTAssertEqual(tool.receivedChoice, "2")
+        XCTAssertEqual(pusher.pushedParams?.requestedSchema, BrowserToolPermissionElicitation.choiceSchema(for: ["1", "2"]))
+        XCTAssertEqual(pusher.pushedParams?.meta, ["kind": "identityPicker"])
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    func testWhenTheAnswerIsNotOneOfTheChoicesThenTheToolDoesNotRun() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .choose(message: "m", choices: ["1", "2"], meta: nil))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let unknown = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(),
+                                           elicitationPusher: ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "3")))
+        let allowOnce = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(),
+                                             elicitationPusher: ScriptedPusher(elicitations: elicitations, answer: .accept(choice: "allowOnce")))
+
+        XCTAssertEqual(unknown, .failure(.invalidPermissionChoice))
+        XCTAssertEqual(allowOnce, .failure(.invalidPermissionChoice))
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    func testWhenThePickIsDeclinedOrCancelledThenTheToolDoesNotRun() async {
+        let tool = ApprovedEachCallTool(name: "alpha", prompt: .choose(message: "m", choices: ["1"], meta: nil))
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let declined = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(),
+                                            elicitationPusher: ScriptedPusher(elicitations: elicitations, answer: .decline))
+        let cancelled = await invoker.invoke(toolNamed: "alpha", arguments: nil, context: context(),
+                                             elicitationPusher: ScriptedPusher(elicitations: elicitations, answer: .cancel))
+
+        XCTAssertEqual(declined, .failure(.denied))
+        XCTAssertEqual(cancelled, .failure(.cancelled))
+        XCTAssertFalse(tool.didExecute)
+    }
+
     // MARK: - Cancellation
 
     func testWhenACallIsCancelledWhileItsPromptIsPendingThenItIsCancelledAndTheToolDoesNotRun() async throws {
@@ -693,6 +738,7 @@ private final class ApprovedEachCallTool: BrowserTool {
     private let prompt: BrowserToolApprovalPrompt
     private(set) var didPreparePrompt = false
     private(set) var didExecute = false
+    private(set) var receivedChoice: String?
 
     init(name: String, prompt: BrowserToolApprovalPrompt) {
         self.name = name
@@ -707,6 +753,12 @@ private final class ApprovedEachCallTool: BrowserTool {
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
         didExecute = true
         return .success([:])
+    }
+
+    func execute(arguments: JSONValue?, context: BrowserToolCallContext, approvedChoice: String) async -> BrowserToolResult {
+        didExecute = true
+        receivedChoice = approvedChoice
+        return .success(["choice": .string(approvedChoice)])
     }
 }
 

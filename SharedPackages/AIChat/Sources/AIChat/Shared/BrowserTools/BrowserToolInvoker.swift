@@ -104,9 +104,13 @@ public final class BrowserToolInvoker {
         // call that can never succeed here cannot persist a decision.
         guard !context.isBurner else { return .failure(.unavailable) }
 
+        var approvedChoice: String?
         if tool.approvesEachCall {
-            if let refusal = await approveThisCall(of: tool, arguments: arguments, context: context, elicitationPusher: elicitationPusher) {
+            switch await approveThisCall(of: tool, arguments: arguments, context: context, elicitationPusher: elicitationPusher) {
+            case .refused(let refusal):
                 return .failure(refusal)
+            case .approved(let choice):
+                approvedChoice = choice
             }
         } else {
             switch permissions.effectiveState(for: tool) {
@@ -131,42 +135,63 @@ public final class BrowserToolInvoker {
         }
 
         guard !Task.isCancelled else { return .failure(.cancelled) }
-        let result = await tool.execute(arguments: arguments, context: context)
+        let result: BrowserToolResult
+        if let approvedChoice {
+            result = await tool.execute(arguments: arguments, context: context, approvedChoice: approvedChoice)
+        } else {
+            result = await tool.execute(arguments: arguments, context: context)
+        }
         // A tool that finished without noticing still answers as cancelled: the front end asked to stop.
         return Task.isCancelled ? .failure(.cancelled) : result
     }
 
-    /// Asks with the tool's own prompt, offering Once only. The store is neither read nor written:
-    /// an earlier Always or Never must not decide a call the user has not seen.
+    private enum Approval {
+        /// `choice` is what the user picked from a `.choose` prompt; nil for a plain Once.
+        case approved(choice: String?)
+        case refused(BrowserToolFailure)
+    }
+
+    /// Asks with the tool's own prompt: Once, or a pick from the tool's choices. The store is
+    /// neither read nor written: an earlier Always or Never must not decide a call the user has not seen.
     private func approveThisCall(of tool: any BrowserTool,
                                  arguments: JSONValue?,
                                  context: BrowserToolCallContext,
-                                 elicitationPusher: (any AIChatElicitationPushing)?) async -> BrowserToolFailure? {
+                                 elicitationPusher: (any AIChatElicitationPushing)?) async -> Approval {
         let message: String
         let meta: JSONValue?
+        let choices: [String]?
         switch await tool.approvalPrompt(arguments: arguments, context: context) {
         case .refuse(let failure):
-            return failure
+            return .refused(failure)
         case .ask(let promptMessage, let promptMeta):
             message = promptMessage
             meta = promptMeta
+            choices = nil
+        case .choose(let promptMessage, let promptChoices, let promptMeta):
+            message = promptMessage
+            meta = promptMeta
+            choices = promptChoices
         }
-        guard context.supportsElicitationForm else { return .elicitationUnsupported }
+        guard context.supportsElicitationForm else { return .refused(.elicitationUnsupported) }
 
+        let schema = choices.map(BrowserToolPermissionElicitation.choiceSchema(for:)) ?? BrowserToolPermissionElicitation.allowOnceSchema
         let answer = await elicitations.elicit(toolName: tool.name,
                                                message: message,
-                                               requestedSchema: BrowserToolPermissionElicitation.allowOnceSchema,
+                                               requestedSchema: schema,
                                                meta: meta,
                                                ownerTabID: context.ownerTabID,
                                                pusher: elicitationPusher)
         switch MCPElicitationAction(rawValue: answer.action) {
         case .decline:
-            return .denied
+            return .refused(.denied)
         case .cancel, .none:
-            return .cancelled
+            return .refused(.cancelled)
         case .accept:
-            guard let choice = answer.content?["choice"]?.stringValue, !choice.isEmpty else { return .invalidArguments }
-            return choice == BrowserToolPermissionChoice.allowOnce.rawValue ? nil : .invalidPermissionChoice
+            guard let choice = answer.content?["choice"]?.stringValue, !choice.isEmpty else { return .refused(.invalidArguments) }
+            if let choices {
+                return choices.contains(choice) ? .approved(choice: choice) : .refused(.invalidPermissionChoice)
+            }
+            return choice == BrowserToolPermissionChoice.allowOnce.rawValue ? .approved(choice: nil) : .refused(.invalidPermissionChoice)
         }
     }
 

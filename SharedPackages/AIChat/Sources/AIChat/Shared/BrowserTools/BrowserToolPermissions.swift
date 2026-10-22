@@ -128,14 +128,19 @@ public enum BrowserToolPermissionElicitation {
     ]
 
     /// For a tool approved call by call: there is nothing to remember, so Once is the only choice.
-    public static let allowOnceSchema: JSONValue = [
-        "type": "object",
-        "properties": [
-            "choice": [
-                "type": "string",
-                "enum": ["allowOnce"]
-            ]
-        ],
-        "required": ["choice"]
-    ]
+    public static let allowOnceSchema: JSONValue = choiceSchema(for: [BrowserToolPermissionChoice.allowOnce.rawValue])
+
+    /// For a tool approved call by call that asks the user to pick one of `choices`.
+    public static func choiceSchema(for choices: [String]) -> JSONValue {
+        [
+            "type": "object",
+            "properties": [
+                "choice": [
+                    "type": "string",
+                    "enum": .array(choices.map(JSONValue.string))
+                ]
+            ],
+            "required": ["choice"]
+        ]
+    }
 }

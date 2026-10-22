@@ -380,6 +380,9 @@ public enum BrowserToolFailure: String, Equatable, Sendable, CaseIterable {
     /// asks the user first.
     case useSubmitForm = "use_submit_form"
 
+    /// Only the user may do this: filling or submitting payment details. `showTab` hands it to them.
+    case userActionRequired = "user_action_required"
+
     /// The user refused, now or by a stored decision.
     case denied
 

@@ -59,6 +59,9 @@ public protocol BrowserTool: AnyObject {
     /// without asking the user.
     func approvalPrompt(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolApprovalPrompt
 
+    /// Runs a call the user approved by picking `approvedChoice` from a `.choose` prompt.
+    func execute(arguments: JSONValue?, context: BrowserToolCallContext, approvedChoice: String) async -> BrowserToolResult
+
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
     /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
@@ -73,6 +76,10 @@ public extension BrowserTool {
 
     func approvalPrompt(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolApprovalPrompt {
         .refuse(.unavailable)
+    }
+
+    func execute(arguments: JSONValue?, context: BrowserToolCallContext, approvedChoice: String) async -> BrowserToolResult {
+        await execute(arguments: arguments, context: context)
     }
 
     /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and
@@ -135,8 +142,10 @@ public struct BrowserToolCallContext: Equatable, Sendable {
 
 /// What the user is asked before an `approvesEachCall` tool runs.
 public enum BrowserToolApprovalPrompt: Equatable, Sendable {
-    /// `meta` reaches the front end as the prompt's `_meta`.
+    /// Once or not at all. `meta` reaches the front end as the prompt's `_meta`.
     case ask(message: String, meta: JSONValue?)
+    /// The user picks one of `choices`, and the tool runs with it.
+    case choose(message: String, choices: [String], meta: JSONValue?)
     case refuse(BrowserToolFailure)
 }
 

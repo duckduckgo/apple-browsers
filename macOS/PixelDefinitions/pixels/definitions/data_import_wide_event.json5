@@ -104,15 +104,10 @@
             },
             // Per-type error descriptions
             {
-                "keyPattern": "^feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.description$",
+                "keyPattern": "^feature\\.data\\.ext\\.(bookmarks|passwords|creditCards|history)_error\\.description$",
                 "type": "string",
                 "description": "Human-readable error description for each import type failures",
                 "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
-            },
-            {
-                "key": "feature.data.ext.history_error.description",
-                "type": "string",
-                "description": "Human-readable error description for history import failures"
             },
             // Per-type underlying error domains
             {

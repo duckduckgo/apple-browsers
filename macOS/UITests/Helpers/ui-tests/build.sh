@@ -15,6 +15,10 @@ elif [[ "$distribution" != dmg ]]; then
     echo 'Expected dmg or appstore' >&2
     exit 1
 fi
+architecture=(ONLY_ACTIVE_ARCH=YES)
+if [[ -n "${UI_TEST_ARTIFACT_ARCHS:-}" ]]; then
+    architecture=(ONLY_ACTIVE_ARCH=NO "ARCHS=$UI_TEST_ARTIFACT_ARCHS")
+fi
 cd "$macos_dir"
 xcrun xcodebuild build-for-testing \
     -project DuckDuckGo-macOS.xcodeproj \
@@ -25,5 +29,5 @@ xcrun xcodebuild build-for-testing \
     -enableCodeCoverage NO \
     -onlyUsePackageVersionsFromResolvedFile \
     -skipPackagePluginValidation -skipMacroValidation \
-    TEST_TARGET_NAME= ONLY_ACTIVE_ARCH=YES \
+    TEST_TARGET_NAME= "${architecture[@]}" \
     ${extra[@]+"${extra[@]}"} "$@"

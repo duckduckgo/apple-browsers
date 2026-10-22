@@ -11,9 +11,9 @@ CI pins Xcode using the existing select-xcode-version action. UI uses macOS 14 /
 macOS 15 / Xcode 26.2 and macOS 27 / Xcode 27.0. Sync also uses macOS 26 / Xcode 26.6.
 The app archive remains universal; test products use the producer's native architecture.
 Consumers must match the producer's macOS major version, architecture, and exact Xcode build.
-A mismatch fails before an app is launched or its state is reset.
+A mismatch fails before an app is launched or its state is reset, except for the explicit macOS 12 adapter described below.
 
-There are no XCTest binary patches, symbol forwarders, replacement runners or copied XCTest
+The macOS 14+ path has no XCTest binary patches, symbol forwarders, replacement runners or copied XCTest
 runtimes. Xcode creates its own runner; the consumer uses that runner and the installed native
 frameworks. Updating Xcode means changing the normal CI version setting, rebuilding the test
 artifact, and running qualification on that environment. These checks do not establish that
@@ -62,6 +62,31 @@ Use --suite performance, --suite sync, or --suite sync-appstore for the other ta
 --plan 'UI Tests App Store' selects the broader App Store plan; --only Class/method filters a method.
 Sync recovery CODE is supplied at runtime and is not included in artifacts. Results include
 xcresults, logs and JSON summaries. Missing results, incomplete execution or all-skipped runs fail.
+
+## Optional macOS 12 support (stacked PR)
+
+Only macOS 12 loads monterey.py. macOS 14+ keeps the native path above, including its original
+runner and frameworks. The 14 / Xcode 16.2 producer builds both arm64 and x86_64 for this optional
+consumer. Monterey requires Xcode 13.4.1 and Python 3.9+; other producer/runtime combinations fail.
+
+The adapter copies Xcode 13's runner and this artifact's test bundle, compiles the small
+monterey/XCTestCompat.swift forwarder, redirects the copied bundle's XCTest dependencies and
+ad-hoc signs that copy. The notarized app is not modified. One bridge exports a specific Swift
+symbol and omits issue severity unsupported by XCTest 13. Future XCTest/compiler changes require
+requalification; this path is not an Apple-supported cross-version bundle guarantee.
+
+Before launching the app, a loader check verifies all symbols. Monterey-only discovery asks
+XCTest 13 for method names. Each method then runs in a fresh xcodebuild process, limited to five
+minutes, with one full profile reset per class. Persisted state remains between methods. The old
+runner's event queue cannot reliably continue across methods. A completely skipped workload fails.
+
+Monterey fixtures configure autocomplete through its stored preference before app launch and
+avoid the polling timer's nested keyboard/mouse synthesis; XCTest's interruption monitor remains.
+The App Store NTP wait uses the navigation timeout. These changes are confined to test support.
+
+The previous mixed implementation's bounded Monterey evidence does not qualify this new Xcode
+16.2-produced artifact. A fresh macOS 12 run, including the sandbox Downloads/FileProvider path,
+is still required. Do not count the native macOS 14 CI results as Monterey passes.
 
 ## Validation
 

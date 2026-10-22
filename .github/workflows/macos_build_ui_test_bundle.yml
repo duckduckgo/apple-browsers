@@ -32,6 +32,8 @@ jobs:
         working-directory: macOS
     env:
       RELEASE_TYPE: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
+      # Monterey reuses this source-built bundle on ARM and Intel; native 14 still uses its own XCTest.
+      UI_TEST_ARTIFACT_ARCHS: ${{ inputs.os-version == '14' && 'arm64 x86_64' || '' }}
     steps:
       - uses: actions/checkout@v6
         with:

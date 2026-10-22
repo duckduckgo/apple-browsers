@@ -71,6 +71,8 @@ def loader_environment(root, host, developer):
     sdk = developer / 'Platforms/MacOSX.platform/Developer'
     frameworks = [host / 'Contents/Frameworks', sdk / 'Library/Frameworks', sdk / 'Library/PrivateFrameworks',
                   root / 'Products/Review', root / 'Products/Review/PackageFrameworks']
+    if platform.mac_ver()[0].startswith('12.'):
+        frameworks.insert(0, host.parent)
     environment = {key: value for key, value in os.environ.items() if not key.startswith('DYLD_')}
     return dict(environment, DYLD_FRAMEWORK_PATH=':'.join(map(str, frameworks)),
                 DYLD_LIBRARY_PATH=str(sdk / 'usr/lib') + ':' + str(root / 'Products/Review'))
@@ -87,7 +89,9 @@ def pack(args):
     app_name = 'DuckDuckGo App Store Review.app' if args.distribution == 'appstore' else 'DuckDuckGo Review.app'
     app = products / 'Review' / app_name
     app_info = read_plist(app / 'Contents/Info.plist')
-    architectures = [platform.machine()]
+    first = targets(data)[0]
+    first_runner = Path(first['TestHostPath'].replace('__TESTROOT__', str(products)))
+    architectures = output(['lipo', '-archs', binary(first_runner / 'Contents/PlugIns' / (first['BlueprintName'] + '.xctest'))]).split()
     with tempfile.TemporaryDirectory(prefix='ddg-test-artifact-') as temporary:
         root = Path(temporary) / 'ui-tests'
         destination = root / 'Products/Review'
@@ -178,6 +182,9 @@ def download(args):
 
 
 def native_host(root, target, developer, env):
+    if platform.mac_ver()[0].startswith('12.'):
+        import monterey
+        return monterey.host(root, target, developer, env)
     metadata = json.loads((root / 'manifest.json').read_text())
     if metadata.get('os_major') != platform.mac_ver()[0].split('.')[0]:
         raise ValueError('Use a test artifact built on this macOS major version; cross-OS XCTest adaptation is not supported')
@@ -240,7 +247,7 @@ def specification(root, target, host, developer, identifiers, plan, mode):
             environment[item['key']] = os.environ.get(item['key'], '') if '$(' in value else value
     environment.update(INTERNAL_USER_MODE='true' if mode == 'internal' else 'false', UITEST_APP_PATH=str(app),
                        UITEST_LIFECYCLE_SCRIPT=str(root / 'Scripts/pre-run.sh'))
-    for key in ('CODE', 'UITEST_KEYCHAIN_PATH'):
+    for key in ('CODE', 'UITEST_KEYCHAIN_PATH', 'UITEST_RESET_CLASS_STATE', 'UITEST_CLASS_RESET_MARKER'):
         if key in os.environ:
             environment[key] = os.environ[key]
     data['EnvironmentVariables'] = environment
@@ -249,6 +256,9 @@ def specification(root, target, host, developer, identifiers, plan, mode):
     data['UITargetAppPerformanceAntipatternCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('performanceAntipatternCheckerEnabled', False))
     data['UITargetAppMainThreadCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('mainThreadCheckerEnabled', True))
     data['UITargetAppEnvironmentVariables'] = {k: v for k, v in target.get('UITargetAppEnvironmentVariables', {}).items() if not k.startswith(('DYLD_', '__'))}
+    if platform.mac_ver()[0].startswith('12.'):
+        import monterey
+        return monterey.specification(data)
     source = read_plist(root / 'source.xctestrun')
     if 'TestConfigurations' not in source:
         return {data['BlueprintName']: data, '__xctestrun_metadata__': source['__xctestrun_metadata__']}
@@ -308,6 +318,9 @@ def execution_summary(log, code, result, expected, retrying=False, allow_all_ski
 
 
 def execute_tests(args):
+    if platform.mac_ver()[0].startswith('12.') and not getattr(args, '_monterey_method', False):
+        import monterey
+        return monterey.run(args, execute_tests)
     if args.environment_file:
         os.environ.update(json.loads(args.environment_file.read_text()))
     root = args.root.resolve()
@@ -361,7 +374,8 @@ def execute_tests(args):
         try:
             command = ['xcodebuild', 'test-without-building', '-xctestrun', str(spec), '-destination', 'platform=macOS,arch=' + platform.machine(),
                        '-resultBundlePath', str(directory / 'tests.xcresult')]
-            command += ['-test-iterations', '2', '-retry-tests-on-failure', '-test-repetition-relaunch-enabled', 'YES']
+            if not getattr(args, '_monterey_method', False):
+                command += ['-test-iterations', '2', '-retry-tests-on-failure', '-test-repetition-relaunch-enabled', 'YES']
             with (directory / 'xcodebuild.log').open('w') as log:
                 process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                 try:
@@ -375,7 +389,7 @@ def execute_tests(args):
         finally:
             try:
                 try:
-                    if 'UITEST_KEYCHAIN_PATH' in os.environ:
+                    if 'UITEST_KEYCHAIN_PATH' in os.environ or getattr(args, '_monterey_method', False):
                         stop_owned_app(app)
                 finally:
                     stop_owned_app(host)
@@ -384,13 +398,14 @@ def execute_tests(args):
         log = (directory / 'xcodebuild.log').read_text(errors='replace')
         print(log, end='', flush=True)
         summary = dict(tests=batch, **execution_summary(log, code, directory / 'tests.xcresult', 1,
-                                                      retrying=True))
+                                                      retrying=not getattr(args, '_monterey_method', False),
+                                                      allow_all_skipped=getattr(args, '_monterey_method', False)))
         executed += summary['executed']
         skipped += summary['skipped']
         failures += not summary['passed']
         (directory / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         print(json.dumps(summary), flush=True)
-    passed = failures == 0 and executed > skipped
+    passed = failures == 0 and (executed > skipped or getattr(args, '_monterey_method', False))
     (results / 'summary.json').write_text(json.dumps({'filters': identifiers, 'failed_batches': failures,
                                                      'executed': executed, 'skipped': skipped, 'passed': passed}, indent=2) + '\n')
     return 0 if passed else 1

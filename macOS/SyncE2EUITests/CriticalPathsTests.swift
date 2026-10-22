@@ -59,6 +59,9 @@ final class CriticalPathsTests: XCTestCase {
 
     override class func setUp() {
         super.setUp()
+        if #unavailable(macOS 13), ProcessInfo.processInfo.environment["UITEST_RESET_CLASS_STATE"] == "0" {
+            return
+        }
         do {
             let application = XCUIApplication()
             application.terminate()

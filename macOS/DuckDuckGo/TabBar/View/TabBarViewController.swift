@@ -722,8 +722,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func reloadForTabGroupChange() {
         // Keeps every group's tabs together whichever way the groups changed.
         tabCollectionViewModel.arrangeTabsByGroup()
-        collectionView.reloadData()
-        collectionView.collectionViewLayout?.invalidateLayout()
+        reloadDataAndLayout()
         reloadSelection()
         updateTabMode()
         enableScrollButtons()
@@ -1846,8 +1845,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     /// would scroll with a stale item count and crash, so reload first when the counts differ.
     private func reloadIfItemCountIsStale() {
         if collectionView.numberOfItems(inSection: 0) != displayItems.count {
-            collectionView.reloadData()
+            reloadDataAndLayout()
         }
+    }
+
+    /// An animated scroll right after `reloadData`, before layout, can keep showing the old cells,
+    /// e.g. a tab where a group header now belongs. Lay out first.
+    private func reloadDataAndLayout() {
+        collectionView.reloadData()
+        collectionView.collectionViewLayout?.invalidateLayout()
+        collectionView.layoutSubtreeIfNeeded()
     }
 
     private func reloadSelection() {
@@ -2622,7 +2629,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
     }
 
     func tabCollectionViewModelDidMultipleChanges(_ tabCollectionViewModel: TabCollectionViewModel) {
-        collectionView.reloadData()
+        reloadDataAndLayout()
         reloadSelection()
 
         updateTabMode()

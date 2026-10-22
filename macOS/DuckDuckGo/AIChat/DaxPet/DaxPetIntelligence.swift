@@ -348,8 +348,9 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
             "show me my tabs", "list my open tabs", "how many tabs do I have?".
             findOpenTab: go to or find a particular tab they already have open, like "where's my flights tab?", \
             "go to github", "switch to the tab with the recipe", "which tab has my email?".
-            findPageFromHistory: find a page they visited before, like "what was that article about rust I read \
-            last week?", "find the recipe I looked at yesterday", "that hotel site from Monday".
+            findPageFromHistory: find a page they visited or a video they watched before, even when they say open, \
+            like "what was that article about rust I read last week?", "find the recipe I looked at yesterday", \
+            "open the last youtube video I watched", "that hotel site from Monday".
             compareOpenTabs: compare or weigh up things they have open in several tabs, like "compare these hotels", \
             "which of these laptops is best?", "compare the flights I have open".
             askAssistant: anything else, which an AI assistant answers: questions, writing, and anything about \

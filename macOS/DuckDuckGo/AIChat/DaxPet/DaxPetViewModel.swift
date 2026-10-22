@@ -396,7 +396,7 @@ final class DaxPetViewModel: ObservableObject {
             guard submitter.canCompareTabs else { return submit() }
             await chooseTabsToCompare(for: prompt, lookup, in: browsing)
         case .openTab, .history:
-            if let screenLooker, let app = await appTheRequestIsAbout(prompt) {
+            if let screenLooker, let app = await appTheRequestIsAbout(prompt, lookup) {
                 await withHistoryConsent { [weak self] canSearchHistory in
                     await self?.findFromScreen(for: prompt, in: app, with: screenLooker, browsing, includingHistory: canSearchHistory)
                 }
@@ -427,8 +427,14 @@ final class DaxPetViewModel: ObservableObject {
     }
 
     /// The app in front, when the request is about what the user has open in it.
-    private func appTheRequestIsAbout(_ prompt: String) async -> DaxPetForegroundApp? {
+    /// A request that names what it's after, its search words being in it, is about that and not the screen;
+    /// only one that leaves it unnamed ("did I look at this before?") may be about the app in front.
+    private func appTheRequestIsAbout(_ prompt: String, _ lookup: DaxPetLookup) async -> DaxPetForegroundApp? {
         guard canSeeForegroundApp(), let app = screenLooker?.foregroundApp else { return nil }
+        guard !lookup.terms.contains(where: { DaxPetBrowser.mentions(prompt, $0) }) else {
+            Logger.aiChat.notice("Dax: the request names what it's after, so it isn't about \(app.name, privacy: .public)")
+            return nil
+        }
         return await intelligence.refersToScreen(prompt, appName: app.name) ? app : nil
     }
 
@@ -484,10 +490,18 @@ final class DaxPetViewModel: ObservableObject {
     /// Tabs open at most this long go to the on-device model to choose from.
     static let maximumCandidates = 30
 
+    /// Tabs with the words are the ones to choose from. With none, the request is likely for a page seen
+    /// before, so the history comes next; failing that, the model guesses among all tabs, and a guess is
+    /// only offered, never switched to.
     private func findTab(for prompt: String, _ lookup: DaxPetLookup, in browsing: DaxPetBrowsing) async {
         let tabs = browsing.openTabs
         let matching = tabs.filter { tab in lookup.terms.contains { DaxPetBrowser.mentions(tab.title + " " + tab.url.absoluteString, $0) } }
-        let candidates = Array((matching.isEmpty ? tabs : matching).prefix(Self.maximumCandidates))
+        if matching.isEmpty, historyConsent?.canSearchHistory == true, !browsing.history(matching: lookup.terms, limit: 1).isEmpty {
+            Logger.aiChat.notice("Dax: no open tab has the words, but the history does")
+            return await findPage(for: prompt, lookup, in: browsing)
+        }
+        let isGuessing = matching.isEmpty
+        let candidates = Array((isGuessing ? tabs : matching).prefix(Self.maximumCandidates))
         character.mood = .thinking
         let picks = await intelligence.pick(prompt, from: candidates.map { "\($0.title) — \($0.url.host ?? "")" }, maximum: 3)
         guard isStillAsking(prompt) else { return }
@@ -500,7 +514,7 @@ final class DaxPetViewModel: ObservableObject {
         switch found.count {
         case 0:
             submit()
-        case 1:
+        case 1 where !isGuessing:
             openFinding(.tab(found[0]))
         default:
             show(found.map(DaxPetFindings.Item.tab), headline: UserText.daxPetFoundTabs)
@@ -546,7 +560,13 @@ final class DaxPetViewModel: ObservableObject {
         guard isStillAsking(prompt) else { return }
         character.mood = .listening
         guard !picks.isEmpty else { return submit() }
-        show(picks.map { .visit(candidates[$0]) }, headline: UserText.daxPetFoundHistory)
+        // A page that's still open is offered as its tab, rather than opened again.
+        let openTabs = browsing.openTabs
+        show(picks.map { index in
+            let visit = candidates[index]
+            let page = DaxPetBrowser.samePageKey(visit.url)
+            return openTabs.first { DaxPetBrowser.samePageKey($0.url) == page }.map(DaxPetFindings.Item.tab) ?? .visit(visit)
+        }, headline: UserText.daxPetFoundHistory)
     }
 
     private func show(_ items: [DaxPetFindings.Item], headline: String) {

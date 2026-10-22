@@ -1686,4 +1686,55 @@ final class DaxPetViewModelTests: XCTestCase {
         XCTAssertTrue(model.suggestions.isEmpty)
         XCTAssertTrue(model.isComposing)
     }
+
+    // MARK: - Requests the open tabs can't answer
+
+    func testWhenNoTabHasTheWordsButTheHistoryDoesThenItsPagesAreOfferedAndNoTabIsSwitchedTo() async throws {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        let video = DaxPetVisit(title: "Iron Maiden - The Writing On The Wall", url: try XCTUnwrap(URL(string: "https://youtube.com/watch?v=1")), date: Date())
+        browser.visits = [video]
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["iron maiden"], daysBack: 0)
+        intelligence.picks = [0]
+
+        await ask(model, "open the last iron maiden video I saw")
+
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetFoundHistory, content: .items([.visit(video)])))
+        XCTAssertTrue(browser.switchedTo.isEmpty)
+    }
+
+    func testAGuessAmongAllTheTabsIsOfferedRatherThanSwitchedTo() async {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["email"], daysBack: 0)
+        intelligence.picks = [0]
+
+        await ask(model, "take me to my email")
+
+        XCTAssertEqual(model.findings, DaxPetFindings(headline: UserText.daxPetFoundTabs, content: .items([.tab(Self.flights)])))
+        XCTAssertTrue(browser.switchedTo.isEmpty)
+    }
+
+    func testAPageFromTheHistoryThatIsStillOpenIsOfferedAsItsTab() async throws {
+        let (model, intelligence, browser, _) = makeLookingModel()
+        browser.visits = [DaxPetVisit(title: "Hotel Adlon", url: try XCTUnwrap(URL(string: "https://booking.com/adlon/")), date: Date())]
+        intelligence.lookup = DaxPetLookup(kind: .history, terms: ["adlon"], daysBack: 0)
+        intelligence.picks = [0]
+
+        await ask(model, "that hotel I looked at")
+
+        XCTAssertEqual(model.findings?.content, .items([.tab(Self.hotel)]))
+    }
+
+    func testARequestThatNamesWhatItIsAfterIsNotTakenToBeAboutTheAppInFront() async {
+        let looker = StubDaxPetScreenLooker()
+        let (model, intelligence, browser, _) = makeLookingModel(screenLooker: looker)
+        intelligence.lookup = DaxPetLookup(kind: .openTab, terms: ["flights"], daysBack: 0)
+        intelligence.refersToScreen = true
+        intelligence.picks = [0]
+
+        await ask(model, "where's my flights tab?")
+
+        XCTAssertTrue(intelligence.screenChecks.isEmpty)
+        XCTAssertTrue(intelligence.screenTexts.isEmpty)
+        XCTAssertEqual(browser.switchedTo, [Self.flights])
+    }
 }

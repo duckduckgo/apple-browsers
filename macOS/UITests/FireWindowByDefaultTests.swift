@@ -22,7 +22,8 @@ class FireWindowByDefaultTests: UITestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        app = XCUIApplication.setUp(featureFlags: ["maliciousSiteProtection": false])
+        // Assume feature flag is on by default
+        app = XCUIApplication.setUp()
 
         app.enforceSingleWindow()
 

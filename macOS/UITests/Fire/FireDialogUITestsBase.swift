@@ -34,27 +34,17 @@ extension FireDialogUITests {
     var fireDialogDetailsDisclosureButton: XCUIElement { app.fireDialogDetailsDisclosureButton }
 
     func setUpFireDialogUITests(featureFlags: [String: Bool] = [:]) {
-        // Fire scenarios must not wait for remote threat-list initialization during navigation.
-        let flags = ["fireDialogSimplified": true, "maliciousSiteProtection": false]
-            .merging(featureFlags, uniquingKeysWith: { _, override in override })
-        app = XCUIApplication.setUp(featureFlags: flags)
-        // These scenarios require unpinned tabs; other suites intentionally leave pinned tabs behind.
-        app.debugMenu.click()
-        app.debugMenu.menuItems["Reset Pinned Tabs"].click()
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
         app.enforceSingleWindow()
-        XCTAssertEqual(app.pinnedTabs.count, 0, "Fire dialog tests must start without pinned tabs")
 
         // Reset fireproof sites
         app.debugMenu.click()
         app.debugMenu.menuItems["Reset Fireproof Sites"].click()
 
-        // Clear fixture state through the menu; the scenarios exercise the Fire button themselves.
-        openFireDialog()
+        // Clear state
+        app.fireButton.click()
 
-        let allDataButton = app.fireDialogSegmentedControl.buttons["All data"]
-        XCTAssertTrue(allDataButton.waitForExistence(timeout: UITests.Timeouts.navigation),
-                      "The Fire dialog must finish loading history before setup selects its scope")
-        allDataButton.click()
+        app.fireDialogSegmentedControl.buttons["All data"].click()
         if (fireDialogDetailsDisclosureButton.value as? String) != "expanded" {
             fireDialogDetailsDisclosureButton.click()
         }
@@ -112,10 +102,10 @@ extension FireDialogUITests {
     }
 
     func setStorageAndCookies(file: StaticString = #file, line: UInt = #line) {
-        let webView = app.windows.firstMatch.webViews.firstMatch
+        let webView = app.webViews.firstMatch
         let manualIncrementButton = webView.buttons["Manual Increment"]
         XCTAssertTrue(
-            manualIncrementButton.waitForExistence(timeout: UITests.Timeouts.navigation),
+            manualIncrementButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Manual Increment button didn't appear",
             file: file,
             line: line
@@ -133,7 +123,7 @@ extension FireDialogUITests {
     }
 
     func verifyCounterSet(_ counterName: String, at offset: Int, file: StaticString = #file, line: UInt = #line) {
-        let webView = app.windows.firstMatch.webViews.firstMatch
+        let webView = app.webViews.firstMatch
         let counter = webView.staticTexts.containing(\.value, containing: "\(counterName) Counter:").element(boundBy: offset)
         XCTAssertTrue(
             counter.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -154,7 +144,7 @@ extension FireDialogUITests {
     }
 
     func verifyCounterCleared(_ counterName: String, file: StaticString = #file, line: UInt = #line) {
-        let webView = app.windows.firstMatch.webViews.firstMatch
+        let webView = app.webViews.firstMatch
         let counter = webView.staticTexts.containing(\.value, containing: "\(counterName) Counter:").firstMatch
         XCTAssertTrue(
             counter.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -219,7 +209,7 @@ extension FireDialogUITests {
     func waitForFireAnimationToComplete() {
         RunLoop.main.run(until: Date().addingTimeInterval(2.0))
         XCTAssertTrue( // Let any ongoing fire animation or data processes complete
-            app.waitForDataClearingToFinish(timeout: UITests.Timeouts.fireAnimation),
+            app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
     }
@@ -232,7 +222,7 @@ extension FireDialogUITests {
     /// flow where the title does reset can assert `app.tabs["New Tab"]` in addition to this.
     func verifyNewTabPageIsOpen(file: StaticString = #file, line: UInt = #line) {
         XCTAssertTrue(
-            app.windows.firstMatch.webViews["New Tab Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            app.webViews["New Tab Page"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "New Tab Page should be open after burning tabs",
             file: file,
             line: line

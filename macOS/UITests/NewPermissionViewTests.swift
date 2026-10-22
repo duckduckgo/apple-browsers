@@ -96,7 +96,7 @@ class NewPermissionViewTests: UITestCase {
 
         // Wait for fire animation to complete
         XCTAssertTrue(
-            app.waitForDataClearingToFinish(timeout: UITests.Timeouts.fireAnimation),
+            app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
 
@@ -695,7 +695,7 @@ final class NewPermissionViewPopupTests: UITestCase {
         app.fireDialogBurnButton.click()
 
         // Wait for fire animation to complete
-        _ = app.waitForDataClearingToFinish(timeout: UITests.Timeouts.fireAnimation)
+        _ = app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation)
 
         super.tearDown()
     }

@@ -25,7 +25,7 @@ import QuartzCore
 /// The visible replacement is installed before the source is ordered out. It owns no browser views.
 @MainActor
 final class FireWindowAnimationController: NSWindowController {
-    private final class SnapshotWindow: NSWindow {
+    final class SnapshotWindow: NSWindow {
         override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
             // The captured shadow can extend above the screen's visible area. AppKit's default
             // constraint would move the entire snapshot down, especially on a secondary display.
@@ -209,12 +209,6 @@ actor DefaultFireAnimationLoader {
         return fire
     }
 
-    @MainActor
-    func createAnimationView() async -> LottieAnimationView? {
-        guard let fire = await load() else { return nil }
-        return LottieAnimationView(animation: fire.animation, configuration: LottieConfiguration(renderingEngine: .coreAnimation))
-    }
-
     private func sampleBurnFronts(_ animation: LottieAnimation) -> [[CGFloat]]? {
         let width = 136
         let height = max(1, Int((CGFloat(width) * animation.bounds.height / animation.bounds.width).rounded()))
@@ -275,8 +269,6 @@ final class FireProgressWindowController: NSWindowController {
     private static var active = [UUID: FireProgressWindowController]()
     private let identifier = UUID()
     private let fireViewModel: FireViewModel
-    private weak var sourceWindow: NSWindow?
-    private let windowsToRestore = NSHashTable<NSWindow>.weakObjects()
     private var cancellable: AnyCancellable?
     private var pendingPresentation: DispatchWorkItem?
     private var pendingDismissal: DispatchWorkItem?
@@ -291,10 +283,8 @@ final class FireProgressWindowController: NSWindowController {
     static func present(fireViewModel: FireViewModel, message: String, sourceWindow: NSWindow, delay: TimeInterval) -> FireProgressWindowController {
         let controller = FireProgressWindowController(fireViewModel: fireViewModel, message: message, sourceWindow: sourceWindow)
         // A previous burn may still be holding its progress panel for the minimum display time.
-        // Transfer restoration ownership before cancelling its delayed callbacks.
         for previous in Array(active.values) where previous.fireViewModel === fireViewModel {
-            previous.windowsToRestore.allObjects.forEach { controller.windowsToRestore.add($0) }
-            previous.closeProgress(restoreSources: false)
+            previous.closeProgress()
         }
         active[controller.identifier] = controller
         controller.observe(delay: delay)
@@ -303,11 +293,9 @@ final class FireProgressWindowController: NSWindowController {
 
     private init(fireViewModel: FireViewModel, message: String, sourceWindow: NSWindow) {
         self.fireViewModel = fireViewModel
-        self.sourceWindow = sourceWindow
         self.message = message
         self.sourceFrame = sourceWindow.frame
         super.init(window: nil)
-        windowsToRestore.add(sourceWindow)
     }
 
     private func createWindow() {
@@ -404,36 +392,22 @@ final class FireProgressWindowController: NSWindowController {
         let remaining = max(0, 1 - (presentedAt.map { Date().timeIntervalSince($0) } ?? 1))
         let pending = DispatchWorkItem { [weak self] in
             guard let self, !fireViewModel.isBurning else { return }
-            closeProgress(restoreSources: true)
+            closeProgress()
         }
         pendingDismissal = pending
         DispatchQueue.main.asyncAfter(deadline: .now() + remaining, execute: pending)
     }
 
-    private func closeProgress(restoreSources: Bool) {
+    private func closeProgress() {
         guard !isDismissed else { return }
         isDismissed = true
         pendingPresentation?.cancel()
         pendingDismissal?.cancel()
         pendingPresentation = nil
         pendingDismissal = nil
-        let keyWindow = NSApp.keyWindow
-        let progressWindow = window
         progressIndicator?.stopAnimation(nil)
         window?.close()
         window = nil
-        if restoreSources && !fireViewModel.isBurning {
-            for source in windowsToRestore.allObjects where !source.isVisible
-                && Application.appDelegate.windowControllersManager.mainWindowControllers.contains(where: { $0.window === source }) {
-                if source === sourceWindow, NSApp.isActive, keyWindow == nil || keyWindow === progressWindow {
-                    source.makeKeyAndOrderFront(nil)
-                } else if NSApp.isActive, let keyWindow, keyWindow.isVisible {
-                    source.order(.below, relativeTo: keyWindow.windowNumber)
-                } else {
-                    source.orderBack(nil)
-                }
-            }
-        }
         cancellable = nil
         Self.active[identifier] = nil
     }

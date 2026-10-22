@@ -32,7 +32,7 @@ extension Fire.BurningData {
      */
     func shouldDelayShowingDialog(decider: VisualizeFireSettingsDecider) -> Bool {
         switch self {
-        case .specificDomains(_, false, .none):
+        case .specificDomains(_, false, _):
             return decider.shouldShowFireAnimation
         default:
             return false
@@ -67,14 +67,14 @@ final class FireViewModel {
     @Published private(set) var isAnimationPlaying = false
     private(set) var isDataClearingAnimationPlaying = false
     private var closingWindowAnimationCount = 0
-    private var hasPresentedCurrentBurn = false
-    private var burningPresentationCancellable: AnyCancellable?
+    private var hasPresentedCurrentSnapshotBurn = false
+    private var snapshotPresentationCancellable: AnyCancellable?
 
     /// A synchronous completion must not let another window present the same published burn.
     @MainActor
-    func claimFirePresentation() -> Bool {
-        guard !hasPresentedCurrentBurn else { return false }
-        hasPresentedCurrentBurn = true
+    func claimSnapshotPresentation() -> Bool {
+        guard !hasPresentedCurrentSnapshotBurn else { return false }
+        hasPresentedCurrentSnapshotBurn = true
         return true
     }
 
@@ -122,9 +122,9 @@ final class FireViewModel {
     @MainActor
     init(fire: FireProtocol) {
         self.fire = fire
-        burningPresentationCancellable = fire.burningDataPublisher.sink { [weak self] burningData in
+        snapshotPresentationCancellable = fire.burningDataPublisher.sink { [weak self] burningData in
             if burningData == nil {
-                self?.hasPresentedCurrentBurn = false
+                self?.hasPresentedCurrentSnapshotBurn = false
             }
         }
     }

@@ -857,8 +857,6 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
 
         // Verify we have 2 windows
         XCTAssertEqual(app.windows.count, 2, "Should have 2 windows")
-        XCTAssertEqual(app.tabs.count, 1, "The window to burn must have exactly one regular tab")
-        XCTAssertEqual(app.pinnedTabs.count, 0, "The window to burn must not contain pinned tabs")
 
         // Open Fire dialog
         app.fireButton.click()
@@ -875,8 +873,7 @@ final class FireDialogTabScopeUITests: UITestCase, FireDialogUITests {
         waitForFireAnimationToComplete()
 
         // Verify current window was closed entirely (as it had only 1 tab)
-        XCTAssertTrue(app.windows.wait(for: \.count, in: ...1, timeout: UITests.Timeouts.elementExistence),
-                      "Should have only 1 window remaining (the background window): \(app.windows.debugDescription)")
+        XCTAssertEqual(app.windows.count, 1, "Should have only 1 window remaining (the background window)")
 
         // Verify only background window remains with its 2 tabs (now frontmost)
         XCTAssertEqual(app.windows.count, 1, "Should have only 1 window (background window)")

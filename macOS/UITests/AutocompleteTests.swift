@@ -27,6 +27,7 @@ class AutocompleteTests: UITestCase {
     private var addressBarTextField: XCUIElement!
     private var suggestionsTableView: XCUIElement!
     private var clearAllHistoryAlertClearButton: XCUIElement!
+    private var fakeFireButton: XCUIElement!
     private var siteTitleForBookmarkedSite: String!
     private var siteTitleForHistorySite: String!
 
@@ -45,6 +46,7 @@ class AutocompleteTests: UITestCase {
         addressBarTextField = app.addressBar
         suggestionsTableView = app.tables["SuggestionViewController.tableView"]
         clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
+        fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
         let siteTitleLength = 12
         siteTitleForBookmarkedSite = UITests.randomPageTitle(length: siteTitleLength)
         siteTitleForHistorySite = UITests.randomPageTitle(length: siteTitleLength)
@@ -211,7 +213,7 @@ private extension AutocompleteTests {
 
         // Wait for fire animation to complete
         XCTAssertTrue(
-            app.waitForDataClearingToFinish(timeout: UITests.Timeouts.fireAnimation),
+            fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
 

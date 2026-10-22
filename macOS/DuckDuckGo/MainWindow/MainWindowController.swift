@@ -87,8 +87,7 @@ final class MainWindowController: NSWindowController {
         setupWindow(window)
         setupToolbar()
         subscribeToTrafficLightsAlpha()
-        subscribeToInPlaceFireAnimation()
-        subscribeToBurningInteraction()
+        subscribeToBurningData()
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
         subscribeToKeyWindow()
@@ -313,63 +312,48 @@ final class MainWindowController: NSWindowController {
         }
     }
 
-    private var inPlaceFireAnimationCancellable: AnyCancellable?
-
-    private func subscribeToInPlaceFireAnimation() {
-        inPlaceFireAnimationCancellable = mainViewController.fireViewController.$isAnimatingInPlace
-            .dropFirst()
-            .sink { [weak self] isAnimating in
-                guard let self else { return }
-                moveTabBarView(toTitlebarView: !isAnimating)
-                setTitlebarBackgroundColor(isAnimating ? .clear : theme.colorsProvider.baseBackgroundColor)
-            }
-    }
-
+    private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
+    private var didMoveTabBarForFireAnimation = false
     private(set) var isClosingAndBurning = false
-    private var burningInteractionCancellable: AnyCancellable?
-    private var interactionPreventedOutsideBurn = false
-    private var interactionPreventedForBurn = false
-    private var wasClosableBeforeBurn = false
 
-    private func subscribeToBurningInteraction() {
-        burningInteractionCancellable = fireViewModel.fire.burningDataPublisher
-            .map { $0 != nil }
+    private func subscribeToBurningData() {
+        burningDataCancellable = fireViewModel.fire.burningDataPublisher
+            .dropFirst()
             .removeDuplicates()
-            .sink { [weak self] burning in
-                self?.userInteraction(prevented: burning, forBurning: true)
+            .sink { [weak self] burningData in
+                guard let self else { return }
+                // The tab bar is only moved out of the titlebar so the fire animation can cover it.
+                // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
+                // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
+                if let burningData, !burningData.usesWindowSnapshot,
+                   burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
+                    moveTabBarView(toTitlebarView: false)
+                    // The titlebar has an opaque background (see applyThemeStyle) and sits above the
+                    // full-window fire animation. With the tab bar moved out, that leaves a blank bar
+                    // over the animation — clear it so the animation shows through, and restore it after.
+                    setTitlebarBackgroundColor(.clear)
+                    didMoveTabBarForFireAnimation = true
+                } else if burningData == nil, didMoveTabBarForFireAnimation {
+                    moveTabBarView(toTitlebarView: true)
+                    setTitlebarBackgroundColor(theme.colorsProvider.baseBackgroundColor)
+                    didMoveTabBarForFireAnimation = false
+                }
             }
     }
 
     func userInteraction(prevented: Bool, forBurning: Bool = false) {
-        if forBurning {
-            if prevented && !interactionPreventedForBurn {
-                wasClosableBeforeBurn = window?.styleMask.contains(.closable) == true
-            }
-            interactionPreventedForBurn = prevented
-        } else {
-            interactionPreventedOutsideBurn = prevented
-        }
-        let isPrevented = interactionPreventedOutsideBurn || interactionPreventedForBurn
-        mainViewController.userInteraction(prevented: isPrevented)
+        mainViewController.userInteraction(prevented: prevented)
 
-        NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !isPrevented }
+        NSApplication.shared.mainMenuTyped.menuItemsForUserPrevention.forEach { $0.isEnabled = !prevented }
 
         guard forBurning else { return }
         if prevented {
             window?.styleMask.remove(.closable)
             mainViewController.view.makeMeFirstResponder()
         } else {
-            if wasClosableBeforeBurn {
-                window?.styleMask.update(with: .closable)
-            }
-            // @Published emits before Fire.burningData is updated. Restore focus after that update,
-            // and only if no newer interaction lock or window selection superseded this completion.
-            DispatchQueue.main.async { [weak self] in
-                guard let self, !interactionPreventedOutsideBurn, !interactionPreventedForBurn,
-                      window?.isKeyWindow == true else { return }
-                mainViewController.adjustFirstResponder()
-            }
+            window?.styleMask.update(with: .closable)
+            mainViewController.adjustFirstResponder()
         }
     }
 
@@ -727,7 +711,7 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
-        // Repeated close requests must not create another snapshot or restart cleanup.
+        // A snapshot owns playback after the browser window closes.
         guard !isClosingAndBurning else { return }
         isClosingAndBurning = true
 

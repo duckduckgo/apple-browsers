@@ -1951,7 +1951,7 @@ extension MainViewController: NSMenuItemValidation {
         }
 
         guard fireViewController.fireViewModel.fire.burningData == nil else {
-            return false
+            return true
         }
         switch menuItem.action {
         // Back/Forward

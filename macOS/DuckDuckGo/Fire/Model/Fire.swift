@@ -40,7 +40,8 @@ protocol FireProtocol: AnyObject {
 
     func fireAnimationDidStart()
     func fireAnimationDidFinish()
-    @MainActor func shouldKeepWindowOpenWhenBurning(_ windowController: MainWindowController) -> Bool
+
+    @MainActor func beginWindowClosingPresentation(for windowController: MainWindowController)
 
     @MainActor func burnAll(isBurnOnExit: Bool,
                             opening url: URL,
@@ -69,9 +70,8 @@ protocol FireProtocol: AnyObject {
 
 extension FireProtocol {
 
-    /// Burn implementations that do not create a replacement tab do not keep an empty window.
     @MainActor
-    func shouldKeepWindowOpenWhenBurning(_ windowController: MainWindowController) -> Bool { false }
+    func beginWindowClosingPresentation(for windowController: MainWindowController) {}
 
     @MainActor
     func burnAll(isBurnOnExit: Bool = false,
@@ -205,13 +205,31 @@ final class Fire: FireProtocol {
 
     private var dispatchGroup: DispatchGroup?
     private weak var windowToKeepAfterBurning: MainWindowController?
+    private var windowsWithClosingPresentation = Set<ObjectIdentifier>()
 
     enum BurningData: Equatable {
         case specificDomains(_ domains: Set<String>, closesTabs: Bool, scope: BurningScope)
         case all
 
-        /// Whether the burn closes/replaces tabs. Dialog burns can also animate while preserving tabs;
-        /// New Tab Page privacy-feed burns clear site data without touching tabs.
+        /// Only whole-window burns that close tabs replace the window with a snapshot.
+        /// Today's visits also use an all-windows entity when closing is selected.
+        /// Tab burns and clearing data without closing windows keep their original presentation.
+        var usesWindowSnapshot: Bool {
+            switch self {
+            case .all,
+                 .specificDomains(_, true, .window),
+                 .specificDomains(_, true, .allWindows),
+                 .specificDomains(_, true, .visits):
+                return true
+            default:
+                return false
+            }
+        }
+
+        /// Whether the burn closes/replaces tabs (all-data, window or tab burns) and therefore
+        /// presents the full-window fire treatment — the fire animation and/or the
+        /// "Deleting browsing data…" progress dialog. New Tab Page privacy-feed site burns clear
+        /// data in place without touching tabs. Independent of whether the fire animation is enabled.
         var closesTabs: Bool {
             switch self {
             case .all:
@@ -222,8 +240,8 @@ final class Fire: FireProtocol {
         }
 
         func shouldPlayFireAnimation(decider: VisualizeFireSettingsDecider) -> Bool {
-            // Privacy-feed burns have their own animation. Dialog burns animate even when tabs stay open.
-            if case .specificDomains(_, _, scope: .none) = self { return false }
+            // We don't present the fire animation if the user burns from the privacy feed.
+            guard closesTabs else { return false }
             return decider.shouldShowFireAnimation
         }
     }
@@ -439,7 +457,8 @@ final class Fire: FireProtocol {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        // Ordering out the source snapshot can change the key window. Preserve the original choice.
+        // Snapshot handoff can change the key window; preserve the original replacement policy.
+        windowsWithClosingPresentation.removeAll()
         windowToKeepAfterBurning = windowControllersManager.mainWindowControllers.first(where: shouldKeepWindowOpenWhenBurning)
         burningData = .specificDomains(domains, closesTabs: entity.closesTabs, scope: scope)
 
@@ -571,6 +590,7 @@ final class Fire: FireProtocol {
         let group = DispatchGroup()
         dispatchGroup = group
 
+        windowsWithClosingPresentation.removeAll()
         windowToKeepAfterBurning = windowControllersManager.mainWindowControllers.first(where: shouldKeepWindowOpenWhenBurning)
         burningData = .all
 
@@ -817,8 +837,9 @@ final class Fire: FireProtocol {
     /// rather than closing the window entirely.
     @MainActor
     func shouldKeepWindowOpenWhenBurning(_ windowController: MainWindowController) -> Bool {
-        if burningData != nil {
-            return windowToKeepAfterBurning === windowController
+        if burningData?.usesWindowSnapshot == true {
+            // The captured source is a closing window, not a hidden browser to reuse after burning.
+            return windowToKeepAfterBurning === windowController && !windowsWithClosingPresentation.contains(ObjectIdentifier(windowController))
         }
         return !visualizeFireAnimationDecider.isOpenFireWindowByDefaultEnabled
             && !windowController.mainViewController.isBurner
@@ -1067,36 +1088,40 @@ final class Fire: FireProtocol {
     // MARK: - Tabs
 
     @MainActor
-    private func burnTab(_ tabViewModel: TabViewModel, in collection: TabCollectionViewModel) -> Result<Void, Error> {
-        guard let index = collection.indexInAllTabs(of: tabViewModel.tab) else { return .success(()) }
-        if index.isPinnedTab {
-            let replacement = Tab(content: tabViewModel.tab.content.loadedFromCache(), shouldLoadInBackground: true)
-            return collection.replaceTab(at: index, with: replacement, forceChange: true)
+    func beginWindowClosingPresentation(for windowController: MainWindowController) {
+        windowsWithClosingPresentation.insert(ObjectIdentifier(windowController))
+    }
+
+    @MainActor
+    private func closeSnapshotSourceWindows(_ controllers: [MainWindowController]) {
+        // Only the new presentation closes its captured source; legacy tab/no-close burns and
+        // the existing policy for other windows stay unchanged. This also handles capture failure.
+        for controller in controllers where windowsWithClosingPresentation.contains(ObjectIdentifier(controller))
+            && windowControllersManager.mainWindowControllers.contains(controller) {
+            controller.close()
         }
-        if collection.allTabsCount == 1, windowControllersManager.mainWindowControllers.count == 1 {
-            _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
+    }
+
+    @MainActor
+    private func snapshotWindowControllers(for entity: BurningEntity) -> [MainWindowController] {
+        guard burningData?.usesWindowSnapshot == true else { return [] }
+        switch entity {
+        case .window(let collection, _, true):
+            return windowControllersManager.mainWindowControllers.filter {
+                $0.mainViewController.tabCollectionViewModel === collection
+            }
+        case .allWindows(let controllers, _, _, true):
+            return controllers
+        default:
+            return []
         }
-        if let index = collection.indexInAllTabs(of: tabViewModel.tab) {
-            collection.close(at: index, forceChange: true)
-        }
-        return .success(())
     }
 
     @MainActor
     /// Closes tabs/windows when `close` is true; otherwise clears back/forward history and session state when requested.
     private func burnTabs(burningEntity: BurningEntity) -> Result<Void, Error> {
         var firstError: Error?
-        let affectedWindowControllers: [MainWindowController]
-        switch burningEntity {
-        case .none:
-            affectedWindowControllers = []
-        case .tab(_, _, let collection, let close), .window(let collection, _, let close):
-            affectedWindowControllers = close ? windowControllersManager.mainWindowControllers.filter {
-                $0.mainViewController.tabCollectionViewModel === collection
-            } : []
-        case .allWindows(let controllers, _, _, let close):
-            affectedWindowControllers = close ? controllers : []
-        }
+        let snapshotWindowControllers = snapshotWindowControllers(for: burningEntity)
 
         func replacementPinnedTab(from pinnedTab: AnyTab) -> Tab {
             return Tab(content: pinnedTab.content.loadedFromCache(), shouldLoadInBackground: true)
@@ -1157,9 +1182,24 @@ final class Fire: FireProtocol {
                   selectedDomains: _,
                   parentTabCollectionViewModel: let tabCollectionViewModel,
                   close: let shouldClose):
+            assert(tabViewModel === tabCollectionViewModel.selectedTabViewModel)
             if shouldClose {
                 closeFloatingAIChatWindows(for: [tabViewModel.tab.uuid])
-                measureError(burnTab(tabViewModel, in: tabCollectionViewModel))
+                if tabCollectionViewModel.pinnedTabsManager?.isTabPinned(tabViewModel.tab) ?? false {
+                    let tab = replacementPinnedTab(from: .loaded(tabViewModel.tab))
+                    if let index = tabCollectionViewModel.selectionIndex {
+                        let result = tabCollectionViewModel.replaceTab(at: index, with: tab, forceChange: true)
+                        measureError(result)
+                    }
+                } else {
+                    if tabCollectionViewModel.allTabsCount == 1,
+                       windowControllersManager.mainWindowControllers.count == 1 {
+                        // If closing last Window's last Tab: Insert a new tab to prevent key window closing:
+                        _=insertNewTabIfNeeded(into: windowControllersManager.mainWindowControllers[0])
+                    }
+                    let result = tabCollectionViewModel.closeSelected(forceChange: true)
+                    measureError(result)
+                }
             }
 
         case .window(tabCollectionViewModel: let tabCollectionViewModel,
@@ -1205,11 +1245,7 @@ final class Fire: FireProtocol {
             }
         }
 
-        // Snapshot sources are hidden, so their visible-view subscriptions may already be cancelled.
-        // Closing an emptied window must not depend on BrowserTabViewController being visible.
-        for controller in affectedWindowControllers where windowControllersManager.mainWindowControllers.contains(controller) {
-            _ = controller.mainViewController.closeWindowIfNeeded()
-        }
+        closeSnapshotSourceWindows(snapshotWindowControllers)
 
         if let error = firstError {
             return .failure(error)

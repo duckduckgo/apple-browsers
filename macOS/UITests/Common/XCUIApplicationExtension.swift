@@ -117,7 +117,7 @@ extension XCUIApplication {
         static let fireproofDomainsAddCurrentButton = "FireproofDomainsViewController.addCurrentButton"
         static let fireproofDomainsDoneButton = "FireproofDomainsViewController.doneButton"
         static let fireButton = "TabBarViewController.fireButton"
-        static let fireProgressWindow = "FireProgressWindowController.window"
+        static let fakeFireButton = "FireViewController.fakeFireButton"
         static let homeButton = "NavigationBarViewController.HomeButton"
 
         static let fireDialogMoreOptionsMenuButton = "FireDialogView.toolbarMoreButton"
@@ -186,18 +186,13 @@ extension XCUIApplication {
     func enforceSingleWindow() {
         let window = windows.firstMatch
         while window.exists {
-            let windowCount = windows.count
             let closeButton = window.buttons["_XCUI:CloseWindow"]
             if closeButton.isHittable {
                 closeButton.click()
             } else {
                 typeKey("w", modifierFlags: [.command, .option, .shift])
             }
-            // firstMatch retargets to the next window as soon as this one closes.
-            guard windows.wait(for: \.count, in: ..<windowCount, timeout: UITests.Timeouts.elementExistence) else {
-                XCTFail("The number of windows did not decrease after closing a window")
-                return
-            }
+            _=window.waitForNonExistence(timeout: UITests.Timeouts.elementExistence)
         }
         typeKey("n", modifierFlags: .command)
     }
@@ -1053,25 +1048,11 @@ extension XCUIApplication {
     }
 
     var fireButton: XCUIElement {
-        windows.firstMatch.buttons[AccessibilityIdentifiers.fireButton].firstMatch
+        buttons[AccessibilityIdentifiers.fireButton].firstMatch
     }
 
-    func waitForDataClearingToFinish(timeout: TimeInterval) -> Bool {
-        let button = fireButton
-        let progressWindow = windows.matching(identifier: AccessibilityIdentifiers.fireProgressWindow).firstMatch
-        var lastState: String?
-        let predicate = NSPredicate { _, _ in
-            // A hidden snapshot source is not a completed burn: wait until the browser is usable again.
-            let buttonReady = button.exists && button.isEnabled
-            let progressExists = progressWindow.exists
-            let state = "buttonReady=\(buttonReady) progress=\(progressExists)"
-            if state != lastState {
-                Logger.log("Data clearing: \(state)")
-                lastState = state
-            }
-            return buttonReady && !progressExists
-        }
-        return XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: self)], timeout: timeout) == .completed
+    var fakeFireButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.fakeFireButton]
     }
 
     var helpMenu: XCUIElement {

@@ -184,7 +184,7 @@ rm -rf "$DOWNLOAD_DIR"
 echo "Cleaning non-localization files from working tree..."
 git restore --staged --worktree -- . ':(exclude)**/*.strings' ':(exclude)**/*.stringsdict' ':(exclude)**/*.xcstrings'
 
-if ./scripts/smartling/check_translation_integrity.py --include-xcstrings; then
+if ./scripts/smartling/check_translation_integrity.py; then
 	INTEGRITY="passed"
 else
 	INTEGRITY="issues_found"

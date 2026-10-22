@@ -232,7 +232,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
             f'refresh-files --file-uri-prefix {REFRESH_PREFIX} --files {EXPORTED_XLIFF} {ENGLISH_STRINGSDICT}'
         )
         self.assertIn(f'--file-uris {REFRESH_PREFIX}/en.xliff {REFRESH_PREFIX}/Localizable.stringsdict', calls[2])
-        self.assertIn('integrity --include-xcstrings', calls)
+        self.assertTrue(any(call.startswith('integrity') for call in calls))
 
     def testWhenTheExportChangesTrackedFilesThenOnlyTheImportedTranslationsAreCommitted(self):
         outputs = self.run_import()

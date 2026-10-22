@@ -272,6 +272,17 @@ struct AuditLogEntryDecoderTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Page key refresh limit bridges to a safe error", .timeLimit(.minutes(1)))
+    func testWhenPageKeyRefreshLimitIsReachedThenBridgesToSafeNSError() {
+        let error = PageScopedAccountInfoKeys.Error.forcedRefreshAlreadyAttempted as NSError
+
+        #expect(error.domain == "com.duckduckgo.sync.audit-log.account-info-keys")
+        #expect(error.code == 1)
+        #expect(error.localizedDescription == "The account-info key refresh was already attempted for this audit-log page.")
+        #expect(error.userInfo[NSUnderlyingErrorKey] == nil)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A stale key refreshes before decrypting", .timeLimit(.minutes(1)))
     func testWhenCachedKeyDoesNotMatchThenRefreshesAndDecrypts() async throws {
         let fixture = try makeFixture()

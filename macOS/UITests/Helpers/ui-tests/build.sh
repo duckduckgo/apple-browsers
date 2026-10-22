@@ -20,6 +20,8 @@ if [[ -n "${UI_TEST_ARTIFACT_ARCHS:-}" ]]; then
     architecture=(ONLY_ACTIVE_ARCH=NO "ARCHS=$UI_TEST_ARTIFACT_ARCHS")
 fi
 cd "$macos_dir"
+# Native compilers select versioned package manifests with different dependencies.
+# Let SwiftPM resolve that graph instead of forcing the app compiler's lockfile.
 xcrun xcodebuild build-for-testing \
     -project DuckDuckGo-macOS.xcodeproj \
     -scheme "$scheme" \
@@ -27,7 +29,6 @@ xcrun xcodebuild build-for-testing \
     -derivedDataPath "$derived_data" \
     -destination 'platform=macOS' \
     -enableCodeCoverage NO \
-    -onlyUsePackageVersionsFromResolvedFile \
     -skipPackagePluginValidation -skipMacroValidation \
     TEST_TARGET_NAME= "${architecture[@]}" \
     ${extra[@]+"${extra[@]}"} "$@"

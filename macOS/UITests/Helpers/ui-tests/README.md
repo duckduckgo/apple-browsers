@@ -7,6 +7,9 @@ compile the application. UI classes and both user modes share that environment's
 Sync and Performance each have one workload per environment, so they build native tests in their
 own job before executing them.
 
+Each native compiler resolves its package graph from the packages' versioned manifests;
+the app compiler's lockfile can describe different dependencies.
+
 CI pins Xcode using the existing select-xcode-version action. UI uses macOS 14 / Xcode 16.2,
 macOS 15 / Xcode 26.2 and macOS 27 / Xcode 27.0. Sync also uses macOS 26 / Xcode 26.6.
 The app archive remains universal; test products use the producer's native architecture.

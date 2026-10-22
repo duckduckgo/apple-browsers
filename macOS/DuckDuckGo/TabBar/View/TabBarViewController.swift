@@ -720,6 +720,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func reloadForTabGroupChange() {
+        // Keeps every group's tabs together whichever way the groups changed.
+        tabCollectionViewModel.arrangeTabsByGroup()
         collectionView.reloadData()
         collectionView.collectionViewLayout?.invalidateLayout()
         reloadSelection()
@@ -3591,20 +3593,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         var hostingController: NSHostingController<TabGroupsManagementView>?
 
-        let onAddToGroup: (TabGroup) -> Void = { [weak tabGroupManager, weak self] group in
-            // Move first, then set group (so insertionIndex sees other tabs, not this one)
-            if let tabGroupManager {
-                self?.tabCollectionViewModel.moveTabToGroup(tab, group: group, using: tabGroupManager)
-                tabGroupManager.setGroup(group.id, for: tab)
-            }
+        let onAddToGroup: (TabGroup) -> Void = { [weak tabGroupManager] group in
+            // The tab bar puts the tab next to its group once the change settles.
+            tabGroupManager?.setGroup(group.id, for: tab)
         }
 
-        let onRemoveFromGroup: () -> Void = { [weak tabGroupManager, weak self] in
-            // Move first, then clear group
-            if let tabGroupManager {
-                self?.tabCollectionViewModel.moveTabToGroup(tab, group: nil, using: tabGroupManager)
-                tabGroupManager.setGroup(nil, for: tab)
-            }
+        let onRemoveFromGroup: () -> Void = { [weak tabGroupManager] in
+            tabGroupManager?.setGroup(nil, for: tab)
         }
 
         let tabGroupsView = TabGroupsManagementView(

@@ -215,6 +215,8 @@ public enum WebExtensionAPIStubScript {
         var missingMembers = [
             { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
+            { path: "webNavigation.onHistoryStateUpdated", kind: "event" },
+            { path: "webNavigation.onTabReplaced", kind: "event" },
             { path: "runtime.onSuspend", kind: "event" }
         ];
 

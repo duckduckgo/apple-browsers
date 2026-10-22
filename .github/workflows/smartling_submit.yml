@@ -250,11 +250,13 @@ jobs:
             | tee -a "$GITHUB_STEP_SUMMARY"
 
       # A job over the limit gets a review task. So does any nightly failure; release failures go to the release task.
+      # A job still awaiting authorization from an earlier run gets one too, in case that run failed to create it:
+      # asana_review_task.py skips creating it when a task with the same name is still open.
       - name: Decide on a review task
         id: review
         if: >-
           always() && !cancelled() && !inputs.dry_run && steps.job.outcome == 'success' &&
-          (steps.submit.outputs.outcome == 'review_required' || failure())
+          (steps.submit.outputs.outcome == 'review_required' || steps.submit.outputs.outcome == 'pending_review' || failure())
         env:
           FAILED: ${{ job.status == 'failure' || steps.submit.outputs.failed == 'true' }}
         run: |

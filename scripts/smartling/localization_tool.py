@@ -454,7 +454,7 @@ async def run_submit(client: SmartlingClient,
         if pending_job:
             job_id = pending_job.get('translationJobUid') or pending_job.get('jobUid', '')
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
-            # The run that left this job waiting already opened a review task, so don't open another.
+            # Reported as pending, so the caller can make sure its review task exists without creating a new job.
             return SubmitResult(
                 outcome='pending_review',
                 job_id=job_id,
@@ -468,10 +468,20 @@ async def run_submit(client: SmartlingClient,
             None
         )
         if existing_job:
+            existing_job_id = existing_job.get('translationJobUid') or existing_job.get('jobUid', '')
+            if existing_job.get('jobStatus') == 'AWAITING_AUTHORIZATION':
+                # A rerun reports it as pending, so the caller can make sure its review task exists.
+                log(f"⏸️ '{job_name}' already exists and is awaiting authorization: {job_url(client, existing_job_id)}")
+                return SubmitResult(
+                    outcome='pending_review',
+                    job_id=existing_job_id,
+                    job_name=job_name,
+                    reason=f"'{job_name}' is still awaiting authorization"
+                )
             log(f"⏭️ A job named '{job_name}' already exists")
             return SubmitResult(
                 outcome='skipped_existing_job',
-                job_id=existing_job.get('translationJobUid') or existing_job.get('jobUid', ''),
+                job_id=existing_job_id,
                 job_name=job_name,
                 reason=f"A job named '{job_name}' already exists"
             )

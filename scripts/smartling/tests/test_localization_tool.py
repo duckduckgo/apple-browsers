@@ -575,6 +575,17 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
         self.assertEqual(result.jobs_awaiting_authorization, [])
         self.assertEqual(client.awaiting_jobs_calls, 0)
 
+    async def testWhenStringsAreNotAuthorizedThenTheyAreCountedAcrossLocales(self):
+        status = file_status(10, de_DE=(3, 0), fr_FR=(9, 1))
+        status['items'][0]['authorizedStringCount'] = 4
+        client = FakeSmartlingClient(locales=['de-DE', 'fr-FR', 'it-IT'], file_statuses={XLIFF_URI: status})
+
+        result = await self.release_status(client)
+
+        self.assertEqual(result.outcome, 'not_ready')
+        self.assertEqual(result.strings_left, 17)
+        self.assertEqual(result.strings_awaiting_authorization, 13)
+
     async def testWhenListingJobsAwaitingAuthorizationFailsThenTheStatusIsStillReported(self):
         client = FakeSmartlingClient(
             file_statuses={XLIFF_URI: file_status(10, de_DE=(3, 0))},
@@ -628,6 +639,12 @@ class RefreshTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(client.file_statuses[XLIFF_URI]['lastUploaded'], 'upload-1')
         self.assertEqual(client.file_statuses[STRINGSDICT_URI]['lastUploaded'], 'upload-2')
+
+    async def testWhenSmartlingRejectsAnUploadThenTheRefreshFails(self):
+        client = FakeSmartlingClient(upload_code='VALIDATION_ERROR')
+
+        with self.assertRaisesRegex(RuntimeError, 'VALIDATION_ERROR'):
+            await self.refresh(client)
 
     async def testWhenSmartlingNeverFinishesProcessingThenTheRefreshFails(self):
         client = FakeSmartlingClient(

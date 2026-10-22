@@ -64,6 +64,7 @@ class ReleaseStatus:
     strings_left: Optional[int] = None
     incomplete_locales: List[str] = field(default_factory=list)
     locales: Optional[int] = None
+    strings_awaiting_authorization: Optional[int] = None
     jobs_awaiting_authorization: List[str] = field(default_factory=list)
     reason: str = ""
 
@@ -632,6 +633,21 @@ def job_uid(job: Dict) -> str:
     return job.get('translationJobUid') or job.get('jobUid', '')
 
 
+def strings_awaiting_authorization(file_status: Dict, locales: List[str]) -> int:
+    """Strings not authorized for translation, in a job awaiting authorization or in no job, summed over locales."""
+    total = int(file_status.get('totalStringCount') or 0)
+    by_locale = {item.get('localeId'): item for item in file_status.get('items') or []}
+    awaiting = 0
+    for locale in locales:
+        item = by_locale.get(locale, {})
+        handled = sum(
+            int(item.get(count) or 0)
+            for count in ('authorizedStringCount', 'completedStringCount', 'excludedStringCount')
+        )
+        awaiting += max(total - handled, 0)
+    return awaiting
+
+
 async def find_job(client: SmartlingClient, job_name: str) -> Optional[Dict]:
     """The job named exactly job_name, if there is one."""
     jobs = await client.list_jobs(job_name, [])
@@ -666,6 +682,7 @@ async def run_release_status(client: SmartlingClient,
         locales = await client.get_project_locales()
         total_strings = 0
         strings_left = 0
+        awaiting_authorization = 0
         incomplete_locales = set()
         for file_uri in file_uris:
             try:
@@ -680,12 +697,15 @@ async def run_release_status(client: SmartlingClient,
             )
             total_strings += file_total * len(locales)
             strings_left += sum(left.values())
+            awaiting_authorization += strings_awaiting_authorization(file_status, locales)
             incomplete_locales.update(left)
 
         if total_strings == 0:
             raise RuntimeError("The release files have no strings")
 
         outcome = 'not_ready' if strings_left else 'ready'
+        if awaiting_authorization:
+            log(f"✋ {awaiting_authorization} string translations aren't authorized for translation")
         log(f"{'⏳' if strings_left else '✅'} {strings_left} of {total_strings} string translations left")
         return ReleaseStatus(
             outcome=outcome,
@@ -693,6 +713,7 @@ async def run_release_status(client: SmartlingClient,
             job_status=job_status,
             total_strings=total_strings,
             strings_left=strings_left,
+            strings_awaiting_authorization=awaiting_authorization,
             incomplete_locales=sorted(incomplete_locales),
             locales=len(locales),
             jobs_awaiting_authorization=await describe_jobs_awaiting_authorization(client) if strings_left else []
@@ -748,9 +769,12 @@ async def run_refresh(client: SmartlingClient,
         except Exception:  # pylint: disable=broad-except
             previous_upload = ''
         response = await client.upload_file(file_path, file_uri)
-        if response.get('code') == 'ACCEPTED':
+        code = response.get('code')
+        if code == 'ACCEPTED':
             log(f"⏳ Smartling is still processing {file_uri}")
             await wait_for_file_upload(client, file_uri, previous_upload, sleep)
+        elif code != 'SUCCESS':
+            raise RuntimeError(f"Smartling answered {code or 'nothing'} to the upload of {file_uri}")
         details = response.get('data') or {}
         strings = details.get('stringCount')
         log(f"📤 Refreshed {file_uri}" + (f" ({strings} strings)" if strings is not None else ""))

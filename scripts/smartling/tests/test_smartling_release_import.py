@@ -11,6 +11,7 @@ from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).parents[1] / 'smartling_release_import.sh'
 RELEASE_BRANCH = 'release/ios/0.1.0'
+REFRESH_PREFIX = 'release/ios/0.1.0/current'
 IMPORT_BRANCH = 'smartling/release-ios-0.1.0'
 STRINGS_PATH = 'iOS/App/de.lproj/Localizable.strings'
 ENGLISH_STRINGS_PATH = 'iOS/App/en.lproj/Localizable.strings'
@@ -227,8 +228,9 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual([call.split(' ')[0] for call in calls[:3]], ['export', 'refresh-files', 'release-status'])
         self.assertEqual(
             calls[1],
-            f'refresh-files --file-uri-prefix {RELEASE_BRANCH} --files {EXPORTED_XLIFF} {ENGLISH_STRINGSDICT}'
+            f'refresh-files --file-uri-prefix {REFRESH_PREFIX} --files {EXPORTED_XLIFF} {ENGLISH_STRINGSDICT}'
         )
+        self.assertIn(f'--file-uris {REFRESH_PREFIX}/en.xliff {REFRESH_PREFIX}/Localizable.stringsdict', calls[2])
         self.assertIn('integrity --include-xcstrings', calls)
 
     def testWhenTheExportChangesTrackedFilesThenOnlyTheImportedTranslationsAreCommitted(self):
@@ -257,10 +259,12 @@ class ReleaseImportScriptTests(unittest.TestCase):
     def testWhenNotReadyThenTheJobsAwaitingAuthorizationAreReported(self):
         outputs = self.run_import(release_status={
             **READY, 'outcome': 'not_ready', 'strings_left': 120, 'incomplete_locales': ['de-DE'],
+            'strings_awaiting_authorization': 96,
             'jobs_awaiting_authorization': ['keyChange (created 2025-04-04)'],
         })
 
         self.assertEqual(outputs['outcome'], 'not_ready')
+        self.assertEqual(outputs['strings_awaiting_authorization'], '96')
         self.assertEqual(outputs['jobs_awaiting_authorization'], 'keyChange (created 2025-04-04)')
 
     def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):

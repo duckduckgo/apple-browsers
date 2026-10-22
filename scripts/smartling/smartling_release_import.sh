@@ -46,9 +46,10 @@ fi
 VERSION="${RELEASE_BRANCH#"release/$PLATFORM_SLUG/"}"
 JOB_NAME="Release $PLATFORM $VERSION"
 IMPORT_BRANCH="smartling/release-$PLATFORM_SLUG-$VERSION"
+REFRESH_PREFIX="$RELEASE_BRANCH/current"
 FILE_URIS=()
 for export_file in "${EXPORT_FILES[@]}"; do
-	FILE_URIS+=("$RELEASE_BRANCH/$(basename "$export_file")")
+	FILE_URIS+=("$REFRESH_PREFIX/$(basename "$export_file")")
 done
 
 OUTCOME=""
@@ -59,6 +60,7 @@ JOB_STATUS=""
 TOTAL_STRINGS=""
 STRINGS_LEFT=""
 INCOMPLETE_LOCALES=""
+STRINGS_AWAITING_AUTHORIZATION=""
 JOBS_AWAITING_AUTHORIZATION=""
 INTEGRITY=""
 PR_URL=""
@@ -83,6 +85,7 @@ finish() {
 			echo "total_strings=$TOTAL_STRINGS"
 			echo "strings_left=$STRINGS_LEFT"
 			echo "incomplete_locales=$INCOMPLETE_LOCALES"
+			echo "strings_awaiting_authorization=$STRINGS_AWAITING_AUTHORIZATION"
 			echo "jobs_awaiting_authorization=$JOBS_AWAITING_AUTHORIZATION"
 			echo "integrity=$INTEGRITY"
 			echo "pr_url=$PR_URL"
@@ -99,6 +102,7 @@ finish() {
 			echo "- Job: \`$JOB_NAME\` (\`${JOB_STATUS:-not found}\`)"
 			[ -z "$STRINGS_LEFT" ] || echo "- String translations left: \`$STRINGS_LEFT\` of \`$TOTAL_STRINGS\`"
 			[ -z "$INCOMPLETE_LOCALES" ] || echo "- Incomplete locales: \`$INCOMPLETE_LOCALES\`"
+			[ -z "$STRINGS_AWAITING_AUTHORIZATION" ] || [ "$STRINGS_AWAITING_AUTHORIZATION" = "0" ] || echo "- String translations not authorized (in a job awaiting authorization or in no job): \`$STRINGS_AWAITING_AUTHORIZATION\`"
 			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || echo "- Jobs awaiting authorization: $JOBS_AWAITING_AUTHORIZATION"
 			[ -z "$INTEGRITY" ] || echo "- Integrity check: \`$INTEGRITY\`"
 			[ -z "$PR_URL" ] || echo "- Pull request: $PR_URL"
@@ -136,7 +140,7 @@ echo "Exporting the release branch's strings..."
 "./$PLATFORM/scripts/loc_export.sh" | xcbeautify
 git restore --staged --worktree -- .
 
-if ! ./scripts/smartling/loc_tool.sh refresh-files --file-uri-prefix "$RELEASE_BRANCH" --files "${EXPORT_FILES[@]}"; then
+if ! ./scripts/smartling/loc_tool.sh refresh-files --file-uri-prefix "$REFRESH_PREFIX" --files "${EXPORT_FILES[@]}"; then
 	finish status_error "Could not refresh the release files in Smartling"
 fi
 
@@ -153,6 +157,7 @@ JOB_STATUS="$(jq -r '.job_status' "$RESULT_FILE")"
 TOTAL_STRINGS="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 STRINGS_LEFT="$(jq -r '.strings_left // empty' "$RESULT_FILE")"
 INCOMPLETE_LOCALES="$(jq -r '.incomplete_locales | join(", ")' "$RESULT_FILE")"
+STRINGS_AWAITING_AUTHORIZATION="$(jq -r '.strings_awaiting_authorization // empty' "$RESULT_FILE")"
 JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | join(", ")' "$RESULT_FILE")"
 REASON="$(jq -r '.reason' "$RESULT_FILE")"
 

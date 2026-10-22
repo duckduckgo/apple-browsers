@@ -305,7 +305,7 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                                      "url": "\(site)"
                                  }
                              },
-                             {"id": "device"},
+                             {"id": "deviceWithMemory"},
                              {"id": "os"},
                              {"id": "appVersion"},
                              \(atbEntry)
@@ -322,6 +322,9 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
                              {"id": "userRefreshCount"},
                              {"id": "locale"},
                              {"id": "detectorData"},
+                             {"id": "networkState"},
+                             {"id": "dnsResolution"},
+                             {"id": "failedResources"},
                          ]
                      });
                      """

@@ -21,6 +21,7 @@ import SnapshotTesting
 
 public enum SnapshotRecordMode {
     public static let environmentVariableName = "GENERATE_SNAPSHOTS"
+    public static let requireReferencesEnvironmentVariableName = "REQUIRE_SNAPSHOT_REFERENCES"
 
     public static func shouldRecord(
         record: Bool,
@@ -29,11 +30,20 @@ public enum SnapshotRecordMode {
         record || isEnabled(environment[environmentVariableName])
     }
 
+    public static func requiresReferences(
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> Bool {
+        isEnabled(environment[requireReferencesEnvironmentVariableName])
+    }
+
     static func snapshotTestingRecord(
         record: Bool,
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> SnapshotTestingConfiguration.Record {
-        shouldRecord(record: record, environment: environment) ? .all : .missing
+        if shouldRecord(record: record, environment: environment) {
+            return .all
+        }
+        return requiresReferences(environment: environment) ? .never : .missing
     }
 
     private static func isEnabled(_ value: String?) -> Bool {

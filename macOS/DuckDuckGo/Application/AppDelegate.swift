@@ -119,7 +119,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .downgraded: versionChange = .downgraded
         case .noChange: versionChange = nil
         }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
+            NSApp.isActive ? .active : .inactive
+        }
     }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
@@ -474,6 +476,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    lazy var bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarkAddedSyncPromoDelegate(
+            featureFlagger: featureFlagger,
+            syncService: syncService,
+            storage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
+    lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            hasTopLevelEntitiesProvider: { [bookmarkManager] in
+                bookmarkManager.hasTopLevelEntities()
+            },
+            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher(),
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
+    lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        AutofillEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            isAnyCategoryEmptyProvider: {
+                guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
+                return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
+            },
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -545,6 +588,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private(set) var webExtensionManager: WebExtensionManaging?
+    /// Whether a password manager extension has taken autofill over from DuckDuckGo.
+    let webExtensionAutofillTakeover: WebExtensionAutofillTakeover
     private(set) var webExtensionAvailability: WebExtensionAvailabilityProviding
     private let webExtensionManagerHolder = WebExtensionManagerHolder()
     private var webExtensionFeatureFlagHandler: AnyObject?
@@ -771,6 +816,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
@@ -1221,6 +1267,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: try? KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "EventHubKeyValueStore"))
 
         if AppVersion.runType.requiresEnvironment {
+            let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)
+            let isSparkleBuild = StandardApplicationBuildType().isSparkleBuild
             remoteMessagingClient = RemoteMessagingClient(
                 remoteMessagingDatabase: RemoteMessagingDatabase().db,
                 bookmarksDatabase: bookmarkDatabase.db,
@@ -1238,7 +1286,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: self.featureFlagger,
                 configurationURLProvider: configurationURLProvider,
                 themeManager: themeManager,
-                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager }
+                dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager },
+                // App Store builds can't detect reinstalls, so rules using it fail there rather than treating everyone as new.
+                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil }
             )
             let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -1562,6 +1612,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // checking state – updating later would only take effect on next launch
         grammarFeaturesManager.manage()
 
+        // Must run before the first web view starts a passkey request
+        if featureFlagger.isFeatureOn(.passkeyRequestCancellation) {
+            WebKitPasskeyRequestCanceller.install()
+        }
+
         configurationManager.start()
 
         let isFirstLaunch = LocalStatisticsStore().atb == nil
@@ -1634,7 +1689,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autofillImportPromoObserver: autofillImportPromoObserver,
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
             syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
-            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate
+            bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate,
+            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate,
+            bookmarksEmptyStatePromoDelegate: bookmarksEmptyStatePromoDelegate,
+            autofillEmptyStatePromoDelegate: autofillEmptyStatePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2250,6 +2308,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.webExtensionLifecycleCoordinator?.cancelAll()
                 self?.webExtensionLifecycleCoordinator = nil
                 self?.webExtensionManager = nil
+                self?.webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
             },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
@@ -2273,6 +2332,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 scriptletConfiguration: makeScriptletConfiguration()
             )
             self.webExtensionManager = webExtensionManager
+            webExtensionAutofillTakeover.manager = webExtensionManager
 
             let coordinator = WebExtensionLifecycleCoordinator(
                 manager: webExtensionManager,
@@ -2286,9 +2346,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.webExtensionLifecycleCoordinator = coordinator
 
             // Load extensions asynchronously - the controller is already attached to tabs
-            coordinator.loadAndSync()
+            let initialLoad = coordinator.loadAndSync()
+            Task { @MainActor [weak self] in
+                await initialLoad.value
+                self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            }
         } else {
-            webExtensionManager = nil
+            webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
         }
     }
 
@@ -2308,6 +2372,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
+        webExtensionAutofillTakeover.manager = webExtensionManager
 
         let coordinator = WebExtensionLifecycleCoordinator(
             manager: webExtensionManager,
@@ -2320,6 +2385,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.webExtensionLifecycleCoordinator = coordinator
         await coordinator.loadAndSync().value
+        startRemoteDisableEnforcer(for: webExtensionManager)
+    }
+
+    /// Call it after the initial load, so an enforcement pass can't race it.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
+        guard self.webExtensionManager === webExtensionManager else { return }
+        webExtensionManager.startRemoteDisableEnforcer(
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
     }
 
     @available(macOS 15.4, *)
@@ -2711,12 +2788,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                           aiChatTabOpener: aiChatTabOpener,
                                                           duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                           preferences: aiChatPreferencesPersistor)
+        let positionStore = PromptBarPreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
         let coordinator = PromptBarCoordinator(
             preferences: promptBarPreferences,
             shortcutRegistrar: CarbonGlobalShortcutRegistrar(),
             presenter: PromptBarPresenter(content: content,
                                           presentationEffectsEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatLauncherPromo) },
-                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) })
+                                          promoOutcome: { [keyValueStore] in DuckAiLauncherPromo.storedOutcome(in: keyValueStore) },
+                                          isDragEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.aiChatDragPromptBar) },
+                                          loadRelativePosition: { positionStore.relativePosition },
+                                          saveRelativePosition: { positionStore.relativePosition = $0 })
         )
         coordinator.start()
         promptBarCoordinator = coordinator

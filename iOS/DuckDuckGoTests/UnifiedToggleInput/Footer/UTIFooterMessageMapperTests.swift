@@ -54,6 +54,17 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         }
     }
 
+    func test_promptTooLongMessage_showsTheCountAgainstTheLimitWithoutSeparators() {
+        let message = sut.promptTooLongMessage(count: 16_800, limit: 16_000)
+
+        XCTAssertEqual(message.icon, .alert)
+        XCTAssertEqual(message.title, "Please try a shorter message.")
+        XCTAssertEqual(message.subtitle, "16800/16000")
+        XCTAssertNil(message.primaryAction)
+        XCTAssertNil(message.link)
+        XCTAssertFalse(message.isDismissible)
+    }
+
     // MARK: - Headlines
 
     func test_message_approachingNamesTheWindowAndThePercentage() {

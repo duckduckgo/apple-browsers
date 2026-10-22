@@ -86,18 +86,39 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
             return
         }
 
-        guard let url = URL.makeURL(from: term) else {
+        guard let url = Self.searchBoxURL(for: term) else {
             Logger.newTabPageOmnibar.error("Failed to create URL from term: \(term)")
             return
         }
 
         NewTabPageLinkOpener.open(
             url,
-            source: .ui,
+            source: Self.searchBoxSource(for: url),
             sender: .userScript,
             target: target.linkOpenTarget,
             sourceWindow: mainWindowController.window
         )
+    }
+
+    /// A Duck.ai URL is built as the web view will report it: HTTPS (Duck.ai serves nothing else), a lowercase
+    /// host and a root path. When the tab's URL differs from the web view's, the tab replaces its content with
+    /// the web view's URL and drops the source the chat was opened with.
+    static func searchBoxURL(for term: String) -> URL? {
+        guard let url = URL.makeURL(from: term) else { return nil }
+        guard url.isDuckAIURL, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return url }
+        if url.isHttp, url.port == nil {
+            components.scheme = URL.NavigationalScheme.https.rawValue
+        }
+        components.host = components.host?.lowercased()
+        if components.path.isEmpty {
+            components.path = "/"
+        }
+        return components.url ?? url
+    }
+
+    /// Duck.ai reached from the search box is a direct navigation; the box's Duck.ai mode is a separate path.
+    private static func searchBoxSource(for url: URL) -> TabContent.URLSource {
+        url.isDuckAIURL ? .attributedUI(.directNewTabPage) : .ui
     }
 
     func openSuggestion(_ suggestion: NewTabPageDataModel.Suggestion, target: NewTabPageDataModel.OpenTarget) {
@@ -133,7 +154,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
                 }
                 NewTabPageLinkOpener.open(
                     suggestionUrl,
-                    source: .ui,
+                    source: Self.searchBoxSource(for: suggestionUrl),
                     sender: .userScript,
                     target: target.linkOpenTarget,
                     sourceWindow: mainWindowController.window
@@ -205,8 +226,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
         let nativePrompt = AIChatNativePrompt.queryPrompt(chat,
                                                           autoSubmit: true,
                                                           toolChoice: toolChoice,
-                                                          images: nativeImages,
-                                                          files: nativeFiles,
+                                                          attachments: AIChatPromptAttachments(images: nativeImages, files: nativeFiles),
                                                           modelId: modelId,
                                                           pageContext: pageContextPayload,
                                                           mode: mode,
@@ -276,7 +296,7 @@ final class NewTabPageOmnibarActionsHandler: NewTabPageOmnibarActionsHandling {
     @MainActor
     func openAttachmentPrivacyLearnMore(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
         AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireLearnMoreTapped(kind: .init(kind))
-        windowControllersManager.show(url: .aiChatPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
+        windowControllersManager.show(url: .aiChatUploadFilesAndImagesPrivacy, tabId: nil, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor

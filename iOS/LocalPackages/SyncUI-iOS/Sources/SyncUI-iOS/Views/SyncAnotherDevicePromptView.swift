@@ -34,12 +34,12 @@ struct SyncAnotherDevicePromptView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 128, height: 96)
 
-                    Text(UserText.simplifiedSyncAnotherDeviceTitle)
+                    Text(model.isImprovedPairingFlowEnabled ? UserText.simplifiedSyncAnotherDeviceImprovedTitle : UserText.simplifiedSyncAnotherDeviceTitle)
                         .daxTitle1()
                         .multilineTextAlignment(.center)
                         .padding(.vertical, 24)
 
-                    Text(UserText.simplifiedSyncAnotherDeviceBody)
+                    Text(model.isImprovedPairingFlowEnabled ? UserText.simplifiedSyncAnotherDeviceImprovedBody : UserText.simplifiedSyncAnotherDeviceBody)
                         .daxBodyRegular()
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -102,11 +102,12 @@ struct SyncAnotherDevicePromptView: View {
 #if DEBUG
 
 private extension SyncSettingsViewModel {
-    static func previewModel(isConnecting: Bool = false) -> SyncSettingsViewModel {
+    static func previewModel(isConnecting: Bool = false, isImprovedPairingFlowEnabled: Bool = false) -> SyncSettingsViewModel {
         let model = SyncSettingsViewModel(
             isOnDevEnvironment: { false },
             switchToProdEnvironment: {},
-            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+            autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled,
+            isImprovedPairingFlowEnabled: isImprovedPairingFlowEnabled
         )
         model.isSyncEnabled = true
         model.devices = [.init(id: "1", name: "Dave’s iPhone", type: "phone", isThisDevice: true)]
@@ -115,22 +116,16 @@ private extension SyncSettingsViewModel {
     }
 }
 
-#Preview("Rebranded") {
-    RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptView(model: .previewModel())
-    }
+#Preview("Default") {
+    SyncAnotherDevicePromptView(model: .previewModel())
+}
+
+#Preview("Improved Pairing Flow") {
+    SyncAnotherDevicePromptView(model: .previewModel(isImprovedPairingFlowEnabled: true))
 }
 
 #Preview("Connecting") {
-    RebrandedPreview(isRebranded: true) {
-        SyncAnotherDevicePromptView(model: .previewModel(isConnecting: true))
-    }
-}
-
-#Preview("Legacy brand") {
-    RebrandedPreview(isRebranded: false) {
-        SyncAnotherDevicePromptView(model: .previewModel())
-    }
+    SyncAnotherDevicePromptView(model: .previewModel(isConnecting: true))
 }
 
 #endif

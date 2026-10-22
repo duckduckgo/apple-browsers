@@ -19,8 +19,6 @@
 
 import AIChat
 import Core
-import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckAiDataStore
 import HangMetrics
 import Persistence
@@ -75,30 +73,20 @@ struct Launching: LaunchingHandling {
         let launchBreadcrumb = LaunchBreadcrumb()
         launchBreadcrumb.reportIncompleteLaunch()
 
-        // Wire the DesignSystem rebrand singleton to the live feature flag.
-        // Consumed by `DesignSystemImages` accessors and the `Image(rebrandable:)` initializer
-        // so call sites don't need to read the flag directly.
-        AppRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
-        // Temporary feature flag and wiring during rebrand rollout – used to enable color palette updates.
-        DesignSystemRebrand.isAppRebranded = { [featureFlagger] in
-            featureFlagger.isFeatureOn(.appRebranding)
-        }
-
-        DesignSystemPalette.current = featureFlagger.isFeatureOn(.appRebranding) ? .rebranded : .default
-
         favicons = Favicons(fireproofing: fireproofing)
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         launchBreadcrumb.mark(.keyValueStore)
         lastBackgroundDateStorage = appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring()
 
+        // The app's single owner of the Duck.ai bonus record, shared by every consumer.
+        let aiChatBonusService = AIChatBonusService()
+
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
             appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            featureFlagger: featureFlagger
+            featureFlagger: featureFlagger,
+            aiChatBonusService: aiChatBonusService
         )
 
         var isBookmarksDBFilePresent: Bool?
@@ -228,7 +216,7 @@ struct Launching: LaunchingHandling {
         let freemiumPIREligibilityChecker = DefaultFreemiumPIREligibilityChecker(
             featureFlagger: featureFlagger,
             runPrerequisitesDelegate: dbpService.dbpIOSPublicInterface,
-            subscriptionAuthenticationStateProvider: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
             freemiumPIRDebugSettings: freemiumPIRDebugSettings
         )
 
@@ -257,11 +245,12 @@ struct Launching: LaunchingHandling {
                                                             subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                             remoteMessagingImageLoader: remoteMessagingImageLoader,
                                                             idleReturnEligibilityManager: idleReturnEligibilityManager,
+                                                            aiChatBonusStateProvider: aiChatBonusService,
                                                             dbpRunPrerequisitesDelegate: dbpService.dbpIOSPublicInterface)
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager
@@ -303,6 +292,13 @@ struct Launching: LaunchingHandling {
         // Initialise promo coordination
         let omniBarFocuser = OmniBarFocuserProvider()
         let promoQueueLeaseArbiter = PromoQueueLeaseArbiter()
+        let backgroundDateStorage = lastBackgroundDateStorage
+        let promptExposureReporter = PromptExposureReporter(
+            storage: appKeyValueFileStoreService.keyValueFilesStore.throwingKeyedStoring(),
+            installDateProvider: { StatisticsUserDefaults().installDate },
+            onboardingCompletedProvider: { daxDialogs.hasSeenOnboarding },
+            lastBackgroundDateProvider: { (try? backgroundDateStorage.lastBackgroundDate) ?? nil }
+        )
         let promoCoordinationService = PromoCoordinationFactory.makeService(
             dependency: .init(
                 launchSourceManager: launchSourceManager,
@@ -326,7 +322,8 @@ struct Launching: LaunchingHandling {
                 subscriptionPromoExistingUserPresenter: subscriptionPromoExistingUserPresenter,
                 subscriptionPromoExistingUserCoordinator: subscriptionPromoExistingUserCoordinator,
                 userScriptsDependencies: contentBlockingService.userScriptsDependencies,
-                omniBarFocuser: omniBarFocuser
+                omniBarFocuser: omniBarFocuser,
+                promptExposureReporter: promptExposureReporter
             )
         )
 
@@ -339,6 +336,7 @@ struct Launching: LaunchingHandling {
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
 
+        let usageContextProvider = UsageContextProvider()
         mainCoordinator = try MainCoordinator(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                               syncService: syncService,
                                               contentBlockingService: contentBlockingService,
@@ -375,7 +373,9 @@ struct Launching: LaunchingHandling {
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault,
                                               wideEvent: AppDependencyProvider.shared.wideEvent,
                                               onboardingManager: onboardingManager,
-                                              eventHub: eventHubService.eventHub
+                                              eventHub: eventHubService.eventHub,
+                                              usageContextProvider: usageContextProvider,
+                                              promptExposureReporter: promptExposureReporter
         )
         launchBreadcrumb.mark(.mainCoordinator)
 
@@ -402,6 +402,7 @@ struct Launching: LaunchingHandling {
                                         keyValueStore: appKeyValueFileStoreService.keyValueFilesStore))
         let aiChatService = AIChatService(
             aiChatSettings: aiChatSettings,
+            aiChatBonusService: aiChatBonusService,
             termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver(
                 storageHandler: duckAiNativeStorageHandler,
                 feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
@@ -415,7 +416,6 @@ struct Launching: LaunchingHandling {
             return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
         })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
-            featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             stateStore: inactivityStateStore

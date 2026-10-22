@@ -485,6 +485,8 @@ final class NavigationBarViewController: NSViewController {
         static let addressBarStackSpacing: CGFloat = 16
         static let addressBarVerticalInset: CGFloat = 6
         static let addressBarMinWidth: CGFloat = 212
+        /// Pinned views move to the overflow menu rather than squeeze the address bar below this width.
+        static let addressBarOverflowWidth: CGFloat = 320
         static let addressBarSideSpacing: CGFloat = 12
         /// The address bar wants to take this share of the window width; it is a low-priority
         /// constraint so the bar keeps contracting with the window while the side gaps stay open,
@@ -799,7 +801,8 @@ final class NavigationBarViewController: NSViewController {
             let updater = WebExtensionNavigationBarUpdater(webExtensionManagerProvider: { NSApp.delegateTyped.webExtensionManager },
                                                            themeManager: themeManager,
                                                            container: menuButtons,
-                                                           isPrivateWindow: tabCollectionViewModel.isBurner)
+                                                           isPrivateWindow: tabCollectionViewModel.isBurner,
+                                                           selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
         }
@@ -1142,14 +1145,14 @@ final class NavigationBarViewController: NSViewController {
     private func promptToSaveAutofillData(_ data: AutofillData) {
         let autofillPreferences = AutofillPreferences()
 
-        if autofillPreferences.askToSaveUsernamesAndPasswords, let credentials = data.credentials {
+        if autofillPreferences.isUsernamesAndPasswordsAutofillActive, let credentials = data.credentials {
             Logger.passwordManager.debug("Presenting Save Credentials popover")
             popovers.displaySaveCredentials(credentials,
                                             automaticallySaved: data.automaticallySavedCredentials,
                                             backfilled: data.backfilled,
                                             usingView: passwordManagementButton,
                                             withDelegate: self)
-        } else if autofillPreferences.askToSavePaymentMethods, let card = data.creditCard {
+        } else if autofillPreferences.isPaymentMethodsAutofillActive, let card = data.creditCard {
             guard CreditCardValidation.isValidCardNumber(CreditCardValidation.extractDigits(from: card.cardNumber)) else {
                 Logger.autofill.debug("Invalid credit card number, not presenting save popover")
                 return
@@ -1159,7 +1162,7 @@ final class NavigationBarViewController: NSViewController {
             popovers.displaySavePaymentMethod(card,
                                               usingView: passwordManagementButton,
                                               withDelegate: self)
-        } else if autofillPreferences.askToSaveAddresses, let identity = data.identity {
+        } else if autofillPreferences.isAddressesAutofillActive, let identity = data.identity {
             Logger.passwordManager.debug("Presenting Save Identity popover")
             popovers.displaySaveIdentity(identity,
                                          usingView: passwordManagementButton,
@@ -1508,11 +1511,14 @@ final class NavigationBarViewController: NSViewController {
             })
     }
 
-    /// Web extension buttons apply to a web page only, so tabs that show native content hide them.
+    /// Web extension buttons show on web pages, extension pages and the New Tab page. Native content hides them.
     private func updateWebExtensionButtonsVisibility(for content: TabContent) {
         guard #available(macOS 15.4, *),
               let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
-        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView
+        let isNewTab = if case .newtab = content { true } else { false }
+        let isExtensionPage = if case .webExtensionUrl = content { true } else { false }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab || isExtensionPage
+        updater.refreshActions()
     }
 
     private func subscribeToDownloads() {
@@ -1927,8 +1933,23 @@ final class NavigationBarViewController: NSViewController {
     // MARK: - Overflow menu
 
     var pinnedViews: [PinnableView] {
-        let allButtons: [PinnableView] = [.share, .downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
-        return allButtons.filter(pinningManager.isPinned)
+        PinnableView.allCases
+            .filter { pinningManager.isPinned($0) && !navBarButtonViews(for: $0).isEmpty }
+            .sorted { overflowOrder(of: $0) < overflowOrder(of: $1) }
+    }
+
+    /// Position of each pinned view in the overflow logic: the last visible one moves to the overflow menu first,
+    /// and the first one in the overflow menu is restored first.
+    private func overflowOrder(of view: PinnableView) -> Int {
+        switch view {
+        case .feedback: 0
+        case .share: 1
+        case .downloads: 2
+        case .autofill: 3
+        case .bookmarks: 4
+        case .networkProtection: 5
+        case .homeButton: 6
+        }
     }
 
     private var visiblePinnedItems: [PinnableView] {
@@ -1943,20 +1964,43 @@ final class NavigationBarViewController: NSViewController {
 
     private var visiblePinnedViewsRequiredWidth: CGFloat {
         let visiblePinnedViewsWidth = visiblePinnedItems.map(navBarWidth).reduce(0, +)
-        let overflowButtonWidth = overflowButton.isVisible ? overflowButton.bounds.width : 0
-        return visiblePinnedViewsWidth + overflowButtonWidth
+        return visiblePinnedViewsWidth + visibleOverflowButtonWidth
     }
 
-    /// Width of displayed address bar buttons that add to the minimum width of the address bar (e.g. zoom, permissions)
-    private var addressBarButtonsAddedWidth: CGFloat = 0
+    private var visibleOverflowButtonWidth: CGFloat {
+        overflowButton.isHidden ? 0 : overflowButton.bounds.width + menuButtons.spacing
+    }
+
+    /// Restoring the last item in the overflow menu also hides the overflow button, freeing its width.
+    private func requiredWidth(restoring pinnedView: PinnableView) -> CGFloat {
+        let isLastOverflowItem = overflowItems == [pinnedView] && !isAIChatButtonInOverflowMenu
+        let freedOverflowButtonWidth = isLastOverflowItem ? visibleOverflowButtonWidth : 0
+        return visiblePinnedViewsRequiredWidth + navBarWidth(for: pinnedView) - freedOverflowButtonWidth
+    }
 
     private var daxLogoWidth: CGFloat = 0
 
+    /// Width the address bar stack keeps before pinned views move to the overflow menu.
+    private var addressBarStackOverflowWidth: CGFloat {
+        let logoWidth = daxLogo.isHidden ? 0 : daxLogoWidth
+        return logoWidth + max(LayoutConstants.addressBarOverflowWidth, addressBarViewController?.minimumWidth ?? 0)
+    }
+
+    /// Width of everything in the button stacks that can't move to the overflow menu (back, forward, reload, options,
+    /// web extension buttons, unpinned buttons that are temporarily shown), including the gaps between them.
+    /// Gaps next to pinned views and the overflow button are counted in `visiblePinnedViewsRequiredWidth`.
+    private var nonOverflowableViewsWidth: CGFloat {
+        let overflowableViews = visiblePinnedItems.flatMap(navBarButtonViews) + [overflowButton]
+        return [navigationButtons, menuButtons].map { stack in
+            let views = stack.arrangedSubviews.filter { !$0.isHidden && !overflowableViews.contains($0) }
+            return views.map(\.bounds.width).reduce(0, +) + stack.spacing * CGFloat(max(views.count - 1, 0))
+        }.reduce(0, +)
+    }
+
     private var overflowThreshold: CGFloat {
-        let availableWidth = view.bounds.width - 24 // account for leading and trailing space
-        let alwaysVisibleButtonsWidth = [goBackButton, goForwardButton, refreshOrStopButton, optionsButton].map(\.bounds.width).reduce(0, +)
-        let addressBarMinWidth = (addressBarMinWidthConstraint?.constant ?? 0) + addressBarButtonsAddedWidth + 24 // account for leading and trailing space
-        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth - daxLogoWidth
+        let horizontalInsets = LayoutConstants.navigationButtonsLeading + LayoutConstants.menuButtonsTrailing
+        let addressBarSideSpacing = 2 * LayoutConstants.addressBarSideSpacing
+        return view.bounds.width - horizontalInsets - addressBarSideSpacing - nonOverflowableViewsWidth - addressBarStackOverflowWidth
     }
 
     private func setupOverflowMenu() {
@@ -1971,14 +2015,12 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToNavigationBarWidthChanges() {
-        addressBarViewController?.addressBarButtonsViewController?.$buttonsWidth
-            .sink { [weak self] totalWidth in
-                guard let self,
-                      let staticButton = addressBarViewController?.addressBarButtonsViewController?.privacyDashboardButton else { return }
+        guard let addressBarButtonsViewController = addressBarViewController?.addressBarButtonsViewController else { return }
 
-                let optionalButtonsWidth = totalWidth - staticButton.bounds.width
-                addressBarButtonsAddedWidth = optionalButtonsWidth
-                updateNavigationBarForCurrentWidth()
+        addressBarButtonsViewController.$buttonsWidth.removeDuplicates()
+            .merge(with: addressBarButtonsViewController.$trailingButtonsWidth.removeDuplicates())
+            .sink { [weak self] _ in
+                self?.updateNavigationBarForCurrentWidth()
             }
             .store(in: &cancellables)
     }
@@ -2016,7 +2058,7 @@ final class NavigationBarViewController: NSViewController {
                 toggleAIChatButtonVisibility(isHidden: true)
                 break
             }
-            guard let itemToOverflow = visiblePinnedItems.last else {
+            guard let itemToOverflow = nextItemToOverflow else {
                 break
             }
             updateNavBarViews(with: itemToOverflow, isHidden: true)
@@ -2025,14 +2067,35 @@ final class NavigationBarViewController: NSViewController {
 
     private func removeButtonsFromOverflowMenuIfPossible() {
         while let itemToRestore = overflowItems.first {
-            let restorableButtonWidth = navBarWidth(for: itemToRestore)
-            let newMaximumWidth = visiblePinnedViewsRequiredWidth + restorableButtonWidth
-
-            if newMaximumWidth < overflowThreshold {
+            if requiredWidth(restoring: itemToRestore) < overflowThreshold {
                 updateNavBarViews(with: itemToRestore, isHidden: false)
             } else {
                 break
             }
+        }
+    }
+
+    /// The last visible pinned view that can move to the overflow menu.
+    /// A view anchoring a popover stays in the bar, otherwise the popover would lose its anchor.
+    private var nextItemToOverflow: PinnableView? {
+        visiblePinnedItems.last { !isAnchoringPopover($0) }
+    }
+
+    private func isAnchoringPopover(_ pinnedView: PinnableView) -> Bool {
+        switch pinnedView {
+        case .downloads:
+            return popovers.isDownloadsPopoverShown
+        case .autofill:
+            return popovers.isPasswordManagementPopoverShown
+            || popovers.isAutofillOnboardingPopoverShown
+            || popovers.hasAnySavePopoversVisible()
+            || isAutoFillAutosaveMessageVisible
+        case .bookmarks:
+            return popovers.bookmarkListPopoverShown
+        case .networkProtection:
+            return popovers.isNetworkProtectionPopoverShown
+        case .share, .homeButton, .feedback:
+            return false
         }
     }
 
@@ -2043,7 +2106,11 @@ final class NavigationBarViewController: NSViewController {
 
     /// Returns the width of any navigation bar views related to the provided pinned view
     func navBarWidth(for viewType: PinnableView) -> CGFloat {
-        navBarButtonViews(for: viewType).map(\.bounds.width).reduce(0, +)
+        navBarButtonViews(for: viewType).map { $0.bounds.width + stackSpacing(for: $0) }.reduce(0, +)
+    }
+
+    private func stackSpacing(for view: NSView) -> CGFloat {
+        navigationButtons.arrangedSubviews.contains(view) ? navigationButtons.spacing : menuButtons.spacing
     }
 
     /// Moves the provided pinned view between the nav bar and overflow menu.
@@ -2144,11 +2211,11 @@ final class NavigationBarViewController: NSViewController {
     /// Moves the next pinned view into the overflow menu, to make space to show the provided pinned view.
     /// This is used to ensure there is space to show a pinned view in the nav bar when it is selected from the overflow menu.
     private func makeSpaceInNavBarIfNeeded(for view: PinnableView) {
-        guard visiblePinnedViewsRequiredWidth + navBarWidth(for: view) > overflowThreshold else {
+        guard requiredWidth(restoring: view) > overflowThreshold else {
             return
         }
 
-        guard let itemToOverflow = visiblePinnedItems.last else {
+        guard let itemToOverflow = nextItemToOverflow else {
             return
         }
         updateNavBarViews(with: itemToOverflow, isHidden: true)
@@ -2530,7 +2597,8 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedPaidAIChat(_ menu: NSMenu) {
         let aiChatURL = AIChatRemoteSettings().aiChatURL
-        showTab(.aiChat(aiChatURL))
+        NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.moreOptionsMenuOpenDuckAI)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .url(aiChatURL), behavior: .newTab(selected: true))
     }
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {
@@ -2544,6 +2612,8 @@ extension NavigationBarViewController: NSPopoverDelegate {
 
     /// We check references here because these popovers might be on other windows.
     func popoverDidClose(_ notification: Notification) {
+        defer { view.needsLayout = true }
+
         if let popover = popovers.autofillOnboardingPopover, notification.object as AnyObject? === popover {
             popovers.autofillOnboardingPopoverClosed()
             resolveAutofillPinningPromo(with: .ignored())
@@ -2753,7 +2823,7 @@ extension NavigationBarViewController: AutofillToolbarPinningPromoPresenting {
                                                                     withDelegate: self,
                                                                     ctaCallback: { [weak self] didAddShortcut in
                 guard let self else { return }
-                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned : .ignored())
+                resolveAutofillPinningPromo(with: didAddShortcut ? .actioned() : .ignored())
                 if didAddShortcut {
                     pinningManager.pin(.autofill)
                 }

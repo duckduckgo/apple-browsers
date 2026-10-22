@@ -36,6 +36,9 @@ private final class MockUserAuthenticator: UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
         result(.success)
     }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        false
+    }
 }
 
 class MockSyncFeatureFlagger: FeatureFlagger {
@@ -465,6 +468,20 @@ final class SyncPreferencesTests: XCTestCase {
 
         let fireCall = pixelKitMock.actualFireCalls.first { $0.pixel.name == "sync_settings_open_mac" }
         XCTAssertEqual(fireCall?.pixel.parameters?["is_enabled"], "1")
+    }
+
+    // MARK: - RegisteredDevice → SyncDevice.Kind
+
+    func testWhenMappingRegisteredDeviceThenKindFollowsTypeAndCredential() {
+        XCTAssertEqual(SyncDevice(RegisteredDevice(id: "1", name: "Mac", type: "desktop")).kind, .desktop)
+        XCTAssertEqual(SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "mobile")).kind, .mobile)
+        XCTAssertEqual(SyncDevice(RegisteredDevice(id: "3", name: "Unknown", type: "unknown")).kind, .unknown)
+    }
+
+    func testWhenMappingUndecryptableThirdPartyDeviceThenThirdPartyKindWins() {
+        let device = RegisteredDevice(id: "4", name: "Browser", type: "unknown", credentialId: SyncCredentialID.thirdParty)
+
+        XCTAssertEqual(SyncDevice(device).kind, .thirdParty)
     }
 
 }

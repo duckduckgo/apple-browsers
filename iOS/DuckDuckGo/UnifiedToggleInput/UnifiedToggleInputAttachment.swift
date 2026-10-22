@@ -92,6 +92,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
     case file(AIChatFileAttachment)
     case invalidFile(UnifiedToggleInputInvalidFileAttachment)
     case tab(UnifiedToggleInputTabAttachment)
+    case pastedText(AIChatPastedText)
 
     var id: UUID {
         switch self {
@@ -103,6 +104,8 @@ enum UnifiedToggleInputAttachment: Identifiable {
             return attachment.id
         case .tab(let attachment):
             return attachment.id
+        case .pastedText(let pastedText):
+            return pastedText.id
         }
     }
 
@@ -116,6 +119,20 @@ enum UnifiedToggleInputAttachment: Identifiable {
             return attachment.fileName
         case .tab(let attachment):
             return attachment.title
+        case .pastedText(let pastedText):
+            return pastedText.title
+        }
+    }
+
+    var pastedText: AIChatPastedText? {
+        guard case .pastedText(let pastedText) = self else { return nil }
+        return pastedText
+    }
+
+    var isUploadAttachment: Bool {
+        switch self {
+        case .image, .file, .invalidFile: return true
+        case .tab, .pastedText: return false
         }
     }
 
@@ -133,7 +150,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
 
     var fileSizeBytes: Int {
         switch self {
-        case .image, .tab:
+        case .image, .tab, .pastedText:
             return 0
         case .file(let attachment):
             return attachment.fileSizeBytes
@@ -153,7 +170,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
         switch self {
         case .file, .invalidFile:
             return true
-        case .image, .tab:
+        case .image, .tab, .pastedText:
             return false
         }
     }
@@ -177,7 +194,7 @@ enum UnifiedToggleInputAttachment: Identifiable {
 
     var mimeType: String? {
         switch self {
-        case .image, .tab:
+        case .image, .tab, .pastedText:
             return nil
         case .file(let attachment):
             return attachment.mimeType
@@ -191,4 +208,12 @@ enum UnifiedToggleInputAttachment: Identifiable {
         return attachment.image
     }
 
+}
+
+extension Sequence where Element == UnifiedToggleInputAttachment {
+
+    /// The prompt wide event's `attachments_selected` on iPhone and iPad. A paste is prompt text, so it doesn't count.
+    var hasAttachmentsSelected: Bool {
+        contains { $0.pastedText == nil }
+    }
 }

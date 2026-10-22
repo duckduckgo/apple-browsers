@@ -55,6 +55,29 @@ extension WebExtensionManager {
     static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
     }
+
+    /// Start after installed extensions load, so enforcement can't race the initial load.
+    @MainActor
+    func startRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        guard remoteDisableEnforcer == nil else { return }
+        let enforcer = WebExtensionRemoteDisableEnforcer(
+            manager: self,
+            configurationManager: configurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                var disabledIDs: Set<String> = []
+                if !featureFlagger.isFeatureOn(.webExtensionBitwarden) {
+                    disabledIDs.insert(ChromeWebStoreID.bitwarden.rawValue)
+                }
+                if !featureFlagger.isFeatureOn(.webExtensionOnePassword) {
+                    disabledIDs.insert(ChromeWebStoreID.onePassword.rawValue)
+                }
+                return disabledIDs
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+        )
+        remoteDisableEnforcer = enforcer
+        enforcer.start()
+    }
 }
 
 // MARK: - Factory
@@ -99,6 +122,10 @@ enum WebExtensionManagerFactory {
             installationStore: installationStore,
             prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
         ) : nil
+        // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
+        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+            ? NativeMessagingHandler(installationStore: installationStore)
+            : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
@@ -112,12 +139,24 @@ enum WebExtensionManagerFactory {
             isCPMMessagingHangRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
             },
+            isCPMNetworkProcessRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
+            nativeMessagingHandler: nativeMessagingHandler,
+            keyValueStore: keyValueStore,
             scriptletConfiguration: scriptletConfiguration
         )
 

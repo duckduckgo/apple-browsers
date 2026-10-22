@@ -39,10 +39,12 @@ struct AppConfiguration {
     let onboardingConfiguration = OnboardingConfiguration()
     private let appKeyValueStore: ThrowingKeyValueStoring
     private let featureFlagger: FeatureFlagger
+    private let aiChatBonusService: AIChatBonusService
 
-    init(appKeyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger) {
+    init(appKeyValueStore: ThrowingKeyValueStoring, featureFlagger: FeatureFlagger, aiChatBonusService: AIChatBonusService) {
         self.appKeyValueStore = appKeyValueStore
         self.featureFlagger = featureFlagger
+        self.aiChatBonusService = aiChatBonusService
     }
 
     func start(isBookmarksDBFilePresent: Bool?) throws {
@@ -59,6 +61,7 @@ struct AppConfiguration {
         clearTemporaryDirectory()
         try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         migrateAIChatSettings()
+        deleteAIChatBonusRecordIfNewInstall()
         setDefaultOmnibarModeIfNeeded()
         migratePromptCooldown()
 
@@ -77,6 +80,17 @@ struct AppConfiguration {
             }
             return sharedUserDefaults ?? UserDefaults()
         })
+    }
+
+    /// Deletes the Duck.ai bonus record a previous install left in the Keychain, which outlives the app.
+    ///
+    /// No install date means a new install: the first ATB request saves it, and deleting the app removes it.
+    /// Must run before that request and before anything reads the record. Until then it deletes on every launch,
+    /// which is harmless: no offer can be claimed without an install date.
+    private func deleteAIChatBonusRecordIfNewInstall() {
+        guard StatisticsUserDefaults().installDate == nil else { return }
+        // The service reports a failed delete and retries it on the next access.
+        try? aiChatBonusService.permanentlyDeleteRecord()
     }
 
     /// Set the default omnibar mode for new users on first launch.

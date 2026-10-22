@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import PixelKit
 
 enum AppReturnPixel: PixelKit.Event {
@@ -45,12 +46,14 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
     private let eligibilityManager: IdleReturnEligibilityManaging
     private let isUnifiedInputAvailable: () -> Bool
     private let isToggleEnabled: () -> Bool
+    private let isPad: Bool
     private let now: () -> Date
     private let fireDailyAndCount: (AppReturnPixel, [String: String]) -> Void
 
     init(eligibilityManager: IdleReturnEligibilityManaging,
          isUnifiedInputAvailable: @escaping () -> Bool = { UnifiedToggleInputFeature().isAvailable },
          isToggleEnabled: @escaping () -> Bool,
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          now: @escaping () -> Date = Date.init,
          fireDailyAndCount: @escaping (AppReturnPixel, [String: String]) -> Void = { event, params in
              PixelKit.fire(event, frequency: .dailyAndCount, withAdditionalParameters: params)
@@ -58,6 +61,7 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
         self.eligibilityManager = eligibilityManager
         self.isUnifiedInputAvailable = isUnifiedInputAvailable
         self.isToggleEnabled = isToggleEnabled
+        self.isPad = isPad
         self.now = now
         self.fireDailyAndCount = fireDailyAndCount
     }
@@ -80,8 +84,14 @@ final class DefaultAppReturnInstrumentation: AppReturnInstrumentation {
             "feature_eligible": String(eligibilityManager.isFeatureAvailable()),
             "unified_input_available": String(isUnifiedInputAvailable()),
             "toggle_enabled": String(isToggleEnabled()),
+            "address_bar_toggle_available": String(isAddressBarToggleAvailable),
             "launch_source": Self.launchSource(for: launchAction)
         ])
+    }
+
+    /// Unified Input on iPhone and the address bar on iPad both offer the toggle when the setting is on.
+    private var isAddressBarToggleAvailable: Bool {
+        (isUnifiedInputAvailable() || isPad) && isToggleEnabled()
     }
 
     static func timeAwayBucket(for timeAway: TimeInterval?) -> String {

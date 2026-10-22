@@ -266,6 +266,140 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         XCTAssertEqual(spy.readCount, 1)
     }
 
+    private func longText(_ count: Int = 4_000) -> String { String(repeating: "a", count: count) }
+
+    func testInsertedTextAtTheThresholdBecomesPastedTextAndBelowStaysInline() {
+        let delegate = MockPasteDelegate()
+        delegate.support = .init(isEnabled: true, acceptsImages: false, fileTypes: [], acceptsPastedText: true)
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.attachInsertedTextIfLong(longText(3_999)))
+        XCTAssertTrue(handler.attachInsertedTextIfLong(longText(4_000)))
+        XCTAssertEqual(delegate.pastedTexts, [longText(4_000)])
+    }
+
+    func testBlankInsertedTextStaysInline() {
+        let delegate = MockPasteDelegate()
+        delegate.support = .init(isEnabled: true, acceptsImages: false, fileTypes: [], acceptsPastedText: true)
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.attachInsertedTextIfLong(String(repeating: " ", count: 5_000)))
+        XCTAssertTrue(delegate.pastedTexts.isEmpty)
+    }
+
+    func testLongInsertedTextStaysInlineWhenPasteIsDisabled() {
+        let delegate = MockPasteDelegate()
+        delegate.support = .init(isEnabled: false, acceptsImages: true, fileTypes: [.pdf], acceptsPastedText: true)
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.attachInsertedTextIfLong(longText()))
+        XCTAssertTrue(delegate.pastedTexts.isEmpty)
+    }
+
+    func testLongInsertedTextStaysInlineWhenPastedTextIsNotAccepted() {
+        let delegate = MockPasteDelegate()
+        delegate.support = .init(isEnabled: true, acceptsImages: true, fileTypes: [.pdf], acceptsPastedText: false)
+        let handler = makeHandler(delegate)
+
+        XCTAssertFalse(handler.attachInsertedTextIfLong(longText()))
+        XCTAssertTrue(delegate.pastedTexts.isEmpty)
+    }
+
+    func testTextEntryRefusesTheInsertionTheHandlerTakes() throws {
+        let handler = MockAttachmentPasteHandler()
+        handler.takesInsertedText = true
+        let sut = SwitchBarTextEntryView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.attachmentPasteHandler = handler
+        let textView = try XCTUnwrap(firstDescendant(of: SwitchBarTextView.self, in: sut))
+
+        XCTAssertFalse(sut.textView(textView, shouldChangeTextIn: NSRange(location: 0, length: 0), replacementText: longText()))
+        XCTAssertEqual(handler.offeredTexts, [longText()])
+    }
+
+    func testTextEntryInsertsTextTheHandlerDeclines() throws {
+        let handler = MockAttachmentPasteHandler()
+        let sut = SwitchBarTextEntryView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.attachmentPasteHandler = handler
+        let textView = try XCTUnwrap(firstDescendant(of: SwitchBarTextView.self, in: sut))
+
+        XCTAssertTrue(sut.textView(textView, shouldChangeTextIn: NSRange(location: 0, length: 0), replacementText: "hello"))
+        XCTAssertEqual(handler.offeredTexts, ["hello"])
+    }
+
+    func testTextEntryRemovesTheSelectionALongPasteReplacesAndRestoresTheCaret() throws {
+        let handler = MockAttachmentPasteHandler()
+        handler.takesInsertedText = true
+        let inputHandler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: inputHandler)
+        sut.attachmentPasteHandler = handler
+        sut.setQueryText("keep this, drop that")
+        let textView = try XCTUnwrap(firstDescendant(of: SwitchBarTextView.self, in: sut))
+        let selection = NSRange(location: 10, length: 10)
+
+        XCTAssertFalse(sut.textView(textView, shouldChangeTextIn: selection, replacementText: longText()))
+
+        XCTAssertEqual(textView.text, "keep this,")
+        XCTAssertEqual(inputHandler.currentText, "keep this,", "The text model follows the removal")
+    }
+
+    func testRemovingTheReplacedSelectionPutsTheCaretBackOnTheScheduledTurn() {
+        let textView = SwitchBarTextView()
+        textView.text = "keep this, drop that"
+        var scheduled: [() -> Void] = []
+
+        PastedTextInsertion.removeReplacedSelection(in: textView, range: NSRange(location: 10, length: 10), schedule: { scheduled.append($0) })
+        textView.selectedRange = NSRange(location: 3, length: 0)
+        XCTAssertEqual(scheduled.count, 1)
+        scheduled.forEach { $0() }
+
+        XCTAssertEqual(textView.text, "keep this,")
+        XCTAssertEqual(textView.selectedRange, NSRange(location: 10, length: 0))
+    }
+
+    func testPasteAndGoThatConvertsSubmitsAnAttachmentOnlyPromptWithItsOwnTrigger() throws {
+        let handler = MockAttachmentPasteHandler()
+        handler.takesInsertedText = true
+        let inputHandler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: inputHandler)
+        sut.attachmentPasteHandler = handler
+        sut.setQueryText("typed draft")
+        let textView = try XCTUnwrap(firstDescendant(of: SwitchBarTextView.self, in: sut))
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        pasteboard.string = longText()
+        textView.pasteboard = { pasteboard }
+        var submissions: [(text: String, trigger: TextSubmissionTrigger)] = []
+        let cancellable = inputHandler.textSubmissionPublisher.sink { submissions.append((text: $0.text, trigger: $0.trigger)) }
+        defer { cancellable.cancel() }
+
+        sut.pasteURLAndGo()
+
+        XCTAssertEqual(handler.offeredTexts, [longText()])
+        XCTAssertEqual(inputHandler.currentText, "", "Paste & Go replaces the draft")
+        XCTAssertEqual(submissions.map(\.text), [""])
+        XCTAssertEqual(submissions.map(\.trigger), [.pasteAndGo])
+    }
+
+    func testPasteAndGoThatDoesNotConvertSubmitsTheTextAsToday() throws {
+        let handler = MockAttachmentPasteHandler()
+        let inputHandler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
+        let sut = SwitchBarTextEntryView(handler: inputHandler)
+        sut.attachmentPasteHandler = handler
+        let textView = try XCTUnwrap(firstDescendant(of: SwitchBarTextView.self, in: sut))
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        pasteboard.string = "duckduckgo.com"
+        textView.pasteboard = { pasteboard }
+        var submissions: [(text: String, trigger: TextSubmissionTrigger)] = []
+        let cancellable = inputHandler.textSubmissionPublisher.sink { submissions.append((text: $0.text, trigger: $0.trigger)) }
+        defer { cancellable.cancel() }
+
+        sut.pasteURLAndGo()
+
+        XCTAssertEqual(submissions.map(\.text), ["duckduckgo.com"])
+        XCTAssertEqual(submissions.map(\.trigger), [.pasteAndGo])
+    }
+
     // MARK: - Text control paste override
 
     func testTextViewAdvertisesPasteWhenHandlerAccepts() {
@@ -282,10 +416,14 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         handler.canPasteResult = true
         let textView = SwitchBarTextView()
         textView.attachmentPasteHandler = handler
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        textView.pasteboard = { pasteboard }
 
         textView.paste(nil)
 
         XCTAssertEqual(handler.pasteCallCount, 1)
+        XCTAssertTrue(handler.pasteboards.allSatisfy { $0 === pasteboard })
     }
 
     func testTextViewDefersToDefaultWhenHandlerDeclines() {
@@ -293,10 +431,18 @@ final class UnifiedToggleInputPasteHandlerTests: XCTestCase {
         handler.canPasteResult = false
         let textView = SwitchBarTextView()
         textView.attachmentPasteHandler = handler
+        let pasteboard = UIPasteboard.withUniqueName()
+        defer { UIPasteboard.remove(withName: pasteboard.name) }
+        textView.pasteboard = { pasteboard }
 
         textView.paste(nil)
 
         XCTAssertEqual(handler.pasteCallCount, 0)
+    }
+
+    private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {
+        if let match = view as? T { return match }
+        return view.subviews.lazy.compactMap { self.firstDescendant(of: type, in: $0) }.first
     }
 
     // MARK: - Helpers
@@ -386,15 +532,34 @@ private final class MockPasteDelegate: UnifiedToggleInputPasteDelegate {
     func presentPasteError(_ message: String) {
         presentedErrors.append(message)
     }
+
+    private(set) var pastedTexts: [String] = []
+
+    func addPastedText(_ text: String) {
+        pastedTexts.append(text)
+    }
 }
 
 @MainActor
 private final class MockAttachmentPasteHandler: AttachmentPasteHandling {
     var canPasteResult = false
+    var takesInsertedText = false
     private(set) var pasteCallCount = 0
+    private(set) var pasteboards: [UIPasteboard] = []
+    private(set) var offeredTexts: [String] = []
 
-    func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool { canPasteResult }
-    func pasteAttachments(from pasteboard: UIPasteboard) { pasteCallCount += 1 }
+    func canPasteAttachments(from pasteboard: UIPasteboard) -> Bool {
+        pasteboards.append(pasteboard)
+        return canPasteResult
+    }
+    func pasteAttachments(from pasteboard: UIPasteboard) {
+        pasteboards.append(pasteboard)
+        pasteCallCount += 1
+    }
+    func attachInsertedTextIfLong(_ text: String) -> Bool {
+        offeredTexts.append(text)
+        return takesInsertedText
+    }
 }
 
 @MainActor

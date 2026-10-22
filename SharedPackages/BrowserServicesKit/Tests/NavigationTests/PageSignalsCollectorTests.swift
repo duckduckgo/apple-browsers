@@ -26,7 +26,7 @@ import Testing
 struct PageSignalsCollectorTests {
 
     private let collector = PageSignalsCollector(tld: TLD())
-    private let dnsError = PageResourceLoadError.error(URLError(.cannotFindHost) as NSError)
+    private let dnsError = PageResourceLoadError.error(domain: NSURLErrorDomain, code: URLError.cannotFindHost.rawValue)
     private let serverError = PageResourceLoadError.statusCode(503)
 
     @available(iOS 16, macOS 13, *)
@@ -47,6 +47,24 @@ struct PageSignalsCollectorTests {
         collector.recordResourceFailure(dnsError, for: URL(string: "https://example.com/3.js")!)
 
         #expect(collector.signals.resourceFailures == ["example.com": [dnsError, serverError]])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Repeated resource errors with different metadata are deduplicated", .timeLimit(.minutes(1)))
+    func repeatedResourceErrorsWithDifferentMetadataAreDeduplicated() throws {
+        let url = URL(string: "https://cdn.example.com/config.json")!
+
+        for requestID in 0..<1_000 {
+            let error = NSError(domain: NSURLErrorDomain, code: URLError.badURL.rawValue, userInfo: [
+                NSURLErrorFailingURLErrorKey: url,
+                NSUnderlyingErrorKey: NSError(domain: NSURLErrorDomain, code: requestID)
+            ])
+            let resourceLoadError = try #require(PageResourceLoadError.resourceLoadError(from: error, response: nil))
+            collector.recordResourceFailure(resourceLoadError, for: url)
+        }
+
+        #expect(collector.signals.resourceFailures["example.com"]?.count == 1)
+        #expect(collector.signals.formattedResourceLoadErrors(maxEntries: 10) == "example.com:(NSURLErrorDomain,-1000)")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -75,7 +93,7 @@ struct PageSignalsCollectorTests {
 }
 
 /// Mimics `_WKContentRuleListAction`'s `blockedLoad` property.
-private final class ContentRuleListActionStub: NSObject {
+final class ContentRuleListActionStub: NSObject {
     @objc let blockedLoad: Bool
 
     init(blockedLoad: Bool) {

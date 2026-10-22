@@ -66,6 +66,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
     let promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting?
+    let daxGreetingDebugging: DaxGreetingDebugging
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -88,6 +89,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          syncAutoRestoreHandler: SyncAutoRestoreHandling,
          freemiumPIRDebugSettings: FreemiumPIRDebugSettings,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
+         daxGreetingDebugging: DaxGreetingDebugging,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
          promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
@@ -115,6 +117,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
         self.promoCoordinationCooldownResetter = promoCoordinationCooldownResetter
+        self.daxGreetingDebugging = daxGreetingDebugging
     }
     
     enum LegacyView {
@@ -172,7 +175,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
-            promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter))
+            promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
+            daxGreetingDebugging: self.daxGreetingDebugging))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
@@ -180,7 +184,14 @@ class SettingsLegacyViewProvider: ObservableObject {
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { UnprotectedSitesViewController() }
     var fireproofSites: UIViewController { instantiateFireproofingController() }
-    var keyboard: UIViewController { instantiate("Keyboard", fromStoryboard: StoryboardName.settings) }
+    var keyboard: UIViewController {
+        guard AppDependencyProvider.shared.featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
+            return instantiate("Keyboard", fromStoryboard: StoryboardName.settings)
+        }
+        let controller = UIHostingController(rootView: KeyboardSettingsView())
+        controller.title = UserText.settingsKeyboard
+        return controller
+    }
     var feedback: UIViewController { instantiate("Feedback", fromStoryboard: StoryboardName.feedback) }
     var debug: UIViewController { instantiateDebugController() }
 

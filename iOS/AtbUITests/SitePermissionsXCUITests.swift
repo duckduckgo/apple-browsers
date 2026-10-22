@@ -94,6 +94,26 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
+    func testWhenSavedCameraAllowHasUndecidedSystemAccessThenSiteDialogPrecedesSystemPromptAndAllowPersists() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; }; }")
+        openPermissionPage()
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=0")
+        openPermissionsSheet()
+        assertSheetDecision("Camera", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+
+        reloadPermissionPage()
+        request("camera")
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=0")
+        assertNoPermissionPrompt()
+    }
+
     func testWhenNeverAllowIsSavedThenRequestsAreDeniedUntilResetInSheet() {
         assertReloadCaptionAfterResettingPermission("camera", row: "Camera")
     }
@@ -231,6 +251,52 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
+    func testWhenSavedCombinedAllowHasUndecidedMicrophoneThenSiteDialogPrecedesOnlyMicrophoneSystemPrompt() {
+        launchApp()
+        openPermissionPage()
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("success 1")
+
+        app.terminate()
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = allow; }; }")
+        openPermissionPage()
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "microphone", allow: true)
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=1")
+        assertNoSystemAlert()
+    }
+
+    func testWhenSavedCombinedAllowHasSystemCameraDenialThenReminderAppearsWithoutSiteOrSystemPrompt() {
+        launchApp()
+        openPermissionPage()
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: false)
+        assertResult("NotAllowedError 1")
+
+        reloadPermissionPage()
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        dismissReminder(for: "camera")
+        assertResult("NotAllowedError 1")
+
+        reloadPermissionPage()
+        request("camera and microphone")
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForExistence(timeout: timeout))
+        XCTAssertFalse(element("SitePermissions.Dialog").exists)
+        assertNoSystemAlert()
+        dismissReminder(for: "camera")
+        assertResult("NotAllowedError 1")
+    }
+
     func testWhenCombinedMediaHasSystemCameraDenialThenNeitherTrackIsGrantedAndMicrophoneWorksIndependently() {
         assertCombinedMediaFailsAfterSystemDenial(of: "camera")
     }
@@ -283,6 +349,46 @@ final class SitePermissionsXCUITests: XCTestCase {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         assertResult("location success 1 37.3317,-122.0301")
         assertNoPermissionPrompt()
+    }
+
+    func testWhenSavedLocationAllowHasUndecidedSystemAccessThenSiteDialogPrecedesSystemPromptAndAllowPersists() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        openPermissionsSheet()
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+
+        reloadPermissionPage()
+        request("location")
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+    }
+
+    func testWhenSavedLocationAllowSiteDialogIsDismissedThenRequestsAreDeniedUntilReload() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        request("location")
+        assertSiteDialog(permission: "location")
+        dismissSiteDialog()
+        assertResult("location error 1 1")
+        assertNoSystemAlert()
+
+        request("location")
+        assertResult("location error 2 1")
+        assertNoPermissionPrompt()
+
+        reloadPermissionPage()
+        request("location")
+        assertSiteDialog(permission: "location")
     }
 
     func testWhenSystemLocationIsDeniedThenReminderKeepsSavedSiteAllow() {
@@ -759,7 +865,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     }
 
     private func prepareVoiceSearchWithDeniedMicrophone() {
-        launchApp(additionalArguments: ["-ff.utiDuckAIWarnings", "false"])
+        launchApp(additionalArguments: ["-ff.utiDuckAIWarnings", "false", "-ff.duckAINativeTermsOfService", "false"])
         enableDuckAIInput()
         openVoiceSearchSettings()
         XCTAssertEqual(voiceSearchSwitch.value as? String, "0")
@@ -1085,6 +1191,13 @@ final class SitePermissionsXCUITests: XCTestCase {
             XCTAssertEqual(button.label, label, file: file, line: line)
         }
         assertNoSystemAlert(file: file, line: line)
+    }
+
+    private func dismissSiteDialog() {
+        // The side scrim avoids the floating browser controls above the tab.
+        let backdrop = element("SitePermissions.Dialog").coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+        backdrop.tap()
+        XCTAssertTrue(element("SitePermissions.Dialog").waitForNonExistence(timeout: timeout))
     }
 
     private func answerSystemAlert(for permission: String, allow: Bool, waitForDismissal: Bool = true) {

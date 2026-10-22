@@ -894,7 +894,7 @@ final class AutofillLoginListViewController: UIViewController {
         let cell = tableView.dequeueCell(ofType: AutofillListItemTableViewCell.self, for: indexPath)
         cell.item = item
         cell.accessoryType = .disclosureIndicator
-        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         return cell
     }
 
@@ -911,7 +911,7 @@ final class AutofillLoginListViewController: UIViewController {
             PixelKit.fire(Pixel.Event.autofillLoginsReportConfirmationPromptDisplayed)
         })
         cell.embed(in: self, withView: contentView)
-        cell.backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        cell.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         cell.selectionStyle = .none
         return cell
     }

@@ -117,6 +117,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
+    /// Cancels WebKit's pending passkey request before WebKit starts the next one
+    case passkeyRequestCancellation
+
     /// App rebranding feature flag
     case appRebranding
 
@@ -155,6 +158,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Skip the automatic update check triggered when the release notes page loads
     case skipReleaseNotesUpdateCheck
+
+    /// Makes updates more prominent, such as in the address bar and browser menu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219579052808597?focus=true
+    case moreProminentUpdates
 
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
@@ -407,6 +414,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Kill switch for the native input attachment privacy disclosure.
     case unifiedToggleInputAttachmentPrivacy
 
+    /// Turns long pastes in the native Duck.ai inputs into pasted-text attachments.
+    /// https://app.asana.com/0/0/1219207880593588/f
+    case unifiedToggleInputPastedText
+
     /// Controls the attachment privacy disclosure in Duck.ai on iPad.
     case iPadAttachmentPrivacy
 
@@ -455,6 +466,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
     case pdfPageContext
+
+    /// Attaches page context to the sidebar by default; a manual remove lasts across navigation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
+    case pageContextAutoAttach
 
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
     case sidebarAttachMoreTabs
@@ -560,6 +575,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
     case nativeTermsOfService
+
+    case dragPromptBar
+
+    /// Enables the Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
+    case chatLimitExtensionPromo
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -673,7 +694,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
@@ -682,7 +702,6 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
-    case simplifiedSyncSetupV2
 
     /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
     case improvedPairingFlow
@@ -843,6 +862,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
+    case historyImport
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -868,14 +888,28 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case protectedDataLoadGate
     /// Failsafe for waiting on embedded background content before restoring web pages.
     case stateRestorationGate
-    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health, and for the
+    /// background-load readiness observation, which asks the context to join the load already in progress to learn how it ended.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
+    /// Controls reloading an unchanged GET document after a late background startup loses its first response.
+    case cpmLateBackgroundDocumentRecovery
+    /// Controls retrying failed embedded background content without replacing its context (P2).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
+    /// Preserve surviving shared pinned tabs when WebKit processes a macOS window close.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
+    case sharedPinnedTabWindowClose
+    /// Restarts the embedded background after a confirmed Network process replacement.
+    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
+    case cpmNetworkProcessRecovery
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
+    /// Controls native messaging between web extensions and host apps on macOS.
+    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -945,6 +979,15 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
     case bookmarksBarSyncPromo
+
+    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
+    case bookmarkAddedSyncPromo
+
+    /// Kill switch for the import/sync promo on the Bookmarks "No bookmarks yet" empty state.
+    case bookmarksEmptyStatePromo
+
+    /// Kill switch for the import/sync promo on the Passwords panel empty states.
+    case autofillEmptyStatePromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
@@ -1007,4 +1050,6 @@ public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature
     case bitwarden
     case onePassword
     case lastPass
+    case iCloudPasswords
+    case darkReader
 }

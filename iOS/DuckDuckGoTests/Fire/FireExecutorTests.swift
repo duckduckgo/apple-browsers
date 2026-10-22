@@ -781,6 +781,19 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
     }
 
+    func testBurnTabClearsDataForParentAndLinkPreviewDomains() async {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://parent.example")!]
+        tabViewModel.tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example"))
+        tabViewModel.tab.recordLinkPreviewDomain(for: URL(string: "https://redirect.example"))
+
+        await executor.burn(request: makeFireRequest(options: [.tabs, .data], scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
+        XCTAssertEqual(Set(mockWebsiteDataManager.clearCalledWithDomains ?? []), ["parent.example", "preview.example", "redirect.example"])
+    }
+
     // MARK: - Site Permissions Fire Worker Tests
 
     func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
@@ -981,6 +994,24 @@ final class FireExecutorTests: XCTestCase {
 
         let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
         XCTAssertNotNil(eventData.clearAIChatHistoryWarmupWaitMilliseconds)
+    }
+
+    func testWhenDataIsBurnedThenWideEventRecordsTheWebsiteDataWarmupAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.warmUpWebsiteDataStoreDuration?.end)
+    }
+
+    func testWhenBurnFinishesThenWideEventRecordsTheAppSwitcherSnapshotClearingAsAStep() async throws {
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .tabs), applicationState: .unknown)
+
+        let eventData = try XCTUnwrap(wideEventMock.completions.last?.0 as? DataClearingWideEventData)
+        XCTAssertNotNil(eventData.clearAppSwitcherSnapshotsDuration?.end)
     }
 
     func testWhenAIChatClearSucceededFirstTimeThenWideEventRecordsNoRetry() async throws {

@@ -175,6 +175,26 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         XCTAssertFalse(submitButton?.isEnabled ?? true)
     }
 
+    func testPreparingInitialPromptShowsSpinnerAndDisablesSubmitUntilCompletion() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.isSubmitEnabled = true
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: "AIChat.Toolbar.Button.Submit", in: sut))
+
+        sut.isPreparingInitialPrompt = true
+
+        XCTAssertFalse(submitButton.isEnabled)
+        XCTAssertNil(submitButton.image(for: .normal))
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
+        XCTAssertTrue(submitButton.subviews.compactMap { $0 as? UIActivityIndicatorView }.first?.isAnimating == true)
+
+        sut.isPreparingInitialPrompt = false
+
+        XCTAssertTrue(submitButton.isEnabled)
+        XCTAssertNotNil(submitButton.image(for: .normal))
+        XCTAssertEqual(submitButton.accessibilityLabel, UserText.aiChatToolbarSubmitButtonAccessibilityLabel)
+        XCTAssertFalse(submitButton.subviews.compactMap { $0 as? UIActivityIndicatorView }.first?.isAnimating == true)
+    }
+
     /// Voice is a way into a chat the allowance can't pay for either, so it greys out with submit.
     func test_isInputBlockedByUsageLimit_disablesTheVoiceButton() {
         let sut = UnifiedToggleInputToolbarView()
@@ -327,6 +347,17 @@ final class UnifiedToggleInputToolbarViewTests: XCTestCase {
         sut.isSubmitEnabled = false
 
         sut.termsOfServiceSendButton = .ask
+
+        let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
+        XCTAssertFalse(submitButton.isEnabled)
+        assertColor(submitButton.backgroundColor, matches: .controlsFillPrimary)
+    }
+
+    func testWhenSubmitIsBlockedByPromptLengthThenTheReturnKeyStyleShowsTheInactiveFill() throws {
+        let sut = UnifiedToggleInputToolbarView()
+        sut.usesNewPromptSubmitStyle = true
+        sut.isSubmitEnabled = true
+        sut.isSubmitBlockedByPromptLength = true
 
         let submitButton = try XCTUnwrap(findButton(accessibilityIdentifier: Self.submitButtonIdentifier, in: sut))
         XCTAssertFalse(submitButton.isEnabled)

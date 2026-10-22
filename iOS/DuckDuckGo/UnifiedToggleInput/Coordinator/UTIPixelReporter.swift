@@ -174,27 +174,39 @@ final class UTIPixelReporter {
     }
 
     func reportTabAttachment(_ action: MultiTabAttachmentPixel.Action, source: TabAttachmentOrigin,
-                             surface: UnifiedToggleInputPixelSurface? = nil) {
-        guard let surface = surface ?? context()?.surface else { return }
-        firing.fire(MultiTabAttachmentPixel(action: action, source: source, surface: surface), frequency: .dailyAndCount)
+                             attribution: MultiTabPixelAttribution? = nil) {
+        guard let attribution = attribution ?? currentTabPixelAttribution() else { return }
+        firing.fire(MultiTabAttachmentPixel(action: action, source: source, attribution: attribution), frequency: .dailyAndCount)
+    }
+
+    func currentTabPixelAttribution() -> MultiTabPixelAttribution? {
+        guard let context = context() else { return nil }
+        return MultiTabPixelAttribution(surface: context.surface, pageType: context.pageType)
     }
 
     /// Snapshot attribution before asynchronous collection; delivery must outlive the input coordinator.
     func makeTabSubmissionReporter(requestedTabCount: Int) -> (MultiTabAttachmentRequest.SubmissionResult) -> Void {
-        guard requestedTabCount > 0, let surface = context()?.surface else { return { _ in } }
+        guard requestedTabCount > 0, let attribution = currentTabPixelAttribution() else { return { _ in } }
         return { [firing] result in
-            if result.additionalTabCount > 0 {
-                firing.fire(MultiTabSentPixel(count: result.totalTabCount, surface: surface), frequency: .dailyAndCount)
+            if result.deliveredAttachmentCount > 0 {
+                firing.fire(MultiTabSentPixel(count: result.totalTabCount, attribution: attribution), frequency: .dailyAndCount)
             }
-            if result.additionalTabCount < requestedTabCount {
-                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.additionalTabCount == 0 ? .all : .partial
-                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, surface: surface), frequency: .dailyAndCount)
+            if result.deliveredAttachmentCount < requestedTabCount {
+                let outcome: MultiTabSubmissionIncompletePixel.Outcome = result.deliveredAttachmentCount == 0 ? .all : .partial
+                firing.fire(MultiTabSubmissionIncompletePixel(outcome: outcome, attribution: attribution), frequency: .dailyAndCount)
             }
         }
     }
 
     func reportAttachmentRemoved(_ attachment: UnifiedToggleInputAttachment) {
-        withContext { UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(for: attachment, surface: $0.surface, firing: firing) }
+        withContext {
+            UnifiedToggleInputCoordinatorPixelHelper.fireAttachmentRemovedPixel(
+                for: attachment, surface: $0.surface, pageType: $0.pageType, firing: firing)
+        }
+    }
+
+    func reportPastedText(_ action: UnifiedToggleInputPastedTextPixel.Action) {
+        withContext { firing.fire(UnifiedToggleInputPastedTextPixel(action: action, surface: $0.surface), frequency: .dailyAndCount) }
     }
 
     // MARK: - Model / reasoning / tools
@@ -270,13 +282,14 @@ final class UTIPixelReporter {
         }
     }
 
-    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode) {
+    func reportQuerySubmitted(defaultOmnibarMode: DefaultOmnibarMode, queryType: UnifiedToggleInputQueryType) {
         withContext {
             UnifiedToggleInputCoordinatorPixelHelper.fireUnifiedQuerySubmittedPixel(
                 surface: $0.surface,
                 pageType: $0.pageType,
                 isToggleVisible: $0.isToggleVisible,
                 defaultMode: defaultOmnibarMode,
+                queryType: queryType,
                 firing: firing
             )
         }

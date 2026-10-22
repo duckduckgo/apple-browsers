@@ -20,7 +20,7 @@ import Foundation
 import FoundationExtensions
 
 public enum PageResourceLoadError: Error, Hashable {
-    case error(NSError)
+    case error(domain: String, code: Int)
     case statusCode(Int)
 }
 
@@ -30,7 +30,7 @@ extension PageResourceLoadError {
     ///
     static func resourceLoadError(from error: NSError?, response: URLResponse?) -> PageResourceLoadError? {
         if let error {
-            return .error(error)
+            return .error(domain: error.domain, code: error.code)
         }
 
         if let response = response as? HTTPURLResponse {
@@ -46,8 +46,8 @@ public extension PageResourceLoadError {
     /// Encodes as `(errorDomain,code)` or `(statusCode,code)`.
     var stringValue: String {
         switch self {
-        case .error(let error):
-            return "(\(error.domain),\(error.code))"
+        case .error(let domain, let code):
+            return "(\(domain),\(code))"
         case .statusCode(let statusCode):
             return "(statusCode,\(statusCode))"
         }

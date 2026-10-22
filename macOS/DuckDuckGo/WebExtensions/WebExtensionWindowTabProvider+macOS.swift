@@ -106,8 +106,7 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
         }
 
-        // swiftlint:disable:next force_cast
-        return mainWindow?.windowController as! MainWindowController
+        return mainWindow?.windowController as? MainWindowController
     }
 
     func openNewTab(
@@ -123,8 +122,20 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return tab
         }
 
-        assertionFailure("Failed to create tab based on configuration")
-        return Tab(content: .newtab)
+        return nil
+    }
+
+    func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool {
+        switch url.host {
+        case "password-manager":
+            windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
+            return true
+        case "extensions" where Application.appDelegate.internalUserDecider.isInternalUser:
+            windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
+            return true
+        default:
+            return false
+        }
     }
 
     func presentPopup(
@@ -192,7 +203,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                     .mainViewController.tabCollectionViewModel,
                 let currentIndex = sourceViewModel.tabCollection.firstIndex(of: tab)
             else {
-                assertionFailure("Failed to find tab collection view model for \(existingTab)")
                 continue
             }
 
@@ -202,7 +212,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
 
     private func buttonForContext(_ context: WKWebExtensionContext) -> NSButton? {
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
-            assertionFailure("No main window controller")
             return nil
         }
 

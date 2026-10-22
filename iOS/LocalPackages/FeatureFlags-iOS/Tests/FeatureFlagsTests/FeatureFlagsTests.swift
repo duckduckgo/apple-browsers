@@ -25,6 +25,90 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testTabSwitcherSwipeUpGestureIsDefaultEnabledRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.tabSwitcherSwipeUpGesture
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .tabSwitcherSwipeUpGesture)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "tabSwitcherSwipeUpGesture")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testTabSwitcherSwipeUpGestureDefaultsOnAndFollowsRemoteChanges() {
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
+        defer { unsetenv("TESTS_FEATUREFLAGGER_MODE") }
+
+        let manager = makeSwipeUpConfigurationManager()
+        let flagger = DefaultFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: false),
+                                           privacyConfigManager: manager,
+                                           experimentManager: nil)
+
+        XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
+        manager.reload(etag: "disabled", data: swipeUpConfigurationData(state: "disabled"))
+        XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
+        manager.reload(etag: "enabled", data: swipeUpConfigurationData(state: "enabled"))
+        XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
+        manager.reload(etag: "removed", data: swipeUpConfigurationData())
+        XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
+    }
+
+    func testTabSwitcherSwipeUpGestureSupportsChangingAndClearingLocalOverrides() throws {
+        setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
+        defer { unsetenv("TESTS_FEATUREFLAGGER_MODE") }
+
+        let suiteName = "FeatureFlagsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let overrides = FeatureFlagLocalOverrides(keyValueStore: defaults,
+                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>())
+        let manager = makeSwipeUpConfigurationManager()
+        let flagger = DefaultFeatureFlagger(internalUserDecider: MockInternalUserDecider(isInternalUser: true),
+                                           privacyConfigManager: manager,
+                                           localOverrides: overrides,
+                                           experimentManager: nil,
+                                           for: FeatureFlag.self)
+        let flag = FeatureFlag.tabSwitcherSwipeUpGesture
+
+        overrides.toggleOverride(for: flag)
+        XCTAssertFalse(flagger.isFeatureOn(for: flag))
+        overrides.clearOverride(for: flag)
+        XCTAssertTrue(flagger.isFeatureOn(for: flag))
+
+        manager.reload(etag: "disabled", data: swipeUpConfigurationData(state: "disabled"))
+        XCTAssertFalse(flagger.isFeatureOn(for: flag))
+        overrides.toggleOverride(for: flag)
+        XCTAssertTrue(flagger.isFeatureOn(for: flag))
+        overrides.clearOverride(for: flag)
+        XCTAssertFalse(flagger.isFeatureOn(for: flag))
+    }
+
+    private func makeSwipeUpConfigurationManager() -> PrivacyConfigurationManager {
+        PrivacyConfigurationManager(fetchedETag: nil,
+                                    fetchedData: nil,
+                                    embeddedDataProvider: MockEmbeddedDataProvider(data: swipeUpConfigurationData(), etag: "test"),
+                                    localProtection: MockDomainsProtectionStore(),
+                                    internalUserDecider: MockInternalUserDecider())
+    }
+
+    private func swipeUpConfigurationData(state: String? = nil) -> Data {
+        let subfeature = state.map { "\"tabSwitcherSwipeUpGesture\": {\"state\": \"\($0)\"}" } ?? ""
+        return """
+        {
+            "features": {
+                "\(PrivacyFeature.iOSBrowserConfig.rawValue)": {"state": "enabled", "features": {\(subfeature)}}
+            },
+            "unprotectedTemporary": []
+        }
+        """.data(using: .utf8)!
+    }
+
     func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
         let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
         guard case let .remoteReleasable(subfeature) = flag.source else {

@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import FeatureFlags_iOS
 
 extension MainViewController {
 
@@ -42,7 +43,8 @@ extension MainViewController {
     }
 
     func shouldBeginTabSwitcherSwipeUp(_ pan: UIPanGestureRecognizer) -> Bool {
-        guard appSettings.currentAddressBarPosition.isBottom,
+        guard featureFlagger.isFeatureOn(.tabSwitcherSwipeUpGesture),
+              appSettings.currentAddressBarPosition.isBottom,
               tabSwitcherSwipeUpTransition.canBegin,
               !viewCoordinator.omniBar.isTextFieldEditing else { return false }
 

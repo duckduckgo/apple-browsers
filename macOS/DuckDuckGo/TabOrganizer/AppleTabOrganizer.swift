@@ -49,7 +49,8 @@ final class AppleTabOrganizer: TabOrganizing {
         let tabList = Self.tabList(for: tabs)
         switch request {
         case .groupByTopic:
-            return TabOrganizerProposalBuilder.proposal(from: try await topicLabels(for: tabs), tabs: tabs)
+            let proposal = TabOrganizerProposalBuilder.proposal(from: try await topicLabels(for: tabs), tabs: tabs)
+            return Self.reusingTabGroupNames(proposal, tabs: tabs)
         case .instruction(let text):
             let session = LanguageModelSession(instructions: Self.instructionInstructions)
             let prompt = "Tabs:\n\(tabList)\n\nRequest: \(text)"
@@ -146,17 +147,14 @@ final class AppleTabOrganizer: TabOrganizing {
     /// for the whole window, then it assigns tabs to exactly those topics in batches of 10.
     /// Tabs that are already in a tab group keep it; only the other tabs are sorted, into those groups or new topics.
     /// To regroup everything, callers pass snapshots without group names.
+    /// The model never sees tab groups: every tab is sorted on its own title and site.
     private func topicLabels(for tabs: [TabSnapshot], criterion: String? = nil) async throws -> TopicResponse {
-        var labels = tabs.enumerated().compactMap { index, tab in
-            tab.groupName.map { TopicResponse.Label(tabNumber: index + 1, topic: $0) }
-        }
-        let existingGroups = Self.unique(labels.map(\.topic))
-        let numbers = tabs.indices.filter { tabs[$0].groupName == nil }.map { $0 + 1 }
-        guard !numbers.isEmpty else { return TopicResponse(labels: labels) }
+        guard !tabs.isEmpty else { return TopicResponse(labels: []) }
+        var labels: [TopicResponse.Label] = []
+        let numbers = Array(1...tabs.count)
 
-        let newTopics = try await broadTopics(for: numbers.map { tabs[$0 - 1] }, criterion: criterion, existingGroups: existingGroups)
-        let topics = Self.unique(existingGroups + newTopics)
-        guard !topics.isEmpty else { return TopicResponse(labels: labels) }
+        let topics = try await broadTopics(for: tabs, criterion: criterion)
+        guard !topics.isEmpty else { return TopicResponse(labels: []) }
 
         for start in stride(from: 0, to: numbers.count, by: Self.topicBatchSize) {
             let batch = Array(numbers[start..<min(start + Self.topicBatchSize, numbers.count)])
@@ -171,20 +169,29 @@ final class AppleTabOrganizer: TabOrganizing {
         return TopicResponse(labels: labels.filter { $0.topic != Self.otherTopic })
     }
 
-    /// Case-insensitively unique, in order of first use.
-    private static func unique(_ names: [String]) -> [String] {
-        var seen = Set<String>()
-        return names.filter { seen.insert($0.lowercased()).inserted }
+    /// A proposed group whose tabs are mostly in one existing tab group takes that group's name, so applying it
+    /// keeps the group, its colour and position instead of creating "Retail" next to "Shopping".
+    static func reusingTabGroupNames(_ proposal: TabOrganizerProposal, tabs: [TabSnapshot]) -> TabOrganizerProposal {
+        let groupNameByTabID = Dictionary(uniqueKeysWithValues: tabs.map { ($0.id, $0.groupName) })
+        var proposal = proposal
+        var taken = Set<String>()
+        // Bigger groups pick first.
+        for index in proposal.groups.indices.sorted(by: { proposal.groups[$0].tabIDs.count > proposal.groups[$1].tabIDs.count }) {
+            let group = proposal.groups[index]
+            guard group.name != TabOrganizerProposalBuilder.otherGroupName else { continue }
+            let counts = Dictionary(grouping: group.tabIDs.compactMap { groupNameByTabID[$0] ?? nil }, by: { $0 }).mapValues(\.count)
+            guard let (name, count) = counts.max(by: { $0.value < $1.value }),
+                  count * 2 > group.tabIDs.count, !taken.contains(name) else { continue }
+            proposal.groups[index].name = name
+            taken.insert(name)
+        }
+        return proposal
     }
 
-    private func broadTopics(for tabs: [TabSnapshot], criterion: String?, existingGroups: [String]) async throws -> [String] {
+    private func broadTopics(for tabs: [TabSnapshot], criterion: String?) async throws -> [String] {
         let instructions = criterion.map { "You group a person's open browser tabs by \($0). Name each group after its \($0)." }
         let session = LanguageModelSession(instructions: instructions ?? Self.topicInstructions)
-        var prompt = "Tabs:\n\(Self.tabList(for: tabs))"
-        if !existingGroups.isEmpty {
-            prompt = "The person already has these tab groups: \(existingGroups.joined(separator: ", ")). "
-                + "Only add topics for tabs that fit none of them.\n\n" + prompt
-        }
+        let prompt = "Tabs:\n\(Self.tabList(for: tabs))"
         let response = try await session.respond(to: prompt, generating: GeneratedTopicList.self).content
         var seen = Set<String>()
         return response.topics

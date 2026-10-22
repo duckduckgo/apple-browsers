@@ -753,6 +753,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 #endif
         // Keeps every group's tabs together whichever way the groups changed.
+        tabCollectionViewModel.tabGroupManager.removeEmptyGroups(keeping: tabCollectionViewModel.tabCollection.tabs)
         tabCollectionViewModel.arrangeTabsByGroup()
         reloadDataAndSelectWithoutAnimation()
         updateTabMode()

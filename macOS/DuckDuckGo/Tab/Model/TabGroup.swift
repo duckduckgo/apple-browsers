@@ -142,6 +142,16 @@ final class TabGroupManager: ObservableObject {
         groups.append(group)
     }
 
+    /// Groups whose tabs were all closed, moved or regrouped go away.
+    func removeEmptyGroups(keeping tabs: [some TabGroupMember]) {
+        let uuids = Set(tabs.map(\.uuid))
+        tabToGroup = tabToGroup.filter { uuids.contains($0.key) }
+        let used = Set(tabToGroup.values)
+        for group in groups where !used.contains(group.id) {
+            unregisterGroup(group)
+        }
+    }
+
     func unregisterGroup(_ group: TabGroup) {
         // Remove all tab associations for this group
         tabToGroup = tabToGroup.filter { $0.value != group.id }

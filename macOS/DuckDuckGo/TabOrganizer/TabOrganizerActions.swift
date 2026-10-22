@@ -39,6 +39,7 @@ struct TabOrganizerActions {
         }
         moveToNewWindow(groups.filter { $0.action == .moveToNewWindow })
         close(groups.filter { $0.action == .close }.flatMap(\.tabIDs))
+        tabCollectionViewModel.tabGroupManager.removeEmptyGroups(keeping: tabCollectionViewModel.tabCollection.tabs)
     }
 
     private var unpinnedTabs: [AnyTab] {

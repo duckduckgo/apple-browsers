@@ -47,6 +47,10 @@ public protocol BrowserTool: AnyObject {
     /// MCP hints; omitted for untrusted page tools.
     var annotations: MCPToolAnnotations? { get }
 
+    /// For an `ask` tool whose `tabId` argument may name a tab this chat opened with `openTab`.
+    /// Duck.ai picked those pages itself, so reading them skips the prompt; a stored Never still applies.
+    var skipsPromptForDuckAIOpenedTabs: Bool { get }
+
     /// Runs the tool. Callers go through the invoker so gating runs first, but a tool still
     /// re-checks the Fire boundary so a direct call cannot bypass it.
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult
@@ -56,6 +60,7 @@ public extension BrowserTool {
     var outputSchema: JSONValue? { nil }
     var permissionReason: String { "Duck.ai wants to use a browser tool." }
     var annotations: MCPToolAnnotations? { nil }
+    var skipsPromptForDuckAIOpenedTabs: Bool { false }
 
     /// This tool's `tools/list` descriptor. DEBUG builds also advertise the permission mode and
     /// current decision; release builds keep the wire MCP-clean.

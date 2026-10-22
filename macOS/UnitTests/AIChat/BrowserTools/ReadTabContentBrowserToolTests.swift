@@ -24,14 +24,17 @@ import XCTest
 final class ReadTabContentBrowserToolTests: XCTestCase {
 
     private var reader: StubPageContentReader!
+    private var productReader: StubProductDataReader!
 
     override func setUp() {
         super.setUp()
         reader = StubPageContentReader()
+        productReader = StubProductDataReader()
     }
 
     override func tearDown() {
         reader = nil
+        productReader = nil
         super.tearDown()
     }
 
@@ -107,6 +110,65 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
         XCTAssertEqual(tool.permissionReason, "Duck.ai wants to read this tab's content.")
     }
 
+    /// The invoker reads this to skip the prompt for tabs the chat opened itself.
+    func testWhenDescribedThenTabsDuckAIOpenedSkipThePrompt() {
+        let (tool, _, _) = make()
+
+        XCTAssertTrue(tool.skipsPromptForDuckAIOpenedTabs)
+    }
+
+    // MARK: - Products
+
+    func testWhenThePageDeclaresProductsThenTheyAreAddedWithOnlyTheirPresentFields() async throws {
+        let (tool, context, other) = make()
+        productReader.products = [BrowserToolProduct(name: "Kettle", price: "39.99", currency: "USD")]
+
+        let result = await tool.execute(arguments: ["tabId": .string(other.uuid)], context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["products"], [["name": "Kettle", "price": "39.99", "currency": "USD"]])
+        XCTAssertEqual(productReader.requestedTabID, other.uuid)
+    }
+
+    func testWhenThePageDeclaresNoProductsThenTheKeyIsOmitted() async throws {
+        let (tool, context, _) = make()
+
+        let result = await tool.execute(arguments: nil, context: context)
+
+        let payload = try XCTUnwrap(result.successPayload?.objectValue)
+        XCTAssertNil(payload["products"])
+    }
+
+    // MARK: - Size
+
+    func testWhenContentIsOverTheCapThenItIsCutAndMarkedTruncated() async throws {
+        let (tool, context, _) = make()
+        let length = ReadTabContentBrowserTool.maxContentLength + 500
+        reader.pageContext = AIChatPageContextData(title: "t", favicon: [], url: "https://a.example",
+                                                   content: String(repeating: "a", count: length),
+                                                   truncated: false, fullContentLength: length)
+
+        let result = await tool.execute(arguments: nil, context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["content"]?.stringValue?.count, ReadTabContentBrowserTool.maxContentLength)
+        XCTAssertEqual(payload["truncated"], true)
+        XCTAssertEqual(payload["fullContentLength"], .int(length))
+    }
+
+    func testWhenContentIsWithinTheCapThenItIsUntouched() async throws {
+        let (tool, context, _) = make()
+        let content = String(repeating: "a", count: ReadTabContentBrowserTool.maxContentLength)
+        reader.pageContext = AIChatPageContextData(title: "t", favicon: [], url: "https://a.example",
+                                                   content: content, truncated: false, fullContentLength: content.count)
+
+        let result = await tool.execute(arguments: nil, context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["content"], .string(content))
+        XCTAssertEqual(payload["truncated"], false)
+    }
+
     // MARK: -
 
     private func make() -> (ReadTabContentBrowserTool, BrowserToolCallContext, Tab) {
@@ -118,11 +180,21 @@ final class ReadTabContentBrowserToolTests: XCTestCase {
         let manager = WindowControllersManagerMock()
         manager.customAllTabCollectionViewModels = [collection]
         reader.pageContext = AIChatPageContextData(title: "t", favicon: [], url: "https://a.example", content: "c", truncated: false, fullContentLength: 1)
-        let tool = ReadTabContentBrowserTool(windowControllersManager: manager, reader: reader)
+        let tool = ReadTabContentBrowserTool(windowControllersManager: manager, reader: reader, productReader: productReader)
         let context = BrowserToolCallContext(ownerTabID: owner.uuid,
                                              ownerWindowToken: AIChatTabPickerSource.windowToken(forCollection: collection),
                                              isBurner: false,
                                              supportsElicitationForm: true)
         return (tool, context, other)
+    }
+}
+
+final class StubProductDataReader: BrowserToolProductDataReading {
+    var products: [BrowserToolProduct] = []
+    private(set) var requestedTabID: TabIdentifier?
+
+    func products(forTabID tabID: TabIdentifier, in collection: TabCollectionViewModel) async -> [BrowserToolProduct] {
+        requestedTabID = tabID
+        return products
     }
 }

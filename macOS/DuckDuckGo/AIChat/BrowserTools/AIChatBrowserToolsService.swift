@@ -73,7 +73,8 @@ final class AIChatBrowserToolsService {
         self.invoker = BrowserToolInvoker(catalog: catalog,
                                           configuration: configuration,
                                           permissions: permissions,
-                                          elicitations: elicitations)
+                                          elicitations: elicitations,
+                                          openedTabs: openedTabs)
         self.catalogChangeNotifier = BrowserToolCatalogChangeNotifier(
             changes: featureFlagger.updatesPublisher,
             signature: { [configuration, catalog] in configuration.isEnabled ? catalog.enabledTools.map(\.name) : [] },
@@ -90,7 +91,7 @@ final class AIChatBrowserToolsService {
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
             SwitchToTabBrowserTool(windowControllersManager: windowControllersManager),
             SearchHistoryBrowserTool(historyCoordinator: historyCoordinator),
-            ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
+            ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader, productReader: WebViewProductDataReader()),
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
             OpenTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, loadWaiter: TabPageLoadWaiter()),

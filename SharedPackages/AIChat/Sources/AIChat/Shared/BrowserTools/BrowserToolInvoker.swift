@@ -27,15 +27,18 @@ public final class BrowserToolInvoker {
     private let configuration: BrowserToolsConfiguration
     private let permissions: BrowserToolPermissionStoring
     private let elicitations: AIChatElicitationCoordinator
+    private let openedTabs: BrowserToolOpenedTabs
 
     public init(catalog: BrowserToolCatalog,
                 configuration: BrowserToolsConfiguration,
                 permissions: BrowserToolPermissionStoring,
-                elicitations: AIChatElicitationCoordinator) {
+                elicitations: AIChatElicitationCoordinator,
+                openedTabs: BrowserToolOpenedTabs) {
         self.catalog = catalog
         self.configuration = configuration
         self.permissions = permissions
         self.elicitations = elicitations
+        self.openedTabs = openedTabs
     }
 
     /// - Parameter elicitationPusher: where a permission prompt for this call is delivered. `nil`
@@ -60,6 +63,9 @@ public final class BrowserToolInvoker {
         case .deny:
             return .failure(.denied)
         case .ask:
+            if targetsTabOpenedByThisChat(tool, arguments: arguments, context: context) {
+                break
+            }
             guard context.supportsElicitationForm else { return .failure(.elicitationUnsupported) }
             let answer = await elicitations.elicit(toolName: tool.name,
                                                    message: tool.permissionReason,
@@ -72,6 +78,15 @@ public final class BrowserToolInvoker {
         }
 
         return await tool.execute(arguments: arguments, context: context)
+    }
+
+    private func targetsTabOpenedByThisChat(_ tool: any BrowserTool, arguments: JSONValue?, context: BrowserToolCallContext) -> Bool {
+        guard tool.skipsPromptForDuckAIOpenedTabs,
+              let tabID = arguments?["tabId"]?.stringValue?.trimmingCharacters(in: .whitespaces),
+              !tabID.isEmpty else {
+            return false
+        }
+        return openedTabs.contains(tabID, ownerTabID: context.ownerTabID)
     }
 
     /// Records Always/Never and says whether the call may proceed. Anything unexpected is a refusal,

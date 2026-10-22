@@ -19,16 +19,22 @@
 import AIChat
 import Foundation
 
-/// Returns a tab's extracted text, the same payload the sidebar's `@` picker attaches.
+/// Returns a tab's extracted text, the same payload the sidebar's `@` picker attaches, plus any
+/// products the page declares about itself.
 @MainActor
 final class ReadTabContentBrowserTool: BrowserTool {
+
+    /// Pages are read in a loop during a price search, so each read stays small even if the
+    /// remotely configured extraction limit is raised.
+    static let maxContentLength = 10_000
 
     /// Matches `AIChatBrowserToolsSubfeature.readTabContent`, which is how the catalog gates it.
     let name = "readTabContent"
     let title = "Read tab content"
-    let description = "Read the text content of an open tab."
+    let description = "Read the text content of an open tab, and the products it declares in structured data."
     let permissionMode = BrowserToolPermissionMode.ask
     let permissionReason = "Duck.ai wants to read this tab's content."
+    let skipsPromptForDuckAIOpenedTabs = true
 
     let inputSchema: JSONValue = [
         "type": "object",
@@ -62,7 +68,22 @@ final class ReadTabContentBrowserTool: BrowserTool {
             "contentScope": ["type": "string"],
             "pageTypeSignals": ["type": "object"],
             "attached": ["type": "boolean"],
-            "attachable": ["type": "boolean"]
+            "attachable": ["type": "boolean"],
+            "products": [
+                "type": "array",
+                "items": [
+                    "type": "object",
+                    "properties": [
+                        "name": ["type": "string"],
+                        "price": ["type": "string"],
+                        "currency": ["type": "string"],
+                        "availability": ["type": "string"],
+                        "url": ["type": "string"],
+                        "brand": ["type": "string"],
+                        "sku": ["type": "string"]
+                    ]
+                ]
+            ]
         ],
         "required": ["title", "url", "truncated", "fullContentLength", "tabId"]
     ]
@@ -74,10 +95,14 @@ final class ReadTabContentBrowserTool: BrowserTool {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private let reader: BrowserToolPageContentReading
+    private let productReader: BrowserToolProductDataReading
 
-    init(windowControllersManager: WindowControllersManagerProtocol, reader: BrowserToolPageContentReading) {
+    init(windowControllersManager: WindowControllersManagerProtocol,
+         reader: BrowserToolPageContentReading,
+         productReader: BrowserToolProductDataReading) {
         self.windowControllersManager = windowControllersManager
         self.reader = reader
+        self.productReader = productReader
     }
 
     func execute(arguments: JSONValue?, context: BrowserToolCallContext) async -> BrowserToolResult {
@@ -100,10 +125,23 @@ final class ReadTabContentBrowserTool: BrowserTool {
         guard let pageContext = await reader.pageContext(forTabID: tabID, in: collection) else {
             return .failure(.unavailable)
         }
-        guard let payload = Self.jsonValue(for: pageContext.withTabId(tabID)) else {
+        guard var payload = Self.jsonValue(for: pageContext.withTabId(tabID))?.objectValue else {
             return .failure(.unavailable)
         }
-        return .success(payload)
+        Self.capContent(in: &payload)
+
+        // Optional by design: a page without product data, or a script that fails, still reads.
+        let products = await productReader.products(forTabID: tabID, in: collection)
+        if !products.isEmpty {
+            payload["products"] = .array(products.map(\.jsonValue))
+        }
+        return .success(.object(payload))
+    }
+
+    static func capContent(in payload: inout [String: JSONValue]) {
+        guard let content = payload["content"]?.stringValue, content.count > maxContentLength else { return }
+        payload["content"] = .string(String(content.prefix(maxContentLength)))
+        payload["truncated"] = true
     }
 
     static func jsonValue(for pageContext: AIChatPageContextData) -> JSONValue? {

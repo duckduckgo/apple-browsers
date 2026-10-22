@@ -25,16 +25,19 @@ final class BrowserToolInvokerTests: XCTestCase {
 
     private var permissions: InMemoryPermissionStore!
     private var elicitations: AIChatElicitationCoordinator!
+    private var openedTabs: BrowserToolOpenedTabs!
 
     override func setUp() {
         super.setUp()
         permissions = InMemoryPermissionStore()
         elicitations = AIChatElicitationCoordinator(timeout: 5)
+        openedTabs = BrowserToolOpenedTabs()
     }
 
     override func tearDown() {
         permissions = nil
         elicitations = nil
+        openedTabs = nil
         super.tearDown()
     }
 
@@ -169,6 +172,95 @@ final class BrowserToolInvokerTests: XCTestCase {
 
         XCTAssertEqual(result, .failure(.denied))
         XCTAssertNil(pusher.pushedParams)
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    // MARK: - Tabs Duck.ai opened
+
+    func testWhenAskToolTargetsATabThisChatOpenedThenItRunsWithoutPrompting() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, skipsPromptForDuckAIOpenedTabs: true)
+        openedTabs.add("duck-tab", ownerTabID: "owner-tab")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": " duck-tab "], context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .success([:]))
+        XCTAssertNil(pusher.pushedParams)
+        XCTAssertEqual(permissions.storedDecisions, [:])
+    }
+
+    /// No prompt is needed, so a front end that cannot show one can still read Duck.ai's tabs.
+    func testWhenTabThisChatOpenedIsTargetedWithoutElicitationSupportThenItStillRuns() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, skipsPromptForDuckAIOpenedTabs: true)
+        openedTabs.add("duck-tab", ownerTabID: "owner-tab")
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "duck-tab"], context: context(supportsElicitationForm: false), elicitationPusher: nil)
+
+        XCTAssertEqual(result, .success([:]))
+    }
+
+    func testWhenAskToolTargetsTheUsersOwnTabThenItStillPrompts() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, skipsPromptForDuckAIOpenedTabs: true)
+        openedTabs.add("duck-tab", ownerTabID: "owner-tab")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "users-tab"], context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertNotNil(pusher.pushedParams)
+        XCTAssertFalse(tool.didExecute)
+    }
+
+    /// Omitting `tabId` reads the chat's own host page, which is always the user's.
+    func testWhenAskToolOmitsTheTabIdThenItStillPrompts() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, skipsPromptForDuckAIOpenedTabs: true)
+        openedTabs.add("owner-tab", ownerTabID: "owner-tab")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: [:], context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertNotNil(pusher.pushedParams)
+    }
+
+    func testWhenAnotherChatOpenedTheTabThenItStillPrompts() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, skipsPromptForDuckAIOpenedTabs: true)
+        openedTabs.add("duck-tab", ownerTabID: "other-chat")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "duck-tab"], context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertNotNil(pusher.pushedParams)
+    }
+
+    func testWhenTheToolDoesNotOptInThenATabThisChatOpenedStillPrompts() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask)
+        openedTabs.add("duck-tab", ownerTabID: "owner-tab")
+        let pusher = ScriptedPusher(elicitations: elicitations, answer: .cancel)
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "duck-tab"], context: context(), elicitationPusher: pusher)
+
+        XCTAssertEqual(result, .failure(.cancelled))
+        XCTAssertNotNil(pusher.pushedParams)
+    }
+
+    /// The user's Never covers every read, including pages Duck.ai opened in their session.
+    func testWhenToolIsStoredAsNeverThenATabThisChatOpenedIsStillDenied() async {
+        let tool = SpyBrowserTool(name: "alpha", permissionMode: .ask, skipsPromptForDuckAIOpenedTabs: true)
+        openedTabs.add("duck-tab", ownerTabID: "owner-tab")
+        permissions.setState(.deny, forToolNamed: "alpha")
+        let invoker = makeInvoker(tools: [tool], enabledToolNames: ["alpha"])
+
+        let result = await invoker.invoke(toolNamed: "alpha", arguments: ["tabId": "duck-tab"], context: context(), elicitationPusher: nil)
+
+        XCTAssertEqual(result, .failure(.denied))
         XCTAssertFalse(tool.didExecute)
     }
 
@@ -337,7 +429,8 @@ final class BrowserToolInvokerTests: XCTestCase {
         return BrowserToolInvoker(catalog: BrowserToolCatalog(tools: tools, configuration: configuration),
                                   configuration: configuration,
                                   permissions: permissions,
-                                  elicitations: elicitations)
+                                  elicitations: elicitations,
+                                  openedTabs: openedTabs)
     }
 
     private func context(isBurner: Bool = false, supportsElicitationForm: Bool = true) -> BrowserToolCallContext {
@@ -370,6 +463,7 @@ private final class SpyBrowserTool: BrowserTool {
     var description: String { "Spy tool" }
     let permissionMode: BrowserToolPermissionMode
     let permissionReason: String
+    let skipsPromptForDuckAIOpenedTabs: Bool
     var inputSchema: JSONValue { ["type": "object"] }
 
     private(set) var didExecute = false
@@ -380,10 +474,12 @@ private final class SpyBrowserTool: BrowserTool {
     init(name: String,
          permissionMode: BrowserToolPermissionMode = .auto,
          permissionReason: String = "Duck.ai wants to use a browser tool.",
+         skipsPromptForDuckAIOpenedTabs: Bool = false,
          result: BrowserToolResult = .success([:])) {
         self.name = name
         self.permissionMode = permissionMode
         self.permissionReason = permissionReason
+        self.skipsPromptForDuckAIOpenedTabs = skipsPromptForDuckAIOpenedTabs
         self.result = result
     }
 

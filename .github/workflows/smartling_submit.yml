@@ -289,7 +289,7 @@ jobs:
           ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
           TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.job.outputs.job_name) }}"
           TASK_NOTES: |
-            ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized. A job created before the failure is left in Smartling.', inputs.platform, inputs.kind) }}
+            ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized.{2}', inputs.platform, inputs.kind, steps.submit.outputs.job_id && ' The job created before the failure is left in Smartling.' || '') }}
 
             🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
             💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}

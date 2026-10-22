@@ -719,13 +719,56 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .store(in: &cancellables)
     }
 
+#if DEBUG
+    /// Hack days diagnostics: what the model says vs what the tab bar shows.
+    private func logTabGroupState(_ reason: String) {
+        let manager = tabCollectionViewModel.tabGroupManager
+        let tabs = tabCollectionViewModel.tabCollection.tabs.enumerated().map { index, tab in
+            "\(index):\((tab.title ?? "").prefix(12))[\(manager.group(for: tab)?.name ?? "-")]"
+        }
+        let expected = displayItems.enumerated().map { index, item -> String in
+            switch item {
+            case .groupHeader(let group): return "\(index):HEADER(\(group.name))"
+            case .tab(let tab): return "\(index):\((tab.title ?? "").prefix(12))"
+            }
+        }
+        let shown = collectionView.indexPathsForVisibleItems().sorted().map { indexPath -> String in
+            guard let item = collectionView.item(at: indexPath) as? TabBarViewItem else { return "\(indexPath.item):?" }
+            if let group = item.currentHeaderGroup { return "\(indexPath.item):HEADER(\(group.name))" }
+            return "\(indexPath.item):\((item.tabViewModel?.title ?? "").prefix(12))"
+        }
+        print("TABGROUPS \(reason) items=\(collectionView.numberOfItems(inSection: 0)) expected=\(expected.count)")
+        print("TABGROUPS tabs     \(tabs.joined(separator: " | "))")
+        print("TABGROUPS expected \(expected.joined(separator: " | "))")
+        print("TABGROUPS shown    \(shown.joined(separator: " | "))")
+    }
+#endif
+
     private func reloadForTabGroupChange() {
+#if DEBUG
+        defer {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.logTabGroupState("0.5s after group change")
+            }
+        }
+#endif
         // Keeps every group's tabs together whichever way the groups changed.
         tabCollectionViewModel.arrangeTabsByGroup()
-        reloadDataAndLayout()
-        reloadSelection()
+        reloadDataAndSelectWithoutAnimation()
         updateTabMode()
         enableScrollButtons()
+        // A selection animation started elsewhere swallows reloads made while it runs; redo once it's over.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            self?.reloadDataAndSelectWithoutAnimation()
+        }
+    }
+
+    private func reloadDataAndSelectWithoutAnimation() {
+        reloadDataAndLayout()
+        guard let selectionIndex = tabCollectionViewModel.selectionIndex, selectionIndex.isUnpinnedTab,
+              let tab = tabCollectionViewModel.tabCollection.tabs[safe: selectionIndex.item],
+              let displayIndex = displayItemIndex(for: tab) else { return }
+        collectionView.selectItems(at: [IndexPath(item: displayIndex)], scrollPosition: [])
     }
 
     private func refreshTabGroupBackgrounds() {

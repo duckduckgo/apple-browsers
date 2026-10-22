@@ -1039,7 +1039,8 @@ final class TabCollectionViewModel: NSObject {
         if let selectedTabID, let index = tabCollection.tabs.firstIndex(where: { $0.uuid == selectedTabID }) {
             selectWithoutResettingState(at: .unpinned(index))
         }
-        delegate?.tabCollectionViewModelDidMultipleChanges(self)
+        // No delegate call: the tab bar reloads once group changes settle. A reload per call would start
+        // selection animations, and NSCollectionView drops reloads made while one is running.
     }
 
     /// Moves a tab to be adjacent to other tabs in its group.

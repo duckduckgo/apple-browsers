@@ -29,6 +29,7 @@ struct NativeModelComparisonView: View {
 
     var body: some View {
         List {
+            SuggestionsComparisonSection()
             Section {
                 Picker("Job", selection: $model.job) {
                     ForEach(NativeModelComparison.Job.allCases) { Text($0.title).tag($0) }
@@ -96,13 +97,12 @@ struct NativeModelComparisonView: View {
 final class NativeModelComparison: ObservableObject {
 
     enum Job: String, CaseIterable, Identifiable {
-        case suggestedPrompts, summarize, translate
+        case summarize, translate
 
         var id: String { rawValue }
 
         var title: String {
             switch self {
-            case .suggestedPrompts: "Suggested prompts"
             case .summarize: "Summarize page"
             case .translate: "Translate page to German"
             }
@@ -110,7 +110,6 @@ final class NativeModelComparison: ObservableObject {
 
         var localTask: DuckAINativeSettings.LocalTask {
             switch self {
-            case .suggestedPrompts: .suggestedPrompts
             case .summarize: .summarize
             case .translate: .translate
             }
@@ -118,7 +117,6 @@ final class NativeModelComparison: ObservableObject {
 
         var evalTask: EvalTask {
             switch self {
-            case .suggestedPrompts: .suggestPrompts
             case .summarize: .summarizePage
             case .translate: .translatePage
             }
@@ -146,7 +144,7 @@ final class NativeModelComparison: ObservableObject {
         let output: String
     }
 
-    @Published var job: Job = .suggestedPrompts
+    @Published var job: Job = .summarize
     @Published var runs = 1
     @Published var selected: Set<String> = []
     @Published private(set) var results: [Result] = []

@@ -19,6 +19,7 @@
 
 import DuckAIChatMLX
 import DuckAINative
+import DuckAILocalTasks
 import SwiftUI
 import UIKit
 
@@ -108,6 +109,24 @@ struct DuckAINativeDebugView: View {
                         .font(.caption)
                 }
             }
+            Section("Suggested prompts variants") {
+                Picker("Page input", selection: $settings.suggestionsInput) {
+                    ForEach(SuggestionsVariant.Input.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                }
+                Picker("Generate when", selection: $settings.suggestionsTrigger) {
+                    Text("Page load after dwell").tag(SuggestionsVariant.Trigger.pageLoad)
+                    Text("Sheet opens").tag(SuggestionsVariant.Trigger.sheetOpen)
+                }
+                Picker("Method", selection: $settings.suggestionsMethod) {
+                    Text("Selected model").tag(SuggestionsVariant.Method.model)
+                    Text("Foundation Models guided").tag(SuggestionsVariant.Method.foundationModels)
+                    Text("Templates (English)").tag(SuggestionsVariant.Method.templates)
+                }
+                Picker("Prompt count", selection: $settings.suggestionsCount) {
+                    Text("3").tag(3)
+                    Text("4").tag(4)
+                }
+            }
             Section {
                 Picker("Budget", selection: $settings.suggestionsBudgetSeconds) {
                     Text("1.5 s").tag(1.5)
@@ -119,7 +138,7 @@ struct DuckAINativeDebugView: View {
             } header: {
                 Text("Suggested prompts budget")
             } footer: {
-                Text("How long the sheet waits for local suggestions before it shows the static ones. Loading the model doesn't count, so the first open after launch still gets a chance.")
+                Text("Generation budget after model preparation. Catalog chips appear immediately while local chips arrive. Page-load results stay in this tab until navigation or settings change.")
             }
             Section {
                 TaskModelPicker(title: "Chat", task: .chat, settings: settings)

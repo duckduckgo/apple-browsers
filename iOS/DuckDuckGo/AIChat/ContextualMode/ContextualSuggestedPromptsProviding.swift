@@ -85,4 +85,25 @@ protocol ContextualSuggestedPromptsProviding {
     var prioritySuggestionIDs: Set<String> { get }
 
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions
+    @MainActor
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput,
+                            onUpdate: @escaping @MainActor (ResolvedPageSuggestions) -> Void) async -> ResolvedPageSuggestions
+    @MainActor
+    func cachedSuggestions(scope: ResolvePageSuggestionsInput.Scope, locale: String) -> ResolvedPageSuggestions?
+    @MainActor
+    func cancelPendingSuggestions()
+}
+
+extension ContextualSuggestedPromptsProviding {
+    @MainActor
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput,
+                            onUpdate: @escaping @MainActor (ResolvedPageSuggestions) -> Void) async -> ResolvedPageSuggestions {
+        await resolveSuggestions(input)
+    }
+
+    @MainActor
+    func cachedSuggestions(scope: ResolvePageSuggestionsInput.Scope, locale: String) -> ResolvedPageSuggestions? { nil }
+
+    @MainActor
+    func cancelPendingSuggestions() {}
 }

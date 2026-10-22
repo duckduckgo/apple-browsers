@@ -31,7 +31,8 @@ enum NativeChatProviderFactory {
 
     /// The provider for one job. A job on Automatic follows chat; chat on Automatic picks by device.
     static func makeProvider(for task: DuckAINativeSettings.LocalTask) -> any ChatProvider {
-        provider(for: resolvedModel(for: task), task: task)
+        if task != .suggestedPrompts { NotificationCenter.default.post(name: .nativeChatWillStart, object: nil) }
+        return provider(for: resolvedModel(for: task), task: task)
     }
 
     static func provider(for model: DuckAINativeSettings.TaskModel, task: DuckAINativeSettings.LocalTask) -> any ChatProvider {

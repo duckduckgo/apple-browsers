@@ -19,70 +19,53 @@
 
 import DuckAILocalTasks
 import Foundation
-import os.log
 
-/// Demo branch: the catalog's suggestions, with the generic prompts replaced by ones a local model writes for this page
-/// when the routing asks for it. Falls back to the catalog whenever the model is slow, fails or writes nothing usable.
 struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
-    private static let actionSuggestionIDs: Set<String> = ["summarize-page", "translate-page"]
-    private static let logger = Logger(subsystem: "com.duckduckgo.mobile.ios", category: "NativeDuckAI")
-
     private let base: ContextualSuggestedPromptsProviding
+    private let local: TabLocalSuggestions?
 
-    init(base: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider()) {
+    init(base: ContextualSuggestedPromptsProviding = DefaultContextualSuggestedPromptsProvider(), local: TabLocalSuggestions? = nil) {
         self.base = base
+        self.local = local
     }
 
     var maxSuggestedPrompts: Int { base.maxSuggestedPrompts }
     var prioritySuggestionIDs: Set<String> { base.prioritySuggestionIDs }
 
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
+        await resolveSuggestions(input, onUpdate: { _ in })
+    }
+
+    @MainActor
+    func resolveSuggestions(_ input: ResolvePageSuggestionsInput,
+                            onUpdate: @escaping @MainActor (ResolvedPageSuggestions) -> Void) async -> ResolvedPageSuggestions {
         let resolved = await base.resolveSuggestions(input)
-        guard await DuckAINativeSettings.shared.generatesSuggestedPromptsLocally else { return resolved }
-        guard input.scope == .page else {
-            await LocalSuggestionsDiagnostics.shared.record(outcome: "Skipped: selection scope uses the catalog")
-            return resolved
+        guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally, input.scope == .page, let local else { return resolved }
+        onUpdate(resolved)
+        let run = await local.resolve(input) { prompts in
+            onUpdate(Self.merging(prompts, into: resolved))
         }
-        guard let content = input.pageContent, !content.isEmpty else {
-            await LocalSuggestionsDiagnostics.shared.record(outcome: "Skipped: no page content when suggestions resolved")
-            return resolved
-        }
+        guard !Task.isCancelled, case .generated(let prompts, _) = run?.result else { return resolved }
+        return Self.merging(prompts, into: resolved)
+    }
 
-        let provider = await NativeChatProviderFactory.makeProvider(for: .suggestedPrompts)
-        let budget = await DuckAINativeSettings.shared.suggestionsBudgetSeconds
-        let generator = SuggestedPromptsGenerator(provider: provider,
-                                                  budget: .milliseconds(Int(budget * 1_000)),
-                                                  uiLanguageName: ContextualSuggestionsMatcher.languageDisplayName(input.uiLocale))
-        let page = PageSnapshot(title: input.pageTitle ?? "", url: input.url.flatMap(URL.init(string:)), content: content, language: nil)
-        let run = await generator.run(for: page)
-        let details = [
-            "Budget \(budget) s after loading",
-            "Load \(Self.seconds(run.loadTime)) · first word \(Self.seconds(run.timeToFirstText)) · total \(Self.seconds(run.total))",
-            "Page \(content.count) characters"
-        ]
-        Self.logger.notice("Local suggested prompts: \(String(describing: run.result), privacy: .public) \(details.joined(separator: " | "), privacy: .public)")
-        await LocalSuggestionsDiagnostics.shared.record(outcome: Self.outcome(run.result), modelName: provider.descriptor.modelName,
-                                                        details: details, raw: run.raw)
+    @MainActor
+    func cachedSuggestions(scope: ResolvePageSuggestionsInput.Scope, locale: String) -> ResolvedPageSuggestions? {
+        guard scope == .page, let cached = local?.cachedPrompts(locale: locale), let catalog = SuggestionCatalog.bundled else { return nil }
+        let input = ResolvePageSuggestionsInput(pageTypeSignals: nil, url: cached.url.absoluteString, uiLocale: locale)
+        return Self.merging(cached.prompts, into: ContextualSuggestionsMatcher.resolve(input, catalog: catalog))
+    }
 
-        guard case .generated(let prompts, _) = run.result else { return resolved }
-        let actions = resolved.suggestions.filter { Self.actionSuggestionIDs.contains($0.id) }
+    @MainActor
+    func cancelPendingSuggestions() {
+        local?.cancelGeneration()
+    }
+
+    private static func merging(_ prompts: [SuggestedPrompt], into resolved: ResolvedPageSuggestions) -> ResolvedPageSuggestions {
+        let actions = resolved.suggestions.filter { ["summarize-page", "translate-page"].contains($0.id) }
         let local = prompts.enumerated().map { index, prompt in
             ContextualSuggestedPrompt(id: "local-\(index)", label: prompt.text, prompt: prompt.text, icon: nil)
         }
         return ResolvedPageSuggestions(suggestions: actions + local, isSmart: true, pageType: resolved.pageType)
-    }
-
-    private static func outcome(_ result: SuggestedPromptsResult) -> String {
-        switch result {
-        case .generated(let prompts, _): "Generated \(prompts.count) prompts"
-        case .timedOut: "Fell back: timed out"
-        case .failed(let error): "Fell back: failed (\(error))"
-        case .unusable: "Fell back: nothing usable in the reply"
-        }
-    }
-
-    private static func seconds(_ duration: Duration?) -> String {
-        guard let duration else { return "–" }
-        return String(format: "%.2f s", Double(duration.components.seconds) + Double(duration.components.attoseconds) / 1e18)
     }
 }

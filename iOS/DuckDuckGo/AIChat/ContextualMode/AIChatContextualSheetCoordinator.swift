@@ -261,7 +261,8 @@ final class AIChatContextualSheetCoordinator {
          pixelHandler: AIChatContextualModePixelFiring = AIChatContextualModePixelHandler(),
          selectionJourneyScopeID: String = UUID().uuidString,
          selectionJourneyInstrumentation: DuckAISelectionJourneyInstrumenting? = nil,
-         tabAttachmentSource: MultiTabAttachmentSource? = nil) {
+         tabAttachmentSource: MultiTabAttachmentSource? = nil,
+         localSuggestions: TabLocalSuggestions? = nil) {
         self.tabAttachmentSource = tabAttachmentSource
         self.voiceSearchHelper = voiceSearchHelper
         self.aiChatSettings = aiChatSettings
@@ -292,6 +293,7 @@ final class AIChatContextualSheetCoordinator {
             aiChatSettings: aiChatSettings,
             pixelHandler: pixelHandler,
             featureFlagger: featureFlagger,
+            suggestedPromptsProvider: LocalSuggestedPromptsProvider(local: localSuggestions),
             isCurrentPageAttachable: { [weak pageContextHandler] in pageContextHandler?.isCurrentPageAttachable() ?? true }
         )
         self.sessionState.updateUnifiedToggleInputActive(isWebUTIEnabled, isImmediateContextual: isImmediateContextualUTIEnabled)

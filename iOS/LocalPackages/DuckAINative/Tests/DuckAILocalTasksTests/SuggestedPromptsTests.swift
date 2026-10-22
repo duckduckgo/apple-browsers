@@ -64,7 +64,7 @@ import Testing
         let turn = SuggestedPromptsPrompt.turn(for: page, count: 4, uiLanguageName: "German")
 
         #expect(turn.input.contains("Duck"))
-        #expect(turn.input.contains("https://en.wikipedia.org/wiki/Duck"))
+        #expect(turn.input.contains("en.wikipedia.org"))
         #expect(turn.input.count < SuggestedPromptsPrompt.contentCharacterLimit + 300)
         #expect(turn.instructions.contains("4"))
         #expect(turn.instructions.contains("German"))
@@ -92,7 +92,7 @@ import Testing
         let lines = "What do ducks eat?\nHow long do ducks live?\nWhy do ducks quack?\nWhere do ducks nest?\n"
         let rambling = lines + String(repeating: "and then some more text ", count: 100)
         let generator = SuggestedPromptsGenerator(provider: stub(rambling, wordsPerSecond: 40),
-                                                  budget: .seconds(20), uiLanguageName: "English")
+                                                  budget: .seconds(20), maxSuggestions: 4, uiLanguageName: "English")
         let started = ContinuousClock.now
 
         let result = await generator.suggestions(for: page)
@@ -183,5 +183,137 @@ import Testing
         let generator = SuggestedPromptsGenerator(provider: stub("Sure:"), uiLanguageName: "English")
 
         #expect(await generator.suggestions(for: page) == .unusable(raw: "Sure:"))
+    }
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func inputVariantsBoundAllPageFieldsAndHideURLSecrets() {
+        let page = PageSnapshot(title: String(repeating: "t", count: 2_000),
+                                url: URL(string: "https://example.com/private?secret=123#token"),
+                                content: String(repeating: "b", count: 8_000), language: nil,
+                                description: String(repeating: "d", count: 2_000),
+                                headings: Array(repeating: String(repeating: "h", count: 1_000), count: 100))
+        for variant in SuggestionsVariant.Input.allCases {
+            let input = SuggestedPromptsPrompt.boundedInput(for: page, variant: variant)
+            #expect(!input.contains("secret"))
+            #expect(!input.contains("private"))
+            #expect(input.count < (variant == .body ? 1_400 : 500))
+            #expect(input.contains("Content:") == (variant == .body))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func updatesContainOnlyCompleteUniqueLinesAndTimeoutPreservesThem() async {
+        let updates = PromptUpdates()
+        let generator = SuggestedPromptsGenerator(
+            provider: stub("What do ducks eat?\nWhat do ducks eat?\n" + String(repeating: "unfinished ", count: 100), wordsPerSecond: 80),
+            budget: .milliseconds(500), uiLanguageName: "English")
+        let run = await generator.run(for: page) { await updates.append($0) }
+        #expect(await updates.values == [[SuggestedPrompt("What do ducks eat?")]])
+        guard case .generated(let prompts, _) = run.result else { Issue.record("Expected partial result"); return }
+        #expect(prompts == [SuggestedPrompt("What do ducks eat?")])
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func replacedDocumentRejectsLateCallbacksAndReusesMatchingRequest() async {
+        let cache = CurrentDocumentSuggestions()
+        let variant = SuggestionsVariant(modelID: "stub", locale: "en")
+        let first = SuggestionsKey(document: UUID(), url: URL(string: "https://example.com")!, variant: variant)
+        let second = SuggestionsKey(document: UUID(), url: first.url, variant: variant)
+        cache.start(key: first) { update in
+            try? await Task.sleep(for: .seconds(1))
+            await update([SuggestedPrompt("Old document question")])
+            return SuggestedPromptsRun(result: .generated([SuggestedPrompt("Old document question")], stats: nil), raw: "", total: .zero)
+        }
+        cache.start(key: second) { update in
+            await update([SuggestedPrompt("New document question")])
+            return SuggestedPromptsRun(result: .generated([SuggestedPrompt("New document question")], stats: nil), raw: "", total: .zero)
+        }
+        _ = await cache.resolve { _ in }
+        cache.start(key: second) { _ in
+            Issue.record("Identical request must reuse cached result")
+            return SuggestedPromptsRun(result: .timedOut, raw: "", total: .zero)
+        }
+        #expect(cache.prompts == [SuggestedPrompt("New document question")])
+        cache.invalidate()
+        #expect(cache.prompts.isEmpty)
+        #expect(cache.key == nil)
+        var changed = variant
+        changed.budgetSeconds = 10
+        #expect(SuggestionsKey(document: first.document, url: first.url, variant: changed) != first)
+        changed = variant
+        changed.locale = "de"
+        #expect(SuggestionsKey(document: first.document, url: first.url, variant: changed) != first)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func sameKeyRestartRejectsCanceledOperationUpdates() async {
+        let cache = CurrentDocumentSuggestions()
+        let key = SuggestionsKey(document: UUID(), url: URL(string: "https://example.com")!,
+                                 variant: SuggestionsVariant(modelID: "stub", locale: "en"))
+        let gate = SuggestionsGate()
+        cache.start(key: key) { update in
+            await gate.wait()
+            await update([SuggestedPrompt("Canceled old question")])
+            await gate.markFinished()
+            return SuggestedPromptsRun(result: .generated([SuggestedPrompt("Canceled old question")], stats: nil), raw: "", total: .zero)
+        }
+        await Task.yield()
+        cache.invalidate()
+        cache.start(key: key) { update in
+            await update([SuggestedPrompt("Current new question")])
+            return SuggestedPromptsRun(result: .generated([SuggestedPrompt("Current new question")], stats: nil), raw: "", total: .zero)
+        }
+        _ = await cache.resolve { _ in }
+        await gate.release()
+        await gate.waitUntilFinished()
+        #expect(cache.prompts == [SuggestedPrompt("Current new question")])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func canceledGeneratorReturnsWithoutPublishingLateLines() async {
+        let updates = PromptUpdates()
+        let generator = SuggestedPromptsGenerator(provider: stub("What do ducks eat?\nHow long do ducks live?\n", wordsPerSecond: 5),
+                                                  budget: .seconds(10), uiLanguageName: "English")
+        let task = Task { await generator.run(for: page) { await updates.append($0) } }
+        try? await Task.sleep(for: .milliseconds(20))
+        task.cancel()
+        _ = await task.value
+        try? await Task.sleep(for: .milliseconds(50))
+        #expect(await updates.values.isEmpty)
+    }
+
+}
+
+private actor PromptUpdates {
+    var values: [[SuggestedPrompt]] = []
+    func append(_ prompts: [SuggestedPrompt]) { values.append(prompts) }
+}
+
+private actor SuggestionsGate {
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var released = false
+    private var finished = false
+    private var finishedContinuation: CheckedContinuation<Void, Never>?
+    func markFinished() {
+        finished = true
+        finishedContinuation?.resume()
+        finishedContinuation = nil
+    }
+    func waitUntilFinished() async {
+        if !finished { await withCheckedContinuation { finishedContinuation = $0 } }
+    }
+    func wait() async {
+        if !released { await withCheckedContinuation { continuation = $0 } }
+    }
+    func release() {
+        released = true
+        continuation?.resume()
+        continuation = nil
     }
 }

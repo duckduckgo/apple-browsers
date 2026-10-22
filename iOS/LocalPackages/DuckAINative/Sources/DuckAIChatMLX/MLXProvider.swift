@@ -72,6 +72,11 @@ public final class MLXProvider: ChatProvider, Sendable {
             Task {
                 await worker.acquire()
                 do {
+                    guard !stop.isRaised else {
+                        continuation.finish()
+                        await worker.release()
+                        return
+                    }
                     #if targetEnvironment(simulator)
                     throw ChatError.modelUnavailable(reason: "MLX requires a device.")
                     #else
@@ -80,7 +85,12 @@ public final class MLXProvider: ChatProvider, Sendable {
                     let wasLoaded = await worker.isLoaded
                     if !wasLoaded { continuation.yield(.stage(.loadingModel(fraction: nil))) }
                     let container = try await worker.load(model, at: directory)
-                    let loadTime = wasLoaded ? nil : started.duration(to: .now)
+                    let loadTime = wasLoaded ? Duration.zero : started.duration(to: .now)
+                    guard !stop.isRaised else {
+                        continuation.finish()
+                        await worker.release()
+                        return
+                    }
                     continuation.yield(.stage(.readingInput(estimatedTokens: turn.estimatedInputTokens, fraction: nil)))
                     let stats = try await Self.generate(container: container, turn: turn, stop: stop,
                                                         continuation: continuation, loadTime: loadTime)

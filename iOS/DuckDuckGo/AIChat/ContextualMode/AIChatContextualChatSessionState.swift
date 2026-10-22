@@ -194,6 +194,7 @@ final class AIChatContextualChatSessionState {
     private var suggestionsAreSmart = false
     private var suggestionsPageType: SuggestionsPageType = .none
     private var suggestionsScope: ResolvePageSuggestionsInput.Scope = .page
+    private var suggestionsRequestID = UUID()
     private var suggestionsResolveTask: Task<Void, Never>?
     private var suggestionsTimeoutTask: Task<Void, Never>?
 
@@ -280,6 +281,9 @@ final class AIChatContextualChatSessionState {
 
     /// Call when user submits a prompt from native input
     func handlePromptSubmission(_ prompt: String, url: URL? = nil, termsAccepted: Bool = false) {
+        suggestedPromptsProvider.cancelPendingSuggestions()
+        suggestionsRequestID = UUID()
+        suggestionsResolveTask?.cancel()
         guard frontendState != .restoredChat else {
             Logger.aiChat.debug("[SessionState] Chat start request ignored - preserving .restoredChat state")
             return
@@ -313,6 +317,9 @@ final class AIChatContextualChatSessionState {
     /// Call when the first prompt is submitted through contextual UTI. The UTI coordinator
     /// delivers the prompt, so this only performs the contextual session transition and pixels.
     func beginChatForUTISubmission() {
+        suggestedPromptsProvider.cancelPendingSuggestions()
+        suggestionsRequestID = UUID()
+        suggestionsResolveTask?.cancel()
         fireSelectionsSubmittedPixelIfNeeded()
 
         guard frontendState != .restoredChat else {
@@ -428,6 +435,7 @@ final class AIChatContextualChatSessionState {
             suggestedContext = nil
             emit(.deliverPageContext(nil, targets: .utiSuggestedContext))
         }
+        suggestionsRequestID = UUID()
         suggestionsResolveTask?.cancel()
         suggestionsTimeoutTask?.cancel()
         suggestions = []
@@ -633,9 +641,17 @@ final class AIChatContextualChatSessionState {
 
     func beginLoadingSuggestions() {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
+        suggestionsRequestID = UUID()
         suggestionsResolveTask?.cancel()
         suggestions = []
         suggestionsLoadState = .loading
+        let scope: ResolvePageSuggestionsInput.Scope = attachedSelections.isEmpty ? .page : .selection
+        if let cached = suggestedPromptsProvider.cachedSuggestions(scope: scope, locale: Locale.current.identifier) {
+            suggestions = cached.suggestions
+            suggestionsAreSmart = cached.isSmart
+            suggestionsPageType = cached.pageType
+            suggestionsScope = scope
+        }
         rebuildViewState()
         startSuggestionsTimeout()
     }
@@ -716,6 +732,9 @@ final class AIChatContextualChatSessionState {
 
     /// Ends in-flight attach work when a sheet session ends.
     func handleSheetDismissed() {
+        suggestionsRequestID = UUID()
+        suggestionsResolveTask?.cancel()
+        suggestionsTimeoutTask?.cancel()
         isAutomaticAttachInProgress = false
         if isManualAttachInProgress {
             isManualAttachInProgress = false
@@ -997,12 +1016,15 @@ private extension AIChatContextualChatSessionState {
             pageContent: context?.contextData.content
         )
 
+        suggestionsRequestID = UUID()
         suggestionsResolveTask?.cancel()
+        let requestID = suggestionsRequestID
         suggestionsResolveTask = Task { [weak self] in
-            guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions(input) else { return }
-            // A prompt submission may start a chat while the resolve is in flight; submission
-            // methods don't cancel this task, so drop late results to keep chat view state intact.
-            guard let self, !Task.isCancelled, !self.hasActiveChat else { return }
+            guard let resolved = await self?.suggestedPromptsProvider.resolveSuggestions(input, onUpdate: { [weak self] resolved in
+                guard let self, self.suggestionsRequestID == requestID, !self.hasActiveChat else { return }
+                self.applySuggestions(resolved, scope: input.scope)
+            }) else { return }
+            guard let self, !Task.isCancelled, self.suggestionsRequestID == requestID, !self.hasActiveChat else { return }
             self.suggestions = resolved.suggestions
             self.suggestionsAreSmart = resolved.isSmart
             self.suggestionsPageType = resolved.pageType
@@ -1010,6 +1032,15 @@ private extension AIChatContextualChatSessionState {
             self.suggestionsLoadState = .loaded
             self.rebuildViewState()
         }
+    }
+
+    private func applySuggestions(_ resolved: ResolvedPageSuggestions, scope: ResolvePageSuggestionsInput.Scope) {
+        suggestions = resolved.suggestions
+        suggestionsAreSmart = resolved.isSmart
+        suggestionsPageType = resolved.pageType
+        suggestionsScope = scope
+        suggestionsLoadState = .loaded
+        rebuildViewState()
     }
 
     func rebuildViewState() {
@@ -1030,7 +1061,7 @@ private extension AIChatContextualChatSessionState {
             chipState: chipState,
             quickActions: quickActions,
             suggestions: hidePageContextSuggestions || shouldHideSuggestions ? [] : visibleSuggestions(reserving: quickActions.count),
-            suggestionsLoadState: hidePageContextSuggestions || isDocumentChipLoading ? .loaded : suggestionsLoadState,
+            suggestionsLoadState: hidePageContextSuggestions || isDocumentChipLoading || !suggestions.isEmpty ? .loaded : suggestionsLoadState,
             suggestionsAreSmart: suggestionsAreSmart,
             suggestionsPageType: suggestionsPageType,
             suggestionsScope: suggestionsScope

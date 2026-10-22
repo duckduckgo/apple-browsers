@@ -462,6 +462,8 @@ class TabViewController: UIViewController {
     var urlPublisher: AnyPublisher<URL?, Never> {
         urlSubject.eraseToAnyPublisher()
     }
+    let localSuggestions = TabLocalSuggestions()
+
     private let didFinishURLSubject = CurrentValueSubject<URL?, Never>(nil)
     var didFinishURLPublisher: AnyPublisher<URL?, Never> {
         didFinishURLSubject.eraseToAnyPublisher()
@@ -876,7 +878,8 @@ class TabViewController: UIViewController {
             usageContextProvider: usageContextProvider,
             onboardingActivationRecorder: SubscriptionOnboardingActivationRecorder(keyValueStore: keyValueStore),
             selectionJourneyScopeID: tabModel.uid,
-            tabAttachmentSource: tabAttachmentSource
+            tabAttachmentSource: tabAttachmentSource,
+            localSuggestions: localSuggestions
         )
         coordinator.delegate = self
         return coordinator
@@ -1798,6 +1801,7 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.url):
+            localSuggestions.invalidate()
             // Cleared here, so we act on same-document navigation too.
             reopenableClosedTabURL = nil
 
@@ -1811,6 +1815,9 @@ class TabViewController: UIViewController {
                 // Settled same-document rewrites (FE assigning a chatID) update chat identity;
                 // in-flight loads are skipped — `didCommit` owns those.
                 if !self.webView.isLoading {
+                    self.localSuggestions.pageDidFinish(webView: self.webView, isAttachable: { [weak self] in
+                        self?.pageContextHandler.isCurrentPageAttachable() ?? false
+                    })
                     self.lastCommittedDuckAIChatID = self.webView.url?.duckAIChatID
                 }
                 self.pullToRefreshViewAdapter?.setRefreshControlEnabled(!self.isAITab)
@@ -2548,7 +2555,8 @@ class TabViewController: UIViewController {
     }
 
     private func cleanUpBeforeClosing() {
-        let job = { [weak webView, userContentController] in
+        let job = { [weak webView, userContentController, localSuggestions] in
+            MainActor.assumeIsolated { localSuggestions.invalidate() }
             userContentController.cleanUpBeforeClosing()
 
             webView?.assertObjectDeallocated(after: 4.0)
@@ -2866,6 +2874,7 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        localSuggestions.invalidate()
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -2935,6 +2944,9 @@ extension TabViewController: WKNavigationDelegate {
         pageContextInitialRequestPending = false
         pageContextNavigationInProgress = false
         pageContextPageChanges.send()
+        localSuggestions.pageDidFinish(webView: webView, isAttachable: { [weak self] in
+            self?.pageContextHandler.isCurrentPageAttachable() ?? false
+        })
         didFinishURLSubject.send(webView.url)
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
@@ -4722,6 +4734,7 @@ extension TabViewController: WKUIDelegate {
     // reason is available, so it must reproduce that method's reporting and recovery in full.
     @objc(_webView:webContentProcessDidTerminateWithReason:)
     public func webView(_ webView: WKWebView, webContentProcessDidTerminateWith reason: Int) {
+        localSuggestions.invalidate()
         handleWebContentProcessDidTerminate(webView, reasonName: WKProcessTerminationReason(rawValue: reason)?.pixelName ?? "unknown")
     }
 

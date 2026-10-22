@@ -20,15 +20,18 @@
 import DuckAIChatCore
 import Foundation
 
-/// What the suggested-prompts model sees of a page. The app caps `content`; `turn` trims it further.
 public struct PageSnapshot: Equatable, Sendable {
     public let title: String
     public let url: URL?
+    public let description: String
+    public let headings: [String]
     public let content: String
     /// BCP 47 code of the page language when known, e.g. "de". Suggestions are written in the UI language regardless.
     public let language: String?
 
-    public init(title: String, url: URL?, content: String, language: String?) {
+    public init(title: String, url: URL?, content: String, language: String?, description: String = "", headings: [String] = []) {
+        self.description = description
+        self.headings = headings
         self.title = title
         self.url = url
         self.content = content
@@ -58,10 +61,24 @@ public struct SuggestedPromptsRun: Sendable {
     public let result: SuggestedPromptsResult
     /// Everything the model wrote, including partial text when the run timed out.
     public let raw: String
-    /// From the request until the model started reading the page.
+    /// Preparation, including queue wait, until reading starts. Actual model load comes from `stats`.
     public let loadTime: Duration?
     public let timeToFirstText: Duration?
     public let total: Duration
+    public let firstChipTime: Duration?
+    public let stats: GenerationStats?
+
+    public init(result: SuggestedPromptsResult, raw: String, loadTime: Duration? = nil,
+                timeToFirstText: Duration? = nil, total: Duration, firstChipTime: Duration? = nil,
+                stats: GenerationStats? = nil) {
+        self.result = result
+        self.raw = raw
+        self.loadTime = loadTime
+        self.timeToFirstText = timeToFirstText
+        self.total = total
+        self.firstChipTime = firstChipTime
+        self.stats = stats
+    }
 }
 
 /// One-shot suggested prompts for the contextual sheet, from any `ChatProvider`.
@@ -74,13 +91,16 @@ public struct SuggestedPromptsGenerator: Sendable {
     private let loadBudget: Duration
     private let maxSuggestions: Int
     private let uiLanguageName: String
+    private let input: SuggestionsVariant.Input
 
     /// `uiLanguageName` is the language suggestions are written in, e.g. "English".
     public init(provider: any ChatProvider,
                 budget: Duration = SuggestedPromptsGenerator.defaultBudget,
                 loadBudget: Duration = SuggestedPromptsGenerator.defaultLoadBudget,
-                maxSuggestions: Int = 4,
+                maxSuggestions: Int = 3,
+                input: SuggestionsVariant.Input = .headings,
                 uiLanguageName: String) {
+        self.input = input
         self.provider = provider
         self.budget = budget
         self.loadBudget = loadBudget
@@ -88,26 +108,24 @@ public struct SuggestedPromptsGenerator: Sendable {
         self.uiLanguageName = uiLanguageName
     }
 
-    /// Streams one reply and parses it, returning as soon as `maxSuggestions` whole lines have arrived. `budget` starts when
-    /// the model starts reading the page, so loading it does not count; `loadBudget` caps the wait before that. When a budget elapses first, raises the reply's `StopSignal` and returns
-    /// `.timedOut` at once; the provider drains on its own (Core's stop contract). Never throws.
     public func suggestions(for page: PageSnapshot) async -> SuggestedPromptsResult {
         await run(for: page).result
     }
 
-    public func run(for page: PageSnapshot) async -> SuggestedPromptsRun {
+    public func run(for page: PageSnapshot,
+                    onUpdate: @escaping @Sendable ([SuggestedPrompt]) async -> Void = { _ in }) async -> SuggestedPromptsRun {
         let trace = RunTrace()
         let stop = StopSignal()
-        let turn = SuggestedPromptsPrompt.turn(for: page, count: maxSuggestions, uiLanguageName: uiLanguageName)
+        let turn = SuggestedPromptsPrompt.turn(for: page, count: maxSuggestions, uiLanguageName: uiLanguageName, input: input)
         let (results, continuation) = AsyncStream<SuggestedPromptsResult>.makeStream()
         let (reading, readingContinuation) = AsyncStream<Void>.makeStream()
-        Task.detached {
-            continuation.yield(await result(for: turn, stop: stop, trace: trace, onReading: { readingContinuation.finish() }))
+        let worker = Task.detached {
+            continuation.yield(await result(for: turn, stop: stop, trace: trace,
+                                             onReading: { readingContinuation.finish() }, onUpdate: onUpdate))
             continuation.finish()
             readingContinuation.finish()
         }
         let timeout = Task.detached { [budget, loadBudget] in
-            // Loading the model is excluded from `budget`; it has its own, longer cap.
             let startedReading = await withTaskGroup(of: Bool.self) { group in
                 group.addTask {
                     for await _ in reading {}
@@ -126,19 +144,30 @@ public struct SuggestedPromptsGenerator: Sendable {
             }
             guard !Task.isCancelled else { return }
             stop.raise()
-            continuation.yield(.timedOut)
+            continuation.yield(trace.partialResult(max: maxSuggestions))
             continuation.finish()
         }
-        var iterator = results.makeAsyncIterator()
-        let result = await iterator.next() ?? .timedOut
-        timeout.cancel()
-        return trace.run(result)
+        return await withTaskCancellationHandler {
+            var iterator = results.makeAsyncIterator()
+            let result = await iterator.next() ?? .timedOut
+            timeout.cancel()
+            stop.raise()
+            worker.cancel()
+            return trace.run(result)
+        } onCancel: {
+            stop.raise()
+            worker.cancel()
+            timeout.cancel()
+            continuation.finish()
+        }
     }
 
-    private func result(for turn: ProviderTurn, stop: StopSignal, trace: RunTrace, onReading: () -> Void) async -> SuggestedPromptsResult {
+    private func result(for turn: ProviderTurn, stop: StopSignal, trace: RunTrace, onReading: () -> Void,
+                        onUpdate: @escaping @Sendable ([SuggestedPrompt]) async -> Void) async -> SuggestedPromptsResult {
         var raw = ""
         var stats: GenerationStats?
         var refused = false
+        var emitted: [SuggestedPrompt] = []
         do {
             for try await event in provider.reply(to: turn, stop: stop) {
                 switch event {
@@ -150,26 +179,32 @@ public struct SuggestedPromptsGenerator: Sendable {
                     trace.append(text)
                     onReading()
                     raw += text
-                    // Models often keep writing past the suggestions; stop as soon as enough whole lines have arrived.
                     if let lastNewline = raw.lastIndex(of: "\n") {
                         let complete = SuggestedPromptsPrompt.parse(String(raw[..<lastNewline]), max: maxSuggestions)
-                        if complete.count == maxSuggestions {
-                            stop.raise()
-                            return .generated(complete, stats: nil)
+                        if !Task.isCancelled, complete != emitted {
+                            emitted = complete
+                            trace.markChip()
+                            await onUpdate(complete)
                         }
+                        if complete.count == maxSuggestions { stop.raise() }
                     }
                 case .refusal: refused = true
-                case .finished(let generationStats): stats = generationStats
+                case .finished(let generationStats):
+                    stats = generationStats
+                    trace.record(stats)
                 case .stage, .reasoningDelta: break
                 }
             }
         } catch let error as ChatError {
+            if !emitted.isEmpty { return .generated(emitted, stats: stats) }
             return .failed(error)
         } catch {
+            if !emitted.isEmpty { return .generated(emitted, stats: stats) }
             return .failed(.unknown(String(describing: error)))
         }
         if refused { return .unusable(raw: "") }
         let parsed = SuggestedPromptsPrompt.parse(raw, max: maxSuggestions)
+        if !Task.isCancelled, !parsed.isEmpty, parsed != emitted { trace.markChip(); await onUpdate(parsed) }
         return parsed.isEmpty ? .unusable(raw: raw.trimmingCharacters(in: .whitespacesAndNewlines)) : .generated(parsed, stats: stats)
     }
 }
@@ -179,24 +214,30 @@ public enum SuggestedPromptsPrompt {
     /// Page content beyond this is dropped: suggestions need the gist, and a short read keeps the first token fast.
     public static let contentCharacterLimit = 1_200
 
-    /// Instructions ask for `count` questions or requests of at most 8 words, one per line, no numbering, written in
-    /// `uiLanguageName`. Small models write long questions unless told a word limit, and the parser drops lines over 80
-    /// characters. The input is "Title:", "URL:" (when known) and the first
-    /// `contentCharacterLimit` characters of content. `maxOutputTokens` is 80. `history` is empty.
     public static func turn(for page: PageSnapshot, count: Int, uiLanguageName: String,
-                            conversation: ConversationID = ConversationID()) -> ProviderTurn {
+                            conversation: ConversationID = ConversationID(), input variant: SuggestionsVariant.Input = .headings) -> ProviderTurn {
         let instructions = """
         Suggest \(count) things a reader of this page might ask an AI assistant about it.
         Each one is a short question or request of at most 8 words, like a button label.
         Write in \(uiLanguageName). One per line. No numbering, bullets, quotes or other text.
         """
-        var lines = ["Title: \(page.title)"]
-        if let url = page.url { lines.append("URL: \(url.absoluteString)") }
-        lines.append("Content: \(page.content.prefix(contentCharacterLimit))")
-        let input = lines.joined(separator: "\n")
+        let input = boundedInput(for: page, variant: variant)
         let estimatedInputTokens = Int((Double((instructions + input).count) / 3.5).rounded(.up))
         return ProviderTurn(conversation: conversation, instructions: instructions, history: [], input: input,
                             maxOutputTokens: 80, estimatedInputTokens: estimatedInputTokens)
+    }
+
+    public static func boundedInput(for page: PageSnapshot, variant: SuggestionsVariant.Input) -> String {
+        var lines = ["Title: \(page.title.prefix(100))"]
+        if let host = page.url?.host { lines.append("Site: \(host.prefix(60))") }
+        switch variant {
+        case .title: break
+        case .headings:
+            lines.append("Description: \(page.description.prefix(120))")
+            lines.append("Headings: \(page.headings.prefix(6).joined(separator: "; ").prefix(160))")
+        case .body: lines.append("Content: \(page.content.prefix(contentCharacterLimit))")
+        }
+        return lines.joined(separator: "\n")
     }
 
     /// Lenient: one suggestion per non-empty line. Strips bullets ("-", "*", "•"), numbering ("1.", "1)"), surrounding
@@ -227,6 +268,8 @@ private final class RunTrace: @unchecked Sendable {
     private var raw = ""
     private var readingAt: ContinuousClock.Instant?
     private var firstTextAt: ContinuousClock.Instant?
+    private var firstChipAt: ContinuousClock.Instant?
+    private var stats: GenerationStats?
 
     func markReading() {
         lock.withLock {
@@ -241,12 +284,29 @@ private final class RunTrace: @unchecked Sendable {
         }
     }
 
+    func markChip() {
+        lock.withLock { if firstChipAt == nil { firstChipAt = .now } }
+    }
+
+    func record(_ stats: GenerationStats?) {
+        lock.withLock { self.stats = stats }
+    }
+
+    func partialResult(max: Int) -> SuggestedPromptsResult {
+        lock.withLock {
+            guard let newline = raw.lastIndex(of: "\n") else { return .timedOut }
+            let prompts = SuggestedPromptsPrompt.parse(String(raw[..<newline]), max: max)
+            return prompts.isEmpty ? .timedOut : .generated(prompts, stats: stats)
+        }
+    }
+
     func run(_ result: SuggestedPromptsResult) -> SuggestedPromptsRun {
         lock.withLock {
             SuggestedPromptsRun(result: result, raw: raw,
                                 loadTime: readingAt.map { started.duration(to: $0) },
                                 timeToFirstText: firstTextAt.map { started.duration(to: $0) },
-                                total: started.duration(to: .now))
+                                total: started.duration(to: .now),
+                                firstChipTime: firstChipAt.map { started.duration(to: $0) }, stats: stats)
         }
     }
 }

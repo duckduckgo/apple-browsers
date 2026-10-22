@@ -19,6 +19,7 @@
 
 import Core
 import DuckAINative
+import DuckAILocalTasks
 import FeatureFlags_iOS
 import Foundation
 import PrivacyConfig
@@ -77,12 +78,36 @@ final class DuckAINativeSettings: ObservableObject {
         didSet { defaults.set(suggestionsBudgetSeconds, forKey: Keys.suggestionsBudget) }
     }
 
+    @Published var suggestionsInput: SuggestionsVariant.Input {
+        didSet { defaults.set(suggestionsInput.rawValue, forKey: "duckAINative.suggestionsInput") }
+    }
+    @Published var suggestionsTrigger: SuggestionsVariant.Trigger {
+        didSet { defaults.set(suggestionsTrigger.rawValue, forKey: "duckAINative.suggestionsTrigger") }
+    }
+    @Published var suggestionsMethod: SuggestionsVariant.Method {
+        didSet { defaults.set(suggestionsMethod.rawValue, forKey: "duckAINative.suggestionsMethod") }
+    }
+    @Published var suggestionsCount: Int {
+        didSet { defaults.set(suggestionsCount, forKey: "duckAINative.suggestionsCount") }
+    }
+
+    @MainActor
+    func suggestionsVariant(locale: String = Locale.current.identifier) -> SuggestionsVariant {
+        SuggestionsVariant(input: suggestionsInput, trigger: suggestionsTrigger, method: suggestionsMethod,
+                           count: suggestionsCount, modelID: NativeChatProviderFactory.resolvedModel(for: .suggestedPrompts).storedValue,
+                           locale: locale, budgetSeconds: suggestionsBudgetSeconds)
+    }
+
     private let defaults: UserDefaults
     private let featureFlagger: FeatureFlagger
 
     init(defaults: UserDefaults = .standard, featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.defaults = defaults
         self.featureFlagger = featureFlagger
+        suggestionsInput = defaults.string(forKey: "duckAINative.suggestionsInput").flatMap(SuggestionsVariant.Input.init) ?? .headings
+        suggestionsTrigger = defaults.string(forKey: "duckAINative.suggestionsTrigger").flatMap(SuggestionsVariant.Trigger.init) ?? .pageLoad
+        suggestionsMethod = defaults.string(forKey: "duckAINative.suggestionsMethod").flatMap(SuggestionsVariant.Method.init) ?? .model
+        suggestionsCount = defaults.integer(forKey: "duckAINative.suggestionsCount") == 4 ? 4 : 3
         routing = DuckAIRouting(
             chat: defaults.string(forKey: Keys.chat).flatMap(DuckAIRouting.Chat.init) ?? .web,
             suggestedPrompts: defaults.string(forKey: Keys.suggestedPrompts).flatMap(DuckAIRouting.SuggestedPrompts.init) ?? .staticCatalog,

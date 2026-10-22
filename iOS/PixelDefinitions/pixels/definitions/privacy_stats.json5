@@ -1,6 +1,6 @@
 {
     "privacy-stats_database_load_failed": {
-        "description": "Fired when the Privacy Stats store fails to load at launch. stage=initial is the first load attempt; stage=retry is the second attempt, after the store was recreated",
+        "description": "Fired once when the Privacy Stats store fails to load at launch, with the outcome of handling the failure",
         "owners": ["hassaanelgarem"],
         "triggers": ["other"],
         "suffixes": ["daily_count", "platform", "form_factor"],
@@ -11,9 +11,9 @@
             "underlyingErrorCode",
             "underlyingErrorDomain",
             {
-                "key": "stage",
-                "description": "Which load attempt failed",
-                "enum": ["initial", "retry"]
+                "key": "outcome",
+                "description": "unavailable: the error isn't corruption, so the store is kept and Privacy Stats is disabled for the session. recreated: the store was corrupted and has been recreated. recreate_failed: the store was corrupted and recreating it failed, so Privacy Stats is disabled for the session",
+                "enum": ["unavailable", "recreated", "recreate_failed"]
             }
         ]
     }

@@ -74,27 +74,35 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
     }
 
     private func prepareStore() -> Bool {
+        let error: Error
         do {
             try loadStore()
             return true
-        } catch {
-            pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, stage: .initial), frequency: .dailyAndCount)
-            guard Self.isCorruption(error) else {
-                Logger.general.error("Could not load Privacy Stats database: \(error.localizedDescription, privacy: .public)")
-                return false
-            }
-            Logger.general.error("Privacy Stats database is corrupted, recreating it: \(error.localizedDescription, privacy: .public)")
+        } catch let loadError {
+            error = loadError
+        }
+
+        guard Self.isCorruption(error) else {
+            Logger.general.error("Could not load Privacy Stats database: \(error.localizedDescription, privacy: .public)")
+            fireLoadFailed(error, outcome: .unavailable)
+            return false
         }
 
         do {
             try Self.deleteStoreFiles(at: location)
             try loadStore()
+            Logger.general.error("Recreated corrupted Privacy Stats database: \(error.localizedDescription, privacy: .public)")
+            fireLoadFailed(error, outcome: .recreated)
             return true
-        } catch {
-            Logger.general.error("Could not recreate Privacy Stats database: \(error.localizedDescription, privacy: .public)")
-            pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, stage: .retry), frequency: .dailyAndCount)
+        } catch let recreateError {
+            Logger.general.error("Could not recreate Privacy Stats database: \(recreateError.localizedDescription, privacy: .public)")
+            fireLoadFailed(recreateError, outcome: .recreateFailed)
             return false
         }
+    }
+
+    private func fireLoadFailed(_ error: Error, outcome: PrivacyStatsDatabasePixel.Outcome) {
+        pixelFiring?.fire(PrivacyStatsDatabasePixel.loadFailed(error, outcome: outcome), frequency: .dailyAndCount)
     }
 
     private func loadStore() throws {
@@ -129,22 +137,23 @@ final class PrivacyStatsDatabase: PrivacyStatsDatabaseProviding {
 
 enum PrivacyStatsDatabasePixel: PixelKit.Event {
 
-    enum Stage: String {
-        /// The store failed to load at launch. A corrupted store is then recreated; otherwise Privacy Stats is
-        /// unavailable for this session.
-        case initial
-        /// A corrupted store failed to load again after it was recreated. Privacy Stats is unavailable for this session.
-        case retry
+    enum Outcome: String {
+        /// The error isn't corruption. The store is left in place and Privacy Stats is unavailable for this session.
+        case unavailable
+        /// The store was corrupted and has been recreated.
+        case recreated
+        /// The store was corrupted and recreating it failed. Privacy Stats is unavailable for this session.
+        case recreateFailed = "recreate_failed"
     }
 
-    case loadFailed(Error, stage: Stage)
+    case loadFailed(Error, outcome: Outcome)
 
     var name: String { "privacy-stats_database_load_failed" }
 
     var parameters: [String: String]? {
         switch self {
-        case .loadFailed(_, let stage):
-            return ["stage": stage.rawValue]
+        case .loadFailed(_, let outcome):
+            return ["outcome": outcome.rawValue]
         }
     }
 

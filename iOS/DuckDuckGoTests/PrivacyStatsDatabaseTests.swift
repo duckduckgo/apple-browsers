@@ -55,7 +55,7 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         XCTAssertEqual(pixelKit.actualFireCalls.count, 1)
         let call = try XCTUnwrap(pixelKit.actualFireCalls.first)
         XCTAssertEqual(call.pixel.name, "privacy-stats_database_load_failed")
-        XCTAssertEqual(call.pixel.parameters, ["stage": "initial"])
+        XCTAssertEqual(call.pixel.parameters, ["outcome": "recreated"])
         XCTAssertEqual(call.pixel.error?.domain, NSCocoaErrorDomain)
         XCTAssertEqual(call.frequency, .dailyAndCount)
     }
@@ -68,8 +68,22 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         let database = PrivacyStatsDatabase(location: blockingFile.appendingPathComponent("store"), pixelFiring: pixelKit)
 
         XCTAssertNil(database)
-        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["stage": "initial"]])
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["outcome": "unavailable"]])
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount])
+    }
+
+    func testWhenCorruptedStoreCannotBeDeletedThenDatabaseIsNilAndRecreateFailedIsFired() throws {
+        let storeFile = location.appendingPathComponent("PrivacyStats.sqlite")
+        try Data(repeating: 0xAB, count: 4096).write(to: storeFile)
+        // A read-only directory means the corrupted store can't be deleted.
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: location.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: location.path) }
+
+        let database = PrivacyStatsDatabase(location: location, pixelFiring: pixelKit)
+
+        XCTAssertNil(database)
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["outcome": "recreate_failed"]])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: storeFile.path))
     }
 
     func testIsCorruption() {

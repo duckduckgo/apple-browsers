@@ -44,19 +44,19 @@ struct PastedTextSheetSubtitle: Equatable {
     func attributed(format: String = UserText.aiChatPastedTextCountFormat, locale: Locale = .current) -> AttributedString {
         let pieces = format.components(separatedBy: "%1$d")
         guard pieces.count == 2 else {
-            return Self.secondary(String(format: format, locale: locale, count, limit))
+            return Self.secondary(PromptLengthText.format(format, count, limit, locale: locale))
         }
-        var countText = AttributedString(String(format: "%d", locale: locale, count))
+        var countText = AttributedString(PromptLengthText.number(count, locale: locale))
         countText.foregroundColor = Color(designSystemColor: isOverLimit ? .destructivePrimary : .textPrimary)
         return Self.secondary(limitFilled(pieces[0], locale: locale)) + countText + Self.secondary(limitFilled(pieces[1], locale: locale))
     }
 
     func accessibilityLabel(locale: Locale = .current) -> String {
-        String(format: UserText.aiChatPastedTextCountAccessibilityFormat, locale: locale, count, limit)
+        PromptLengthText.format(UserText.aiChatPastedTextCountAccessibilityFormat, count, limit, locale: locale)
     }
 
     private func limitFilled(_ piece: String, locale: Locale) -> String {
-        String(format: piece.replacingOccurrences(of: "%2$d", with: "%1$d"), locale: locale, limit)
+        piece.replacingOccurrences(of: "%2$d", with: PromptLengthText.number(limit, locale: locale))
     }
 
     private static func secondary(_ text: String) -> AttributedString {

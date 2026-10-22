@@ -77,7 +77,7 @@ struct UTIFooterMessageMapper {
     func promptTooLongMessage(count: Int, limit: Int) -> UTIFooterMessage {
         UTIFooterMessage(
             icon: .alert,
-            title: String.localizedStringWithFormat(UserText.aiChatPromptTooLongTitleFormat, count, limit),
+            title: PromptLengthText.format(UserText.aiChatPromptTooLongTitleFormat, count, limit),
             subtitle: UserText.aiChatPromptTooLongSubtitle,
             primaryAction: nil,
             isDismissible: false,
@@ -176,5 +176,18 @@ struct UTIFooterMessageMapper {
         case .startUsingWeeklyLimit:
             return UserText.utiDuckAIWarningsStartUsingWeeklyLimit
         }
+    }
+}
+
+/// Writes character counts in the locale's digits without grouping separators, as the design writes them (16000, not 16,000).
+enum PromptLengthText {
+    static func number(_ value: Int, locale: Locale = .current) -> String {
+        value.formatted(.number.grouping(.never).locale(locale))
+    }
+
+    /// Fills a `%1$d`/`%2$d` format with the count and the limit.
+    static func format(_ format: String, _ count: Int, _ limit: Int, locale: Locale = .current) -> String {
+        let objectFormat = format.replacingOccurrences(of: "%1$d", with: "%1$@").replacingOccurrences(of: "%2$d", with: "%2$@")
+        return String(format: objectFormat, number(count, locale: locale), number(limit, locale: locale))
     }
 }

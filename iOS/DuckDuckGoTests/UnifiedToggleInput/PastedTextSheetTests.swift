@@ -127,10 +127,10 @@ final class PastedTextSheetTests: XCTestCase {
         XCTAssertEqual(subtitle, PastedTextSheetSubtitle(count: 923, limit: 16_000))
         XCTAssertFalse(subtitle.isOverLimit)
         let line = subtitle.attributed(locale: Self.english)
-        XCTAssertEqual(String(line.characters), "923/16,000", "Whole numbers, no compact 16k and no unit")
+        XCTAssertEqual(String(line.characters), "923/16000", "Whole numbers, no compact 16k and no unit")
         XCTAssertEqual(colors(in: line), [
             "923": light(.textPrimary),
-            "/16,000": light(.textSecondary)
+            "/16000": light(.textSecondary)
         ])
     }
 
@@ -141,10 +141,10 @@ final class PastedTextSheetTests: XCTestCase {
 
         XCTAssertTrue(subtitle.isOverLimit)
         let line = subtitle.attributed(locale: Self.english)
-        XCTAssertEqual(String(line.characters), "16,001/16,000")
+        XCTAssertEqual(String(line.characters), "16001/16000")
         XCTAssertEqual(colors(in: line), [
-            "16,001": light(.destructivePrimary),
-            "/16,000": light(.textSecondary)
+            "16001": light(.destructivePrimary),
+            "/16000": light(.textSecondary)
         ])
     }
 
@@ -174,17 +174,17 @@ final class PastedTextSheetTests: XCTestCase {
 
         let line = subtitle.attributed(locale: Locale(identifier: "ar_EG"))
 
-        XCTAssertEqual(String(line.characters), "١٦٬٠٠١/١٦٬٠٠٠")
+        XCTAssertEqual(String(line.characters), "١٦٠٠١/١٦٠٠٠")
         XCTAssertEqual(colors(in: line), [
-            "١٦٬٠٠١": light(.destructivePrimary),
-            "/١٦٬٠٠٠": light(.textSecondary)
+            "١٦٠٠١": light(.destructivePrimary),
+            "/١٦٠٠٠": light(.textSecondary)
         ])
     }
 
     func testVoiceOverReadsTheCountAsCharactersOfTheLimitNotASlash() {
         let subtitle = PastedTextSheetSubtitle(count: 923, limit: 16_000)
 
-        XCTAssertEqual(subtitle.accessibilityLabel(locale: Self.english), "923 of 16,000 characters")
+        XCTAssertEqual(subtitle.accessibilityLabel(locale: Self.english), "923 of 16000 characters")
     }
 
     func testCountAtExactlyTheLimitIsNotRed() throws {
@@ -192,7 +192,7 @@ final class PastedTextSheetTests: XCTestCase {
 
         let subtitle = try XCTUnwrap(rules.subtitle(for: String(repeating: "a", count: 16_000)))
 
-        XCTAssertEqual(colors(in: subtitle.attributed(locale: Self.english))["16,000"], light(.textPrimary))
+        XCTAssertEqual(colors(in: subtitle.attributed(locale: Self.english))["16000"], light(.textPrimary))
     }
 
     func testViewOnlySheetIsTitledPastedTextWithNoSubtitleAndEditableIsEditText() {

@@ -883,7 +883,7 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         let chip = try XCTUnwrap(pastedTextChip(in: view))
 
         XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.promptTooLong])
-        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Text exceeds the character limit 16,100/16,000.")
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Text exceeds the character limit 16100/16000.")
         XCTAssertFalse(view.aiChatSendButton.isEnabled)
         XCTAssertEqual(chip.subviews[0].layer.borderColor, UIColor(designSystemColor: .lines).cgColor, "The pasted-text chip stays grey while the prompt is too long")
         XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle, "Ask stays while the error hides the disclaimer")
@@ -913,7 +913,7 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         let typed = try XCTUnwrap(typedView.visibleFooterMessages.first)
         XCTAssertEqual(pasted.id, .promptTooLong)
         XCTAssertEqual(pasted.message, typed.message)
-        XCTAssertEqual(typed.message.title, "Text exceeds the character limit 16,100/16,000.")
+        XCTAssertEqual(typed.message.title, "Text exceeds the character limit 16100/16000.")
         XCTAssertEqual(typed.message.subtitle, "Reduce or remove text to continue chat.")
         XCTAssertNil(typed.message.primaryAction, "No Edit action, pasted or not")
     }
@@ -941,7 +941,7 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertTrue(view.visibleFooterMessages.isEmpty)
 
         enter(String(repeating: "a", count: 101), in: controller, view)
-        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Text exceeds the character limit 16,001/16,000.")
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Text exceeds the character limit 16001/16000.")
         XCTAssertFalse(view.aiChatSendButton.isEnabled)
 
         enter(String(repeating: "a", count: 100), in: controller, view)

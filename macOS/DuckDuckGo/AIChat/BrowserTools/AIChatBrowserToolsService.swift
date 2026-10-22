@@ -104,7 +104,9 @@ final class AIChatBrowserToolsService {
             GetPageSnapshotBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver),
             FillFormBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler),
             ClickElementBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler),
-            SubmitFormBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler)
+            SubmitFormBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver, settler: formSettler),
+            GetAutofillIdentitiesBrowserTool(identities: AutofillIdentityProvider()),
+            ShowTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, driver: formDriver)
         ]
     }
 
@@ -243,6 +245,8 @@ final class AIChatBrowserToolsConfiguration: BrowserToolsConfiguration {
         case .fillForm: .aiChatBrowserToolFillForm
         case .clickElement: .aiChatBrowserToolClickElement
         case .submitForm: .aiChatBrowserToolSubmitForm
+        case .getAutofillIdentities: .aiChatBrowserToolGetAutofillIdentities
+        case .showTab: .aiChatBrowserToolShowTab
         }
     }
 }

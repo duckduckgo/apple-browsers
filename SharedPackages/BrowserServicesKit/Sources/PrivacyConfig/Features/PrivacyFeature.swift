@@ -628,6 +628,12 @@ public enum AIChatBrowserToolsSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Submits a form on a tab Duck.ai opened, after the user approves it.
     case submitForm
+
+    /// Shares one saved Autofill identity, the one the user picks.
+    case getAutofillIdentities
+
+    /// Brings a tab Duck.ai opened to the front, e.g. to hand a checkout to the user.
+    case showTab
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

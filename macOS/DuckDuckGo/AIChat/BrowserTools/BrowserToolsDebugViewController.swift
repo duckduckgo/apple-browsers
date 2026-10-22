@@ -20,6 +20,7 @@
 
 import AIChat
 import AppKit
+import BrowserServicesKit
 import UserScript
 import WebKit
 
@@ -139,6 +140,50 @@ final class BrowserToolsDebugViewController: NSViewController {
         let tabs = (collection.pinnedTabsCollection?.tabs ?? []) + collection.tabCollection.tabs
         let lines = tabs.map { "\($0.title ?? $0.url?.absoluteString ?? "")\n   {\"tabId\": \"\($0.uuid)\"}" }
         appendToLog(summary: "→ \(tabs.count) tabs in this window (panel only, not a tool)", detail: lines.joined(separator: "\n"), expanded: true)
+    }
+
+    /// A made-up identity and the published 4242 test card, for trying getAutofillIdentities and a
+    /// checkout hand-off. Each is added once; running it again changes nothing.
+    @objc private func seedDemoAutofillData() {
+        let identityTitle = "Duck.ai demo"
+        let cardTitle = "Duck.ai demo card"
+        do {
+            let vault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
+            var added: [String] = []
+            if try !vault.identities().contains(where: { $0.title == identityTitle }) {
+                _ = try vault.storeIdentity(SecureVaultModels.Identity(title: identityTitle,
+                                                                       created: Date(),
+                                                                       lastUpdated: Date(),
+                                                                       firstName: "Jamie",
+                                                                       lastName: "Rivera",
+                                                                       birthdayDay: 14,
+                                                                       birthdayMonth: 6,
+                                                                       birthdayYear: 1990,
+                                                                       addressStreet: "123 Example Street",
+                                                                       addressStreet2: "Apt 4",
+                                                                       addressCity: "Springfield",
+                                                                       addressProvince: "IL",
+                                                                       addressPostalCode: "62701",
+                                                                       addressCountryCode: "US",
+                                                                       mobilePhone: "555-0134",
+                                                                       emailAddress: "jamie.rivera@example.com"))
+                added.append("identity")
+            }
+            if try !vault.creditCards().contains(where: { $0.title == cardTitle }) {
+                let nextYear = Calendar.current.component(.year, from: Date()) + 3
+                _ = try vault.storeCreditCard(SecureVaultModels.CreditCard(title: cardTitle,
+                                                                           cardNumber: "4242424242424242",
+                                                                           cardholderName: "Jamie Rivera",
+                                                                           cardSecurityCode: "123",
+                                                                           expirationMonth: 12,
+                                                                           expirationYear: nextYear))
+                added.append("test card")
+            }
+            appendToLog(summary: added.isEmpty ? "· demo identity and card were already saved" : "· saved demo " + added.joined(separator: " and "),
+                        detail: nil)
+        } catch {
+            appendToLog(summary: "· could not save demo Autofill data: \(error.localizedDescription)", detail: nil)
+        }
     }
 
     @objc private func clearLog() {
@@ -290,11 +335,13 @@ final class BrowserToolsDebugViewController: NSViewController {
         case ("findInPage", "query"): return "games"
         case ("highlightInPage", "quotes"): return "games"
         case ("openTab", "url"): return "https://duckduckgo.com/"
-        case ("getPageSnapshot", "tabId"), ("fillForm", "tabId"), ("clickElement", "tabId"), ("submitForm", "tabId"):
+        case ("getPageSnapshot", "tabId"), ("fillForm", "tabId"), ("clickElement", "tabId"), ("submitForm", "tabId"), ("showTab", "tabId"):
             return ownerTabProvider().flatMap { service.openedTabs.tabIDs(ownerTabID: $0.uuid).last }
         case ("fillForm", "fields"): return #"[{"ref": "e1", "value": "Pat Doe"}]"#
         case ("clickElement", "ref"): return "b1"
         case ("submitForm", "formRef"): return "f1"
+        case ("showTab", "focusRef"): return "e1"
+        case ("getAutofillIdentities", "purpose"): return "to fill the checkout on Stride Runners"
         default: return nil
         }
     }
@@ -309,10 +356,20 @@ final class BrowserToolsDebugViewController: NSViewController {
         ("Cancel", MCPElicitationResult(action: .cancel))
     ]
 
+    /// An identity picker is answered with one of its identities; every other prompt with a permission choice.
+    private static func answers(for params: MCPElicitationCreateParams) -> [(title: String, result: MCPElicitationResult)] {
+        guard params.meta?["kind"]?.stringValue == "identityPicker", let options = params.meta?["options"]?.arrayValue else { return Self.answers }
+        let shares = options.compactMap { option -> (title: String, result: MCPElicitationResult)? in
+            guard let value = option["value"]?.stringValue else { return nil }
+            return ("Share \(option["title"]?.stringValue ?? value)", MCPElicitationResult(action: .accept, content: ["choice": .string(value)]))
+        }
+        return shares + Self.answers.filter { $0.result.action != MCPElicitationAction.accept.rawValue }
+    }
+
     /// The prompt is a log entry like any other, in sequence, with its answers in the header so it
     /// cannot be missed and the history shows what was chosen.
     private func addPromptEntry(for params: MCPElicitationCreateParams) {
-        let buttons = Self.answers.map { answer -> NSView in
+        let buttons = Self.answers(for: params).map { answer -> NSView in
             let button = PromptButton(title: answer.title, target: self, action: #selector(answerPrompt(_:)))
             button.bezelStyle = .rounded
             button.controlSize = .small
@@ -483,6 +540,7 @@ final class BrowserToolsDebugViewController: NSViewController {
             makeButton("tools/list", #selector(listTools)),
             makeButton("Show tab IDs", #selector(listWindowTabs)),
             makeButton("Refresh", #selector(refreshTarget)),
+            makeButton("Seed demo Autofill", #selector(seedDemoAutofillData)),
             makeButton("Clear log", #selector(clearLog))
         ])
         buttons.orientation = .horizontal

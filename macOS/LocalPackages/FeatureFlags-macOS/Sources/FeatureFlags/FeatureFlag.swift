@@ -701,6 +701,14 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
     case aiChatBrowserToolSubmitForm
 
+    /// Gates the `getAutofillIdentities` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolGetAutofillIdentities
+
+    /// Gates the `showTab` browser tool.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218321368831117
+    case aiChatBrowserToolShowTab
+
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
@@ -1155,6 +1163,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.clickElement), category: .duckAI)
         case .aiChatBrowserToolSubmitForm:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.submitForm), category: .duckAI)
+        case .aiChatBrowserToolGetAutofillIdentities:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.getAutofillIdentities), category: .duckAI)
+        case .aiChatBrowserToolShowTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.showTab), category: .duckAI)
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))

@@ -27,6 +27,7 @@ final class FormBrowserToolsTests: XCTestCase {
 
     private var openedTabs: BrowserToolOpenedTabs!
     private var manager: WindowControllersManagerMock!
+    private var collection: TabCollectionViewModel!
     private var tabs: [Tab]!
     private var driver: StubFormDriver!
     private var settler: StubPageSettler!
@@ -40,9 +41,9 @@ final class FormBrowserToolsTests: XCTestCase {
         tabs = ["https://duck.ai/", "https://user.example", "https://quotes.example/movers"].map {
             Tab(content: .url(URL(string: $0)!, credential: nil, source: .ui))
         }
-        let collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs.map { .loaded($0) }),
-                                                pinnedTabsManagerProvider: nil,
-                                                burnerMode: .regular)
+        collection = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs.map { .loaded($0) }),
+                                            pinnedTabsManagerProvider: nil,
+                                            burnerMode: .regular)
         manager = WindowControllersManagerMock()
         manager.customAllTabCollectionViewModels = [collection]
         context = BrowserToolCallContext(ownerTabID: tabs[0].uuid,
@@ -56,6 +57,7 @@ final class FormBrowserToolsTests: XCTestCase {
     override func tearDown() {
         openedTabs = nil
         manager = nil
+        collection = nil
         tabs = nil
         driver = nil
         settler = nil
@@ -360,7 +362,8 @@ final class FormBrowserToolsTests: XCTestCase {
         XCTAssertEqual(submitForm().permissionMode, .ask)
         XCTAssertEqual(fillForm().permissionMode, .auto)
         XCTAssertEqual(clickElement().permissionMode, .auto)
-        XCTAssertEqual(allTools().map { $0.name }, ["getPageSnapshot", "fillForm", "clickElement", "submitForm"])
+        XCTAssertEqual(allTools().map { $0.name }, ["getPageSnapshot", "fillForm", "clickElement", "submitForm", "showTab"])
+        XCTAssertEqual(showTab().permissionMode, .auto)
     }
 
     // MARK: - Checkout
@@ -427,7 +430,50 @@ final class FormBrowserToolsTests: XCTestCase {
         XCTAssertTrue(driver.calls.contains("click b1"))
     }
 
+    // MARK: - showTab
+
+    func testWhenShowingADuckAITabThenItIsSelected() async throws {
+        let result = await showTab().execute(arguments: ["tabId": .string(tabs[2].uuid)], context: context)
+
+        let payload = try XCTUnwrap(result.successPayload)
+        XCTAssertEqual(payload["tabId"], .string(tabs[2].uuid))
+        XCTAssertEqual(payload["shown"], true)
+        XCTAssertTrue(collection.selectedTabViewModel?.tab === tabs[2])
+        XCTAssertTrue(driver.calls.isEmpty)
+    }
+
+    /// With the card field focused, Autofill offers the user's saved card.
+    func testWhenShowingWithAFocusRefThenThatElementIsFocused() async {
+        driver.pages = [Self.checkoutPage()]
+
+        _ = await showTab().execute(arguments: ["tabId": .string(tabs[2].uuid), "focusRef": "e2"], context: context)
+
+        XCTAssertEqual(driver.calls, ["page", "focus e2"])
+        XCTAssertTrue(collection.selectedTabViewModel?.tab === tabs[2])
+    }
+
+    func testWhenTheFocusRefIsUnknownThenNothingMoves() async {
+        let unknown = await showTab().execute(arguments: ["tabId": .string(tabs[2].uuid), "focusRef": "e99"], context: context)
+        let notText = await showTab().execute(arguments: ["tabId": .string(tabs[2].uuid), "focusRef": 5], context: context)
+
+        XCTAssertEqual(unknown, .failure(.notFound))
+        XCTAssertEqual(notText, .failure(.invalidArguments))
+        XCTAssertTrue(collection.selectedTabViewModel?.tab === tabs[0])
+        XCTAssertFalse(driver.calls.contains { $0.hasPrefix("focus") })
+    }
+
+    func testWhenShowingTheUsersOwnTabThenItIsNotFoundAndStaysInTheBackground() async {
+        let result = await showTab().execute(arguments: ["tabId": .string(tabs[1].uuid)], context: context)
+
+        XCTAssertEqual(result, .failure(.notFound))
+        XCTAssertTrue(collection.selectedTabViewModel?.tab === tabs[0])
+    }
+
     // MARK: -
+
+    private func showTab() -> ShowTabBrowserTool {
+        ShowTabBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver)
+    }
 
     private func fillForm() -> FillFormBrowserTool {
         FillFormBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver, settler: settler)
@@ -442,7 +488,7 @@ final class FormBrowserToolsTests: XCTestCase {
     }
 
     private func allTools() -> [any BrowserTool] {
-        [GetPageSnapshotBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver), fillForm(), clickElement(), submitForm()]
+        [GetPageSnapshotBrowserTool(windowControllersManager: manager, openedTabs: openedTabs, driver: driver), fillForm(), clickElement(), submitForm(), showTab()]
     }
 
     private func makeInvoker(elicitations: AIChatElicitationCoordinator) -> BrowserToolInvoker {

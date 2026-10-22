@@ -24,6 +24,18 @@ import DesignResourcesKit
 /// Lays itself out in the coordinate space of the screen; add it to a full-screen superview.
 final class TabSwitcherCardView: UIView {
 
+    /// In a grid the page shrinks into the cell's preview; in a list it fades into the row as the card collapses to it.
+    enum CellStyle {
+        case grid
+        case list
+
+        static var current: CellStyle {
+            DefaultTabSwitcherSettings().isGridViewEnabled ? .grid : .list
+        }
+    }
+
+    let cellStyle: CellStyle
+
     private let shadow = UIView()
     private let card = UIView()
     private let contentClip = UIView()
@@ -60,8 +72,10 @@ final class TabSwitcherCardView: UIView {
          contentCropTop: CGFloat,
          screenBounds: CGRect,
          screenCornerRadius: CGFloat,
-         screenBackgroundColor: UIColor) {
+         screenBackgroundColor: UIColor,
+         cellStyle: CellStyle = .current) {
         self.content = content
+        self.cellStyle = cellStyle
         self.contentFrameInScreen = contentFrameInScreen
         self.contentCropTop = contentCropTop
         self.screenBounds = screenBounds
@@ -127,15 +141,22 @@ final class TabSwitcherCardView: UIView {
                                        height: dax.circleInScreen.height * scale))
             dax.pageDax?.alpha = 1
             dax.cellDax.alpha = dax.pageDax == nil ? 1 : 0
-            contentClip.alpha = 1
+            if cellStyle == .grid {
+                contentClip.alpha = 1
+            }
         }
     }
 
-    /// The page exactly as `TabViewGridCell` draws it at `cellFrame`.
+    /// The page exactly as `TabViewGridCell` draws it at `cellFrame`, or at a list row's size. A list row shows
+    /// none of the page, so callers fade it with `setPage(visible:)`.
     func applyCellPose(cellFrame: CGRect) {
-        let layout = TabSwitcherSwipeUpGeometry.previewLayout(forCellSize: cellFrame.size,
-                                                              contentSize: contentFrameInScreen.size,
-                                                              contentCropTop: contentCropTop)
+        let layout = cellStyle == .grid
+            ? TabSwitcherSwipeUpGeometry.previewLayout(forCellSize: cellFrame.size,
+                                                       contentSize: contentFrameInScreen.size,
+                                                       contentCropTop: contentCropTop)
+            : TabSwitcherSwipeUpGeometry.listPreviewLayout(forCellSize: cellFrame.size,
+                                                           contentSize: contentFrameInScreen.size,
+                                                           contentCropTop: contentCropTop)
         cardFrame = cellFrame
         card.frame = cellFrame
         card.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
@@ -145,16 +166,23 @@ final class TabSwitcherCardView: UIView {
         shadow.layer.shadowOpacity = 1
         shadow.alpha = 1
         contentClip.frame = layout.clipFrame
-        contentClip.layer.cornerRadius = TabViewCell.Constants.previewCornerRadius
+        contentClip.layer.cornerRadius = cellStyle == .grid ? TabViewCell.Constants.previewCornerRadius : TabViewCell.Constants.cellCornerRadius
         content.frame = layout.contentFrame
         layOutBorder(around: cellFrame)
         if let dax {
-            let imageFrame = TabSwitcherSwipeUpGeometry.logoFrame(inPreviewClip: layout.clipFrame,
-                                                                  logoSize: dax.cellDax.image?.size ?? .zero)
-            layOut(dax, circle: Self.denormalize(dax.cellImageCircle, in: imageFrame))
+            switch cellStyle {
+            case .grid:
+                let imageFrame = TabSwitcherSwipeUpGeometry.logoFrame(inPreviewClip: layout.clipFrame,
+                                                                      logoSize: dax.cellDax.image?.size ?? .zero)
+                layOut(dax, circle: Self.denormalize(dax.cellImageCircle, in: imageFrame))
+            case .list:
+                layOut(dax, circle: TabSwitcherSwipeUpGeometry.faviconFrame(inListCellOfSize: cellFrame.size))
+            }
             dax.pageDax?.alpha = 0
             dax.cellDax.alpha = 1
-            contentClip.alpha = 0
+            if cellStyle == .grid {
+                contentClip.alpha = 0
+            }
         }
     }
 
@@ -263,6 +291,12 @@ final class TabSwitcherCardView: UIView {
         border.alpha = visible ? 1 : 0
     }
 
+    /// Fading the page along with the card's spring would leave it washed out for most of the way, so a list
+    /// row's page fades on a schedule of its own.
+    func setPage(visible: Bool) {
+        contentClip.alpha = visible ? 1 : 0
+    }
+
     func setBackgroundColor(_ color: UIColor) {
         card.backgroundColor = color
     }
@@ -287,7 +321,8 @@ final class TabSwitcherCardView: UIView {
             self.header = header
         }
 
-        if dax == nil {
+        // A grid cell draws the new tab page as a logo, which the travelling Dax already stands in for.
+        if dax == nil || cellStyle == .list {
             installFace(from: cell)
         }
 
@@ -313,6 +348,11 @@ final class TabSwitcherCardView: UIView {
         let face = UIImageView(image: image)
         face.frame = card.bounds
         face.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        if cellStyle == .list {
+            // Stretched to a growing card, the row's text would balloon before it fades.
+            face.contentMode = .topLeft
+            face.clipsToBounds = true
+        }
         face.alpha = 0
         if let header {
             card.insertSubview(face, belowSubview: header)

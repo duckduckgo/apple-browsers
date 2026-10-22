@@ -79,22 +79,36 @@ struct TabSwitcherSwipeUpGeometryTests {
         let screen = CGRect(x: 0, y: 0, width: 999, height: 874)
         let cellFrame = CGRect(x: 30, y: 200, width: 150, height: 180)
 
-        TabSwitcherCellFrameCache.store(cellFrame, row: 3, screenWidth: screen.width)
+        TabSwitcherCellFrameCache.store(cellFrame, row: 3, screenWidth: screen.width, isGrid: true)
 
-        #expect(TabSwitcherCellFrameCache.frame(forRow: 3, in: screen) == cellFrame)
+        #expect(TabSwitcherCellFrameCache.frame(forRow: 3, in: screen, isGrid: true) == cellFrame)
+        #expect(TabSwitcherCellFrameCache.frame(forRow: 3, in: screen, isGrid: false) != cellFrame)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Before any cell was laid out, the card heads for the cell's place in the grid", .timeLimit(.minutes(1)))
     func estimatedCellFrame() {
-        let first = TabSwitcherCellFrameCache.frame(forRow: 0, in: screen)
-        let second = TabSwitcherCellFrameCache.frame(forRow: 1, in: screen)
-        let third = TabSwitcherCellFrameCache.frame(forRow: 2, in: screen)
+        let first = TabSwitcherCellFrameCache.frame(forRow: 0, in: screen, isGrid: true)
+        let second = TabSwitcherCellFrameCache.frame(forRow: 1, in: screen, isGrid: true)
+        let third = TabSwitcherCellFrameCache.frame(forRow: 2, in: screen, isGrid: true)
 
         #expect(first.width == floor(TabSwitcherGridLayoutGeometry.columnWidth(for: screen.width)))
         #expect(second.minY == first.minY)
         #expect(second.minX - first.maxX == TabSwitcherGridLayoutGeometry.spacing)
         #expect(third.minX == first.minX)
         #expect(third.minY > first.minY)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Before any list row was laid out, the card heads for the row's place in the list", .timeLimit(.minutes(1)))
+    func estimatedListRowFrame() {
+        let first = TabSwitcherCellFrameCache.frame(forRow: 0, in: screen, isGrid: false)
+        let second = TabSwitcherCellFrameCache.frame(forRow: 1, in: screen, isGrid: false)
+
+        #expect(first.height == TabSwitcherPageViewController.Constants.listCellHeight)
+        #expect(first.minX == TabSwitcherGridLayoutGeometry.spacing)
+        #expect(first.midX == screen.midX)
+        #expect(second.minX == first.minX)
+        #expect(second.minY - first.maxY == TabSwitcherGridLayoutGeometry.spacing)
     }
 }

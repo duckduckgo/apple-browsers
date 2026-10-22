@@ -95,6 +95,24 @@ enum TabSwitcherSwipeUpGeometry {
         return (clipFrame, contentFrame)
     }
 
+    /// A list row has no preview: the page keeps its width, pinned to the row's top edge, while it fades out.
+    static func listPreviewLayout(forCellSize cellSize: CGSize,
+                                  contentSize: CGSize,
+                                  contentCropTop: CGFloat) -> (clipFrame: CGRect, contentFrame: CGRect) {
+        let scale = contentSize.width > 0 ? cellSize.width / contentSize.width : 1
+        let contentFrame = CGRect(x: 0,
+                                  y: -contentCropTop * scale,
+                                  width: cellSize.width,
+                                  height: contentSize.height * scale)
+        return (CGRect(origin: .zero, size: cellSize), contentFrame)
+    }
+
+    /// Where `TabViewListCell` draws the favicon.
+    static func faviconFrame(inListCellOfSize cellSize: CGSize) -> CGRect {
+        let size = TabViewListCell.Constants.faviconSize
+        return CGRect(x: TabViewListCell.Constants.leadingPadding, y: (cellSize.height - size) / 2, width: size, height: size)
+    }
+
     /// Where a cell showing the new tab logo draws it, matching `TabViewCell.updatePreviewToDisplayLogo()`.
     static func logoFrame(inPreviewClip clipFrame: CGRect, logoSize: CGSize) -> CGRect {
         let center = CGPoint(x: clipFrame.midX,
@@ -119,34 +137,46 @@ enum TabSwitcherCellFrameCache {
     private struct Key: Hashable {
         let row: Int
         let screenWidth: CGFloat
+        let isGrid: Bool
     }
 
     private static var frames: [Key: CGRect] = [:]
 
-    /// The grid cell's last known frame, else roughly where a fresh grid would put it.
-    static func frame(forRow row: Int, in screen: CGRect) -> CGRect {
-        if let frame = frames[Key(row: row, screenWidth: screen.width)] {
+    /// The cell's last known frame, else roughly where a fresh grid or list would put it.
+    static func frame(forRow row: Int, in screen: CGRect, isGrid: Bool) -> CGRect {
+        if let frame = frames[Key(row: row, screenWidth: screen.width, isGrid: isGrid)] {
             return frame
         }
 
         let spacing = TabSwitcherGridLayoutGeometry.spacing
-        let width = floor(TabSwitcherGridLayoutGeometry.columnWidth(for: screen.width))
-        let columns = max(1, Int((screen.width - spacing) / (width + spacing)))
-        let height = TabSwitcherViewController.Constants.cellMaxHeight
+        let size: CGSize
+        let columns: Int
+        if isGrid {
+            size = CGSize(width: floor(TabSwitcherGridLayoutGeometry.columnWidth(for: screen.width)),
+                          height: TabSwitcherViewController.Constants.cellMaxHeight)
+            columns = max(1, Int((screen.width - spacing) / (size.width + spacing)))
+        } else {
+            size = CGSize(width: min(TabSwitcherPageViewController.Constants.listCellMaxWidth, screen.width - spacing * 2),
+                          height: TabSwitcherPageViewController.Constants.listCellHeight)
+            columns = 1
+        }
         // Below the tab switcher's title bar.
         let top: CGFloat = 138
-        let unclampedY = top + CGFloat(row / columns) * (height + spacing)
+        let unclampedY = top + CGFloat(row / columns) * (size.height + spacing)
         // The tab switcher scrolls the current tab into the middle, so far rows never land off screen.
-        let y = min(unclampedY, max(top, screen.height / 2 - height / 2))
-        return CGRect(x: spacing + CGFloat(row % columns) * (width + spacing), y: y, width: width, height: height)
+        let y = min(unclampedY, max(top, screen.height / 2 - size.height / 2))
+        let x = isGrid ? spacing + CGFloat(row % columns) * (size.width + spacing) : screen.midX - size.width / 2
+        return CGRect(origin: CGPoint(x: x, y: y), size: size)
     }
 
     static func store(_ frame: CGRect, row: Int, in tabSwitcher: TabSwitcherViewController) {
-        guard DefaultTabSwitcherSettings().isGridViewEnabled else { return }
-        store(frame, row: row, screenWidth: tabSwitcher.view.window?.bounds.width ?? tabSwitcher.view.bounds.width)
+        store(frame,
+              row: row,
+              screenWidth: tabSwitcher.view.window?.bounds.width ?? tabSwitcher.view.bounds.width,
+              isGrid: DefaultTabSwitcherSettings().isGridViewEnabled)
     }
 
-    static func store(_ frame: CGRect, row: Int, screenWidth: CGFloat) {
-        frames[Key(row: row, screenWidth: screenWidth)] = frame
+    static func store(_ frame: CGRect, row: Int, screenWidth: CGFloat, isGrid: Bool) {
+        frames[Key(row: row, screenWidth: screenWidth, isGrid: isGrid)] = frame
     }
 }

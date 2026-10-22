@@ -437,7 +437,10 @@ class ToWebViewTransition: WebViewTransition {
         // A web view just attached for a different tab hasn't been laid out yet; its frame and insets
         // would place the preview off from where the page will actually draw.
         mainViewController.view.layoutIfNeeded()
-        let statusAreaColor = Self.topEdgeColor(of: preview) ?? backgroundColor
+        // With the address bar at the bottom the page runs under the status bar, which the stored preview leaves out.
+        let statusAreaColor = mainViewController.appSettings.currentAddressBarPosition.isBottom
+            ? Self.topEdgeColor(of: preview) ?? backgroundColor
+            : mainViewController.viewCoordinator.statusBackground.backgroundColor ?? backgroundColor
 
         let webViewFrame = webView.convert(webView.bounds, to: containerView)
         let cropTop = webView.scrollView.contentInset.top

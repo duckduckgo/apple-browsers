@@ -81,7 +81,12 @@ protocol TabSwitcherPageDelegate: AnyObject {
 }
 
 class TabSwitcherPageViewController: UIViewController {
-    
+
+    enum Constants {
+        static let listCellMaxWidth: CGFloat = 664
+        static let listCellHeight: CGFloat = 70
+    }
+
     private(set) var collectionView: UICollectionView!
     let tabsModel: TabsModelManaging
     weak var pageDelegate: TabSwitcherPageDelegate?
@@ -568,8 +573,8 @@ extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
         } else {
             let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
             let spacing = layout?.sectionInset.left ?? 0.0
-            let width = min(664, collectionView.bounds.size.width - 2 * spacing)
-            return CGSize(width: width, height: 70)
+            let width = min(Constants.listCellMaxWidth, collectionView.bounds.size.width - 2 * spacing)
+            return CGSize(width: width, height: Constants.listCellHeight)
         }
     }
 

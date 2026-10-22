@@ -83,7 +83,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
     private let host = UIView()
     private let backdrop = UIView()
     private var cardView: TabSwitcherCardView?
-    private var returnToolbarSnapshot: (tab: Tab, tabCount: Int, view: UIView)?
+    private var returnChromeSnapshot: (tab: Tab, tabCount: Int, view: UIView)?
     private var chromeSnapshots: [UIView] = []
 
     private var screenBounds: CGRect = .zero
@@ -209,45 +209,25 @@ final class TabSwitcherSwipeUpTransition: NSObject {
     }
 
     /// Nil once tabs were opened or closed, since the copy's tab switcher button shows the old count.
-    func takeReturnToolbarSnapshot() -> (tab: Tab, view: UIView)? {
-        defer { returnToolbarSnapshot = nil }
-        guard let returnToolbarSnapshot,
-              returnToolbarSnapshot.tabCount == mainViewController?.tabManager.currentTabsModel.count else { return nil }
-        return (returnToolbarSnapshot.tab, returnToolbarSnapshot.view)
+    func takeReturnChromeSnapshot() -> (tab: Tab, view: UIView)? {
+        defer { returnChromeSnapshot = nil }
+        guard let returnChromeSnapshot,
+              returnChromeSnapshot.tabCount == mainViewController?.tabManager.currentTabsModel.count else { return nil }
+        return (returnChromeSnapshot.tab, returnChromeSnapshot.view)
     }
 
-    /// The live toolbar is hidden under the tab switcher and can't be snapshotted reliably while it is (its glass
+    /// The live bars are hidden under the tab switcher and can't be snapshotted reliably while they are (their glass
     /// samples the wrong backdrop), so keep a copy for the way back to the same tab.
-    private func keepToolbarSnapshotForReturn(of mainViewController: MainViewController, in window: UIView) {
-        returnToolbarSnapshot = nil
+    private func keepChromeSnapshotForReturn(of mainViewController: MainViewController, in window: UIView) {
+        returnChromeSnapshot = nil
         let tabsModel = mainViewController.tabManager.currentTabsModel
         guard let tab = tabsModel.currentTab,
-              let snapshot = toolbarSnapshot(of: mainViewController, in: window) else { return }
-        returnToolbarSnapshot = (tab, tabsModel.count, snapshot)
-    }
-
-    private func toolbarSnapshot(of mainViewController: MainViewController, in window: UIView) -> UIView? {
-        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
-        guard !toolbar.isHidden, toolbar.alpha > 0.01 else { return nil }
-        let rect = toolbar.visibleCapsuleRect
-        let snapshot = toolbar.resizableSnapshotView(from: rect, afterScreenUpdates: false, withCapInsets: .zero)
-        snapshot?.frame = toolbar.convert(rect, to: window)
-        return snapshot
+              let snapshot = mainViewController.tabSwitcherChromeSnapshot(in: window) else { return }
+        returnChromeSnapshot = (tab, tabsModel.count, snapshot)
     }
 
     private func installChromeSnapshots(of mainViewController: MainViewController, in window: UIView) {
-        guard let coordinator = mainViewController.viewCoordinator else { return }
-        var snapshots = [toolbarSnapshot(of: mainViewController, in: window)].compactMap { $0 }
-
-        let otherChrome: [UIView?] = [coordinator.navigationBarContainer, coordinator.unifiedToggleInputContainer]
-        for view in otherChrome.compactMap({ $0 }) where !view.isHidden && view.alpha > 0.01 && view.window != nil {
-            let frame = view.convert(view.bounds, to: window)
-            guard frame.midY > window.bounds.midY,
-                  let snapshot = view.snapshotView(afterScreenUpdates: false) else { continue }
-            snapshot.frame = frame
-            snapshots.append(snapshot)
-        }
-
+        let snapshots = mainViewController.tabSwitcherChromeSnapshots(in: window)
         snapshots.forEach(host.addSubview)
         chromeSnapshots = snapshots
     }
@@ -264,7 +244,12 @@ final class TabSwitcherSwipeUpTransition: NSObject {
 
         isCommitted = true
         commitSpring = spring
-        springCard(to: TabSwitcherCellFrameCache.frame(forRow: row, in: screenBounds))
+        springCard(to: TabSwitcherCellFrameCache.frame(forRow: row, in: screenBounds, isGrid: cardView?.cellStyle != .list))
+        if cardView?.cellStyle == .list {
+            UIView.animate(withDuration: spring.response * 0.45, delay: spring.response * 0.1, options: [.curveEaseIn]) {
+                self.cardView?.setPage(visible: false)
+            }
+        }
         CATransaction.flush()
 
         // The presentation can be refused (another one is in flight, say); don't strand the card on screen.
@@ -466,7 +451,7 @@ extension TabSwitcherSwipeUpTransition: UIViewControllerAnimatedTransitioning, U
 
         if let mainViewController {
             if let window = mainViewController.view.window {
-                keepToolbarSnapshotForReturn(of: mainViewController, in: window)
+                keepChromeSnapshotForReturn(of: mainViewController, in: window)
             }
             mainViewController.beginTabSwitcherToolbarOwnership()
             mainViewController.viewCoordinator.toolbar.alpha = 0

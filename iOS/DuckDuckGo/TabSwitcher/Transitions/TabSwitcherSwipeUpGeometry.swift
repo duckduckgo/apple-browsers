@@ -20,7 +20,7 @@
 import UIKit
 
 /// Where the page card sits while the user drags the bottom address bar upwards, measured from Safari on
-/// iOS 26 frame by frame. The card stays centred horizontally and keeps the screen's proportions; its
+/// iOS 26 frame by frame. The card follows the finger horizontally and keeps the screen's proportions; its
 /// bottom edge rises a little faster than the finger at first, then resists as the card nears its smallest.
 enum TabSwitcherSwipeUpGeometry {
 
@@ -66,13 +66,56 @@ enum TabSwitcherSwipeUpGeometry {
         return (0, 1)
     }
 
-    static func cardFrame(forTravel travel: CGFloat, in screenBounds: CGRect) -> CGRect {
+    static func cardFrame(forTravel travel: CGFloat, horizontalTravel: CGFloat = 0, in screenBounds: CGRect) -> CGRect {
         let pose = pose(forTravel: travel, screenHeight: screenBounds.height)
         let size = CGSize(width: screenBounds.width * pose.scale, height: screenBounds.height * pose.scale)
-        return CGRect(x: screenBounds.midX - size.width / 2,
+        return CGRect(x: screenBounds.midX - size.width / 2 + horizontalTravel,
                       y: screenBounds.maxY - pose.lift - size.height,
                       width: size.width,
                       height: size.height)
+    }
+
+    static func neighborCardFrame(forTravel travel: CGFloat, horizontalTravel: CGFloat, offset: Int, in screenBounds: CGRect) -> CGRect {
+        let frame = cardFrame(forTravel: travel, horizontalTravel: horizontalTravel, in: screenBounds)
+        guard offset != 0 else { return frame }
+        let size = CGSize(width: screenBounds.width * 0.78, height: screenBounds.height * 0.78)
+        // Perspective adds about 1% screen width to the gap at full tilt.
+        let gap = screenBounds.width * 0.085
+        let startingEdge = (offset < 0 ? screenBounds.minX - gap : screenBounds.maxX + gap) + horizontalTravel
+        let targetEdge = offset < 0 ? frame.minX - gap : frame.maxX + gap
+        let edge = startingEdge + (targetEdge - startingEdge) * neighborProgress(forTravel: travel, screenHeight: screenBounds.height)
+        return CGRect(x: offset < 0 ? edge - size.width : edge, y: frame.minY, width: size.width, height: size.height)
+    }
+
+    /// Adjacent cards yaw toward the current card around their vertical axes.
+    static func neighborTilt(forTravel travel: CGFloat, screenHeight: CGFloat, offset: Int) -> CGFloat {
+        return -CGFloat(offset) * 7 * .pi / 180 * neighborProgress(forTravel: travel, screenHeight: screenHeight)
+    }
+
+    private static func neighborProgress(forTravel travel: CGFloat, screenHeight: CGFloat) -> CGFloat {
+        guard screenHeight > 0 else { return 0 }
+        return min(1, max(0, travel / (screenHeight * 0.15)))
+    }
+
+    static func selectedTabOffset(horizontalTravel: CGFloat, screenWidth: CGFloat) -> Int {
+        guard screenWidth > 0, abs(horizontalTravel) > screenWidth * 0.18 else { return 0 }
+        return horizontalTravel < 0 ? 1 : -1
+    }
+
+    /// Keep the destination hidden for the start of the drag, then gradually reveal it as the card lifts.
+    static func revealProgress(forTravel travel: CGFloat, screenHeight: CGFloat) -> CGFloat {
+        guard screenHeight > 0 else { return 0 }
+        return min(1, max(0, (travel / screenHeight - 0.04) / 0.24))
+    }
+
+    /// Keep All Tabs defocused while the user holds the card.
+    static func blurProgress(forRevealProgress progress: CGFloat, isCommitted: Bool) -> CGFloat {
+        isCommitted ? min(0.3, 1 - progress) : max(0.3, 1 - progress)
+    }
+
+    static func chromeVisibility(forTravel travel: CGFloat, screenHeight: CGFloat) -> CGFloat {
+        guard screenHeight > 0 else { return 1 }
+        return min(1, max(0, 1 - travel / (screenHeight * 0.05)))
     }
 
     /// Mirrors `TabViewGridCell`: a header, then the preview clipped to an inset rounded rect with the

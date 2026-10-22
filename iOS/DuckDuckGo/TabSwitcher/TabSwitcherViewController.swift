@@ -507,11 +507,7 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshTitleViews()
-        currentSelection = tabsModel.currentIndex
-        updateUIForSelectionMode()
-        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
-        firePageController?.updateEmptyStateVisibility()
+        prepareChromeForPresentation()
     }
 
     override func viewDidLayoutSubviews() {
@@ -538,9 +534,18 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func prepareForPresentation() {
+        prepareChromeForPresentation()
         view.layoutIfNeeded()
         syncPagingScrollViewToCurrentMode(animated: false)
         self.scrollToInitialTab()
+    }
+
+    private func prepareChromeForPresentation() {
+        refreshTitleViews()
+        currentSelection = tabsModel.currentIndex
+        updateUIForSelectionMode()
+        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
+        firePageController?.updateEmptyStateVisibility()
     }
 
     private func syncPagingScrollViewToCurrentMode(animated: Bool) {

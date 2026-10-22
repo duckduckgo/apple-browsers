@@ -2192,6 +2192,26 @@ final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
                        CGRect(x: 0, y: 50, width: 320, height: 590))
     }
 
+    func testWhenCapturingFullScreenThenSnapshotKeepsNativeWidthInsteadOfGridLimit() {
+        for windowSize in [CGSize(width: 390, height: 844), CGSize(width: 844, height: 390),
+                           CGSize(width: 1024, height: 1366), CGSize(width: 1366, height: 1024)] {
+            let rect = CGRect(origin: .zero, size: windowSize)
+            let gridWidth = WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize)
+
+            XCTAssertEqual(gridWidth, TabSwitcherGridLayoutGeometry.maximumPreviewWidth(for: windowSize))
+            XCTAssertLessThan(gridWidth, rect.width)
+            XCTAssertEqual(WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize, isFullScreen: true), rect.width)
+        }
+    }
+
+    func testWhenViewportIsNarrowerThanGridLimitThenSnapshotDoesNotUpscale() {
+        let rect = CGRect(x: 0, y: 0, width: 100, height: 500)
+        let windowSize = CGSize(width: 390, height: 844)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize), rect.width)
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect, windowSize: windowSize, isFullScreen: true), rect.width)
+    }
+
     func testWhenNotCapturingFullBoundsThenTopAndBottomInsetsAreCropped() {
         let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
         let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)

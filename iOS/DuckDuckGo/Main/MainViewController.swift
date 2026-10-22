@@ -399,7 +399,7 @@ class MainViewController: UIViewController {
 
         let toolbar: BrowserToolbarView = viewCoordinator.toolbar
         _ = themeColorManager.updateThemeColor()
-        refreshSettledFloatingGlassAppearance()
+        refreshSettledFloatingGlassAppearance(animated: isAlreadyShowing)
         toolbar.layoutIfNeeded()
         guard !isAlreadyShowing else { return }
 
@@ -422,10 +422,10 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func refreshSettledFloatingGlassAppearance() {
+    private func refreshSettledFloatingGlassAppearance(animated: Bool = false) {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
-        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle, animated: animated)
         // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
         // in the navigation bar container instead, so its glass keeps the style it was snapshotted
         // with and lands opaque before flipping translucent a frame later.

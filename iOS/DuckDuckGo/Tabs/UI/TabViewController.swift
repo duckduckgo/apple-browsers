@@ -82,8 +82,8 @@ enum WebViewPreviewSnapshotGeometry {
         return visibleRect(webViewBounds: webViewBounds, contentInset: cropInset)
     }
 
-    static func snapshotWidth(for rect: CGRect, windowSize: CGSize) -> CGFloat {
-        min(rect.width, TabSwitcherGridLayoutGeometry.maximumPreviewWidth(for: windowSize))
+    static func snapshotWidth(for rect: CGRect, windowSize: CGSize, isFullScreen: Bool = false) -> CGFloat {
+        isFullScreen ? rect.width : min(rect.width, TabSwitcherGridLayoutGeometry.maximumPreviewWidth(for: windowSize))
     }
 }
 

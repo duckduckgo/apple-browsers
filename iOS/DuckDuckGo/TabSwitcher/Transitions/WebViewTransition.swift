@@ -30,28 +30,6 @@ class WebViewTransition: TabSwitcherTransition {
                                                                      to: self.tabSwitcherViewController.view)
     }
 
-    /// A web view that was just attached for a different tab can take a few hundred milliseconds to paint.
-    /// Revealing it before then flashes the background (black in dark mode), so callers wait for this.
-    /// A one-pixel snapshot completes only once the web content has rendered; the timeout covers stalls.
-    /// Waiting is invisible: by then the card already fills the screen.
-    fileprivate func whenRendered(_ webView: WKWebView, timeout: TimeInterval = 0.6, _ completion: @escaping () -> Void) {
-        var hasCompleted = false
-        let complete = {
-            guard !hasCompleted else { return }
-            hasCompleted = true
-            completion()
-        }
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = CGRect(x: 0, y: 0, width: 1, height: 1)
-        configuration.snapshotWidth = 1
-        webView.takeSnapshot(with: configuration) { _, _ in
-            // The snapshot reports the web content has painted, but compositing it on screen can lag
-            // a few frames behind.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: complete)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: complete)
-    }
-
     /// In floating UI the page runs edge to edge, so the card is the whole screen (status band included)
     /// with the display's corner radius, like Safari, and the page sits in it at `webViewFrame`.
     fileprivate func screenCardGeometry(webViewFrame: CGRect,
@@ -413,7 +391,7 @@ class ToWebViewTransition: WebViewTransition {
             mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
             transitionContext.completeTransition(true)
         }
-        whenRendered(webView) {
+        TabSwitcherTransition.whenRendered(webView) {
             isWebViewRendered = true
             finish()
         }
@@ -460,7 +438,7 @@ class ToWebViewTransition: WebViewTransition {
                        using: transitionContext,
                        mainViewController: mainViewController,
                        tab: tab,
-                       whenPageReady: { self.whenRendered(webView, $0) })
+                       whenPageReady: { TabSwitcherTransition.whenRendered(webView, $0) })
     }
 
     /// With the address bar at the bottom the page runs under the status bar, which the stored preview leaves out.

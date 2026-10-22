@@ -115,8 +115,9 @@ final class TabSwitcherCardView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// The page at `frame`, a scaled-down copy of the whole screen.
-    func applyScreenPose(cardFrame frame: CGRect) {
+    /// The page at `frame`, a scaled-down copy of the whole screen with optional vertical-axis perspective.
+    func applyScreenPose(cardFrame frame: CGRect, tilt: CGFloat = 0) {
+        [shadow, card, border].forEach { $0.layer.transform = CATransform3DIdentity }
         let scale = screenBounds.width > 0 ? frame.width / screenBounds.width : 1
         let radius = screenCornerRadius * scale
         cardFrame = frame
@@ -124,8 +125,10 @@ final class TabSwitcherCardView: UIView {
         card.layer.cornerRadius = radius
         shadow.frame = frame
         shadow.layer.cornerRadius = radius
-        shadow.layer.shadowOpacity = 0
-        shadow.alpha = 0
+        let shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
+        shadow.layer.shadowColor = shadowColor.copy(alpha: shadowColor.alpha * 1.2)
+        shadow.layer.shadowOpacity = Float(min(1, max(0, (1 - scale) / 0.15)))
+        shadow.alpha = 1
         contentClip.frame = card.bounds
         contentClip.layer.cornerRadius = radius
         content.frame = CGRect(x: (contentFrameInScreen.minX - screenBounds.minX) * scale,
@@ -145,11 +148,18 @@ final class TabSwitcherCardView: UIView {
                 contentClip.alpha = 1
             }
         }
+        var perspective = CATransform3DIdentity
+        if tilt != 0 {
+            perspective.m34 = -1 / max(screenBounds.width * 2.5, 1)
+            perspective = CATransform3DRotate(perspective, tilt, 0, 1, 0)
+        }
+        [shadow, card, border].forEach { $0.layer.transform = perspective }
     }
 
     /// The page exactly as `TabViewGridCell` draws it at `cellFrame`, or at a list row's size. A list row shows
     /// none of the page, so callers fade it with `setPage(visible:)`.
     func applyCellPose(cellFrame: CGRect) {
+        [shadow, card, border].forEach { $0.layer.transform = CATransform3DIdentity }
         let layout = cellStyle == .grid
             ? TabSwitcherSwipeUpGeometry.previewLayout(forCellSize: cellFrame.size,
                                                        contentSize: contentFrameInScreen.size,
@@ -163,6 +173,7 @@ final class TabSwitcherCardView: UIView {
         card.backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         shadow.frame = cellFrame
         shadow.layer.cornerRadius = TabViewCell.Constants.cellCornerRadius
+        shadow.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
         shadow.layer.shadowOpacity = 1
         shadow.alpha = 1
         contentClip.frame = layout.clipFrame

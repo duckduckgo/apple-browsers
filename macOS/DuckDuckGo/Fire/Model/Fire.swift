@@ -25,6 +25,7 @@ import FeatureFlags_macOS
 import Foundation
 import History
 import os.log
+import PrivacyConfig
 import PrivacyDashboard
 import PrivacyStats
 import AutoconsentStats
@@ -37,6 +38,9 @@ protocol FireProtocol: AnyObject {
     var fireproofDomains: FireproofDomains { get }
     var visualizeFireAnimationDecider: VisualizeFireSettingsDecider { get }
     var burningDataPublisher: AnyPublisher<Fire.BurningData?, Never> { get }
+    var isWindowSnapshotEnabled: Bool { get }
+
+    func shouldUseWindowSnapshot(for burningData: Fire.BurningData) -> Bool
 
     func fireAnimationDidStart()
     func fireAnimationDidFinish()
@@ -69,6 +73,10 @@ protocol FireProtocol: AnyObject {
 }
 
 extension FireProtocol {
+
+    var isWindowSnapshotEnabled: Bool { false }
+
+    func shouldUseWindowSnapshot(for burningData: Fire.BurningData) -> Bool { false }
 
     @MainActor
     func beginWindowClosingPresentation(for windowController: MainWindowController) {}
@@ -204,16 +212,26 @@ final class Fire: FireProtocol {
     var dataClearingWideEventService: DataClearingWideEventService?
 
     private var dispatchGroup: DispatchGroup?
+    private let featureFlagger: FeatureFlagger
+    private var isSnapshotEnabledForCurrentBurn = false
     private weak var windowToKeepAfterBurning: MainWindowController?
     private var windowsWithClosingPresentation = Set<ObjectIdentifier>()
+
+    var isWindowSnapshotEnabled: Bool {
+        featureFlagger.isFeatureOn(.fireWindowSnapshotAnimation)
+    }
+
+    func shouldUseWindowSnapshot(for burningData: BurningData) -> Bool {
+        isSnapshotEnabledForCurrentBurn && burningData.usesWindowSnapshot
+    }
 
     enum BurningData: Equatable {
         case specificDomains(_ domains: Set<String>, closesTabs: Bool, scope: BurningScope)
         case all
 
         /// Only whole-window burns that close tabs replace the window with a snapshot.
-        /// Today's visits also use an all-windows entity when closing is selected.
-        /// Tab burns and clearing data without closing windows keep their original presentation.
+        /// History-visit burns can also close browser windows.
+        /// Tab burns and clearing data without closing windows render inside the browser window.
         var usesWindowSnapshot: Bool {
             switch self {
             case .all,
@@ -369,6 +387,7 @@ final class Fire: FireProtocol {
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider? = nil,
+         featureFlagger: FeatureFlagger? = nil,
          isAppActiveProvider: @escaping @MainActor () -> Bool = { @MainActor in NSApp.isActive },
          aIChatHistoryCleaner: AIChatHistoryCleaning? = nil,
          dataClearingPixelsReporter: DataClearingPixelsReporter = .init(),
@@ -395,6 +414,7 @@ final class Fire: FireProtocol {
         self.autoconsentManagement = autoconsentManagement ?? NSApp.delegateTyped.autoconsentManagement
         self.autoconsentStats = autoconsentStats ?? NSApp.delegateTyped.autoconsentStats
         self.visualizeFireAnimationDecider = visualizeFireAnimationDecider ?? NSApp.delegateTyped.visualizeFireSettingsDecider
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         self.isAppActiveProvider = isAppActiveProvider
         if let stateRestorationManager = stateRestorationManager {
             self.stateRestorationManager = stateRestorationManager
@@ -457,9 +477,7 @@ final class Fire: FireProtocol {
         let domains = domainsToBurn(from: entity)
         assert(domains.areAllETLDPlus1(tld: tld))
 
-        // Snapshot handoff can change the key window; preserve the original replacement policy.
-        windowsWithClosingPresentation.removeAll()
-        windowToKeepAfterBurning = windowControllersManager.mainWindowControllers.first(where: shouldKeepWindowOpenWhenBurning)
+        prepareWindowClosingPresentation()
         burningData = .specificDomains(domains, closesTabs: entity.closesTabs, scope: scope)
 
         dataClearingWideEventService?.start(.clearLastSessionState)
@@ -590,8 +608,7 @@ final class Fire: FireProtocol {
         let group = DispatchGroup()
         dispatchGroup = group
 
-        windowsWithClosingPresentation.removeAll()
-        windowToKeepAfterBurning = windowControllersManager.mainWindowControllers.first(where: shouldKeepWindowOpenWhenBurning)
+        prepareWindowClosingPresentation()
         burningData = .all
 
         let entity = BurningEntity.allWindows(mainWindowControllers: windowControllersManager.mainWindowControllers, selectedDomains: Set(), customURLToOpen: url, close: true)
@@ -837,7 +854,7 @@ final class Fire: FireProtocol {
     /// rather than closing the window entirely.
     @MainActor
     func shouldKeepWindowOpenWhenBurning(_ windowController: MainWindowController) -> Bool {
-        if burningData?.usesWindowSnapshot == true {
+        if let burningData, shouldUseWindowSnapshot(for: burningData) {
             // The captured source is a closing window, not a hidden browser to reuse after burning.
             return windowToKeepAfterBurning === windowController && !windowsWithClosingPresentation.contains(ObjectIdentifier(windowController))
         }
@@ -1088,14 +1105,27 @@ final class Fire: FireProtocol {
     // MARK: - Tabs
 
     @MainActor
+    private func prepareWindowClosingPresentation() {
+        // Keep a running burn on one path even if a remote or local override changes mid-cleanup.
+        isSnapshotEnabledForCurrentBurn = isWindowSnapshotEnabled
+        // Captured window identities belong to one burn; stale entries must not close windows in a later burn.
+        windowsWithClosingPresentation.removeAll()
+        // Hiding the source changes window focus. Freeze which window qualifies for replacement before
+        // that handoff so focus changes cannot make a different window qualify midway through cleanup.
+        windowToKeepAfterBurning = isSnapshotEnabledForCurrentBurn
+            ? windowControllersManager.mainWindowControllers.first(where: shouldKeepWindowOpenWhenBurning)
+            : nil
+    }
+
+    @MainActor
     func beginWindowClosingPresentation(for windowController: MainWindowController) {
         windowsWithClosingPresentation.insert(ObjectIdentifier(windowController))
     }
 
     @MainActor
     private func closeSnapshotSourceWindows(_ controllers: [MainWindowController]) {
-        // Only the new presentation closes its captured source; legacy tab/no-close burns and
-        // the existing policy for other windows stay unchanged. This also handles capture failure.
+        // Close windows registered for snapshot presentation even if capture failed. Windows without
+        // that registration follow the tab-replacement and window-retention rules in burnTabs.
         for controller in controllers where windowsWithClosingPresentation.contains(ObjectIdentifier(controller))
             && windowControllersManager.mainWindowControllers.contains(controller) {
             controller.close()
@@ -1104,7 +1134,7 @@ final class Fire: FireProtocol {
 
     @MainActor
     private func snapshotWindowControllers(for entity: BurningEntity) -> [MainWindowController] {
-        guard burningData?.usesWindowSnapshot == true else { return [] }
+        guard let burningData, shouldUseWindowSnapshot(for: burningData) else { return [] }
         switch entity {
         case .window(let collection, _, true):
             return windowControllersManager.mainWindowControllers.filter {

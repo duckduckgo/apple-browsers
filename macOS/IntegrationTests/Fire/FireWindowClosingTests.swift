@@ -17,6 +17,7 @@
 //
 
 import Combine
+import FeatureFlags_macOS
 import PrivacyConfig
 import SharedTestUtilities
 import XCTest
@@ -28,16 +29,24 @@ final class FireWindowClosingTests: XCTestCase {
 
     private var cancellables = Set<AnyCancellable>()
     private var initialFireAnimationEnabled = true
+    private var initialSnapshotFlagValue: Bool?
+
+    private var featureFlagger: MockFeatureFlagger {
+        Application.appDelegate.featureFlagger as! MockFeatureFlagger
+    }
 
     @MainActor
     override func setUp() {
         initialFireAnimationEnabled = Application.appDelegate.dataClearingPreferences.isFireAnimationEnabled
         Application.appDelegate.dataClearingPreferences.isFireAnimationEnabled = true
+        initialSnapshotFlagValue = featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue]
+        featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = true
     }
 
     @MainActor
     override func tearDown() {
         Application.appDelegate.dataClearingPreferences.isFireAnimationEnabled = initialFireAnimationEnabled
+        featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = initialSnapshotFlagValue
         cancellables = []
         autoreleasepool {
             WindowsManager.closeWindows()
@@ -57,6 +66,18 @@ final class FireWindowClosingTests: XCTestCase {
 
     // MARK: - Tests
 
+    func testSnapshotFlagIsEnabledByDefaultAndSupportsLocalOverride() {
+        guard case .enabled = FeatureFlag.fireWindowSnapshotAnimation.defaultValue else {
+            return XCTFail("Snapshot presentation must be enabled without remote configuration")
+        }
+        XCTAssertTrue(FeatureFlag.fireWindowSnapshotAnimation.supportsLocalOverriding)
+        guard case .remoteReleasable(let subfeature) = FeatureFlag.fireWindowSnapshotAnimation.source else {
+            return XCTFail("Snapshot presentation must have a remote kill switch")
+        }
+        XCTAssertEqual(subfeature.rawValue, MacOSBrowserConfigSubfeature.fireWindowSnapshotAnimation.rawValue)
+        XCTAssertEqual(subfeature.parent, .macOSBrowserConfig)
+    }
+
     func testOnlyClosingWholeWindowBurnsUseSnapshots() {
         XCTAssertTrue(Fire.BurningData.all.usesWindowSnapshot)
         XCTAssertTrue(Fire.BurningData.specificDomains([], closesTabs: true, scope: .window).usesWindowSnapshot)
@@ -71,7 +92,7 @@ final class FireWindowClosingTests: XCTestCase {
     }
 
     @MainActor
-    func testClearingWithoutClosingPreservesOriginalAnimationAndDialogDelayRules() {
+    func testClearingWithoutClosingUsesInWindowAnimationAndDialogDelayRules() {
         let decider = MockVisualizeFireAnimationDecider()
         for enabled in [true, false] {
             decider.shouldShowFireAnimation = enabled
@@ -96,9 +117,10 @@ final class FireWindowClosingTests: XCTestCase {
     }
 
     @MainActor
-    private func assertSnapshotClosingLifecycle(historyVisits: Bool) async throws {
+    private func assertSnapshotClosingLifecycle(historyVisits: Bool, snapshotEnabled: Bool = true) async throws {
         let cache = HeldSnapshotCache()
         let app = Application.appDelegate!
+        featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = snapshotEnabled
         let fire = Fire(cacheManager: cache,
                         historyCoordinating: HistoryCoordinatingMock(),
                         permissionManager: PermissionManagerMock(),
@@ -106,9 +128,10 @@ final class FireWindowClosingTests: XCTestCase {
                         faviconManagement: FaviconManagerMock(),
                         tld: app.tld,
                         visualizeFireAnimationDecider: app.visualizeFireSettingsDecider,
+                        featureFlagger: featureFlagger,
                         isAppActiveProvider: { true })
         let coordinator = FireCoordinator(tld: app.tld,
-                                          featureFlagger: MockFeatureFlagger(),
+                                          featureFlagger: featureFlagger,
                                           historyCoordinating: app.historyCoordinator,
                                           visualizeFireAnimationDecider: app.visualizeFireSettingsDecider,
                                           onboardingContextualDialogsManager: nil,
@@ -125,11 +148,12 @@ final class FireWindowClosingTests: XCTestCase {
         let sourceController = try XCTUnwrap(source.windowController as? MainWindowController)
         let sourceFire = sourceController.mainViewController.fireViewController
         NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: source)
-        // Simulate a pending legacy presentation from the previous burn. A snapshot must clear it
-        // immediately rather than carry the legacy minimum-display timer into the new window.
-        sourceFire.fireIndicatorVisibilityManager.updateVisibility(true)
+        // A pending in-window progress overlay must be dismissed when a separate progress window takes over.
+        if snapshotEnabled {
+            sourceFire.fireIndicatorVisibilityManager.updateVisibility(true)
+        }
         let clearing = expectation(description: "Cache cleanup is pending")
-        let sourceClosed = expectationForClosing(source)
+        let sourceClosed = snapshotEnabled ? expectationForClosing(source) : nil
         let finished = expectation(description: "Whole-window burn finishes")
         cache.onClear = { clearing.fulfill() }
         if historyVisits {
@@ -141,28 +165,101 @@ final class FireWindowClosingTests: XCTestCase {
                 finished.fulfill()
             }
         }
-        await fulfillment(of: [clearing, sourceClosed], timeout: 5)
+        await fulfillment(of: [clearing] + [sourceClosed].compactMap { $0 }, timeout: 5)
         defer { cache.finish() }
-        XCTAssertFalse(app.windowControllersManager.mainWindowControllers.contains(sourceController), "The captured browser must close, not remain hidden for reuse")
-        XCTAssertFalse(source.isVisible)
-        XCTAssertEqual(sourceFire.view.superview?.isHidden, true)
+        XCTAssertEqual(fire.shouldUseWindowSnapshot(for: try XCTUnwrap(fire.burningData)), snapshotEnabled)
+        // Changing the flag during cleanup affects subsequent burns, not the active presentation.
+        featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = !snapshotEnabled
+        XCTAssertEqual(fire.isWindowSnapshotEnabled, !snapshotEnabled)
+        XCTAssertEqual(fire.shouldUseWindowSnapshot(for: try XCTUnwrap(fire.burningData)), snapshotEnabled)
+        XCTAssertEqual(app.windowControllersManager.mainWindowControllers.contains(sourceController), !snapshotEnabled)
+        XCTAssertEqual(source.isVisible, !snapshotEnabled)
         try await Task.sleep(nanoseconds: 500_000_000)
-        let panel = try XCTUnwrap(NSApp.windows.first { $0.isVisible && $0.windowController is FireProgressWindowController })
-        XCTAssertTrue(panel is NSPanel)
-        XCTAssertNil(panel.parent)
-        XCTAssertNil(panel.sheetParent)
-        XCTAssertTrue(app.windowControllersManager.mainWindowControllers.isEmpty)
+        let panel = NSApp.windows.first { $0.isVisible && $0.windowController is FireProgressWindowController }
+        if snapshotEnabled {
+            let panel = try XCTUnwrap(panel)
+            XCTAssertTrue(panel is NSPanel)
+            XCTAssertNil(panel.parent)
+            XCTAssertNil(panel.sheetParent)
+            XCTAssertTrue(app.windowControllersManager.mainWindowControllers.isEmpty)
+            XCTAssertEqual(sourceFire.view.superview?.isHidden, true)
+        } else {
+            XCTAssertNil(panel, "Flag-disabled burns use the browser's progress overlay")
+            XCTAssertEqual(sourceFire.view.superview?.isHidden, false)
+        }
         cache.finish()
         await fulfillment(of: [finished], timeout: 5)
         try await Task.sleep(nanoseconds: 150_000_000)
         let fresh = try XCTUnwrap(app.windowControllersManager.mainWindowControllers.first)
-        XCTAssertFalse(fresh === sourceController)
-        XCTAssertFalse(fresh.window === source)
-        XCTAssertEqual(fresh.mainViewController.fireViewController.view.superview?.isHidden, true, "The fresh window must not show the legacy burn overlay")
+        XCTAssertEqual(fresh === sourceController, !snapshotEnabled)
+        XCTAssertEqual(fresh.window === source, !snapshotEnabled)
         // Finish editing in the fresh NTP before teardown closes its address-bar suggestions window.
         fresh.window?.makeFirstResponder(fresh.mainViewController.view)
         try await Task.sleep(nanoseconds: 1_100_000_000)
-        XCTAssertFalse(panel.isVisible)
+        XCTAssertEqual(fresh.mainViewController.fireViewController.view.superview?.isHidden, true)
+        XCTAssertFalse(panel?.isVisible ?? false)
+    }
+
+    @MainActor
+    func testSnapshotFlagDisabledKeepsBrowserAndInWindowProgressForBurnAll() async throws {
+        try await assertSnapshotClosingLifecycle(historyVisits: false, snapshotEnabled: false)
+    }
+
+    @MainActor
+    func testSnapshotFlagDisabledKeepsBrowserAndInWindowProgressForHistoryBurn() async throws {
+        try await assertSnapshotClosingLifecycle(historyVisits: true, snapshotEnabled: false)
+    }
+
+    @MainActor
+    func testSnapshotFlagControlsWhetherFireWindowClosesBeforePlaybackFinishes() async throws {
+        for snapshotEnabled in [false, true] {
+            featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = snapshotEnabled
+            let controller = try openFireWindow()
+            let window = try XCTUnwrap(controller.window)
+            var visibilityAtAnimationEnd = [Bool]()
+            subscribeToAnimationStates(of: controller) { isPlaying in
+                if !isPlaying { visibilityAtAnimationEnd.append(window.isVisible) }
+            }
+            let closed = expectationForClosing(window)
+            controller.burnAndClose(window)
+            await fulfillment(of: [closed], timeout: 5)
+            // In-window playback finishes before the browser closes. Snapshot presentation closes
+            // the source before signaling animation completion, including when capture is unavailable.
+            XCTAssertEqual(visibilityAtAnimationEnd, [!snapshotEnabled])
+            cancellables = []
+        }
+    }
+
+    @MainActor
+    func testFlagChangesApplyToNextBurnWithoutSwitchingAnActiveBurn() async throws {
+        let cache = HeldSnapshotCache()
+        let app = Application.appDelegate!
+        let fire = Fire(cacheManager: cache,
+                        historyCoordinating: HistoryCoordinatingMock(),
+                        permissionManager: PermissionManagerMock(),
+                        windowControllersManager: WindowControllersManagerMock(),
+                        faviconManagement: FaviconManagerMock(),
+                        tld: app.tld,
+                        visualizeFireAnimationDecider: app.visualizeFireSettingsDecider,
+                        featureFlagger: featureFlagger,
+                        isAppActiveProvider: { false })
+        featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = false
+        for snapshotEnabled in [false, true, false] {
+            let clearing = expectation(description: "Cache cleanup is pending")
+            let finished = expectation(description: "Burn finishes before the next flag state")
+            cache.onClear = { clearing.fulfill() }
+            fire.burnAll(includeChatHistory: false) { finished.fulfill() }
+            XCTAssertEqual(fire.shouldUseWindowSnapshot(for: .all), snapshotEnabled)
+            featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = !snapshotEnabled
+            XCTAssertEqual(fire.isWindowSnapshotEnabled, !snapshotEnabled)
+            XCTAssertEqual(fire.shouldUseWindowSnapshot(for: .all), snapshotEnabled)
+            for scope: Fire.BurningScope in [.none, .tab, .window, .allWindows, .visits] {
+                XCTAssertFalse(fire.shouldUseWindowSnapshot(for: .specificDomains([], closesTabs: false, scope: scope)))
+            }
+            await fulfillment(of: [clearing], timeout: 5)
+            cache.finish()
+            await fulfillment(of: [finished], timeout: 5)
+        }
     }
 
     @MainActor

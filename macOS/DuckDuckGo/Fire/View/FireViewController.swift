@@ -342,7 +342,7 @@ final class FireViewController: NSViewController {
                         return
                     }
 
-                guard !burningData.usesWindowSnapshot else { return }
+                guard !fireViewModel.fire.shouldUseWindowSnapshot(for: burningData) else { return }
 
                 deletingDataLabel.stringValue = burningData.deletingDataMessage(featureFlagger: featureFlagger)
 
@@ -389,7 +389,8 @@ final class FireViewController: NSViewController {
         fakeFireButton.isHidden = true
     }
 
-    /// Closing-window burns use an independent snapshot; all other burns retain the legacy UI above.
+    /// With snapshot presentation enabled, closing-window burns render outside the browser window.
+    /// Tab burns, non-closing burns, and flag-disabled burns use the in-window animation and progress UI.
     private func subscribeToSnapshotBurns() {
         snapshotBurningDataCancellable = fireViewModel.fire.burningDataPublisher.sink { [weak self] burningData in
             guard let self else { return }
@@ -400,7 +401,7 @@ final class FireViewController: NSViewController {
                 isPresentingSnapshotBurn = false
                 return
             }
-            guard let burningData, burningData.usesWindowSnapshot else { return }
+            guard let burningData, fireViewModel.fire.shouldUseWindowSnapshot(for: burningData) else { return }
             isPresentingSnapshotBurn = true
             fireIndicatorVisibilityManager.hideImmediately()
             guard let window = view.window, isKeyWindowController,
@@ -417,34 +418,69 @@ final class FireViewController: NSViewController {
             )
             guard burningData.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider) else { return }
             let presentation = FireWindowAnimationController(sourceWindow: window)
-            fireViewModel.setAnimationPlaying(true, isFireWindow: false)
+            fireViewModel.setSnapshotAnimationPlaying(true, isFireWindow: false)
             if let presentation {
                 presentation.start { [fireViewModel] in
-                    fireViewModel.setAnimationPlaying(false, isFireWindow: false)
+                    fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: false)
                     progress.animationDidFinish()
                 }
             } else {
-                fireViewModel.setAnimationPlaying(false, isFireWindow: false)
+                fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: false)
                 progress.animationDidFinish()
             }
         }
     }
 
     @MainActor
-    func animateFireWhenClosing(_ closeWindow: () -> Void) {
+    func animateSnapshotWhenClosing(_ closeWindow: () -> Void) {
         guard visualizeFireAnimationDecider.shouldShowFireAnimation else {
             closeWindow()
             return
         }
         let presentation = view.window.flatMap { FireWindowAnimationController(sourceWindow: $0) }
-        fireViewModel.setAnimationPlaying(true, isFireWindow: true)
+        fireViewModel.setSnapshotAnimationPlaying(true, isFireWindow: true)
         closeWindow()
         if let presentation {
             presentation.start { [fireViewModel] in
-                fireViewModel.setAnimationPlaying(false, isFireWindow: true)
+                fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: true)
             }
         } else {
-            fireViewModel.setAnimationPlaying(false, isFireWindow: true)
+            fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: true)
+        }
+    }
+
+    @MainActor
+    func animateFireWhenClosing() async {
+        closeAllChildWindows()
+
+        guard visualizeFireAnimationDecider.shouldShowFireAnimation else { return }
+
+        // This burn isn't scoped to a tab or to all data, so drop any text left by a previous burn.
+        deletingDataLabel.stringValue = UserText.fireDialogDeletingData
+
+        await waitForFireAnimationViewIfNeeded()
+        await withUnsafeContinuation { (continuation: UnsafeContinuation<Void, Never>) in
+            progressIndicatorWrapperBG.isHidden = true
+            progressIndicatorWrapper.isHidden = true
+            fakeFireButton.isHidden = true
+            fireViewModel.setAnimationPlaying(true, isFireWindow: true)
+
+            fireAnimationView?.isHidden = false
+            fireAnimationView?.currentProgress = 0
+            let completion = { [fireViewModel] in
+                fireViewModel.setAnimationPlaying(false, isFireWindow: true)
+                continuation.resume()
+            }
+
+            let settings = Settings.current
+            fireAnimationView?.play(fromProgress: settings.animationBeginning, toProgress: settings.animationEnd) { [weak self] _ in
+                defer { completion() }
+                guard let self = self else { return }
+
+                // Hide the fire animation view before showing progress indicator
+                self.showBurningProgressIndicator()
+
+            } ?? completion() // Resume immediately if fireAnimationView is nil
         }
     }
 
@@ -557,7 +593,7 @@ final class FireIndicatorVisibilityManager {
         self.view = view
     }
 
-    /// Snapshot burns have their own progress window and never retain the legacy overlay.
+    /// Hide the in-window overlay immediately when a separate progress window owns the presentation.
     func hideImmediately() {
         timer?.invalidate()
         timer = nil

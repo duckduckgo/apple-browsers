@@ -143,7 +143,7 @@ final class FireWindowAnimationController: NSWindowController {
         completion?()
     }
 
-    /// The original GPU-rendered Lottie asset supplies both the flames and the wipe geometry.
+    /// The bundled GPU-rendered Lottie asset supplies both the flames and the wipe geometry.
     private func animateFire(_ fire: DefaultFireAnimation) {
         guard let view = window?.contentView else { return }
         let animationView = LottieAnimationView(animation: fire.animation, configuration: LottieConfiguration(renderingEngine: .coreAnimation))
@@ -188,13 +188,13 @@ final class FireWindowAnimationController: NSWindowController {
 
 }
 
-/// Normalized, cumulative flame fronts sampled from the original Lottie shapes.
+/// Normalized, cumulative flame fronts sampled from the bundled Lottie shapes.
 struct DefaultFireAnimation: Sendable {
     let animation: LottieAnimation
     let burnFronts: [[CGFloat]]
 }
 
-/// Prepare the original asset and its wipe off the main actor, once for all browser windows.
+/// Prepare the bundled asset and its wipe off the main actor, once for all browser windows.
 actor DefaultFireAnimationLoader {
     static let shared = DefaultFireAnimationLoader()
     static let assetName = "02_Fire_rebranded"

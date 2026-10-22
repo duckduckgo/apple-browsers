@@ -53,6 +53,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216512684334175
     case fireDialogSimplified
 
+    /// Burn closing windows using a snapshot and show cleanup progress in an independent window.
+    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219776515330316?focus=true
+    case fireWindowSnapshotAnimation
+
     // https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715698981
     case unknownUsernameCategorization
 
@@ -715,6 +719,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .subscription)
         case .fireDialogSimplified:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireDialogSimplified))
+        case .fireWindowSnapshotAnimation:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.fireWindowSnapshotAnimation))
         case .unknownUsernameCategorization:
             Config(source: .remoteReleasable(AutofillSubfeature.unknownUsernameCategorization), supportsLocalOverriding: false)
         case .credentialsImportPromotionForExistingUsers:

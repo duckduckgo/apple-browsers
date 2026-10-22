@@ -78,7 +78,20 @@ final class FireViewModel {
         return true
     }
 
-    func setAnimationPlaying(_ isPlaying: Bool, isFireWindow: Bool) {
+    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
+        guard self.isAnimationPlaying != isAnimationPlaying else { return }
+        self.isAnimationPlaying = isAnimationPlaying
+
+        if !isFireWindow {
+            if isAnimationPlaying {
+                fire.fireAnimationDidStart()
+            } else {
+                fire.fireAnimationDidFinish()
+            }
+        }
+    }
+
+    func setSnapshotAnimationPlaying(_ isPlaying: Bool, isFireWindow: Bool) {
         if isFireWindow {
             if isPlaying {
                 closingWindowAnimationCount += 1

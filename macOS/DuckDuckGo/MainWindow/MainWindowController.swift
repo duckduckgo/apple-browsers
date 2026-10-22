@@ -326,7 +326,7 @@ final class MainWindowController: NSWindowController {
                 // The tab bar is only moved out of the titlebar so the fire animation can cover it.
                 // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
                 // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
-                if let burningData, !burningData.usesWindowSnapshot,
+                if let burningData, !fireViewModel.fire.shouldUseWindowSnapshot(for: burningData),
                    burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
                     moveTabBarView(toTitlebarView: false)
                     // The titlebar has an opaque background (see applyThemeStyle) and sits above the
@@ -711,7 +711,6 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
-        // A snapshot owns playback after the browser window closes.
         guard !isClosingAndBurning else { return }
         isClosingAndBurning = true
 
@@ -719,8 +718,16 @@ extension MainWindowController: NSWindowDelegate {
             window.close()
             return
         }
-        mainViewController.fireViewController.animateFireWhenClosing {
-            window.close()
+        if fireViewModel.fire.isWindowSnapshotEnabled {
+            mainViewController.fireViewController.animateSnapshotWhenClosing {
+                window.close()
+            }
+        } else {
+            Task {
+                moveTabBarView(toTitlebarView: false)
+                await mainViewController.fireViewController.animateFireWhenClosing()
+                window.close()
+            }
         }
     }
 

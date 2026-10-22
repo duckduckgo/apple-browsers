@@ -250,18 +250,18 @@ jobs:
           echo "Dry run: would submit '$JOB_NAME' with files under $FILE_URI_PREFIX/, authorized up to \$$AUTO_AUTHORIZE_MAX_USD." \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
-      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly submission that failed in
-      # Smartling gets a failure task. A failure before the submission (runner, Xcode, export) gets no task: the failed
-      # run is the signal. Release failures go to the release task.
+      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly failure gets a failure
+      # task, whether it failed in Smartling or before Smartling returned a result (runner, Xcode, export), as long as
+      # the platform's Asana project is known by then. Release failures go to the release task.
       - name: Decide on an Asana task
         id: task
-        if: ${{ !cancelled() && steps.submit.outputs.outcome != '' }}
+        if: ${{ !cancelled() && !inputs.dry_run && (steps.submit.outputs.outcome != '' || failure()) }}
         env:
           OUTCOME: ${{ steps.submit.outputs.outcome }}
           FAILED: ${{ steps.submit.outputs.failed }}
         run: |
-          if [[ "$FAILED" == true ]]; then
-            [[ "$KIND" != nightly ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+          if [[ -z "$OUTCOME" || "$FAILED" == true ]]; then
+            [[ "$KIND" != nightly || -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
           elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
             echo "kind=review" >> "$GITHUB_OUTPUT"
           fi
@@ -294,7 +294,7 @@ jobs:
             🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
             💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}
             📝 String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}
-            ✋ Reason: ${{ steps.submit.outputs.reason || 'Localization export or Smartling submission failed' }}
+            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
             🌿 Branch: ${{ steps.job.outputs.ref }}
             🔖 Commit: ${{ steps.checkout.outputs.commit || 'unavailable' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

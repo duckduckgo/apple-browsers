@@ -60,6 +60,9 @@ public struct OAuthRequest {
         case accountChangeEmailAddressFailed = "account_change_email_address_failed"
         case invalidToken = "invalid_token"
         case expiredToken = "expired_token"
+        case serviceUnavailable = "service_unavailable"
+        case internalServerError = "internal_server_error"
+        case incompatibleLoginAuthorizationScopes = "incompatible_login_authorization_scopes"
 
         /// A human-readable explanation of the error code, as documented by the Auth API.
         public var description: String {
@@ -102,6 +105,12 @@ public struct OAuthRequest {
                 return "Provided access token is missing or invalid"
             case .expiredToken:
                 return "Provided access token is expired"
+            case .serviceUnavailable:
+                return "Temporary server error"
+            case .internalServerError:
+                return "Ran into an unexpected error"
+            case .incompatibleLoginAuthorizationScopes:
+                return "The login method is not allowed for this authorization session"
             }
         }
     }

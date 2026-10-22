@@ -150,10 +150,11 @@ struct AIChatScreenRecordingPermission {
     }
 }
 
-/// Installs held back by Screen Recording: how many hit it, accept the alert, then capture.
+/// Installs held back by Screen Recording: how many hit it, accept the alert, turn it on, then capture.
 protocol AIChatScreenshotPermissionInstrumentation {
     func permissionNeeded()
     func permissionAlertAccepted()
+    func reportGrantIfNeeded(isGranted: () -> Bool)
     func captureSucceeded()
 }
 
@@ -179,9 +180,19 @@ final class DefaultAIChatScreenshotPermissionInstrumentation: AIChatScreenshotPe
         pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionAlertAccepted, frequency: .uniqueByName)
     }
 
+    /// Only installs that once hit the permission are asked, so every other install pays a defaults read.
+    func reportGrantIfNeeded(isGranted: () -> Bool) {
+        guard hasNeededPermission, isGranted() else { return }
+        pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionGranted, frequency: .uniqueByName)
+    }
+
     /// Only installs that once hit the permission count, so converted over needed is the funnel's conversion.
     func captureSucceeded() {
-        guard (try? keyValueStore.object(forKey: Self.neededKey)) as? Bool == true else { return }
+        guard hasNeededPermission else { return }
         pixelFiring?.fire(AIChatPixel.aiChatScreenshotPermissionConverted, frequency: .uniqueByName)
+    }
+
+    private var hasNeededPermission: Bool {
+        (try? keyValueStore.object(forKey: Self.neededKey)) as? Bool == true
     }
 }

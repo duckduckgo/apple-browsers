@@ -1841,6 +1841,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyAIChatSettingsStatePixel()
         fireDailyAIFeaturesStatePixel()
         fireDailyPromptBarStatePixel()
+        aiChatScreenshotCaptureService.reportPermissionGrantIfNeeded()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 

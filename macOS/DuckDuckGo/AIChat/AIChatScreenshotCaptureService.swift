@@ -36,6 +36,11 @@ final class AIChatScreenshotCaptureService {
         self.instrumentation = instrumentation
     }
 
+    /// macOS relaunches the app once Screen Recording is turned on, so activation is where a grant shows up.
+    func reportPermissionGrantIfNeeded() {
+        instrumentation.reportGrantIfNeeded(isGranted: permission.isGranted)
+    }
+
     /// Shown for `.permissionDenied`, the same on every surface. macOS shows its own prompt only the first
     /// time it's asked, so from then on the alert opens System Settings instead.
     func presentPermissionAlert(on window: NSWindow?) {

@@ -193,6 +193,26 @@ struct AIChatScreenshotCaptureTests {
         #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .uniqueByName })
     }
 
+    @available(macOS 13, *)
+    @Test("Granted fires only once Screen Recording is on, on installs that once lacked it", .timeLimit(.minutes(1)))
+    func grantedNeedsAnEarlierNeeded() {
+        let pixels = PixelKitMock()
+        let store = InMemoryThrowingKeyValueStore()
+        let instrumentation = DefaultAIChatScreenshotPermissionInstrumentation(pixelFiring: pixels, keyValueStore: store)
+
+        instrumentation.reportGrantIfNeeded(isGranted: { true })
+        #expect(pixels.actualFireCalls.isEmpty)
+
+        instrumentation.permissionNeeded()
+        instrumentation.reportGrantIfNeeded(isGranted: { false })
+        // macOS relaunches the app after the grant: only the store carries over.
+        DefaultAIChatScreenshotPermissionInstrumentation(pixelFiring: pixels, keyValueStore: store).reportGrantIfNeeded(isGranted: { true })
+
+        #expect(pixels.actualFireCalls.map(\.pixel.name) == ["aichat_screenshot_permission_needed_macos_u",
+                                                             "aichat_screenshot_permission_granted_macos_u"])
+        #expect(pixels.actualFireCalls.allSatisfy { $0.frequency == .uniqueByName })
+    }
+
     // MARK: - Helpers
 
     private func makeImage(width: Int, height: Int, noise: Bool) throws -> CGImage {
@@ -221,5 +241,6 @@ final class AIChatScreenshotPermissionInstrumentationSpy: AIChatScreenshotPermis
 
     func permissionNeeded() { events.append("needed") }
     func permissionAlertAccepted() { events.append("alertAccepted") }
+    func reportGrantIfNeeded(isGranted: () -> Bool) { events.append("grantChecked") }
     func captureSucceeded() { events.append("converted") }
 }

@@ -1201,4 +1201,93 @@ final class DaxPetViewModelTests: XCTestCase {
 
         XCTAssertNil(model.findings)
     }
+
+    // MARK: - Duck.ai in the browser
+
+    private func activity(_ tool: String, _ phase: AIChatBrowserToolActivity.Phase, subject: String? = nil, callID: String = "call") -> AIChatBrowserToolActivity {
+        AIChatBrowserToolActivity(callID: callID, toolName: tool, subject: subject, phase: phase)
+    }
+
+    func testWhenDuckAIReadsAPageThenDaxSaysWhichAndReadsAlong() {
+        model.browserToolActivity(activity("readTabContent", .started, subject: "Hotel Adlon"))
+
+        XCTAssertEqual(model.speech, UserText.daxPetToolReading("Hotel Adlon"))
+        XCTAssertEqual(model.character.currentGaze, .read)
+    }
+
+    func testWhenDuckAILooksThroughTabsOrHistoryThenDaxLooksAround() {
+        model.browserToolActivity(activity("listOpenTabs", .started))
+        XCTAssertEqual(model.speech, UserText.daxPetToolTabs)
+        XCTAssertEqual(model.character.currentGaze, .search)
+
+        model.browserToolActivity(activity("searchHistory", .started, subject: "rust"))
+        XCTAssertEqual(model.speech, UserText.daxPetToolHistory(for: "rust"))
+    }
+
+    func testLongTitlesAreCutToFitTheBubble() {
+        model.browserToolActivity(activity("readTabContent", .started, subject: String(repeating: "a", count: 60)))
+
+        XCTAssertEqual(model.speech, UserText.daxPetToolReading(String(repeating: "a", count: 27) + "…"))
+    }
+
+    func testToolsDaxDoesNotKnowPassUnremarked() {
+        model.browserToolActivity(activity("openTab", .started, subject: "Something"))
+
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhileTheUserTypesDaxKeepsQuietAboutTheBrowser() {
+        model.startComposing()
+        model.prompt = "draft"
+
+        model.browserToolActivity(activity("listOpenTabs", .started))
+        model.browserToolActivity(activity("listOpenTabs", .awaitingPermission))
+
+        XCTAssertNil(model.speech)
+        XCTAssertFalse(model.isPointingAtPermission)
+    }
+
+    func testWhenDuckAIWaitsForTheUsersOKThenDaxSaysWhatForUntilItIsAnswered() {
+        model.browserToolActivity(activity("readTabContent", .started, subject: "Hotel Adlon"))
+        model.browserToolActivity(activity("readTabContent", .awaitingPermission, subject: "Hotel Adlon"))
+
+        XCTAssertEqual(model.speech, UserText.daxPetPermissionReading("Hotel Adlon"))
+        XCTAssertTrue(model.isPointingAtPermission)
+
+        model.browserToolActivity(activity("listOpenTabs", .finished(succeeded: true), callID: "another"))
+        XCTAssertTrue(model.isPointingAtPermission)
+
+        model.browserToolActivity(activity("readTabContent", .finished(succeeded: true), subject: "Hotel Adlon"))
+        XCTAssertFalse(model.isPointingAtPermission)
+        XCTAssertNil(model.speech)
+    }
+
+    func testWhileDuckAIWaitsForTheUsersOKClickingDaxBringsTheChatForward() {
+        model.browserToolActivity(activity("searchHistory", .awaitingPermission))
+
+        model.characterClicked()
+
+        XCTAssertEqual(submitter.showBrowserCount, 1)
+        XCTAssertFalse(model.isComposing)
+        XCTAssertEqual(model.speech, UserText.daxPetPermissionHistory)
+    }
+
+    func testWhileDuckAIWaitsForTheUsersOKOtherCallsDoNotTalkOverIt() {
+        model.browserToolActivity(activity("listOpenTabs", .awaitingPermission))
+
+        model.browserToolActivity(activity("findInPage", .started, subject: "price", callID: "another"))
+
+        XCTAssertEqual(model.speech, UserText.daxPetPermissionTabs)
+    }
+
+    func testRewordingsInWhichDaxNamesHimselfAreThrownAway() async {
+        let intelligence = StubDaxPetIntelligence()
+        intelligence.variations = [UserText.daxPetToolTabs: ["Dax is peeking at your tabs!"]]
+        let model = DaxPetViewModel(submitter: submitter, character: DaxCharacterView(reduceMotion: { true }), intelligence: intelligence)
+
+        await model.prepareLineVariations()
+        model.browserToolActivity(activity("listOpenTabs", .started))
+
+        XCTAssertEqual(model.speech, UserText.daxPetToolTabs)
+    }
 }

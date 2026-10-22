@@ -136,6 +136,9 @@ final class DaxPetViewModel: ObservableObject {
     private(set) var isAwaitingAnswer = false
     /// An answer finished while the browser was in the background, and Dax is pointing it out.
     private(set) var hasUnseenAnswer = false
+    /// Duck.ai asked for the user's OK in the chat, and Dax is pointing it out until it's answered.
+    private(set) var isPointingAtPermission = false
+    private var permissionCallID: String?
 
     var onHide: (() -> Void)?
     /// Asks the window to take keyboard focus.
@@ -189,7 +192,10 @@ final class DaxPetViewModel: ObservableObject {
     }
 
     func characterClicked() {
-        if hasUnseenAnswer {
+        if isPointingAtPermission {
+            character.hop()
+            submitter.showBrowser()
+        } else if hasUnseenAnswer {
             hasUnseenAnswer = false
             say(nil)
             character.hop()
@@ -444,6 +450,7 @@ final class DaxPetViewModel: ObservableObject {
     func answerFinished(succeeded: Bool, isBrowserActive: Bool) {
         guard isAwaitingAnswer else { return }
         stopAwaitingAnswer()
+        stopPointingAtPermission()
         guard !isComposing else { return }
         if succeeded {
             character.celebrate()
@@ -470,6 +477,79 @@ final class DaxPetViewModel: ObservableObject {
         let work = DispatchWorkItem { [weak self] in self?.stopAwaitingAnswer() }
         answerTimeoutWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+    }
+
+    // MARK: - Duck.ai in the browser
+
+    /// Dax follows along as Duck.ai uses the browser: he says what it's doing, looks the part, and points
+    /// out when it needs the user's OK. Typing and sleeping aren't interrupted.
+    func browserToolActivity(_ activity: AIChatBrowserToolActivity) {
+        switch activity.phase {
+        case .started:
+            guard !isComposing, !isAsleep, let narration = narration(for: activity) else { return }
+            act(for: activity.toolName)
+            if !isPointingAtPermission { say(narration, for: 4) }
+        case .awaitingPermission:
+            guard !isComposing else { return }
+            permissionCallID = activity.callID
+            isPointingAtPermission = true
+            character.marvel()
+            say(Self.permissionLine(for: activity))
+        case .finished:
+            guard activity.callID == permissionCallID else { return }
+            stopPointingAtPermission()
+        }
+    }
+
+    private func stopPointingAtPermission() {
+        guard isPointingAtPermission else { return }
+        permissionCallID = nil
+        isPointingAtPermission = false
+        say(nil)
+    }
+
+    private func act(for toolName: String) {
+        switch toolName {
+        case "readTabContent": character.look(.read, for: 3)
+        case "listOpenTabs", "searchHistory", "findInPage": character.look(.search, for: 3)
+        case "highlightInPage": character.celebrate()
+        case "switchToTab": character.hop()
+        default: break
+        }
+    }
+
+    /// Titles and search words are cut to fit the bubble.
+    static let maximumSubjectLength = 28
+
+    static func shortened(_ subject: String?) -> String? {
+        guard let subject = subject?.trimmingCharacters(in: .whitespacesAndNewlines), !subject.isEmpty else { return nil }
+        return subject.count > maximumSubjectLength ? String(subject.prefix(maximumSubjectLength - 1)) + "…" : subject
+    }
+
+    /// What Dax says Duck.ai is doing; `nil` for tools he doesn't know.
+    private func narration(for activity: AIChatBrowserToolActivity) -> String? {
+        let subject = Self.shortened(activity.subject)
+        switch activity.toolName {
+        case "listOpenTabs": return line(UserText.daxPetToolTabs)
+        case "searchHistory": return subject.map(UserText.daxPetToolHistory(for:)) ?? line(UserText.daxPetToolHistoryAny)
+        case "readTabContent": return subject.map(UserText.daxPetToolReading) ?? line(UserText.daxPetToolReadingPage)
+        case "findInPage": return subject.map(UserText.daxPetToolFinding) ?? line(UserText.daxPetToolFindingAny)
+        case "highlightInPage": return line(UserText.daxPetToolHighlighting)
+        case "switchToTab": return subject.map(UserText.daxPetToolSwitching) ?? line(UserText.daxPetToolSwitchingAny)
+        default: return nil
+        }
+    }
+
+    /// Names what Duck.ai is asking to do, where the chat only says it wants a browser tool.
+    static func permissionLine(for activity: AIChatBrowserToolActivity) -> String {
+        let subject = shortened(activity.subject)
+        switch activity.toolName {
+        case "listOpenTabs": return UserText.daxPetPermissionTabs
+        case "searchHistory": return UserText.daxPetPermissionHistory
+        case "readTabContent": return subject.map(UserText.daxPetPermissionReading) ?? UserText.daxPetPermissionReadingPage
+        case "findInPage": return subject.map(UserText.daxPetPermissionFinding) ?? UserText.daxPetPermissionAny
+        default: return UserText.daxPetPermissionAny
+        }
     }
 
     func openDuckAI() {
@@ -674,7 +754,9 @@ final class DaxPetViewModel: ObservableObject {
 
     /// The chatter Dax says often enough to want some variety. Lines that tell the user what to do are
     /// left as written, so their meaning can't drift.
-    static let variedLines: [String] = [UserText.daxPetGreeting, UserText.daxPetThinking, UserText.daxPetDropQuestion]
+    static let variedLines: [String] = [UserText.daxPetGreeting, UserText.daxPetThinking, UserText.daxPetDropQuestion,
+                                        UserText.daxPetToolTabs, UserText.daxPetToolHistoryAny, UserText.daxPetToolReadingPage,
+                                        UserText.daxPetToolFindingAny, UserText.daxPetToolHighlighting, UserText.daxPetToolSwitchingAny]
 
     /// A bubble holds this much; longer rewordings are thrown away.
     static let maximumLineLength = 60
@@ -687,6 +769,8 @@ final class DaxPetViewModel: ObservableObject {
                 .filter { !$0.isEmpty && $0.count <= Self.maximumLineLength && $0 != line }
                 // A question stays a question.
                 .filter { !line.hasSuffix("?") || $0.hasSuffix("?") }
+                // Dax doesn't name himself.
+                .filter { !$0.localizedCaseInsensitiveContains("Dax") }
             lineVariations[line] = variations
         }
     }

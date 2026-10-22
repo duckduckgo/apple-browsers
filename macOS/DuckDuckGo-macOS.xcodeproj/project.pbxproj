@@ -3291,7 +3291,9 @@
 		AB1E70030000000000000002 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
 		AB1E70030000000000000003 /* SwitchToTabBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */; };
 		AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */; };
+		52EFE78367D8C6099A7D51FC /* AIChatBrowserToolsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */; };
 		AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */; };
+		0EEB7787C38D9EBF9F8DC5A0 /* AIChatBrowserToolsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */; };
 		AB1E70200000000000000002 /* BrowserToolsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */; };
 		AB1E70200000000000000003 /* BrowserToolsDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */; };
 		AB1E70060000000000000002 /* ListOpenTabsBrowserTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */; };
@@ -6820,6 +6822,7 @@
 		AB1E70020000000000000007 /* BrowserToolsWireFormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsWireFormatTests.swift; sourceTree = "<group>"; };
 		AB1E70030000000000000001 /* SwitchToTabBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchToTabBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolInvokerTests.swift; sourceTree = "<group>"; };
+		E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatBrowserToolsServiceTests.swift; sourceTree = "<group>"; };
 		AB1E70200000000000000001 /* BrowserToolsDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolsDebugViewController.swift; sourceTree = "<group>"; };
 		AB1E70060000000000000001 /* ListOpenTabsBrowserTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListOpenTabsBrowserTool.swift; sourceTree = "<group>"; };
 		AB1E70100000000000000001 /* BrowserToolPageAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserToolPageAccess.swift; sourceTree = "<group>"; };
@@ -12784,6 +12787,7 @@
 				AB1E70020000000000000001 /* AIChatMCPSessionTests.swift */,
 				AB1E70020000000000000004 /* BrowserToolCatalogTests.swift */,
 				AB1E70040000000000000001 /* BrowserToolInvokerTests.swift */,
+				E127DD329D3F0887EE29C53F /* AIChatBrowserToolsServiceTests.swift */,
 				AB1E70070000000000000001 /* ListOpenTabsBrowserToolTests.swift */,
 				AB1E70080000000000000001 /* BrowserToolPermissionStoreTests.swift */,
 				AB1E70090000000000000001 /* AIChatElicitationCoordinatorTests.swift */,
@@ -17783,6 +17787,7 @@
 				AB1E70020000000000000003 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000006 /* BrowserToolCatalogTests.swift in Sources */,
 				AB1E70040000000000000003 /* BrowserToolInvokerTests.swift in Sources */,
+				0EEB7787C38D9EBF9F8DC5A0 /* AIChatBrowserToolsServiceTests.swift in Sources */,
 				AB1E70070000000000000003 /* ListOpenTabsBrowserToolTests.swift in Sources */,
 				AB1E70080000000000000003 /* BrowserToolPermissionStoreTests.swift in Sources */,
 				AB1E70090000000000000003 /* AIChatElicitationCoordinatorTests.swift in Sources */,
@@ -20259,6 +20264,7 @@
 				AB1E70020000000000000002 /* AIChatMCPSessionTests.swift in Sources */,
 				AB1E70020000000000000005 /* BrowserToolCatalogTests.swift in Sources */,
 				AB1E70040000000000000002 /* BrowserToolInvokerTests.swift in Sources */,
+				52EFE78367D8C6099A7D51FC /* AIChatBrowserToolsServiceTests.swift in Sources */,
 				AB1E70070000000000000002 /* ListOpenTabsBrowserToolTests.swift in Sources */,
 				AB1E70080000000000000002 /* BrowserToolPermissionStoreTests.swift in Sources */,
 				AB1E70090000000000000002 /* AIChatElicitationCoordinatorTests.swift in Sources */,

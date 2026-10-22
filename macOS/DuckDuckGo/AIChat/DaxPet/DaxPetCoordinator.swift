@@ -30,6 +30,8 @@ final class DaxPetCoordinator: NSObject {
     private var persistor: DaxPetPreferencesPersistor
     private let submitter: DaxPetPromptSubmitting
     private let browsing: DaxPetBrowsing?
+    private let browserToolActivity: AnyPublisher<AIChatBrowserToolActivity, Never>?
+    private var browserToolActivityCancellable: AnyCancellable?
 
     private var window: DaxPetWindow?
     private var model: DaxPetViewModel?
@@ -53,6 +55,7 @@ final class DaxPetCoordinator: NSObject {
          persistor: DaxPetPreferencesPersistor,
          submitter: DaxPetPromptSubmitting,
          browsing: DaxPetBrowsing? = nil,
+         browserToolActivity: AnyPublisher<AIChatBrowserToolActivity, Never>? = nil,
          notificationCenter: NotificationCenter = .default,
          isBrowserActive: @escaping @MainActor () -> Bool = { NSApp.isActive },
          now: @escaping () -> Date = Date.init,
@@ -61,6 +64,7 @@ final class DaxPetCoordinator: NSObject {
         self.persistor = persistor
         self.submitter = submitter
         self.browsing = browsing
+        self.browserToolActivity = browserToolActivity
         self.notificationCenter = notificationCenter
         self.isBrowserActive = isBrowserActive
         self.now = now
@@ -142,6 +146,7 @@ final class DaxPetCoordinator: NSObject {
 
     private func dismiss() {
         responseStateCancellable = nil
+        browserToolActivityCancellable = nil
         dayChangeCancellable = nil
         answers = DaxAnswerTracker()
         model?.endComposing()
@@ -259,6 +264,9 @@ final class DaxPetCoordinator: NSObject {
                 guard let status = notification.userInfo?[AIChatNotificationUserInfoKey.responseStatus] as? AIChatStatusValue else { return }
                 self?.responseStateChanged(to: status, on: notification.object as AnyObject?)
             }
+        browserToolActivityCancellable = browserToolActivity?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] activity in self?.model?.browserToolActivity(activity) }
     }
 
     private func responseStateChanged(to status: AIChatStatusValue, on page: AnyObject?) {

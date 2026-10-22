@@ -157,6 +157,198 @@
         }
       }
     },
+    "duckai.dax-pet.permission.any" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to use the browser. Clicking Dax brings the chat forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai needs your OK in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.permission.finding" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to search a web page. %@ is the text it looks for. Clicking Dax brings the chat forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai would like to look for “%@” on the page. Answer it in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.permission.history" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to search the browsing history. Clicking Dax brings the chat forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai would like to search your history. Answer it in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.permission.reading" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to read a web page. Clicking Dax brings the chat forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai would like to read a page. Answer it in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.permission.reading.title" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to read a web page. %@ is the page's title. Clicking Dax brings the chat forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai would like to read “%@”. Answer it in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.permission.tabs" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to see the open tabs. Clicking Dax brings the chat forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai would like to see your open tabs. Answer it in the chat."
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.finding" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches a web page for some text",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Searching the page…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.finding.words" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches a web page. %@ is the text it looks for",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Looking for “%@” on the page…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.highlighting" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai highlights text on a web page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Highlighting it for you…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.history" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches the browsing history",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Looking through your history…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.history.words" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches the browsing history. %@ is what it searches for, e.g. rust",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Looking through your history for “%@”…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.reading" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai reads a web page open in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reading the page…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.reading.title" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai reads a web page open in the browser. %@ is the page's title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reading “%@”…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.switching" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai brings another tab forward",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switching tabs…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.switching.title" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai brings another tab forward. %@ is the tab's title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Switching to “%@”…"
+          }
+        }
+      }
+    },
+    "duckai.dax-pet.tool.tabs" : {
+      "comment" : "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai looks at the list of tabs open in the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Peeking at your open tabs…"
+          }
+        }
+      }
+    },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
         "de" : {

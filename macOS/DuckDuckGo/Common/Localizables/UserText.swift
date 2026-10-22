@@ -784,6 +784,34 @@ struct UserText {
     static let daxPetHistoryAllow = NSLocalizedString("duckai.dax-pet.history.allow", value: "Look Through History", comment: "Button that lets Dax, the DuckDuckGo mascot, search the browsing history on the Mac, now and from then on")
     static let daxPetHistoryToggle = NSLocalizedString("duckai.dax-pet.history.toggle", value: "Let Dax search your browsing history", comment: "Checkbox in Settings → AI Features, under the option to show Dax, the DuckDuckGo mascot. It lets him search the browsing history when asked for a page the user visited")
     static let daxPetHistoryCaption = NSLocalizedString("duckai.dax-pet.history.caption", value: "When you ask Dax for a page you visited, like “that recipe from yesterday”, Apple Intelligence searches your history on your Mac. Nothing leaves your Mac.", comment: "Caption under the setting that lets Dax, the DuckDuckGo mascot, search the browsing history")
+    static let daxPetToolTabs = NSLocalizedString("duckai.dax-pet.tool.tabs", value: "Peeking at your open tabs…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai looks at the list of tabs open in the browser")
+    static let daxPetToolHistoryAny = NSLocalizedString("duckai.dax-pet.tool.history", value: "Looking through your history…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches the browsing history")
+    static func daxPetToolHistory(for words: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.tool.history.words", value: "Looking through your history for “%@”…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches the browsing history. %@ is what it searches for, e.g. rust"), words)
+    }
+    static let daxPetToolReadingPage = NSLocalizedString("duckai.dax-pet.tool.reading", value: "Reading the page…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai reads a web page open in the browser")
+    static func daxPetToolReading(_ title: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.tool.reading.title", value: "Reading “%@”…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai reads a web page open in the browser. %@ is the page's title"), title)
+    }
+    static let daxPetToolFindingAny = NSLocalizedString("duckai.dax-pet.tool.finding", value: "Searching the page…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches a web page for some text")
+    static func daxPetToolFinding(_ words: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.tool.finding.words", value: "Looking for “%@” on the page…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai searches a web page. %@ is the text it looks for"), words)
+    }
+    static let daxPetToolHighlighting = NSLocalizedString("duckai.dax-pet.tool.highlighting", value: "Highlighting it for you…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai highlights text on a web page")
+    static let daxPetToolSwitchingAny = NSLocalizedString("duckai.dax-pet.tool.switching", value: "Switching tabs…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai brings another tab forward")
+    static func daxPetToolSwitching(_ title: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.tool.switching.title", value: "Switching to “%@”…", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai brings another tab forward. %@ is the tab's title"), title)
+    }
+    static let daxPetPermissionTabs = NSLocalizedString("duckai.dax-pet.permission.tabs", value: "Duck.ai would like to see your open tabs. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to see the open tabs. Clicking Dax brings the chat forward")
+    static let daxPetPermissionHistory = NSLocalizedString("duckai.dax-pet.permission.history", value: "Duck.ai would like to search your history. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to search the browsing history. Clicking Dax brings the chat forward")
+    static let daxPetPermissionReadingPage = NSLocalizedString("duckai.dax-pet.permission.reading", value: "Duck.ai would like to read a page. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to read a web page. Clicking Dax brings the chat forward")
+    static func daxPetPermissionReading(_ title: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.permission.reading.title", value: "Duck.ai would like to read “%@”. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to read a web page. %@ is the page's title. Clicking Dax brings the chat forward"), title)
+    }
+    static func daxPetPermissionFinding(_ words: String) -> String {
+        String(format: NSLocalizedString("duckai.dax-pet.permission.finding", value: "Duck.ai would like to look for “%@” on the page. Answer it in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to search a web page. %@ is the text it looks for. Clicking Dax brings the chat forward"), words)
+    }
+    static let daxPetPermissionAny = NSLocalizedString("duckai.dax-pet.permission.any", value: "Duck.ai needs your OK in the chat.", comment: "Speech bubble shown by Dax, the DuckDuckGo mascot, while Duck.ai waits for the user to allow it to use the browser. Clicking Dax brings the chat forward")
     static let daxPetPromptPlaceholder = NSLocalizedString("duckai.dax-pet.prompt.placeholder", value: "Ask Dax anything…", comment: "Placeholder of the text field used to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetAsk = NSLocalizedString("duckai.dax-pet.ask", value: "Ask Dax", comment: "Tooltip of the button that opens the field to ask Dax, the DuckDuckGo mascot, a question")
     static let daxPetSend = NSLocalizedString("duckai.dax-pet.send", value: "Send", comment: "Tooltip of the button that sends the question typed for Dax to Duck.ai")

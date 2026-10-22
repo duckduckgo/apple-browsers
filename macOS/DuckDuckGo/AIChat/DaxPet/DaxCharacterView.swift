@@ -101,6 +101,25 @@ final class DaxCharacterView: NSView {
     /// Where Dax looks, in screen coordinates. `nil` lets the cursor lead.
     var lookTarget: NSPoint?
 
+    /// How his eyes move while he follows what Duck.ai does in the browser.
+    enum Gaze: Equatable {
+        /// Side to side, looking for something.
+        case search
+        /// Along lines of text, one after another.
+        case read
+    }
+
+    private var gaze: (kind: Gaze, until: TimeInterval)?
+
+    func look(_ gaze: Gaze, for duration: TimeInterval) {
+        self.gaze = (gaze, time + duration)
+    }
+
+    var currentGaze: Gaze? {
+        guard let gaze, time < gaze.until else { return nil }
+        return gaze.kind
+    }
+
     var onClick: (() -> Void)?
     var onRightClick: ((NSEvent) -> Void)?
     var onDrop: ((NSPasteboard) -> Void)?
@@ -341,6 +360,8 @@ final class DaxCharacterView: NSView {
         case nod = "Nod"
         case slowBlink = "Slow Blink"
         case marvel = "Wide Eyes"
+        case search = "Searching (Eyes Sweep)"
+        case read = "Reading (Eyes Along Lines)"
         case landing = "Landing"
         case anticipateDrop = "Something Dragged Over Him"
     }
@@ -375,6 +396,10 @@ final class DaxCharacterView: NSView {
             blinkStartTime = time
         case .marvel:
             marvel()
+        case .search:
+            look(.search, for: 4)
+        case .read:
+            look(.read, for: 4)
         case .landing:
             landingStartTime = time
             hop()
@@ -603,6 +628,11 @@ final class DaxCharacterView: NSView {
         case _ where isBeingPetted:
             // Blissfully up.
             target = CGPoint(x: 0, y: 0.5)
+        case _ where currentGaze == .search:
+            target = CGPoint(x: sin(time * 2 * .pi / 1.4) * 0.8, y: -0.1)
+        case _ where currentGaze == .read:
+            let line = (time / 0.9).rounded(.down)
+            target = CGPoint(x: -0.6 + (time / 0.9 - line) * 1.2, y: -0.15 - line.truncatingRemainder(dividingBy: 3) * 0.15)
         case .thinking:
             // Up and away, pondering.
             target = CGPoint(x: -0.6, y: 0.9)

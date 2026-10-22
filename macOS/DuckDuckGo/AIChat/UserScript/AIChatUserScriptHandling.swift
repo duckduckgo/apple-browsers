@@ -1434,10 +1434,11 @@ extension AIChatUserScriptHandler {
             supportsElicitationForm: session.supportsElicitationForm
         )
 
-        let result = await browserTools.invoker.invoke(toolNamed: request.name,
-                                                       arguments: request.arguments,
-                                                       context: context,
-                                                       elicitationPusher: elicitationPusher)
+        let result = await browserTools.invoke(toolNamed: request.name,
+                                               arguments: request.arguments,
+                                               context: context,
+                                               callID: request.callId,
+                                               elicitationPusher: elicitationPusher)
         return InvokeBrowserToolResponse(callId: request.callId, result: result.callToolResult)
     }
 

@@ -25,139 +25,49 @@ import XCTest
 @MainActor
 final class GeolocationUserScriptTests: XCTestCase {
 
-    func testScriptUsesPageWorldAtDocumentStartInEveryFrame() {
+    func testSubfeatureServesThePageWorldFeatureAndEveryBridgeOperation() {
         let script = GeolocationUserScript()
 
-        XCTAssertEqual(script.injectionTime, .atDocumentStart)
-        XCTAssertFalse(script.forMainFrameOnly)
-        XCTAssertTrue(script.requiresRunInPageContentWorld)
-        XCTAssertEqual(script.messageNames, ["sitePermissionsGeolocation", "sitePermissionsGeolocationWatch"])
-        XCTAssertEqual(script.policyScript.injectionTime, .atDocumentStart)
-        XCTAssertFalse(script.policyScript.forMainFrameOnly)
-        XCTAssertFalse(script.policyScript.requiresRunInPageContentWorld)
-        XCTAssertTrue(script.policyScript.messageNames.isEmpty)
-    }
-
-    func testScriptSourceLoadsFromPackageAndContainsAllBridgeOperations() {
-        let script = GeolocationUserScript()
-        let source = script.source
-        let policySource = script.policyScript.source
-
-        for operation in ["registerFrame", "getCurrentPosition", "watchPosition", "clearWatch", "queryPermission",
-                          "receiveWatchResult", "receiveTerminalWatchResult", "receivePermissionState"] {
-            XCTAssertTrue(source.contains(operation), "Expected shim source to contain \(operation)")
+        XCTAssertEqual(script.featureName, "sitePermissionsGeolocation")
+        XCTAssertEqual(GeolocationUserScript.policyFeatureName, "sitePermissionsGeolocationPolicy")
+        guard case .all = script.messageOriginPolicy else {
+            return XCTFail("Every origin must reach the native policy checks")
         }
-        XCTAssertTrue(source.contains("!apply(mapHas, activeWatches, [requestID])"), "A cleared watch must compensate if native start wins the race")
-        XCTAssertTrue(source.contains("postMessage.bind"), "Page code must not replace the captured native bridge functions")
-        XCTAssertTrue(source.contains("const isSecureContext = globalThis.isSecureContext === true"),
-                      "The secure-context constraint must be captured before page scripts run")
-        XCTAssertTrue(source.contains("globalThis.top.location.origin === globalThis.location.origin"),
-                      "Only frames with the top-level origin may use the v1 fallback")
-        XCTAssertTrue(source.contains("globalThis.location.hostname.length > 0"),
-                      "Opaque and synthetic documents must fail closed")
-        XCTAssertTrue(source.contains("globalThis.origin !== \"null\""))
-        XCTAssertTrue(source.contains("globalThis.location.protocol === \"https:\" || globalThis.location.protocol === \"http:\""),
-                      "Only network documents may use the shim")
-        XCTAssertTrue(source.contains("return globalThis.top === globalThis;\n        } catch (_)"),
-                      "Missing Permissions Policy introspection must deny subframes")
-        XCTAssertTrue(policySource.contains("isPolicyAllowed: requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation()"),
-                      "Every request and permission query must share the same policy constraint")
-        XCTAssertTrue(source.contains("const nativePermissionsPolicy = document.permissionsPolicy ?? document.featurePolicy"))
-        XCTAssertTrue(source.contains("apply(nativePolicyAllowsFeature, nativePermissionsPolicy, [\"geolocation\"])"),
-                      "Page code must not replace the captured policy API before a later resample")
-        XCTAssertTrue(policySource.contains("embeddingFrameForSource(source)"),
-                      "The parent must map each authenticated child to its direct embedding element")
-        XCTAssertTrue(policySource.contains("attributeOldValue: true"),
-                      "Sandbox removal must retain the prior attribute value")
-        XCTAssertTrue(policySource.contains("sandboxedEmbeddingFrames"),
-                      "An embedding frame that was ever sandboxed must stay fail-closed for its surviving document")
-        XCTAssertTrue(policySource.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame])"))
-        XCTAssertTrue(policySource.contains("callThen(sandboxVerdict, (ancestorSandboxed) => {"),
-                      "A child must inherit the sandbox verdict from every ancestor")
-        XCTAssertTrue(policySource.contains("signHMAC(\"HMAC\""),
-                      "The page-visible probe must authenticate without exposing the native capability")
-        XCTAssertTrue(policySource.contains("sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true)"),
-                      "An unanswered parent probe must fail closed")
-        XCTAssertTrue(source.contains("const registration = registerFrame()"),
-                      "Every operation must register with native policy enforcement")
-        XCTAssertTrue(source.contains("message(\"registerFrame\")"), "Each frame must authenticate before sending requests")
-        XCTAssertTrue(source.contains("const capability ="), "Every message must carry the native bridge capability")
-        XCTAssertTrue(source.contains("documentID: frameNonce"), "Requests must identify the exact page document")
-        XCTAssertFalse(source.contains("signHMAC"), "Signing must be absent from the page world")
-        XCTAssertFalse(source.contains("signingToken"))
-        XCTAssertFalse(policySource.contains(GeolocationUserScript.capabilityToken), "The signing token must differ from the page capability")
-        XCTAssertFalse(policySource.contains("${SIGNING_TOKEN}"))
-        XCTAssertTrue(source.contains("configurable: false"), "The installed API must not reveal native methods after deletion")
-        XCTAssertTrue(source.contains("Object.getPrototypeOf(nativeGeolocation)"), "Direct native-prototype calls must route through the shim")
-        XCTAssertTrue(source.contains("Object.getPrototypeOf(nativePermissions)"), "Direct Permissions prototype calls must route through the shim")
-        XCTAssertTrue(source.contains("scheduleTask(() => { throw exception; }, 0)"),
-                      "Callback exceptions must be reported in a later task without terminating native watch routing")
-        XCTAssertFalse(source.contains("${CAPABILITY_TOKEN}"), "The package must replace the native bridge capability")
-        XCTAssertFalse(source.contains("${INSTALL_IMMEDIATELY}"), "The package must replace the installation mode")
-        XCTAssertTrue(source.contains("const installImmediately = \"false\" === \"true\""), "The default script must leave non-tab WebViews untouched")
-
-        let terminalStart = try? XCTUnwrap(source.range(of: "const receiveTerminalWatchResult"))
-        let delete = terminalStart.flatMap { source.range(of: "apply(mapDelete, activeWatches, [requestID])", range: $0.lowerBound..<source.endIndex) }
-        let callback = terminalStart.flatMap { source.range(of: "settlePosition(result", range: $0.lowerBound..<source.endIndex) }
-        XCTAssertNotNil(delete)
-        XCTAssertNotNil(callback)
-        if let delete, let callback {
-            XCTAssertLessThan(delete.lowerBound, callback.lowerBound, "Terminal delivery must remove page state before invoking callbacks")
+        for method in ["registerFrame", "getCurrentPosition", "queryPermission", "startWatch", "clearWatch"] {
+            XCTAssertNotNil(script.handler(forMethodNamed: method), "Expected a handler for \(method)")
         }
+        XCTAssertNil(script.handler(forMethodNamed: "requestPermission"))
     }
 
-    func testImmediateInstallationHardensBeforeRegistrationAndBypassesOnlyDuckAIHosts() {
-        let source = GeolocationUserScript(installImmediately: true).source
-
-        XCTAssertTrue(source.contains("const installImmediately = \"true\" === \"true\""))
-        XCTAssertTrue(source.contains("initialHostname === \"duck.ai\""))
-        XCTAssertTrue(source.contains("initialHostname.endsWith(\".duck.ai\")"))
-        XCTAssertFalse(source.contains("initialHostname === \"duckduckgo.com\""))
-        let install = source.range(of: "if (installImmediately) {\n        installShim();")
-        let registrationReply = source.range(of: "callThen(registration, (enabled) => {\n        if (enabled && !installImmediately)")
-        XCTAssertNotNil(install)
-        XCTAssertNotNil(registrationReply)
-        if let install, let registrationReply {
-            XCTAssertLessThan(install.lowerBound, registrationReply.lowerBound)
-        }
+    func testFeatureSettingsCarryTheCapabilityAndInstallationMode() {
+        XCTAssertEqual(GeolocationUserScript().featureSettings["capability"] as? String, GeolocationUserScript.capabilityToken)
+        XCTAssertEqual(GeolocationUserScript().featureSettings["installImmediately"] as? Bool, false)
+        XCTAssertEqual(GeolocationUserScript(installImmediately: true).featureSettings["installImmediately"] as? Bool, true)
     }
 
-    func testEachOperationRefreshesNativeFrameRegistration() {
-        let source = GeolocationUserScript().source
+    func testPolicySigningTokenDiffersFromThePageCapabilityAndStaysOutOfPageSettings() throws {
+        let signingToken = try XCTUnwrap(GeolocationUserScript.policyFeatureSettings["signingToken"] as? String)
 
-        XCTAssertTrue(source.contains("const registerFrame = () => callThen(postOneShot(message(\"registerFrame\"))"))
-        XCTAssertEqual(source.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
-                       "Position requests, permission queries, watch starts, and watch cancellation must recover after native registration resets")
+        XCTAssertEqual(signingToken.count, 72)
+        XCTAssertNotEqual(signingToken, GeolocationUserScript.capabilityToken)
+        XCTAssertFalse(GeolocationUserScript().featureSettings.values.contains { $0 as? String == signingToken })
     }
 
-    func testPolicyIsResampledForRegistrationAndImmediatelyBeforeOperations() {
-        let source = GeolocationUserScript().source
+    func testUnauthenticatedMessagesAreDeniedBeforeAnyOtherCheck() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = PolicyTestWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        var body = registrationBody()
+        body["capability"] = "forged"
+        let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
 
-        XCTAssertTrue(source.contains("isPolicyAllowed: result.constraints?.isPolicyAllowed === true"))
-        XCTAssertTrue(source.contains("constraints.isPolicyAllowed && policyAllowsGeolocation() && !constraints.isSandboxed"))
-        let policySource = GeolocationUserScript().policyScript.source
-        XCTAssertTrue(policySource.contains("const getConstraints = () => {"))
-        XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation()"))
-        XCTAssertTrue(source.contains("const receiveWatchResult = (requestID, result) => {"))
-        XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                apply(mapDelete, activeWatches, [requestID]);"),
-                      "A restrictive policy change must stop later watch deliveries")
-        XCTAssertTrue(source.contains("settlePosition(isAllowedByPlatform() ? result : deniedResult(), success, error)"),
-                      "A newly restrictive policy must suppress an in-flight one-shot result")
-        XCTAssertTrue(source.contains("record.initialize(isAllowedByPlatform() ? normalizedPermissionState(result?.state) : \"denied\")"),
-                      "A newly restrictive policy must suppress an in-flight query result")
-        XCTAssertTrue(source.contains("record.update(isAllowedByPlatform() ? state : \"denied\")"),
-                      "A policy change must fail closed when native refreshes an existing status")
-        XCTAssertTrue(source.contains("result?.status === \"started\" && !isAllowedByPlatform()"),
-                      "A newly restrictive policy must cancel an in-flight watch start")
-        XCTAssertFalse(source.contains("staticConstraints"))
-    }
+        let reply = await script.userContentController(WKUserContentController(), didReceive: message)
 
-    func testScriptPayloadsDoNotDefineHostOriginOrURLFields() {
-        let source = GeolocationUserScript().source.lowercased()
-
-        XCTAssertFalse(source.contains("host:"))
-        XCTAssertFalse(source.contains("origin:"))
-        XCTAssertFalse(source.contains("url:"))
+        let payload = try XCTUnwrap(reply.0 as? [String: Any])
+        XCTAssertEqual(payload["status"] as? String, "error")
+        XCTAssertEqual(payload["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
     }
 
     func testOptionsAcceptFiniteNonnegativeValues() {

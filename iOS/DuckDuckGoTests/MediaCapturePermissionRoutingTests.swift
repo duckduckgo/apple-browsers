@@ -478,16 +478,10 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertTrue(tabDelegate.grantedSitePermissions.isEmpty)
     }
 
-    func testDisabledLaunchInstallsBridgeButRemoteActivationStillBypasses() async {
+    func testDisabledLaunchBridgeBypassesEvenAfterRemoteActivation() async {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         // The fake's content-blocking publisher never emits assets.
         let sut = makeSUT(featureFlagger: featureFlagger)
-        let scripts = sut.webView.configuration.userContentController.userScripts
-        let expectedSource = MediaCaptureUserScript().makeWKUserScriptSync().source
-        let mediaCaptureScripts = scripts.filter { $0.source == expectedSource }
-        XCTAssertEqual(mediaCaptureScripts.count, 1)
-        XCTAssertEqual(mediaCaptureScripts.first?.injectionTime, .atDocumentStart)
-        XCTAssertEqual(mediaCaptureScripts.first?.isForMainFrameOnly, false)
 
         let disabledDecision = await requestPermissionThroughBridge(on: sut,
                                                                      originHost: "top-level.example",

@@ -27,14 +27,14 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
 
     func testDisabledRegistrationLeavesNativePageAPIUntouched() async throws {
         let script = GeolocationUserScript()
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
 
         try await harness.load(nativeAPICaptureHTML)
         try await waitUntil(in: harness.webView, expression: "window.pageStart !== undefined")
 
         let state = try await javaScriptDictionary(in: harness.webView, body: """
         return {
-            markerInstalled: Boolean(window.__ddgSitePermissionsGeolocation),
+            markerInstalled: \(SitePermissionsContentScope.geolocationShimInstalled),
             geolocationUnchanged: window.pageStart.geolocation === navigator.geolocation,
             getCurrentPositionUnchanged: window.pageStart.getCurrentPosition === navigator.geolocation.getCurrentPosition,
             permissionsQueryUnchanged: window.pageStart.permissionsQuery === navigator.permissions.query
@@ -50,14 +50,14 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
     func testEnabledRegistrationInstallsShimInThePageWorld() async throws {
         let script = GeolocationUserScript(installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
 
         try await harness.load(nativeAPICaptureHTML)
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
 
         let state = try await javaScriptDictionary(in: harness.webView, body: """
         return {
-            markerInstalled: Boolean(window.__ddgSitePermissionsGeolocation),
+            markerInstalled: \(SitePermissionsContentScope.geolocationShimInstalled),
             installedBeforePageScript: window.pageStart.geolocation === navigator.geolocation &&
                                        window.pageStart.getCurrentPosition === navigator.geolocation.getCurrentPosition &&
                                        window.pageStart.permissionsQuery === navigator.permissions.query
@@ -72,7 +72,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
         try await harness.load(try XCTUnwrap(server.url))
@@ -81,7 +81,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         globalThis.pageOnlySentinel = "page";
         return {
             hasPolicyState: globalThis.__ddgSitePermissionsGeolocationPolicy !== undefined,
-            hasPageShim: globalThis.__ddgSitePermissionsGeolocation !== undefined
+            hasPageShim: \(SitePermissionsContentScope.geolocationShimInstalled)
         };
         """)
         let isolatedState = try await harness.webView.callAsyncJavaScript("""
@@ -105,7 +105,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript, includePolicyScript: false)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript, includePolicyScript: false)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
         try await harness.load(try XCTUnwrap(server.url))
@@ -127,12 +127,12 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
 
         try await harness.load(try XCTUnwrap(server.url))
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
 
         let state = try await javaScriptDictionary(in: harness.webView, body: """
         const geolocation = navigator.geolocation;
@@ -193,12 +193,12 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: unavailablePolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
 
         try await harness.load(try XCTUnwrap(server.url))
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
 
         let state = try await javaScriptDictionary(in: harness.webView, body: """
         const policy = document.permissionsPolicy ?? document.featurePolicy;
@@ -232,7 +232,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: frameHostHTML(source: "/frame"),
                                                               frameHTML: frameExerciseHTML)
         defer { server.stop() }
@@ -250,7 +250,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameHTML = frameExerciseHTML.replacingOccurrences(of: "<head>", with: """
         <head><script>globalThis.Promise = class ApplicationPromise extends Promise {};</script>
         """)
@@ -268,7 +268,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameServer = try await WebKitLoopbackHTTPServer.start(html: frameExerciseHTML)
         defer { frameServer.stop() }
         let frameURL = try XCTUnwrap(frameServer.url)
@@ -288,7 +288,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameServer = try await WebKitLoopbackHTTPServer.start(html: frameExerciseHTML)
         defer { frameServer.stop() }
         var frameURL = try XCTUnwrap(URLComponents(url: try XCTUnwrap(frameServer.url), resolvingAgainstBaseURL: false))
@@ -311,11 +311,11 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
         let insecureURL = try XCTUnwrap(URL(string: "http://example.com"))
 
         try await harness.load("<html><body></body></html>", baseURL: insecureURL)
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
         let state = try await exerciseGeolocation(in: harness.webView)
 
         XCTAssertEqual(state["isSecureContext"] as? Bool, false, "Page state: \(state)")
@@ -329,7 +329,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame", sandboxed: true),
             frameHTML: frameExerciseHTML
@@ -350,7 +350,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
         // Isolate sandbox enforcement from OS differences in Permissions Policy support.
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let frameHTML = """
         <html><head><script>
             const originalThen = Promise.prototype.then;
@@ -389,7 +389,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame?outer", sandboxed: true),
             frameHTML: """
@@ -437,7 +437,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         delegate.watchCancelled = cancelled
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
         try await harness.load(try XCTUnwrap(server.url))
@@ -482,16 +482,18 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         delegate.permissionStatusCancelled = statusCancelled
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame"),
             frameHTML: """
             <html><head><script>
                 if (location.search === "?replacement") {
-                    if (!window.__ddgSitePermissionsGeolocation) {
-                        window.__ddgSitePermissionsGeolocation = new Proxy({}, {
-                            get: () => (...payload) => { parent.staleDeliveries.push(payload); return true; }
-                        });
+                    if (!navigator.duckduckgo) {
+                        Object.defineProperty(navigator, "duckduckgo", { value: {
+                            messageHandlers: new Proxy({}, {
+                                get: () => (...payload) => { parent.staleDeliveries.push(payload); return true; }
+                            })
+                        } });
                     }
                     parent.replacementLoaded = true;
                 }
@@ -553,7 +555,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: allowedPolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: allowedPolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame?removeSandbox", sandboxed: true),
             frameHTML: frameExerciseHTML
@@ -580,7 +582,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: """
+        let harness = try makeHarness(script: script, precedingScript: """
         Object.defineProperty(document, "permissionsPolicy", {
             value: { allowsFeature: () => false }
         });
@@ -600,7 +602,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         delegate.permissionState = .denied
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: unavailablePolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>",
                                                               permissionsPolicy: "geolocation=()")
         defer { server.stop() }
@@ -615,7 +617,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: unavailablePolicyScript)
+        let harness = try makeHarness(script: script, precedingScript: unavailablePolicyScript)
         let server = try await WebKitLoopbackHTTPServer.start(
             html: frameHostHTML(source: "/frame").replacingOccurrences(of: "allow=\"geolocation\"", with: "allow=\"geolocation 'none'\""),
             frameHTML: """
@@ -649,7 +651,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script, precedingScript: """
+        let harness = try makeHarness(script: script, precedingScript: """
         Object.defineProperty(document, "permissionsPolicy", {
             value: { allowsFeature: () => globalThis.frameElement?.getAttribute("allow") !== "geolocation 'none'" }
         });
@@ -681,12 +683,12 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
 
         try await harness.load(try XCTUnwrap(server.url))
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
         _ = try await harness.webView.callAsyncJavaScript(
             "return (await navigator.permissions.query({ name: 'geolocation' })).state;",
             arguments: [:],
@@ -707,12 +709,12 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         delegate.permissionState = .prompt
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
 
         try await harness.load(try XCTUnwrap(server.url))
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
         let initial = try await javaScriptDictionary(in: harness.webView, body: """
         const status = await navigator.permissions.query({ name: "geolocation" });
         window.testPermissionStatus = status;
@@ -745,12 +747,12 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
         let delegate = WebKitTestGeolocationDelegate()
         let script = GeolocationUserScript(delegate: delegate, installImmediately: true)
         script.activationHandler = { _ in true }
-        let harness = makeHarness(script: script)
+        let harness = try makeHarness(script: script)
         let server = try await WebKitLoopbackHTTPServer.start(html: "<html><body></body></html>")
         defer { server.stop() }
 
         try await harness.load(try XCTUnwrap(server.url))
-        try await waitUntil(in: harness.webView, expression: "Boolean(window.__ddgSitePermissionsGeolocation)")
+        try await waitUntil(in: harness.webView, expression: SitePermissionsContentScope.geolocationShimInstalled)
         let result = try await javaScriptDictionary(in: harness.webView, body: """
         const before = await navigator.permissions.query({ name: "geolocation" });
         const nameBefore = before.name;
@@ -877,7 +879,7 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
 
     private func makeHarness(script: GeolocationUserScript,
                              precedingScript: String? = nil,
-                             includePolicyScript: Bool = true) -> WebKitTestHarness {
+                             includePolicyScript: Bool = true) throws -> WebKitTestHarness {
         let configuration = WKWebViewConfiguration()
         if let precedingScript {
             for world in [WKContentWorld.page, .defaultClient] {
@@ -887,21 +889,9 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
                                                                                 in: world))
             }
         }
-        if includePolicyScript {
-            let policyScript = script.policyScript
-            configuration.userContentController.addUserScript(WKUserScript(source: policyScript.source,
-                                                                            injectionTime: policyScript.injectionTime,
-                                                                            forMainFrameOnly: policyScript.forMainFrameOnly,
-                                                                            in: .defaultClient))
-        }
-        configuration.userContentController.addUserScript(WKUserScript(source: script.source,
-                                                                        injectionTime: script.injectionTime,
-                                                                        forMainFrameOnly: script.forMainFrameOnly,
-                                                                        in: .page))
-        for messageName in script.messageNames {
-            configuration.userContentController.addScriptMessageHandler(script, contentWorld: .page, name: messageName)
-        }
-        return WebKitTestHarness(configuration: configuration)
+        let contentScope = try SitePermissionsContentScope(geolocation: script, includesGeolocationPolicy: includePolicyScript)
+        contentScope.install(in: configuration.userContentController)
+        return WebKitTestHarness(configuration: configuration, contentScope: contentScope)
     }
 
     private func waitUntil(in webView: WKWebView,
@@ -933,9 +923,12 @@ final class GeolocationUserScriptWebKitTests: XCTestCase {
 private final class WebKitTestHarness: NSObject, WKNavigationDelegate {
 
     let webView: WKWebView
+    /// Keeps the content-scope scripts, which own the message brokers, alive with the web view.
+    let contentScope: SitePermissionsContentScope
     private var navigationContinuation: CheckedContinuation<Void, Error>?
 
-    init(configuration: WKWebViewConfiguration) {
+    init(configuration: WKWebViewConfiguration, contentScope: SitePermissionsContentScope) {
+        self.contentScope = contentScope
         webView = WKWebView(frame: .zero, configuration: configuration)
         super.init()
         webView.navigationDelegate = self

@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import ContentScopeScripts
 import Foundation
 import UserScript
 import WebKit
@@ -40,46 +39,55 @@ public protocol MediaCaptureUserScriptDelegate: AnyObject {
                                 webView: WKWebView) async -> MediaCaptureBridgeDecision
 }
 
-public final class MediaCaptureUserScript: NSObject, UserScript {
+/// Answers permission requests from the `sitePermissionsMediaCapture` content-scope feature, which delays
+/// `getUserMedia` until the app has asked for site permission. Register it with the page-world
+/// `ContentScopeUserScript` and inject `featureSettings` into that script's configuration.
+public final class MediaCaptureUserScript: NSObject, Subfeature {
 
-    private static let messageName = "sitePermissionsMediaCapture"
+    /// The page-world content-scope feature this subfeature serves.
+    public static let featureNameValue = "sitePermissionsMediaCapture"
+
+    enum MessageKind: String {
+        case requestPermission
+    }
+
     static let capabilityToken = UUID().uuidString + UUID().uuidString
 
-    public lazy var source: String = {
-        do {
-            return try Self.loadJS("sitePermissionsMediaCapture",
-                                   from: ContentScopeScripts.Bundle,
-                                   withReplacements: ["${CAPABILITY_TOKEN}": Self.capabilityToken])
-        } catch {
-            fatalError("Failed to load JS for MediaCaptureUserScript: \(error.localizedDescription)")
-        }
-    }()
+    public let featureName = MediaCaptureUserScript.featureNameValue
+    public let messageOriginPolicy: MessageOriginPolicy = .all
+    public weak var broker: UserScriptMessageBroker?
 
-    public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public let forMainFrameOnly = false
-    public let messageNames = [MediaCaptureUserScript.messageName]
-    public var requiresRunInPageContentWorld: Bool { true }
+    /// Settings for the page-world feature. Without them the feature leaves `getUserMedia` untouched.
+    public var featureSettings: [String: Any] {
+        ["capability": Self.capabilityToken]
+    }
 
     @MainActor public weak var delegate: MediaCaptureUserScriptDelegate?
 
-    public func userContentController(_ userContentController: WKUserContentController,
-                                      didReceive message: WKScriptMessage) {
-        // This script uses the reply-handler overload on every supported iOS version.
+    public func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
+
+    public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        guard MessageKind(rawValue: methodName) == .requestPermission else { return nil }
+        return { [weak self] params, message in
+            guard let self else { return nil }
+            let body = params as? [String: Any] ?? [:]
+            return await SitePermissionsBridgeReply(["decision": self.decision(for: body, message: message).rawValue])
+        }
     }
 
     @MainActor
-    public func userContentController(_ userContentController: WKUserContentController,
-                                      didReceive message: WKScriptMessage) async -> (Any?, String?) {
-        guard let body = message.body as? [String: Any],
-              body["capability"] as? String == Self.capabilityToken,
+    func decision(for body: [String: Any], message: WKScriptMessage) async -> MediaCaptureBridgeDecision {
+        guard body["capability"] as? String == Self.capabilityToken,
               let delegate else {
-            return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
+            return .deny
         }
 
         // A retained document must return to WebKit's behavior on rollback, including contexts
         // the custom flow does not support. Check the flag before applying its eligibility rules.
         guard delegate.isMediaCapturePermissionHandlingEnabled else {
-            return (["decision": MediaCaptureBridgeDecision.bypass.rawValue], nil)
+            return .bypass
         }
 
         guard body["isEligible"] as? Bool == true,
@@ -90,7 +98,7 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
               requestsVideo || requestsAudio,
               let webView = message.webView,
               !message.frameInfo.securityOrigin.host.isEmpty else {
-            return (["decision": MediaCaptureBridgeDecision.deny.rawValue], nil)
+            return .deny
         }
 
         var permissionTypes = Set<SitePermissionType>()
@@ -101,12 +109,11 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
             permissionTypes.insert(.microphone)
         }
 
-        let decision = await delegate.mediaCaptureUserScript(self,
-                                                               requestPermissionFor: permissionTypes,
-                                                               requestID: requestID,
-                                                               in: message.frameInfo,
-                                                               webView: webView)
-        return (["decision": decision.rawValue], nil)
+        return await delegate.mediaCaptureUserScript(self,
+                                                     requestPermissionFor: permissionTypes,
+                                                     requestID: requestID,
+                                                     in: message.frameInfo,
+                                                     webView: webView)
     }
 
     static func isValidRequestID(_ requestID: String) -> Bool {
@@ -121,5 +128,3 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
         return true
     }
 }
-
-extension MediaCaptureUserScript: WKScriptMessageHandlerWithReply {}

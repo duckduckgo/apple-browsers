@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import ContentScopeScripts
 import CoreLocation
 import Foundation
 import UserScript
@@ -170,15 +169,16 @@ public protocol GeolocationUserScriptDelegate: AnyObject {
                                didCancelPermissionStatusWithID statusID: String)
 }
 
-/// Routes page requests after checking policy in an isolated content world. Install
-/// `policyScript` before this adapter. The delegate owns site and system permissions,
-/// location acquisition, and cancellation of its pending work.
-public final class GeolocationUserScript: NSObject, UserScript {
+/// Routes page requests from the `sitePermissionsGeolocation` content-scope feature after checking
+/// policy in the isolated content world. Register it with the page-world `ContentScopeUserScript`, and
+/// inject `featureSettings` and `policyFeatureSettings` into the page-world and isolated configurations.
+/// The delegate owns site and system permissions, location acquisition, and cancellation of its pending work.
+public final class GeolocationUserScript: NSObject, Subfeature {
 
-    private enum MessageName {
-        static let oneShot = "sitePermissionsGeolocation"
-        static let watch = "sitePermissionsGeolocationWatch"
-    }
+    /// The page-world content-scope feature this subfeature serves.
+    public static let featureNameValue = "sitePermissionsGeolocation"
+    /// The isolated-world content-scope feature that evaluates frame policy.
+    public static let policyFeatureName = "sitePermissionsGeolocationPolicy"
 
     enum MessageKind: String {
         case registerFrame
@@ -188,30 +188,31 @@ public final class GeolocationUserScript: NSObject, UserScript {
         case clearWatch
     }
 
-    static let capabilityToken = UUID().uuidString + UUID().uuidString
+    enum Subscription: String {
+        case watchResult = "geolocationWatchResult"
+        case terminalWatchResult = "geolocationTerminalWatchResult"
+        case permissionState = "geolocationPermissionState"
+    }
 
-    /// Install before this page-world adapter in every frame of the same web view.
-    public let policyScript = GeolocationPolicyUserScript()
+    static let capabilityToken = UUID().uuidString + UUID().uuidString
+    private static let signingToken = UUID().uuidString + UUID().uuidString
+    private static let defaultMessagingContext = "contentScopeScripts"
 
     private let installImmediately: Bool
 
-    public lazy var source: String = {
-        do {
-            return try Self.loadJS("sitePermissionsGeolocation",
-                                   from: ContentScopeScripts.Bundle,
-                                   withReplacements: [
-                                    "${CAPABILITY_TOKEN}": Self.capabilityToken,
-                                    "${INSTALL_IMMEDIATELY}": String(installImmediately)
-                                   ])
-        } catch {
-            fatalError("Failed to load JS for GeolocationUserScript: \(error.localizedDescription)")
-        }
-    }()
+    public let featureName = GeolocationUserScript.featureNameValue
+    public let messageOriginPolicy: MessageOriginPolicy = .all
+    public weak var broker: UserScriptMessageBroker?
 
-    public let injectionTime: WKUserScriptInjectionTime = .atDocumentStart
-    public let forMainFrameOnly = false
-    public let messageNames = [MessageName.oneShot, MessageName.watch]
-    public var requiresRunInPageContentWorld: Bool { true }
+    /// Settings for the page-world feature. Without them the feature leaves the page untouched.
+    public var featureSettings: [String: Any] {
+        ["capability": Self.capabilityToken, "installImmediately": installImmediately]
+    }
+
+    /// Settings for the isolated-world policy feature. The signing token must never reach the page world.
+    public static var policyFeatureSettings: [String: Any] {
+        ["signingToken": signingToken]
+    }
 
     @MainActor public weak var delegate: GeolocationUserScriptDelegate?
 
@@ -226,33 +227,35 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     @MainActor
     /// - Parameter installImmediately: Hardens the page API synchronously at document start. Use only when the
-    ///   embedding app scopes this script to its tab web views; `duck.ai` and its subdomains remain untouched.
+    ///   embedding app scopes this feature to its tab web views; `duck.ai` and its subdomains remain untouched.
     public init(delegate: GeolocationUserScriptDelegate? = nil, installImmediately: Bool = false) {
         self.delegate = delegate
         self.installImmediately = installImmediately
         super.init()
     }
 
-    public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        // All registered message names use the reply-handler overload on iOS 15 and later.
+    public func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
+
+    public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        guard let kind = MessageKind(rawValue: methodName) else { return nil }
+        return { [weak self] params, message in
+            guard let self else { return nil }
+            let body = params as? [String: Any] ?? [:]
+            return await SitePermissionsBridgeReply(self.handle(kind, body: body, message: message))
+        }
     }
 
     @MainActor
-    public func userContentController(_ userContentController: WKUserContentController,
-                                      didReceive message: WKScriptMessage) async -> (Any?, String?) {
-        guard let body = message.body as? [String: Any],
-              let rawKind = body["kind"] as? String,
-              let kind = MessageKind(rawValue: rawKind) else {
-            return (Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request"), nil)
-        }
-
+    func handle(_ kind: MessageKind, body: [String: Any], message: WKScriptMessage) async -> [String: Any] {
         let frame = GeolocationFrame(message.frameInfo)
         guard body["capability"] as? String == Self.capabilityToken else {
-            return (Self.errorPayload(.permissionDenied, message: "Unauthenticated geolocation request"), nil)
+            return Self.errorPayload(.permissionDenied, message: "Unauthenticated geolocation request")
         }
 
         if kind == .registerFrame {
-            return (await handleFrameRegistration(body: body, frame: frame, webView: message.webView), nil)
+            return await handleFrameRegistration(body: body, frame: frame, webView: message.webView)
         }
 
         // Only the isolated world supplies policy. Page messages cannot replace
@@ -266,7 +269,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
                 for: nonce,
                 frame: GeolocationNativeFrameIdentity(frame: frame, webView: webView)
               ) else {
-            return (Self.errorPayload(.permissionDenied, message: "Unregistered geolocation frame"), nil)
+            return Self.errorPayload(.permissionDenied, message: "Unregistered geolocation frame")
         }
 
         let generation = lifecycleGeneration
@@ -276,34 +279,34 @@ public final class GeolocationUserScript: NSObject, UserScript {
               await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView, generation: generation),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true else {
-            return (Self.errorPayload(.permissionDenied, message: "Geolocation document is no longer active"), nil)
+            return Self.errorPayload(.permissionDenied, message: "Geolocation document is no longer active")
         }
         guard kind == .clearWatch || policy.constraints.allowsRequest else {
             if kind == .queryPermission {
-                return (Self.permissionPayload(.denied), nil)
+                return Self.permissionPayload(.denied)
             }
-            return (Self.errorPayload(.permissionDenied, message: "Geolocation is not allowed in this context"), nil)
+            return Self.errorPayload(.permissionDenied, message: "Geolocation is not allowed in this context")
         }
 
         switch kind {
         case .getCurrentPosition:
-            return (await handlePositionRequest(body: body, frame: frame, constraints: policy.constraints), nil)
+            return await handlePositionRequest(body: body, frame: frame, constraints: policy.constraints)
         case .queryPermission:
-            return (handlePermissionQuery(body: body,
-                                          frame: frame,
-                                          nonce: nonce,
-                                          constraints: policy.constraints,
-                                          webView: webView), nil)
+            return handlePermissionQuery(body: body,
+                                         frame: frame,
+                                         nonce: nonce,
+                                         constraints: policy.constraints,
+                                         webView: webView)
         case .startWatch:
-            return (handleWatchStart(body: body,
-                                     frame: frame,
-                                     nonce: nonce,
-                                     constraints: policy.constraints,
-                                     webView: webView), nil)
+            return handleWatchStart(body: body,
+                                    frame: frame,
+                                    nonce: nonce,
+                                    constraints: policy.constraints,
+                                    webView: webView)
         case .clearWatch:
-            return (handleWatchCancellation(body: body, nonce: nonce), nil)
+            return handleWatchCancellation(body: body, nonce: nonce)
         case .registerFrame:
-            return (Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request"), nil)
+            return Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request")
         }
     }
 
@@ -335,9 +338,10 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor @discardableResult
     public func send(_ result: GeolocationPositionResult, toWatchWithID requestID: String) -> Bool {
         guard watchRegistry.contains(requestID) else { return false }
-        guard let payload = Self.javaScriptObject(from: Self.positionPayload(result)) else { return false }
-        let sent = watchRegistry.send(Self.callbackScript("receiveWatchResult", requestID: requestID, payload: payload),
-                                      to: requestID) { [weak self] succeeded in
+        guard let script = callbackScript(.watchResult,
+                                          callbackID: requestID,
+                                          params: ["requestID": requestID, "result": Self.positionPayload(result)]) else { return false }
+        let sent = watchRegistry.send(script, to: requestID) { [weak self] succeeded in
             guard !succeeded, let self, self.watchRegistry.remove(requestID) else { return }
             self.delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
         }
@@ -347,10 +351,12 @@ public final class GeolocationUserScript: NSObject, UserScript {
     /// Delivers a final result and removes both native and page-side watch state.
     @MainActor @discardableResult
     public func sendTerminal(_ result: GeolocationPositionResult, toWatchWithID requestID: String) -> Bool {
-        guard let payload = Self.javaScriptObject(from: Self.positionPayload(result)),
+        guard let script = callbackScript(.terminalWatchResult,
+                                          callbackID: requestID,
+                                          params: ["requestID": requestID, "result": Self.positionPayload(result)]),
               let callback = watchRegistry.take(requestID) else { return false }
 
-        callback(Self.callbackScript("receiveTerminalWatchResult", requestID: requestID, payload: payload)) { _ in }
+        callback(script) { _ in }
         delegate?.geolocationUserScript(self, didCancelWatchWithID: requestID)
         return true
     }
@@ -358,11 +364,10 @@ public final class GeolocationUserScript: NSObject, UserScript {
     /// Refreshes a previously queried `PermissionStatus` in its exact requesting frame.
     @MainActor @discardableResult
     public func send(_ state: GeolocationPermissionState, toPermissionStatusWithID statusID: String) -> Bool {
-        let encodedState = Self.javaScriptString(state.rawValue)
-        return permissionStatusRegistry.send(
-            Self.callbackScript("receivePermissionState", requestID: statusID, payload: encodedState),
-            to: statusID
-        ) { [weak self] succeeded in
+        guard let script = callbackScript(.permissionState,
+                                          callbackID: statusID,
+                                          params: ["statusID": statusID, "state": state.rawValue]) else { return false }
+        return permissionStatusRegistry.send(script, to: statusID) { [weak self] succeeded in
             guard !succeeded, let self, self.permissionStatusRegistry.remove(statusID) else { return }
             self.delegate?.geolocationUserScript(self, didCancelPermissionStatusWithID: statusID)
         }
@@ -625,12 +630,20 @@ public final class GeolocationUserScript: NSObject, UserScript {
         return value
     }
 
-    private static func callbackScript(_ method: String, requestID: String, payload: String) -> String {
-        let documentID = String(requestID.prefix { $0 != ":" })
+    /// Builds a content-scope subscription event for the page. The page acknowledges ownership by returning `true`.
+    private func callbackScript(_ subscription: Subscription, callbackID: String, params: [String: Any]) -> String? {
+        let event: [String: Any] = [
+            "context": broker?.context ?? Self.defaultMessagingContext,
+            "featureName": featureName,
+            "subscriptionName": subscription.rawValue,
+            "params": params
+        ]
+        guard let encodedEvent = Self.javaScriptObject(from: event) else { return nil }
+        let documentID = String(callbackID.prefix { $0 != ":" })
         // A WKFrameInfo can outlive its document. Check the document token before exposing the payload.
         return """
-        window.__ddgSitePermissionsGeolocation?.documentID === \(javaScriptString(documentID)) &&
-        window.__ddgSitePermissionsGeolocation.\(method)(\(javaScriptString(requestID)), \(payload)) === true
+        window.__ddgSitePermissionsGeolocationDocumentID === \(Self.javaScriptString(documentID)) &&
+        navigator.duckduckgo?.messageHandlers?.[\(Self.javaScriptString(subscription.rawValue))]?.(\(encodedEvent)) === true
         """
     }
 
@@ -649,9 +662,6 @@ public final class GeolocationUserScript: NSObject, UserScript {
         return encoded
     }
 }
-
-@available(iOS 14.0, *)
-extension GeolocationUserScript: WKScriptMessageHandlerWithReply {}
 
 @MainActor
 final class GeolocationWatchRegistry {

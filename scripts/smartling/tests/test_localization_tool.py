@@ -489,6 +489,21 @@ class ReleaseStatusTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('no strings', result.reason)
 
 
+class ProjectLocalesTests(unittest.IsolatedAsyncioTestCase):
+
+    async def testWhenALocaleIsDisabledThenItIsNotAProjectLocale(self):
+        client = LOCALIZATION_TOOL.SmartlingClient(LOCALIZATION_TOOL.Credentials('user', 'secret', 'project'))
+        client._request = unittest.mock.AsyncMock(return_value={'response': {'data': {'targetLocales': [
+            {'localeId': 'de-DE', 'enabled': True},
+            {'localeId': 'fr-FR', 'enabled': False},
+            {'localeId': 'it-IT'},
+        ]}}})
+
+        locales = await client.get_project_locales()
+
+        self.assertEqual(locales, ['de-DE', 'it-IT'])
+
+
 class DownloadCommandTests(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):

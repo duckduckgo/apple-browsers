@@ -19,7 +19,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import List, Dict, Optional
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from urllib.parse import urlencode
 
 import aiohttp
@@ -50,16 +50,7 @@ class SubmitResult:
     failed: bool = False
 
     def as_dict(self) -> Dict:
-        return {
-            'outcome': self.outcome,
-            'job_id': self.job_id,
-            'job_name': self.job_name,
-            'total_strings': self.total_strings,
-            'locales': self.locales,
-            'max_usd': self.max_usd,
-            'reason': self.reason,
-            'failed': self.failed,
-        }
+        return asdict(self)
 
 
 @dataclass
@@ -75,16 +66,7 @@ class ReleaseStatus:
     reason: str = ""
 
     def as_dict(self) -> Dict:
-        return {
-            'outcome': self.outcome,
-            'job_id': self.job_id,
-            'job_status': self.job_status,
-            'total_strings': self.total_strings,
-            'strings_left': self.strings_left,
-            'incomplete_locales': self.incomplete_locales,
-            'locales': self.locales,
-            'reason': self.reason,
-        }
+        return asdict(self)
 
 
 # ============================================================================
@@ -217,7 +199,10 @@ class SmartlingClient:
     async def get_project_locales(self) -> List[str]:
         """Get valid project locales."""
         data = await self._request('GET', f'/projects-api/v2/projects/{self.creds.project_id}')
-        return [loc['localeId'] for loc in data['response']['data']['targetLocales']]
+        return [
+            loc['localeId'] for loc in data['response']['data']['targetLocales']
+            if loc.get('enabled', True)
+        ]
 
     async def create_batch(self, job_id: str, file_uris: List[str]) -> str:
         """Create file batch."""
@@ -326,6 +311,11 @@ class SmartlingClient:
 # ============================================================================
 # CLI Commands
 # ============================================================================
+
+def error_reason(error: Exception) -> str:
+    """An error message on one line, short enough for step outputs and annotations."""
+    return str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+
 
 def log(message: str):
     """Print a progress line for CI logs."""
@@ -581,7 +571,7 @@ async def run_submit(client: SmartlingClient,
     except Exception as error:  # pylint: disable=broad-except
         log(f"❌ {error}")
         traceback.print_exc()
-        reason = str(error).replace('\n', ' ').replace('\r', ' ')[:500]
+        reason = error_reason(error)
         if delete_job_on_failure and unauthorized_job_id:
             try:
                 process_id = await client.cancel_job(unauthorized_job_id)
@@ -619,6 +609,13 @@ async def find_job(client: SmartlingClient, job_name: str) -> Optional[Dict]:
     """The job named exactly job_name, if there is one."""
     jobs = await client.list_jobs(job_name, [])
     return next((job for job in jobs if job.get('jobName') == job_name), None)
+
+
+def failed_release_status(error: Exception, job_id: str = "", job_status: str = "") -> ReleaseStatus:
+    """Log the error and report it as the release status."""
+    log(f"❌ {error}")
+    traceback.print_exc()
+    return ReleaseStatus(outcome='error', job_id=job_id, job_status=job_status, reason=error_reason(error))
 
 
 async def run_release_status(client: SmartlingClient,
@@ -673,14 +670,7 @@ async def run_release_status(client: SmartlingClient,
             locales=len(locales)
         )
     except Exception as error:  # pylint: disable=broad-except
-        log(f"❌ {error}")
-        traceback.print_exc()
-        return ReleaseStatus(
-            outcome='error',
-            job_id=job_id,
-            job_status=job_status,
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
-        )
+        return failed_release_status(error, job_id, job_status)
 
 
 def get_git_branch() -> str:
@@ -775,7 +765,7 @@ async def submit_command(args):
         traceback.print_exc()
         result = SubmitResult(
             outcome='review_required',
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500],
+            reason=error_reason(error),
             failed=True
         )
 
@@ -806,12 +796,7 @@ async def release_status_command(args):
         async with SmartlingClient(get_credentials(args)) as client:
             result = await run_release_status(client, args.job_name, args.file_uris)
     except Exception as error:  # pylint: disable=broad-except
-        log(f"❌ {error}")
-        traceback.print_exc()
-        result = ReleaseStatus(
-            outcome='error',
-            reason=str(error).replace('\n', ' ').replace('\r', ' ')[:500]
-        )
+        result = failed_release_status(error)
 
     if result.outcome == 'error':
         annotate('error', f"{args.job_name}: {result.reason}")

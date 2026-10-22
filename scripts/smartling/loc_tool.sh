@@ -109,10 +109,12 @@ case "$cmd" in
 		python3 "$PYTHON_TOOL" approve --job-id "$JOB_ID"
 		;;
 	download)
-		if [ "${1:-}" = "--file-uris" ]; then
-			python3 "$PYTHON_TOOL" download "$@"
-			exit
-		fi
+		for arg in "$@"; do
+			if [ "$arg" = "--file-uris" ]; then
+				python3 "$PYTHON_TOOL" download "$@"
+				exit
+			fi
+		done
 
 		JOB_ID=$(parse_job_id "$@")
 

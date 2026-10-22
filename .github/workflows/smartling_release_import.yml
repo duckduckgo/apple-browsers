@@ -56,6 +56,7 @@ jobs:
           REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
           IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
           SIMULATE_WEDNESDAY: ${{ inputs.simulate_wednesday || false }}
+        shell: bash
         run: |
           platform_slug="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
           if [ -n "$INPUT_RELEASE_BRANCH" ]; then
@@ -104,7 +105,6 @@ jobs:
                 echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
                 echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
                 echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
-                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
               } >> "$GITHUB_ENV"
               ;;
             macOS)
@@ -112,7 +112,6 @@ jobs:
                 echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
                 echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
                 echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
-                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
               } >> "$GITHUB_ENV"
               ;;
             *)
@@ -172,7 +171,7 @@ jobs:
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-project: ${{ env.ASANA_PROJECT_ID }}
+          asana-project: ${{ matrix.platform == 'iOS' && vars.GH_ASANA_IOS_APP_PROJECT_ID || vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
           asana-task-name: "Release translations not ready: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
           asana-task-description: >-
             The ${{ matrix.platform }} translations for ${{ steps.release.outputs.branch }} aren't ready to import yet.
@@ -186,12 +185,13 @@ jobs:
       - name: Open ${{ matrix.platform }} release import failure task
         if: >-
           failure() && github.event_name == 'schedule' &&
-          steps.import.outputs.outcome != 'status_error'
+          steps.import.outputs.outcome != 'status_error' &&
+          steps.import.outputs.outcome != 'not_ready'
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: create-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-project: ${{ env.ASANA_PROJECT_ID }}
+          asana-project: ${{ matrix.platform == 'iOS' && vars.GH_ASANA_IOS_APP_PROJECT_ID || vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}
           asana-task-name: "Release translations import failed: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
           asana-task-description: >-
             The nightly ${{ matrix.platform }} release translations import failed for ${{ steps.release.outputs.branch || 'the release branch' }}.

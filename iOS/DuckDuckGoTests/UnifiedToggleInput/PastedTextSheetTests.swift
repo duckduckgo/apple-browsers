@@ -29,13 +29,14 @@ final class PastedTextSheetTests: XCTestCase {
 
     private let original = AIChatPastedText(content: "original text")
 
-    func testSaveIsOffWhenBlankOrOverTheLimitAndOnOtherwise() {
+    func testSaveIsOffOnlyWhenBlankSoAnOverTheLimitEditCanStillBeSaved() {
         let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 10))
 
         XCTAssertFalse(rules.canSave(""))
         XCTAssertFalse(rules.canSave(" \n\t"))
-        XCTAssertFalse(rules.canSave("12345678901"))
         XCTAssertTrue(rules.canSave("1234567890"))
+        XCTAssertTrue(rules.isOverLimit("12345678901"))
+        XCTAssertTrue(rules.canSave("12345678901"), "Lets the user trim several pastes in turn while the prompt is still too long")
     }
 
     func testSaveIsNeverOfferedInViewOnlyMode() {

@@ -32,9 +32,12 @@ struct RedesignedFavoriteItemView: View {
         RedesignedFavoriteTileView(title: favorite.title) {
             RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .if(isEditable) {
-                    $0.contextMenu {
-                        // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
+                    $0.contextMenuWithPreviewIfAvailable {
                         contextMenuItems()
+                    } preview: {
+                        RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                            .background(Color(designSystemColor: .background))
+                            .clipShape(RedesignedFavoriteTileMetrics.tileShape)
                     }
                 }
         }

@@ -39,6 +39,7 @@ final class AIChatBrowserToolsService {
     let invoker: BrowserToolInvoker
     let permissions: BrowserToolPermissionStoring
     let elicitations: AIChatElicitationCoordinator
+    let openedTabs: BrowserToolOpenedTabs
 
     private let configuration: AIChatBrowserToolsConfiguration
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -56,13 +57,16 @@ final class AIChatBrowserToolsService {
          permissionStorage: any KeyedStoring<BrowserToolPermissionStorageKeys> = UserDefaults.standard.keyedStoring(),
          tools: [any BrowserTool]? = nil) {
         let configuration = AIChatBrowserToolsConfiguration(featureFlagger: featureFlagger)
+        let openedTabs = BrowserToolOpenedTabs()
         let catalog = BrowserToolCatalog(tools: tools ?? Self.defaultTools(windowControllersManager: windowControllersManager,
-                                                                           historyCoordinator: historyCoordinator),
+                                                                           historyCoordinator: historyCoordinator,
+                                                                           openedTabs: openedTabs),
                                          configuration: configuration)
         let permissions = BrowserToolPermissionStore(storage: permissionStorage)
         let elicitations = AIChatElicitationCoordinator()
         self.configuration = configuration
         self.windowControllersManager = windowControllersManager
+        self.openedTabs = openedTabs
         self.catalog = catalog
         self.permissions = permissions
         self.elicitations = elicitations
@@ -79,7 +83,8 @@ final class AIChatBrowserToolsService {
 
     /// Registration order is the order the front end sees in `tools/list`.
     private static func defaultTools(windowControllersManager: WindowControllersManagerProtocol,
-                                     historyCoordinator: HistoryCoordinating) -> [any BrowserTool] {
+                                     historyCoordinator: HistoryCoordinating,
+                                     openedTabs: BrowserToolOpenedTabs) -> [any BrowserTool] {
         let reader = BrowserToolPageContentReader(windowControllersManager: windowControllersManager)
         return [
             ListOpenTabsBrowserTool(windowControllersManager: windowControllersManager),
@@ -87,7 +92,9 @@ final class AIChatBrowserToolsService {
             SearchHistoryBrowserTool(historyCoordinator: historyCoordinator),
             ReadTabContentBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
             FindInPageBrowserTool(windowControllersManager: windowControllersManager, reader: reader),
-            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter())
+            HighlightInPageBrowserTool(windowControllersManager: windowControllersManager, highlighter: WebViewPageHighlighter()),
+            OpenTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs, loadWaiter: TabPageLoadWaiter()),
+            CloseTabBrowserTool(windowControllersManager: windowControllersManager, openedTabs: openedTabs)
         ]
     }
 

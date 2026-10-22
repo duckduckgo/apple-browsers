@@ -73,6 +73,80 @@ enum BrowserToolTargetTab {
         }
         return tab
     }
+
+    /// Looks in every window, since the user may have dragged the tab out of the chat's. A pinned
+    /// tab is left alone: pinning it made it the user's.
+    @discardableResult
+    static func closeUnpinnedTab(withID tabID: TabIdentifier, in windowControllersManager: WindowControllersManagerProtocol) -> Bool {
+        for collection in windowControllersManager.allTabCollectionViewModels {
+            guard let index = collection.indexInAllTabs(where: { $0.uuid == tabID }) else { continue }
+            guard index.isUnpinnedTab else { return false }
+            collection.close(at: index)
+            return collection.indexInAllTabs(where: { $0.uuid == tabID }) == nil
+        }
+        return false
+    }
+}
+
+enum BrowserToolPageLoadOutcome: Equatable {
+    case loaded
+    case timeout
+    /// A navigation error or an HTTP error response.
+    case blocked
+}
+
+/// Waits for a newly opened tab's page, behind a seam so `openTab` is testable without loading.
+@MainActor
+protocol BrowserToolPageLoadWaiting: AnyObject {
+
+    /// Throws `CancellationError` when the calling task is cancelled.
+    func waitUntilSettled(_ tab: Tab) async throws -> BrowserToolPageLoadOutcome
+}
+
+/// A page has settled once a load has started and the tab has then stayed idle for the quiet
+/// period, which gives prices rendered by JavaScript, and client-side redirects, time to land.
+@MainActor
+final class TabPageLoadWaiter: BrowserToolPageLoadWaiting {
+
+    private let pollInterval: TimeInterval
+    private let quietPeriod: TimeInterval
+    private let timeout: TimeInterval
+
+    init(pollInterval: TimeInterval = 0.1, quietPeriod: TimeInterval = 1.5, timeout: TimeInterval = 20) {
+        self.pollInterval = pollInterval
+        self.quietPeriod = quietPeriod
+        self.timeout = timeout
+    }
+
+    func waitUntilSettled(_ tab: Tab) async throws -> BrowserToolPageLoadOutcome {
+        // Polled rather than observed: the error, the status and every later navigation all have
+        // to be read against one deadline, and `Task.sleep` makes cancellation free.
+        let deadline = Date().addingTimeInterval(timeout)
+        var hasStarted = false
+        var quietSince: Date?
+        while Date() < deadline {
+            try await Task.sleep(nanoseconds: UInt64(pollInterval * 1_000_000_000))
+            if tab.error != nil {
+                return .blocked
+            }
+            if tab.isLoading {
+                hasStarted = true
+                quietSince = nil
+                continue
+            }
+            // The load is scheduled on the next main-queue turn after the tab is created.
+            guard hasStarted || tab.webView.url != nil else { continue }
+            if let status = tab.brokenSiteInfo?.lastMainFrameHttpStatusCode, status >= 400 {
+                return .blocked
+            }
+            let now = Date()
+            if let quietSince, now.timeIntervalSince(quietSince) >= quietPeriod {
+                return .loaded
+            }
+            quietSince = quietSince ?? now
+        }
+        return .timeout
+    }
 }
 
 /// Page text for the read and find tools, behind a seam so the tools are testable without a web view.

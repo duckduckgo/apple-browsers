@@ -28,6 +28,8 @@ final class BrokenSiteInfoTabExtension {
 
     private(set) var lastWebError: Error?
     private(set) var lastHttpStatusCode: Int?
+    /// `lastHttpStatusCode` also records subframes, so an ad's 404 would make the page look broken.
+    private(set) var lastMainFrameHttpStatusCode: Int?
 
     private(set) var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private(set) var refreshCountSinceLoad: Int = 0
@@ -101,6 +103,9 @@ extension BrokenSiteInfoTabExtension: NavigationResponder {
     @MainActor
     func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
         lastHttpStatusCode = navigationResponse.httpStatusCode
+        if navigationResponse.isForMainFrame {
+            lastMainFrameHttpStatusCode = navigationResponse.httpStatusCode
+        }
 
         return .next
     }
@@ -139,6 +144,7 @@ extension BrokenSiteInfoTabExtension: NavigationResponder {
 protocol BrokenSiteInfoTabExtensionProtocol: AnyObject, NavigationResponder {
     var lastWebError: Error? { get }
     var lastHttpStatusCode: Int? { get }
+    var lastMainFrameHttpStatusCode: Int? { get }
 
     var inferredOpenerContext: BrokenSiteReport.OpenerContext? { get }
     var refreshCountSinceLoad: Int { get }

@@ -30,6 +30,7 @@ enum TabSnapshotProvider {
         let pinnedTabs = collection.pinnedTabsCollection?.tabs ?? []
         let pinnedIDs = Set(pinnedTabs.map(\.uuid))
         let selectedTabID = collection.selectedTabViewModel?.tab.uuid
+        let tabGroupManager = collection.tabGroupManager
 
         return (pinnedTabs + collection.tabCollection.tabs).compactMap { tab in
             guard case .url(let url, _, _) = tab.content, !url.isDuckAIURL else { return nil }
@@ -39,7 +40,8 @@ enum TabSnapshotProvider {
                                path: String(url.path.prefix(maxPathLength)),
                                isPinned: pinnedIDs.contains(tab.uuid),
                                isCurrent: tab.uuid == selectedTabID,
-                               lastSelectedAt: tab.lastSelectedAt)
+                               lastSelectedAt: tab.lastSelectedAt,
+                               groupName: tabGroupManager.group(for: tab)?.name)
         }
     }
 

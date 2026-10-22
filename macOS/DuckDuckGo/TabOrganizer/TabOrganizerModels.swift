@@ -29,6 +29,8 @@ struct TabSnapshot: Equatable {
     let lastSelectedAt: Date?
     var pageType: String?
     var excerpt: String?
+    /// The tab group the tab is in, if any.
+    var groupName: String?
 }
 
 enum TabOrganizerRequest: Equatable {

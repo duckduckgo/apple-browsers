@@ -113,6 +113,34 @@ final class TabOrganizerViewModel: ObservableObject {
         }
     }
 
+    struct TabSection: Identifiable {
+        let id: String
+        /// nil for ungrouped tabs when the window has no groups at all.
+        let name: String?
+        let color: NSColor?
+        let tabs: [TabSnapshot]
+    }
+
+    /// Existing tab groups in tab order, then the ungrouped tabs.
+    var idleSections: [TabSection] {
+        var names: [String] = []
+        for name in tabs.compactMap(\.groupName) where !names.contains(name) {
+            names.append(name)
+        }
+        var sections = names.map { name in
+            TabSection(id: name, name: name, color: groupColor(named: name), tabs: tabs.filter { $0.groupName == name })
+        }
+        let ungrouped = tabs.filter { $0.groupName == nil }
+        if !ungrouped.isEmpty {
+            sections.append(TabSection(id: "", name: names.isEmpty ? nil : "Not in a group", color: nil, tabs: ungrouped))
+        }
+        return sections
+    }
+
+    func groupColor(named name: String) -> NSColor? {
+        tabCollectionViewModel.tabGroupManager.groups.first { $0.name == name }?.color.nsColor
+    }
+
     func tab(withID id: String) -> TabSnapshot? {
         tabs.first { $0.id == id }
     }
@@ -394,9 +422,24 @@ struct TabOrganizerView: View {
         case .idle:
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
-                    ForEach(viewModel.tabs, id: \.id) { tab in
-                        TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
-                            .onTapGesture { viewModel.switchToTab(tab.id) }
+                    ForEach(viewModel.idleSections) { section in
+                        if let name = section.name {
+                            HStack(spacing: 6) {
+                                if let color = section.color {
+                                    TabOrganizerGroupPill(name: name, color: Color(color))
+                                } else {
+                                    Text(name).font(.headline)
+                                }
+                                Text("\(section.tabs.count)").foregroundColor(.secondary)
+                            }
+                            .padding(.top, 10)
+                            .padding(.bottom, 2)
+                        }
+                        ForEach(section.tabs, id: \.id) { tab in
+                            TabOrganizerRow(tab: tab, favicon: viewModel.favicons[tab.id])
+                                .onTapGesture { viewModel.switchToTab(tab.id) }
+                                .padding(.leading, section.name == nil ? 0 : 14)
+                        }
                     }
                 }
             }
@@ -514,6 +557,23 @@ struct TabOrganizerView: View {
     private var isLoading: Bool {
         if case .loading = viewModel.state { return true }
         return false
+    }
+}
+
+/// The same look as the tab bar's group header: colour dot and name on a tint of the group colour.
+struct TabOrganizerGroupPill: View {
+
+    let name: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Circle().fill(color).frame(width: 8, height: 8)
+            Text(name).font(.system(size: 12, weight: .medium)).lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(color.opacity(0.18)))
     }
 }
 

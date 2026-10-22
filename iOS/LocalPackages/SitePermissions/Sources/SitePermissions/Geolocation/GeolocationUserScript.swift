@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import ContentScopeScripts
 import CoreLocation
 import Foundation
 import UserScript
@@ -187,8 +188,6 @@ public final class GeolocationUserScript: NSObject, UserScript {
         case clearWatch
     }
 
-    public static var bundle: Bundle { .module }
-
     static let capabilityToken = UUID().uuidString + UUID().uuidString
 
     /// Install before this page-world adapter in every frame of the same web view.
@@ -198,8 +197,8 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     public lazy var source: String = {
         do {
-            return try Self.loadJS("geolocation",
-                                   from: Self.bundle,
+            return try Self.loadJS("sitePermissionsGeolocation",
+                                   from: ContentScopeScripts.Bundle,
                                    withReplacements: [
                                     "${CAPABILITY_TOKEN}": Self.capabilityToken,
                                     "${INSTALL_IMMEDIATELY}": String(installImmediately)

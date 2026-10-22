@@ -94,7 +94,7 @@ final class GeolocationUserScriptTests: XCTestCase {
                       "Callback exceptions must be reported in a later task without terminating native watch routing")
         XCTAssertFalse(source.contains("${CAPABILITY_TOKEN}"), "The package must replace the native bridge capability")
         XCTAssertFalse(source.contains("${INSTALL_IMMEDIATELY}"), "The package must replace the installation mode")
-        XCTAssertTrue(source.contains("const installImmediately = false"), "The default script must leave non-tab WebViews untouched")
+        XCTAssertTrue(source.contains("const installImmediately = \"false\" === \"true\""), "The default script must leave non-tab WebViews untouched")
 
         let terminalStart = try? XCTUnwrap(source.range(of: "const receiveTerminalWatchResult"))
         let delete = terminalStart.flatMap { source.range(of: "apply(mapDelete, activeWatches, [requestID])", range: $0.lowerBound..<source.endIndex) }
@@ -109,7 +109,7 @@ final class GeolocationUserScriptTests: XCTestCase {
     func testImmediateInstallationHardensBeforeRegistrationAndBypassesOnlyDuckAIHosts() {
         let source = GeolocationUserScript(installImmediately: true).source
 
-        XCTAssertTrue(source.contains("const installImmediately = true"))
+        XCTAssertTrue(source.contains("const installImmediately = \"true\" === \"true\""))
         XCTAssertTrue(source.contains("initialHostname === \"duck.ai\""))
         XCTAssertTrue(source.contains("initialHostname.endsWith(\".duck.ai\")"))
         XCTAssertFalse(source.contains("initialHostname === \"duckduckgo.com\""))

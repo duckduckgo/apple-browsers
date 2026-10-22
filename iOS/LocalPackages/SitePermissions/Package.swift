@@ -35,6 +35,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-http-structured-headers.git", from: "1.7.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.29.0"),
         .package(path: "../DuckUI"),
         .package(path: "../../../SharedPackages/BrowserServicesKit"),
         .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit"),
@@ -49,6 +50,7 @@ let package = Package(
             name: "SitePermissions",
             dependencies: [
                 .product(name: "RawStructuredFieldValues", package: "swift-http-structured-headers"),
+                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
                 .product(name: "DuckUI", package: "DuckUI"),
                 .product(name: "UserScript", package: "BrowserServicesKit"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
@@ -59,7 +61,6 @@ let package = Package(
                 .product(name: "UIComponents", package: "UIComponents")
             ],
             resources: [
-                .process("jsSources"),
                 .copy("PrivacyInfo.xcprivacy")
             ]
         ),

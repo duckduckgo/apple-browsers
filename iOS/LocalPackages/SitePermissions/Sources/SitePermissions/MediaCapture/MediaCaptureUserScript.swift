@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import ContentScopeScripts
 import Foundation
 import UserScript
 import WebKit
@@ -44,12 +45,10 @@ public final class MediaCaptureUserScript: NSObject, UserScript {
     private static let messageName = "sitePermissionsMediaCapture"
     static let capabilityToken = UUID().uuidString + UUID().uuidString
 
-    public static var bundle: Bundle { .module }
-
     public lazy var source: String = {
         do {
-            return try Self.loadJS("mediaCapture",
-                                   from: Self.bundle,
+            return try Self.loadJS("sitePermissionsMediaCapture",
+                                   from: ContentScopeScripts.Bundle,
                                    withReplacements: ["${CAPABILITY_TOKEN}": Self.capabilityToken])
         } catch {
             fatalError("Failed to load JS for MediaCaptureUserScript: \(error.localizedDescription)")

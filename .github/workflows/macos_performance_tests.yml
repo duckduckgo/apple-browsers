@@ -19,8 +19,6 @@ on:
     paths:
       - 'SharedPackages/BrowserServicesKit/**'
       - 'macOS/**'
-      # Build number bumps by the release automation have nothing new to test
-      - '!macOS/Configuration/BuildNumber.xcconfig'
   pull_request:
     # opened, synchronize, reopened are the default triggering events for a pull request
     # We're also adding ready_for_review to run checks when a draft PR becomes ready for review.
@@ -36,12 +34,6 @@ concurrency:
 jobs:
   create-notarized-app:
     name: Build Notarized Review app
-    # Skip pushes to release branches by the release automation (GHA_ELEVATED_PERMISSIONS_TOKEN_USER), except its merges
-    if: >
-      !(github.event_name == 'push' &&
-      startsWith(github.ref, 'refs/heads/release/') &&
-      github.actor == vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER &&
-      !startsWith(github.event.head_commit.message, 'Merge '))
     uses: ./.github/workflows/macos_build_notarized.yml
     with:
       release-type: review
@@ -389,7 +381,7 @@ jobs:
   report-memory-metrics-to-clickhouse:
     name: Report Memory Metrics to ClickHouse
     needs: performance-tests
-    if: always() && needs.performance-tests.result != 'skipped'
+    if: always()
     runs-on: [ self-hosted, apple, Linux ]
 
     steps:

@@ -12,8 +12,6 @@ on:
       - 'SharedPackages/**'
       - 'macOS/**'
       - '!macOS/fastlane/**'
-      # Build number bumps by the release automation must not start another bump
-      - '!macOS/Configuration/BuildNumber.xcconfig'
   workflow_dispatch:
     inputs:
       asana-task-url:
@@ -39,8 +37,6 @@ jobs:
 
     name: Validate Input Conditions
 
-    # Avoid automation pushes (GHA_ELEVATED_PERMISSIONS_TOKEN) triggering another bump
-    if: github.event_name != 'push' || github.actor != vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER
     # This doesn't need Xcode, so could technically run on Ubuntu, but find_asana_release_task.sh
     # uses BSD-specific `date` syntax, that doesn't work with GNU `date` (available on Linux).
     runs-on: [image:osx-tahoe-27, m4pro]
@@ -57,13 +53,6 @@ jobs:
       skip-appstore: ${{ steps.prepare-release-bump.outputs.skip_appstore }}
 
     steps:
-      # Without the variable the guard above can't skip automation pushes, so stop instead of bumping repeatedly
-      - name: Assert GHA_ELEVATED_PERMISSIONS_TOKEN_USER is set
-        if: vars.GHA_ELEVATED_PERMISSIONS_TOKEN_USER == ''
-        run: |
-          echo "::error::GHA_ELEVATED_PERMISSIONS_TOKEN_USER repository variable is not set"
-          exit 1
-
       - name: Check out the code
         uses: actions/checkout@v6
         with:

@@ -140,6 +140,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
     case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
 
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
@@ -794,6 +797,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.sharedPinnedTabWindowClose), category: .webExtensions)
         case .cpmNetworkProcessRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
+        case .cpmStableBaseURL:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),

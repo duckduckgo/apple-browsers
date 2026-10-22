@@ -906,6 +906,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
     case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.

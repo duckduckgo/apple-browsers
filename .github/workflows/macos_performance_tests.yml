@@ -40,7 +40,6 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-ui-tests: true
     secrets: inherit
 
   performance-tests:
@@ -51,7 +50,7 @@ jobs:
     env:
       RUNS_ON: image:osx-tahoe-27,ui-tests # keep this in sync with runs-on above
       RUNNER_NAME: image-osx-tahoe-27,ui-tests # artifact names cannot contain colons
-      OS_VERSION: "26"
+      OS_VERSION: "27"
 
     timeout-minutes: 60
 
@@ -89,15 +88,20 @@ jobs:
         merge-multiple: true
         path: macOS
 
-    - name: Download UI test bundle
-      uses: actions/download-artifact@v7
+    - name: Register SSH keys for private packages
+      uses: webfactory/ssh-agent@v0.10.0
       with:
-        pattern: DuckDuckGo-ui-tests-review-*.tar.gz
-        path: macOS/test-artifact
-        merge-multiple: true
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
 
-    - name: Select installed runtime Xcode
-      run: python3 UITests/Helpers/ui-tests/latest-xcode.py
+    - name: Select native Xcode
+      uses: ./.github/actions/select-xcode-version
+
+    - name: Build native test targets once
+      run: |
+        set -o pipefail
+        bash UITests/Helpers/ui-tests/build.sh dmg "$GITHUB_WORKSPACE/macOS/NativeTests" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= 2>&1 | tee xcodebuild.log
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit
@@ -115,9 +119,10 @@ jobs:
       run: |
         set -euo pipefail
         tar -xf DuckDuckGo-*.app.tar.xz
-        tar -xzf test-artifact/*.tar.gz
         app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
-        ditto "$app" 'ui-tests/Products/Review/DuckDuckGo Review.app'
+        ditto "$app" 'NativeTests/Build/Products/Review/DuckDuckGo Review.app'
+        python3 UITests/Helpers/ui-tests/artifact.py pack --products NativeTests/Build/Products --distribution dmg --output native-tests.tar.gz
+        tar -xzf native-tests.tar.gz
 
     - name: Run Performance Tests
       id: run-ui-tests
@@ -268,6 +273,7 @@ jobs:
 
         # locate and copy all files, flattening the structure with verbose output
         cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp native-tests.tar.enumeration.* "$archive_name/" || true
         cp "ui-tests.log" "$archive_name/" || echo "No ui-tests.log found"
         cp "ui-tests.xml" "$archive_name/" || echo "No ui-tests.xml found"
         cp "app-console.log" "$archive_name/" || echo "No app-console.log found"

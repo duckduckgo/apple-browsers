@@ -146,21 +146,12 @@ set_up_environment() {
 	export_options_plist="${cwd}/assets/ExportOptions.plist"
 
 	source "${cwd}/helpers/version.sh"
-	if [[ "${BUILD_UI_TESTS:-false}" == "true" ]]; then
-		if [[ "${configuration}" != "Review" ]]; then
-			die "UI test artifacts are supported only for Review builds"
-		fi
-		# These two checked-in settings are literal values; avoid two package-resolving showBuildSettings calls.
-		app_version="${override_version:-$(awk '/^MARKETING_VERSION[[:space:]]*=/ {print $3}' Configuration/Version.xcconfig)}"
-		build_number=$(awk '/^CURRENT_PROJECT_VERSION[[:space:]]*=/ {print $3}' Configuration/BuildNumber.xcconfig)
-	elif [[ -n "${override_version}" ]]; then
+	if [[ -n "${override_version}" ]]; then
 		app_version="${override_version}"
 	else
 		app_version=$(get_app_version "${scheme}")
 	fi
-	if [[ "${BUILD_UI_TESTS:-false}" != "true" ]]; then
-		build_number=$(get_build_number "${scheme}")
-	fi
+	build_number=$(get_build_number "${scheme}")
 	version_identifier="${app_version}.${build_number}"
 
 	app_path="${workdir}/${app_name}.app"
@@ -252,71 +243,7 @@ setup_log_formatter() {
 	fi
 }
 
-cleanup_ui_test_packaging() {
-	local pid="${ui_test_package_pid:-}"
-	if [[ -n "$pid" ]] && jobs -pr | grep -qx "$pid"; then
-		kill "$pid" 2>/dev/null || true
-		wait "$pid" 2>/dev/null || true
-	fi
-}
-
-sign_sparkle_helpers() {
-	local framework="${app_path}/Contents/Frameworks/Sparkle.framework"
-	[[ -d "$framework" ]] || return 0
-	# Code Sign on Copy signs only the outer framework. Export used to sign these helpers.
-	# https://sparkle-project.org/documentation/sandboxing/#code-signing
-	local certificate_prefix="${workdir}/ui-app-signing-"
-	codesign --display --extract-certificates="$certificate_prefix" "${app_path}"
-	local identity
-	identity=$(shasum -a 1 "${certificate_prefix}0" | awk '{print $1}')
-	local helper
-	for helper in XPCServices/Installer.xpc Autoupdate Updater.app; do
-		codesign --force --sign "$identity" --options runtime --timestamp "${framework}/Versions/B/${helper}"
-	done
-	# Preserve Downloader's own sandbox entitlements; never use --deep when signing Sparkle.
-	codesign --force --sign "$identity" --options runtime --timestamp --preserve-metadata=entitlements \
-		"${framework}/Versions/B/XPCServices/Downloader.xpc"
-	codesign --force --sign "$identity" --timestamp --preserve-metadata=identifier,entitlements,flags "$framework"
-	codesign --force --sign "$identity" --timestamp --preserve-metadata=identifier,entitlements,flags "${app_path}"
-}
-
-build_app_and_ui_tests() {
-	local distribution=dmg
-	[[ "${release_type}" == "sandbox-review" ]] && distribution=appstore
-	local derived_data="${workdir}/DerivedData"
-	local log_formatter
-	setup_log_formatter
-	"${cwd}/../UITests/Helpers/ui-tests/build.sh" "$distribution" "$derived_data" \
-		MARKETING_VERSION="${app_version}" CURRENT_PROJECT_VERSION="${build_number}" \
-		CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO OTHER_CODE_SIGN_FLAGS=--timestamp \
-		${EXCLUDED_ARCHS:+"EXCLUDED_ARCHS=${EXCLUDED_ARCHS}"} \
-		2>&1 | tee "${workdir}/archive.log" | ${log_formatter}
-
-	# Review is already Developer ID signed by its target configuration. Release/Alpha keep the archive/export path.
-	local products="${derived_data}/Build/Products"
-	ditto "${products}/Review/${app_name}.app" "${app_path}"
-	if [[ "$distribution" == dmg ]]; then
-		sign_sparkle_helpers
-	fi
-	codesign --verify --deep --strict "${app_path}"
-	dsym_path="${workdir}/dSYMs"
-	mkdir -p "$dsym_path"
-	for symbol in "${products}/Review/"*.dSYM; do
-		[[ -d "$symbol" ]] && ditto "$symbol" "${dsym_path}/$(basename "$symbol")"
-	done
-	# Package/reflection/compression overlaps notarization, without a second compiler or package resolver.
-	python3 "${cwd}/../UITests/Helpers/ui-tests/artifact.py" pack --products "$products" --distribution "$distribution" \
-		--output "${workdir}/DuckDuckGo-ui-tests-${version_identifier}.tar.gz" \
-		> "${workdir}/ui-test-artifact.log" 2>&1 &
-	ui_test_package_pid=$!
-	trap cleanup_ui_test_packaging EXIT
-}
-
 archive_and_export() {
-	if [[ "${BUILD_UI_TESTS:-false}" == "true" ]]; then
-		build_app_and_ui_tests
-		return
-	fi
 	local log_formatter
 	setup_log_formatter
 
@@ -524,10 +451,6 @@ main() {
 		staple_notarized_app
 	fi
 	compress_app_and_dsym
-	if [[ -n "${ui_test_package_pid:-}" ]]; then
-		wait "$ui_test_package_pid" || { cat "${workdir}/ui-test-artifact.log"; die "UI test artifact packaging failed"; }
-		ui_test_package_pid=
-	fi
 
 	if [[ ${create_dmg} ]]; then
 		create_dmg

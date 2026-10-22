@@ -21,6 +21,10 @@ on:
         description: "macOS version of the runner (e.g. '26'). Used for names and conditional steps."
         required: true
         type: string
+      xcode-version:
+        description: "Native Xcode version shared with the test producer"
+        required: true
+        type: string
       test:
         description: "The UITestCase class to run"
         required: true
@@ -116,12 +120,14 @@ jobs:
     - name: Download UI test bundle
       uses: actions/download-artifact@v7
       with:
-        pattern: DuckDuckGo-ui-tests-${{ env.release-type }}-*.tar.gz
+        name: DuckDuckGo-native-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}
         path: macOS/test-artifact
         merge-multiple: true
 
-    - name: Select installed runtime Xcode
-      run: python3 UITests/Helpers/ui-tests/latest-xcode.py
+    - name: Select native Xcode
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit

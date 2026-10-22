@@ -24,10 +24,6 @@ on:
         description: "Asana release task URL"
         required: false
         type: string
-      build-ui-tests:
-        description: "Build and publish portable UI/Sync/Performance test artifacts together with the Review app"
-        type: boolean
-        default: false
       build-arm64-only:
         description: "Build arm64 only (review builds only)"
         default: false
@@ -62,10 +58,6 @@ on:
         description: "Skip Mattermost notification"
         default: false
         type: boolean
-      build-ui-tests:
-        description: "Build and publish portable UI/Sync/Performance test artifacts together with the Review app"
-        type: boolean
-        default: false
       build-arm64-only:
         description: "Build arm64 only (review builds only)"
         default: false
@@ -75,10 +67,6 @@ on:
         required: false
         type: string
         default: ""
-    outputs:
-      ui-tests-run-url:
-        description: "Portable app + UI tests run manifest URL (Review builds with build-ui-tests)"
-        value: ${{ jobs.export-notarized-app.outputs.ui-tests-run-url }}
     secrets:
       APPLE_API_KEY_BASE64:
         required: true
@@ -116,7 +104,6 @@ jobs:
       app-version: ${{ steps.set-outputs.outputs.app-version }}
       app-name: ${{ steps.set-outputs.outputs.app-name }}
       upload-to: ${{ steps.is-official-release.outputs.upload-to }}
-      ui-tests-run-url: ${{ steps.upload-ui-tests.outputs.run-url }}
       test-build-s3-path: ${{ steps.upload-dsyms-to-s3-test-build.outputs.test-build-s3-path }}
       dsym-s3-path: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-s3-path }}
       dsym-url: ${{ steps.upload-dsyms-to-s3-test-build.outputs.dsym-url }}
@@ -149,10 +136,6 @@ jobs:
         BUILD_ARM64_ONLY: ${{ inputs.build-arm64-only }}
         RELEASE_TYPE: ${{ github.event.inputs.release-type || inputs.release-type }}
       run: |
-        if [[ "${{ inputs.build-ui-tests }}" == "true" && "$RELEASE_TYPE" != "review" && "$RELEASE_TYPE" != "sandbox-review" ]]; then
-          echo "::error::Portable UI artifacts require review or sandbox-review."
-          exit 1
-        fi
         if [[ "$BUILD_ARM64_ONLY" == "true" && "$RELEASE_TYPE" != "review" && "$RELEASE_TYPE" != "sandbox-review" ]]; then
           echo "::error::Arm64-only archives are limited to review builds. Release and alpha archives must remain universal."
           exit 1
@@ -235,16 +218,7 @@ jobs:
         fi
 
     - name: Select Xcode
-      if: ${{ !inputs.build-ui-tests }}
       uses: ./.github/actions/select-xcode-version
-
-    - name: Select latest Xcode for app and test artifacts
-      if: inputs.build-ui-tests
-      run: python3 UITests/Helpers/ui-tests/latest-xcode.py
-
-    - name: Validate portable test tooling
-      if: inputs.build-ui-tests
-      run: python3 -B -m unittest discover -s scripts/tests -v
 
     - name: Override version and build number for Alpha release and add commit SHA to plist
       if: ${{ env.release-type == 'alpha' }}
@@ -269,7 +243,6 @@ jobs:
         APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         BUILD_ARM64_ONLY: ${{ inputs.build-arm64-only }}
-        BUILD_UI_TESTS: ${{ inputs.build-ui-tests }}
       run: |
         # import API Key from secrets
         export APPLE_API_KEY_PATH="$RUNNER_TEMP/apple_api_key.pem"
@@ -293,8 +266,6 @@ jobs:
         path: |
           macOS/release/archive.log
           macOS/release/export.log
-          macOS/release/ui-test-artifact.log
-          macOS/release/notarization*.json
           macOS/release/DerivedData/**/swbuild.tmp.*/Data.noindex/**
         retention-days: 7
         if-no-files-found: warn
@@ -409,55 +380,6 @@ jobs:
         echo "dsym-url=${dsym_url}" >> $GITHUB_OUTPUT
         aws s3 cp $DSYM_LOCAL_PATH $dsym_s3_path --acl public-read
         echo "dsym-s3-path=${dsym_s3_path}" >> $GITHUB_OUTPUT
-
-    - name: Upload UI test artifact
-      if: inputs.build-ui-tests
-      uses: actions/upload-artifact@v6
-      with:
-        name: ${{ inputs.artifact-prefix }}DuckDuckGo-ui-tests-${{ env.release-type }}-${{ env.app-version }}.tar.gz
-        path: macOS/release/DuckDuckGo-ui-tests-${{ env.app-version }}.tar.gz
-
-    - name: Upload app and UI tests to S3
-      if: inputs.build-ui-tests
-      id: upload-ui-tests
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-        AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-        S3_PATH: ${{ steps.upload-dsyms-to-s3-test-build.outputs.test-build-s3-path }}ui-tests/${{ github.run_id }}/${{ github.run_attempt }}/${{ env.release-type }}/
-        BUCKET_ROOT: s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/
-        URL_ROOT: ${{ vars.DMG_URL_ROOT }}
-        RELEASE_TYPE: ${{ env.release-type }}
-        APP_VERSION: ${{ env.app-version }}
-      run: |
-        set -euo pipefail
-        app_name="DuckDuckGo-${RELEASE_TYPE}-${APP_VERSION}.app.tar.xz"
-        tests_name="DuckDuckGo-ui-tests-${RELEASE_TYPE}-${APP_VERSION}.tar.gz"
-        aws s3 cp "release/DuckDuckGo-${APP_VERSION}.app.tar.xz" "${S3_PATH}${app_name}" --acl public-read
-        aws s3 cp "release/DuckDuckGo-ui-tests-${APP_VERSION}.tar.gz" "${S3_PATH}${tests_name}" --acl public-read
-        aws s3 cp UITests/Helpers/ui-tests/artifact.py "${S3_PATH}run-ui-tests.py" --acl public-read
-        export APP_NAME="$app_name" TESTS_NAME="$tests_name"
-        python3 - <<'PYTHON'
-        import hashlib, json, os, subprocess
-        from pathlib import Path
-        prefix = os.environ['S3_PATH'].replace(os.environ['BUCKET_ROOT'], os.environ['URL_ROOT'], 1)
-        version = os.environ['APP_VERSION']
-        def sha(path):
-            value = hashlib.sha256()
-            with open(path, 'rb') as stream:
-                for chunk in iter(lambda: stream.read(1024 * 1024), b''):
-                    value.update(chunk)
-            return value.hexdigest()
-        descriptor = {'format': 1, 'git_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-                      'app': {'url': prefix + os.environ['APP_NAME'], 'sha256': sha(f'release/DuckDuckGo-{version}.app.tar.xz')},
-                      'tests': {'url': prefix + os.environ['TESTS_NAME'], 'sha256': sha(f'release/DuckDuckGo-ui-tests-{version}.tar.gz')}}
-        Path('release/run.json').write_text(json.dumps(descriptor, indent=2) + '\n')
-        Path('release/run-url.txt').write_text(prefix + 'run-' + os.environ['RELEASE_TYPE'] + '.json')
-        PYTHON
-        aws s3 cp release/run.json "${S3_PATH}run-${RELEASE_TYPE}.json" --acl public-read
-        run_url="$(cat release/run-url.txt)"
-        echo "run-url=$run_url" >> "$GITHUB_OUTPUT"
-        echo "UI tests: [$run_url]($run_url)" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Report success
       if: ${{ env.upload-to == 's3' && env.asana-task-url != '' }}

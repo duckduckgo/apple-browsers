@@ -65,27 +65,6 @@ enum UITests {
     /// does.
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
-        guard #available(macOS 13, *) else {
-            // Xcode 13's accessibility query for this Settings checkbox hangs on Monterey.
-            // Prepare the class fixture before launch, using the app's persisted preference.
-            let app = XCUIApplication()
-            if app.state != .notRunning {
-                app.terminate()
-            }
-            do {
-                let bundleID = try XCTUnwrap(app.bundleID)
-                let process = Process()
-                process.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
-                process.arguments = ["write", bundleID, "preferences.appearance.show-autocomplete-suggestions",
-                                     "-bool", requestedToggleState ? "true" : "false"]
-                try process.run()
-                process.waitUntilExit()
-                XCTAssertEqual(process.terminationStatus, 0, "Could not configure the autocomplete fixture")
-            } catch {
-                XCTFail("Could not configure the autocomplete fixture: \(error)")
-            }
-            return
-        }
         let app = XCUIApplication.setUp()
         // Settings opens as a tab, so it needs a browser window to host it
         app.enforceSingleWindow()
@@ -96,9 +75,7 @@ enum UITests {
     }
 
     /// Reset once before a test class configures its fixture.
-    /// Legacy runners use separate processes for methods and reset only the first method of each class.
     static func resetAppState() throws {
-        guard ProcessInfo.processInfo.environment["UITEST_RESET_CLASS_STATE"] != "0" else { return }
         let application = XCUIApplication()
         if application.state != .notRunning {
             application.terminate()
@@ -189,9 +166,7 @@ class UITestCase: XCTestCase {
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
         do {
             try UITests.resetAppState()
-            if ProcessInfo.processInfo.environment["UITEST_RESET_CLASS_STATE"] != "0" {
-                UITests.firstRun()
-            }
+            UITests.firstRun()
         } catch {
             XCTFail("Could not prepare test class: \(error)")
         }
@@ -200,9 +175,6 @@ class UITestCase: XCTestCase {
     /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
     /// on the main run loop fires during XCTest waits and dismisses them before the next click.
     private func startSystemPermissionPromptDismissTimerIfNeeded() {
-        // Xcode 13 cannot synthesize another UI event from the run loop while an
-        // event is pending. Its normal interruption monitor still handles prompts.
-        guard #available(macOS 13, *) else { return }
         guard Self.systemPermissionPromptPollingTimer == nil else { return }
 
         let timer = Timer(timeInterval: 5, repeats: true) { _ in

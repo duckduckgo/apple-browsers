@@ -41,8 +41,10 @@ class PortableTests(unittest.TestCase):
         self.metadata = {'app': 'DuckDuckGo Review.app', 'distribution': 'dmg', 'architectures': ['x86_64'],
                          'tests': {'UI Tests': ['First/testOne', 'First/testTwo', 'Second/testOne']}}
         (self.root / 'manifest.json').write_text(json.dumps(self.metadata))
+        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}],
+                                                           '__xctestrun_metadata__': {'FormatVersion': 2}})
         (self.root / 'Plans').mkdir()
-        (self.root / 'Plans/UI Tests.xctestplan').write_text('{}')
+        (self.root / 'Plans/UI Tests.xctestplan').write_text(json.dumps({'testTargets': [{'target': {'name': 'UI Tests'}}]}))
 
     def test_runtime_honors_selected_developer_directory(self):
         developer = self.root / 'Xcode.app/Contents/Developer'
@@ -93,15 +95,16 @@ class PortableTests(unittest.TestCase):
     def test_plan_selection_and_cli_filter_intersect(self):
         plan = {'testTargets': [{'target': {'name': 'UI Tests'}, 'selectedTests': ['First', 'Second/testOne()'],
                                 'skippedTests': ['First/testTwo()']}]}
-        self.assertEqual(artifact.selected_tests(self.metadata, self.target, plan, ['First']), ['First/testOne'])
-        self.assertEqual(artifact.selected_tests(self.metadata, self.target, plan, ['Missing']), [])
+        self.assertEqual(artifact.selected_tests(self.metadata, self.target, plan, ['First']), ['First'])
+        with self.assertRaises(ValueError):
+            artifact.selected_tests(self.metadata, self.target, plan, ['Missing'])
 
     def test_relocated_run_has_no_builder_injection_and_uses_runtime_secrets(self):
         host = self.root / 'runner.app'
-        plan = {'defaultOptions': {'performanceAntipatternCheckerEnabled': True, 'environmentVariableEntries': [{'key': 'CODE', 'value': '$(CODE)'}],
+        plan = {'testTargets': [{'target': {'name': 'UI Tests'}}], 'defaultOptions': {'performanceAntipatternCheckerEnabled': True, 'environmentVariableEntries': [{'key': 'CODE', 'value': '$(CODE)'}],
                                    'commandLineArgumentEntries': [{'argument': '-test', 'enabled': True}]}}
         with mock.patch.dict(os.environ, {'CODE': 'runtime-only'}):
-            data = artifact.specification(self.root, self.target, host, None, self.root / 'Developer', ['First/testOne'], plan, 'internal')
+            data = artifact.specification(self.root, self.target, host, self.root / 'Developer', ['First/testOne'], plan, 'internal')
         target = artifact.targets(data)[0]
         self.assertEqual(target['OnlyTestIdentifiers'], ['First/testOne'])
         self.assertEqual(target['TestHostPath'], str(host))
@@ -112,50 +115,38 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(target['CommandLineArguments'], ['-test'])
         self.assertTrue(target['UITargetAppPerformanceAntipatternCheckerEnabled'])
 
-    def test_old_xcode_specification_is_format_one(self):
-        with mock.patch.object(artifact.platform, 'mac_ver', return_value=('12.7.6', (), 'arm64')):
-            data = artifact.specification(self.root, self.target, self.root / 'runner.app', self.root / 'compat',
-                                          self.root / 'Developer', ['First/testOne'], {}, 'production')
+    def test_preserves_native_xctestrun_format(self):
+        artifact.write_plist(self.root / 'source.xctestrun', {'UI Tests': self.target,
+                                                           '__xctestrun_metadata__': {'FormatVersion': 1}})
+        data = artifact.specification(self.root, self.target, self.root / 'runner.app',
+                                      self.root / 'Developer', ['First/testOne'], {'testTargets': [{'target': {'name': 'UI Tests'}}]}, 'production')
         self.assertEqual(data['__xctestrun_metadata__']['FormatVersion'], 1)
         self.assertEqual(artifact.targets(data)[0]['BlueprintName'], 'UI Tests')
-        self.assertNotIn('DependentProductPaths', artifact.targets(data)[0])
+
+    def test_rejects_cross_os_or_xcode_artifacts_without_adapting_them(self):
+        self.metadata.update(os_major='14', xcode='Xcode 16.2\nBuild version 16C5032a')
+        (self.root / 'manifest.json').write_text(json.dumps(self.metadata))
+        for os_version, xcode_version, accepted in (
+                ('14.8.9', self.metadata['xcode'], True),
+                ('15.8.1', self.metadata['xcode'], False),
+                ('14.8.9', 'Xcode 16.3\nBuild version 16E140', False)):
+            with self.subTest(os_version=os_version, xcode_version=xcode_version), \
+                 mock.patch.object(artifact.platform, 'mac_ver', return_value=(os_version, (), 'arm64')), \
+                 mock.patch.object(artifact, 'output', return_value=xcode_version):
+                if accepted:
+                    self.assertEqual(artifact.native_host(self.root, self.target, self.root / 'Developer', {}),
+                                     self.root / 'Products/Review/UI Tests-Runner.app')
+                else:
+                    with self.assertRaises(ValueError):
+                        artifact.native_host(self.root, self.target, self.root / 'Developer', {})
+        self.assertFalse((self.root / 'Compatibility').exists())
 
     def test_ui_plan_does_not_inherit_producer_performance_diagnostics(self):
         self.target['UITargetAppPerformanceAntipatternCheckerEnabled'] = True
-        for plan in ({}, {'defaultOptions': {'performanceAntipatternCheckerEnabled': False}}):
-            data = artifact.specification(self.root, self.target, self.root / 'runner.app', None,
+        for plan in ({'testTargets': [{'target': {'name': 'UI Tests'}}]}, {'testTargets': [{'target': {'name': 'UI Tests'}}], 'defaultOptions': {'performanceAntipatternCheckerEnabled': False}}):
+            data = artifact.specification(self.root, self.target, self.root / 'runner.app',
                                           self.root / 'Developer', ['First/testOne'], plan, 'production')
             self.assertFalse(artifact.targets(data)[0]['UITargetAppPerformanceAntipatternCheckerEnabled'])
-
-    def test_legacy_methods_preserve_class_state(self):
-        app = self.root / 'Products/Review' / self.metadata['app']
-        app.mkdir(parents=True)
-        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}]})
-        host = self.root / 'runner.app'
-        args = argparse.Namespace(root=self.root, environment_file=None, preflight_only=False, app=None, suite='ui', plan=None,
-                                  only=[], result=self.root / 'Results', user_mode='production', timeout=3600)
-
-        class PassingProcess:
-            def __init__(self, command, **kwargs):
-                spec = artifact.read_plist(Path(command[command.index('-xctestrun') + 1]))
-                environment = artifact.targets(spec)[0]['EnvironmentVariables']
-                Path(environment['UITEST_CLASS_RESET_MARKER']).touch()
-                Path(command[command.index('-resultBundlePath') + 1]).mkdir()
-                kwargs['stdout'].write('Executed 1 test, with 0 failures\n')
-
-            def wait(self, **kwargs):
-                return 0
-
-        with mock.patch.object(artifact.platform, 'machine', return_value='x86_64'), \
-             mock.patch.object(artifact.platform, 'mac_ver', return_value=('12.7.6', (), 'x86_64')), \
-             mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
-             mock.patch.object(artifact, 'legacy_host', return_value=(host, self.root / 'compat')), \
-             mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), mock.patch.object(artifact.subprocess, 'Popen', PassingProcess), \
-             mock.patch('builtins.print'):
-            self.assertEqual(artifact.execute_tests(args), 0)
-        flags = [artifact.targets(artifact.read_plist(args.result / str(i) / 'run.xctestrun'))[0]
-                 ['EnvironmentVariables']['UITEST_RESET_CLASS_STATE'] for i in (1, 2, 3)]
-        self.assertEqual(flags, ['1', '0', '1'])
 
     def test_successful_retries_use_xctest_final_outcome(self):
         result = self.root / 'tests.xcresult'
@@ -165,39 +156,10 @@ class PortableTests(unittest.TestCase):
         self.assertFalse(artifact.execution_summary(log, 65, result, 2)['passed'])
         self.assertFalse(artifact.execution_summary(log, 0, result, 2, retrying=False)['passed'])
 
-    def test_legacy_skips_are_checked_across_the_complete_run(self):
-        (self.root / 'Products/Review' / self.metadata['app']).mkdir(parents=True)
-        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}]})
-        args = argparse.Namespace(root=self.root, environment_file=None, preflight_only=False, app=None, suite='ui', plan=None,
-                                  only=[], result=None, user_mode='production', timeout=3600)
-        for index, summaries in enumerate(((1, 0, 0), (1, 1, 1))):
-            with self.subTest(summaries=summaries):
-                args.result = self.root / ('Results-' + str(index))
-                skipped = iter(summaries)
-
-                class SkippingProcess:
-                    def __init__(self, command, **kwargs):
-                        Path(command[command.index('-resultBundlePath') + 1]).mkdir()
-                        kwargs['stdout'].write('Executed 1 test, with %s tests skipped and 0 failures\n' % next(skipped))
-
-                    def wait(self, **kwargs):
-                        return 0
-
-                with mock.patch.object(artifact.platform, 'machine', return_value='x86_64'), \
-                     mock.patch.object(artifact.platform, 'mac_ver', return_value=('12.7.6', (), 'x86_64')), \
-                     mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
-                     mock.patch.object(artifact, 'legacy_host', return_value=(self.root / 'runner.app', self.root / 'compat')), \
-                     mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), \
-                     mock.patch.object(artifact.subprocess, 'Popen', SkippingProcess), mock.patch('builtins.print'):
-                    self.assertEqual(artifact.execute_tests(args), 0 if index == 0 else 1)
-                summary = json.loads((args.result / 'summary.json').read_text())
-                self.assertEqual(summary['skipped'], sum(summaries))
-                self.assertEqual(summary['passed'], index == 0)
-
     def test_sonoma_native_runtime_retains_whole_batch_and_retries(self):
         app = self.root / 'Products/Review' / self.metadata['app']
         app.mkdir(parents=True)
-        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}]})
+        artifact.write_plist(self.root / 'source.xctestrun', {'TestConfigurations': [{'TestTargets': [self.target]}], '__xctestrun_metadata__': {'FormatVersion': 2}})
         args = argparse.Namespace(root=self.root, environment_file=None, preflight_only=False, app=None, suite='ui', plan=None,
                                   only=[], result=self.root / 'Results', user_mode='production', timeout=3600)
         commands = []
@@ -214,7 +176,7 @@ class PortableTests(unittest.TestCase):
         with mock.patch.object(artifact.platform, 'machine', return_value='x86_64'), \
              mock.patch.object(artifact.platform, 'mac_ver', return_value=('14.8.9', (), 'x86_64')), \
              mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
-             mock.patch.object(artifact, 'legacy_host', return_value=(self.root / 'runner.app', self.root / 'compat')), \
+             mock.patch.object(artifact, 'native_host', return_value=self.root / 'runner.app'), \
              mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), \
              mock.patch.object(artifact.subprocess, 'Popen', PassingProcess), mock.patch('builtins.print'):
             self.assertEqual(artifact.execute_tests(args), 0)
@@ -224,7 +186,7 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(spec['__xctestrun_metadata__']['FormatVersion'], 2)
         target = artifact.targets(spec)[0]
         self.assertTrue(target['UITargetAppMainThreadCheckerEnabled'])
-        self.assertEqual(target['OnlyTestIdentifiers'], self.metadata['tests']['UI Tests'])
+        self.assertNotIn('OnlyTestIdentifiers', target)
         self.assertNotIn('UITEST_CLASS_RESET_MARKER', target['EnvironmentVariables'])
         self.assertNotIn('Runtime/Frameworks', target['TestingEnvironmentVariables']['DYLD_FRAMEWORK_PATH'])
 

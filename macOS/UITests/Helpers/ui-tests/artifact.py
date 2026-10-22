@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Build once, package once, run the same macOS UI tests without project/package resolution."""
+"""Package native Xcode test products once per environment and run them without rebuilding."""
 import argparse
 import copy
-import fnmatch
 import hashlib
 import json
 import os
@@ -54,17 +53,6 @@ def digest(path):
     return value.hexdigest()
 
 
-def minimum_os(path, architecture=None):
-    commands = output(['otool', '-arch', architecture or platform.machine(), '-l', path])
-    versions = []
-    for command in re.split(r'Load command \d+\n', commands):
-        if re.search(r'cmd LC_BUILD_VERSION\b', command):
-            versions += re.findall(r'^\s*minos (\S+)', command, re.MULTILINE)
-        elif re.search(r'cmd LC_VERSION_MIN_MACOSX\b', command):
-            versions += re.findall(r'^\s*version (\S+)', command, re.MULTILINE)
-    return max((tuple(map(int, value.split('.'))) for value in versions), default=(0,))
-
-
 def xcode(args):
     developer = args.xcode.resolve() / 'Contents/Developer' if args.xcode else Path(os.environ.get('DEVELOPER_DIR') or output(['xcode-select', '-p']))
     if not (developer / 'usr/bin/xcodebuild').is_file():
@@ -79,14 +67,13 @@ def targets(data):
     return [target for config in data['TestConfigurations'] if config.get('IsEnabled', True) for target in config['TestTargets']]
 
 
-def loader_environment(root, host, developer, legacy=None):
-    frameworks = [root / 'Runtime/Frameworks', root / 'Runtime/PrivateFrameworks', host / 'Contents/Frameworks', root / 'Products/Review', root / 'Products/Review/PackageFrameworks']
+def loader_environment(root, host, developer):
     sdk = developer / 'Platforms/MacOSX.platform/Developer'
-    if legacy:
-        frameworks = [legacy, sdk / 'Library/Frameworks', sdk / 'Library/PrivateFrameworks', root / 'Products/Review', root / 'Products/Review/PackageFrameworks']
+    frameworks = [host / 'Contents/Frameworks', sdk / 'Library/Frameworks', sdk / 'Library/PrivateFrameworks',
+                  root / 'Products/Review', root / 'Products/Review/PackageFrameworks']
     environment = {key: value for key, value in os.environ.items() if not key.startswith('DYLD_')}
     return dict(environment, DYLD_FRAMEWORK_PATH=':'.join(map(str, frameworks)),
-                DYLD_LIBRARY_PATH=(str(sdk / 'usr/lib') if legacy else str(root / 'Runtime/lib')) + ':' + str(root / 'Products/Review'))
+                DYLD_LIBRARY_PATH=str(sdk / 'usr/lib') + ':' + str(root / 'Products/Review'))
 
 
 def pack(args):
@@ -100,34 +87,23 @@ def pack(args):
     app_name = 'DuckDuckGo App Store Review.app' if args.distribution == 'appstore' else 'DuckDuckGo Review.app'
     app = products / 'Review' / app_name
     app_info = read_plist(app / 'Contents/Info.plist')
-    architectures = output(['lipo', '-archs', binary(app)]).split()
+    architectures = [platform.machine()]
     with tempfile.TemporaryDirectory(prefix='ddg-test-artifact-') as temporary:
         root = Path(temporary) / 'ui-tests'
         destination = root / 'Products/Review'
         destination.mkdir(parents=True)
-        sdk = args.developer / 'Platforms/MacOSX.platform/Developer'
-        for folder in ('Frameworks', 'PrivateFrameworks'):
-            execute(['ditto', sdk / 'Library' / folder, root / 'Runtime' / folder])
-        (root / 'Runtime/lib').mkdir()
-        for library in (sdk / 'usr/lib').glob('*.dylib'):
-            execute(['ditto', library, root / 'Runtime/lib' / library.name])
-        test_inventory = {}
         for target in targets(data):
             host = Path(target['TestHostPath'].replace('__TESTROOT__', str(products)))
             execute(['ditto', host, destination / host.name])
             packaged_host = destination / host.name
-            for cache in packaged_host.rglob('__pycache__'):
-                shutil.rmtree(cache)
-            execute(['codesign', '-f', '-s', '-', '--deep', packaged_host])
             target['TestHostPath'] = '__TESTROOT__/Products/Review/' + host.name
-            target['UITargetAppPath'] = '__TESTROOT__/Products/Review/' + app_name
+            target['UITargetAppPath'] = str(app)
+            target['UITargetAppBundleIdentifier'] = app_info['CFBundleIdentifier']
             bundle = packaged_host / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')
-            env = loader_environment(root, packaged_host, args.developer)
-            test_inventory[target['BlueprintName']] = json.loads(output([sys.executable, HERE / 'discover.py', binary(bundle), target['ProductModuleName']], env=env))
             test_architectures = output(['lipo', '-archs', binary(bundle)]).split()
             for architecture in architectures:
-                if architecture not in test_architectures or minimum_os(binary(bundle), architecture) > (12, 3, 0):
-                    raise ValueError('Test bundle must support macOS 12.3 and architecture ' + architecture)
+                if architecture not in test_architectures:
+                    raise ValueError('Test bundle must contain architecture ' + architecture)
         for pattern in ('*.bundle', '*.framework', '*.dylib', 'tests-server'):
             for dependency in (products / 'Review').glob(pattern):
                 execute(['ditto', dependency, destination / dependency.name])
@@ -136,20 +112,22 @@ def pack(args):
             raise ValueError('The producer did not build tests-server')
         server_architectures = output(['lipo', '-archs', server]).split()
         for architecture in architectures:
-            if architecture not in server_architectures or minimum_os(server, architecture) > (12, 3, 0):
-                raise ValueError('tests-server must support macOS 12.3 and architecture ' + architecture)
+            if architecture not in server_architectures:
+                raise ValueError('tests-server must contain architecture ' + architecture)
         shutil.copytree(HERE, root / 'Scripts', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
         plans = root / 'Plans'
         plans.mkdir()
         for folder in (HERE.parents[2] / 'UITests', HERE.parents[2] / 'PerformanceTests', HERE.parents[2] / 'SyncE2EUITests'):
             for plan in folder.glob('*.xctestplan'):
                 shutil.copy2(plan, plans / plan.name)
+        for target in targets(data):
+            target['UITargetAppPath'] = '__TESTROOT__/Products/Review/' + app_name
         write_plist(root / 'source.xctestrun', data)
         metadata = {'format': 1, 'git_sha': output(['git', 'rev-parse', 'HEAD']),
                     'distribution': args.distribution, 'app': app_name, 'bundle_id': app_info['CFBundleIdentifier'],
                     'app_version': app_info['CFBundleShortVersionString'], 'app_build': app_info['CFBundleVersion'],
-                    'xcode': output(['xcodebuild', '-version']),
-                    'architectures': architectures, 'tests': test_inventory}
+                    'xcode': output(['xcodebuild', '-version']), 'os_major': platform.mac_ver()[0].split('.')[0],
+                    'architectures': architectures, 'targets': [target['BlueprintName'] for target in targets(data)]}
         (root / 'manifest.json').write_text(json.dumps(metadata, indent=2) + '\n')
         args.output.parent.mkdir(parents=True, exist_ok=True)
         execute(['tar', '-czf', args.output.resolve(), '-C', root.parent, root.name])
@@ -199,75 +177,37 @@ def download(args):
     print(root)
 
 
-def legacy_host(root, target, developer, env):
-    original = root / target['TestHostPath'].replace('__TESTROOT__/', '')
-    original_bundle = original / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')
-    host_os = tuple(map(int, platform.mac_ver()[0].split('.')))
-    # Sonoma keeps the installed Xcode 16 XCTest, as the previous CI did. The
-    # producer's runner can load there, but that does not establish runtime compatibility.
-    if host_os >= (15, 0) and minimum_os(binary(original)) <= host_os:
-        return original, None
-    source = root / 'Scripts/XCTestCompat.swift'
-    seal = original_bundle / 'Contents/_CodeSignature/CodeResources'
-    fingerprint = hashlib.sha256((output(['xcodebuild', '-version'], env=env) + platform.machine()
-                                  + digest(binary(original_bundle)) + digest(seal) + digest(source)).encode()).hexdigest()[:20]
-    final = root / 'Compatibility' / fingerprint
-    if (final / 'ready').is_file():
-        return final / 'Legacy-Runner.app', final
-    final.parent.mkdir(parents=True, exist_ok=True)
-    stage = Path(tempfile.mkdtemp(prefix='.preparing-', dir=final.parent))
-    sdk = developer / 'Platforms/MacOSX.platform/Developer'
-    framework = stage / 'XCTestCompat.framework'
-    (framework / 'Versions/A').mkdir(parents=True)
-    compat_binary = framework / 'Versions/A/XCTestCompat'
-    execute(['xcrun', 'swiftc', '-target', platform.machine() + '-apple-macos12.0', '-module-name', 'XCUIAutomation', '-emit-library',
-             '-F', sdk / 'Library/Frameworks', '-I', sdk / 'usr/lib', '-L', sdk / 'usr/lib',
-             '-Xlinker', '-reexport_framework', '-Xlinker', 'XCTest', '-Xlinker', '-reexport-lXCTestSwiftSupport',
-             '-Xlinker', '-install_name', '-Xlinker', '@rpath/XCTestCompat.framework/Versions/A/XCTestCompat', source, '-o', compat_binary], env=env)
-    (framework / 'Versions/Current').symlink_to('A')
-    (framework / 'XCTestCompat').symlink_to('Versions/Current/XCTestCompat')
-    execute(['codesign', '-f', '-s', '-', compat_binary])
-    host = stage / 'Legacy-Runner.app'
-    execute(['ditto', sdk / 'Library/Xcode/Agents/XCTRunner.app', host])
-    runner = host / 'Contents/MacOS/XCTRunner'
-    if len(output(['lipo', '-archs', runner]).split()) > 1:
-        execute(['lipo', runner, '-thin', platform.machine(), '-output', str(runner) + '.thin'])
-        os.replace(str(runner) + '.thin', runner)
-    info = read_plist(host / 'Contents/Info.plist')
-    info.update(CFBundleExecutable='XCTRunner', CFBundleName='Legacy-Runner', CFBundleIdentifier=target['TestHostBundleIdentifier'])
-    write_plist(host / 'Contents/Info.plist', info)
-    (host / 'Contents/PlugIns').mkdir(exist_ok=True)
-    bundle = host / 'Contents/PlugIns' / original_bundle.name
-    execute(['ditto', original_bundle, bundle])
-    compat = '@rpath/XCTestCompat.framework/Versions/A/XCTestCompat'
-    bundle_binary = binary(bundle)
-    if len(output(['lipo', '-archs', bundle_binary]).split()) > 1:
-        execute(['lipo', bundle_binary, '-thin', platform.machine(), '-output', str(bundle_binary) + '.thin'])
-        os.replace(str(bundle_binary) + '.thin', bundle_binary)
-    execute(['install_name_tool', '-change', '@rpath/XCTest.framework/Versions/A/XCTest', compat,
-             '-change', '@rpath/libXCTestSwiftSupport.dylib', compat, binary(bundle)])
-    execute(['codesign', '-f', '-s', '-', '--deep', host])
-    # Fail on missing symbols before any application state is touched.
-    execute([sys.executable, '-c', 'import ctypes,os,sys; ctypes.CDLL(sys.argv[1], mode=os.RTLD_NOW)', binary(bundle)],
-            env=loader_environment(root, host, developer, stage))
-    (stage / 'ready').touch()
-    stage.rename(final)
-    return final / 'Legacy-Runner.app', final
+def native_host(root, target, developer, env):
+    metadata = json.loads((root / 'manifest.json').read_text())
+    if metadata.get('os_major') != platform.mac_ver()[0].split('.')[0]:
+        raise ValueError('Use a test artifact built on this macOS major version; cross-OS XCTest adaptation is not supported')
+    if metadata.get('xcode') != output(['xcodebuild', '-version'], env=env):
+        raise ValueError('Use the same Xcode version and build that produced this test artifact')
+    return root / target['TestHostPath'].replace('__TESTROOT__/', '')
 
 
 def selected_tests(metadata, target, plan, only):
-    cases = metadata['tests'][target['BlueprintName']]
-    config = next((item for item in plan.get('testTargets', []) if item['target']['name'] == target['BlueprintName']), {})
-    selected = config.get('selectedTests', [])
-    skipped = config.get('skippedTests', [])
-    def matches(identifier, pattern):
-        pattern = pattern.removesuffix('()') if hasattr(pattern, 'removesuffix') else re.sub(r'\(\)$', '', pattern)
-        return identifier == pattern or identifier.startswith(pattern + '/') or fnmatch.fnmatchcase(identifier, pattern)
-    return [test for test in cases if (not selected or any(matches(test, p) for p in selected))
-            and not any(matches(test, p) for p in skipped) and (not only or any(matches(test, p) for p in only))]
+    config = next((item for item in plan.get('testTargets', []) if item['target']['name'] == target['BlueprintName']), None)
+    if config is None or not config.get('enabled', True):
+        raise ValueError('Selected suite is not enabled in this test plan')
+    normalize = lambda value: value.removesuffix('()')
+    selected = [normalize(value) for value in config.get('selectedTests', [])]
+    only = [normalize(value) for value in only]
+    if not selected or not only:
+        return only or selected
+    result = set()
+    for requested in only:
+        for allowed in selected:
+            if requested == allowed or requested.startswith(allowed + '/'):
+                result.add(requested)
+            elif allowed.startswith(requested + '/'):
+                result.add(allowed)
+    if not result:
+        raise ValueError('The requested tests are outside the selected test plan')
+    return sorted(result)
 
 
-def specification(root, target, host, legacy, developer, identifiers, plan, mode):
+def specification(root, target, host, developer, identifiers, plan, mode):
     def relocate(value):
         if isinstance(value, dict):
             return {key: relocate(item) for key, item in value.items()}
@@ -282,11 +222,15 @@ def specification(root, target, host, legacy, developer, identifiers, plan, mode
     data['TestBundlePath'] = '__TESTHOST__/Contents/PlugIns/' + target['BlueprintName'] + '.xctest'
     data['UITargetAppPath'] = str(app)
     data['DependentProductPaths'] = [str(host), str(host / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')), str(app)]
-    data['OnlyTestIdentifiers'] = identifiers
-    data.pop('SkipTestIdentifiers', None)
+    if identifiers:
+        data['OnlyTestIdentifiers'] = identifiers
+    else:
+        data.pop('OnlyTestIdentifiers', None)
+    config = next(item for item in plan['testTargets'] if item['target']['name'] == target['BlueprintName'])
+    data['SkipTestIdentifiers'] = [value.removesuffix('()') for value in config.get('skippedTests', [])]
     # Artifacts contain no source/build machine paths, sanitizers or injected builder libraries.
     data['TestingEnvironmentVariables'] = {}
-    env = loader_environment(root, host, developer, legacy)
+    env = loader_environment(root, host, developer)
     for key in ('DYLD_FRAMEWORK_PATH', 'DYLD_LIBRARY_PATH'):
         data['TestingEnvironmentVariables'][key] = env[key]
     environment = {k: v for k, v in data.get('EnvironmentVariables', {}).items() if not k.startswith(('DYLD_', '__', 'PERFC_', 'IDE_', 'SQLITE_'))}
@@ -303,17 +247,13 @@ def specification(root, target, host, legacy, developer, identifiers, plan, mode
     data['CommandLineArguments'] = [item['argument'] for item in plan.get('defaultOptions', {}).get('commandLineArgumentEntries', []) if item.get('enabled', True)]
     # Producer Xcode defaults must not enable app diagnostics for a different consumer test plan.
     data['UITargetAppPerformanceAntipatternCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('performanceAntipatternCheckerEnabled', False))
-    if legacy and not platform.mac_ver()[0].startswith('12.'):
-        # Xcode 16's generated specification uses this older diagnostics key.
-        data['UITargetAppMainThreadCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('mainThreadCheckerEnabled', True))
+    data['UITargetAppMainThreadCheckerEnabled'] = bool(plan.get('defaultOptions', {}).get('mainThreadCheckerEnabled', True))
     data['UITargetAppEnvironmentVariables'] = {k: v for k, v in target.get('UITargetAppEnvironmentVariables', {}).items() if not k.startswith(('DYLD_', '__'))}
-    if legacy and platform.mac_ver()[0].startswith('12.'):
-        allowed = ('BlueprintName', 'ProductModuleName', 'IsUITestBundle', 'IsXCTRunnerHostedTestBundle', 'TestHostPath',
-                   'TestHostBundleIdentifier', 'TestBundlePath', 'UITargetAppPath', 'OnlyTestIdentifiers', 'EnvironmentVariables',
-                   'TestingEnvironmentVariables', 'UITargetAppEnvironmentVariables', 'CommandLineArguments')
-        data = {k: v for k, v in data.items() if k in allowed}
-        return {data['BlueprintName']: data, '__xctestrun_metadata__': {'FormatVersion': 1}}
-    return {'TestConfigurations': [{'Name': 'Portable', 'IsEnabled': True, 'TestTargets': [data]}], '__xctestrun_metadata__': {'FormatVersion': 2}}
+    source = read_plist(root / 'source.xctestrun')
+    if 'TestConfigurations' not in source:
+        return {data['BlueprintName']: data, '__xctestrun_metadata__': source['__xctestrun_metadata__']}
+    return {'TestConfigurations': [{'Name': 'Native', 'IsEnabled': True, 'TestTargets': [data]}],
+            '__xctestrun_metadata__': source['__xctestrun_metadata__']}
 
 
 def stop_process(process):
@@ -389,15 +329,10 @@ def execute_tests(args):
                 raise ValueError('App/test artifact mismatch: ' + key)
     developer, env = xcode(args)
     target = next(t for t in targets(read_plist(root / 'source.xctestrun')) if t['BlueprintName'] == SUITES[args.suite])
-    host, legacy = legacy_host(root, target, developer, env)
-    legacy_execution = bool(legacy) and platform.mac_ver()[0].startswith('12.')
+    host = native_host(root, target, developer, env)
     if args.preflight_only:
-        bundle = host / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')
-        inventory = json.loads(output([sys.executable, root / 'Scripts/discover.py', binary(bundle), target['ProductModuleName']],
-                                      env=loader_environment(root, host, developer, legacy)))
-        if inventory != metadata['tests'][target['BlueprintName']]:
-            raise ValueError('Runtime test inventory differs from the builder inventory')
-        print(json.dumps({'suite': args.suite, 'tests': len(inventory), 'legacy': bool(legacy), 'app_launched': False}))
+        print(json.dumps({'suite': args.suite, 'target': target['BlueprintName'],
+                          'native_environment_matches': True, 'app_launched': False}))
         return 0
     default_plan = {'ui': 'UI Tests App Store Sandbox' if metadata['distribution'] == 'appstore' else 'UI Tests',
                     'performance': 'macOS Performance Tests', 'sync': 'Sync End-to-End UI Tests', 'sync-appstore': 'Sync End-to-End UI Tests App Store'}[args.suite]
@@ -406,25 +341,16 @@ def execute_tests(args):
         raise ValueError('Test plan not found: ' + str(plan_path))
     plan = json.loads(plan_path.read_text())
     identifiers = selected_tests(metadata, target, plan, args.only)
-    if not identifiers:
-        raise ValueError('No enabled tests match this plan/filter')
     results = args.result.resolve() if args.result else root / 'Results' / (time.strftime('%Y%m%d-%H%M%S') + '-' + str(os.getpid()))
     results.mkdir(parents=True, exist_ok=False)
-    batches = [[test] for test in identifiers] if legacy_execution else [identifiers]
+    batches = [identifiers]
     failures = 0
     executed = skipped = 0
     for index, batch in enumerate(batches):
         directory = results / str(index + 1)
         directory.mkdir()
         spec = directory / 'run.xctestrun'
-        specification_data = specification(root, target, host, legacy, developer, batch, plan, args.user_mode)
-        runtime_target = targets(specification_data)[0]
-        test_class = batch[0].split('/')[0]
-        runtime_target['EnvironmentVariables']['UITEST_RESET_CLASS_STATE'] = '1'
-        if legacy_execution:
-            marker = results / ('class-reset-' + hashlib.sha256(test_class.encode()).hexdigest()[:20])
-            runtime_target['EnvironmentVariables']['UITEST_RESET_CLASS_STATE'] = '0' if marker.exists() else '1'
-            runtime_target['EnvironmentVariables']['UITEST_CLASS_RESET_MARKER'] = str(marker)
+        specification_data = specification(root, target, host, developer, batch, plan, args.user_mode)
         write_plist(spec, specification_data)
         resources = host / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest') / 'Contents/Resources'
         lifecycle_env = dict(env, BUILT_PRODUCTS_DIR=str(root / 'Products/Review'), UITEST_RESOURCES_DIR=str(resources),
@@ -435,12 +361,11 @@ def execute_tests(args):
         try:
             command = ['xcodebuild', 'test-without-building', '-xctestrun', str(spec), '-destination', 'platform=macOS,arch=' + platform.machine(),
                        '-resultBundlePath', str(directory / 'tests.xcresult')]
-            if not legacy_execution:
-                command += ['-test-iterations', '2', '-retry-tests-on-failure', '-test-repetition-relaunch-enabled', 'YES']
+            command += ['-test-iterations', '2', '-retry-tests-on-failure', '-test-repetition-relaunch-enabled', 'YES']
             with (directory / 'xcodebuild.log').open('w') as log:
                 process = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
                 try:
-                    code = process.wait(timeout=min(args.timeout, 300) if legacy_execution else args.timeout)
+                    code = process.wait(timeout=args.timeout)
                 except subprocess.TimeoutExpired:
                     stop_process(process)
                     code = 124
@@ -450,9 +375,7 @@ def execute_tests(args):
         finally:
             try:
                 try:
-                    # Xcode 13 can leave an application's event request pending after
-                    # its runner exits. Close that app before starting the next method.
-                    if legacy_execution or 'UITEST_KEYCHAIN_PATH' in os.environ:
+                    if 'UITEST_KEYCHAIN_PATH' in os.environ:
                         stop_owned_app(app)
                 finally:
                     stop_owned_app(host)
@@ -460,15 +383,15 @@ def execute_tests(args):
                 execute(['bash', root / 'Scripts/post-run.sh'], env=lifecycle_env)
         log = (directory / 'xcodebuild.log').read_text(errors='replace')
         print(log, end='', flush=True)
-        summary = dict(tests=batch, **execution_summary(log, code, directory / 'tests.xcresult', len(batch),
-                                                      retrying=not legacy_execution, allow_all_skipped=legacy_execution))
+        summary = dict(tests=batch, **execution_summary(log, code, directory / 'tests.xcresult', 1,
+                                                      retrying=True))
         executed += summary['executed']
         skipped += summary['skipped']
         failures += not summary['passed']
         (directory / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
         print(json.dumps(summary), flush=True)
     passed = failures == 0 and executed > skipped
-    (results / 'summary.json').write_text(json.dumps({'requested': len(identifiers), 'failed_batches': failures,
+    (results / 'summary.json').write_text(json.dumps({'filters': identifiers, 'failed_batches': failures,
                                                      'executed': executed, 'skipped': skipped, 'passed': passed}, indent=2) + '\n')
     return 0 if passed else 1
 
@@ -558,7 +481,7 @@ def main():
     run_parser.add_argument('--only', action='append', default=[])
     run_parser.add_argument('--xcode', type=Path)
     run_parser.add_argument('--gui', action='store_true')
-    run_parser.add_argument('--preflight-only', action='store_true', help='Verify bundle loading and inventory without app launch/reset')
+    run_parser.add_argument('--preflight-only', action='store_true', help='Verify native OS/architecture/Xcode metadata without app launch/reset')
     run_parser.add_argument('--environment-file', type=Path, help=argparse.SUPPRESS)
     run_parser.add_argument('--user-mode', choices=['production', 'internal'], default='production')
     run_parser.add_argument('--result', type=Path)
@@ -576,6 +499,6 @@ def main():
 if __name__ == '__main__':
     try:
         sys.exit(main())
-    except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError) as error:
+    except (ValueError, OSError, RuntimeError, subprocess.SubprocessError) as error:
         print(str(error), file=sys.stderr)
         sys.exit(1)

@@ -5027,8 +5027,8 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 3706FA6A293F65D500E42796;
-			remoteInfo = "DuckDuckGo Privacy Browser App Store";
+			remoteGlobalIDString = B6EC37E729B5DA2A001ACE79;
+			remoteInfo = "tests-server";
 		};
 		37C320B82F1E80A1008F4604 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -20441,7 +20441,7 @@
 		};
 		376113D62B29CD6800E794BB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 3706FA6A293F65D500E42796 /* DuckDuckGo Privacy Browser App Store */;
+			target = B6EC37E729B5DA2A001ACE79 /* tests-server */;
 			targetProxy = 376113D52B29CD6800E794BB /* PBXContainerItemProxy */;
 		};
 		37C320B72F1E80A1008F4604 /* PBXTargetDependency */ = {

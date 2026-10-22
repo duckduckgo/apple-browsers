@@ -59,7 +59,7 @@ def main():
     parser.add_argument('--results', type=Path, default=Path('remote-ui-results'))
     parser.add_argument('--remote-root', default='workspace/ddg-ui-tests', help='Remote workspace root; use the lease workspace on a physical Virfield host')
     parser.add_argument('host', help='An SSH host alias with a verified host key')
-    parser.add_argument('manifest', help='CI run-review.json URL')
+    parser.add_argument('manifest', help='Native producer run-native.json URL')
     parser.add_argument('run_arguments', nargs=argparse.REMAINDER, help='Arguments forwarded to artifact.py run')
     args = parser.parse_args()
     if not re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.@-]*', args.host):

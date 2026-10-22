@@ -1,0 +1,108 @@
+name: macOS - Build native test bundle
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        type: string
+        required: true
+      os-version:
+        type: string
+        required: true
+      xcode-version:
+        type: string
+        required: true
+      branch:
+        type: string
+        required: true
+      build-type:
+        type: string
+        default: dmg
+      app-artifact-prefix:
+        type: string
+        default: ''
+
+jobs:
+  build:
+    name: Native tests (macOS ${{ inputs.os-version }}, Xcode ${{ inputs.xcode-version }}, ${{ inputs.build-type }})
+    runs-on: ${{ fromJSON(inputs.runner) }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: macOS
+    env:
+      RELEASE_TYPE: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.branch }}
+      - name: Register SSH keys for private packages
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: |
+            ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+            ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+      - name: Select native Xcode
+        uses: ./.github/actions/select-xcode-version
+        with:
+          xcode-version: ${{ inputs.xcode-version }}
+      - name: Build test targets once
+        run: |
+          set -o pipefail
+          bash UITests/Helpers/ui-tests/build.sh '${{ inputs.build-type }}' "$GITHUB_WORKSPACE/macOS/NativeTests" \
+            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= 2>&1 | tee native-test-build.log
+      - name: Download notarized application
+        uses: actions/download-artifact@v7
+        with:
+          pattern: ${{ inputs.app-artifact-prefix }}DuckDuckGo-${{ env.RELEASE_TYPE }}-*.app.tar.xz
+          merge-multiple: true
+          path: macOS
+      - name: Package native test products
+        run: |
+          set -euo pipefail
+          tar -xf DuckDuckGo-*.app.tar.xz -C NativeTests/Build/Products/Review
+          python3 UITests/Helpers/ui-tests/artifact.py pack --products NativeTests/Build/Products \
+            --distribution '${{ inputs.build-type }}' --output native-tests.tar.gz
+      - uses: actions/upload-artifact@v6
+        with:
+          name: DuckDuckGo-native-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}
+          path: macOS/native-tests.tar.gz
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: native-test-build-${{ inputs.build-type }}-macos${{ inputs.os-version }}
+          path: |
+            macOS/native-test-build.log
+            macOS/native-tests.tar.enumeration.*
+      - name: Publish native app/test pair
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          BUCKET_ROOT: s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/
+          URL_ROOT: ${{ vars.DMG_URL_ROOT }}
+          PAIR_PATH: native-ui-tests/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}/macos${{ inputs.os-version }}/${{ inputs.build-type }}/
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, subprocess
+          from pathlib import Path
+          archive = next(Path('.').glob('DuckDuckGo-*.app.tar.xz'))
+          prefix = os.environ['URL_ROOT'] + os.environ['PAIR_PATH']
+          def item(path, name):
+              value = hashlib.sha256()
+              with path.open('rb') as stream:
+                  for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                      value.update(chunk)
+              return {'url': prefix + name, 'sha256': value.hexdigest()}
+          descriptor = {'format': 1, 'git_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+                        'app': item(archive, 'app.tar.xz'), 'tests': item(Path('native-tests.tar.gz'), 'tests.tar.gz')}
+          Path('run-native.json').write_text(json.dumps(descriptor, indent=2) + '\n')
+          Path('app-archive.txt').write_text(str(archive))
+          PY
+          destination="${BUCKET_ROOT}${PAIR_PATH}"
+          aws s3 cp "$(cat app-archive.txt)" "${destination}app.tar.xz" --acl public-read
+          aws s3 cp native-tests.tar.gz "${destination}tests.tar.gz" --acl public-read
+          aws s3 cp UITests/Helpers/ui-tests/artifact.py "${destination}run-ui-tests.py" --acl public-read
+          aws s3 cp run-native.json "${destination}run-native.json" --acl public-read
+          echo "Native app/test pair: ${URL_ROOT}${PAIR_PATH}run-native.json" >> "$GITHUB_STEP_SUMMARY"

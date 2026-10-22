@@ -95,8 +95,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-ui-tests: true
-      build-arm64-only: false # The same artifact also supports Intel Monterey workers.
+      build-arm64-only: false
     secrets: inherit
 
   # The App Store sandbox test case (AppStoreSandboxUITests) runs along every full (unfiltered) DMG run,
@@ -113,8 +112,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-ui-tests: true
-      build-arm64-only: false # The same artifact also supports Intel Monterey workers.
+      build-arm64-only: false
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs
@@ -163,14 +161,14 @@ jobs:
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             config=$(jq -c <<< '[
-              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "26"}
+              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-14-xlarge"], "os-version": "14"},
-              {"runner": ["macos-15-xlarge"], "os-version": "15"},
-              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27"}
+              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
+              {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
+              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')
           fi
           echo "all-os-versions=${all_os_versions}" >> $GITHUB_OUTPUT
@@ -260,6 +258,38 @@ jobs:
           echo "test=${test}" >> $GITHUB_OUTPUT
           echo "test-plan=${test_plan}" >> $GITHUB_OUTPUT
 
+  build-native-tests:
+    name: Build native tests
+    needs: [create-notarized-app, setup-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
+    uses: ./.github/workflows/macos_build_ui_test_bundle.yml
+    with:
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
+      build-type: ${{ inputs.build-type || 'dmg' }}
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
+
+  build-native-appstore-tests:
+    name: Build native App Store tests
+    needs: [create-notarized-appstore-app, setup-tests]
+    strategy:
+      fail-fast: false
+      matrix:
+        config: ${{ fromJSON(needs.setup-tests.outputs.config) }}
+    uses: ./.github/workflows/macos_build_ui_test_bundle.yml
+    with:
+      runner: ${{ toJSON(matrix.config.runner) }}
+      os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
+      build-type: appstore
+      branch: ${{ inputs.branch || github.sha }}
+    secrets: inherit
+
   # UI Tests run as two jobs, one per user mode, each calling the reusable macos_run_ui_test.yml
   # helper once per (runner x test) combination. Both modes in a single matrix would exceed GitHub's
   # 256-configuration limit.
@@ -268,7 +298,7 @@ jobs:
   # continue-on-error inside the helper's job.
   ui-tests-production:
     name: UI Tests
-    needs: [create-notarized-app, setup-tests]
+    needs: [build-native-tests, setup-tests]
     if: needs.setup-tests.outputs.run-production == 'true'
     strategy:
       fail-fast: false
@@ -283,6 +313,7 @@ jobs:
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -292,7 +323,7 @@ jobs:
 
   ui-tests-internal:
     name: UI Tests
-    needs: [create-notarized-app, setup-tests]
+    needs: [build-native-tests, setup-tests]
     if: needs.setup-tests.outputs.run-internal == 'true'
     strategy:
       fail-fast: false
@@ -305,6 +336,7 @@ jobs:
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: internal
       build-type: ${{ inputs.build-type || 'dmg' }}
@@ -315,7 +347,7 @@ jobs:
   # App Store only test case, run along the full DMG run on the same runner configurations (production mode).
   ui-tests-appstore:
     name: UI Tests App Store
-    needs: [create-notarized-appstore-app, setup-tests]
+    needs: [build-native-appstore-tests, setup-tests]
     strategy:
       fail-fast: false
       # See the note on ui-tests-production for why the configurations are a matrix key.
@@ -326,6 +358,7 @@ jobs:
     with:
       runner: ${{ toJSON(matrix.config.runner) }}
       os-version: ${{ matrix.config.os-version }}
+      xcode-version: ${{ matrix.config.xcode-version }}
       test: ${{ matrix.test }}
       user-mode: production
       build-type: appstore

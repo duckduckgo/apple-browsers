@@ -84,8 +84,6 @@ def main():
         reset(bundle_id)
         if args.sync:
             subprocess.run(['/usr/bin/defaults', 'write', bundle_id, 'sync.environment', 'Development'], check=True)
-        if 'UITEST_CLASS_RESET_MARKER' in os.environ:
-            Path(os.environ['UITEST_CLASS_RESET_MARKER']).touch()
         return
     binary = products / 'tests-server'
     if not binary.is_file():

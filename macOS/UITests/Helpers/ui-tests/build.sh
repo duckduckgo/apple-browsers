@@ -1,5 +1,5 @@
 #!/bin/bash
-# One build graph lets Xcode schedule the app and test targets and share package products.
+# Build test/server targets once with the same native Xcode used by their consumers.
 set -euo pipefail
 runner_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 macos_dir="$(cd "$runner_dir/../../.." && pwd)"
@@ -25,5 +25,5 @@ xcrun xcodebuild build-for-testing \
     -enableCodeCoverage NO \
     -onlyUsePackageVersionsFromResolvedFile \
     -skipPackagePluginValidation -skipMacroValidation \
-    ONLY_ACTIVE_ARCH=NO 'ARCHS=arm64 x86_64' \
+    TEST_TARGET_NAME= ONLY_ACTIVE_ARCH=YES \
     ${extra[@]+"${extra[@]}"} "$@"

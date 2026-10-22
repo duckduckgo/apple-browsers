@@ -1,160 +1,74 @@
-# Build once, run on each macOS
+# Native macOS test artifacts
 
-The notarized Review build job opts into `build-ui-tests: true`. It selects the latest installed
-stable Xcode and calls one `build-for-testing` graph for the app, UI Tests, Performance Tests and
-SyncE2EUITests. App Store builds use the corresponding producer scheme. Shared dependencies resolve
-and build in this graph, once per architecture/configuration; the universal products contain both
-arm64 and x86_64. Existing Release/Alpha archive/export builds keep their original path.
+The notarized application uses the existing archive/export workflow. Test artifacts are built
+separately, once per macOS/Xcode environment and app flavor, with `build-for-testing`.
+The artifact schemes build only test targets and tests-server (`TEST_TARGET_NAME=`); they do not
+compile the application. UI classes and both user modes share that environment's test artifact.
+Sync and Performance each have one workload per environment, so they build native tests in their
+own job before executing them.
 
-`archive.sh` notarizes/staples the app while `artifact.py pack` copies the test runners, test server,
-resources, test plans, XCTest runtime and discovered method inventory. App and test archives are
-published together with a `run-review.json` (or `run-sandbox-review.json`) descriptor containing
-revision and SHA-256 checksums. No credentials or recovery codes belong in the artifact.
+CI pins Xcode using the existing select-xcode-version action. UI uses macOS 14 / Xcode 16.2,
+macOS 15 / Xcode 26.2 and macOS 27 / Xcode 27.0. Sync also uses macOS 26 / Xcode 26.6.
+The app archive remains universal; test products use the producer's native architecture.
+Consumers must match the producer's macOS major version, architecture, and exact Xcode build.
+A mismatch fails before an app is launched or its state is reset.
 
-CI consumers download the pair and use `test-without-building -xctestrun`. They do not open the
-project, resolve Swift packages or compile application/test targets. Each host selects its newest
-compatible installed Xcode for the test service and result tools. The OS matrix stays; the Xcode
-matrix is removed. Compilation cost moves to the producer, so fan-out jobs get cheaper; producer
-latency and universal artifact size increase. Packaging overlaps notarization; compiler work stays
-in one dependency graph rather than racing two xcodebuild processes.
+There are no XCTest binary patches, symbol forwarders, replacement runners or copied XCTest
+runtimes. Xcode creates its own runner; the consumer uses that runner and the installed native
+frameworks. Updating Xcode means changing the normal CI version setting, rebuilding the test
+artifact, and running qualification on that environment. These checks do not establish that
+arbitrary Xcode versions can exchange test bundles.
 
 ## Local Xcode
 
-The existing workspace/schemes still build the app and tests. Scheme pre/post actions call only
-`pre-run.sh` and `post-run.sh`. The pre script starts the built server and checks readiness; the post
-script stops only its recorded process. A busy server port fails instead of killing another run.
+The normal app workspace and schemes remain available. Scheme pre/post actions and artifacts
+use the same pre-run.sh / post-run.sh scripts for tests-server readiness and owned-process cleanup.
+An occupied port fails instead of stopping an unrelated server.
 
-`UITestCase` resets app defaults, container data, WebKit data and app-configuration group data once
-before **each class**, before the subclass configures its fixture. State persists between methods
-in that class. Performance and Sync classes use the same reset. Sync also retains its explicit cleanup
-between methods. Only Debug/Review bundle identifiers are allowed. A local live run removes these test app
-profiles, so save any Review data you need first.
+UITestCase resets the selected Debug/Review app profile once before each class configures its
+fixture. State persists between methods. Performance and Sync reset at class setup too; Sync
+retains its per-method cleanup. A local live run removes the selected test profile's data.
 
-## Download and run on a Mac
+## Dedicated Mac or SSH
 
-Copy the run descriptor URL from the producer job summary. In a fresh directory:
+The native UI producer publishes a run-native.json URL in its job summary. Select the producer
+for the destination Mac's OS, architecture and Xcode; a macOS 14 artifact cannot run on macOS 12.
+The manifest pairs the notarized app and native test archive using revision and SHA-256 checksums.
 
 ```bash
-RUN_URL='https://<test-build-prefix>/<revision>/run-review.json'
-curl -fL "${RUN_URL%/*}/run-ui-tests.py" -o runner.py
-python3 runner.py download "$RUN_URL" --output run
+python3 remote.py --ssh-config /path/to/pinned-config \
+  --results /path/to/results test-mac https://example.com/path/run-native.json \
+  --only AddressBarUrlEditingTests
+```
+
+The remote Mac needs the matching full Xcode, Python 3, a logged-in unlocked desktop and configured
+UI Automation. The launcher runs a native UI probe first, then the test workload with a temporary
+keychain. It restores the prior SSH/GUI keychain selection and fetches results even on failure.
+It does not enable unattended Automation or grant folder permissions. Provision those explicitly
+on the dedicated test host. Only one UI workload may use an account at a time.
+The default remote directory is ~/workspace/ddg-ui-tests; --remote-root selects a lease workspace.
+
+To download and run directly on the matching Mac:
+
+```bash
+curl -fL https://example.com/path/run-ui-tests.py -o runner.py
+python3 runner.py download https://example.com/path/run-native.json --output run
 python3 run/ui-tests/Scripts/prepare-host.py --result readiness
 python3 run/ui-tests/Scripts/with-keychain.py --result keychain-session -- \
   python3 run/ui-tests/Scripts/artifact.py run run/ui-tests --only AddressBarUrlEditingTests
 ```
 
-Use `--suite performance`, `--suite sync`, or `--suite sync-appstore` for other suites;
-`--plan 'UI Tests App Store'` selects the broader App Store plan. Without `--only`, the selected
-plan runs all enabled tests. `--only Class/method` limits a method. `CODE` is supplied at runtime
-for Sync tests that require it. Results include xcresult bundles, xcodebuild/server logs and JSON
-summaries; zero executed tests, all skipped tests and missing result bundles fail the command.
-
-The Mac needs a full locally compatible Xcode, Python 3, an unlocked GUI login and working developer
-UI automation. Xcode's first-launch components must be installed. `prepare-host.py` builds a tiny
-independent probe with that Xcode, launches its own app, clicks and checks an accessibility value.
-It saves its xcresult and log, and rejects zero/skipped/failed execution even if old xcodebuild exits
-zero. This qualification uses no Swift packages and leaves the Review profile alone. No Screen Sharing is required by
-the launcher: commands run over SSH against the existing console session. Pass
-`--xcode /Applications/Xcode13.4.1.app` if xcode-select points elsewhere.
-
-Check `/usr/bin/automationmodetool` when provisioning a dedicated CI Mac. Apple's documented
-`automationmodetool enable-automationmode-without-authentication` configures unattended activation
-and requires administrator authentication in the shell (`man automationmodetool`). Do this only
-on the dedicated test environment. A `ready` Virfield developer lease does not prove UI-test
-readiness: qualify a real XCUITest before unattended use. The native probe has been executed on
-Monterey/Xcode 13.4.1 and Sonoma/Xcode 16.2. A loader check alone does not establish UI execution.
-`--gui` is an optional
-Terminal console launcher, not an automation permission grant.
-
-On Sonoma, the portable workload uses the installed Xcode 16 XCTest and the Swift adapter instead
-of the producer's XCTest runtime. Whole classes and retry behavior are retained there. This keeps
-the OS and test service/runtime combination used by the earlier CI while sharing the compiled
-test bundle. Newer hosts use the packaged runtime. Qualify both architectures when changing this
-selection; an Intel Sonoma pass does not establish the result on an ARM runner.
-
-## Monterey
-
-The test bundle deployment target remains 12.3. That setting alone is insufficient: a modern
-XCTRunner/XCTest runtime requires a newer OS. On macOS 12, the consumer copies its installed Xcode
-13.4.1 XCTRunner and compiles only `XCTestCompat.swift` with the local Swift 5.6 compiler. The shim
-forwards newer XCTest Swift symbols to old equivalents (issue severity is not represented by old
-XCTest). It rewrites/signs copied test products; the notarized app stays unchanged. Symbol loading
-is checked before app state is touched. Application/test sources and package graphs are never built
-on Monterey.
-
-The old runtime runs one method per xcodebuild process because its automation event queue can
-become unusable across methods. The owned app is terminated between those processes; its persisted
-class state is retained. A run tracks classes and enables the full reset only for the first
-method of each class. Class fixture setup still runs in each fresh process. This costs process startup
-and produces one xcresult per method. A legacy method is limited to five minutes; modern batches
-use `--timeout` (default one hour) and retain retry-on-failure behavior. Changes in compiler/XCTest
-symbols require revalidating the adapter; this is a compatibility layer, not an Apple guarantee
-that arbitrary Xcode versions can exchange UI test bundles.
-
-The autocomplete class fixture writes its persisted preference before app launch on Monterey:
-Xcode 13's accessibility query for that Settings checkbox can hang before the test method starts.
-The assertions in editing tests still run against the application UI. Monterey uses XCTest's
-interruption monitor for permission prompts; it avoids the polling timer's nested event synthesis,
-which Xcode 13 cannot safely perform while another keyboard/mouse event is pending.
-
-## Virfield and a rented Mac mini
-
-Use the same published pair and launcher for either host:
-
-```bash
-# Virfield: ready lease + verified/pinned SSH config obtained through its normal lease workflow.
-python3 macOS/UITests/Helpers/ui-tests/remote.py \
-  --ssh-config /path/to/lease/config virfield "$RUN_URL" \
-  --xcode /Applications/Xcode13.4.1.app --only AddressBarUrlEditingTests
-
-# Dedicated Mac: configure a pinned SSH alias and provision an unlocked console session.
-python3 macOS/UITests/Helpers/ui-tests/remote.py monterey-mini "$RUN_URL" \
-  --xcode /Applications/Xcode13.4.1.app --only AddressBarUrlEditingTests
-```
-
-The launcher uses a unique remote directory, qualifies UI Automation with the native probe, uses
-the logged-in GUI session through SSH and fetches readiness/test results even after test failure.
-It gives the workload a disposable keychain instead of reading personal login items. A temporary
-Aqua agent selects and unlocks it in the GUI audit session as well as the launcher's SSH session: an SSH-only
-unlock can leave the sandboxed app waiting for a password before it creates a window. The wrapper
-restores the original default/search list after failure or success, removes only its own temporary
-keychain and deletes its password file before results are fetched. Run one UI workload per account.
-`--preflight-only` checks bundle loading without running the probe or application.
-It does not provision machines, disable host-key checks, reset an
-OS or release leases. Use a dedicated test account/profile and run only one UI session per Mac.
-Virfield guests and physical hosts use the same protocol once a lease is ready.
-The default remote root is `~/workspace/ddg-ui-tests`. For a physical Virfield lease, pass
-`--remote-root /Users/admin/virfield/leases/<vm-name>/workspace/ddg-ui-tests` so all files stay in
-that lease's workspace.
-
-[MacinCloud documents Monterey for Dedicated Server plans](https://support.macincloud.com/support/solutions/articles/8000095277-macos-monterey-12-6-7-now-supported-on-macincloud-dedicated-servers).
-That announcement is from 2023; confirm current Intel/M1 Monterey stock, full Xcode 13.4.1,
-admin/SSH and an interactive desktop before renting. Current stock is not established by that
-article. [MacStadium offers dedicated Macs](https://macstadium.com/pricing), but Monterey inventory
-also requires confirmation. Do not choose new hardware that cannot boot Monterey.
-
-## Verified execution
-
-The current candidate passed the native UI Automation probe on Monterey ARM/Xcode 13.4.1 and
-Sonoma Intel/Xcode 16.2. On Monterey, AddressBarSearchQueryEditingTests executed 26/26 methods
-on the first attempt, with one class reset followed by 25 methods retaining the class profile.
-Sonoma executed PrintingTests 7/7 with its installed XCTest 16, then the search-editing class
-and SaveCredentials regression test together passed 27/27; its App Store sandbox class passed 2/2.
-Monterey also passed a mixed run with one executed test and one OS skip. The sandbox class on
-that Monterey image still blocks in FileProvider while General Settings reads the Downloads path;
-that file-permission/environment qualification is outstanding. The launcher does not grant privacy
-permissions. These are bounded qualification
-runs, not a full-suite or ARM Sonoma compatibility guarantee. Full CI remains required.
+Use --suite performance, --suite sync, or --suite sync-appstore for the other targets.
+--plan 'UI Tests App Store' selects the broader App Store plan; --only Class/method filters a method.
+Sync recovery CODE is supplied at runtime and is not included in artifacts. Results include
+xcresults, logs and JSON summaries. Missing results, incomplete execution or all-skipped runs fail.
 
 ## Validation
 
 ```bash
 python3 -B -m unittest discover -s macOS/scripts/tests -v
-macOS/UITests/Helpers/ui-tests/build.sh dmg /tmp/ui-test-build CODE_SIGNING_ALLOWED=NO
-python3 macOS/UITests/Helpers/ui-tests/artifact.py pack \
-  --products /tmp/ui-test-build/Build/Products --distribution dmg --output /tmp/ui-tests.tar.gz
+bash macOS/UITests/Helpers/ui-tests/build.sh dmg /absolute/path/to/DerivedData CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
 ```
 
-Unsigned local app builds validate compilation/packaging only; CI needs its normal signing assets
-for the notarized Review app. A loader check is not a passing UI suite: qualify actual tests on each
-supported OS, especially legacy XCTest, when changing the producer Xcode.
+On each environment, verify a real UI execution with the native runtime, the full selected suite,
+and the App Store sandbox leg. Loader checks and old cross-version CI results are insufficient.

@@ -47,7 +47,8 @@ struct RegisteredDeviceMappingResult {
     }
 }
 
-/// Caches the recovered scoped password once per audit-log page, including a nil result.
+/// Historical audit-log entries may need the same password recovery, which fetches credentials from the server.
+/// Cache its result for one page so entries do not repeat that request, even when recovery fails.
 /// The cache is used sequentially and is intentionally not Sendable.
 final class ThirdPartyPasswordRecoveryCache {
     private var hasAttemptedRecovery = false

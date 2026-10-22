@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import DDGError
 import DDGSyncCrypto
 import Networking
 import os.log
@@ -526,9 +527,25 @@ enum AuditLogCursor {
     case before(String)
 }
 
-enum AuditLogError: Error, Equatable {
+enum AuditLogError: DDGError {
     case responseDecodingFailed
     case missingRequiredAfterCursor
+
+    static var errorDomain: String { "com.duckduckgo.sync.audit-log" }
+
+    var errorCode: Int {
+        switch self {
+        case .responseDecodingFailed: 1
+        case .missingRequiredAfterCursor: 2
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .responseDecodingFailed: "Failed to decode the audit log response."
+        case .missingRequiredAfterCursor: "Audit log response is missing the required after cursor."
+        }
+    }
 }
 
 struct AuditLogPage: Decodable {

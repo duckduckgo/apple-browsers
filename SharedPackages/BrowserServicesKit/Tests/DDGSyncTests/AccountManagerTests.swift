@@ -1290,6 +1290,20 @@ final class AccountManagerTests: XCTestCase {
         }
     }
 
+    func testAuditLogErrorsBridgeToNSErrorWithSafeStableMetadata() {
+        let decodingError = AuditLogError.responseDecodingFailed as NSError
+        XCTAssertEqual(decodingError.domain, "com.duckduckgo.sync.audit-log")
+        XCTAssertEqual(decodingError.code, 1)
+        XCTAssertEqual(decodingError.localizedDescription, "Failed to decode the audit log response.")
+        XCTAssertNil(decodingError.userInfo[NSUnderlyingErrorKey])
+
+        let missingCursorError = AuditLogError.missingRequiredAfterCursor as NSError
+        XCTAssertEqual(missingCursorError.domain, decodingError.domain)
+        XCTAssertEqual(missingCursorError.code, 2)
+        XCTAssertEqual(missingCursorError.localizedDescription, "Audit log response is missing the required after cursor.")
+        XCTAssertNil(missingCursorError.userInfo[NSUnderlyingErrorKey])
+    }
+
     func testWhenFetchingAuditLogWithoutTokenThenThrowsWithoutMakingRequest() async {
         let api = RemoteAPIRequestCreatingMock()
         let accountManager = AccountManager(endpoints: Endpoints(baseURL: Self.baseURL),

@@ -124,6 +124,35 @@ final class HoveredLinkTooltipPresenterTests: XCTestCase {
         harness.scheduler.run(at: 1)
         XCTAssertEqual(tooltip.frame.maxY, harness.parent.frame.minY)
         XCTAssertFalse(tooltip.frame.contains(harness.pointer.location))
+        XCTAssertEqual(harness.animator.movements.last?.duration,
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12)
+    }
+
+    func testWhenTooltipAppearsThenInitialPlacementIsImmediate() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        XCTAssertEqual(harness.animator.movements.last?.frame, harness.tooltip?.frame)
+        XCTAssertEqual(harness.animator.movements.last?.duration, 0)
+    }
+
+    func testWhenPositionIsUpdatedRepeatedlyThenMovementIsNotRestartedAndCanReverse() {
+        let harness = TooltipHarness()
+        harness.showFirstLink()
+        let originalFrame = harness.tooltip!.frame
+        harness.pointer.location = NSPoint(x: originalFrame.minX + 20, y: originalFrame.minY + 10)
+        harness.presenter.updatePosition()
+        let movementCount = harness.animator.movements.count
+        for _ in 0..<10 {
+            harness.presenter.updatePosition()
+        }
+        XCTAssertEqual(harness.animator.movements.count, movementCount)
+
+        harness.pointer.location = NSPoint(x: 600, y: 500)
+        harness.presenter.updatePosition()
+        XCTAssertEqual(harness.animator.movements.count, movementCount + 1)
+        XCTAssertEqual(harness.animator.movements.last?.frame, originalFrame)
+        XCTAssertEqual(harness.animator.movements.last?.duration,
+                       NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0 : 0.12)
     }
 
     func testWhenCrossingLinksRepeatedlyThenOldHideCallbacksCannotHideNewLink() {
@@ -330,7 +359,7 @@ private final class TooltipHarness {
         let animator = animator
         presenter = HoveredLinkTooltipPresenter(hostView: hostView, backgroundColor: .windowBackgroundColor,
                                                makeWindow: { TooltipTestWindow() }, mouseLocation: { pointer.location },
-                                               animate: animator.animate, schedule: scheduler.schedule)
+                                               animate: animator.animate, move: animator.move, schedule: scheduler.schedule)
     }
 
     deinit {
@@ -391,6 +420,12 @@ private final class TooltipScheduler {
 private final class TooltipAnimator {
     var completesImmediately = true
     private(set) var animations = [(opacity: CGFloat, duration: TimeInterval, completion: () -> Void)]()
+    private(set) var movements = [(frame: NSRect, duration: TimeInterval)]()
+
+    func move(window: NSWindow, frame: NSRect, duration: TimeInterval) {
+        movements.append((frame, duration))
+        window.setFrame(frame, display: true)
+    }
 
     func animate(window: NSWindow, opacity: CGFloat, duration: TimeInterval, completion: @escaping () -> Void) {
         window.alphaValue = opacity

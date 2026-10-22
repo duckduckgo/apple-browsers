@@ -27,6 +27,8 @@ final class HoveredLinkTooltipPresenter {
     private let schedule: (TimeInterval, @escaping () -> Void) -> DispatchWorkItem
     private let mouseLocation: () -> NSPoint
     private let animate: (NSWindow, CGFloat, TimeInterval, @escaping () -> Void) -> Void
+    private let move: (NSWindow, NSRect, TimeInterval) -> Void
+    private var targetFrame: NSRect?
     private var hoveredURL: URL?
     private var hasShownTooltip = false
     private var isFadingOut = false
@@ -48,6 +50,17 @@ final class HoveredLinkTooltipPresenter {
                  completion()
              }
          },
+         move: @escaping (NSWindow, NSRect, TimeInterval) -> Void = { window, frame, duration in
+             // Cancel any previous movement and apply sizing immediately so text stays within its bounds.
+             NSAnimationContext.runAnimationGroup { context in
+                 context.duration = 0
+                 window.animator().setFrame(NSRect(origin: window.frame.origin, size: frame.size), display: true)
+             }
+             NSAnimationContext.runAnimationGroup { context in
+                 context.duration = duration
+                 window.animator().setFrame(frame, display: true)
+             }
+         },
          schedule: @escaping (TimeInterval, @escaping () -> Void) -> DispatchWorkItem = { delay, action in
              let item = DispatchWorkItem(block: action)
              DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
@@ -57,6 +70,7 @@ final class HoveredLinkTooltipPresenter {
         self.window = makeWindow()
         self.mouseLocation = mouseLocation
         self.animate = animate
+        self.move = move
         self.schedule = schedule
 
         let background = NSBox(frame: .zero)
@@ -128,6 +142,8 @@ final class HoveredLinkTooltipPresenter {
     private func hide() {
         isFadingOut = false
         window.alphaValue = 0
+        move(window, window.frame, 0)
+        targetFrame = nil
         appearanceObservation = nil
         window.orderOut(nil)
         window.parent?.removeChildWindow(window)
@@ -209,10 +225,10 @@ final class HoveredLinkTooltipPresenter {
 
     func updatePosition() {
         guard hoveredURL != nil, window.isVisible else { return }
-        layout()
+        layout(animated: true)
     }
 
-    private func layout() {
+    private func layout(animated: Bool = false) {
         guard let hostView, let parent = hostView.window else { return }
         let hostFrame = parent.convertToScreen(hostView.convert(hostView.bounds, to: nil))
         let screenFrame = parent.screen?.visibleFrame ?? hostFrame
@@ -224,8 +240,11 @@ final class HoveredLinkTooltipPresenter {
         let frame = Self.frame(size: size, hostFrame: hostFrame, parentFrame: parent.frame,
                                screenFrame: screenFrame, mouseLocation: mouseLocation())
         window.appearance = hostView.effectiveAppearance
-        window.setFrame(frame, display: true)
         label.frame = NSRect(x: 12, y: 6, width: max(0, size.width - 20), height: labelSize.height)
+        guard targetFrame != frame else { return }
+        targetFrame = frame
+        let duration = animated && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion ? 0.12 : 0
+        move(window, frame, duration)
     }
 
     /// All inputs use screen coordinates. Always test against the resting frame, so moving

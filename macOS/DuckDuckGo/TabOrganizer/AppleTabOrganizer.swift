@@ -73,7 +73,13 @@ final class AppleTabOrganizer: TabOrganizing {
         let matchingTabs = tabs.filter { matching?.tabIDs.contains($0.id) == true }
         guard !matchingTabs.isEmpty else { return TabOrganizerProposalBuilder.proposal(from: response, tabs: tabs) }
 
-        let labels = try await topicLabels(for: matchingTabs, criterion: criterion)
+        // Splitting regroups the matching tabs whatever groups they are in now.
+        let ungroupedMatchingTabs = matchingTabs.map { tab in
+            var tab = tab
+            tab.groupName = nil
+            return tab
+        }
+        let labels = try await topicLabels(for: ungroupedMatchingTabs, criterion: criterion)
         var groups = TabOrganizerProposalBuilder.proposal(from: labels, tabs: matchingTabs).groups
         for index in groups.indices {
             groups[index].action = response.actionForMatching
@@ -90,12 +96,20 @@ final class AppleTabOrganizer: TabOrganizing {
 
     /// Two phases, because the model is reliable on short outputs only: first it names a few broad topics
     /// for the whole window, then it assigns tabs to exactly those topics in batches of 10.
+    /// Tabs that are already in a tab group keep it; only the other tabs are sorted, into those groups or new topics.
+    /// To regroup everything, callers pass snapshots without group names.
     private func topicLabels(for tabs: [TabSnapshot], criterion: String? = nil) async throws -> TopicResponse {
-        let topics = try await broadTopics(for: tabs, criterion: criterion)
-        guard !topics.isEmpty else { return TopicResponse(labels: []) }
+        var labels = tabs.enumerated().compactMap { index, tab in
+            tab.groupName.map { TopicResponse.Label(tabNumber: index + 1, topic: $0) }
+        }
+        let existingGroups = Self.unique(labels.map(\.topic))
+        let numbers = tabs.indices.filter { tabs[$0].groupName == nil }.map { $0 + 1 }
+        guard !numbers.isEmpty else { return TopicResponse(labels: labels) }
 
-        var labels: [TopicResponse.Label] = []
-        let numbers = Array(1...tabs.count)
+        let newTopics = try await broadTopics(for: numbers.map { tabs[$0 - 1] }, criterion: criterion, existingGroups: existingGroups)
+        let topics = Self.unique(existingGroups + newTopics)
+        guard !topics.isEmpty else { return TopicResponse(labels: labels) }
+
         for start in stride(from: 0, to: numbers.count, by: Self.topicBatchSize) {
             let batch = Array(numbers[start..<min(start + Self.topicBatchSize, numbers.count)])
             labels += try await assign(batch, in: tabs, to: topics)
@@ -109,10 +123,21 @@ final class AppleTabOrganizer: TabOrganizing {
         return TopicResponse(labels: labels.filter { $0.topic != Self.otherTopic })
     }
 
-    private func broadTopics(for tabs: [TabSnapshot], criterion: String?) async throws -> [String] {
+    /// Case-insensitively unique, in order of first use.
+    private static func unique(_ names: [String]) -> [String] {
+        var seen = Set<String>()
+        return names.filter { seen.insert($0.lowercased()).inserted }
+    }
+
+    private func broadTopics(for tabs: [TabSnapshot], criterion: String?, existingGroups: [String]) async throws -> [String] {
         let instructions = criterion.map { "You group a person's open browser tabs by \($0). Name each group after its \($0)." }
         let session = LanguageModelSession(instructions: instructions ?? Self.topicInstructions)
-        let response = try await session.respond(to: "Tabs:\n\(Self.tabList(for: tabs))", generating: GeneratedTopicList.self).content
+        var prompt = "Tabs:\n\(Self.tabList(for: tabs))"
+        if !existingGroups.isEmpty {
+            prompt = "The person already has these tab groups: \(existingGroups.joined(separator: ", ")). "
+                + "Only add topics for tabs that fit none of them.\n\n" + prompt
+        }
+        let response = try await session.respond(to: prompt, generating: GeneratedTopicList.self).content
         var seen = Set<String>()
         return response.topics
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -169,6 +194,7 @@ final class AppleTabOrganizer: TabOrganizing {
         func lines(excerptLimit: Int) -> String {
             zip(numbers, tabs).map { number, tab in
                 var line = "\(number). \(tab.title) — \(tab.host)\(tab.path)"
+                if let groupName = tab.groupName { line += " (in group \(groupName))" }
                 if let pageType = tab.pageType { line += " [\(pageType)]" }
                 if let excerpt = tab.excerpt, excerptLimit > 0 { line += ": \(excerpt.prefix(excerptLimit))" }
                 return line

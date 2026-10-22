@@ -75,6 +75,12 @@ final class TabOrganizerViewModel: ObservableObject {
     @Published private(set) var notice: String?
     @Published var instruction = ""
     @Published var readsPageContent = false
+    /// On: grouped tabs stay in their groups and only ungrouped tabs are sorted. Off: regroup everything.
+    @Published var keepsTabGroups = true
+
+    var hasTabGroups: Bool {
+        tabs.contains { $0.groupName != nil }
+    }
 
     let favicons: [String: NSImage]
     var onApplied: (() -> Void)?
@@ -187,11 +193,16 @@ final class TabOrganizerViewModel: ObservableObject {
             guard let self else { return }
             var snapshots = TabSnapshotProvider.snapshots(in: tabCollectionViewModel)
             snapshots = await TabSnapshotProvider.addingContent(to: snapshots, in: tabCollectionViewModel, excerptLength: excerptLength)
+            let snapshotsForModel = keepsTabGroups ? snapshots : snapshots.map { snapshot in
+                var snapshot = snapshot
+                snapshot.groupName = nil
+                return snapshot
+            }
             if excerptLength > 0 {
                 state = .loading("Organizing \(snapshots.count) tabs…")
             }
             do {
-                let proposal = try await AppleTabOrganizer().organize(snapshots, request: request)
+                let proposal = try await AppleTabOrganizer().organize(snapshotsForModel, request: request)
                 guard !Task.isCancelled else { return }
                 tabs = snapshots
                 if case .instruction = request, !groups.isEmpty {
@@ -398,9 +409,17 @@ struct TabOrganizerView: View {
                 }
             }
 
-            Toggle("Look inside pages (slower)", isOn: $viewModel.readsPageContent)
-                .toggleStyle(.checkbox)
-                .font(.caption)
+            HStack(spacing: 16) {
+                if viewModel.hasTabGroups {
+                    Toggle("Keep my tab groups", isOn: $viewModel.keepsTabGroups)
+                        .toggleStyle(.checkbox)
+                        .font(.caption)
+                        .help("Off: regroup all tabs as if there were no tab groups")
+                }
+                Toggle("Look inside pages (slower)", isOn: $viewModel.readsPageContent)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+            }
 
             if !viewModel.cleanupTabIDs.isEmpty {
                 HStack(spacing: 8) {

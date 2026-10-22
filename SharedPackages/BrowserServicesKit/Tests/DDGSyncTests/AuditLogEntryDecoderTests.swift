@@ -103,7 +103,7 @@ struct AuditLogEntryDecoderTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("A cached password is checked for each entry and failed recovery is reused", .timeLimit(.minutes(1)))
-    func testWhenCachedPasswordOnlyDecryptsFirstEntryThenKeepsItsDetailsAndMemoizesRecoveryFailure() async throws {
+    func testWhenCachedPasswordOnlyDecryptsFirstEntryThenKeepsItsDetailsAndReusesRecoveryResult() async throws {
         let fixture = try makeFixture()
         let cachedPassword = Data(repeating: 0x05, count: 32)
         let historicalPassword = Data(repeating: 0x06, count: 32)
@@ -521,7 +521,7 @@ private struct RegisteredDeviceMappingTestDouble: RegisteredDeviceMapping {
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
                                           accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
-                                          pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> RegisteredDeviceMappingResult {
+                                          thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?) async -> RegisteredDeviceMappingResult {
         let devices = entries.map { RegisteredDevice(id: $0.id, name: $0.name ?? "Unknown", type: $0.type ?? "unknown") }
         return RegisteredDeviceMappingResult(devices: devices, needsCurrentDeviceInfoRepair: false)
     }

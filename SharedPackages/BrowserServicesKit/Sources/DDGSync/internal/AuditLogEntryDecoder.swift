@@ -111,16 +111,16 @@ struct AuditLogEntryDecoder {
 
     private let accountInfoKeys: (any AccountInfoKeyProviding)?
     private let deviceMapper: any RegisteredDeviceMapping
-    private let pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?
+    private let thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache?
     private let jweCompactCodec: JWECompactCodec
 
     init(accountInfoKeys: (any AccountInfoKeyProviding)?,
          deviceMapper: any RegisteredDeviceMapping,
-         pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery? = nil,
+         thirdPartyPasswordRecoveryCache: ThirdPartyPasswordRecoveryCache? = nil,
          jweCompactCodec: JWECompactCodec = JWECompactCodec()) {
         self.accountInfoKeys = accountInfoKeys
         self.deviceMapper = deviceMapper
-        self.pageScopedThirdPartyPasswordRecovery = pageScopedThirdPartyPasswordRecovery
+        self.thirdPartyPasswordRecoveryCache = thirdPartyPasswordRecoveryCache
         self.jweCompactCodec = jweCompactCodec
     }
 
@@ -153,7 +153,7 @@ struct AuditLogEntryDecoder {
                                                                            account: account,
                                                                            isUnifiedReadEnabled: true,
                                                                            accountInfoKeyProvider: accountInfoKeys,
-                                                                           pageScopedThirdPartyPasswordRecovery: pageScopedThirdPartyPasswordRecovery)
+                                                                           thirdPartyPasswordRecoveryCache: thirdPartyPasswordRecoveryCache)
         try Task.checkCancellation()
         guard let device = mapping.devices.first else {
             return .unreadable(id: entry.id, reason: .invalidPayload)

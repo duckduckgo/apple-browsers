@@ -113,7 +113,7 @@ jobs:
 
   submit_translations:
     name: Submit Release to Smartling
-    # Nothing depends on this job, so a failed submission never blocks the release.
+    # Nothing depends on this job, so a failed submission never blocks the release, though it fails the run.
     # The version comes from the release branch name, which covers both a given and a calculated version.
     # Set the MACOS_SMARTLING_RELEASE_SUBMISSION repository variable to 0 to stop submitting at code freeze.
     needs: create_release_branch
@@ -123,7 +123,6 @@ jobs:
       kind: release
       platform: macOS
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
-      asana_task_url: ${{ needs.create_release_branch.outputs.asana_task_url }}
     secrets: inherit
 
   increment_build_number:

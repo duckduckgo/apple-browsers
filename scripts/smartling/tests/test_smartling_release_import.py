@@ -65,6 +65,7 @@ esac
 
 EXPORT_STUB = """#!/bin/bash
 echo "export" >> "$STUB_DIR/loc_tool.log"
+[ ! -e "$STUB_DIR/export_fails" ] || exit 0
 mkdir -p "iOS/scripts/assets/loc/en.xcloc/Localized Contents"
 echo '<xliff/>' > "iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff"
 echo '"regenerated" = "Regenerated";' >> iOS/App/en.lproj/Localizable.strings
@@ -246,6 +247,18 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertEqual(outputs['outcome'], 'status_error')
         self.assertIn('Could not refresh', outputs['reason'])
         self.assertFalse(any(call.startswith('release-status') for call in self.tool_calls()))
+
+    def testWhenTheExportProducesNoXliffThenItIsAnErrorAndNothingIsRefreshed(self):
+        stale_xliff = self.repo / EXPORTED_XLIFF
+        stale_xliff.parent.mkdir(parents=True)
+        stale_xliff.write_text('<xliff/>', encoding='utf-8')
+        (self.stub_dir / 'export_fails').touch()
+
+        outputs = self.run_import(expected_exit_code=1)
+
+        self.assertEqual(outputs['outcome'], 'error')
+        self.assertIn('did not produce', outputs['reason'])
+        self.assertEqual(self.tool_calls(), ['export'])
 
     def testWhenTheWorkingTreeHasChangesThenNothingIsExported(self):
         (self.repo / STRINGS_PATH).write_text('"local" = "Local";\n', encoding='utf-8')

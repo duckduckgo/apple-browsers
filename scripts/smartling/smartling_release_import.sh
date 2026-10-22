@@ -136,9 +136,17 @@ if [ -n "$(git status --porcelain)" ]; then
 	finish error "The working tree has uncommitted changes"
 fi
 
+for export_file in "${EXPORT_FILES[@]}"; do
+	git ls-files --error-unmatch -- "$export_file" > /dev/null 2>&1 || rm -f "$export_file"
+done
+
 echo "Exporting the release branch's strings..."
 "./$PLATFORM/scripts/loc_export.sh" | xcbeautify
 git restore --staged --worktree -- .
+
+for export_file in "${EXPORT_FILES[@]}"; do
+	[ -f "$export_file" ] || finish error "The export did not produce $export_file"
+done
 
 if ! ./scripts/smartling/loc_tool.sh refresh-files --file-uri-prefix "$REFRESH_PREFIX" --files "${EXPORT_FILES[@]}"; then
 	finish status_error "Could not refresh the release files in Smartling"

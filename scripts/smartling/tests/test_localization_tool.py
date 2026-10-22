@@ -39,6 +39,7 @@ class FakeSmartlingClient:
                  failing_downloads=None,
                  awaiting_jobs=None,
                  awaiting_jobs_error=None,
+                 file_status_error=None,
                  upload_code='SUCCESS',
                  polls_until_processed=0,
                  authorize_error=None):
@@ -56,6 +57,7 @@ class FakeSmartlingClient:
         self.failing_downloads = failing_downloads or set()
         self.awaiting_jobs = awaiting_jobs or []
         self.awaiting_jobs_error = awaiting_jobs_error
+        self.file_status_error = file_status_error
         self.awaiting_jobs_calls = 0
         self.upload_code = upload_code
         self.polls_until_processed = polls_until_processed
@@ -112,6 +114,8 @@ class FakeSmartlingClient:
         return ['feature/en.xliff']
 
     async def get_file_status(self, file_uri):
+        if self.file_status_error:
+            raise self.file_status_error
         if file_uri not in self.file_statuses:
             raise RuntimeError('HTTP 404: File not found')
         status = self.file_statuses[file_uri]
@@ -639,6 +643,16 @@ class RefreshTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(client.file_statuses[XLIFF_URI]['lastUploaded'], 'upload-1')
         self.assertEqual(client.file_statuses[STRINGSDICT_URI]['lastUploaded'], 'upload-2')
+
+    async def testWhenThePreviousUploadCannotBeReadThenNothingIsUploaded(self):
+        client = FakeSmartlingClient(
+            file_statuses={XLIFF_URI: {'lastUploaded': 'code-freeze'}},
+            file_status_error=RuntimeError('HTTP 500: Server error')
+        )
+
+        with self.assertRaisesRegex(RuntimeError, 'HTTP 500'):
+            await self.refresh(client)
+        self.assertEqual(client.refreshed, [])
 
     async def testWhenSmartlingRejectsAnUploadThenTheRefreshFails(self):
         client = FakeSmartlingClient(upload_code='VALIDATION_ERROR')

@@ -740,6 +740,17 @@ async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[
     return descriptions
 
 
+async def get_last_upload(client: SmartlingClient, file_uri: str) -> str:
+    """When file_uri was last uploaded, or nothing if it was never uploaded."""
+    try:
+        status = await client.get_file_status(file_uri)
+    except RuntimeError as error:
+        if str(error).startswith('HTTP 404'):
+            return ''
+        raise
+    return status.get('lastUploaded') or ''
+
+
 async def wait_for_file_upload(client: SmartlingClient,
                                file_uri: str,
                                previous_upload: str,
@@ -764,10 +775,7 @@ async def run_refresh(client: SmartlingClient,
     file_uris = []
     for file_path in files:
         file_uri = f"{file_uri_prefix}/{file_path.name}"
-        try:
-            previous_upload = (await client.get_file_status(file_uri)).get('lastUploaded') or ''
-        except Exception:  # pylint: disable=broad-except
-            previous_upload = ''
+        previous_upload = await get_last_upload(client, file_uri)
         response = await client.upload_file(file_path, file_uri)
         code = response.get('code')
         if code == 'ACCEPTED':

@@ -47,11 +47,28 @@ struct RegisteredDeviceMappingResult {
     }
 }
 
+/// Caches one scoped-password recovery result, including nil after a failure or unavailable password.
+/// The cache belongs to one audit-log page and is used sequentially; it is intentionally not Sendable.
+final class PageScopedThirdPartyPasswordRecovery {
+    private var didAttemptRecovery = false
+    private var recoveredPassword: Data?
+
+    func password(recover: () async -> Data?) async -> Data? {
+        guard !didAttemptRecovery else {
+            return recoveredPassword
+        }
+        didAttemptRecovery = true
+        recoveredPassword = await recover()
+        return recoveredPassword
+    }
+}
+
 protocol RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
-                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
+                                          pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> RegisteredDeviceMappingResult
     func registeredDevice(fromLegacyEntry entry: RegisteredDeviceEntry, account: SyncAccount) -> RegisteredDevice?
     func registeredDevice(fromDefaultCredentialLoginEntryWithID id: String,
                           encryptedName: String,
@@ -66,7 +83,8 @@ extension RegisteredDeviceMapping {
         await registeredDevicesWithRepairState(from: entries,
                                                account: account,
                                                isUnifiedReadEnabled: isUnifiedReadEnabled,
-                                               accountInfoKeyProvider: nil)
+                                               accountInfoKeyProvider: nil,
+                                               pageScopedThirdPartyPasswordRecovery: nil)
     }
 
     func registeredDevices(from entries: [RegisteredDeviceEntry],
@@ -182,7 +200,8 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
-                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult {
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
+                                          pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> RegisteredDeviceMappingResult {
         let effectiveAccountInfoKeyProvider = accountInfoKeyProvider ?? self.accountInfoKeys
         let accountInfoKeyResolution = await accountInfoKeyIfNeeded(for: entries,
                                                                     account: account,
@@ -222,7 +241,8 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         }
         let resolvedMappings = await mappingsApplyingThirdPartyFallback(to: finalMappings,
                                                                         entries: entries,
-                                                                        account: account)
+                                                                        account: account,
+                                                                        pageScopedPasswordRecovery: pageScopedThirdPartyPasswordRecovery)
         return RegisteredDeviceMappingResult(
             devices: resolvedMappings.map(\.device),
             needsCurrentDeviceInfoRepair: needsCurrentDeviceInfoRepair(in: resolvedMappings,
@@ -299,14 +319,17 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
 
     private func mappingsApplyingThirdPartyFallback(to mappings: [MappingAttempt],
                                                     entries: [RegisteredDeviceEntry],
-                                                    account: SyncAccount) async -> [MappingAttempt] {
+                                                    account: SyncAccount,
+                                                    pageScopedPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> [MappingAttempt] {
         let fallbackEntryIndices = entries.indices.filter {
             entries[$0].credentialId == SyncCredentialID.thirdParty
                 && mappings[$0].source != .deviceInfo
         }
         let fallbackEntries = fallbackEntryIndices.map { entries[$0] }
         guard !fallbackEntries.isEmpty,
-              let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: fallbackEntries, account: account) else {
+              let thirdPartyMainKey = await thirdPartyMainKeyIfNeeded(for: fallbackEntries,
+                                                                      account: account,
+                                                                      pageScopedPasswordRecovery: pageScopedPasswordRecovery) else {
             return mappings
         }
 
@@ -541,7 +564,9 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
         }
     }
 
-    private func thirdPartyMainKeyIfNeeded(for entries: [RegisteredDeviceEntry], account: SyncAccount) async -> Data? {
+    private func thirdPartyMainKeyIfNeeded(for entries: [RegisteredDeviceEntry],
+                                           account: SyncAccount,
+                                           pageScopedPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> Data? {
         guard entries.contains(where: { $0.credentialId == SyncCredentialID.thirdParty }) else {
             return nil
         }
@@ -553,7 +578,15 @@ struct RegisteredDeviceMapper: RegisteredDeviceMapping {
             return cachedMainKey
         }
 
-        return await recoveredScopedPassword(for: account)
+        let recoveredPassword: Data?
+        if let pageScopedPasswordRecovery {
+            recoveredPassword = await pageScopedPasswordRecovery.password { [self] in
+                await recoveredScopedPassword(for: account)
+            }
+        } else {
+            recoveredPassword = await recoveredScopedPassword(for: account)
+        }
+        return recoveredPassword
             .map { ScopedAccessKeyDerivation.mainKey(from: $0, userID: account.userId) }
     }
 

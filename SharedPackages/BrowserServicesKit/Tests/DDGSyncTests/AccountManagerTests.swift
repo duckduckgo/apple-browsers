@@ -1718,7 +1718,8 @@ private final class RegisteredDeviceMappingMock: RegisteredDeviceMapping {
     func registeredDevicesWithRepairState(from entries: [RegisteredDeviceEntry],
                                           account: SyncAccount,
                                           isUnifiedReadEnabled: Bool,
-                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?) async -> RegisteredDeviceMappingResult {
+                                          accountInfoKeyProvider: (any AccountInfoKeyProviding)?,
+                                          pageScopedThirdPartyPasswordRecovery: PageScopedThirdPartyPasswordRecovery?) async -> RegisteredDeviceMappingResult {
         registeredDevicesHandler?()
         registeredDevicesCallEntryIDs = entries.map(\.id)
         unifiedReadEnabledValues.append(isUnifiedReadEnabled)

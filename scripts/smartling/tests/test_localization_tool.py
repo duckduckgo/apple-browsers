@@ -30,7 +30,8 @@ class FakeSmartlingClient:
                  batch_status='COMPLETED',
                  estimate_status='COMPLETED',
                  cancellation_state='COMPLETED',
-                 job_status='CANCELLED'):
+                 job_status='CANCELLED',
+                 authorize_error=None):
         self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
         self.report = report or {}
         self.pending_jobs = pending_jobs or []
@@ -39,6 +40,7 @@ class FakeSmartlingClient:
         self.estimate_status = estimate_status
         self.cancellation_state = cancellation_state
         self.job_status = job_status
+        self.authorize_error = authorize_error
         self.authorized_jobs = []
         self.deleted_jobs = []
         self.created_jobs = []
@@ -89,6 +91,8 @@ class FakeSmartlingClient:
 
     async def authorize_job(self, job_id):
         self.authorized_jobs.append(job_id)
+        if self.authorize_error:
+            raise self.authorize_error
 
 
 class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
@@ -99,15 +103,21 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.export_file = Path(export_dir.name) / 'en.xliff'
         self.export_file.write_text('<xliff/>', encoding='utf-8')
 
-    async def run_submit(self, client, auto_authorize_max_usd='500.00'):
+    async def run_submit(self,
+                         client,
+                         auto_authorize_max_usd='500.00',
+                         delete_job_on_failure=False,
+                         job_name='Nightly iOS - 2026-08-04',
+                         pending_job_prefix='Nightly iOS - '):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return await LOCALIZATION_TOOL.run_submit(
                 client=client,
                 files=[self.export_file],
-                job_name='Nightly iOS - 2026-08-04',
-                pending_job_prefix='Nightly iOS - ',
+                job_name=job_name,
+                pending_job_prefix=pending_job_prefix,
                 file_uri_prefix='main',
                 auto_authorize_max_usd=Decimal(auto_authorize_max_usd),
+                delete_job_on_failure=delete_job_on_failure,
                 sleep=no_sleep
             )
 
@@ -169,6 +179,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.job_id, 'job-123')
         self.assertEqual(result.max_usd, '500.01')
         self.assertEqual((result.total_strings, result.locales), (10, 1))
+        self.assertFalse(result.as_dict()['failed'])
         self.assertEqual(client.authorized_jobs, [])
 
     async def testWhenEstimateHasWarningsThenReviewIsRequired(self):
@@ -235,6 +246,44 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('status FAILED', result.reason)
+        self.assertTrue(result.as_dict()['failed'])
+        self.assertEqual(client.operations, [])
+
+    async def testWhenSubmissionFailsAndDeletingIsOnThenJobIsDeleted(self):
+        client = FakeSmartlingClient(estimate_status='FAILED')
+
+        result = await self.run_submit(client, delete_job_on_failure=True)
+
+        self.assertTrue(result.failed)
+        self.assertEqual((result.job_id, result.job_name), ('', ''))
+        self.assertIn('rerun starts over', result.reason)
+        self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
+
+    async def testWhenAuthorizationTimesOutThenTheJobIsNotDeleted(self):
+        client = FakeSmartlingClient(
+            report={
+                'totalStrings': 10,
+                'priceInformation': [{'currencyCode': 'USD', 'priceMin': 10, 'priceMax': 20}],
+            },
+            authorize_error=TimeoutError('read timed out')
+        )
+
+        result = await self.run_submit(client, delete_job_on_failure=True)
+
+        self.assertTrue(result.failed)
+        self.assertEqual(result.job_id, 'job-123')
+        self.assertEqual(client.authorized_jobs, ['job-123'])
+        self.assertEqual(client.operations, [])
+
+    async def testWhenDeletingTheFailedJobFailsThenItIsKeptAndReported(self):
+        client = FakeSmartlingClient(estimate_status='FAILED', cancellation_state='FAILED')
+
+        result = await self.run_submit(client, delete_job_on_failure=True)
+
+        self.assertTrue(result.failed)
+        self.assertEqual(result.job_id, 'job-123')
+        self.assertIn('delete it before a rerun', result.reason)
+        self.assertEqual(client.operations, ['cancel:job-123'])
 
     async def testWhenEstimateTimesOutThenReviewIsRequired(self):
         client = FakeSmartlingClient(estimate_status='PROCESSING')
@@ -258,6 +307,16 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(result.total_strings)
         self.assertIn('Nightly iOS - 2026-08-03', result.reason)
         self.assertEqual(client.created_jobs, [])
+
+    async def testWhenThereIsNoPendingPrefixThenSimilarlyNamedPendingJobsDontBlock(self):
+        client = FakeSmartlingClient(pending_jobs=[{
+            'jobName': 'Release iOS 7.200.0 (test)',
+            'translationJobUid': 'test-job',
+        }])
+
+        await self.run_submit(client, job_name='Release iOS 7.200.0', pending_job_prefix='')
+
+        self.assertEqual(client.created_jobs, ['Release iOS 7.200.0'])
 
     async def testWhenJobWithSameNameExistsThenNoJobIsCreated(self):
         client = FakeSmartlingClient(named_jobs=[

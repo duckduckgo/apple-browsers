@@ -553,6 +553,37 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertNil(try primaryStorage.getTokenContainer())
     }
 
+    func testRestore_sameAccountAdoptedDuringFork_deletesTheSpentBackup() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        let sameAccount = OAuthTokensFactory.makeTokenContainer(refreshToken: "adoptedR")
+        let stub = SideEffectForkRefresher(minted: [newBackup, newPrimary]) { }
+        let client = makeClient(backupStorage: backupStorage, tokenRefresher: stub)
+        stub.sideEffect = { try? await client.adopt(tokenContainer: sameAccount) }
+
+        do {
+            _ = try await client.restoreFromBackup(expectedExternalID: nil, issuedAfter: nil)
+            XCTFail("Expected error")
+        } catch {
+            XCTAssertEqual(error as? TokenBackupError, .sessionChanged)
+        }
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), sameAccount)
+        XCTAssertNil(try backupStorage.getTokenContainer())
+    }
+
+    func testRestore_primaryStoredDuringPartialFork_deletesTheSpentBackup() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
+        let otherProcessToken = OAuthTokensFactory.makeTokenContainer(refreshToken: "otherProcessR")
+        let primary = primaryStorage!
+        let stub = SideEffectForkRefresher(minted: [newPrimary], failAfterMinted: URLError(.timedOut)) {
+            try? primary.saveTokenContainer(otherProcessToken)
+        }
+
+        _ = try? await makeClient(backupStorage: backupStorage, tokenRefresher: stub).restoreFromBackup(expectedExternalID: nil, issuedAfter: nil)
+
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), otherProcessToken)
+        XCTAssertNil(try backupStorage.getTokenContainer())
+    }
+
     func testRestore_concurrentCalls_forkOnce() async throws {
         try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "storedBackupR"))
         mockOAuthService.setRefreshAccessTokenDelay(100_000_000)

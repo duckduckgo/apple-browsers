@@ -64,6 +64,7 @@ class ReleaseStatus:
     strings_left: Optional[int] = None
     incomplete_locales: List[str] = field(default_factory=list)
     locales: Optional[int] = None
+    jobs_awaiting_authorization: List[str] = field(default_factory=list)
     reason: str = ""
 
     def as_dict(self) -> Dict:
@@ -280,6 +281,30 @@ class SmartlingClient:
             'GET', f'/jobs-api/v3/projects/{self.creds.project_id}/jobs/{job_id}/files'
         )
         return [f['uri'] for f in data['response']['data'].get('items', [])]
+
+    async def upload_file(self, file_path: Path, file_uri: str) -> Dict:
+        """Upload a file outside any job, without authorizing any locale."""
+        form = aiohttp.FormData()
+        form.add_field('fileUri', file_uri)
+        form.add_field(
+            'fileType', 'xliff' if file_path.suffix == '.xliff' else 'stringsdict'
+        )
+        form.add_field('file', file_path.read_bytes(), filename=file_path.name)
+        data = await self._request(
+            'POST',
+            f'/files-api/v2/projects/{self.creds.project_id}/file',
+            data=form
+        )
+        return data.get('response', {})
+
+    async def list_jobs_awaiting_authorization(self) -> List[Dict]:
+        """List the project's jobs that are awaiting authorization."""
+        data = await self._request(
+            'GET',
+            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
+            params=[('translationJobStatus', 'AWAITING_AUTHORIZATION'), ('limit', '100')]
+        )
+        return data['response']['data'].get('items', [])
 
     async def get_file_status(self, file_uri: str) -> Dict:
         """Get a file's string counts, in total and per locale."""
@@ -669,10 +694,68 @@ async def run_release_status(client: SmartlingClient,
             total_strings=total_strings,
             strings_left=strings_left,
             incomplete_locales=sorted(incomplete_locales),
-            locales=len(locales)
+            locales=len(locales),
+            jobs_awaiting_authorization=await describe_jobs_awaiting_authorization(client) if strings_left else []
         )
     except Exception as error:  # pylint: disable=broad-except
         return failed_release_status(error, job_id, job_status)
+
+
+async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[str]:
+    """The project's jobs awaiting authorization, which keep their strings out of other jobs."""
+    try:
+        jobs = await client.list_jobs_awaiting_authorization()
+    except Exception as error:  # pylint: disable=broad-except
+        log(f"⚠️ Could not list the jobs awaiting authorization: {error}")
+        return []
+    jobs = sorted(jobs, key=lambda job: job.get('createdDate') or '')
+    descriptions = []
+    for job in jobs:
+        name = job.get('jobName', 'unnamed')
+        created = (job.get('createdDate') or '')[:10]
+        descriptions.append(f"{name} (created {created})" if created else name)
+    if descriptions:
+        log(f"✋ Jobs awaiting authorization: {', '.join(descriptions)}")
+    return descriptions
+
+
+async def wait_for_file_upload(client: SmartlingClient,
+                               file_uri: str,
+                               previous_upload: str,
+                               sleep=asyncio.sleep):
+    """Wait until Smartling reports an upload of file_uri newer than previous_upload."""
+    for _ in range(60):
+        try:
+            last_uploaded = (await client.get_file_status(file_uri)).get('lastUploaded') or ''
+        except Exception:  # pylint: disable=broad-except
+            last_uploaded = ''
+        if last_uploaded and last_uploaded != previous_upload:
+            return
+        await sleep(5)
+    raise RuntimeError(f"Smartling did not finish processing {file_uri}")
+
+
+async def run_refresh(client: SmartlingClient,
+                      files: List[Path],
+                      file_uri_prefix: str,
+                      sleep=asyncio.sleep) -> List[str]:
+    """Replace the content of <file_uri_prefix>/<file name> with files, outside any job."""
+    file_uris = []
+    for file_path in files:
+        file_uri = f"{file_uri_prefix}/{file_path.name}"
+        try:
+            previous_upload = (await client.get_file_status(file_uri)).get('lastUploaded') or ''
+        except Exception:  # pylint: disable=broad-except
+            previous_upload = ''
+        response = await client.upload_file(file_path, file_uri)
+        if response.get('code') == 'ACCEPTED':
+            log(f"⏳ Smartling is still processing {file_uri}")
+            await wait_for_file_upload(client, file_uri, previous_upload, sleep)
+        details = response.get('data') or {}
+        strings = details.get('stringCount')
+        log(f"📤 Refreshed {file_uri}" + (f" ({strings} strings)" if strings is not None else ""))
+        file_uris.append(file_uri)
+    return file_uris
 
 
 def get_git_branch() -> str:
@@ -815,6 +898,18 @@ async def release_status_command(args):
     print(f"REASON={result.reason}")
 
 
+async def refresh_files_command(args):
+    """Replace the content of release files with the current export, outside any job."""
+    files = [Path(file_path) for file_path in args.files]
+    missing_files = [str(file_path) for file_path in files if not file_path.exists()]
+    if missing_files:
+        raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
+
+    async with SmartlingClient(get_credentials(args)) as client:
+        file_uris = await run_refresh(client, files, args.file_uri_prefix)
+    print(f"REFRESHED={' '.join(file_uris)}")
+
+
 async def status_command(args):
     """Check job status."""
     async with SmartlingClient(get_credentials(args)) as client:
@@ -952,6 +1047,12 @@ def main():
                                        help='The release files, e.g. release/ios/7.200.0/en.xliff')
     release_status_parser.add_argument('--result-file', default='release_status.json')
 
+    # Refresh files
+    refresh_parser = subparsers.add_parser('refresh-files')
+    refresh_parser.add_argument('--file-uri-prefix', required=True,
+                                help='Smartling file URIs become <prefix>/<file name>, e.g. release/ios/7.200.0')
+    refresh_parser.add_argument('--files', nargs='+', required=True)
+
     # Status
     status_parser = subparsers.add_parser('status')
     status_parser.add_argument('--job-id', required=True)
@@ -980,6 +1081,7 @@ def main():
         'upload': upload_command,
         'submit': submit_command,
         'release-status': release_status_command,
+        'refresh-files': refresh_files_command,
         'status': status_command,
         'approve': approve_command,
         'download': download_command,

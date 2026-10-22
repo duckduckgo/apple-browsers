@@ -83,7 +83,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
     private let host = UIView()
     private let backdrop = UIView()
     private var cardView: TabSwitcherCardView?
-    private var returnChromeSnapshot: (tab: Tab, tabCount: Int, view: UIView)?
     private var chromeSnapshots: [UIView] = []
 
     private var screenBounds: CGRect = .zero
@@ -206,24 +205,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
             guard let self, self.isActive, self.isCommitted, self.transitionContext == nil else { return }
             self.mainViewController?.requestTabSwitcher()
         }
-    }
-
-    /// Nil once tabs were opened or closed, since the copy's tab switcher button shows the old count.
-    func takeReturnChromeSnapshot() -> (tab: Tab, view: UIView)? {
-        defer { returnChromeSnapshot = nil }
-        guard let returnChromeSnapshot,
-              returnChromeSnapshot.tabCount == mainViewController?.tabManager.currentTabsModel.count else { return nil }
-        return (returnChromeSnapshot.tab, returnChromeSnapshot.view)
-    }
-
-    /// The live bars are hidden under the tab switcher and can't be snapshotted reliably while they are (their glass
-    /// samples the wrong backdrop), so keep a copy for the way back to the same tab.
-    private func keepChromeSnapshotForReturn(of mainViewController: MainViewController, in window: UIView) {
-        returnChromeSnapshot = nil
-        let tabsModel = mainViewController.tabManager.currentTabsModel
-        guard let tab = tabsModel.currentTab,
-              let snapshot = mainViewController.tabSwitcherChromeSnapshot(in: window) else { return }
-        returnChromeSnapshot = (tab, tabsModel.count, snapshot)
     }
 
     private func installChromeSnapshots(of mainViewController: MainViewController, in window: UIView) {
@@ -450,9 +431,6 @@ extension TabSwitcherSwipeUpTransition: UIViewControllerAnimatedTransitioning, U
         host.superview?.bringSubviewToFront(host)
 
         if let mainViewController {
-            if let window = mainViewController.view.window {
-                keepChromeSnapshotForReturn(of: mainViewController, in: window)
-            }
             mainViewController.beginTabSwitcherToolbarOwnership()
             mainViewController.viewCoordinator.toolbar.alpha = 0
         }

@@ -390,7 +390,8 @@ class MainViewController: UIViewController {
     }
 
     /// Call only once transition overlays are gone: glass snapshotted mid-morph samples the wrong background and lands dark.
-    func revealFloatingToolbarAfterTabSwitcherTransition() {
+    /// Pass `isAlreadyShowing` when the transition faded the toolbar in itself, to hand it back without a second entrance.
+    func revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: Bool = false) {
         isTabSwitcherTransitionOwningToolbar = false
         // Non-floating transitions never conceal the toolbar or reset chrome, so forcing
         // alpha here would desync `lastChromeVisibilityPercent` and break tap-to-show-bars.
@@ -400,6 +401,7 @@ class MainViewController: UIViewController {
         _ = themeColorManager.updateThemeColor()
         refreshSettledFloatingGlassAppearance()
         toolbar.layoutIfNeeded()
+        guard !isAlreadyShowing else { return }
 
         guard !UIAccessibility.isReduceMotionEnabled else {
             toolbar.transform = .identity

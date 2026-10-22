@@ -56,12 +56,12 @@ extension MainViewController {
     }
 
     /// Copies of the toolbar and the address bar, wherever it sits, in `window`'s coordinates.
-    func tabSwitcherChromeSnapshots(in window: UIView, afterScreenUpdates: Bool = false) -> [UIView] {
+    func tabSwitcherChromeSnapshots(in window: UIView) -> [UIView] {
         var snapshots: [UIView] = []
         let toolbar: BrowserToolbarView = viewCoordinator.toolbar
         if !toolbar.isHidden, toolbar.alpha > 0.01 {
             let rect = toolbar.visibleCapsuleRect
-            if let snapshot = toolbar.resizableSnapshotView(from: rect, afterScreenUpdates: afterScreenUpdates, withCapInsets: .zero) {
+            if let snapshot = toolbar.resizableSnapshotView(from: rect, afterScreenUpdates: false, withCapInsets: .zero) {
                 snapshot.frame = toolbar.convert(rect, to: window)
                 snapshots.append(snapshot)
             }
@@ -69,20 +69,10 @@ extension MainViewController {
 
         let otherChrome: [UIView?] = [viewCoordinator.navigationBarContainer, viewCoordinator.unifiedToggleInputContainer]
         for view in otherChrome.compactMap({ $0 }) where !view.isHidden && view.alpha > 0.01 && view.window != nil {
-            guard let snapshot = view.snapshotView(afterScreenUpdates: afterScreenUpdates) else { continue }
+            guard let snapshot = view.snapshotView(afterScreenUpdates: false) else { continue }
             snapshot.frame = view.convert(view.bounds, to: window)
             snapshots.append(snapshot)
         }
         return snapshots
-    }
-
-    /// The same copies gathered in one full-window view, or nil when no bar is showing.
-    func tabSwitcherChromeSnapshot(in window: UIView, afterScreenUpdates: Bool = false) -> UIView? {
-        let snapshots = tabSwitcherChromeSnapshots(in: window, afterScreenUpdates: afterScreenUpdates)
-        guard !snapshots.isEmpty else { return nil }
-        let container = UIView(frame: window.bounds)
-        container.isUserInteractionEnabled = false
-        snapshots.forEach(container.addSubview)
-        return container
     }
 }

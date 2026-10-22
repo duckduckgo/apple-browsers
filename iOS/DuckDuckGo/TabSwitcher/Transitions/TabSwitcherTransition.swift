@@ -32,9 +32,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         static let displayCornerRadius: CGFloat = 55
     }
 
-    /// The bars as they looked when the tab switcher opened, for the way back to that tab.
-    var returningChromeSnapshot: (tab: Tab, view: UIView)?
-
     /// Spring curves measured frame-by-frame from Safari's tab overview on iOS 26.
     struct Spring {
         let response: TimeInterval
@@ -239,33 +236,46 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         return snapshot
     }
 
-    /// The live bars sit under the transition, so a copy of them fades in over the growing page like Safari's.
-    /// Returning to the tab the tab switcher opened from uses the copy kept then; another tab's bars have
-    /// never been on screen, so they are drawn now.
-    func installReturningChromeSnapshot(for tab: Tab,
-                                        of mainViewController: MainViewController,
-                                        in containerView: UIView,
-                                        response: TimeInterval) -> UIView? {
-        let snapshot: UIView
-        if let returningChromeSnapshot, returningChromeSnapshot.tab === tab {
-            snapshot = returningChromeSnapshot.view
-        } else {
-            let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
-            let toolbarAlpha = toolbar.alpha
-            toolbar.alpha = 1
-            defer { toolbar.alpha = toolbarAlpha }
-            guard let freshSnapshot = mainViewController.tabSwitcherChromeSnapshot(in: containerView, afterScreenUpdates: true) else { return nil }
-            snapshot = freshSnapshot
+    /// The bars' glass draws as a solid fill in a copy, so instead of copying them, the transition's views
+    /// move in under the live bars, which then fade in over the growing page like Safari's. Returns a closure
+    /// that moves what is left back into `containerView` for UIKit to tidy up, or nil when the bars stay put.
+    func revealLiveChrome(of mainViewController: MainViewController,
+                          over containerView: UIView,
+                          response: TimeInterval) -> (() -> Void)? {
+        guard mainViewController.isFloatingUIEnabled else { return nil }
+        let coordinator: MainViewCoordinator = mainViewController.viewCoordinator
+        let stage = coordinator.superview
+        let toolbar: BrowserToolbarView = coordinator.toolbar
+        let bars: [UIView] = [toolbar, coordinator.navigationBarContainer].filter {
+            $0.superview === stage && !$0.isHidden && ($0 === toolbar || $0.alpha > 0.01)
         }
+        let lowestBar = bars.min { (stage.subviews.firstIndex(of: $0) ?? 0) < (stage.subviews.firstIndex(of: $1) ?? 0) }
+        guard let lowestBar else { return nil }
+
+        let transitionViews = containerView.subviews
+        for view in transitionViews {
+            view.center = stage.convert(view.center, from: containerView)
+            stage.insertSubview(view, belowSubview: lowestBar)
+        }
+
         let revealScale = CGAffineTransform(scaleX: Constants.floatingToolbarRevealScale, y: Constants.floatingToolbarRevealScale)
-        snapshot.alpha = 0
-        snapshot.subviews.forEach { $0.transform = revealScale }
-        containerView.addSubview(snapshot)
-        UIView.animate(withDuration: 0.2, delay: response * 0.3, options: [.curveEaseOut]) {
-            snapshot.alpha = 1
-            snapshot.subviews.forEach { $0.transform = .identity }
+        for bar in bars {
+            bar.alpha = 0
+            bar.transform = revealScale
         }
-        return snapshot
+        UIView.animate(withDuration: 0.2, delay: response * 0.3, options: [.curveEaseOut]) {
+            for bar in bars {
+                bar.alpha = 1
+                bar.transform = .identity
+            }
+        }
+
+        return {
+            for view in transitionViews where view.superview === stage {
+                view.center = containerView.convert(view.center, from: stage)
+                containerView.addSubview(view)
+            }
+        }
     }
 
     /// Grows `cardView` from the cell back to the full screen, mirroring how `TabSwitcherSwipeUpTransition`
@@ -300,7 +310,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         }
 
         let spring = TabSwitcherTransition.Spring.dismiss
-        let chromeSnapshot = installReturningChromeSnapshot(for: tab, of: mainViewController, in: containerView, response: spring.response)
         let animator = spring.animator()
         animator.addAnimations {
             cardView.applyScreenPose(cardFrame: containerView.bounds)
@@ -326,6 +335,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         UIView.animate(withDuration: spring.response * 0.55, delay: 0, options: [.curveEaseOut]) {
             self.tabSwitcherViewController.view.alpha = 0
         }
+        let restoreTransitionViews = revealLiveChrome(of: mainViewController, over: containerView, response: spring.response)
 
         var isHandOffDue = false
         var isPageReady = false
@@ -337,9 +347,9 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
             guard isHandOffFinished, isAnimationFinished else { return }
             cardView.removeFromSuperview()
             backdrop.removeFromSuperview()
-            chromeSnapshot?.removeFromSuperview()
             cell?.alpha = 1
             self.removeTransitionViews()
+            restoreTransitionViews?()
             transitionContext.completeTransition(true)
         }
         let handOff = {
@@ -348,7 +358,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
             // The card covers the screen by now; drop the backdrop outright so the card fades straight
             // into the live page rather than through the backdrop's colour.
             backdrop.isHidden = true
-            self.revealLiveToolbar(of: mainViewController, replacing: chromeSnapshot)
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: restoreTransitionViews != nil)
             UIView.animate(withDuration: 0.15, delay: 0, options: [.curveEaseInOut], animations: {
                 cardView.alpha = 0
             }, completion: { _ in
@@ -370,17 +380,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
             finish()
         }
         animator.startAnimation()
-    }
-
-    /// Hands the toolbar back to the page. When a returning copy is already showing it, the live toolbar
-    /// appears in place instead of playing its own entrance.
-    func revealLiveToolbar(of mainViewController: MainViewController, replacing chromeSnapshot: UIView?) {
-        mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
-        guard chromeSnapshot != nil else { return }
-        let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
-        toolbar.layer.removeAllAnimations()
-        toolbar.alpha = 1
-        toolbar.transform = .identity
     }
 
     // MARK: UIViewControllerAnimatedTransitioning
@@ -453,7 +452,6 @@ class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDele
         } else {
             transition = ToWebViewTransition(tabSwitcherViewController: tabSwitcherVC)
         }
-        transition.returningChromeSnapshot = swipeUpTransition?.takeReturnChromeSnapshot()
         return transition
     }
 }

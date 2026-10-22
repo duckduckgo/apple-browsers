@@ -336,10 +336,9 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
         
-        let chromeSnapshot = installReturningChromeSnapshot(for: tab,
-                                                            of: mainViewController,
-                                                            in: transitionContext.containerView,
-                                                            response: TabSwitcherTransition.Spring.dismiss.response)
+        let restoreTransitionViews = revealLiveChrome(of: mainViewController,
+                                                      over: transitionContext.containerView,
+                                                      response: TabSwitcherTransition.Spring.dismiss.response)
         TabSwitcherTransition.Spring.dismiss.animateKeyframes(animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
@@ -393,8 +392,8 @@ class ToHomeScreenTransition: HomeScreenTransition {
         }, completion: { _ in
             self.removeTransitionViews()
             self.settingsButtonSnapshot?.removeFromSuperview()
-            self.revealLiveToolbar(of: mainViewController, replacing: chromeSnapshot)
-            chromeSnapshot?.removeFromSuperview()
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: restoreTransitionViews != nil)
+            restoreTransitionViews?()
             transitionContext.completeTransition(true)
         })
     }

@@ -215,8 +215,24 @@ import Testing
         #expect(run.suggestions.first?.sourceIDs == ["0"])
         #expect(run.raw.contains(raw))
         #expect(provider.turns.count == 2)
-        #expect(provider.turns[0].input == provider.turns[1].input)
-        #expect(!provider.turns[1].input.contains("What are the top stories"))
+        #expect(provider.turns[1].input.hasPrefix(provider.turns[0].input))
+        #expect(provider.turns[1].input.contains("What are the top stories"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func capturedReversedTopicResponseReceivesSpecificRepairFeedback() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Latest news, sport and opinion from the Guardian", host: "theguardian.com")]
+        let raw = "Sport | The Guardian"
+        #expect(OpenTabSuggestions.parse(raw, tabs: tabs).isEmpty)
+        let provider = RepairTabProvider(replies: [raw, "0 | News and current affairs"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.suggestions.first?.sourceIDs == ["0"])
+        #expect(run.suggestions.first?.label == "News and current affairs")
+        #expect(provider.turns.count == 2)
+        #expect(provider.turns[0].instructions.contains("0 | News and current affairs"))
+        #expect(provider.turns[1].input.contains(raw))
+        #expect(provider.turns[1].instructions.contains("LEFT field"))
     }
 
     @available(iOS 16, macOS 13, *)

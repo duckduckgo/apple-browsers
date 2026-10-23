@@ -563,10 +563,16 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
 
         self.assertEqual(result.outcome, 'not_ready')
         self.assertEqual(result.jobs_awaiting_authorization, [
-            'keyChange (created 2025-04-04): '
-            'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-1',
-            'pau/feature-2026-10-20 (created 2026-10-20): '
-            'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-2',
+            {
+                'name': 'keyChange',
+                'created': '2025-04-04',
+                'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-1',
+            },
+            {
+                'name': 'pau/feature-2026-10-20',
+                'created': '2026-10-20',
+                'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-2',
+            },
         ])
 
     async def testWhenReadyThenJobsAwaitingAuthorizationAreNotLookedUp(self):

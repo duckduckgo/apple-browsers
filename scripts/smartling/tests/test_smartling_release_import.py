@@ -284,14 +284,17 @@ class ReleaseImportScriptTests(unittest.TestCase):
         outputs = self.run_import(release_status={
             **READY, 'outcome': 'not_ready', 'strings_left': 120, 'incomplete_locales': ['de-DE'],
             'strings_awaiting_authorization': 96,
-            'jobs_awaiting_authorization': ['keyChange (created 2025-04-04): https://j/1', 'pau/feature: https://j/2'],
+            'jobs_awaiting_authorization': [
+                {'name': 'keyChange', 'created': '2025-04-04', 'url': 'https://j/1'},
+                {'name': 'pau/feature', 'created': '', 'url': 'https://j/2'},
+            ],
         })
 
         self.assertEqual(outputs['outcome'], 'not_ready')
         self.assertEqual(outputs['strings_awaiting_authorization'], '96')
         self.assertEqual(
             outputs['jobs_awaiting_authorization'],
-            '- keyChange (created 2025-04-04): https://j/1\n- pau/feature: https://j/2'
+            '- [keyChange](https://j/1) (created 2025-04-04)\n- [pau/feature](https://j/2)'
         )
         self.assertEqual(outputs['integrity'], '')
 

@@ -168,7 +168,7 @@ TOTAL_STRINGS="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 STRINGS_LEFT="$(jq -r '.strings_left // empty' "$RESULT_FILE")"
 INCOMPLETE_LOCALES="$(jq -r '.incomplete_locales | join(", ")' "$RESULT_FILE")"
 STRINGS_AWAITING_AUTHORIZATION="$(jq -r '.strings_awaiting_authorization // empty' "$RESULT_FILE")"
-JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | map("- " + .) | join("\n")' "$RESULT_FILE")"
+JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | map("- [\(.name)](\(.url))" + (if .created != "" then " (created \(.created))" else "" end)) | join("\n")' "$RESULT_FILE")"
 REASON="$(jq -r '.reason' "$RESULT_FILE")"
 
 case "$status_outcome" in

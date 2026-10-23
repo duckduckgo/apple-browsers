@@ -39,11 +39,16 @@ def pick_dri(rotation_tasks: List[Dict], today: date) -> Optional[Dict]:
 
 
 def notes_html(notes: str) -> str:
-    """Asana rich text for plain notes: "Label: value" lines other than "- " bullets get a bold label, and URLs become links."""
+    """Asana rich text for plain notes: "Label: value" lines other than "- " bullets get a bold label, and
+    Markdown links and URLs become links."""
     lines = []
     for line in notes.strip().split('\n'):
         line = html.escape(line, quote=False)  # Asana shows &#x27; and &quot; literally in text.
-        line = re.sub(r'(https?://\S+)', r'<a href="\1">\1</a>', line)
+        line = re.sub(
+            r'\[([^\]]+)\]\((https?://[^)\s]+)\)|(https?://\S+)',
+            lambda match: f'<a href="{match[2]}">{match[1]}</a>' if match[2] else f'<a href="{match[3]}">{match[3]}</a>',
+            line
+        )
         line = re.sub(r'^(?!- )([^:<]{1,60}):(\s)', r'<strong>\1:</strong>\2', line)
         lines.append(line)
     return '<body>' + '\n'.join(lines) + '</body>'

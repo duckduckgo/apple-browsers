@@ -56,7 +56,6 @@ final class SitePermissionsState {
     fileprivate var retiredGeolocationUserScripts = [GeolocationUserScript]()
     fileprivate var shouldRetireGeolocationOnProcessReplacement = false
     fileprivate var storeChangeCancellable: AnyCancellable?
-    fileprivate var applicationActiveCancellable: AnyCancellable?
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
     fileprivate var dialogHostingController: UIViewController?
@@ -209,7 +208,6 @@ final class SitePermissionsState {
         geolocationProvider = nil
         geolocationUserScript = nil
         storeChangeCancellable = nil
-        applicationActiveCancellable = nil
         shouldRetireGeolocationOnProcessReplacement = false
     }
 
@@ -562,7 +560,10 @@ extension TabViewController {
         }
         sitePermissionsState.managementPresentationDelegate = presentationDelegate
         hostingController.presentationController?.delegate = presentationDelegate
-        observeSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
+        observeSitePermissionsManagement(coordinator: coordinator,
+                                         site: site,
+                                         viewModel: viewModel,
+                                         systemPermissionClient: dependencies.systemPermissionClient)
 
         present(hostingController, animated: true) { [weak self, weak hostingController] in
             guard let self,
@@ -577,7 +578,8 @@ extension TabViewController {
 
     private func observeSitePermissionsManagement(coordinator: SitePermissionsCoordinator,
                                                   site: SitePermissionKey,
-                                                  viewModel: SitePermissionsSheetViewModel) {
+                                                  viewModel: SitePermissionsSheetViewModel,
+                                                  systemPermissionClient: SystemPermissionClient) {
         sitePermissionsState.managementCancellables.removeAll()
 
         coordinator.$captureStates
@@ -589,9 +591,12 @@ extension TabViewController {
             }
             .store(in: &sitePermissionsState.managementCancellables)
 
+        // Core Location can report a location change from Settings after the app becomes active.
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .map { _ in }
+            .merge(with: systemPermissionClient.locationAuthorizationChanges)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak coordinator, weak viewModel] _ in
+            .sink { [weak self, weak coordinator, weak viewModel] in
                 guard let self, let coordinator, let viewModel else { return }
                 self.refreshSitePermissionsManagement(coordinator: coordinator, site: site, viewModel: viewModel)
             }
@@ -873,13 +878,6 @@ extension TabViewController {
         }
         sitePermissionsState.storeChangeCancellable = dependencies.store.changesPublisher
             .sink { [weak provider] _ in
-                provider?.refreshPermissionStatuses()
-            }
-        sitePermissionsState.applicationActiveCancellable = notificationCenter
-            .publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak provider, weak systemPermissionClient = dependencies.systemPermissionClient] _ in
-                systemPermissionClient?.refreshAuthorizationStates()
                 provider?.refreshPermissionStatuses()
             }
         sitePermissionsState.geolocationProvider = provider

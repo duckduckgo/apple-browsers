@@ -767,6 +767,21 @@ async def wait_for_file_upload(client: SmartlingClient,
     raise RuntimeError(f"Smartling did not finish processing {file_uri}")
 
 
+async def wait_for_file_status(client: SmartlingClient, file_uri: str, sleep=asyncio.sleep):
+    """Wait until Smartling stops answering HTTP 423 for file_uri, which it does while it processes an upload."""
+    for attempt in range(60):
+        try:
+            await client.get_file_status(file_uri)
+            return
+        except RuntimeError as error:
+            if not str(error).startswith('HTTP 423'):
+                raise
+        if attempt == 0:
+            log(f"⏳ Smartling is still processing {file_uri}")
+        await sleep(5)
+    raise RuntimeError(f"Smartling did not finish processing {file_uri}")
+
+
 async def run_refresh(client: SmartlingClient,
                       files: List[Path],
                       file_uri_prefix: str,
@@ -776,16 +791,20 @@ async def run_refresh(client: SmartlingClient,
     for file_path in files:
         file_uri = f"{file_uri_prefix}/{file_path.name}"
         previous_upload = await get_last_upload(client, file_uri)
+        upload_start = time.monotonic()
         response = await client.upload_file(file_path, file_uri)
         code = response.get('code')
         if code == 'ACCEPTED':
             log(f"⏳ Smartling is still processing {file_uri}")
             await wait_for_file_upload(client, file_uri, previous_upload, sleep)
-        elif code != 'SUCCESS':
+        elif code == 'SUCCESS':
+            await wait_for_file_status(client, file_uri, sleep)
+        else:
             raise RuntimeError(f"Smartling answered {code or 'nothing'} to the upload of {file_uri}")
         details = response.get('data') or {}
         strings = details.get('stringCount')
-        log(f"📤 Refreshed {file_uri}" + (f" ({strings} strings)" if strings is not None else ""))
+        processing = f"processed in {time.monotonic() - upload_start:.0f}s"
+        log(f"📤 Refreshed {file_uri} (" + (f"{strings} strings, " if strings is not None else "") + f"{processing})")
         file_uris.append(file_uri)
     return file_uris
 

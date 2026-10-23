@@ -120,6 +120,7 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         addEventListener('load', () => fetch(\(reloadJavaScript), { cache: 'no-store' }));
         </script>
         """)
+        app.activateAddressBar()
         app.openURL(page, waitForWebViewAccessibilityLabel: "Surviving pinned page")
         app.pinCurrentTab()
         XCTAssertEqual(app.pinnedTabs.count, 1)

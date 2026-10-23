@@ -48,7 +48,12 @@ def export_theme(name, modes, template, out_dir):
     light = {key[len("light"):]: value for key, value in modes["light"].items()}
     dark = {key[len("dark"):]: value for key, value in modes["dark"].items()}
 
-    struct_name = pascal_case(name) + "ColorPalette"
+    # Figma's "Default" theme maps to LatestColorPalette
+    theme_name = pascal_case(name)
+    if theme_name == "Default":
+        theme_name = "Latest"
+
+    struct_name = theme_name + "ColorPalette"
     lines = []
     for key in sorted(dark.keys() - light.keys()):
         print(f"### Skipping {key} in {name} - Missing Light color", file=sys.stderr)

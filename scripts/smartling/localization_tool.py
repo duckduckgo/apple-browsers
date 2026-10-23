@@ -942,11 +942,6 @@ async def release_status_command(args):
         annotate('notice', f"{args.job_name}: {result.outcome}")
 
     Path(args.result_file).write_text(json.dumps(result.as_dict()), encoding='utf-8')
-    print(f"OUTCOME={result.outcome}")
-    print(f"JOB_ID={result.job_id}")
-    print(f"JOB_STATUS={result.job_status}")
-    print(f"STRINGS_LEFT={'' if result.strings_left is None else result.strings_left}")
-    print(f"REASON={result.reason}")
 
 
 async def refresh_files_command(args):
@@ -957,8 +952,7 @@ async def refresh_files_command(args):
         raise RuntimeError(f"Missing export files: {', '.join(missing_files)}")
 
     async with SmartlingClient(get_credentials(args)) as client:
-        file_uris = await run_refresh(client, files, args.file_uri_prefix)
-    print(f"REFRESHED={' '.join(file_uris)}")
+        await run_refresh(client, files, args.file_uri_prefix)
 
 
 async def status_command(args):
@@ -1014,26 +1008,26 @@ async def download_command(args):
         if args.file_uris:
             file_uris = args.file_uris
             locales = await client.get_project_locales()
-            print(f"📁 Downloading {len(file_uris)} files for {len(locales)} locales")
+            log(f"📁 Downloading {len(file_uris)} files for {len(locales)} locales")
         else:
             job = await client.get_job(args.job_id)
-            print(f"📋 Job: {job['jobName']}")
-            print(f"📊 Status: {job['jobStatus']}")
+            log(f"📋 Job: {job['jobName']}")
+            log(f"📊 Status: {job['jobStatus']}")
 
             if job['jobStatus'] != "COMPLETED":
                 if not args.allow_unfinished:
                     print("DOWNLOADED=0")
-                    print(f"⚠️  Job not completed (status: {job['jobStatus']})")
+                    log(f"⚠️ Job not completed (status: {job['jobStatus']})")
                     return
-                print(f"⚠️  Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
+                log(f"⚠️ Job not completed (status: {job['jobStatus']}), downloading anyway (--allow-unfinished)")
 
             file_uris = await client.get_job_files(args.job_id)
             if not file_uris:
                 print("DOWNLOADED=0")
-                print("⚠️  No files found in job")
+                log("⚠️ No files found in job")
                 return
 
-            print(f"📁 Found {len(file_uris)} files")
+            log(f"📁 Found {len(file_uris)} files")
             locales = job['targetLocaleIds']
 
         count = 0
@@ -1051,15 +1045,15 @@ async def download_command(args):
                         file_name = f"{file_name}_{locale}"
 
                     (out_dir / file_name).write_bytes(data)
-                    print(f"   ✅ {file_name} ({locale})")
+                    log(f"✅ {file_name} ({locale})")
                     count += 1
                 except Exception as e:  # pylint: disable=broad-except
-                    print(f"⚠️  Failed to download {file_uri} for {locale}: {e}")
+                    log(f"⚠️ Failed to download {file_uri} for {locale}: {e}")
 
         print(f"DOWNLOADED={count}")
         if args.file_uris and count < len(file_uris) * len(locales):
             raise RuntimeError(f"Downloaded {count} of {len(file_uris) * len(locales)} files")
-        print(f"\n🎉 Downloaded {count} files")
+        log(f"🎉 Downloaded {count} files")
 
 
 # ============================================================================

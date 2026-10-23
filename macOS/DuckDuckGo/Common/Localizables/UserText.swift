@@ -27,6 +27,11 @@ struct UserText {
     static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo", comment: "Application name to be displayed in the About dialog")
     static let duckDuckGoForMacAppStore = NSLocalizedString("about.app_name_app_store", value: "DuckDuckGo for Mac App Store", comment: "Application name to be displayed in the About dialog in App Store app")
 
+    // MARK: - Smartling test (throwaway branch, don't merge)
+    static let smartlingTest1 = NSLocalizedString("smartling.test.1", value: "Smartling automation test one", comment: "Test only, don't translate")
+    static let smartlingTest2 = NSLocalizedString("smartling.test.2", value: "Smartling automation test two", comment: "Test only, don't translate")
+    static let smartlingTest3 = NSLocalizedString("smartling.test.3", value: "Smartling automation test three", comment: "Test only, don't translate")
+
     // MARK: - Generic
     static let ok = NSLocalizedString("ok", value: "OK", comment: "OK button")
     static let cancel = NSLocalizedString("cancel", value: "Cancel", comment: "Cancel button")

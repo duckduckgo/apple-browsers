@@ -5011,9 +5011,6 @@
 /* No comment provided by engineer. */
 "Status:" = "Status:";
 
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "格納されたホスト名：%@";
-
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "デバイスに追加";
 

@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Inviare automaticamente le segnalazioni di arresto anomalo?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Numero attuale degli ignora: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Abbonamenti attuali";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Pillola d'ingresso";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Accedi";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Azione principali/prima azione";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Modale priming";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Protezioni della Privacy";
@@ -4181,10 +4181,10 @@
 "Reset" = "Ripristina";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Reimposta numero delle pillole ignorate";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Ripristina lo stato modale di priming";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Nome host salvato: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Aggiungi al dispositivo";

@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Kilitlenme raporları otomatik olarak gönderilsin mi?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Mevcut Reddetme Sayısı: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Mevcut Abonelikler";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Giriş Kapsülü";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Oturum Aç";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Birincil / İlk İşlem";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Ön Bilgilendirme Penceresi";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Gizlilik Korumaları";
@@ -4181,10 +4181,10 @@
 "Reset" = "Sıfırla";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Kapsül Kapatma Sayısını Sıfırla";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Ön Bilgilendirme Penceresi Durumunu Sıfırla";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Cihaza Ekle";

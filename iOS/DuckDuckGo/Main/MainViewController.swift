@@ -5739,11 +5739,15 @@ extension MainViewController: BrowserChromeDelegate {
         )
     }
 
+    func floatingWebViewChromeInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
+        UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
+                     left: 0,
+                     bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
+                     right: 0)
+    }
+
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets {
-        let chromeInsets = UIEdgeInsets(top: floatingWebViewTopObscuredHeight(for: barsVisibilityPercent),
-                                       left: 0,
-                                       bottom: floatingWebViewBottomObscuredHeight(for: barsVisibilityPercent),
-                                       right: 0)
+        let chromeInsets = floatingWebViewChromeInsets(for: barsVisibilityPercent)
         guard isFloatingUIEnabled, !isKeyboardOwnedByOmnibar else { return chromeInsets }
         return BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
                                                     keyboardFrame: viewCoordinator.isWebInputEditing

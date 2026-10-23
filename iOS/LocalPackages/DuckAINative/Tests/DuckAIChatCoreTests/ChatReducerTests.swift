@@ -25,6 +25,24 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func emptyChatReportsUnsupportedModelAndRecoversWithAvailability() throws {
+        var state = try Fixture.state(availability: .unsupported(reason: "Unavailable here"))
+        #expect(state.status == .error(.modelUnavailable(reason: "Unavailable here")))
+        #expect(!state.canSend)
+        #expect(state.messages.isEmpty)
+        _ = state.apply(.availabilityChanged(.ready))
+        #expect(state.status == .ready)
+        #expect(state.canSend)
+        _ = state.apply(.availabilityChanged(.unsupported(reason: "Disabled")))
+        #expect(state.status == .error(.modelUnavailable(reason: "Disabled")))
+        #expect(!state.canSend)
+        _ = state.apply(.availabilityChanged(.ready))
+        #expect(state.status == .ready)
+        #expect(state.canSend)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func explicitTurnContextPreservesEveryPageInOrderWithoutDuplicatingInitialContext() throws {
         let second = PageContext(title: "Geese", url: URL(string: "https://example.com/geese"), content: "Geese migrate together.")
         var state = try Fixture.state(page: Fixture.page)

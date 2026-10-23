@@ -27,6 +27,26 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func openTabsKeepCompleteRowsWhenProviderStalls() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n9 | Unknown | What is this source?\n0 | Partial | Why do ducks")
+        let suggestions = await OpenTabSuggestions.generate(tabs: tabs, locale: "en", provider: provider)
+        #expect(suggestions.map(\.prompt) == ["What do ducks eat?"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsStopAfterThreeCompleteValidRows() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n0 | Duck homes | Where do ducks live?\n0 | Duck flight | How do ducks fly?\n")
+        let started = ContinuousClock.now
+        let suggestions = await OpenTabSuggestions.generate(tabs: tabs, locale: "en", provider: provider)
+        #expect(suggestions.count == 3)
+        #expect(started.duration(to: .now) < .seconds(2))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func openTabsUseBoundedMetadataAndRejectUnknownDuplicateSources() async {
         let tabs = (0..<9).map { OpenTabMetadata(id: String($0), title: String(repeating: "t", count: 200), host: "example.com") }
         let turn = OpenTabSuggestions.turn(tabs: tabs, locale: "en")
@@ -368,5 +388,21 @@ private actor SuggestionsGate {
         released = true
         continuation?.resume()
         continuation = nil
+    }
+}
+
+private final class StallingTabProvider: ChatProvider, @unchecked Sendable {
+    let descriptor = ProviderDescriptor(id: ProviderID(rawValue: "stall"), displayName: "Stall", modelName: "Stall", contextWindowTokens: 4096)
+    let availability: ProviderAvailability = .ready
+    let text: String
+    init(_ text: String) { self.text = text }
+    func availabilityUpdates() -> AsyncStream<ProviderAvailability> { AsyncStream { $0.finish() } }
+    func download() async throws { }
+    func prepare() async { }
+    func unload() { }
+    func reply(to turn: ProviderTurn, stop: StopSignal) -> AsyncThrowingStream<ProviderEvent, Error> {
+        AsyncThrowingStream { continuation in
+            continuation.yield(.textDelta(text))
+        }
     }
 }

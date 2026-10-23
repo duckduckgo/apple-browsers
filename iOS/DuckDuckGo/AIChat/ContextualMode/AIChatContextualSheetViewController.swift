@@ -1266,8 +1266,8 @@ extension AIChatContextualSheetViewController {
     }
 
     func apply(_ viewState: SheetViewState) {
-        expandButton.isEnabled = viewState.isExpandButtonEnabled
-        titleTapControl?.isEnabled = viewState.isExpandButtonEnabled
+        expandButton.isEnabled = isShowingNativeChat || viewState.isExpandButtonEnabled
+        titleTapControl?.isEnabled = expandButton.isEnabled
         contextualInputViewController.updateStartActions(suggestions: viewState.suggestions, quickActions: viewState.quickActions)
         contextualInputViewController.updateSuggestionsLoading(viewState.suggestionsLoadState == .loading)
         fireAskAboutPageShownPixelIfNeeded(for: viewState)

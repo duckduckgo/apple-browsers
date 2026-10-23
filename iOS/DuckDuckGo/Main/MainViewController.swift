@@ -5155,8 +5155,9 @@ class MainViewController: UIViewController {
         configureNativeChatWebContinuation(chat, in: tab, webURL: webURL)
         tab.showNativeChat(chat)
         if currentTab === tab {
+            removeHomeScreen()
             if let unifiedToggleInputCoordinator {
-                chat.attach(to: unifiedToggleInputCoordinator)
+                bindAITabIfPossible(tab: tab, coordinator: unifiedToggleInputCoordinator, hasExistingChat: !chat.session.state.messages.isEmpty)
             }
             aiChatTabChatHeaderView?.setNativeChatTitle(chat.title)
         }

@@ -41,14 +41,14 @@ final class TabManagerTests: XCTestCase {
         let manager = try makeManager(model)
         let originalController = try XCTUnwrap(manager.current(createIfNeeded: true))
         weak var oldPresentation: UIViewController?
-        do {
+        try autoreleasepool {
             let chat = try XCTUnwrap(NativeTabChat.newChat())
             originalController.showNativeChat(chat)
             oldPresentation = chat.viewController
+            _ = manager.select(otherTab)
+            manager.invalidateCache(forController: originalController, reloadCurrent: false)
         }
         let session = try XCTUnwrap(nativeTab.nativeChatSession)
-        _ = manager.select(otherTab)
-        manager.invalidateCache(forController: originalController, reloadCurrent: false)
         XCTAssertNil(originalController.nativeChat)
         XCTAssertNil(oldPresentation)
         XCTAssertTrue(nativeTab.nativeChatSession === session)

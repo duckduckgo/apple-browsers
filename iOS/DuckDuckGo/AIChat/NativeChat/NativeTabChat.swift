@@ -42,7 +42,7 @@ final class NativeTabChat: NativeChatDelegate {
         self.restoredAfterRelaunch = restoredAfterRelaunch
     }
 
-    private let restoredAfterRelaunch: Bool
+    let restoredAfterRelaunch: Bool
 
     convenience init(context: ChatContext) {
         self.init(session: ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: .chat)))
@@ -165,7 +165,7 @@ enum DuckAIChatDestination: Equatable {
 
     static func forURL(_ url: URL, opensNatively: Bool) -> Self {
         guard opensNatively, url.isDuckAIURL,
-              url.path.isEmpty || url.path == "/",
+              ["", "/", "/chat", "/chat/"].contains(url.path),
               url.fragment == nil,
               let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return .web }
         let items = components.queryItems ?? []

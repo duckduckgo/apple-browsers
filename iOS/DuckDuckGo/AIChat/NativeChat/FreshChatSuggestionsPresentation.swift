@@ -35,7 +35,7 @@ final class FreshChatSuggestionsPresentation {
     private let destinationID: String
     private let nativeChat: NativeTabChat?
     private let initialURL: URL?
-    private let hasSameWebRecipient: () -> Bool
+    private weak var webRecipient: AIChatUserScript?
 
     init(tab: TabViewController, input: UnifiedToggleInputCoordinator) {
         self.tab = tab
@@ -43,11 +43,7 @@ final class FreshChatSuggestionsPresentation {
         destinationID = tab.tabModel.uid
         nativeChat = tab.nativeChat
         initialURL = tab.url ?? tab.link?.url
-        let userScript = tab.userScripts?.aiChatUserScript
-        hasSameWebRecipient = { [weak tab, weak userScript] in
-            guard let userScript else { return false }
-            return tab?.userScripts?.aiChatUserScript === userScript
-        }
+        webRecipient = tab.userScripts?.aiChatUserScript
         content.isHidden = true
         content.onRetry = { [weak input] in input?.retryFreshSuggestions() }
         mount(in: tab)
@@ -75,6 +71,10 @@ final class FreshChatSuggestionsPresentation {
 
     func refresh() {
         guard let input else { return }
+        if nativeChat == nil, webRecipient !== tab?.userScripts?.aiChatUserScript {
+            input.hideFreshSuggestions()
+            webRecipient = tab?.userScripts?.aiChatUserScript
+        }
         content.isHidden = !isFresh
         input.refreshFreshSuggestions(destinationID: destinationID, isFresh: { [weak self] in self?.isFresh == true })
     }
@@ -84,12 +84,12 @@ final class FreshChatSuggestionsPresentation {
               input.currentTabUID == destinationID, !input.hasSubmittedPrompt,
               input.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
         if let nativeChat {
-            return tab.nativeChat === nativeChat && nativeChat.session.state.messages.isEmpty
+            return !nativeChat.restoredAfterRelaunch && tab.nativeChat === nativeChat && nativeChat.session.state.messages.isEmpty
                 && nativeChat.session.state.context.opening == nil
         }
-        guard tab.nativeChat == nil, hasSameWebRecipient(), let url = tab.url ?? tab.link?.url,
+        guard tab.nativeChat == nil, let webRecipient, tab.userScripts?.aiChatUserScript === webRecipient, let url = tab.url ?? tab.link?.url,
               url == initialURL, url.isDuckAIURL, url.duckAIChatID == nil,
-              url.path.isEmpty || url.path == "/",
+              ["", "/", "/chat", "/chat/"].contains(url.path),
               !url.isDuckAISidebarOpen, !url.isDuckAISettingsOpen,
               !url.isDuckAIChatProtectionOpen, !url.isDuckAIVoiceMode else { return false }
         let query = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []

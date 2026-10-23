@@ -112,7 +112,8 @@ extension TabViewController: AITabController {
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source, nativeChat: nil)
+        let chat = DuckAINativeSettings.shared.opensNewChatsNatively ? NativeTabChat.newChat() : nil
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source, nativeChat: chat)
     }
 
     /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"

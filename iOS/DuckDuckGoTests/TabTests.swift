@@ -42,7 +42,8 @@ class TabTests: XCTestCase {
     }
 
     func testFreshDuckAIURLRoutingUsesNativePreferenceAndPreservesSubmittedPrompt() throws {
-        for address in ["https://duck.ai", "https://duck.ai/", "https://duck.ai/?native-input=true", "https://duckduckgo.com/?ia=chat"] {
+        for address in ["https://duck.ai", "https://duck.ai/", "https://duck.ai/chat", "https://duck.ai/chat?duckai=4&native-input=true",
+                        "https://duck.ai/?native-input=true", "https://duckduckgo.com/?ia=chat"] {
             let url = try XCTUnwrap(URL(string: address))
             XCTAssertEqual(DuckAIChatDestination.forURL(url, opensNatively: true), .native(prompt: nil))
             XCTAssertEqual(DuckAIChatDestination.forURL(url, opensNatively: false), .web)

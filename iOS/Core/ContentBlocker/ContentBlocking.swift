@@ -21,6 +21,7 @@ import Foundation
 import BrowserServicesKit
 import Combine
 import Common
+import Configuration
 import FoundationExtensions
 import ContentBlocking
 import PrivacyConfig
@@ -46,6 +47,7 @@ public final class ContentBlocking {
     }
 
     private init(privacyConfigurationManager: PrivacyConfigurationManaging? = nil) {
+        Self.discardStoredPrivacyConfigurationFromEarlierOverride()
         let internalUserDecider = DefaultInternalUserDecider(store: InternalUserStore())
         let statisticsStore = StatisticsUserDefaults()
         let privacyConfigurationManager = privacyConfigurationManager
@@ -80,6 +82,26 @@ public final class ContentBlocking {
                                                                           exceptionsSource: exceptionsSource,
                                                                           errorReporting: attributionDebugEvents,
                                                                           compilationErrorReporting: Self.debugEvents)
+    }
+
+    /// A launch without `-privacyConfigURL` must not read a privacy configuration stored by an earlier override.
+    /// Called from `init`, because it must run before the privacy configuration manager reads the store.
+    /// After a reset it also clears the refresh throttle, so the first production fetch isn't delayed by up to 30 minutes.
+    @discardableResult
+    static func discardStoredPrivacyConfigurationFromEarlierOverride(
+        markerDefaults: UserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
+        argumentDefaults: UserDefaults = .app,
+        appDefaults: UserDefaults = .app,
+        removeStoredConfiguration: () -> Void = {
+            _ = FileStore().removeData(forFile: Configuration.privacyConfiguration.storeKey)
+            UserDefaultsETagStorage().removeEtag(for: .privacyConfiguration)
+        }
+    ) -> Bool {
+        let marker = PrivacyConfigurationOverrideMarker(defaults: markerDefaults)
+        return marker.resetIfNeeded(userDefaults: argumentDefaults) {
+            removeStoredConfiguration()
+            appDefaults.removeObject(forKey: UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue)
+        }
     }
 
     private static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in

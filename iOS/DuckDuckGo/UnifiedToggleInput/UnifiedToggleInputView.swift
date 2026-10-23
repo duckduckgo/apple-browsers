@@ -268,10 +268,7 @@ final class UnifiedToggleInputView: UIView {
     }
 
     var isPromptOverLimit: Bool = false {
-        didSet {
-            toolsToolbar.isSubmitBlockedByPromptLength = isPromptOverLimit
-            attachmentsStrip.showsPromptLengthError = isPromptOverLimit
-        }
+        didSet { toolsToolbar.isSubmitBlockedByPromptLength = isPromptOverLimit }
     }
 
     var isInputBlockedByUsageLimit: Bool = false {

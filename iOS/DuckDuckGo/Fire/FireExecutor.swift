@@ -140,7 +140,7 @@ class FireExecutor: FireExecuting {
     private let dataClearingCapability: DataClearingCapable
     private let appSettings: AppSettings
     private let aiChatSyncCleaner: AIChatSyncCleaning
-    let pixelsReporter: DataClearingPixelsReporter
+    let pixelsReporter: any DataClearingInstrumentation
     private let pixelFiring: (any PixelKitFiring)?
     private let dataClearingWideEventService: DataClearingWideEventService?
     private let aiChatDeleter: AIChatDeleting
@@ -179,7 +179,7 @@ class FireExecutor: FireExecuting {
          aiChatSyncCleaner: AIChatSyncCleaning,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
-         pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(),
+         pixelsReporter: any DataClearingInstrumentation = DataClearingPixelsReporter(),
          pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
          wideEvent: WideEventManaging? = nil,
          idManager: DataStoreIDManaging = DataStoreIDManager.shared,
@@ -265,6 +265,18 @@ class FireExecutor: FireExecuting {
     @MainActor
     func burn(request: FireRequest,
               applicationState: DataStoreWarmup.ApplicationState) async {
+        let singleTabMeasurement: DataClearingPixelsReporter.Measurement?
+        let singleTabOptimizationEnabled: Bool
+        if case .tab = request.scope {
+            singleTabOptimizationEnabled = featureFlagger.isFeatureOn(.singleTabBurnOptimization)
+            singleTabMeasurement = pixelsReporter.beginMeasurement()
+            pixelsReporter.fireSingleTabBurnRequested(optimized: singleTabOptimizationEnabled, dropped: burnInProgress)
+        } else {
+            singleTabOptimizationEnabled = false
+            singleTabMeasurement = nil
+        }
+        var tabClosureDuration: TimeInterval?
+
         // Drops reentrant calls. Callers should gate on `burnInProgress`
         if burnInProgress {
             pixelsReporter.fireDroppedBurnPixel(request: request)
@@ -329,6 +341,7 @@ class FireExecutor: FireExecuting {
         cancelOngoingDownloadsIfNeeded(request)
         if shouldBurnTabs {
             burnTabsWithDelegateCallbacks(request: request, domains: domains)
+            tabClosureDuration = singleTabMeasurement.map { pixelsReporter.duration(of: $0) }
         }
         
         // Await async tasks
@@ -349,6 +362,11 @@ class FireExecutor: FireExecuting {
 
         // Reset prepared state for next burn cycle
         preparedOptions = []
+        if let singleTabMeasurement {
+            pixelsReporter.fireSingleTabBurnFinished(optimized: singleTabOptimizationEnabled,
+                                                     measurement: singleTabMeasurement,
+                                                     tabClosure: tabClosureDuration)
+        }
     }
     
     // MARK: - General Helpers

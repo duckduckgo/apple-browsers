@@ -802,7 +802,7 @@ extension DefaultOmniBarViewController {
             }
         )
         promptLengthGate = gate
-        attachmentControllerInstance.pastedTextSheetLimit = { gate.sheetLimit(for: $0) }
+        attachmentControllerInstance.pastedTextSheetMode = { gate.sheetMode(for: $0) }
 
         controller.onModelsUpdated = { [weak self] in
             guard let self else { return }

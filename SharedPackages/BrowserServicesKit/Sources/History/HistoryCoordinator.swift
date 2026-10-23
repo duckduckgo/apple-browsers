@@ -173,7 +173,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
             let draft = makeImportDraft(of: historyDictionary[url], url: url)
             for importedVisit in importedVisits {
                 _ = draft.addVisit(at: importedVisit.date, tabID: nil)
-                Self.applyTitle(of: importedVisit, to: draft)
+                applyTitle(of: importedVisit, to: draft)
             }
             drafts[url] = draft
         }
@@ -194,7 +194,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         return draft
     }
 
-    private static func applyTitle(of importedVisit: HistoryImport.Visit, to entry: HistoryEntry) {
+    private func applyTitle(of importedVisit: HistoryImport.Visit, to entry: HistoryEntry) {
         if let title = importedVisit.title, !title.isEmpty,
            importedVisit.date >= entry.lastVisit || entry.title?.isEmpty ?? true {
             entry.title = title
@@ -232,7 +232,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     visit.savingState = .saved
                     visit.identifier = visitIDsByDate[importedVisit.date]
                 }
-                Self.applyTitle(of: importedVisit, to: entry)
+                applyTitle(of: importedVisit, to: entry)
             }
             if !isDraftOfEntry {
                 duplicateDrafts.append(draft)

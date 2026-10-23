@@ -20,6 +20,7 @@
 
 import Foundation
 import WebKit
+import DDGError
 
 /// Opens the action popup for `chrome.action.openPopup()` calls the API stub script forwards from an
 /// extension page embedded in a website, such as iCloud Passwords' completion list.
@@ -30,9 +31,29 @@ import WebKit
 @available(macOS 15.4, *)
 final class WebExtensionActionPopupMessageHandler {
 
-    enum Failure: String, Error {
-        case notAnExtensionPage = "The caller is not a page of a loaded extension"
-        case noTab = "The caller is not in a tab"
+    enum Failure: DDGError {
+        case notAnExtensionPage
+        case noTab
+
+        static var errorDomain: String { "com.duckduckgo.WebExtensionActionPopupMessageHandler" }
+
+        var description: String {
+            switch self {
+            case .notAnExtensionPage:
+                return "The caller is not a page of a loaded extension"
+            case .noTab:
+                return "The caller is not in a tab"
+            }
+        }
+
+        var errorCode: Int {
+            switch self {
+            case .notAnExtensionPage:
+                return 0
+            case .noTab:
+                return 1
+            }
+        }
     }
 
     private static let extensionScheme = "webkit-extension"
@@ -52,7 +73,7 @@ final class WebExtensionActionPopupMessageHandler {
             try openPopup(originProtocol: origin.protocol, originHost: origin.host, tab: tab)
             replyHandler(NSNull(), nil)
         } catch {
-            replyHandler(nil, error.rawValue)
+            replyHandler(nil, error.description)
         }
     }
 

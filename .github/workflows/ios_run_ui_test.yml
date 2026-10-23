@@ -114,6 +114,12 @@ jobs:
           xcrun simctl boot "$simulator_udid"
         fi
         xcrun simctl bootstatus "$simulator_udid" -b
+        xcrun simctl spawn "$simulator_udid" defaults write com.apple.keyboard.preferences DidShowContinuousPathIntroduction -bool true
+        keyboard_intro_completed=$(xcrun simctl spawn "$simulator_udid" defaults read com.apple.keyboard.preferences DidShowContinuousPathIntroduction)
+        if [[ "$keyboard_intro_completed" != "1" ]]; then
+          echo "::error::Failed to mark the Slide-to-Type keyboard introduction complete."
+          exit 1
+        fi
         echo "simulator-udid=$simulator_udid" >> "$GITHUB_OUTPUT"
         xcrun simctl spawn "$simulator_udid" log config --subsystem General --mode level:debug,persist:debug
         xcrun simctl spawn "$simulator_udid" log config --status --subsystem General

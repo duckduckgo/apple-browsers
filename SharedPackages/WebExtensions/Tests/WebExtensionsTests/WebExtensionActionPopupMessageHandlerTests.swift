@@ -30,20 +30,20 @@ final class WebExtensionActionPopupMessageHandlerTests: XCTestCase {
     private var handler: WebExtensionActionPopupMessageHandler!
     private var controller: WKWebExtensionController!
     private var context: WKWebExtensionContext!
-    private var presentedPopups: [(action: WKWebExtension.Action, context: WKWebExtensionContext)] = []
+    private var performedActions: [(context: WKWebExtensionContext, tab: any WKWebExtensionTab)] = []
 
     override func setUp() async throws {
         try await super.setUp()
         controller = WKWebExtensionController(configuration: .nonPersistent())
         context = try await loadContext(action: ["default_popup": "popup.html"])
 
-        presentedPopups = []
+        performedActions = []
         handler = WebExtensionActionPopupMessageHandler()
         handler.extensionContext = { [unowned self] url in
             url.host == Self.extensionHost ? context : nil
         }
-        handler.presentPopup = { [unowned self] action, context in
-            presentedPopups.append((action, context))
+        handler.performAction = { [unowned self] context, tab in
+            performedActions.append((context, tab))
         }
     }
 
@@ -51,7 +51,7 @@ final class WebExtensionActionPopupMessageHandlerTests: XCTestCase {
         handler = nil
         context = nil
         controller = nil
-        presentedPopups = []
+        performedActions = []
         super.tearDown()
     }
 
@@ -68,14 +68,14 @@ final class WebExtensionActionPopupMessageHandlerTests: XCTestCase {
         return context
     }
 
-    func testWhenALoadedExtensionPageInATabAsks_ThenThePopupOfTheTabsActionIsPresented() throws {
+    func testWhenALoadedExtensionPageInATabAsks_ThenTheActionIsPerformedForThatTab() throws {
         let tab = FakeTab()
 
         try handler.openPopup(originProtocol: "webkit-extension", originHost: Self.extensionHost, tab: tab)
 
-        XCTAssertEqual(presentedPopups.count, 1)
-        XCTAssertTrue(presentedPopups.first?.context === context)
-        XCTAssertTrue(presentedPopups.first?.action === context.action(for: tab))
+        XCTAssertEqual(performedActions.count, 1)
+        XCTAssertTrue(performedActions.first?.context === context)
+        XCTAssertTrue(performedActions.first?.tab === tab)
     }
 
     func testWhenTheActionHasNoPopup_ThenItIsRefusedAndNothingOpens() async throws {
@@ -84,14 +84,14 @@ final class WebExtensionActionPopupMessageHandlerTests: XCTestCase {
         XCTAssertThrowsError(try handler.openPopup(originProtocol: "webkit-extension", originHost: Self.extensionHost, tab: FakeTab())) {
             XCTAssertEqual($0 as? WebExtensionActionPopupMessageHandler.Failure, .noPopup)
         }
-        XCTAssertTrue(presentedPopups.isEmpty)
+        XCTAssertTrue(performedActions.isEmpty)
     }
 
     func testWhenAWebsiteAsks_ThenItIsRefusedAndNothingOpens() {
         XCTAssertThrowsError(try handler.openPopup(originProtocol: "https", originHost: "example.com", tab: FakeTab())) {
             XCTAssertEqual($0 as? WebExtensionActionPopupMessageHandler.Failure, .notAnExtensionPage)
         }
-        XCTAssertTrue(presentedPopups.isEmpty)
+        XCTAssertTrue(performedActions.isEmpty)
     }
 
     func testWhenAnUnloadedExtensionAsks_ThenItIsRefusedAndNothingOpens() {
@@ -101,14 +101,14 @@ final class WebExtensionActionPopupMessageHandlerTests: XCTestCase {
         XCTAssertThrowsError(try handler.openPopup(originProtocol: "webkit-extension", originHost: "", tab: FakeTab())) {
             XCTAssertEqual($0 as? WebExtensionActionPopupMessageHandler.Failure, .notAnExtensionPage)
         }
-        XCTAssertTrue(presentedPopups.isEmpty)
+        XCTAssertTrue(performedActions.isEmpty)
     }
 
     func testWhenThereIsNoTab_ThenItIsRefusedAndNothingOpens() {
         XCTAssertThrowsError(try handler.openPopup(originProtocol: "webkit-extension", originHost: Self.extensionHost, tab: nil)) {
             XCTAssertEqual($0 as? WebExtensionActionPopupMessageHandler.Failure, .noTab)
         }
-        XCTAssertTrue(presentedPopups.isEmpty)
+        XCTAssertTrue(performedActions.isEmpty)
     }
 }
 

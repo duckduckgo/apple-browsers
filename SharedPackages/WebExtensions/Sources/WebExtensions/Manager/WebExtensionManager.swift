@@ -330,15 +330,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         actionPopupHandler.extensionContext = { [weak self] url in
             self?.extensionContext(for: url)
         }
-        actionPopupHandler.presentPopup = { [weak self] action, context in
-            Task { @MainActor in
-                do {
-                    try await self?.windowTabProvider.presentPopup(action, for: context)
-                } catch {
-                    Logger.webExtensions.error("❌ Popup of \(context.uniqueIdentifier) not shown: \(error.localizedDescription, privacy: .public)")
-                }
-            }
-        }
         // Granting `privacy` can make an extension's earlier setting count; taking it back hands autofill
         // back to DuckDuckGo, so the extension's settings go too.
         permissionController?.appPermissionsDidChange = { [weak self] identifier in
@@ -1305,9 +1296,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         permissionsHandler.reply(to: message, replyHandler: replyHandler)
     }
 
-    /// Shows the action popup for `chrome.action.openPopup()` from an extension page embedded in a
-    /// website in `tab`, without performing the action. Pages the controller hosts call WebKit's own
-    /// `openPopup`, so this handler is not installed there.
+    /// Opens the action popup for `chrome.action.openPopup()` from an extension page embedded in a
+    /// website in `tab`. Pages the controller hosts call WebKit's own `openPopup`, so this handler is
+    /// not installed there.
     @MainActor
     public func handleActionOpenPopupMessage(_ message: WKScriptMessage,
                                              tab: (any WKWebExtensionTab)?,

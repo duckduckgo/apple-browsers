@@ -98,7 +98,8 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             configProvider.usageLimitsPublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.requiresAiTermsAcceptancePublisher.map { _ in () }.eraseToAnyPublisher(),
             configProvider.attachmentPrivacyDisclaimerPublisher.eraseToAnyPublisher(),
-            configProvider.launcherPromoPublisher.eraseToAnyPublisher()
+            configProvider.launcherPromoPublisher.eraseToAnyPublisher(),
+            configProvider.suggestedPromptsPublisher.eraseToAnyPublisher()
         )
         .sink { [weak self] _ in
             Task { @MainActor in
@@ -194,7 +195,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
-            launcherPromo: configProvider.launcherPromo()
+            launcherPromo: configProvider.launcherPromo(),
+            showSuggestedPrompts: configProvider.showSuggestedPrompts,
+            suggestedPromptsPromptCount: configProvider.suggestedPromptsPromptCount,
+            suggestedPromptsPromptLimit: configProvider.suggestedPromptsPromptLimit
         )
     }
 
@@ -225,7 +229,17 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             }
         }
         persistReasoningEffort(from: config)
+        persistSuggestedPrompts(from: config)
         return nil
+    }
+
+    /// The count only moves forward, so a stale config echoed by another open NTP can't
+    /// bring the chips back.
+    @MainActor
+    private func persistSuggestedPrompts(from config: NewTabPageDataModel.OmnibarConfig) {
+        if let count = config.suggestedPromptsPromptCount, count > configProvider.suggestedPromptsPromptCount {
+            configProvider.suggestedPromptsPromptCount = count
+        }
     }
 
     /// Only persists when the feature is on, the selected model isn't gated, and the value is
@@ -283,7 +297,10 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             createImageModelSwitch: createImageModelSwitch,
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
-            launcherPromo: configProvider.launcherPromo()
+            launcherPromo: configProvider.launcherPromo(),
+            showSuggestedPrompts: configProvider.showSuggestedPrompts,
+            suggestedPromptsPromptCount: configProvider.suggestedPromptsPromptCount,
+            suggestedPromptsPromptLimit: configProvider.suggestedPromptsPromptLimit
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -354,6 +371,9 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             files: action.files,
             aiTermsAccepted: action.aiTermsAccepted == true
         )
+        if let suggestedPromptId = action.suggestedPromptId {
+            actionHandler.suggestedPromptSubmitted(promptId: suggestedPromptId)
+        }
         if action.launcherPromoVisible == true {
             configProvider.launcherPromoIgnored()
         }

@@ -486,6 +486,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     case ntpSuggestionsDeletion
 
+    /// Enables the Duck.ai suggested-prompt chips below the New Tab Page omnibar's Duck.ai input
+    case ntpSuggestedPrompts
+
     /// Enables removing individual AI chat suggestions
     case removeSuggestion
 

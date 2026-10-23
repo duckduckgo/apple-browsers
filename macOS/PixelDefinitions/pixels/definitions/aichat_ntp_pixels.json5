@@ -95,6 +95,37 @@
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
     },
+    "m_mac_aichat_ntp_suggested_prompt_submitted": {
+        "description": "Fired when user sends a prompt by picking a Duck.ai suggested-prompt chip below the New Tab Page omnibar. Also counted in new-tab-page_prompt_submitted, so the two give the share of NTP prompts that came from the chips.",
+        "owners": ["moon0326"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "promptId",
+                "description": "Catalog key of the picked suggested prompt. Bounded and PII-free.",
+                "type": "string",
+                "enum": [
+                    "jobapplication",
+                    "homefix",
+                    "financialterms",
+                    "fitnessplan",
+                    "writeemail",
+                    "plantrip",
+                    "buyinghouse",
+                    "gettingfit",
+                    "difficultconversation",
+                    "newskill",
+                    "moneyhabits",
+                    "improvesleep",
+                    "createcomic",
+                    "designspace"
+                ]
+            }
+        ]
+    },
     "m_mac_aichat_ntp_customize_responses_opened": {
         "description": "Fired when the user opens Customize Responses from the New Tab Page omnibar Tools menu",
         "owners": ["jotaemepereira"],

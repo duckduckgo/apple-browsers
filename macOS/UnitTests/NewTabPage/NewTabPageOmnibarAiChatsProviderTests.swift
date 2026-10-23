@@ -386,6 +386,10 @@ private final class MockAiChatsConfigProvider: NewTabPageOmnibarConfigProviding 
     var isSearchSuggestionDeletionEnabledPublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
     var requiresAiTermsAcceptance: Bool = false
     var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> { Just(false).eraseToAnyPublisher() }
+    var showSuggestedPrompts: Bool = false
+    var suggestedPromptsPromptCount: Int = 0
+    var suggestedPromptsPromptLimit: Int = 5
+    var suggestedPromptsPublisher: AnyPublisher<Void, Never> { Empty<Void, Never>().eraseToAnyPublisher() }
 }
 
 private extension AIChatSuggestion {

@@ -308,6 +308,16 @@ public extension NewTabPageDataModel {
         /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
         var requiresAiTermsAcceptance: Bool?
         var launcherPromo: OmnibarLauncherPromo?
+        /// Shows the Duck.ai suggested-prompt chips below the Duck.ai input. Driven by the
+        /// `aiChatNtpSuggestedPrompts` feature flag; false once the user sent enough Duck.ai prompts.
+        /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
+        var showSuggestedPrompts: Bool?
+        /// How many Duck.ai prompts the user has sent from the NTP while the chips were offered, from
+        /// the chips or typed. The web increments it and hides the chips at `suggestedPromptsPromptLimit`;
+        /// native persists it and never lets an echo lower it.
+        var suggestedPromptsPromptCount: Int?
+        /// How many Duck.ai prompts can be sent before the chips hide for good, from remote config.
+        var suggestedPromptsPromptLimit: Int?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
@@ -542,6 +552,9 @@ public extension NewTabPageDataModel {
         /// Enter, voice and the "Ask Duck.ai" suggestion never send it, because legal requires a click.
         var aiTermsAccepted: Bool?
         var launcherPromoVisible: Bool?
+        /// Fixed catalog ID of the suggested-prompt chip the user picked (e.g. `jobapplication`).
+        /// Omitted for typed prompts.
+        var suggestedPromptId: String?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

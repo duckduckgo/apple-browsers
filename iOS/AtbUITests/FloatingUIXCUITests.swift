@@ -174,6 +174,56 @@ class FloatingUIXCUITestCase: XCTestCase {
         assertConfiguredBarPosition()
     }
 
+    func verifyTabSwitcherSwipeUpGesture(isEnabled: Bool) {
+        if !isEnabled {
+            app.terminate()
+            launchApp(additionalArguments: ["-ff.tabSwitcherSwipeUpGesture", "false"])
+        }
+        openPage(path: "/page-one", heading: Page.oneHeading)
+
+        let start = searchField.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.35))
+        start.press(forDuration: 0.05, thenDragTo: end)
+
+        let doneButton = element(withIdentifier: AccessibilityID.tabSwitcherDone)
+        if isEnabled {
+            XCTAssertTrue(doneButton.waitForHittable(timeout: timeout))
+            doneButton.tap()
+        } else {
+            XCTAssertFalse(doneButton.exists)
+            XCTAssertTrue(app.staticTexts[Page.oneHeading].isHittable)
+        }
+
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        assertConfiguredBarPosition()
+        verifyTabSwitcherTransitions()
+    }
+
+    func verifyTabSwitcherSwipeUpCancellationAndAdjacentTabs() {
+        openPage(path: "/swipe-one", heading: Page.swipeOneHeading)
+        openNewTab()
+        openPage(path: "/swipe-two", heading: Page.swipeTwoHeading)
+
+        let start = searchField.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.05,
+                    thenDragTo: start.withOffset(CGVector(dx: 0, dy: -25)),
+                    withVelocity: .slow,
+                    thenHoldForDuration: 0)
+        XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+        XCTAssertTrue(app.staticTexts[Page.swipeTwoHeading].isHittable)
+        XCTAssertFalse(element(withIdentifier: AccessibilityID.tabSwitcherDone).exists)
+
+        for (xOffset, heading) in [(0.85, Page.swipeOneHeading), (0.15, Page.swipeTwoHeading)] {
+            let start = searchField.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: xOffset, dy: 0.4))
+            start.press(forDuration: 0.05, thenDragTo: end)
+            XCTAssertTrue(app.staticTexts[heading].waitForHittable(timeout: timeout))
+            XCTAssertTrue(searchField.waitForHittable(timeout: timeout))
+            XCTAssertFalse(element(withIdentifier: AccessibilityID.tabSwitcherDone).exists)
+            assertConfiguredBarPosition()
+        }
+    }
+
     func verifyBrowserChromeLongPressMenus() {
         searchField.press(forDuration: 0.8)
 
@@ -694,6 +744,7 @@ class FloatingUIXCUITestCase: XCTestCase {
             "-isInternalUser", "true",
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
+            "-ff.tabSwitcherSwipeUpGesture", "true",
             "-ff.omniBarLongPressMenu", "true",
             "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-ff.newTabPageRedesign", "false",
@@ -1161,6 +1212,9 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
 
     func testUnifiedToggleInputTransitions() { verifyUnifiedToggleInputTransitions() }
     func testTabSwitcherTransitions() { verifyTabSwitcherTransitions() }
+    func testTabSwitcherSwipeUpGestureEnabled() { verifyTabSwitcherSwipeUpGesture(isEnabled: true) }
+    func testTabSwitcherSwipeUpGestureDisabled() { verifyTabSwitcherSwipeUpGesture(isEnabled: false) }
+    func testTabSwitcherSwipeUpCancellationAndAdjacentTabs() { verifyTabSwitcherSwipeUpCancellationAndAdjacentTabs() }
     func testBrowserChromeLongPressMenus() { verifyBrowserChromeLongPressMenus() }
     func testAddressBarButtonMenus() { verifyAddressBarButtonMenus() }
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }

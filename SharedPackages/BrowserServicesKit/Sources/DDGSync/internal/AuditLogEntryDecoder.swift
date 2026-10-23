@@ -35,7 +35,7 @@ final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
     }
 
     private let manager: any AccountInfoKeyProviding
-    private var initialKeyResult: Result<AccountInfoKey, Swift.Error>?
+    private var currentKeyResult: Result<AccountInfoKey, Swift.Error>?
     private var didAttemptForcedRefresh = false
     private var keysByID: [String: AccountInfoKey] = [:]
 
@@ -44,15 +44,15 @@ final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
     }
 
     func loadKey(for account: SyncAccount) async throws -> AccountInfoKey {
-        if let initialKeyResult {
-            return try initialKeyResult.get()
+        if let currentKeyResult {
+            return try currentKeyResult.get()
         }
         do {
             let key = try await manager.loadKey(for: account)
             cache(key)
             return key
         } catch {
-            initialKeyResult = .failure(error)
+            currentKeyResult = .failure(error)
             throw error
         }
     }
@@ -73,7 +73,7 @@ final class PageScopedAccountInfoKeys: AccountInfoKeyProviding {
 
     private func cache(_ key: AccountInfoKey) {
         keysByID[key.kid] = key
-        initialKeyResult = .success(key)
+        currentKeyResult = .success(key)
     }
 }
 

@@ -118,10 +118,7 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         // Click screen coordinates so XCTest does not refuse an intentionally intercepted element.
         // The first click may only activate a background window; the second must still be blocked.
         for _ in 0..<2 {
-            let applicationOrigin = app.coordinate(withNormalizedOffset: .zero)
-            let originPoint = applicationOrigin.screenPoint
-            applicationOrigin.withOffset(CGVector(dx: incrementPoint.x - originPoint.x,
-                                                  dy: incrementPoint.y - originPoint.y)).click()
+            clickScreenPoint(incrementPoint)
         }
         releaseCleanup()
         waitForBurnToFinish()
@@ -130,7 +127,8 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         XCTAssertTrue(app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation))
         XCTAssertTrue(survivor.webViews.staticTexts["Clicked 0"].exists,
                       "The remaining window must reject input while cleanup is pending")
-        increment.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        // Reuse the same location to verify that these screen clicks actually reach the button.
+        clickScreenPoint(incrementPoint)
         XCTAssertTrue(survivor.webViews.staticTexts["Clicked 1"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "The blocker must release input after cleanup")
     }
@@ -316,6 +314,15 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         app.activateAddressBar()
         app.openURL(page, waitForWebViewAccessibilityLabel: title)
         XCTAssertTrue(app.webViews[title].staticTexts["Sample text for \(title)"].waitForExistence(timeout: UITests.Timeouts.localTestServer))
+    }
+
+    private func clickScreenPoint(_ point: CGPoint) {
+        // The menu bar stays accessible while browser windows are covered. The application's
+        // own frame can be infinite on macOS, so it cannot anchor a real screen click.
+        let menuBarOrigin = app.menuBars.firstMatch.coordinate(withNormalizedOffset: .zero)
+        let originPoint = menuBarOrigin.screenPoint
+        XCTAssertTrue(originPoint.x.isFinite && originPoint.y.isFinite, "Screen clicks require a finite anchor")
+        menuBarOrigin.withOffset(CGVector(dx: point.x - originPoint.x, dy: point.y - originPoint.y)).click()
     }
 
     private func beginBurn(scope: String, closeTabs: Bool) {

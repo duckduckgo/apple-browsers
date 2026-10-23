@@ -480,6 +480,8 @@ private extension DataImport.DataType {
             return DesignSystemImages.Color.Size24.keyCheck
         case .creditCards:
             return DesignSystemImages.Color.Size24.creditCardCheck
+        case .history:
+            return DesignSystemImages.Color.Size24.history
         }
     }
 }

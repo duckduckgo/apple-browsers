@@ -383,7 +383,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
         (.csv, .bookmarks),
-        (_, .creditCards):
+        (_, .creditCards),
+        (_, .history):
         assertionFailure("Invalid source/dataType")
     }
 }
@@ -444,8 +445,8 @@ struct NewDataImportFilePickerScreenView: View {
 
     private var titleText: Text {
         switch mode {
-        case .fallback(.creditCards):
-            assert(false, "Credit card import fallback not handled yet")
+        case .fallback(.creditCards), .fallback(.history):
+            assert(false, "\(mode) import fallback not handled")
             fallthrough
         case .fallback(.passwords):
             return Text(UserText.importPasswordsManuallyTitle)

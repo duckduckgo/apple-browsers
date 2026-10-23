@@ -745,7 +745,7 @@ async def get_last_upload(client: SmartlingClient, file_uri: str) -> str:
     try:
         status = await client.get_file_status(file_uri)
     except RuntimeError as error:
-        if str(error).startswith('HTTP 404'):
+        if str(error).startswith('HTTP 404') or 'could not be found' in str(error):
             return ''
         raise
     return status.get('lastUploaded') or ''

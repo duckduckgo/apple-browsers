@@ -5016,6 +5016,7 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autofillUserScript.passwordImportDelegate = credentialsImportManager
         userScripts.faviconScript.delegate = faviconUpdater
         userScripts.printingSubfeature.delegate = self
+        userScripts.browserUiLockSubfeature.delegate = self
         configureSitePermissionsMediaCapture(with: userScripts.mediaCaptureUserScript)
         userScripts.loginFormDetectionScript?.delegate = self
         userScripts.autoconsentUserScript.delegate = self
@@ -5204,6 +5205,14 @@ extension TabViewController: TrackerProtectionSubfeatureDelegate {
         Task {
             await privacyStats.recordBlockedTracker(entityName)
         }
+    }
+}
+
+// MARK: - BrowserUiLockSubfeatureDelegate
+extension TabViewController: BrowserUiLockSubfeatureDelegate {
+
+    func browserUiLockSubfeature(_ subfeature: BrowserUiLockSubfeature, didChangeLocked isLocked: Bool) {
+        pullToRefreshViewAdapter?.setContentLocked(isLocked)
     }
 }
 

@@ -71,6 +71,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
+    private(set) var browserUiLockSubfeature = BrowserUiLockSubfeature()
 
     private let isAutoconsentExtensionAvailable: Bool
 
@@ -183,6 +184,7 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: selectionFrameScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: browserUiLockSubfeature)
         if let duckAiNativeStorageUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
         }

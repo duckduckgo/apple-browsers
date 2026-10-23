@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import DesignResourcesKit
 import SwiftUI
 import UIKit
 import XCTest
@@ -28,20 +29,21 @@ final class PastedTextSheetTests: XCTestCase {
 
     private let original = AIChatPastedText(content: "original text")
 
-    func testSaveIsOffWhenBlankOrOverTheLimitAndOnOtherwise() {
+    func testSaveIsOffOnlyWhenBlankSoAnOverTheLimitEditCanStillBeSaved() {
         let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 10))
 
         XCTAssertFalse(rules.canSave(""))
         XCTAssertFalse(rules.canSave(" \n\t"))
-        XCTAssertFalse(rules.canSave("12345678901"))
         XCTAssertTrue(rules.canSave("1234567890"))
+        XCTAssertEqual(rules.subtitle(for: "12345678901")?.isOverLimit, true)
+        XCTAssertTrue(rules.canSave("12345678901"), "Lets the user trim several pastes in turn while the prompt is still too long")
     }
 
     func testSaveIsNeverOfferedInViewOnlyMode() {
         let rules = PastedTextSheetRules(original: original, mode: .viewOnly)
 
         XCTAssertFalse(rules.canSave("fine"))
-        XCTAssertFalse(rules.isOverLimit(String(repeating: "a", count: 100_000)))
+        XCTAssertNil(rules.subtitle(for: String(repeating: "a", count: 100_000)), "View-only has no limit to be over")
     }
 
     func testSavingIdenticalContentIsUnchangedAndAnEditIsANewValue() {
@@ -118,10 +120,131 @@ final class PastedTextSheetTests: XCTestCase {
         XCTAssertEqual(outcomes, [.unchanged])
     }
 
-    func testCharacterCountStringsReadNaturally() {
-        XCTAssertEqual(UserText.aiChatPastedTextCharacterCount(1), "1 character")
-        XCTAssertEqual(UserText.aiChatPastedTextCharacterCount(2), "2 characters")
-        XCTAssertEqual(UserText.aiChatPastedTextOverLimitCount(count: 16800, limit: 16000), "16800/16000 characters", "No grouping separators, as in the footer")
+    func testEditableSubtitleIsThePlainCountAgainstTheLimit() throws {
+        let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 16_000))
+
+        let subtitle = try XCTUnwrap(rules.subtitle(for: String(repeating: "a", count: 923)))
+
+        XCTAssertEqual(subtitle, PastedTextSheetSubtitle(count: 923, limit: 16_000))
+        XCTAssertFalse(subtitle.isOverLimit)
+        let line = subtitle.attributed(locale: Self.english)
+        XCTAssertEqual(String(line.characters), "923/16000", "Whole numbers, no compact 16k and no unit")
+        XCTAssertEqual(colors(in: line), [
+            "923": light(.textPrimary),
+            "/16000": light(.textSecondary)
+        ])
+    }
+
+    func testOverTheLimitOnlyTheCountTurnsRed() throws {
+        let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 16_000))
+
+        let subtitle = try XCTUnwrap(rules.subtitle(for: String(repeating: "a", count: 16_001)))
+
+        XCTAssertTrue(subtitle.isOverLimit)
+        let line = subtitle.attributed(locale: Self.english)
+        XCTAssertEqual(String(line.characters), "16001/16000")
+        XCTAssertEqual(colors(in: line), [
+            "16001": light(.destructivePrimary),
+            "/16000": light(.textSecondary)
+        ])
+    }
+
+    func testTheCountKeepsItsColourWhenItIsAPrefixOfTheLimit() {
+        let subtitle = PastedTextSheetSubtitle(count: 16, limit: 16_000)
+
+        XCTAssertEqual(colors(in: subtitle.attributed(format: "%1$d/%2$d", locale: Self.plainDigits)), [
+            "16": light(.textPrimary),
+            "/16000": light(.textSecondary)
+        ])
+    }
+
+    func testTheCountKeepsItsColourWhenATranslationPutsTheLimitFirst() {
+        let subtitle = PastedTextSheetSubtitle(count: 16, limit: 16_000)
+
+        let line = subtitle.attributed(format: "%2$d / %1$d", locale: Self.plainDigits)
+
+        XCTAssertEqual(String(line.characters), "16000 / 16")
+        XCTAssertEqual(colors(in: line), [
+            "16000 / ": light(.textSecondary),
+            "16": light(.textPrimary)
+        ])
+    }
+
+    func testATranslationWithPlainPlaceholdersPutsTheCountFirstAndKeepsItsColour() {
+        let subtitle = PastedTextSheetSubtitle(count: 16_001, limit: 16_000)
+
+        let line = subtitle.attributed(format: "%d/%d", locale: Self.plainDigits)
+
+        XCTAssertEqual(String(line.characters), "16001/16000")
+        XCTAssertEqual(colors(in: line), [
+            "16001": light(.destructivePrimary),
+            "/16000": light(.textSecondary)
+        ])
+    }
+
+    func testALiteralPercentInATranslationShowsAsOnePercentSign() {
+        let subtitle = PastedTextSheetSubtitle(count: 16, limit: 16_000)
+
+        let line = subtitle.attributed(format: "%% %1$d/%2$d %%", locale: Self.plainDigits)
+
+        XCTAssertEqual(String(line.characters), "% 16/16000 %")
+        XCTAssertEqual(colors(in: line), [
+            "% ": light(.textSecondary),
+            "16": light(.textPrimary),
+            "/16000 %": light(.textSecondary)
+        ])
+    }
+
+    func testTheCountUsesLocaleDigitsAndStillTurnsRed() {
+        let subtitle = PastedTextSheetSubtitle(count: 16_001, limit: 16_000)
+
+        let line = subtitle.attributed(locale: Locale(identifier: "ar_EG"))
+
+        XCTAssertEqual(String(line.characters), "١٦٠٠١/١٦٠٠٠")
+        XCTAssertEqual(colors(in: line), [
+            "١٦٠٠١": light(.destructivePrimary),
+            "/١٦٠٠٠": light(.textSecondary)
+        ])
+    }
+
+    func testVoiceOverReadsTheCountAsCharactersOfTheLimitNotASlash() {
+        let subtitle = PastedTextSheetSubtitle(count: 923, limit: 16_000)
+
+        XCTAssertEqual(subtitle.accessibilityLabel(locale: Self.english), "923 of 16000 characters")
+    }
+
+    func testCountAtExactlyTheLimitIsNotRed() throws {
+        let rules = PastedTextSheetRules(original: original, mode: .editable(limit: 16_000))
+
+        let subtitle = try XCTUnwrap(rules.subtitle(for: String(repeating: "a", count: 16_000)))
+
+        XCTAssertEqual(colors(in: subtitle.attributed(locale: Self.english))["16000"], light(.textPrimary))
+    }
+
+    func testViewOnlySheetIsTitledPastedTextWithNoSubtitleAndEditableIsEditText() {
+        let viewOnly = PastedTextSheetRules(original: original, mode: .viewOnly)
+        let editable = PastedTextSheetRules(original: original, mode: .editable(limit: 100))
+
+        XCTAssertEqual(viewOnly.title, "Pasted Text")
+        XCTAssertNil(viewOnly.subtitle(for: "anything"))
+        XCTAssertEqual(editable.title, "Edit Text")
+    }
+
+    private func colors(in line: AttributedString) -> [String: UIColor] {
+        var result: [String: UIColor] = [:]
+        for run in line.runs {
+            result[String(line[run.range].characters)] = run.foregroundColor.map { UIColor($0).resolvedColor(with: Self.light) }
+        }
+        return result
+    }
+
+    private static let light = UITraitCollection(userInterfaceStyle: .light)
+    private static let english = Locale(identifier: "en_US")
+    /// POSIX formats numbers without grouping, which keeps the prefix cases readable.
+    private static let plainDigits = Locale(identifier: "en_US_POSIX")
+
+    private func light(_ color: DesignSystemColor) -> UIColor {
+        UIColor(designSystemColor: color).resolvedColor(with: Self.light)
     }
 
     func testOnlyChangedTextInAnEditableSheetIsAnUnsavedEdit() {

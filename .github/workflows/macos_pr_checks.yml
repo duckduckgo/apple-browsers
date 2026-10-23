@@ -804,7 +804,9 @@ jobs:
         run: python3 scripts/translation-pr-checks/verify_string_extraction.py --platform macOS
 
       - name: Check translations
-        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS
+        # PRs into main may merge untranslated: the nightly Smartling job sends their strings.
+        # Release and hotfix branches still need translations in the PR.
+        run: python3 scripts/translation-pr-checks/check_new_string_translations.py --platform macOS ${{ github.base_ref == 'main' && '--warn-only' || '' }}
 
       - name: Check markdown markers
         id: marker-check

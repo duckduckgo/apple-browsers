@@ -1,6 +1,8 @@
 name: Smartling - Release Import
 
 on:
+  schedule:
+    - cron: '47 4 * * *'
   workflow_dispatch:
     inputs:
       platform:
@@ -138,6 +140,7 @@ jobs:
         with:
           ref: ${{ steps.release.outputs.branch }}
           submodules: recursive
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
 
       - name: Check the release branch has the import script
         id: script
@@ -178,7 +181,7 @@ jobs:
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
           DRY_RUN: ${{ inputs.dry_run || false }}
           REIMPORT: ${{ inputs.reimport || false }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
         run: |
           args=("$PLATFORM" --release-branch "$RELEASE_BRANCH")
           [ "$DRY_RUN" != "true" ] || args+=(--dry-run)

@@ -38,7 +38,7 @@ class PortableTests(unittest.TestCase):
         self.target = {'BlueprintName': 'UI Tests', 'ProductModuleName': 'UI_Tests',
                        'TestHostPath': '__TESTROOT__/Products/Review/UI Tests-Runner.app',
                        'TestBundlePath': '__TESTHOST__/Contents/PlugIns/UI Tests.xctest',
-                       'TestHostBundleIdentifier': 'example.tests', 'IsUITestBundle': True,
+                       'TestHostBundleIdentifier': 'example.tests', 'IsUITestBundle': True, 'UseUITargetAppProvidedByTests': True,
                        'EnvironmentVariables': {'DYLD_INSERT_LIBRARIES': '/builder/diagnostics.dylib', 'CI': 'true'},
                        'UITargetAppEnvironmentVariables': {'DYLD_FRAMEWORK_PATH': '/builder/frameworks'}}
         self.metadata = {'app': 'DuckDuckGo Review.app', 'distribution': 'dmg', 'architectures': ['x86_64'],
@@ -193,6 +193,8 @@ raise SystemExit(int(os.environ['PROBE_EXIT']))
         target = artifact.targets(data)[0]
         self.assertEqual(target['OnlyTestIdentifiers'], ['First/testOne'])
         self.assertEqual(target['TestHostPath'], str(host))
+        self.assertEqual(target['UITargetAppPath'], str(self.root / 'Products/Review' / self.metadata['app']))
+        self.assertFalse(target['UseUITargetAppProvidedByTests'])
         self.assertEqual(target['EnvironmentVariables']['CODE'], 'runtime-only')
         self.assertEqual(target['EnvironmentVariables']['INTERNAL_USER_MODE'], 'true')
         self.assertNotIn('DYLD_INSERT_LIBRARIES', target['EnvironmentVariables'])
@@ -237,9 +239,24 @@ raise SystemExit(int(os.environ['PROBE_EXIT']))
         result = self.root / 'tests.xcresult'
         result.mkdir()
         log = 'Executed 2 tests, with 1 failure\nExecuted 2 tests, with 1 failure\n** TEST EXECUTE SUCCEEDED **\n'
-        self.assertTrue(artifact.execution_summary(log, 0, result, 2, retrying=True)['passed'])
+        report = {'result': 'Passed', 'totalTestCount': 2, 'skippedTests': 0, 'failedTests': 0}
+        with mock.patch.object(artifact, 'output', return_value=json.dumps(report)):
+            self.assertTrue(artifact.execution_summary(log, 0, result, 2, retrying=True)['passed'])
         self.assertFalse(artifact.execution_summary(log, 65, result, 2)['passed'])
         self.assertFalse(artifact.execution_summary(log, 0, result, 2, retrying=False)['passed'])
+
+    def test_zero_exit_cannot_hide_class_setup_failure_or_invent_executed_methods(self):
+        result = self.root / 'tests.xcresult'
+        result.mkdir()
+        log = ('Executed 3 tests, with 0 failures (1 unexpected)\n'
+               'Executed 0 tests, with 1 failure (1 unexpected)\n** TEST EXECUTE SUCCEEDED **\n')
+        report = {'result': 'Failed', 'totalTestCount': 0, 'skippedTests': 0, 'failedTests': 1}
+        with mock.patch.object(artifact, 'output', return_value=json.dumps(report)):
+            summary = artifact.execution_summary(log, 0, result, 1, retrying=True)
+        self.assertFalse(summary['passed'])
+        self.assertEqual(summary['executed'], 0)
+        self.assertEqual(summary['failed'], 1)
+        self.assertFalse(artifact.execution_summary(log, 0, result, 1)['passed'])
 
     def test_sonoma_native_runtime_retains_whole_batch_and_retries(self):
         app = self.root / 'Products/Review' / self.metadata['app']
@@ -262,6 +279,7 @@ raise SystemExit(int(os.environ['PROBE_EXIT']))
              mock.patch.object(artifact.platform, 'mac_ver', return_value=('14.8.9', (), 'x86_64')), \
              mock.patch.object(artifact, 'xcode', return_value=(self.root / 'Developer', {})), \
              mock.patch.object(artifact, 'native_host', return_value=self.root / 'runner.app'), \
+             mock.patch.object(artifact, 'output', return_value=json.dumps({'result': 'Passed', 'totalTestCount': 3, 'skippedTests': 0, 'failedTests': 0})), \
              mock.patch.object(artifact, 'execute'), mock.patch.object(artifact, 'stop_owned_app'), \
              mock.patch.object(artifact.subprocess, 'Popen', PassingProcess), mock.patch('builtins.print'):
             self.assertEqual(artifact.execute_tests(args), 0)

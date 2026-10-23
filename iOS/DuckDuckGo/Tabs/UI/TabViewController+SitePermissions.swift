@@ -60,6 +60,10 @@ final class SitePermissionsState {
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
     fileprivate var dialogHostingController: UIViewController?
+    /// The dialog's impression waits until the tab is on screen, so dialogs on hidden tabs don't count as shown.
+    fileprivate var pendingDialogImpression: SitePermissionsEvent.PermissionType?
+    fileprivate var pendingDialogImpressionCancellable: AnyCancellable?
+    fileprivate var dialogVisibilityOverride: (() -> Bool)?
     fileprivate var recoveryHostingController: UIViewController?
     fileprivate var managementHostingController: UIHostingController<SitePermissionsSheetView>?
     fileprivate var managementViewModel: SitePermissionsSheetViewModel?
@@ -123,6 +127,8 @@ final class SitePermissionsState {
     }
 
     fileprivate func dismissDialog() {
+        pendingDialogImpression = nil
+        pendingDialogImpressionCancellable = nil
         guard let hostingController = dialogHostingController else { return }
         hostingController.willMove(toParent: nil)
         hostingController.view.removeFromSuperview()
@@ -295,6 +301,23 @@ extension TabViewController {
     var sitePermissionsUptimeProvider: () -> TimeInterval {
         get { sitePermissionsState.uptimeProvider }
         set { sitePermissionsState.uptimeProvider = newValue }
+    }
+
+    var sitePermissionsDialogVisibilityOverride: (() -> Bool)? {
+        get { sitePermissionsState.dialogVisibilityOverride }
+        set { sitePermissionsState.dialogVisibilityOverride = newValue }
+    }
+
+    /// Fires the pending dialog impression once the dialog can actually be seen: the tab is on screen and the app is active.
+    func fireSitePermissionDialogImpressionIfVisible() {
+        guard let permissionType = sitePermissionsState.pendingDialogImpression else { return }
+        let isVisible = sitePermissionsState.dialogVisibilityOverride?()
+            ?? (viewIfLoaded?.window != nil && UIApplication.shared.applicationState == .active)
+        guard isVisible else { return }
+
+        sitePermissionsState.pendingDialogImpression = nil
+        sitePermissionsState.pendingDialogImpressionCancellable = nil
+        fireSitePermissionsEvent(.permissionDialogImpression(type: permissionType))
     }
 
     static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
@@ -1058,6 +1081,11 @@ extension TabViewController {
         sitePermissionsState.dismissDialog()
         let dialog = SitePermissionDialogView(viewModel: viewModel) { [weak self] action in
             guard let self else { return }
+            // A tapped dialog was seen, so never record a click without its impression.
+            if sitePermissionsState.pendingDialogImpression != nil {
+                sitePermissionsState.pendingDialogImpression = nil
+                fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
+            }
             fireSitePermissionsEvent(.permissionDialogClick(type: pixelPermissionType,
                                                              selection: action.pixelDialogSelection))
             sitePermissionsState.dismissDialog()
@@ -1078,7 +1106,14 @@ extension TabViewController {
         ])
         hostingController.didMove(toParent: self)
         sitePermissionsState.dialogHostingController = hostingController
-        fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
+        sitePermissionsState.pendingDialogImpression = pixelPermissionType
+        sitePermissionsState.pendingDialogImpressionCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.fireSitePermissionDialogImpressionIfVisible()
+            }
+        fireSitePermissionDialogImpressionIfVisible()
     }
 
     private func presentSitePermissionRecovery(_ recovery: SitePermissionRecovery,

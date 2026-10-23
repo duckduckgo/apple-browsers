@@ -26,6 +26,7 @@
 		1BDE02F3A745968B4D0E61BB /* SyncSuccessViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79F38CB257BE94EF3752259B /* SyncSuccessViewTests.swift */; };
 		1D116C11AE6EDE0456EE23B3 /* SubscriptionPromoExistingUserCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DEC03128C893FD62A15EF4A /* SubscriptionPromoExistingUserCoordinatorTests.swift */; };
 		1E1D8B5D2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1D8B5C2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift */; };
+		5E8CBC8944589467816EAEF6 /* AutoconsentManagementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A835E447DBDD0F41CAC1F1A6 /* AutoconsentManagementTests.swift */; };
 		1E1D8B632995143200C96994 /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B622995143200C96994 /* OHHTTPStubs */; };
 		1E1D8B652995143200C96994 /* OHHTTPStubsSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 1E1D8B642995143200C96994 /* OHHTTPStubsSwift */; };
 		1E1D8B6629953B9800C96994 /* WebViewTestHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9847C00327A419D500DB07AA /* WebViewTestHelper.swift */; };
@@ -1300,6 +1301,7 @@
 		0C0F9A0A007BE54F8EDD5599 /* TabEvictionSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabEvictionSettingsTests.swift; sourceTree = "<group>"; };
 		0DEC03128C893FD62A15EF4A /* SubscriptionPromoExistingUserCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPromoExistingUserCoordinatorTests.swift; sourceTree = "<group>"; };
 		1E1D8B5C2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentMessageProtocolTests.swift; sourceTree = "<group>"; };
+		A835E447DBDD0F41CAC1F1A6 /* AutoconsentManagementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagementTests.swift; sourceTree = "<group>"; };
 		1E3C99D82D9D6C6E009447E2 /* SubscriptionFeatureFlagMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeatureFlagMappingTests.swift; sourceTree = "<group>"; };
 		1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncHeadlessWebViewSettingsTests.swift; sourceTree = "<group>"; };
 		1E8146A928C8AB8200D1AF63 /* PrivacyIconLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyIconLogicTests.swift; sourceTree = "<group>"; };
@@ -2471,6 +2473,7 @@
 			isa = PBXGroup;
 			children = (
 				1E1D8B5C2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift */,
+				A835E447DBDD0F41CAC1F1A6 /* AutoconsentManagementTests.swift */,
 			);
 			name = Autoconsent;
 			sourceTree = "<group>";
@@ -5529,6 +5532,7 @@
 				C111F9512DC3CC2D00FABCA8 /* SaveCreditCardViewModelTests.swift in Sources */,
 				31C138B227A4097800FFD4B2 /* DownloadTestsHelper.swift in Sources */,
 				1E1D8B5D2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift in Sources */,
+				5E8CBC8944589467816EAEF6 /* AutoconsentManagementTests.swift in Sources */,
 				7B65863A2DB7F5B600D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift in Sources */,
 				85C11E532090B23A00BFFEB4 /* UserDefaultsHomeRowReminderStorageTests.swift in Sources */,
 				9F94BBAF2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift in Sources */,

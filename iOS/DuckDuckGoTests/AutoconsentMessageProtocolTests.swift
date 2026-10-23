@@ -139,6 +139,16 @@ final class AutoconsentMessageProtocolTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenNativeAutoconsentPixelFiresThenTheSiteRankOfTheTopUrlIsPassed() {
+        let management = MockAutoconsentManagement()
+        userScript.management = management
+
+        sendInit(url: "https://www.google.com/")
+
+        XCTAssertEqual(management.lastSiteRank, .top10k)
+    }
+
+    @MainActor
     func testWhenInitAcceptedThenPublishesLegacyCPMDiagnostics() throws {
         let delegate = MockAutoconsentUserScriptDelegate()
         userScript.delegate = delegate

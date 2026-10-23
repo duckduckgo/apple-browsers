@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import WebExtensions
 @testable import DuckDuckGo
 
 @MainActor
@@ -30,11 +31,13 @@ final class MockAutoconsentManagement: AutoconsentManaging {
 
     private(set) var firePixelCallCount = 0
     private(set) var lastFiredPixel: AutoconsentPixel?
+    private(set) var lastSiteRank: CPMSiteRank?
     private(set) var lastAdditionalParameters: [String: String]?
 
-    func firePixel(pixel: AutoconsentPixel, additionalParameters: [String: String]) {
+    func firePixel(pixel: AutoconsentPixel, siteRank: CPMSiteRank?, additionalParameters: [String: String]) {
         firePixelCallCount += 1
         lastFiredPixel = pixel
+        lastSiteRank = siteRank
         lastAdditionalParameters = additionalParameters
     }
 

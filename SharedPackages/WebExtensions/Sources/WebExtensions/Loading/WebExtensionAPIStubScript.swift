@@ -1288,8 +1288,8 @@ public enum WebExtensionAPIStubScript {
         // prompt under a login field. A call to `action.openPopup()` from such a frame is a
         // message WebKit's UI process treats as invalid, and WebKit answers an invalid message by
         // terminating the web process, which takes the website down with it. In a tab the app
-        // installs the open-popup handler and opens the popup itself, as a click on the toolbar
-        // button does, so in every frame that is not the top frame the call is forwarded there.
+        // installs the open-popup handler and shows the action's popup itself, so in every frame
+        // that is not the top frame the call is forwarded there.
         // Only tabs have the handler: frames of pages the extension controller hosts run in the
         // extension's process, where WebKit's own `openPopup` works.
         var actionOpenPopupMessageHandlerName = "\(Self.actionOpenPopupMessageHandlerName)";

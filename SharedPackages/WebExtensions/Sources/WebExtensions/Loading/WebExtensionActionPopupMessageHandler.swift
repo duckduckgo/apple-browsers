@@ -26,14 +26,17 @@ import DDGError
 /// extension page embedded in a website, such as iCloud Passwords' completion list.
 ///
 /// That frame runs in the website's web process, where WebKit treats a native `openPopup` call as an
-/// invalid message and terminates the process. The app performs the extension's action for the tab
-/// instead, as a click on its toolbar button does. Only pages of a loaded extension are answered.
+/// invalid message and terminates the process. The app shows the action's popup for the tab instead.
+/// It doesn't perform the action, as a click on the toolbar button does: that would mark the tab as
+/// having a user gesture, which grants `activeTab`, and fire `action.onClicked` for an action without
+/// a popup. Chrome's `openPopup` does neither. Only pages of a loaded extension are answered.
 @available(macOS 15.4, *)
 final class WebExtensionActionPopupMessageHandler {
 
     enum Failure: DDGError {
         case notAnExtensionPage
         case noTab
+        case noPopup
 
         static var errorDomain: String { "com.duckduckgo.WebExtensionActionPopupMessageHandler" }
 
@@ -43,6 +46,8 @@ final class WebExtensionActionPopupMessageHandler {
                 return "The caller is not a page of a loaded extension"
             case .noTab:
                 return "The caller is not in a tab"
+            case .noPopup:
+                return "The extension's action has no popup"
             }
         }
 
@@ -52,6 +57,8 @@ final class WebExtensionActionPopupMessageHandler {
                 return 0
             case .noTab:
                 return 1
+            case .noPopup:
+                return 2
             }
         }
     }
@@ -61,10 +68,8 @@ final class WebExtensionActionPopupMessageHandler {
     /// The loaded extension context the page URL belongs to.
     @MainActor var extensionContext: (URL) -> WKWebExtensionContext? = { _ in nil }
 
-    /// Opens the popup the way the toolbar button does.
-    @MainActor var performAction: (WKWebExtensionContext, any WKWebExtensionTab) -> Void = { context, tab in
-        context.performAction(for: tab)
-    }
+    /// Shows the popup of an action, the way the app shows it for a toolbar button click.
+    @MainActor var presentPopup: (WKWebExtension.Action, WKWebExtensionContext) -> Void = { _, _ in }
 
     @MainActor
     func reply(to message: WKScriptMessage, tab: (any WKWebExtensionTab)?, replyHandler: @escaping (Any?, String?) -> Void) {
@@ -86,7 +91,8 @@ final class WebExtensionActionPopupMessageHandler {
             throw .notAnExtensionPage
         }
         guard let tab else { throw .noTab }
-        performAction(context, tab)
+        guard let action = context.action(for: tab), action.presentsPopup else { throw .noPopup }
+        presentPopup(action, context)
     }
 }
 

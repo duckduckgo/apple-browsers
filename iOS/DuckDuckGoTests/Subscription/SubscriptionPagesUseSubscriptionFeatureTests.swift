@@ -521,20 +521,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
-    func testWhenMappingPlanChangeWideEventFunnelNameThenSubscriptionSettingsOriginsMapToAppSettings() {
-        XCTAssertEqual(
-            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionPlanChangeOrigin.subscriptionSettingsViewPlans.rawValue),
-            SubscriptionFunnelOrigin.appSettings.rawValue)
-        XCTAssertEqual(
-            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionPlanChangeOrigin.subscriptionSettingsUpgradeToPro.rawValue),
-            SubscriptionFunnelOrigin.appSettings.rawValue)
-        XCTAssertEqual(
-            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionFunnelOrigin.onboarding.rawValue),
-            SubscriptionFunnelOrigin.onboarding.rawValue)
-        XCTAssertEqual(SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: "funnel_web_origin"), "funnel_web_origin")
-        XCTAssertNil(SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: nil))
-    }
-
     @MainActor
     func testAppStoreCancelled_EmitsWideEventCancelled() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_onboarding_ios")!
@@ -659,7 +645,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testSubscriptionChangeSelected_WhenOriginIsSubscriptionSettingsViewPlans_StartsWideEventWithAppSettingsFunnelName() async throws {
+    func testSubscriptionChangeSelected_WhenNoOriginAndPlanChangeEntryIsAppSettings_StartsWideEventWithAppSettingsFunnelName() async throws {
         // Given
         let purchaseFlow = AppStorePurchaseFlowMock()
         purchaseFlow.changeTierResult = .success("mock-transaction-jws")
@@ -674,7 +660,8 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
-            subscriptionAttributionOrigin: SubscriptionPlanChangeOrigin.subscriptionSettingsViewPlans.rawValue,
+            subscriptionAttributionOrigin: nil,
+            planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue,
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             subscriptionDataReporter: nil,

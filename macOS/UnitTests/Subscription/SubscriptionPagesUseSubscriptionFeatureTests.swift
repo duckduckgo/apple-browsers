@@ -409,20 +409,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertEqual(SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: "unexpected-origin"), .unknown)
     }
 
-    func testWhenMappingPlanChangeWideEventFunnelNameThenSubscriptionSettingsOriginsMapToAppSettings() {
-        XCTAssertEqual(
-            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionPlanChangeOrigin.subscriptionSettingsViewPlans.rawValue),
-            SubscriptionFunnelOrigin.appSettings.rawValue)
-        XCTAssertEqual(
-            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionPlanChangeOrigin.subscriptionSettingsUpgradeToPro.rawValue),
-            SubscriptionFunnelOrigin.appSettings.rawValue)
-        XCTAssertEqual(
-            SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: SubscriptionFunnelOrigin.appMenu.rawValue),
-            SubscriptionFunnelOrigin.appMenu.rawValue)
-        XCTAssertEqual(SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: "funnel_web_origin"), "funnel_web_origin")
-        XCTAssertNil(SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: nil))
-    }
-
     // MARK: - GetSubscriptionTierOptions Tests
 
     func testGetSubscriptionTierOptions_WhenProTierEnabled_PassesTrueToIncludeProTier() async throws {
@@ -1034,9 +1020,9 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
-    func testSubscriptionChangeSelected_WhenOriginIsSubscriptionSettingsViewPlans_StartsWideEventWithAppSettingsFunnelName() async throws {
+    func testSubscriptionChangeSelected_WhenNoOriginAndPlanChangeEntryIsAppSettings_StartsWideEventWithAppSettingsFunnelName() async throws {
         // Given
-        let originURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_subscriptionsettings_macos__viewplans")!
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions/plans?planChangeEntry=funnel_appsettings_macos")!
         let webView = MockURLWebView(url: originURL)
         let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: [:], webView: webView)
         let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]

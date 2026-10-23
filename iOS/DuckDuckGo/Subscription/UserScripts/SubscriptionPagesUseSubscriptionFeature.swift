@@ -154,6 +154,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
 final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
+    private let wideEventOrigin: String?
     private let subscriptionManager: SubscriptionManager
     private let appStorePurchaseFlow: AppStorePurchaseFlow
     private let appStoreRestoreFlow: AppStoreRestoreFlow
@@ -178,6 +179,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          subscriptionAttributionOrigin: String?,
+         planChangeEntry: String? = nil,
          appStorePurchaseFlow: AppStorePurchaseFlow,
          appStoreRestoreFlow: AppStoreRestoreFlow,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
@@ -201,6 +203,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.appStorePurchaseFlow = appStorePurchaseFlow
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
+        self.wideEventOrigin = subscriptionAttributionOrigin ?? planChangeEntry
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
@@ -483,7 +486,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             purchasePlatform: .appStore,
             subscriptionIdentifier: subscriptionSelection.id,
             freeTrialEligible: freeTrialEligible,
-            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: subscriptionAttributionOrigin))
+            entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: wideEventOrigin))
 
         self.purchaseWideEventData = data
         wideEvent.startFlow(data)
@@ -643,7 +646,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         Logger.subscription.log("[TierChange] Starting from subscription: \(currentSubscription?.productId ?? "unknown", privacy: .public)")
 
-        let funnelName = SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: subscriptionAttributionOrigin)
+        let funnelName = wideEventOrigin
         switch effectivePlatform {
         case .apple:
             await subscriptionFlowsExecuter.performTierChange(

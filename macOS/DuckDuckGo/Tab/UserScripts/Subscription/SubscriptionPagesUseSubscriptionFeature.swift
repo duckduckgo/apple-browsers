@@ -292,6 +292,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let origin = await setPixelOrigin(from: message)
         PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: origin), frequency: .legacyDailyAndCount)
+        let planChangeEntry = await queryParameter(named: SubscriptionURL.QueryParameter.planChangeEntry, from: message)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             // 1: Parse subscription selection from message object
@@ -323,7 +324,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .appStore,
                                                          subscriptionIdentifier: subscriptionSelection.id,
                                                          freeTrialEligible: freeTrialEligible,
-                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin))
+                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin ?? planChangeEntry))
             self.purchaseWideEventData = data
             wideEvent.startFlow(data)
 
@@ -452,7 +453,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let data = SubscriptionPurchaseWideEventData(purchasePlatform: .stripe,
                                                          subscriptionIdentifier: nil, // Not available for Stripe
                                                          freeTrialEligible: true, // Always true for Stripe
-                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin))
+                                                         entryPoint: SubscriptionFunnelOrigin.purchaseWideEventEntryPoint(for: origin ?? planChangeEntry))
 
             wideEvent.startFlow(data)
             self.purchaseWideEventData = data
@@ -501,8 +502,9 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         }
 
         let message = original
-        await setPixelOrigin(from: message)
-        let funnelName = SubscriptionPlanChangeOrigin.planChangeWideEventFunnelName(for: await originFrom(originalMessage: message))
+        let origin = await setPixelOrigin(from: message)
+        let planChangeEntry = await queryParameter(named: SubscriptionURL.QueryParameter.planChangeEntry, from: message)
+        let funnelName = origin ?? planChangeEntry
 
         // Debug: Log raw params received from frontend
         Logger.subscription.debug("[TierChange] Raw params received: \(String(describing: params), privacy: .public)")
@@ -761,8 +763,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     @MainActor
     private func originFrom(originalMessage: WKScriptMessage) -> String? {
+        queryParameter(named: AttributionParameter.origin, from: originalMessage)
+    }
+
+    @MainActor
+    private func queryParameter(named name: String, from originalMessage: WKScriptMessage) -> String? {
         let url = originalMessage.webView?.url
-        return url?.getParameter(named: AttributionParameter.origin)
+        return url?.getParameter(named: name)
     }
 
     // MARK: - UI interactions

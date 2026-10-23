@@ -222,24 +222,4 @@ enum SubscriptionRestoreFunnelOrigin: String {
 enum SubscriptionPlanChangeOrigin: String {
     /// User triggered a plan change by cancelling a pending downgrade.
     case cancelDowngrade = "funnel_canceldowngrade_ios"
-
-    /// User triggered a plan change via "View All Plans" in Subscription Settings.
-    case subscriptionSettingsViewPlans = "funnel_subscriptionsettings_ios__viewplans"
-
-    /// User triggered a plan change via "Upgrade to Pro" in Subscription Settings.
-    case subscriptionSettingsUpgradeToPro = "funnel_subscriptionsettings_ios__upgradetopro"
-}
-
-extension SubscriptionPlanChangeOrigin {
-
-    /// Maps the Subscription Settings "View All Plans" and "Upgrade to Pro" origins back to `funnel_appsettings_ios`,
-    /// so the plan change wide event keeps reporting the same funnel name it did before these origins were introduced.
-    static func planChangeWideEventFunnelName(for origin: String?) -> String? {
-        switch origin {
-        case subscriptionSettingsViewPlans.rawValue, subscriptionSettingsUpgradeToPro.rawValue:
-            return SubscriptionFunnelOrigin.appSettings.rawValue
-        default:
-            return origin
-        }
-    }
 }

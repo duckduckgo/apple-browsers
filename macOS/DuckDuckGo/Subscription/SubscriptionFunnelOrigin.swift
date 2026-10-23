@@ -214,26 +214,3 @@ enum SubscriptionRestoreFunnelOrigin: String {
     /// User entered the restore funnel during the pre-purchase check.
     case prePurchaseCheck = "funnel_prepurchasecheck_macos"
 }
-
-/// Represents the origin of a subscription plan change (not a subscription entry point) in the macOS app.
-enum SubscriptionPlanChangeOrigin: String {
-    /// User triggered a plan change via "View All Plans" in Subscription Settings.
-    case subscriptionSettingsViewPlans = "funnel_subscriptionsettings_macos__viewplans"
-
-    /// User triggered a plan change via "Upgrade to Pro" in Subscription Settings.
-    case subscriptionSettingsUpgradeToPro = "funnel_subscriptionsettings_macos__upgradetopro"
-}
-
-extension SubscriptionPlanChangeOrigin {
-
-    /// Maps the Subscription Settings "View All Plans" and "Upgrade to Pro" origins back to `funnel_appsettings_macos`,
-    /// so the plan change wide event keeps reporting the same funnel name it did before these origins were introduced.
-    static func planChangeWideEventFunnelName(for origin: String?) -> String? {
-        switch origin {
-        case subscriptionSettingsViewPlans.rawValue, subscriptionSettingsUpgradeToPro.rawValue:
-            return SubscriptionFunnelOrigin.appSettings.rawValue
-        default:
-            return origin
-        }
-    }
-}

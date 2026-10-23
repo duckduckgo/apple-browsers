@@ -263,6 +263,7 @@ enum SubscriptionContainerViewFactory {
                                                                    pendingTransactionHandler: pendingTransactionHandler)
 
         let origin = redirectURLComponents?.queryItems?.first(where: { $0.name == AttributionParameter.origin })?.value
+        let planChangeEntry = redirectURLComponents?.queryItems?.first(where: { $0.name == SubscriptionURL.QueryParameter.planChangeEntry })?.value
 
         // Build plans URL from subscription manager (respects custom base URL)
         // and preserve all query parameters from redirectURLComponents
@@ -285,6 +286,7 @@ enum SubscriptionContainerViewFactory {
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                        subscriptionAttributionOrigin: origin,
+                                                                       planChangeEntry: planChangeEntry,
                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
                                                                        internalUserDecider: internalUserDecider,

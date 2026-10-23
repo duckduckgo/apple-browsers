@@ -234,14 +234,6 @@ extension SharedColorPaletteDefinition {
         case .unifiedInputTextSecondary:
             return unifiedInputTextSecondary
 
-        /// System
-        case .spinnerStart:
-            // Non-specialized, we'll always use the default
-            return LatestColorPalette.spinnerStart
-        case .spinnerFinal:
-            // Non-specialized, we'll always use the default
-            return LatestColorPalette.spinnerFinal
-
         /// Shadow Colors
         case .shadowPrimary:
             return shadowPrimary
@@ -313,31 +305,6 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
         case .permissionReloadButtonText:
             return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
-        }
-    }
-
-    static func dynamicColor(for singleUseColor: SingleUseColor) -> DynamicColor {
-        switch singleUseColor {
-        case .fireModeAccent:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
-        case .fireButtonGradientStart:
-            return DynamicColor(lightColor: RebrandingColor.Mandarin.mandarin50, darkColor: RebrandingColor.Mandarin.mandarin40)
-        case .fireButtonGradientEnd:
-            return DynamicColor(lightColor: RebrandingColor.Red.red50, darkColor: RebrandingColor.Red.red40)
-        case .fireButtonPressedGradientStart:
-            return DynamicColor(staticColor: RebrandingColor.Mandarin.mandarin60)
-        case .fireButtonPressedGradientEnd:
-            return DynamicColor(staticColor: RebrandingColor.Red.red70)
-        case .fireDialogKnobFill:
-            return DynamicColor(staticColor: Color(0xFFFFFF))
-        case .fireDialogTabBackground:
-            return DynamicColor(lightColor: Color(designSystemColor: .controlsFillPrimary), darkColor: Color(designSystemColor: .surfaceCanvas))
-        case .fireDialogTabBackgroundSelected:
-            return DynamicColor(lightColor: Color(designSystemColor: .surfaceTertiary), darkColor: Color(designSystemColor: .surfaceSecondary))
-        case .fireDialogTabShadowPrimary:
-            return DynamicColor(lightColor: Color(designSystemColor: .shadowPrimary), darkColor: .shade(0.06))
-        case .fireDialogTabShadowSecondary:
-            return DynamicColor(lightColor: Color(designSystemColor: .shadowTertiary), darkColor: .shade(0.16))
         }
     }
 }

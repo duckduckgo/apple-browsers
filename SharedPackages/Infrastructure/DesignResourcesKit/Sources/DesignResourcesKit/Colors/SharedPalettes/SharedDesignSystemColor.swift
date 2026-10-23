@@ -136,10 +136,6 @@ public enum SharedDesignSystemColor {
     case unifiedInputTextPrimary
     case unifiedInputTextSecondary
 
-    // System
-    case spinnerStart
-    case spinnerFinal
-
     // Shadows
     case shadowPrimary
     case shadowSecondary

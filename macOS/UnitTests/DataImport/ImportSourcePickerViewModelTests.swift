@@ -42,8 +42,8 @@ final class ImportSourcePickerViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.shouldShowExpandButton)
     }
 
-    func testUpdateSelectedSource_typeSelectorShownForAllSources_showsItForPasswordManager() {
-        let viewModel = pickerViewModel(availableSources: [.chrome, .bitwarden], selectedSource: .chrome, showsTypeSelectorForAllSources: true)
+    func testUpdateSelectedSource_sourceFilterEnabled_showsItForPasswordManager() {
+        let viewModel = pickerViewModel(availableSources: [.chrome, .bitwarden], selectedSource: .chrome, isSourceFilterEnabled: true)
 
         viewModel.updateSelectedSource(.bitwarden)
 
@@ -54,7 +54,7 @@ final class ImportSourcePickerViewModelTests: XCTestCase {
     private func pickerViewModel(
         availableSources: [DataImport.Source],
         selectedSource: DataImport.Source,
-        showsTypeSelectorForAllSources: Bool = false
+        isSourceFilterEnabled: Bool = false
     ) -> ImportSourcePickerViewModel {
         ImportSourcePickerViewModel(
             availableSources: availableSources,
@@ -62,7 +62,7 @@ final class ImportSourcePickerViewModelTests: XCTestCase {
             selectedImportTypes: [.bookmarks, .passwords],
             selectableImportTypes: [.bookmarks, .passwords],
             shouldShowSyncButton: false,
-            showsTypeSelectorForAllSources: showsTypeSelectorForAllSources,
+            isSourceFilterEnabled: isSourceFilterEnabled,
             onSourceSelected: { _ in },
             onTypesSelected: { _ in },
             onSyncSelected: {}

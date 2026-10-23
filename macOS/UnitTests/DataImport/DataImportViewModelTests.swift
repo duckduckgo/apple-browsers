@@ -498,7 +498,7 @@ final class DataImportViewModelTests: XCTestCase {
 
         model.selectDataTypes([.bookmarks])
 
-        XCTAssertEqual(model.visibleImportSources, [.chrome, .tor, .fileImport])
+        XCTAssertEqual(model.visibleImportSources, [.chrome, .safari, .tor, .fileImport])
         XCTAssertEqual(model.importSource, .chrome)
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
@@ -523,6 +523,16 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(model.dataTypeFilter, [.bookmarks, .passwords])
         XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
+    }
+
+    @MainActor
+    func testImportButtonPressed_filterOnSafariWithBookmarksOnly_asksForArchiveWithoutPasswords() {
+        model = sourceFilterModel(importSource: .safari, isFilterOn: true) { _, _, _, _ in ImporterMock(importableTypes: []) }
+        model.selectDataTypes([.bookmarks])
+
+        model.importButtonPressed()
+
+        XCTAssertEqual(model.screen, .archiveImport(dataTypes: model.selectableImportTypes.subtracting([.passwords])))
     }
 
     func testDataTypesToImport_keepsTypesTheFilterDoesNotCover() {
@@ -2794,12 +2804,13 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     private var sourceFilterSources: [Source] {
-        [.chrome, .tor, .fileImport, .onePassword8, .bitwarden]
+        [.chrome, .safari, .tor, .fileImport, .onePassword8, .bitwarden]
     }
 
     private func sourceFilterModel(
         importSource: Source,
-        isFilterOn: Bool
+        isFilterOn: Bool,
+        dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() }
     ) -> DataImportViewModel {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
@@ -2811,6 +2822,7 @@ final class DataImportViewModelTests: XCTestCase {
                 let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
                 return .init(browser: browser, profiles: [defaultProfile])
             },
+            dataImporterFactory: dataImporterFactory,
             featureFlagger: featureFlagger,
             directoryAccessAvailability: .mockUnavailable()
         )

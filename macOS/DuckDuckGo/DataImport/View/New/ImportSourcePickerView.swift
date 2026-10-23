@@ -39,7 +39,7 @@ struct ImportSourcePickerView: View {
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncFeature: Bool,
-         showsTypeSelectorForAllSources: Bool,
+         isSourceFilterEnabled: Bool,
          isPickerExpanded: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypesSelected: @escaping (Set<DataImport.DataType>) -> Void,
@@ -56,7 +56,7 @@ struct ImportSourcePickerView: View {
             selectedImportTypes: selectedImportTypes,
             selectableImportTypes: selectableImportTypes,
             shouldShowSyncButton: shouldShowSyncFeature,
-            showsTypeSelectorForAllSources: showsTypeSelectorForAllSources,
+            isSourceFilterEnabled: isSourceFilterEnabled,
             initialPickerExpanded: isPickerExpanded,
             onSourceSelected: onSourceSelected,
             onTypesSelected: onTypesSelected,
@@ -73,7 +73,8 @@ struct ImportSourcePickerView: View {
                             items: $viewModel.importTypeItems,
                             doneAction: viewModel.typeSelectionDone,
                             cancelAction: viewModel.typeSelectionCancelled,
-                            isDoneDisabled: $viewModel.isDoneButtonDisabled
+                            isDoneDisabled: $viewModel.isDoneButtonDisabled,
+                            keepsOneTypeSelected: viewModel.isSourceFilterEnabled
                         )
                     }
                     .padding(.top, 20)

@@ -87,7 +87,7 @@ struct DataImportView: ModalView {
                     selectedImportTypes: Array(model.pickerSelectedDataTypes),
                     selectableImportTypes: Array(model.pickerSelectableDataTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
-                    showsTypeSelectorForAllSources: model.isSourceFilterEnabled,
+                    isSourceFilterEnabled: model.isSourceFilterEnabled,
                     isPickerExpanded: model.isPickerExpanded,
                     onSourceSelected: { source in
                         model.update(with: source)
@@ -120,10 +120,10 @@ struct DataImportView: ModalView {
                     selectFile: { model.selectFile() },
                     onFileDrop: { model.initiateImport(fileURL: $0) }
                 )
-            case .archiveImport(_, let summary):
+            case .archiveImport(let dataTypes, let summary):
                 FileImportScreenView(
                     importSource: model.importSource,
-                    kind: .archive,
+                    kind: .archive(dataTypes: dataTypes),
                     summary: summary,
                     isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
                     selectFile: { model.selectFile() },

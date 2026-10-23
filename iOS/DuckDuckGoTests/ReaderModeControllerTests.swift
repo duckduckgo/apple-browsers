@@ -216,6 +216,72 @@ struct ReaderModeControllerTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func availabilityIsPendingUntilTheFirstExtractionFinishes() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.readerMode])
+        var pending: CheckedContinuation<ReaderModeController.Snapshot?, Error>?
+        let controller = ReaderModeController(featureFlagger: flagger, capture: { _ in
+            try await withCheckedThrowingContinuation { pending = $0 }
+        }, extract: { _, _ in nil })
+        controller.attach(webView: ReaderTestWebView(url: url))
+        #expect(controller.availability == .pending)
+
+        controller.isVisible = true
+        try await waitUntil { pending != nil }
+        #expect(controller.availability == .pending)
+
+        pending?.resume(returning: .init(url: url, html: "navigation"))
+        pending = nil
+        try await waitUntil { controller.availability == .unavailable }
+        controller.detach()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func availabilityIsAvailableOnceAnArticleIsOfferedAndResetsOnNavigation() async throws {
+        let article = try await makeArticle()
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.readerMode])
+        let controller = ReaderModeController(featureFlagger: flagger, capture: { _ in
+            .init(url: url, html: "article")
+        }, extract: { _, _ in article })
+        controller.attach(webView: ReaderTestWebView(url: url))
+        controller.isVisible = true
+        try await waitUntil { controller.availability == .available }
+
+        controller.navigationStarted()
+        #expect(controller.availability == .pending)
+        controller.detach()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func availabilityIsUnavailableWhenTheFlagIsOffOrThePageIsNotWeb() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [])
+        let controller = ReaderModeController(featureFlagger: flagger, capture: { _ in nil }, extract: { _, _ in nil })
+        controller.attach(webView: ReaderTestWebView(url: url))
+        #expect(controller.availability == .unavailable)
+
+        flagger.enabledFeatureFlags = [.readerMode]
+        flagger.triggerUpdate()
+        try await waitUntil { controller.availability == .pending }
+
+        controller.attach(webView: ReaderTestWebView(url: URL(string: "about:blank")!))
+        #expect(controller.availability == .unavailable)
+        controller.detach()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func oversizedPagesStopBeingPending() async throws {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: [.readerMode])
+        let controller = ReaderModeController(featureFlagger: flagger, capture: { _ in nil }, extract: { _, _ in nil })
+        controller.attach(webView: ReaderTestWebView(url: url))
+        controller.isVisible = true
+        try await waitUntil { controller.availability == .unavailable }
+        controller.detach()
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func tabsAreIndependentAndSPARoutesAndTerminationClearState() async throws {
         let article = try await makeArticle()
         let flagger = MockFeatureFlagger(enabledFeatureFlags: [.readerMode])

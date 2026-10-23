@@ -24,6 +24,7 @@ enum OmniBarNotificationType {
     case cookiePopupHidden
     case trackersBlocked(count: Int)
     case youTubeAdBlockOn
+    case readerModeAvailable
 }
 
 final class OmniBarNotificationAnimator: NSObject {
@@ -34,10 +35,13 @@ final class OmniBarNotificationAnimator: NSObject {
     // Work item for cancellable delayed completion
     private var completionWorkItem: DispatchWorkItem?
 
-    func showNotification(_ type: OmniBarNotificationType, in omniBar: any OmniBarView, viewController: UIViewController, completion: (() -> Void)? = nil) {
+    /// `onTap` makes the notification tappable while it is on screen.
+    func showNotification(_ type: OmniBarNotificationType, in omniBar: any OmniBarView, viewController: UIViewController,
+                          completion: (() -> Void)? = nil, onTap: (() -> Void)? = nil) {
 
         omniBar.notificationContainer.alpha = 0
-        omniBar.notificationContainer.prepareAnimation(type, in: viewController)
+        omniBar.notificationContainer.prepareAnimation(type, in: viewController, onTap: onTap)
+        omniBar.notificationContainer.isUserInteractionEnabled = onTap != nil
         omniBar.textField.alpha = 0
 
         let fadeDuration = Constants.Duration.fade
@@ -66,6 +70,7 @@ final class OmniBarNotificationAnimator: NSObject {
                 // Create cancellable work item for completion
                 let completionWorkItem = DispatchWorkItem {
                     omniBar.notificationContainer.removePreviousNotification()
+                    omniBar.notificationContainer.isUserInteractionEnabled = false
                     // Re-assert the floating field appearance after the animation.
                     omniBar.restoreFloatingFieldAppearance()
                     completion?()
@@ -95,6 +100,7 @@ final class OmniBarNotificationAnimator: NSObject {
 
         // Reset visual state
         omniBar.notificationContainer.removePreviousNotification()
+        omniBar.notificationContainer.isUserInteractionEnabled = false
         omniBar.notificationContainer.alpha = 0
         omniBar.textField.alpha = 1
         omniBar.privacyInfoContainer.alpha = 1

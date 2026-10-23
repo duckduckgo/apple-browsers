@@ -6032,6 +6032,10 @@ extension MainViewController: OmniBarDelegate {
         return currentTab?.url
     }
     
+    func onReaderModePressed() {
+        currentTab?.readerModeController.setActive(true)
+    }
+
     func onCustomizableButtonPressed() {
         guard mobileCustomization.state.isEnabled else {
             shareCurrentURLFromAddressBar()

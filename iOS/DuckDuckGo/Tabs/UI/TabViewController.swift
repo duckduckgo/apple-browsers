@@ -345,6 +345,9 @@ class TabViewController: UIViewController {
     private let autofillPromptKeyboardHandler = AutofillPromptKeyboardHandler()
     private(set) lazy var readerModeController: ReaderModeController = {
         let controller = ReaderModeController(featureFlagger: featureFlagger)
+        controller.articleOffered = { [weak self] in
+            self?.showReaderModeAvailableNotification()
+        }
         controller.stateDidChange = { [weak self] in
             self?.updateReaderModeUI()
             if #available(iOS 18.4, *) {
@@ -1159,6 +1162,11 @@ class TabViewController: UIViewController {
         guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking),
               let assets = userContentController.contentBlockingAssets else { return [] }
         return Array(assets.globalRuleLists.values)
+    }
+
+    private func showReaderModeAvailableNotification() {
+        guard delegate?.tabCheckIfItsBeingCurrentlyPresented(self) == true else { return }
+        chromeDelegate?.omniBar.showReaderModeAvailableNotification()
     }
 
     private func updateReaderModeUI() {

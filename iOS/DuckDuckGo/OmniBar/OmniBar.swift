@@ -78,6 +78,9 @@ protocol OmniBar: AnyObject {
 
     func refreshCustomizableButton()
 
+    /// Queues a tappable notification, after the other address bar notifications, that Reader Mode is available.
+    func showReaderModeAvailableNotification()
+
     /// Sets the dynamic Dax Easter Egg logo URL for display in the omnibar privacy icon.
     /// When a URL is provided, the privacy icon will load and display the dynamic logo image.
     /// When nil is provided, the privacy icon resets to the default static Dax logo.

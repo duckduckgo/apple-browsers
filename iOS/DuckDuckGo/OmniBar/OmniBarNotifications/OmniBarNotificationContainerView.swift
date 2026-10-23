@@ -42,10 +42,11 @@ final class OmniBarNotificationContainerView: UIView {
         currentNotificationController?.rootView.lozengeHeight = lozengeHeight
     }
     
-    func prepareAnimation(_ type: OmniBarNotificationType, in controller: UIViewController) {
+    func prepareAnimation(_ type: OmniBarNotificationType, in controller: UIViewController, onTap: (() -> Void)? = nil) {
         removePreviousNotification()
         
         let viewModel = makeNotificationViewModel(for: type)
+        viewModel.onTap = onTap
         let notificationViewController = UIHostingController(rootView: OmniBarNotification(viewModel: viewModel, lozengeHeight: lozengeHeight),
                                                              ignoreSafeArea: true)
         
@@ -113,6 +114,9 @@ final class OmniBarNotificationContainerView: UIView {
         case .youTubeAdBlockOn:
             notificationText = UserText.omnibarNotificationYouTubeAdBlockOn
             icon = .image(DesignSystemImages.Color.Size24.videoPlayerBlocked)
+        case .readerModeAvailable:
+            notificationText = UserText.omnibarNotificationReaderModeAvailable
+            icon = .image(DesignSystemImages.Glyphs.Size24.news.withRenderingMode(.alwaysTemplate))
         }
 
         return OmniBarNotificationViewModel(text: notificationText,

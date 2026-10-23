@@ -24,13 +24,13 @@ enum BrowsingMenuEntry {
 
     var tag: BrowsingMenuModel.Entry.Tag? {
         switch self {
-        case .regular(_, _, _, _, _, _, _, let tag, _):
+        case .regular(_, _, _, _, _, _, _, let tag, _, _):
             return tag
         default: return nil
         }
     }
 
-    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, detailText: String? = nil, detailBadge: String? = nil, tag: BrowsingMenuModel.Entry.Tag? = nil, action: () -> Void)
+    case regular(name: String, accessibilityLabel: String? = nil, image: UIImage, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, detailText: String? = nil, detailBadge: String? = nil, tag: BrowsingMenuModel.Entry.Tag? = nil, isEnabled: Bool = true, action: () -> Void)
 
     case separator
 }
@@ -392,7 +392,7 @@ final class BrowsingMenuViewController: UIViewController {
 
     private func recalculatePreferredWidthConstraint() {
         let longestEntry = menuEntries.reduce("") { (result, entry) -> String in
-            guard case BrowsingMenuEntry.regular(let name, _, _, _, _, _, _, _, _) = entry else { return result }
+            guard case BrowsingMenuEntry.regular(let name, _, _, _, _, _, _, _, _, _) = entry else { return result }
             if result.length() < name.length() {
                 return name
             }
@@ -429,7 +429,8 @@ extension BrowsingMenuViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         switch menuEntries[indexPath.row] {
-        case .regular(_, _, _, _, _, _, _, _, let action):
+        case .regular(_, _, _, _, _, _, _, _, let isEnabled, let action):
+            guard isEnabled else { return }
             wasActionSelected = true
             dismiss(animated: true) {
                 action()
@@ -452,13 +453,13 @@ extension BrowsingMenuViewController: UITableViewDataSource {
         let theme = ThemeManager.shared.currentTheme
         
         switch menuEntries[indexPath.row] {
-        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, _, _, _, _):
+        case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, _, _, _, let isEnabled, _):
             guard let cell = tableView.dequeueReusableCell(withIdentifier: Contants.entryCellReuseIdentifier,
                                                            for: indexPath) as? BrowsingMenuEntryViewCell else {
                 fatalError("Cell should be dequeued")
             }
             
-            cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot, customDotColor: customDotColor)
+            cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot, customDotColor: customDotColor, isEnabled: isEnabled)
             cell.accessibilityIdentifier = menuEntries[indexPath.row].tag == .sitePermissions ? "BrowsingMenu.SitePermissions" : nil
             return cell
         case .separator:

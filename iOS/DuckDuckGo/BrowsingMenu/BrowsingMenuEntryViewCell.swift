@@ -21,7 +21,11 @@ import UIKit
 import Core
 
 class BrowsingMenuEntryViewCell: UITableViewCell {
-    
+
+    private enum Constants {
+        static let disabledAlpha: CGFloat = 0.4
+    }
+
     let entryImage = UIImageView()
     let entryLabel = UILabel()
     let notificationDot = UIView()
@@ -36,7 +40,7 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false, customDotColor: UIColor? = nil) {
+    func configure(image: UIImage, label: String, accessibilityLabel: String?, showNotificationDot: Bool = false, customDotColor: UIColor? = nil, isEnabled: Bool = true) {
         entryImage.image = image
         entryLabel.setAttributedTextString(label)
         entryLabel.accessibilityLabel = accessibilityLabel
@@ -46,6 +50,9 @@ class BrowsingMenuEntryViewCell: UITableViewCell {
         decorate(with: theme)
         entryImage.tintColor = theme.browsingMenuIconsColor
         entryLabel.textColor = theme.browsingMenuTextColor
+        entryImage.alpha = isEnabled ? 1 : Constants.disabledAlpha
+        entryLabel.alpha = isEnabled ? 1 : Constants.disabledAlpha
+        accessibilityTraits = isEnabled ? .button : [.button, .notEnabled]
         backgroundColor = theme.browsingMenuBackgroundColor
         setHighlightedStateBackgroundColor(theme.browsingMenuHighlightColor)
         

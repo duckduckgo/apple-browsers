@@ -40,6 +40,8 @@ struct OmniBarNotification: View {
             }
             .frame(height: lozengeHeight)
             .background(background)
+            .contentShape(Rectangle())
+            .onTapGesture { viewModel.onTap?() }
             .padding(.leading, OmniBarMetrics.notificationLozengeInset)
 
             Spacer()
@@ -189,7 +191,8 @@ private struct OmniBarNotificationGallery: View {
         ("Cookies managed (animated cookie)", .cookiePopupManaged),
         ("Cookie popup hidden (animated cookie)", .cookiePopupHidden),
         ("Trackers blocked (shield)", .trackersBlocked(count: 12)),
-        ("YouTube ads blocked (video-player icon)", .youTubeAdBlockOn)
+        ("YouTube ads blocked (video-player icon)", .youTubeAdBlockOn),
+        ("Reader Mode available (document icon)", .readerModeAvailable)
     ]
 
     var body: some View {

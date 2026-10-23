@@ -110,12 +110,13 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private enum AnimationPriority: Int {
         case high = 0  // Higher priority (sorted first)
-        case low = 1   // Lower priority (sorted last)
+        case low = 1
+        case lowest = 2  // Sorted last
 
         var delay: TimeInterval {
             switch self {
             case .high: return AnimationTiming.highPriorityDelay
-            case .low: return AnimationTiming.lowPriorityDelay
+            case .low, .lowest: return AnimationTiming.lowPriorityDelay
             }
         }
     }
@@ -476,6 +477,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
+    func showReaderModeAvailableNotification() {
+        enqueueAnimationIfNeeded(priority: .lowest) { [weak self] in
+            guard let self else { return }
+            self.notificationAnimator.showNotification(.readerModeAvailable, in: barView, viewController: self, completion: { [weak self] in
+                self?.completeCurrentAnimation()
+            }, onTap: { [weak self] in
+                self?.cancelAllAnimations()
+                self?.omniDelegate?.onReaderModePressed()
+            })
+        }
+    }
+
     func showYouTubeAdBlockNotification() {
         enqueueAnimationIfNeeded(priority: .low) { [weak self] in
             guard let self else { return }
@@ -604,6 +617,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     func refreshCustomizableButton() {
         applyCustomization()
     }
+
 
     func hidePrivacyIcon() {
         barView.privacyInfoContainer.privacyIcon.isHidden = true

@@ -56,6 +56,9 @@ final class OmniBarNotificationViewModel: ObservableObject {
     @Published var isOpen: Bool = false
     @Published var isAnimating: Bool = false
 
+    /// Called when the user taps the notification.
+    var onTap: (() -> Void)?
+
     init(text: String,
          icon: Icon,
          eventCount: Int = 0,

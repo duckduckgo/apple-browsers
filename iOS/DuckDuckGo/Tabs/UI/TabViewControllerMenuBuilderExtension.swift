@@ -467,9 +467,13 @@ extension TabViewController {
     }
 
     private func buildReaderModeEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
-        guard readerModeController.state.isAvailable else { return nil }
-        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.news : DesignSystemImages.Glyphs.Size24.news
-        return BrowsingMenuEntry.regular(name: UserText.readerModeOpen, image: image, action: { [weak self] in
+        guard featureFlagger.isFeatureOn(.readerMode) else { return nil }
+        let availability = readerModeController.availability
+        let image = (useSmallIcon ? DesignSystemImages.Glyphs.Size16.news : DesignSystemImages.Glyphs.Size24.news).withRenderingMode(.alwaysTemplate)
+        return BrowsingMenuEntry.regular(name: availability == .pending ? UserText.readerModePending : UserText.readerModeOpen,
+                                         image: image,
+                                         isEnabled: availability == .available,
+                                         action: { [weak self] in
             self?.readerModeController.setActive(true)
         })
     }

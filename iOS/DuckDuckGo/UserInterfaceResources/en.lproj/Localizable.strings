@@ -3499,6 +3499,9 @@ https://duckduckgo.com/mac";
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop-up Hidden";
 
+/* Text displayed on tappable notification appearing in the address bar when the page can be opened in Reader Mode */
+"omnibar.notification.reader-mode-available" = "Reader Mode Available";
+
 /* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
 "omnibar.notification.trackers-blocked" = "%d Trackers";
 
@@ -3990,6 +3993,9 @@ https://duckduckgo.com/mac";
 
 /* Browsing menu item that opens a distraction-free article view */
 "reader.mode.open" = "Reader Mode";
+
+/* Disabled browsing menu item shown while the page is still being checked for a readable article */
+"reader.mode.pending" = "Reader Mode (pending)";
 
 /* Title for scoped fire confirmation dialog in fire mode, asking user to delete all fire tabs and their data */
 "scoped.fire.confirmation.alert.fireMode.title" = "Delete Fire Tabs and their data?";

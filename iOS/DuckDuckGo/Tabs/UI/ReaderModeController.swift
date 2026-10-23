@@ -42,6 +42,14 @@ final class ReaderModeController {
         }
     }
 
+    /// Whether Reader Mode can be used on the current document.
+    enum Availability {
+        case unavailable
+        /// The page is eligible for sampling but no extraction has finished for it yet.
+        case pending
+        case available
+    }
+
     struct Snapshot {
         let url: URL
         let html: String
@@ -51,6 +59,8 @@ final class ReaderModeController {
         didSet { stateDidChange?() }
     }
     var stateDidChange: (() -> Void)?
+    /// Called when an article is offered for the current document.
+    var articleOffered: (() -> Void)?
     var isVisible = false {
         didSet { reconcileSampling() }
     }
@@ -63,6 +73,7 @@ final class ReaderModeController {
     private var documentURL: URL?
     private var previousHTML: String?
     private var isNavigating = false
+    private var hasCompletedExtraction = false
     private var isForeground: Bool
     private var isEnabled: Bool
     private var timer: Timer?
@@ -93,6 +104,11 @@ final class ReaderModeController {
     deinit {
         timer?.invalidate()
         samplingTask?.cancel()
+    }
+
+    var availability: Availability {
+        if state.isAvailable { return .available }
+        return isEnabled && !hasCompletedExtraction && isWebPage ? .pending : .unavailable
     }
 
     func attach(webView: WKWebView) {
@@ -168,7 +184,12 @@ final class ReaderModeController {
         generation = UUID()
         samplingTask?.cancel()
         previousHTML = nil
+        hasCompletedExtraction = false
         state = .unavailable
+    }
+
+    private var isWebPage: Bool {
+        ["http", "https"].contains(webView?.url?.scheme?.lowercased() ?? "")
     }
 
     private var canSample: Bool {
@@ -192,25 +213,30 @@ final class ReaderModeController {
     }
 
     func sampleIfNeeded() {
-        guard canSample, samplingTask == nil, let webView,
-              ["http", "https"].contains(webView.url?.scheme?.lowercased() ?? "") else { return }
+        guard canSample, samplingTask == nil, let webView, isWebPage else { return }
         let generation = generation
         samplingTask = Task { [weak self, weak webView] in
             guard let self else { return }
             defer { self.samplingTask = nil }
             guard let webView, isCurrent(generation, webView: webView) else { return }
             do {
-                guard let snapshot = try await capture(webView),
-                      isCurrent(generation, webView: webView),
-                      Self.withoutFragment(snapshot.url) == Self.withoutFragment(webView.url),
-                      snapshot.html.utf8.count <= 1_048_576,
+                let capturedSnapshot = try await capture(webView)
+                guard isCurrent(generation, webView: webView) else { return }
+                guard let snapshot = capturedSnapshot, snapshot.html.utf8.count <= 1_048_576 else {
+                    // The page is too large or has no document, so it will not offer an article until it changes.
+                    hasCompletedExtraction = true
+                    return
+                }
+                guard Self.withoutFragment(snapshot.url) == Self.withoutFragment(webView.url),
                       snapshot.html != previousHTML else { return }
                 let article = try await extract(snapshot.html, snapshot.url)
                 guard isCurrent(generation, webView: webView),
                       Self.withoutFragment(snapshot.url) == Self.withoutFragment(webView.url) else { return }
                 previousHTML = snapshot.html
+                hasCompletedExtraction = true
                 state = article.map(State.offered) ?? .unavailable
                 reconcileSampling()
+                if article != nil { articleOffered?() }
             } catch {
             }
         }
@@ -228,8 +254,20 @@ final class ReaderModeController {
 
     private static func captureSnapshot(_ webView: WKWebView) async throws -> Snapshot? {
         let result = try await webView.callAsyncJavaScript("""
-            if (!document.documentElement || document.getElementsByTagName('*').length > 50000) return null;
-            const html = document.documentElement.outerHTML;
+            if (!document.documentElement || !document.body || document.getElementsByTagName('*').length > 50000) return null;
+            const clone = document.documentElement.cloneNode(true);
+            const liveElements = Array.from(document.body.getElementsByTagName('*'));
+            const copies = Array.from(clone.querySelector('body').getElementsByTagName('*'));
+            // Hidden elements, such as a cookie banner hidden by CSS, are not part of what the reader should judge or show.
+            if (liveElements.length <= 10000 && liveElements.length === copies.length) {
+                const invisibleContainers = ['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'];
+                liveElements.forEach((element, index) => {
+                    if (!invisibleContainers.includes(element.tagName) && getComputedStyle(element).display === 'none') {
+                        copies[index].remove();
+                    }
+                });
+            }
+            const html = clone.outerHTML;
             if (html.length > 1048576) return null;
             return { url: location.href, html: html };
             """, arguments: [:], in: nil, contentWorld: .defaultClient)

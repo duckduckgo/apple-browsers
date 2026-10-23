@@ -67,6 +67,8 @@ protocol OmniBarDelegate: AnyObject {
 
     func onRefreshPressed()
 
+    func onReaderModePressed()
+
     func onCustomizableButtonPressed()
 
     func onBackPressed()
@@ -225,6 +227,9 @@ extension OmniBarDelegate {
     
     func onRefreshPressed() {
     
+    }
+
+    func onReaderModePressed() {
     }
 
     func onAIChatPressed() {

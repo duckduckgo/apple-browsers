@@ -26,6 +26,7 @@ import FoundationExtensions
 public struct UserText {
 
     public static let readerModeOpen = NSLocalizedString("reader.mode.open", value: "Reader Mode", comment: "Browsing menu item that opens a distraction-free article view")
+    public static let readerModePending = NSLocalizedString("reader.mode.pending", value: "Reader Mode (pending)", comment: "Disabled browsing menu item shown while the page is still being checked for a readable article")
     public static let readerModeClose = NSLocalizedString("reader.mode.close", value: "Close Reader", comment: "Accessibility label for the close button that returns to the original webpage")
 
     public static let addressBarPositionTop = NSLocalizedString("address.bar.top", value: "Top", comment: "Settings label for top position for the address bar")
@@ -1344,6 +1345,7 @@ public struct UserText {
     // MARK: Omnibar
 
     public static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies-managed", value: "Cookies Managed", comment: "Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it")
+    public static let omnibarNotificationReaderModeAvailable = NSLocalizedString("omnibar.notification.reader-mode-available", value: "Reader Mode Available", comment: "Text displayed on tappable notification appearing in the address bar when the page can be opened in Reader Mode")
     public static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup-hidden", value: "Pop-up Hidden", comment: "Text displayed on notification appearing in the address bar when the browser  hides a cookie popup")
     private static let omnibarNotificationTrackersBlockedFormat = NSLocalizedString("omnibar.notification.trackers-blocked", value: "%d Trackers", comment: "Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict.")
 

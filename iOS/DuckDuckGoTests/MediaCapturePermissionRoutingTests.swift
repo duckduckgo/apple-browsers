@@ -1620,6 +1620,60 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         ])
     }
 
+    func testPermissionDialogImpressionWaitsUntilTabIsVisibleAndSkipsDialogsRemovedWhileHidden() async throws {
+        var events = [SitePermissionsEvent]()
+        var isVisible = false
+        var presented = expectation(description: "First dialog presented")
+        let impression = expectation(description: "Impression after becoming active")
+        let sut = makeSUT(eventHandler: { event in
+            events.append(event)
+            if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+        })
+        // Presenting a dialog checks visibility, so the check doubles as the "presented" signal.
+        sut.sitePermissionsDialogVisibilityOverride = {
+            presented.fulfill()
+            return isVisible
+        }
+        defer { sut.closeSitePermissions() }
+
+        // Hidden tab: the page asks, then reloads before anyone could see the dialog.
+        let firstRequest = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        let firstDecision = await firstRequest.value
+        XCTAssertEqual(firstDecision, .deny)
+        sut.webView(sut.webView, didCommit: nil)
+
+        // The removed dialog stays uncounted even once the tab becomes visible.
+        isVisible = true
+        sut.fireSitePermissionDialogImpressionIfVisible()
+        XCTAssertTrue(events.isEmpty)
+        isVisible = false
+
+        // The reloaded page asks again; the impression fires only once the app becomes active with the tab visible.
+        presented = expectation(description: "Second dialog presented")
+        let secondRequest = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        XCTAssertTrue(events.isEmpty)
+
+        isVisible = true
+        presented = expectation(description: "Visibility rechecked")
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await fulfillment(of: [presented, impression], timeout: 1)
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+
+        let dialog = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+        }.first)
+        dialog.onAction(.dismissed)
+        let secondDecision = await secondRequest.value
+        XCTAssertEqual(secondDecision, .deny)
+        XCTAssertEqual(events, [
+            .permissionDialogImpression(type: .camera),
+            .permissionDialogClick(type: .camera, selection: .dismissed)
+        ])
+    }
+
     func testPermissionDialogFiresImpressionAndClickEventsAndRoutesSelectedAction() async throws {
         var events = [SitePermissionsEvent]()
         var decisions = [WKPermissionDecision]()
@@ -2111,6 +2165,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             revokePermissionsInOtherTabs: revokePermissionsInOtherTabs
         )
         sut.sitePermissionsDependenciesProvider = { dependencies }
+        // The test tab has no window; treat its dialogs as visible unless a test says otherwise.
+        sut.sitePermissionsDialogVisibilityOverride = { true }
         sut.setSitePermissionsGeolocationActive(true)
         if hasCommittedMainFrame {
             sut.webView(sut.webView, didCommit: nil)

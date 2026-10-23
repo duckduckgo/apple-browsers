@@ -73,3 +73,24 @@ final class DaxPetPageQuoteTests: XCTestCase {
         XCTAssertNil(DaxPetPageQuote.fragment(matching: "Hotel", in: page))
     }
 }
+
+final class DaxPetScreenReferenceTests: XCTestCase {
+
+    func testAQuestionAboutSomeoneOnlyTheScreenShowsLeavesThemUnnamed() {
+        XCTAssertTrue(DaxPetScreenReference.leavesSubjectUnnamed("when did they release their last album"))
+        XCTAssertTrue(DaxPetScreenReference.leavesSubjectUnnamed("how old is he?"))
+        XCTAssertTrue(DaxPetScreenReference.leavesSubjectUnnamed("what does this error mean?"))
+        XCTAssertTrue(DaxPetScreenReference.leavesSubjectUnnamed("make it shorter"))
+    }
+
+    func testAQuestionThatNamesWhatItIsAboutDoesNot() {
+        XCTAssertFalse(DaxPetScreenReference.leavesSubjectUnnamed("when did Iron Maiden release their last album?"))
+        XCTAssertFalse(DaxPetScreenReference.leavesSubjectUnnamed("how old is Taylor Swift?"))
+        XCTAssertFalse(DaxPetScreenReference.leavesSubjectUnnamed("is Lisbon nice in winter? I want to go there"))
+    }
+
+    func testAQuestionThatRefersToNothingDoesNot() {
+        XCTAssertFalse(DaxPetScreenReference.leavesSubjectUnnamed("recommend me some jazz"))
+        XCTAssertFalse(DaxPetScreenReference.leavesSubjectUnnamed("write an email to my landlord"))
+    }
+}

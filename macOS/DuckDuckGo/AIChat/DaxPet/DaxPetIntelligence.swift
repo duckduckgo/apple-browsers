@@ -47,6 +47,34 @@ protocol DaxPetIntelligence {
     func screenTopic(_ text: String, appName: String) async -> DaxPetScreenTopic?
 }
 
+/// Requests that point at someone or something without naming it, like "when did they release their last
+/// album?" with Spotify in front. English only; elsewhere the on-device model judges alone.
+enum DaxPetScreenReference {
+
+    static let referenceWords: Set<String> = ["this", "that", "these", "those", "here", "it", "its", "they", "them", "their",
+                                              "theirs", "he", "him", "his", "she", "her", "hers"]
+
+    /// Refers to something with one of the reference words, and names no one and nothing: no name the language
+    /// tagger knows, and no capitalised word past the first, which catches bands and products it doesn't.
+    static func leavesSubjectUnnamed(_ prompt: String) -> Bool {
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        tagger.string = prompt
+        var refers = false
+        var names = false
+        var isFirstWord = true
+        tagger.enumerateTags(in: prompt.startIndex..<prompt.endIndex, unit: .word, scheme: .nameType,
+                             options: [.omitWhitespace, .omitPunctuation, .joinNames]) { tag, range in
+            let word = String(prompt[range])
+            if referenceWords.contains(word.lowercased()) { refers = true }
+            if let tag, [.personalName, .organizationName, .placeName].contains(tag) { names = true }
+            if !isFirstWord, word != "I", word.first?.isUppercase == true { names = true }
+            isFirstWord = false
+            return true
+        }
+        return refers && !names
+    }
+}
+
 /// What's on the user's screen, and words to find pages about it.
 struct DaxPetScreenTopic: Equatable {
     let topic: String
@@ -305,13 +333,21 @@ final class DaxPetOnDeviceIntelligence: DaxPetIntelligence {
     }
 
     func refersToScreen(_ prompt: String, appName: String) async -> Bool {
+        // The model misses "they" and "she" about someone only the screen shows, so those are settled first.
+        if DaxPetScreenReference.leavesSubjectUnnamed(prompt) {
+            Logger.aiChat.notice("Dax: about the screen: true, it refers to something it doesn't name")
+            return true
+        }
         let session = LanguageModelSession(instructions: """
             The user is looking at \(appName) and asks an AI assistant something. Decide whether the question points \
-            at what they have open in \(appName). It does when it says "this", "that", "these" or "here" about \
-            something unnamed, or asks to act on what's open without naming it: "what is this?", "summarize", \
-            "summarize this email", "translate this", "what does this error mean?", "reply to this", "is this a scam?". \
-            It doesn't when the question stands on its own: "what's the capital of France?", "write a poem about \
-            ducks", "how do I boil an egg?", "help me write an email to my landlord".
+            at what they have open in \(appName). It does when it refers to something it doesn't name: "this", "that", \
+            "these", "here", or "it", "they", "them", "their", "he", "she", "his" or "her" about someone or something \
+            that only the screen shows, or when it asks to act on what's open without naming it. For example: \
+            "what is this?", "summarize", "summarize this email", "translate this", "what does this error mean?", \
+            "reply to this", "is this a scam?", "when did they release their last album?", "how old is she?", \
+            "is it any good?", "who sings this?". It doesn't when the question names what it's about or stands on \
+            its own: "what's the capital of France?", "write a poem about ducks", "how do I boil an egg?", \
+            "help me write an email to my landlord", "when did Iron Maiden release their last album?".
             """)
         let response = await respond(session, to: "Question: \(prompt)", generating: ScreenReference.self, temperature: 0,
                                      for: "screen check")

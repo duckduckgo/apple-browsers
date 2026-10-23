@@ -84,6 +84,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var freshSuggestionsCachedState: FreshChatSuggestionsState = .hidden
     private var freshSuggestionsDestinationID: String?
     private var freshSuggestionsCandidates: [MultiTabAttachmentCandidate] = []
+    private var freshSuggestionsVariant: SuggestionsVariant?
+    private var freshSuggestionsSettingsObserver: AnyCancellable?
     private var freshSuggestionsValidity: (@MainActor () -> Bool)?
     private var freshSuggestionsTask: Task<Void, Never>?
     private var freshSuggestionsGeneration = UUID()
@@ -94,18 +96,25 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             hideFreshSuggestions()
             return
         }
+        if freshSuggestionsSettingsObserver == nil {
+            freshSuggestionsSettingsObserver = DuckAINativeSettings.shared.objectWillChange.sink { [weak self] in
+                Task { @MainActor in self?.refreshCurrentFreshSuggestions() }
+            }
+        }
+        let candidates = freshMetadataCandidates()
+        let variant = DuckAINativeSettings.shared.suggestionsVariant()
         freshSuggestionsValidity = isFresh
-        if freshSuggestionsDestinationID == destinationID {
+        if freshSuggestionsDestinationID == destinationID, candidates == freshSuggestionsCandidates,
+           variant == freshSuggestionsVariant {
             freshSuggestionsState = isFresh() ? freshSuggestionsCachedState : .hidden
             return
         }
-        guard isFresh(), let source = tabAttachmentSource else { freshSuggestionsState = .hidden; return }
+        guard isFresh(), tabAttachmentSource != nil else { freshSuggestionsState = .hidden; return }
         hideFreshSuggestions()
         freshSuggestionsValidity = isFresh
         freshSuggestionsDestinationID = destinationID
-        freshSuggestionsCandidates = Array(source.candidates().filter {
-            !$0.isCurrentTab && ["http", "https"].contains($0.url.scheme?.lowercased() ?? "")
-        }.prefix(6))
+        freshSuggestionsCandidates = candidates
+        freshSuggestionsVariant = variant
         guard !freshSuggestionsCandidates.isEmpty else { return }
         let metadata = freshSuggestionsCandidates.enumerated().map {
             OpenTabMetadata(id: String($0.offset), title: $0.element.title, host: $0.element.url.host ?? "")
@@ -117,9 +126,25 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         freshSuggestionsTask = Task { [weak self] in
             let suggestions = await OpenTabSuggestions.generate(tabs: metadata, locale: Locale.current.identifier, provider: provider)
             guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else { return }
+            guard self.freshMetadataCandidates() == self.freshSuggestionsCandidates,
+                  DuckAINativeSettings.shared.suggestionsVariant() == variant, self.isTabAttachmentFeatureAvailable else {
+                self.refreshCurrentFreshSuggestions()
+                return
+            }
             self.freshSuggestionsCachedState = suggestions.isEmpty ? .unavailable : .ready(suggestions)
             self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? self.freshSuggestionsCachedState : .hidden
         }
+    }
+
+    private func freshMetadataCandidates() -> [MultiTabAttachmentCandidate] {
+        Array((tabAttachmentSource?.candidates() ?? []).filter {
+            !$0.isCurrentTab && ["http", "https"].contains($0.url.scheme?.lowercased() ?? "")
+        }.prefix(6))
+    }
+
+    private func refreshCurrentFreshSuggestions() {
+        guard let destination = freshSuggestionsDestinationID, let isFresh = freshSuggestionsValidity else { return }
+        refreshFreshSuggestions(destinationID: destination, isFresh: isFresh)
     }
 
     func hideFreshSuggestions() {
@@ -128,6 +153,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         freshSuggestionsTask = nil
         freshSuggestionsDestinationID = nil
         freshSuggestionsCandidates = []
+        freshSuggestionsVariant = nil
         freshSuggestionsCachedState = .hidden
         freshSuggestionsState = .hidden
         freshSuggestionsValidity = nil
@@ -150,6 +176,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         for candidate in selected {
             guard attachmentController.setTabAttachment(candidate, isAttached: true, attachmentSource: .recentTabs).isSuccessful else {
                 discardTabAttachments()
+                freshSuggestionsCachedState = .unavailable
+                freshSuggestionsState = .unavailable
                 return
             }
         }
@@ -2135,7 +2163,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             viewController.mentionHandler = mentionController
             tabMentionCandidatesCancellable = source?.tabsPublisher?
                 .receive(on: DispatchQueue.main)
-                .sink { [weak self] _ in self?.tabMentionController?.refresh() }
+                .sink { [weak self] _ in
+                    self?.tabMentionController?.refresh()
+                    self?.refreshCurrentFreshSuggestions()
+                }
         }
         if synchronizesDraft { synchronizeTabAttachmentPreparations() }
         updateImageButtonVisibility()

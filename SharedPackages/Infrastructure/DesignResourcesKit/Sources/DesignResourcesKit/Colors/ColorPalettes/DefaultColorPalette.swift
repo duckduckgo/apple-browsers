@@ -322,6 +322,18 @@ struct DefaultColorPalette: ColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: x3D3D3D)
         case .unifiedToggleInputStopButtonBackground:
             return DynamicColor(lightColor: .shade(0.06), darkColor: .tint(0.12))
+        case .unifiedToggleInputListeningGlowBlue:
+            return DynamicColor(lightColor: RebrandingColor.Pondwater.pondwater30, darkColor: RebrandingColor.Pondwater.pondwater60)
+        case .unifiedToggleInputListeningGlowGreen:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad30, darkColor: RebrandingColor.Lilypad.lilypad60)
+        case .unifiedToggleInputListeningGlowHaloGreen:
+            return DynamicColor(lightColor: RebrandingColor.Lilypad.lilypad30, darkColor: RebrandingColor.Lilypad.lilypad50)
+        case .unifiedToggleInputListeningGlowViolet:
+            return DynamicColor(lightColor: RebrandingColor.Blossom.blossom30, darkColor: RebrandingColor.Blossom.blossom50)
+        case .unifiedToggleInputListeningGlowReducedMotionRing:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater40)
+        case .unifiedToggleInputListeningGlowReducedMotionHalo:
+            return DynamicColor(staticColor: RebrandingColor.Pondwater.pondwater30)
         case .floatingAddressBarBackground:
             return DynamicColor(lightColor: .shade(0.05), darkColor: .tint(0.08))
         case .floatingEmbeddedAddressBarBackground:

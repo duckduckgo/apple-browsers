@@ -485,6 +485,29 @@ final class UnifiedToggleInputViewController: UIViewController {
         inputBarView.setInactiveCardAppearance(inactive)
     }
 
+    // MARK: - Inline Voice To Text
+
+    var isInlineVoiceListening: Bool { inputBarView.isInlineVoiceListening }
+
+    func setInlineVoiceListening(_ listening: Bool) {
+        inputBarView.setInlineVoiceListening(listening)
+    }
+
+    var softwareKeyboardSuppression: SwitchBarTextEntryView.SoftwareKeyboardSuppression {
+        get { inputBarView.softwareKeyboardSuppression }
+        set { inputBarView.softwareKeyboardSuppression = newValue }
+    }
+
+    var onInlineVoiceStopTapped: (() -> Void)? {
+        get { inputBarView.onInlineVoiceStopTapped }
+        set { inputBarView.onInlineVoiceStopTapped = newValue }
+    }
+
+    var onInlineVoiceSubmitTapped: (() -> Void)? {
+        get { inputBarView.onInlineVoiceSubmitTapped }
+        set { inputBarView.onInlineVoiceSubmitTapped = newValue }
+    }
+
     func activateInput() {
         inputBarView.becomeFirstResponder()
     }

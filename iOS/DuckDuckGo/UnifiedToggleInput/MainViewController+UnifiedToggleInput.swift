@@ -1321,6 +1321,40 @@ extension MainViewController {
 
 }
 
+// MARK: - Inline Voice To Text
+
+extension MainViewController {
+
+    /// With inline voice-to-text on, the microphone transcribes into the address bar, opening it first
+    /// when needed, instead of presenting full-screen voice search. Microphone access must already be granted.
+    /// Returns `false` when full-screen voice search should open instead.
+    func startInlineVoiceToTextIfEnabled(preferredTarget: VoiceSearchTarget?) -> Bool {
+        guard featureFlagger.isFeatureOn(.inlineVoiceToText),
+              let coordinator = unifiedToggleInputCoordinator else { return false }
+
+        if coordinator.isInlineVoiceToTextAvailable {
+            coordinator.startInlineVoiceToText()
+            return coordinator.isInlineVoiceToTextActive
+        }
+
+        let textEntryMode: TextEntryMode? = preferredTarget.map { $0 == .AIChat ? .aiChat : .search }
+        let decision = activateFromOmnibarIfNeeded(currentText: nil,
+                                                   tapped: false,
+                                                   textEntryMode: textEntryMode,
+                                                   isRequestValid: { true },
+                                                   onFocus: { [weak self] didFocus in
+            // Opening the address bar did not stick, so fall back to the full-screen experience.
+            guard !didFocus, let self, self.unifiedToggleInputCoordinator?.isInlineVoiceToTextActive != true else { return }
+            self.showVoiceSearch(preferredTarget: preferredTarget)
+        })
+        guard decision == .intercept else { return false }
+
+        // Starting before the scheduled focus keeps the keyboard from flashing up first.
+        coordinator.startInlineVoiceToText()
+        return true
+    }
+}
+
 // MARK: - UnifiedToggleInputOmnibarActivating
 
 extension MainViewController: UnifiedToggleInputOmnibarActivating {

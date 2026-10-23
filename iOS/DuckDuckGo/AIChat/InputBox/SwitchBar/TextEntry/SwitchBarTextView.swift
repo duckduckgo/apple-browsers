@@ -26,6 +26,8 @@ import DesignResourcesKitIcons
 final class SwitchBarTextView: UITextView {
 
     var onTouchesBeganHandler: (() -> Void)?
+    /// Called on every touch, unlike `onTouchesBeganHandler`, which is cleared after the first.
+    var onAnyTouchBegan: (() -> Void)?
     var isInputFrozen = false
 
     /// When set, a native image/file paste is routed into the attachment strip; `nil` keeps default paste.
@@ -58,6 +60,7 @@ final class SwitchBarTextView: UITextView {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         onTouchesBeganHandler?()
+        onAnyTouchBegan?()
     }
 
     override var canBecomeFirstResponder: Bool {

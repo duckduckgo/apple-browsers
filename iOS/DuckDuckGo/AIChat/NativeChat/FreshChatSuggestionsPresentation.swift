@@ -85,6 +85,7 @@ final class FreshChatSuggestionsPresentation {
               input.currentTabUID == destinationID, !input.hasSubmittedPrompt,
               input.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
         if let nativeChat {
+            if case .error = nativeChat.session.state.status { return false }
             return !nativeChat.restoredAfterRelaunch && tab.nativeChat === nativeChat && nativeChat.session.state.messages.isEmpty
                 && nativeChat.session.state.context.opening == nil
         }

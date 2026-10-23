@@ -9,6 +9,7 @@ name: Should Run PR Checks
 # - Always runs for PRs that are not in draft state
 # - Runs for draft PRs only if they have the specified "run checks" label
 # - If `paths` is set, PRs that pass the checks above also need to change a file matching one of the paths. This ensures the calling workflow always starts without leaving required checks pending forever.
+#   A path starting with `!` excludes matching files.
 #
 # Usage:
 #   jobs:
@@ -18,6 +19,7 @@ name: Should Run PR Checks
 #         paths: |
 #           iOS/**
 #           SharedPackages/**
+#           !.github/workflows/smartling*.yml
 #     other-job:
 #       needs: [should-run-checks]
 #       if: needs.should-run-checks.outputs.should_run == 'true'
@@ -36,7 +38,7 @@ on:
         type: string
         default: 'strict pr checks'
       paths:
-        description: 'Newline-separated glob patterns. When set, PR checks run only if the PR changes a matching file'
+        description: 'Newline-separated glob patterns. When set, PR checks run only if the PR changes a matching file. Patterns starting with ! exclude files'
         required: false
         type: string
         default: ''
@@ -117,11 +119,16 @@ jobs:
         run: |
           set -euo pipefail
 
-          # One `:(glob)` pathspec per non-empty line of `paths`, so `dir/**` matches everything under `dir`
+          # One `:(glob)` pathspec per non-empty line of `paths`, so `dir/**` matches everything under `dir`.
+          # A line starting with `!` becomes a `:(glob,exclude)` pathspec.
           pathspecs=()
           while IFS= read -r pattern; do
             pattern="$(echo "$pattern" | xargs)"
-            [[ -n "$pattern" ]] && pathspecs+=(":(glob)$pattern")
+            if [[ "$pattern" == !* ]]; then
+              pathspecs+=(":(glob,exclude)${pattern#!}")
+            elif [[ -n "$pattern" ]]; then
+              pathspecs+=(":(glob)$pattern")
+            fi
           done <<< "$PATHS"
 
           # The merge commit's first parent is the base branch, so this diff is exactly the PR's changes.

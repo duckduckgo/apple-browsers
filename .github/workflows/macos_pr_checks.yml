@@ -68,6 +68,7 @@ jobs:
     with:
       paths: |
         .github/**
+        !.github/workflows/smartling*.yml
         .xcode-version
         SharedPackages/**
         macOS/**

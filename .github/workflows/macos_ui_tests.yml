@@ -67,6 +67,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - '.github/**'
+      - '!.github/workflows/smartling*.yml'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/Package.swift'
 

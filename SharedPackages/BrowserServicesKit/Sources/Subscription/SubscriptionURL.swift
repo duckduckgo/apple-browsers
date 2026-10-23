@@ -186,7 +186,7 @@ extension SubscriptionURL {
             url = url.appendingParameter(name: AttributionParameter.origin, value: origin)
         }
         if let planChangeEntry {
-            url = url.appendingParameter(name: QueryParameter.planChangeEntry, value: planChangeEntry)
+            url = url.appendingParameter(name: PlanChangeParameter.entry, value: planChangeEntry)
         }
         if let tier {
             url = url.appendingParameter(name: "tier", value: tier)
@@ -215,10 +215,13 @@ extension SubscriptionURL {
         public static let winback = "winback"
     }
 
+    public enum PlanChangeParameter {
+        public static let entry = "planChangeEntry"
+    }
+
     /// Query item names the subscription pages read off the URL they are opened with.
-    public enum QueryParameter {
+    enum QueryParameter {
         static let featurePage = "featurePage"
-        public static let planChangeEntry = "planChangeEntry"
         /// Whether the user is eligible for a free trial. Always stated on a pre-rendered paywall.
         static let trial = "trial"
         /// Only ever `false`, and only when the offering excludes Personal Information Removal.

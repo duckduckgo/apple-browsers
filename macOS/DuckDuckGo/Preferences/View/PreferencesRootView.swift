@@ -441,14 +441,15 @@ enum Preferences {
                                                         blackFridayCampaignProvider: blackFridayCampaignProvider,
                                                         isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
                                                         cancelPendingDowngradeHandler: { [flowPerformer] productId in
-                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, contextName: "CancelDowngradeButton")
+                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, wideEventFunnelName: "CancelDowngradeButton")
             })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
             DispatchQueue.main.async {
                 let parameterName = switch subscriptionURL {
-                case .plans, .upgradeToTier: SubscriptionURL.QueryParameter.planChangeEntry
+                // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
+                case .plans, .upgradeToTier: SubscriptionURL.PlanChangeParameter.entry
                 default: AttributionParameter.origin
                 }
                 let url = subscriptionManager.url(for: subscriptionURL)

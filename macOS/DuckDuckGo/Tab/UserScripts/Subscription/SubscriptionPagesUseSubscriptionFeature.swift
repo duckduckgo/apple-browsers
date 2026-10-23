@@ -292,7 +292,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let origin = await setPixelOrigin(from: message)
         PixelKit.fire(SubscriptionPixel.subscriptionPurchaseAttempt(origin: origin), frequency: .legacyDailyAndCount)
-        let planChangeEntry = await queryParameter(named: SubscriptionURL.QueryParameter.planChangeEntry, from: message)
+        let planChangeEntry = await queryParameter(named: SubscriptionURL.PlanChangeParameter.entry, from: message)
 
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             // 1: Parse subscription selection from message object
@@ -503,7 +503,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
         let message = original
         let origin = await setPixelOrigin(from: message)
-        let planChangeEntry = await queryParameter(named: SubscriptionURL.QueryParameter.planChangeEntry, from: message)
+        let planChangeEntry = await queryParameter(named: SubscriptionURL.PlanChangeParameter.entry, from: message)
         let funnelName = origin ?? planChangeEntry
 
         // Debug: Log raw params received from frontend
@@ -526,7 +526,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let purchaseUpdate = await flowPerformer.performTierChange(
                 to: subscriptionSelection.id,
                 changeType: subscriptionSelection.change,
-                contextName: funnelName ?? ""
+                wideEventFunnelName: funnelName ?? ""
             )
             if let purchaseUpdate {
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: purchaseUpdate)

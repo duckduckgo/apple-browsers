@@ -65,7 +65,7 @@ class ReleaseStatus:
     incomplete_locales: List[str] = field(default_factory=list)
     locales: Optional[int] = None
     strings_awaiting_authorization: Optional[int] = None
-    jobs_awaiting_authorization: List[str] = field(default_factory=list)
+    jobs_awaiting_authorization: List[Dict] = field(default_factory=list)
     reason: str = ""
 
     def as_dict(self) -> Dict:
@@ -722,21 +722,28 @@ async def run_release_status(client: SmartlingClient,
         return failed_release_status(error, job_id, job_status)
 
 
-async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[str]:
-    """The project's jobs awaiting authorization, which keep their strings out of other jobs."""
+async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[Dict]:
+    """The project's jobs awaiting authorization, which keep their strings out of other jobs, with their links."""
     try:
         jobs = await client.list_jobs_awaiting_authorization()
     except Exception as error:  # pylint: disable=broad-except
         log(f"⚠️ Could not list the jobs awaiting authorization: {error}")
         return []
     jobs = sorted(jobs, key=lambda job: job.get('createdDate') or '')
-    descriptions = []
-    for job in jobs:
-        name = job.get('jobName', 'unnamed')
-        created = (job.get('createdDate') or '')[:10]
-        descriptions.append(f"{name} (created {created})" if created else name)
+    descriptions = [
+        {
+            'name': job.get('jobName', 'unnamed'),
+            'created': (job.get('createdDate') or '')[:10],
+            'url': job_url(client, job_uid(job)),
+        }
+        for job in jobs
+    ]
     if descriptions:
-        log(f"✋ Jobs awaiting authorization: {', '.join(descriptions)}")
+        lines = [
+            f"- {job['name']} (created {job['created']}): {job['url']}" if job['created'] else f"- {job['name']}: {job['url']}"
+            for job in descriptions
+        ]
+        log("✋ Jobs awaiting authorization:\n" + '\n'.join(lines))
     return descriptions
 
 

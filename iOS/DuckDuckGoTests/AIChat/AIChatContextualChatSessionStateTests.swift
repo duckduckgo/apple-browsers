@@ -2186,6 +2186,81 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Suggestions Resolve Race Tests
 
+    func testIndependentSuggestionsStartBeforeContextAndIgnoreLateCollection() async {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        provider.independentPageResolution = true
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(aiChatSettings: mockSettings, pixelHandler: mockPixelHandler,
+                                                       featureFlagger: mockFeatureFlagger, suggestedPromptsProvider: provider)
+        sessionState.beginLoadingSuggestions()
+        await yieldUntil { provider.startedCount == 1 }
+        XCTAssertEqual(provider.startedCount, 1)
+        XCTAssertNil(provider.lastInput?.url)
+
+        sessionState.updateContext(makeTestContext())
+        await yieldBriefly()
+        XCTAssertEqual(provider.startedCount, 1)
+        let expected = makeSuggestedPrompts(ids: ["recent", "useful"])
+        provider.resume(at: 0, returning: expected)
+        await yieldUntil { self.sessionState.suggestionsLoadState == .loaded }
+        XCTAssertEqual(sessionState.suggestions, expected)
+
+        sessionState.updateContext(makeTestContext())
+        await yieldBriefly()
+        XCTAssertEqual(provider.startedCount, 1)
+        XCTAssertEqual(sessionState.suggestions, expected)
+    }
+
+    func testIndependentSuggestionsDiscardPreviousNavigationResult() async {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        provider.independentPageResolution = true
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(aiChatSettings: mockSettings, pixelHandler: mockPixelHandler,
+                                                       featureFlagger: mockFeatureFlagger, suggestedPromptsProvider: provider)
+        sessionState.beginLoadingSuggestions()
+        await yieldUntil { provider.startedCount == 1 }
+        sessionState.notifyPageChanged(pageURL: URL(string: "https://example.com/new"))
+        sessionState.beginLoadingSuggestions()
+        await yieldUntil { provider.startedCount == 2 }
+        let expected = makeSuggestedPrompts(ids: ["new-page"])
+        provider.resume(at: 1, returning: expected)
+        await yieldUntil { self.sessionState.suggestionsLoadState == .loaded }
+        provider.resume(at: 0, returning: makeSuggestedPrompts(ids: ["old-page"]))
+        await yieldBriefly()
+        XCTAssertEqual(sessionState.suggestions, expected)
+    }
+
+    func testContextDependentSuggestionsStillWaitForCollection() async {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState = AIChatContextualChatSessionState(aiChatSettings: mockSettings, pixelHandler: mockPixelHandler,
+                                                       featureFlagger: mockFeatureFlagger, suggestedPromptsProvider: provider)
+        sessionState.beginLoadingSuggestions()
+        await yieldBriefly()
+        XCTAssertEqual(provider.startedCount, 0)
+        sessionState.updateContext(makeTestContext())
+        await yieldUntil { provider.startedCount == 1 }
+        XCTAssertEqual(provider.startedCount, 1)
+        XCTAssertNotNil(provider.lastInput?.url)
+        provider.resume(at: 0, returning: [])
+    }
+
+    func testIndependentPageProviderStillWaitsForSelectionContext() async {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        provider.independentPageResolution = true
+        sessionState = AIChatContextualChatSessionState(aiChatSettings: mockSettings, pixelHandler: mockPixelHandler,
+                                                       featureFlagger: mockFeatureFlagger, suggestedPromptsProvider: provider)
+        sessionState.attachSelection(makeSelection())
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        sessionState.beginLoadingSuggestions()
+        await yieldBriefly()
+        XCTAssertEqual(provider.startedCount, 0)
+        sessionState.updateContext(makeTestContext())
+        await yieldUntil { provider.startedCount == 1 }
+        XCTAssertEqual(provider.lastInput?.scope, .selection)
+        provider.resume(at: 0, returning: [])
+    }
+
     func testStaleSuggestionsResolveFromPreviousNavigationIsDiscarded() async {
         // Given - a provider whose resolves complete only when the test says so
         let provider = GatedContextualSuggestedPromptsProvider()
@@ -2930,9 +3005,16 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
     let maxSuggestedPrompts = 4
     let prioritySuggestionIDs: Set<String> = []
     private(set) var startedCount = 0
+    private(set) var lastInput: ResolvePageSuggestionsInput?
+    var independentPageResolution = false
     private var continuations: [CheckedContinuation<ResolvedPageSuggestions, Never>] = []
 
+    func requiresPageContext(for scope: ResolvePageSuggestionsInput.Scope) -> Bool {
+        !independentPageResolution || scope != .page
+    }
+
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
+        lastInput = input
         startedCount += 1
         return await withCheckedContinuation { continuations.append($0) }
     }

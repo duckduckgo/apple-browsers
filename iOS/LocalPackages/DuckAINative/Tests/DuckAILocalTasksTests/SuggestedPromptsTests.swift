@@ -33,6 +33,8 @@ import Testing
         #expect(!turn.input.contains("6 |"))
         #expect(!turn.input.contains(String(repeating: "t", count: 101)))
         #expect(!turn.input.contains("https://"))
+        #expect(turn.instructions.contains("most recently viewed to least recently viewed"))
+        #expect(turn.instructions.contains("first tab"))
         let raw = """
         9 | Unknown source | Explain this unknown source.
         0,0 | Repeated source | Explain these repeated sources.

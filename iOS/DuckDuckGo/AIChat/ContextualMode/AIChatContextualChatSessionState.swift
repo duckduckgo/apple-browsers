@@ -648,17 +648,21 @@ final class AIChatContextualChatSessionState {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
         suggestionsRequestID = UUID()
         suggestionsResolveTask?.cancel()
+        suggestionsResolveTask = nil
+        suggestionsTimeoutTask?.cancel()
         suggestions = []
         suggestionsLoadState = .loading
         let scope: ResolvePageSuggestionsInput.Scope = attachedSelections.isEmpty ? .page : .selection
         if let cached = suggestedPromptsProvider.cachedSuggestions(scope: scope, locale: Locale.current.identifier) {
-            suggestions = cached.suggestions
-            suggestionsAreSmart = cached.isSmart
-            suggestionsPageType = cached.pageType
-            suggestionsScope = scope
+            applySuggestions(cached, scope: scope)
+            return
         }
         rebuildViewState()
-        startSuggestionsTimeout()
+        if suggestedPromptsProvider.requiresPageContext(for: scope) {
+            startSuggestionsTimeout()
+        } else {
+            resolveSuggestionsIfLoading(from: nil)
+        }
     }
 
     /// Updates the latest page context and determines attach behavior based on internal state.
@@ -1007,6 +1011,8 @@ private extension AIChatContextualChatSessionState {
               featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
               !hasActiveChat else { return }
 
+        let scope: ResolvePageSuggestionsInput.Scope = attachedSelections.isEmpty ? .page : .selection
+        if suggestionsResolveTask != nil, !suggestedPromptsProvider.requiresPageContext(for: scope) { return }
         suggestionsTimeoutTask?.cancel()
 
         // Signals still travel under selection scope: translate compares the source page's language
@@ -1015,7 +1021,7 @@ private extension AIChatContextualChatSessionState {
             pageTypeSignals: context?.contextData.pageTypeSignals,
             url: context?.contextData.url,
             uiLocale: Locale.current.identifier,
-            scope: attachedSelections.isEmpty ? .page : .selection,
+            scope: scope,
             isDocument: context?.contextData.mimeType == AIChatPageContextData.pdfMIMEType,
             pageTitle: context?.contextData.title,
             pageContent: context?.contextData.content

@@ -123,7 +123,7 @@ final class TabLocalSuggestions {
     }
 
     private func hasReusableRun(for key: SuggestionsKey) -> Bool {
-        guard cache.key == key else { return false }
+        guard isAttachable(), cache.key == key else { return false }
         guard let run = cache.run else { return true }
         if case .generated = run.result { return true }
         return false
@@ -135,6 +135,10 @@ final class TabLocalSuggestions {
             do { try await Task.sleep(for: .milliseconds(50)) } catch { return false }
             guard self.webView === webView, webView.url == url else { return false }
         }
+        guard !webView.isLoading, isAttachable() else {
+            recordFallback(webView.isLoading ? "Page is still loading" : "Page is not attachable")
+            return false
+        }
         return !Task.isCancelled
     }
 
@@ -144,13 +148,10 @@ final class TabLocalSuggestions {
             recordFallback("No HTTP document is connected")
             return
         }
-        guard await waitUntilReady(webView, url: url) else { return }
-        guard !webView.isLoading, isAttachable() else {
-            recordFallback(webView.isLoading ? "Page is still loading" : "Page is not attachable")
-            return
-        }
         let variant = DuckAINativeSettings.shared.suggestionsVariant(locale: locale)
         let key = SuggestionsKey(document: document, url: url, variant: variant)
+        if hasReusableRun(for: key) { return }
+        guard await waitUntilReady(webView, url: url) else { return }
         if hasReusableRun(for: key) { return }
         let body = variant.input == .body ? "(document.body?.innerText || '').slice(0, 1200)" : "''"
         let script = """

@@ -28,7 +28,7 @@ import UIKit
 final class FreshChatSuggestionsPresentation {
     private weak var tab: TabViewController?
     private weak var input: UnifiedToggleInputCoordinator?
-    private let content = FreshChatSuggestionsView()
+    private let content: FreshChatSuggestionsView
     private var subscriptions = Set<AnyCancellable>()
     private var submitted = false
     private var isActive = true
@@ -42,6 +42,7 @@ final class FreshChatSuggestionsPresentation {
         self.input = input
         destinationID = tab.tabModel.uid
         nativeChat = tab.nativeChat
+        content = FreshChatSuggestionsView(welcome: tab.nativeChat == nil ? .privateChat : .local)
         initialURL = tab.url ?? tab.link?.url
         webRecipient = tab.userScripts?.aiChatUserScript
         content.isHidden = true

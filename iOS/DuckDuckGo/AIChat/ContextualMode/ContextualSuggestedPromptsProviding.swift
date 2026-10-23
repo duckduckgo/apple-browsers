@@ -84,6 +84,9 @@ protocol ContextualSuggestedPromptsProviding {
     /// Suggestions that must displace a regular suggestion rather than be trimmed from the end.
     var prioritySuggestionIDs: Set<String> { get }
 
+    @MainActor
+    func requiresPageContext(for scope: ResolvePageSuggestionsInput.Scope) -> Bool
+
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions
     @MainActor
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput,
@@ -95,6 +98,9 @@ protocol ContextualSuggestedPromptsProviding {
 }
 
 extension ContextualSuggestedPromptsProviding {
+    @MainActor
+    func requiresPageContext(for scope: ResolvePageSuggestionsInput.Scope) -> Bool { true }
+
     @MainActor
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput,
                             onUpdate: @escaping @MainActor (ResolvedPageSuggestions) -> Void) async -> ResolvedPageSuggestions {

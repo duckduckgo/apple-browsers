@@ -32,6 +32,11 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
     var maxSuggestedPrompts: Int { base.maxSuggestedPrompts }
     var prioritySuggestionIDs: Set<String> { base.prioritySuggestionIDs }
 
+    @MainActor
+    func requiresPageContext(for scope: ResolvePageSuggestionsInput.Scope) -> Bool {
+        scope != .page || local == nil || !DuckAINativeSettings.shared.generatesSuggestedPromptsLocally
+    }
+
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {
         await resolveSuggestions(input, onUpdate: { _ in })
     }

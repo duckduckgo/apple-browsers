@@ -29,7 +29,7 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func openTabsKeepCompleteRowsWhenProviderStalls() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n9 | Unknown | What is this source?\n0 | Partial | Why do ducks")
+        let provider = StallingTabProvider("0 | What do ducks eat?\n9 | What is this source?\n0 | Why do ducks")
         let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, budget: .milliseconds(100))
         #expect(run.outcome == .timedOut)
         #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
@@ -40,7 +40,7 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func openTabsStopAfterThreeCompleteValidRows() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n0 | Duck homes | Where do ducks live?\n0 | Duck flight | How do ducks fly?\n")
+        let provider = StallingTabProvider("0 | What do ducks eat?\n0 | Where do ducks live?\n0 | How do ducks fly?\n")
         let started = ContinuousClock.now
         let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
         #expect(run.outcome == .generated)
@@ -53,17 +53,17 @@ import Testing
     func openTabsUseBoundedMetadataAndRejectUnknownDuplicateSources() async {
         let tabs = (0..<9).map { OpenTabMetadata(id: String($0), title: String(repeating: "t", count: 200), host: "example.com") }
         let turn = OpenTabSuggestions.turn(tabs: tabs, locale: "en")
-        #expect(!turn.input.contains("6 |"))
+        #expect(!turn.input.contains("\"id\":\"6\""))
         #expect(!turn.input.contains(String(repeating: "t", count: 101)))
         #expect(!turn.input.contains("https://"))
         #expect(turn.instructions.contains("most recently viewed to least recently viewed"))
         #expect(turn.instructions.contains("first tab"))
         let raw = """
-        9 | Unknown source | Explain this unknown source.
-        0,0 | Repeated source | Explain these repeated sources.
-        0,1 | Compare these tabs | Compare the topics of these two tabs.
-        1 | Duplicate question | Compare the topics of these two tabs.
-        2 | Explain this tab | Explain the main topic of this tab.
+        9 | Explain this unknown source.
+        0,0 | Explain these repeated sources.
+        0,1 | Compare the topics of these two tabs.
+        1 | Compare the topics of these two tabs.
+        2 | Explain the main topic of this tab.
         """
         let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
         #expect(parsed.map(\.sourceIDs) == [["0", "1"], ["2"]])
@@ -78,7 +78,9 @@ import Testing
                                   recentSearchQuery: "walking shoes " + String(repeating: "x", count: 200))
         let turn = OpenTabSuggestions.turn(tabs: [tab], locale: "en")
         #expect(tab.recentSearchQuery?.count == 100)
-        #expect(turn.input.contains("0 | A shoe review | example.com | Recent search: walking shoes"))
+        #expect(turn.input.contains("walking shoes"))
+        #expect(turn.input.contains("\"recentSearchQuery\""))
+        #expect(turn.input.contains("A shoe review"))
         #expect(!turn.input.contains(String(repeating: "x", count: 101)))
         #expect(turn.instructions.contains("relevant follow-up to that search"))
     }
@@ -91,10 +93,10 @@ import Testing
         #expect(failed.outcome == .failed(.network))
         #expect(failed.suggestions.isEmpty)
         let refused = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: StallingTabProvider(
-            "0 | Duck food | What do ducks eat?\n", refusal: true))
+            "0 | What do ducks eat?\n", refusal: true))
         #expect(refused.outcome == .refused)
         #expect(refused.suggestions.isEmpty)
-        let unusable = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("9 | Unknown | What is this source?"))
+        let unusable = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("9 | What is this source?"))
         #expect(unusable.outcome == .unusable)
         #expect(unusable.suggestions.isEmpty)
     }
@@ -103,7 +105,7 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func cancelledOpenTabsDiscardCompletedRowsAndReturnPromptly() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n")
+        let provider = StallingTabProvider("0 | What do ducks eat?\n")
         let task = Task { await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider) }
         var iterator = provider.started.makeAsyncIterator()
         _ = await iterator.next()
@@ -118,25 +120,25 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func openTabsAcceptTrailingRowOnlyAfterNormalCompletion() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("0 | Duck food | What do ducks eat?"))
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("0 | What do ducks eat?"))
         #expect(run.outcome == .generated)
         #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func openTabsShowTheGeneratedQuestionInsteadOfAnEchoedTitle() {
+    func openTabsUseTheActionForBothLabelAndPrompt() {
         let tabs = [OpenTabMetadata(id: "0", title: "Walking shoes", host: "example.com")]
-        let parsed = OpenTabSuggestions.parse("0 | Walking shoes | Which shoes suit long walks?", tabs: tabs)
+        let parsed = OpenTabSuggestions.parse("0 | Which shoes suit long walks?", tabs: tabs)
         #expect(parsed.first?.label == "Which shoes suit long walks?")
-        #expect(OpenTabSuggestions.parse("0 | Walking shoes | walking shoes", tabs: tabs).isEmpty)
+        #expect(OpenTabSuggestions.parse("0 | walking shoes", tabs: tabs).isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func openTabsAllowModelLoadingBeforeTheGenerationBudget() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StubProvider(configuration: .init(reply: "0 | Duck food | What do ducks eat?",
+        let provider = StubProvider(configuration: .init(reply: "0 | What do ducks eat?",
                                                         wordsPerSecond: 10_000, loadTime: .milliseconds(200), readTime: .zero))
         for _ in 0..<2 {
             let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, budget: .milliseconds(100))
@@ -175,10 +177,10 @@ import Testing
         let wide = String(repeating: "W", count: 61)
         #expect(SuggestedPromptsPrompt.parse("\(verbose)\n\(wide)\nSummarize this page", max: 3).map(\.text) == ["Summarize this page"])
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let raw = "0 | \(verbose) | \(verbose)\n0 | Ducks | \(wide)\n0 | Summarize this page | \(verbose)"
+        let raw = "0 | \(verbose)\n0 | \(wide)\n0 | Summarize this page"
         let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
         #expect(parsed.map(\.label) == ["Summarize this page"])
-        #expect(parsed.first?.prompt == verbose)
+        #expect(parsed.first?.prompt == "Summarize this page")
     }
 
     @available(iOS 16, macOS 13, *)
@@ -186,6 +188,45 @@ import Testing
     func contextualChipsUseTheShorterDisplayBudget() {
         let raw = "Explain these seven words about this page\n\(String(repeating: "W", count: 46))\nCompare these treatment options"
         #expect(SuggestedPromptsPrompt.parse(raw, max: 3).map(\.text) == ["Compare these treatment options"])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func capturedGuardianResponseIsRepairedWithinTheFirstRun() async {
+        let title = "Latest news, sport and opinion from the Guardian"
+        let raw = "0 | Latest news, sport and opinion from the Guardian | What are the top stories in sports and opinion right now?"
+        let tabs = [OpenTabMetadata(id: "0", title: title, host: "theguardian.com")]
+        #expect(OpenTabSuggestions.parse(raw, tabs: tabs).isEmpty)
+        #expect(OpenTabSuggestions.parse("0 | https://theguardian.com", tabs: tabs).isEmpty)
+        #expect(OpenTabSuggestions.parse("0 | theguardian.com", tabs: tabs).isEmpty)
+        #expect(OpenTabSuggestions.parse("0 | www.theguardian.com/sport", tabs: tabs).isEmpty)
+        #expect(OpenTabSuggestions.parse("0 | 今日のスポーツニュースは？", tabs: tabs).first?.label == "今日のスポーツニュースは？")
+        #expect(OpenTabSuggestions.parse("0 | \(title)", tabs: tabs).isEmpty)
+        let provider = RepairTabProvider(replies: [raw, "0 | Which sports stories should I explore?"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.outcome == .generated)
+        #expect(run.suggestions.first?.label == "Which sports stories should I explore?")
+        #expect(run.suggestions.first?.prompt == run.suggestions.first?.label)
+        #expect(run.suggestions.first?.sourceIDs == ["0"])
+        #expect(run.raw.contains(raw))
+        #expect(provider.turns.count == 2)
+        #expect(provider.turns[0].input == provider.turns[1].input)
+        #expect(!provider.turns[1].input.contains("What are the top stories"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func correctionIsBoundedAndDoesNotRestartTheGenerationBudget() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let provider = RepairTabProvider(replies: ["unusable", "still unusable"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.outcome == .unusable)
+        #expect(provider.turns.count == 2)
+        let slow = RepairTabProvider(replies: ["unusable", "0 | What do ducks eat?"], delay: .milliseconds(150))
+        let timed = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: slow, budget: .milliseconds(250))
+        #expect(timed.outcome == .timedOut)
+        #expect(timed.suggestions.isEmpty)
+        #expect(slow.turns.count == 2)
     }
 
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
@@ -529,6 +570,41 @@ private final class StallingTabProvider: ChatProvider {
             start.finish()
             if refusal { continuation.yield(.refusal(Refusal(detectedBy: "test"))) }
             if let failure { continuation.finish(throwing: failure) }
+        }
+    }
+}
+
+private final class RepairTabProvider: ChatProvider, @unchecked Sendable {
+    let descriptor = ProviderDescriptor(id: ProviderID(rawValue: "repair"), displayName: "Repair", modelName: "Repair", contextWindowTokens: 4096)
+    let availability: ProviderAvailability = .ready
+    private let lock = NSLock()
+    private var requests: [ProviderTurn] = []
+    private let replies: [String]
+    private let delay: Duration
+    var turns: [ProviderTurn] { lock.withLock { requests } }
+    init(replies: [String], delay: Duration = .zero) {
+        self.replies = replies
+        self.delay = delay
+    }
+    func availabilityUpdates() -> AsyncStream<ProviderAvailability> { AsyncStream { $0.finish() } }
+    func download() async throws { }
+    func prepare() async { }
+    func unload() { }
+    func reply(to turn: ProviderTurn, stop: StopSignal) -> AsyncThrowingStream<ProviderEvent, Error> {
+        let index = lock.withLock {
+            requests.append(turn)
+            return requests.count - 1
+        }
+        return AsyncThrowingStream { continuation in
+            let task = Task {
+                continuation.yield(.stage(.readingInput(estimatedTokens: 1, fraction: nil)))
+                try? await Task.sleep(for: delay)
+                guard !Task.isCancelled, !stop.isRaised else { continuation.finish(); return }
+                continuation.yield(.textDelta(replies[min(index, replies.count - 1)]))
+                continuation.yield(.finished(nil))
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in stop.raise(); task.cancel() }
         }
     }
 }

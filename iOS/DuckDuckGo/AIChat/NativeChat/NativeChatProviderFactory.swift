@@ -50,9 +50,9 @@ enum NativeChatProviderFactory {
     static func makeSuggestionsProvider(forOpenTabs: Bool) -> any ChatProvider {
         if forOpenTabs, resolvedModel(for: .suggestedPrompts) == .stub {
             let reply = """
-            0 | Explain this tab | Explain the main topic of this tab.
-            0 | Find the key points | What are the key points of this tab?
-            0 | Suggest next steps | What should I explore next about this tab?
+            0 | Explain the main topic of this tab.
+            0 | What are this tab’s key points?
+            0 | What should I explore next?
             """
             return StubProvider(configuration: .init(reply: reply, wordsPerSecond: 60,
                                                      loadTime: .milliseconds(200), readTime: .milliseconds(200)))

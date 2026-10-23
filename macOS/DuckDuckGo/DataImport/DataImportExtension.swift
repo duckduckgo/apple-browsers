@@ -201,7 +201,7 @@ extension DataImport {
                 if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
-            case .creditCards:
+            case .creditCards, .history:
                 return false
             }
         }
@@ -464,6 +464,7 @@ extension DataImport.DataType {
         case .bookmarks: UserText.bookmarkImportBookmarks
         case .passwords: UserText.importLoginsPasswords
         case .creditCards: UserText.importCreditCards
+        case .history: UserText.importHistory
         }
     }
 
@@ -475,6 +476,7 @@ extension DataImport.DataType: @retroactive Comparable {
         case .bookmarks: return 0
         case .passwords: return 1
         case .creditCards: return 2
+        case .history: return 3
         }
     }
 

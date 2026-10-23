@@ -707,6 +707,7 @@ extension DataImport.DataType {
         case .bookmarks: [.html]
         case .passwords: [.commaSeparatedText]
         case .creditCards: [.json]
+        case .history: []
         }
     }
 }

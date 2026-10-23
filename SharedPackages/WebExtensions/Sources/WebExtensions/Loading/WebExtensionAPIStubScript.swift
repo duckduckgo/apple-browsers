@@ -36,6 +36,9 @@ import Foundation
 ///   one, so DuckDuckGo autofill can step aside for it. Without that handler they are persisted in
 ///   `storage.local` under one reserved key.
 ///
+/// In an extension page embedded in a website, `chrome.action.openPopup` is relayed to the extension's
+/// background page, since calling WebKit's own there would take the website's web process down.
+///
 /// A few extensions also get a fix of their own, listed in `extensionFixes` with the problem each one
 /// solves, for Chrome-only code no generic stub can cover.
 ///
@@ -215,6 +218,8 @@ public enum WebExtensionAPIStubScript {
         var missingMembers = [
             { path: "storage.managed", kind: "managedStorage" },
             { path: "webNavigation.onCreatedNavigationTarget", kind: "event" },
+            { path: "webNavigation.onHistoryStateUpdated", kind: "event" },
+            { path: "webNavigation.onTabReplaced", kind: "event" },
             { path: "runtime.onSuspend", kind: "event" }
         ];
 
@@ -1274,10 +1279,158 @@ public enum WebExtensionAPIStubScript {
             console.info("[DuckDuckGo] Could not wrap chrome.permissions: " + error);
         }
 
-        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0) {
+        // An extension page loaded in an iframe inside a website runs in that website's web
+        // process. iCloud Passwords' completion list is one: it is the "Enable Password AutoFill"
+        // prompt under a login field. WebKit treats `action.openPopup()` from such a frame as an
+        // invalid message and terminates the web process, which takes the website down with it.
+        // So the frame hands the call to the extension's background page through runtime
+        // messaging, and the background page makes it with WebKit's own `openPopup`. WebKit then
+        // presents and tracks the popup as it does for any `openPopup` call, with the options as
+        // given and without the user gesture a toolbar click marks. `runtime.sendMessage` reaches
+        // every page of the extension, so the extension's own `runtime.onMessage` listeners are kept
+        // from relay messages in all of them, and only the background page answers.
+        var actionOpenPopupRelayKey = "__ddgActionOpenPopup";
+
+        function isActionOpenPopupRelay(message) {
+            return message !== null && typeof message === "object"
+                && Object.prototype.hasOwnProperty.call(message, actionOpenPopupRelayKey);
+        }
+
+        // Frames inside the extension's own pages run in its process, where WebKit's `openPopup` works.
+        function isEmbeddedInWebsite() {
+            try {
+                if (globalThis.top === undefined || globalThis.top === globalThis) {
+                    return false;
+                }
+                return globalThis.top.location.protocol !== "webkit-extension:";
+            } catch (error) {
+                // A website is cross-origin to an extension page, so reading its `location` throws.
+                return true;
+            }
+        }
+
+        function isBackgroundPage() {
+            try {
+                var background = api.runtime.getManifest().background;
+                var page = background && background.page;
+                if (typeof page !== "string" || globalThis.location === undefined) {
+                    return false;
+                }
+                return globalThis.location.pathname === (page.charAt(0) === "/" ? page : "/" + page);
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function makeRelayedOpenPopup() {
+            return function() {
+                var last = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
+                var callback = typeof last === "function" ? last : undefined;
+                var first = arguments.length > 0 ? arguments[0] : undefined;
+                var request = {};
+                request[actionOpenPopupRelayKey] = first !== null && typeof first === "object" ? first : {};
+                var promise = Promise.resolve().then(function() {
+                    return api.runtime.sendMessage(request);
+                }).then(function(reply) {
+                    if (reply === null || typeof reply !== "object") {
+                        throw new Error("The extension's background page did not open the popup");
+                    }
+                    if (typeof reply.error === "string") {
+                        throw new Error(reply.error);
+                    }
+                    return undefined;
+                });
+                return answerBothStyles(promise, callback);
+            };
+        }
+
+        // Returns a function that registers a listener directly, past the filter, or `null` when the
+        // listeners couldn't be wrapped.
+        function hideActionOpenPopupRelays() {
+            var onMessage = api.runtime.onMessage;
+            var addListener = onMessage.addListener;
+            var removeListener = onMessage.removeListener;
+            var hasListener = onMessage.hasListener;
+            if (typeof addListener !== "function" || typeof removeListener !== "function"
+                || typeof hasListener !== "function") {
+                return null;
+            }
+
+            // Each extension listener is registered through one wrapper that skips relay messages,
+            // so removing or looking up the original listener finds the same wrapper.
+            var wrappers = new WeakMap();
+            function wrapperFor(listener) {
+                if (typeof listener !== "function") {
+                    return listener;
+                }
+                var wrapper = wrappers.get(listener);
+                if (wrapper === undefined) {
+                    wrapper = function(message) {
+                        return isActionOpenPopupRelay(message) ? undefined : listener.apply(this, arguments);
+                    };
+                    wrappers.set(listener, wrapper);
+                }
+                return wrapper;
+            }
+
+            var isWrapped = define(onMessage, "addListener", function(listener) {
+                return addListener.call(onMessage, wrapperFor(listener));
+            }) && define(onMessage, "removeListener", function(listener) {
+                return removeListener.call(onMessage, wrapperFor(listener));
+            }) && define(onMessage, "hasListener", function(listener) {
+                return hasListener.call(onMessage, wrapperFor(listener));
+            });
+            if (!isWrapped) {
+                return null;
+            }
+            return function(listener) {
+                addListener.call(onMessage, listener);
+            };
+        }
+
+        function installActionOpenPopupRelay(addListenerDirectly) {
+            addListenerDirectly(function(message, sender, sendResponse) {
+                if (!isActionOpenPopupRelay(message) || !sender || sender.id !== api.runtime.id) {
+                    return undefined;
+                }
+                Promise.resolve().then(function() {
+                    return api.action.openPopup(message[actionOpenPopupRelayKey]);
+                }).then(function() {
+                    sendResponse({});
+                }, function(error) {
+                    var text = error && error.message ? String(error.message) : String(error);
+                    // WebKit rejects options it doesn't support as "Invalid call to action.openPopup()",
+                    // which the API compatibility log counts as invalid arguments.
+                    reportAPI("error", text);
+                    sendResponse({ error: text });
+                });
+                return true;
+            });
+        }
+
+        var relayedMembers = [];
+        try {
+            if (api.action && api.action.openPopup !== undefined && api.runtime) {
+                var addListenerDirectly = api.runtime.onMessage ? hideActionOpenPopupRelays() : null;
+                if (isEmbeddedInWebsite()) {
+                    if (typeof api.runtime.sendMessage === "function"
+                        && define(api.action, "openPopup", makeRelayedOpenPopup())) {
+                        relayedMembers.push("action.openPopup");
+                    }
+                } else if (addListenerDirectly !== null && isBackgroundPage()) {
+                    installActionOpenPopupRelay(addListenerDirectly);
+                    relayedMembers.push("runtime.onMessage");
+                }
+            }
+        } catch (error) {
+            console.info("[DuckDuckGo] Could not relay chrome.action.openPopup: " + error);
+        }
+
+        if (stubbedNamespaces.length > 0 || stubbedMembers.length > 0 || wrappedNamespaces.length > 0
+            || relayedMembers.length > 0) {
             console.info("[DuckDuckGo] Stubbed unavailable extension APIs — namespaces: ["
                 + stubbedNamespaces.join(", ") + "], members: [" + stubbedMembers.join(", ")
-                + "], wrapped: [" + wrappedNamespaces.join(", ") + "]");
+                + "], wrapped: [" + wrappedNamespaces.join(", ") + "], relayed: [" + relayedMembers.join(", ") + "]");
         }
     })();
 

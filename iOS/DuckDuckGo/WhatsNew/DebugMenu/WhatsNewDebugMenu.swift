@@ -23,9 +23,11 @@ import CoreData
 import Core
 import RemoteMessaging
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 struct WhatsNewDebugView: View {
     @StateObject private var viewModel: WhatsNewDebugViewModel
+    @State private var isShowingExamplePrompt = false
 
     init(
         diagnosticsProvider: PromoCoordinationDiagnosticsProviding?,
@@ -60,11 +62,68 @@ struct WhatsNewDebugView: View {
             }
 
             Section(header: Text(verbatim: "Debug Tool")) {
+                Button("Show Example Prompt") {
+                    isShowingExamplePrompt = true
+                }
                 Button("Delete RMF Messages") {
                     viewModel.deleteAllMessages()
                 }
             }
         }
+        .sheet(isPresented: $isShowingExamplePrompt) {
+            WhatsNewExamplePrompt {
+                isShowingExamplePrompt = false
+            }
+        }
+    }
+}
+
+private struct WhatsNewExamplePrompt: UIViewControllerRepresentable {
+    let onClose: () -> Void
+
+    func makeUIViewController(context: Context) -> WhatsNewViewController {
+        WhatsNewViewController(displayModel: .example, onCloseButton: onClose)
+    }
+
+    func updateUIViewController(_ uiViewController: WhatsNewViewController, context: Context) {}
+}
+
+private extension RemoteMessagingUI.CardsListDisplayModel {
+    static var example: Self {
+        let chevron = Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronRightSmall)
+
+        return .init(
+            screenTitle: "What’s New",
+            icon: RemotePlaceholder.ddgAnnounce.rawValue,
+            preloadedHeaderImage: nil,
+            headerImageUrl: nil,
+            loadHeaderImage: nil,
+            onHeaderImageLoadSuccess: nil,
+            onHeaderImageLoadFailed: nil,
+            items: [
+                .twoLinesCard(.init(
+                    icon: RemotePlaceholder.aiChat.rawValue,
+                    title: "Sync Duck.ai Chats Across Devices",
+                    description: "Sync your chats across desktop and mobile by visiting Duck.ai Settings > Sync & Backup.",
+                    disclosureIcon: chevron
+                )),
+                .twoLinesCard(.init(
+                    icon: RemotePlaceholder.announce.rawValue,
+                    title: "Browse With Fire Tabs",
+                    description: "Use Fire Tabs to isolate your browsing from normal tabs and browse without saving local history.",
+                    disclosureIcon: chevron,
+                    cachedImage: { DesignSystemImages.Color.Size96.fire }
+                )),
+                .twoLinesCard(.init(
+                    icon: RemotePlaceholder.subscription.rawValue,
+                    title: "Explore More Subscription Options",
+                    description: "Pick from two plans: Plus (for all four protections) or Pro (for more powerful AI functionality).",
+                    disclosureIcon: chevron
+                ))
+            ],
+            onAppear: nil,
+            primaryAction: nil
+        )
     }
 }
 

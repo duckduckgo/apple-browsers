@@ -60,7 +60,7 @@ enum UTIAttachmentPrivacyKind: String {
         switch attachment {
         case .image: self = .image
         case .file: self = .file
-        case .invalidFile, .tab: return nil
+        case .invalidFile, .tab, .pastedText: return nil
         }
     }
 }

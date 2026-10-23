@@ -1,0 +1,22 @@
+{
+    "fire_memory-cache-cleanup_finished": {
+        "description": "Fires when the memory cache removal that a single-tab burn defers to the background finishes. Shows how long it takes, and whether iOS ended the app's background time before it finished.",
+        "owners": ["jaceklyp"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "duration_ms",
+                "type": "string",
+                "enum": ["100", "250", "500", "1000", "2000", "5000", "10000", "30000", "60000", "120000", "300000", "more"],
+                "description": "Time from the removal starting until it finished, bucketed by inclusive upper bound in milliseconds; more means over 300000 ms."
+            },
+            {
+                "key": "expired",
+                "type": "boolean",
+                "description": "iOS ended the background time before the removal finished, so the removed sites are removed again once the app is active."
+            }
+        ]
+    }
+}

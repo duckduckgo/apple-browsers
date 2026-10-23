@@ -46,4 +46,9 @@ DEPLOYMENT_LOCATION[config=Debug] = NO
 DSTROOT[config=Debug] = ${BUILT_PRODUCTS_DIR}
 INSTALL_PATH[config=Debug] = Applications/DEBUG
 
+// To install to /Applications/DEBUG/ for 1Password extension testing, set DEPLOYMENT_LOCATION to YES
+DEPLOYMENT_LOCATION[config=CI] = NO
+DSTROOT[config=CI] = ${BUILT_PRODUCTS_DIR}
+INSTALL_PATH[config=CI] = Applications/DEBUG
+
 #include? "../../LocalOverrides.xcconfig"

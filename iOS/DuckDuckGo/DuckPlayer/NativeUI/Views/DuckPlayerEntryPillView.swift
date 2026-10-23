@@ -39,7 +39,6 @@ struct DuckPlayerEntryPillView: View {
         static let vStackSpacing: CGFloat = 4
         static let hStackSpacing: CGFloat = 10
         static let fontSize: CGFloat = 16
-        static let cornerRadius: CGFloat = 16
         static let shadowOpacity: CGFloat = 0.1
         static let shadowRadius: CGFloat = 3
         static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
@@ -93,9 +92,7 @@ struct DuckPlayerEntryPillView: View {
                     )
 
                 }
-                .cornerRadius(AppRebrand.isAppRebranded() ?
-                              ContainerMetrics.cornerRadius
-                              : Constants.cornerRadius)
+                .cornerRadius(ContainerMetrics.cornerRadius)
                 .shadow(
                     color: Color.black.opacity(Constants.shadowOpacity), radius: Constants.shadowRadius,
                     x: Constants.shadowOffset.width, y: Constants.shadowOffset.height

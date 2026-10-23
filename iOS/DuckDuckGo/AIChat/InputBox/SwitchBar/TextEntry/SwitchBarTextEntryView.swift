@@ -399,14 +399,20 @@ class SwitchBarTextEntryView: UIView {
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         if action == #selector(pasteURLAndGo) {
-            return !isInputFrozen && UIPasteboard.general.hasStrings
+            return !isInputFrozen && textView.pasteboard().hasStrings
         }
         return super.canPerformAction(action, withSender: sender)
     }
 
-    @objc private func pasteURLAndGo() {
-        guard !isInputFrozen, let pastedText = UIPasteboard.general.string,
+    @objc func pasteURLAndGo() {
+        guard !isInputFrozen, !handler.isInputBlockedByUsageLimit,
+              let pastedText = textView.pasteboard().string,
               !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if AttachmentPasteRouting.routeInsertedText(pastedText, with: attachmentPasteHandler) {
+            setQueryText("")
+            handler.submitAIChatAttachmentOnlyPrompt(trigger: .pasteAndGo)
+            return
+        }
         handler.updateCurrentText(pastedText)
         handler.submitText(pastedText, trigger: .pasteAndGo)
     }
@@ -414,7 +420,7 @@ class SwitchBarTextEntryView: UIView {
     /// Appends "Paste & Go" to the long-press menu when the clipboard has text (iOS 16+).
     @available(iOS 16.0, *)
     private func pasteAndGoEditMenu(appendingTo suggestedActions: [UIMenuElement]) -> UIMenu? {
-        guard UIPasteboard.general.hasStrings else { return nil }
+        guard textView.pasteboard().hasStrings else { return nil }
         let pasteAndGo = UIAction(title: UserText.actionPasteAndGo) { [weak self] _ in
             self?.pasteURLAndGo()
         }
@@ -1205,6 +1211,13 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
+            return false
+        }
+        if #available(iOS 18, *), textView.isWritingToolsActive {
+            return true
+        }
+        if AttachmentPasteRouting.routeInsertedText(text, with: attachmentPasteHandler) {
+            PastedTextInsertion.removeReplacedSelection(in: textView, range: range)
             return false
         }
         return true

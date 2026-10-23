@@ -1556,13 +1556,13 @@ struct UserText {
         return String(format: message, peerName)
     }
 
-    // Confirmation shown when closing the Sync setup dialog while a device is still being connected (V2 — simplifiedSyncSetupV2).
-    static let syncCloseSetupConfirmationTitleV2 = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationMessageV2 = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationActionV2 = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting (V2)")
-    static let syncCloseSetupConfirmationTitleImproved = NotLocalizedString("sync.close-setup-improved.confirmation.title", value: "Are you sure you want to cancel?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
-    static let syncCloseSetupConfirmationConfirmActionImproved = NotLocalizedString("sync.close-setup-improved.confirmation.confirm-action", value: "Confirm", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting")
-    static let syncCloseSetupConfirmationGoBackActionImproved = NotLocalizedString("sync.close-setup-improved.confirmation.go-back-action", value: "Go Back", comment: "Button that dismisses the confirmation and returns to the Sync setup dialog")
+    // Confirmation shown when closing the Sync setup dialog while a device is still being connected.
+    static let syncCloseSetupConfirmationTitle = NSLocalizedString("sync.close-setup-v2.confirmation.title", value: "Are you sure you want to close this window?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationMessage = NSLocalizedString("sync.close-setup-v2.confirmation.message", value: "Closing this window will stop connecting Sync & Backup.", comment: "Message of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationAction = NSLocalizedString("sync.close-setup-v2.confirmation.action", value: "Close", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationTitleImproved = NSLocalizedString("sync.close-setup-improved.confirmation.title", value: "Are you sure you want to cancel?", comment: "Title of the confirmation shown when closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationConfirmActionImproved = NSLocalizedString("sync.close-setup-improved.confirmation.confirm-action", value: "Confirm", comment: "Button that confirms closing the Sync setup dialog before the devices finished connecting")
+    static let syncCloseSetupConfirmationGoBackActionImproved = NSLocalizedString("sync.close-setup-improved.confirmation.go-back-action", value: "Go Back", comment: "Button that dismisses the confirmation and returns to the Sync setup dialog")
     static let syncBookmarkPausedAlertTitle = NSLocalizedString("alert.sync-bookmarks-paused-title", value: "Bookmark Sync is Paused", comment: "Title for alert shown when sync bookmarks paused for too many items")
     static let syncBookmarkPausedAlertDescription = NSLocalizedString("alert.sync-bookmarks-paused-description", value: "You've reached the maximum number of bookmarks. Please delete some bookmarks to resume sync.", comment: "Description for alert shown when sync bookmarks paused for too many items")
     static let syncCredentialsPausedAlertTitle = NSLocalizedString("alert.sync-credentials-paused-title", value: "Password Sync is Paused", comment: "Title for alert shown when sync credentials paused for too many items")
@@ -1928,6 +1928,7 @@ struct UserText {
     static let importLoginsPasswordsExplainerEncrypted = NSLocalizedString("import.logins.passwords.explainer.encrypted", value: "Encrypted", comment: "Explanatory label stating that the passwords are encrypted")
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
+    static let importHistory = NotLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
@@ -1990,6 +1991,14 @@ struct UserText {
         let localized = NSLocalizedString("import.summary.credit.cards.imported.partial", value: "Credit Cards Imported: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
         return String(format: localized, successful, total)
     }
+    static func importSummaryHistoryImported(_ count: Int) -> String {
+        let localized = NotLocalizedString("import.summary.history.imported", value: "History Imported: %d (last 30 days)", comment: "Summary text showing number of browsing history visits imported from the last 30 days")
+        return String(format: localized, count)
+    }
+    static func importSummaryHistoryImportedPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NotLocalizedString("import.summary.history.imported.partial", value: "History Imported: %d / %d (last 30 days)", comment: "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days")
+        return String(format: localized, successful, total)
+    }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")
         return String(format: localized, count)
@@ -2035,6 +2044,7 @@ struct UserText {
     static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
     static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
     static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
+    static let importCouldNotImportHistory = NotLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
     static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")

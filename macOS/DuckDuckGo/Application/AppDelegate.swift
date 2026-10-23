@@ -119,7 +119,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .downgraded: versionChange = .downgraded
         case .noChange: versionChange = nil
         }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
+            NSApp.isActive ? .active : .inactive
+        }
     }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
@@ -479,6 +481,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             syncService: syncService,
             storage: KeyedStorage(storage: UserDefaults.standard),
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
+    lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            hasTopLevelEntitiesProvider: { [bookmarkManager] in
+                bookmarkManager.hasTopLevelEntities()
+            },
+            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher(),
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
+    lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        AutofillEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            isAnyCategoryEmptyProvider: {
+                guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
+                return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
+            },
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
             recordResult: { [weak self] in
                 self?.promoService?.dismiss(promoId: $0, result: $1)
             }
@@ -1658,7 +1690,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
             syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
             bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate,
-            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate
+            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate,
+            bookmarksEmptyStatePromoDelegate: bookmarksEmptyStatePromoDelegate,
+            autofillEmptyStatePromoDelegate: autofillEmptyStatePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2322,9 +2356,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Bitwarden's Chrome Web Store ID. Bitwarden is disabled while the `webExtensionBitwarden` flag is off.
-    private static let bitwardenChromeWebStoreID = "nngceckbapebfimnlniiiahkandclblb"
-
     @available(macOS 15.4, *)
     @MainActor
     private func initializeWebExtensions() async {
@@ -2361,17 +2392,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @available(macOS 15.4, *)
     @MainActor
     private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
-        guard self.webExtensionManager === webExtensionManager, webExtensionManager.remoteDisableEnforcer == nil else { return }
-        let remoteDisableEnforcer = WebExtensionRemoteDisableEnforcer(
-            manager: webExtensionManager,
+        guard self.webExtensionManager === webExtensionManager else { return }
+        webExtensionManager.startRemoteDisableEnforcer(
             configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            disabledExtensionIDs: { [featureFlagger] in
-                featureFlagger.isFeatureOn(.webExtensionBitwarden) ? [] : [Self.bitwardenChromeWebStoreID]
-            },
-            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+            featureFlagger: featureFlagger
         )
-        webExtensionManager.remoteDisableEnforcer = remoteDisableEnforcer
-        remoteDisableEnforcer.start()
     }
 
     @available(macOS 15.4, *)

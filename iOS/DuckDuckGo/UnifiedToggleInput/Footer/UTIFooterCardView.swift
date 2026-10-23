@@ -71,6 +71,7 @@ final class UTIFooterCardView: UIView {
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
     private var formattedTitleMessage: UTIFooterMessage?
+    private var titleStyle: UTIFooterMessage.TitleStyle = .standard
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -115,10 +116,12 @@ final class UTIFooterCardView: UIView {
                 titleLabel.accessibilityLabel = nil
                 formattedTitleMessage = nil
             }
-            // A title above a reset line is a headline; a standalone one is body copy.
-            let isStandaloneCopy = message.subtitle == nil
-            titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+            titleLabel.font = Self.titleFont(for: message)
             titleLabel.text = message.title
+        }
+        if titleStyle != message.titleStyle {
+            titleStyle = message.titleStyle
+            applyColors()
         }
         // A label can't take a tap on part of its text, so copy carrying a link renders in the text view.
         titleLabel.isHidden = message.link != nil
@@ -162,6 +165,16 @@ final class UTIFooterCardView: UIView {
 
     @objc private func dismissTapped() {
         onDismissTap?()
+    }
+
+    private static func titleFont(for message: UTIFooterMessage) -> UIFont {
+        switch message.titleStyle {
+        case .error:
+            return .daxCaption1()
+        case .standard:
+            // A title above a reset line is a headline; a standalone one is body copy.
+            return message.subtitle == nil ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+        }
     }
 
     private var allIcons: [UIView] {
@@ -349,7 +362,7 @@ private extension UTIFooterCardView {
 
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        titleLabel.textColor = UIColor(designSystemColor: titleStyle == .error ? .destructivePrimary : .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         infoIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)

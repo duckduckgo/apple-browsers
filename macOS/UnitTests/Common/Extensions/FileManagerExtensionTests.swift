@@ -16,67 +16,91 @@
 //  limitations under the License.
 //
 
-import XCTest
+import Foundation
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
-class FileManagerExtensionTests: XCTestCase {
+final class FileManagerExtensionTests {
 
-    let testFile = "the file"
     let testExtension1 = "dmg"
     let testExtension2 = "zip"
     let testData = "test".data(using: .utf8)!
     let fm = FileManager.default
 
-    override var allowedNonNilVariables: Set<String> {
-        ["fm"]
+    /// Unique file name per test so tests can run in parallel without clashing in the temporary directory.
+    private let testFile = "the file \(UUID().uuidString)"
+
+    private var createdURLs: [URL] = []
+
+    deinit {
+        for url in createdURLs {
+            try? fm.removeItem(at: url)
+        }
     }
 
-    func testWhenItemMovedToSameURLIncrementingIndexThenNoErrorIsThrown() {
+    private func write(to url: URL) throws {
+        try testData.write(to: url)
+        createdURLs.append(url)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemMovedToSameURLIncrementingIndexThenNoErrorIsThrown() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
-        try? testData.write(to: srcURL)
+        try write(to: srcURL)
 
-        let destURL = try? fm.moveItem(at: srcURL, to: srcURL, incrementingIndexIfExists: true)
-        XCTAssertEqual(srcURL, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: destURL!.path))
+        let destURL = try fm.moveItem(at: srcURL, to: srcURL, incrementingIndexIfExists: true)
+        #expect(srcURL == destURL)
+        #expect(fm.fileExists(atPath: destURL.path))
     }
 
-    func testWhenItemMovedToSameURLNotIncrementingIndexThenNoErrorIsThrown() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemMovedToSameURLNotIncrementingIndexThenNoErrorIsThrown() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
-        try? testData.write(to: srcURL)
+        try write(to: srcURL)
 
-        let destURL = try? fm.moveItem(at: srcURL, to: srcURL, incrementingIndexIfExists: false)
-        XCTAssertEqual(srcURL, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: destURL!.path))
+        let destURL = try fm.moveItem(at: srcURL, to: srcURL, incrementingIndexIfExists: false)
+        #expect(srcURL == destURL)
+        #expect(fm.fileExists(atPath: destURL.path))
     }
 
-    func testWhenItemMoveDestDoesNotExistThenIndexNotIncremented() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemMoveDestDoesNotExistThenIndexNotIncremented() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         let destURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile)
-        try? testData.write(to: srcURL)
+        try write(to: srcURL)
+        createdURLs.append(destURL)
 
-        let result = try? fm.moveItem(at: srcURL, to: destURL, incrementingIndexIfExists: true)
-        XCTAssertEqual(result, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: result!.path))
-        XCTAssertFalse(fm.fileExists(atPath: srcURL.path))
+        let result = try fm.moveItem(at: srcURL, to: destURL, incrementingIndexIfExists: true)
+        #expect(result == destURL)
+        #expect(fm.fileExists(atPath: result.path))
+        #expect(!fm.fileExists(atPath: srcURL.path))
     }
 
-    func testWhenItemMoveDestExistsThenIndexIsIncremented() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemMoveDestExistsThenIndexIsIncremented() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         let existingURL1 = fm.temporaryDirectory.appendingPathComponent(testFile + testFile)
         let existingURL2 = fm.temporaryDirectory.appendingPathComponent(testFile + testFile + " 1")
         let destURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile + " 2")
 
-        try? testData.write(to: srcURL)
-        try? testData.write(to: existingURL1)
-        try? testData.write(to: existingURL2)
+        try write(to: srcURL)
+        try write(to: existingURL1)
+        try write(to: existingURL2)
+        createdURLs.append(destURL)
 
-        let result = try? fm.moveItem(at: srcURL, to: existingURL1, incrementingIndexIfExists: true)
-        XCTAssertEqual(result, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: result!.path))
-        XCTAssertFalse(fm.fileExists(atPath: srcURL.path))
+        let result = try fm.moveItem(at: srcURL, to: existingURL1, incrementingIndexIfExists: true)
+        #expect(result == destURL)
+        #expect(fm.fileExists(atPath: result.path))
+        #expect(!fm.fileExists(atPath: srcURL.path))
     }
 
-    func testWhenItemWithExtensionMoveDestExistsThenIndexIsIncrementedBeforeExtension() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemWithExtensionMoveDestExistsThenIndexIsIncrementedBeforeExtension() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         let existingURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile)
             .appendingPathExtension(testExtension1)
@@ -84,15 +108,18 @@ class FileManagerExtensionTests: XCTestCase {
         let destURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile + "." + testExtension1 + " 1")
             .appendingPathExtension(testExtension2)
 
-        try? testData.write(to: srcURL)
-        try? testData.write(to: existingURL)
+        try write(to: srcURL)
+        try write(to: existingURL)
+        createdURLs.append(destURL)
 
-        let result = try? fm.moveItem(at: srcURL, to: existingURL, incrementingIndexIfExists: true)
-        XCTAssertEqual(result, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: result!.path))
+        let result = try fm.moveItem(at: srcURL, to: existingURL, incrementingIndexIfExists: true)
+        #expect(result == destURL)
+        #expect(fm.fileExists(atPath: result.path))
     }
 
-    func testWhenItemWithExtensionMoveDestExistsAndExtensionProvidedThenIndexIsIncrementedBeforeExtension() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemWithExtensionMoveDestExistsAndExtensionProvidedThenIndexIsIncrementedBeforeExtension() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         let existingURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile)
             .appendingPathExtension(testExtension1)
@@ -100,15 +127,18 @@ class FileManagerExtensionTests: XCTestCase {
         let destURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile + "." + testExtension1 + " 1")
             .appendingPathExtension(testExtension2)
 
-        try? testData.write(to: srcURL)
-        try? testData.write(to: existingURL)
+        try write(to: srcURL)
+        try write(to: existingURL)
+        createdURLs.append(destURL)
 
-        let result = try? fm.moveItem(at: srcURL, to: existingURL, incrementingIndexIfExists: true, pathExtension: testExtension2)
-        XCTAssertEqual(result, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: result!.path))
+        let result = try fm.moveItem(at: srcURL, to: existingURL, incrementingIndexIfExists: true, pathExtension: testExtension2)
+        #expect(result == destURL)
+        #expect(fm.fileExists(atPath: result.path))
     }
 
-    func testWhenItemWithExtensionMoveDestExistsAndDoubleExtensionProvidedThenIndexIsIncrementedBeforeDoubleExtension() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemWithExtensionMoveDestExistsAndDoubleExtensionProvidedThenIndexIsIncrementedBeforeDoubleExtension() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         let existingURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile)
             .appendingPathExtension(testExtension1)
@@ -117,17 +147,20 @@ class FileManagerExtensionTests: XCTestCase {
             .appendingPathExtension(testExtension1)
             .appendingPathExtension(testExtension2)
 
-        try? testData.write(to: srcURL)
-        try? testData.write(to: existingURL)
+        try write(to: srcURL)
+        try write(to: existingURL)
+        createdURLs.append(destURL)
 
-        let result = try? fm.moveItem(at: srcURL, to: existingURL,
-                                      incrementingIndexIfExists: true,
-                                      pathExtension: testExtension1 + "." + testExtension2)
-        XCTAssertEqual(result, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: result!.path))
+        let result = try fm.moveItem(at: srcURL, to: existingURL,
+                                     incrementingIndexIfExists: true,
+                                     pathExtension: testExtension1 + "." + testExtension2)
+        #expect(result == destURL)
+        #expect(fm.fileExists(atPath: result.path))
     }
 
-    func testWhenItemWithExtensionMoveDestExistsAndWrongExtensionProvidedThenIndexIsIncrementedBeforeActualExtension() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemWithExtensionMoveDestExistsAndWrongExtensionProvidedThenIndexIsIncrementedBeforeActualExtension() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
         let existingURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile)
             .appendingPathExtension(testExtension1)
@@ -135,26 +168,30 @@ class FileManagerExtensionTests: XCTestCase {
         let destURL = fm.temporaryDirectory.appendingPathComponent(testFile + testFile + "." + testExtension1 + " 1")
             .appendingPathExtension("asd")
 
-        try? testData.write(to: srcURL)
-        try? testData.write(to: existingURL)
+        try write(to: srcURL)
+        try write(to: existingURL)
+        createdURLs.append(destURL)
 
-        let result = try? fm.moveItem(at: srcURL, to: existingURL,
-                                      incrementingIndexIfExists: true,
-                                      pathExtension: testExtension1)
-        XCTAssertEqual(result, destURL)
-        XCTAssertTrue(fm.fileExists(atPath: result!.path))
+        let result = try fm.moveItem(at: srcURL, to: existingURL,
+                                     incrementingIndexIfExists: true,
+                                     pathExtension: testExtension1)
+        #expect(result == destURL)
+        #expect(fm.fileExists(atPath: result.path))
     }
 
-    func testWhenItemMovedToReadOnlyDirThenErrorIsThrown() {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func testWhenItemMovedToReadOnlyDirThenErrorIsThrown() throws {
         let srcURL = fm.temporaryDirectory.appendingPathComponent(testFile)
-        try? testData.write(to: srcURL)
+        try write(to: srcURL)
 
         let destURL = URL(fileURLWithPath: "/ro_volume_file")
 
-        XCTAssertThrowsError(try fm.moveItem(at: srcURL, to: destURL, incrementingIndexIfExists: true), "should throw error") { (error) in
-            XCTAssertTrue((error as? CocoaError)?.code == CocoaError.fileWriteNoPermission
-                          || (error as? CocoaError)?.code == CocoaError.fileWriteVolumeReadOnly)
+        let error = #expect(throws: CocoaError.self, "should throw error") {
+            try self.fm.moveItem(at: srcURL, to: destURL, incrementingIndexIfExists: true)
         }
+        #expect(error?.code == CocoaError.fileWriteNoPermission
+                || error?.code == CocoaError.fileWriteVolumeReadOnly)
     }
 
 }

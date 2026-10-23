@@ -47,6 +47,9 @@ final class UserAuthenticatorMock: UserAuthenticating {
         didCallAuthenticate = true
         return _authenticateUser(reason)
     }
+    func isAuthenticationPromptNeeded(reason: DeviceAuthenticator.AuthenticationReason) -> Bool {
+        true
+    }
 }
 
 final class AutofillPreferencesModelTests: XCTestCase {

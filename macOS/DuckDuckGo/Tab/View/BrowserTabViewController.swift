@@ -1041,6 +1041,11 @@ final class BrowserTabViewController: NSViewController {
                                       sharesUserScripts: true)
                 // The tab handles the page's `window.close()`, alerts and new windows, as for its own web view.
                 webView.uiDelegate = tabViewModel.tab
+                // Route navigation out of extension pages through the browser tab.
+                if let manager = webExtensionManager as? WebExtensionManager,
+                   let handler = manager.internalSiteHandler as? WebExtensionInternalSiteHandler {
+                    webView.navigationDelegate = handler.navigationDelegate
+                }
                 let request = URLRequest(url: url)
                 webView.load(request)
                 tabViewModel.tab.webExtensionPageWebView = webView

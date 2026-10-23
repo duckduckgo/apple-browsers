@@ -67,8 +67,11 @@ final class UTIAttachmentController {
         var tabAttachmentFeatureState: () -> AIChatContextualAttachMoreTabsState = { .unavailable }
         var pageContextRemoveHandler: () -> (() -> Void)? = { nil }
         var isFireTab: () -> Bool = { false }
+        var isAttachmentPasteEnabled: () -> Bool = { true }
+        var isPastedTextEnabled: () -> Bool = { false }
         var isEditing: () -> Bool = { false }
         var isVoiceSessionActive: () -> Bool = { false }
+        var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -77,6 +80,7 @@ final class UTIAttachmentController {
         let onExpandIfNeeded: () -> Void
         let updateFloatingReturnKey: () -> Void
         var onTabAttached: () -> Void = {}
+        var onPastedTextSheetDismissed: () -> Void = {}
     }
 
     let pasteHandler = UnifiedToggleInputPasteHandler()
@@ -549,7 +553,7 @@ final class UTIAttachmentController {
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {
-            case .image, .file, .tab: return true
+            case .image, .file, .tab, .pastedText: return true
             case .invalidFile: return false
             }
         }.count
@@ -586,6 +590,7 @@ final class UTIAttachmentController {
             return validationMessage
         }
 
+        guard !environment.isPastedTextEnabled() else { return nil }
         return policy.promptValidationMessage(for: text)
     }
 
@@ -626,12 +631,14 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
     var pasteAttachmentSupport: UnifiedToggleInputPasteSupport {
         let policy = environment.policy()
         let limits = environment.attachmentLimits()
-        let fileTypes = limits == nil ? [] : allowedFileUTTypes.filter { !$0.conforms(to: .text) }
+        let acceptsImages = environment.isAttachmentPasteEnabled() && environment.supportsImageUpload()
+        let fileTypes = limits == nil || !environment.isAttachmentPasteEnabled() ? [] : allowedFileUTTypes.filter { !$0.conforms(to: .text) }
         return UnifiedToggleInputPasteSupport(
             isEnabled: environment.inputMode() == .aiChat && !view.isGenerating(),
-            acceptsImages: environment.supportsImageUpload(),
+            acceptsImages: acceptsImages,
             fileTypes: fileTypes,
-            maxImageCount: environment.supportsImageUpload() ? policy.remainingImagesForPicker : nil,
+            acceptsPastedText: environment.isPastedTextEnabled() && !environment.isEditing(),
+            maxImageCount: acceptsImages ? policy.remainingImagesForPicker : nil,
             maxFileSizeBytes: limits.map { $0.files.maxFileSizeMB * 1_048_576 },
             remainingFileCount: fileTypes.isEmpty ? nil : policy.remainingFilesInConversation,
             remainingTotalFileBytes: fileTypes.isEmpty ? nil : policy.remainingFileSizeBytes
@@ -698,5 +705,39 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
 
     func presentPasteError(_ message: String) {
         presentTransientValidationError(message)
+    }
+
+    func addPastedText(_ text: String) {
+        callbacks.onExpandIfNeeded()
+        view.addAttachment(.pastedText(AIChatPastedText(content: text)))
+        pixelReporter.reportPastedText(.attached)
+        callbacks.onDraftChanged()
+        clearValidationErrorIfPossible()
+        updateAttachButtonPresentation()
+        callbacks.updateFloatingReturnKey()
+    }
+}
+
+extension UTIAttachmentController {
+
+    func presentPastedTextSheet(id: UUID) {
+        guard let pastedText = view.currentAttachments().first(where: { $0.id == id })?.pastedText,
+              let host = environment.presenterViewController() else { return }
+        let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : environment.pastedTextSheetMode(pastedText)
+        pixelReporter.reportPastedText(.sheetOpened)
+        PastedTextSheetPresenter.present(pastedText, mode: mode, from: host) { [weak self] outcome in
+            guard let self else { return }
+            if case .saved(let edited) = outcome {
+                replacePastedText(id: id, with: edited)
+            }
+            callbacks.onPastedTextSheetDismissed()
+        }
+    }
+
+    private func replacePastedText(id: UUID, with pastedText: AIChatPastedText) {
+        guard view.currentAttachments().contains(where: { $0.id == id }) else { return }
+        view.replaceAttachment(id, .pastedText(pastedText))
+        pixelReporter.reportPastedText(.edited)
+        callbacks.onDraftChanged()
     }
 }

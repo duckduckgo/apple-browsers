@@ -45,8 +45,14 @@ final class FreshChatSuggestionsPresentation {
         content = FreshChatSuggestionsView(welcome: tab.nativeChat == nil ? .privateChat : .local)
         initialURL = tab.url ?? tab.link?.url
         webRecipient = tab.userScripts?.aiChatUserScript
+        content.onRetry = { [weak self] in
+            guard let self, self.isFresh else { return }
+            LocalSuggestionsDiagnostics.shared.traceOpenTabs("presentation retry destination=\(self.destinationID)")
+            self.input?.retryFreshSuggestions()
+        }
         content.isHidden = true
         mount(in: tab)
+        LocalSuggestionsDiagnostics.shared.traceOpenTabs("presentation mounted destination=\(destinationID) native=\(nativeChat != nil)")
         input.$freshSuggestionsState.sink { [weak self] state in self?.render(state) }.store(in: &subscriptions)
         input.textChangePublisher.sink { [weak self] _ in self?.refresh() }.store(in: &subscriptions)
         input.didSubmitPrompt.sink { [weak self] _ in
@@ -130,7 +136,25 @@ final class FreshChatSuggestionsPresentation {
     }
 
     private func render(_ state: FreshChatSuggestionsState) {
+        let summary: String
+        switch state {
+        case .hidden: summary = "hidden"
+        case .loading: summary = "loading"
+        case .unavailable: summary = "unavailable"
+        case .ready(let suggestions): summary = "ready(\(suggestions.count))"
+        }
+        LocalSuggestionsDiagnostics.shared.traceOpenTabs(
+            "presentation destination=\(destinationID) state=\(summary) native=\(nativeChat != nil) fresh=\(isFresh) "
+            + "window=\(content.window != nil) bounds=\(content.bounds)"
+        )
         guard isFresh else {
+            LocalSuggestionsDiagnostics.shared.traceOpenTabs(
+                "presentation hidden destination=\(destinationID) active=\(isActive) submitted=\(submitted) "
+                + "currentMatch=\(input?.currentTabUID == destinationID) "
+                + "inputEmpty=\(input?.currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == true) "
+                + "messages=\(nativeChat?.session.state.messages.count ?? 0) "
+                + "opening=\(nativeChat?.session.state.context.opening != nil) restored=\(nativeChat?.restoredAfterRelaunch == true)"
+            )
             content.isHidden = true
             return
         }

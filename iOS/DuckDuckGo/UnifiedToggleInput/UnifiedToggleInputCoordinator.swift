@@ -93,6 +93,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var preparedSuggestionRequest: MultiTabAttachmentRequest?
 
     func refreshFreshSuggestions(destinationID: String, isFresh: @escaping @MainActor () -> Bool) {
+        LocalSuggestionsDiagnostics.shared.traceOpenTabs("Refresh destination=\(destinationID) current=\(currentTabUID ?? "none") fresh=\(isFresh())")
         guard currentTabUID == destinationID else { return }
         guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally else {
             recordFreshSuggestionsSkip("Local suggested prompts disabled", destinationID: destinationID)
@@ -117,7 +118,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             freshSuggestionsState = isFresh() ? freshSuggestionsCachedState : .hidden
             return
         }
-        guard isFresh() else { freshSuggestionsState = .hidden; return }
+        guard isFresh() else {
+            LocalSuggestionsDiagnostics.shared.traceOpenTabs("Hidden: destination is not a fresh chat")
+            freshSuggestionsState = .hidden
+            return
+        }
         guard tabAttachmentSource != nil else {
             recordFreshSuggestionsSkip("Tab source unavailable", destinationID: destinationID)
             freshSuggestionsState = .hidden
@@ -142,10 +147,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let provider = NativeChatProviderFactory.makeSuggestionsProvider(forOpenTabs: true)
         freshSuggestionsDiagnosticKey = nil
         LocalSuggestionsDiagnostics.shared.recordOpenTabs(outcome: "Generating", modelName: provider.descriptor.modelName,
-                                                         details: ["Eligible tabs: \(metadata.count)"])
+                                                         details: ["Eligible tabs: \(metadata.count)", "Destination: \(destinationID)", "Generation: \(generation)"])
         freshSuggestionsTask = Task { [weak self] in
             let run = await OpenTabSuggestions.run(tabs: metadata, locale: Locale.current.identifier, provider: provider)
-            guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else { return }
+            guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else {
+                LocalSuggestionsDiagnostics.shared.traceOpenTabs("Discarded result destination=\(destinationID) generation=\(generation): cancelled or superseded")
+                return
+            }
             guard self.freshMetadataCandidates() == self.freshSuggestionsCandidates,
                   DuckAINativeSettings.shared.suggestionsVariant() == variant, self.isTabAttachmentFeatureAvailable else {
                 self.refreshCurrentFreshSuggestions()
@@ -153,7 +161,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
             LocalSuggestionsDiagnostics.shared.record(openTabs: run, modelName: provider.descriptor.modelName)
             self.freshSuggestionsCachedState = run.suggestions.isEmpty ? .unavailable : .ready(run.suggestions)
-            self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? self.freshSuggestionsCachedState : .hidden
+            let visible = self.freshSuggestionsValidity?() == true
+            LocalSuggestionsDiagnostics.shared.traceOpenTabs("Result destination=\(destinationID) generation=\(generation) accepted=\(run.suggestions.count) rawCharacters=\(run.raw.count) visible=\(visible)")
+            self.freshSuggestionsState = visible ? self.freshSuggestionsCachedState : .hidden
         }
     }
 
@@ -176,6 +186,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     func hideFreshSuggestions() {
+        LocalSuggestionsDiagnostics.shared.traceOpenTabs("Reset destination=\(freshSuggestionsDestinationID ?? "none") generation=\(freshSuggestionsGeneration)")
         freshSuggestionsGeneration = UUID()
         freshSuggestionsTask?.cancel()
         freshSuggestionsTask = nil

@@ -50,7 +50,7 @@ public enum SuggestionsEngine {
     @available(iOS 26, macOS 26, *)
     @Generable
     struct Questions {
-        @Guide(description: "Short questions or requests, each at most eight words, without numbering")
+        @Guide(description: "Short questions or requests, each at most six words and 45 characters, without numbering")
         var questions: [String]
     }
 

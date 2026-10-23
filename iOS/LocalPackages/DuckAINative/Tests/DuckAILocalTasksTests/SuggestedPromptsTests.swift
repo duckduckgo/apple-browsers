@@ -181,6 +181,13 @@ import Testing
         #expect(parsed.first?.prompt == verbose)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func contextualChipsUseTheShorterDisplayBudget() {
+        let raw = "Explain these seven words about this page\n\(String(repeating: "W", count: 46))\nCompare these treatment options"
+        #expect(SuggestedPromptsPrompt.parse(raw, max: 3).map(\.text) == ["Compare these treatment options"])
+    }
+
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
                                     content: String(repeating: "Ducks are waterfowl. ", count: 400), language: "en")
 
@@ -225,7 +232,7 @@ import Testing
         #expect(turn.instructions.contains("4"))
         #expect(turn.instructions.contains("German"))
         #expect(turn.history.isEmpty)
-        #expect(turn.instructions.contains("at most 8 words"))
+        #expect(turn.instructions.contains("at most 6 words"))
         #expect(turn.maxOutputTokens == 80)
     }
 

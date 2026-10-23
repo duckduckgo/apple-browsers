@@ -43,6 +43,14 @@ final class FreshChatSuggestionsView: UIView {
 
     private let actions = SuggestionChipFlowView()
     private let status = UILabel()
+    private let placeholders = UIStackView()
+    private let retry = UIButton(type: .system)
+    private let copyDiagnostics = UIButton(type: .system)
+    var onRetry: (() -> Void)?
+
+    override var isHidden: Bool {
+        didSet { updateLoadingAnimation() }
+    }
     private var displayedTitles: [String]?
     private var lastAnimatedTitles: [String]?
 
@@ -68,7 +76,46 @@ final class FreshChatSuggestionsView: UIView {
         status.textColor = .secondaryLabel
         status.textAlignment = .center
         status.numberOfLines = 0
-        let suggestions = UIStackView(arrangedSubviews: [status, actions])
+        placeholders.axis = .vertical
+        placeholders.alignment = .center
+        placeholders.spacing = 8
+        placeholders.isAccessibilityElement = true
+        placeholders.accessibilityLabel = "Loading suggestions"
+        for width: CGFloat in [220, 260, 190] {
+            let capsule = UIView()
+            capsule.backgroundColor = .tertiarySystemFill
+            capsule.layer.cornerRadius = 22
+            placeholders.addArrangedSubview(capsule)
+            let preferredWidth = capsule.widthAnchor.constraint(equalToConstant: width)
+            preferredWidth.priority = .defaultHigh
+            let height = capsule.heightAnchor.constraint(equalToConstant: 44)
+            height.priority = .defaultHigh
+            NSLayoutConstraint.activate([
+                height,
+                capsule.widthAnchor.constraint(lessThanOrEqualTo: placeholders.widthAnchor),
+                preferredWidth
+            ])
+        }
+        var retryConfiguration = UIButton.Configuration.plain()
+        retryConfiguration.title = "Retry"
+        retryConfiguration.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attributes in
+            var attributes = attributes
+            attributes.font = UIFont.preferredFont(forTextStyle: .footnote)
+            return attributes
+        }
+        retry.configuration = retryConfiguration
+        retry.titleLabel?.adjustsFontForContentSizeCategory = true
+        let retryHeight = retry.heightAnchor.constraint(greaterThanOrEqualToConstant: 44)
+        retryHeight.priority = .defaultHigh
+        retryHeight.isActive = true
+        retry.addAction(UIAction { [weak self] _ in self?.onRetry?() }, for: .touchUpInside)
+        var copyConfiguration = retryConfiguration
+        copyConfiguration.title = "Copy diagnostics"
+        copyDiagnostics.configuration = copyConfiguration
+        copyDiagnostics.addAction(UIAction { _ in
+            UIPasteboard.general.string = LocalSuggestionsDiagnostics.shared.openTabsReport
+        }, for: .touchUpInside)
+        let suggestions = UIStackView(arrangedSubviews: [status, placeholders, actions, retry, copyDiagnostics])
         suggestions.axis = .vertical
         suggestions.spacing = 10
         let scroll = UIScrollView()
@@ -110,16 +157,53 @@ final class FreshChatSuggestionsView: UIView {
             view.actions.invalidateIntrinsicContentSize()
             view.actions.setNeedsLayout()
         }
+        NotificationCenter.default.addObserver(self, selector: #selector(updateLoadingAnimation),
+                                               name: UIAccessibility.reduceMotionStatusDidChangeNotification, object: nil)
         render(.loading)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        updateLoadingAnimation()
+    }
+
+    @objc private func updateLoadingAnimation() {
+        guard window != nil, !isHidden, !placeholders.isHidden, !UIAccessibility.isReduceMotionEnabled else {
+            placeholders.layer.removeAnimation(forKey: "loadingPulse")
+            return
+        }
+        guard placeholders.layer.animation(forKey: "loadingPulse") == nil else { return }
+        let pulse = CABasicAnimation(keyPath: "opacity")
+        pulse.fromValue = 0.45
+        pulse.toValue = 1
+        pulse.duration = 1.1
+        pulse.autoreverses = true
+        pulse.repeatCount = .infinity
+        pulse.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        placeholders.layer.add(pulse, forKey: "loadingPulse")
+    }
+
     func render(_ state: State) {
+        placeholders.isHidden = true
+        retry.isHidden = true
+        copyDiagnostics.isHidden = true
+        defer {
+            status.isHidden = status.text == nil
+            placeholders.spacing = placeholders.isHidden ? 0 : 8
+            updateLoadingAnimation()
+        }
         switch state {
-        case .loading, .unavailable:
+        case .loading:
             actions.isHidden = true
             status.text = nil
+            placeholders.isHidden = false
+        case .unavailable:
+            actions.isHidden = true
+            status.text = "Couldn't load suggestions."
+            retry.isHidden = false
+            copyDiagnostics.isHidden = false
         case .ready(let suggestions):
             let titles = suggestions.map(\.title)
             status.text = suggestions.isEmpty ? nil : "From your recent tabs"

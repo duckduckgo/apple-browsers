@@ -95,6 +95,13 @@ struct DuckAINativeDebugView: View {
                 Text("Runs every case through the model picked for its job, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
             }
             Section("New-chat suggestions: last run") {
+                Button("Copy new-chat diagnostics") {
+                    UIPasteboard.general.string = suggestions.openTabsReport
+                }
+                DisclosureGroup("Event trace") {
+                    Text(suggestions.openTabsTrace.joined(separator: "\n"))
+                        .font(.caption.monospaced()).textSelection(.enabled)
+                }
                 if let last = suggestions.lastOpenTabs {
                     LabeledContent(last.outcome, value: last.date.formatted(date: .omitted, time: .standard))
                     if let model = last.modelName {

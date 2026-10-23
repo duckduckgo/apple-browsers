@@ -35,6 +35,8 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
 
     @Published private(set) var last: Entry?
     @Published private(set) var lastOpenTabs: Entry?
+    @Published private(set) var openTabsTrace: [String] = []
+    private var lastTraceEvent: String?
 
     func record(run: SuggestedPromptsRun, variant: SuggestionsVariant, source: String, sheetTime: Duration? = nil) {
         var details = Self.details(run: run, variant: variant)
@@ -59,7 +61,27 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
     }
 
     func recordOpenTabs(outcome: String, modelName: String? = nil, details: [String] = [], raw: String = "") {
+        traceOpenTabs(([outcome] + details).joined(separator: " | "))
         lastOpenTabs = Entry(date: Date(), outcome: outcome, modelName: modelName, details: details, raw: raw)
+    }
+
+    func traceOpenTabs(_ event: String) {
+        guard event != lastTraceEvent else { return }
+        lastTraceEvent = event
+        openTabsTrace.append("\(Date().formatted(date: .omitted, time: .standard)) \(event)")
+        if openTabsTrace.count > 100 { openTabsTrace.removeFirst(openTabsTrace.count - 100) }
+    }
+
+    var openTabsReport: String {
+        var lines = ["New-chat suggestions diagnostics", "Build: \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown")"]
+        lines.append(contentsOf: openTabsTrace)
+        if let lastOpenTabs {
+            lines.append("Last outcome: \(lastOpenTabs.outcome)")
+            lines.append("Model: \(lastOpenTabs.modelName ?? "unknown")")
+            lines.append(contentsOf: lastOpenTabs.details)
+            lines.append("Model output:\n\(lastOpenTabs.raw)")
+        }
+        return lines.joined(separator: "\n")
     }
 
     static func details(run: SuggestedPromptsRun, variant: SuggestionsVariant) -> [String] {

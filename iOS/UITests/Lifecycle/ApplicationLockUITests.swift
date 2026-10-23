@@ -69,11 +69,7 @@ final class ApplicationLockUITests: UITestCase {
                 waitForAuthenticationPrompt(authenticationReason)
             }
 
-            let passcodeField = springboard.secureTextFields.firstMatch
-            XCTAssertTrue(
-                passcodeField.waitForExistence(timeout: UITestTimeouts.elementExistence),
-                "System passcode field did not appear.")
-            passcodeField.typeText("password\n")
+            springboard.enterSimulatorPasscode()
 
             XCTAssertTrue(
                 app.searchEntry.waitForHittableInAppWindow(in: app, timeout: UITestTimeouts.navigation),

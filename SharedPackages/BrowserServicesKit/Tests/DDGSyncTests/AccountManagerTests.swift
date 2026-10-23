@@ -1189,6 +1189,175 @@ final class AccountManagerTests: XCTestCase {
         XCTAssertTrue(api.createRequestCallArgs.contains { $0.url == endpoints.logoutDevice })
     }
 
+    func testWhenFetchingAuditLogWithoutCursorThenSendsAuthenticatedRequestAndDecodesStringVersions() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
+        {
+            "audit_log": {
+                "entries": [
+                    { "id": "historical-event", "version": "1", "payload": "historical-jwe" },
+                    { "id": "current-event", "version": "1", "payload": "current-jwe" }
+                ],
+                "after": "after-cursor"
+            }
+        }
+        """)
+
+        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+
+        let request = try XCTUnwrap(api.createRequestCallArgs.first)
+        XCTAssertEqual(request.url, endpoints.auditLog)
+        XCTAssertEqual(request.url.path, "/sync/account/audit-log")
+        XCTAssertEqual(request.method, .get)
+        XCTAssertEqual(request.headers["Authorization"], "Bearer token-1")
+        XCTAssertEqual(request.parameters, [:])
+        XCTAssertNil(request.body)
+        XCTAssertEqual(page.entries.map(\.id), ["historical-event", "current-event"])
+        XCTAssertEqual(page.entries.map(\.version), ["1", "1"])
+        XCTAssertEqual(page.entries.map(\.payload), ["historical-jwe", "current-jwe"])
+        XCTAssertEqual(page.after, "after-cursor")
+        XCTAssertNil(page.before)
+    }
+
+    func testWhenFetchingAuditLogWithCursorThenSendsCursorAndLimitParameters() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
+        { "audit_log": { "entries": [], "after": "next-after", "before": "next-before" } }
+        """)
+
+        _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()),
+                                                   cursor: .after("opaque after"),
+                                                   limit: 25)
+        _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()),
+                                                   cursor: .before("opaque before"),
+                                                   limit: 10)
+
+        XCTAssertEqual(api.createRequestCallArgs.map(\.parameters), [
+            ["after": "opaque after", "limit": "25"],
+            ["before": "opaque before", "limit": "10"]
+        ])
+    }
+
+    func testWhenFetchingBackwardAuditLogPageWithoutAfterCursorThenSucceeds() async throws {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
+        { "audit_log": { "entries": [], "before": "previous-page" } }
+        """)
+
+        let page = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: .before("current-page"))
+
+        XCTAssertTrue(page.entries.isEmpty)
+        XCTAssertNil(page.after)
+        XCTAssertEqual(page.before, "previous-page")
+    }
+
+    func testWhenFetchingInitialOrForwardAuditLogPageWithoutAfterCursorThenThrows() async {
+        for cursor in [AuditLogCursor?.none, .some(.after("forward-page"))] {
+            let api = RemoteAPIRequestCreatingMock()
+            let endpoints = Endpoints(baseURL: Self.baseURL)
+            let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                                isScopedAccessCredentialsEnabled: { true })
+            api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
+            { "audit_log": { "entries": [] } }
+            """)
+
+            await assertThrowsError(AuditLogError.missingRequiredAfterCursor) {
+                _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: cursor)
+            }
+        }
+    }
+
+    func testWhenAuditLogResponseHasWrongFieldTypeThenThrowsTypedError() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("""
+        { "audit_log": { "entries": [{ "id": "entry", "version": 2, "payload": "sensitive-encrypted-value" }], "after": "cursor" } }
+        """)
+
+        await assertThrowsError(AuditLogError.responseDecodingFailed) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        }
+    }
+
+    func testAuditLogErrorsBridgeToNSErrorWithSafeStableMetadata() {
+        let decodingError = AuditLogError.responseDecodingFailed as NSError
+        XCTAssertEqual(decodingError.domain, "com.duckduckgo.sync.audit-log")
+        XCTAssertEqual(decodingError.code, 1)
+        XCTAssertEqual(decodingError.localizedDescription, "Failed to decode the audit log response.")
+        XCTAssertNil(decodingError.userInfo[NSUnderlyingErrorKey])
+
+        let missingCursorError = AuditLogError.missingRequiredAfterCursor as NSError
+        XCTAssertEqual(missingCursorError.domain, decodingError.domain)
+        XCTAssertEqual(missingCursorError.code, 2)
+        XCTAssertEqual(missingCursorError.localizedDescription, "Audit log response is missing the required after cursor.")
+        XCTAssertNil(missingCursorError.userInfo[NSUnderlyingErrorKey])
+    }
+
+    func testWhenFetchingAuditLogWithoutTokenThenThrowsWithoutMakingRequest() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let accountManager = AccountManager(endpoints: Endpoints(baseURL: Self.baseURL),
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+
+        await assertThrowsError(SyncError.noToken) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data(), token: nil), cursor: nil)
+        }
+        XCTAssertTrue(api.createRequestCallArgs.isEmpty)
+    }
+
+    func testWhenFetchingAuditLogWithMissingOrMalformedBodyThenThrows() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints, api: api, crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        api.fakeRequests[endpoints.auditLog] = HTTPRequestingMock(result: .init(data: nil, response: .init()))
+
+        await assertThrowsError(SyncError.noResponseBody) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        }
+
+        api.fakeRequests[endpoints.auditLog] = makeJSONRequest("{}")
+        await assertThrowsError(AuditLogError.responseDecodingFailed) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        }
+    }
+
+    func testWhenFetchingAuditLogRequestFailsThenPropagatesError() async {
+        let api = RemoteAPIRequestCreatingMock()
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+        let accountManager = AccountManager(endpoints: endpoints,
+                                            api: api,
+                                            crypter: CryptingMock(),
+                                            isScopedAccessCredentialsEnabled: { true })
+        let request = HTTPRequestingMock()
+        request.error = SyncError.unexpectedStatusCode(418)
+        api.fakeRequests[endpoints.auditLog] = request
+
+        await assertThrowsError(SyncError.unexpectedStatusCode(418)) {
+            _ = try await accountManager.fetchAuditLog(for: makeAccount(primaryKey: Data()), cursor: nil)
+        }
+    }
+
+    func testWhenUpdatingBaseURLThenAuditLogEndpointUsesNewBaseURL() {
+        let endpoints = Endpoints(baseURL: Self.baseURL)
+
+        endpoints.updateBaseURL(for: .development)
+
+        XCTAssertEqual(endpoints.auditLog, ServerEnvironment.development.baseURL.appendingPathComponent("sync/account/audit-log"))
+    }
+
     private func makeDeviceUpdate() -> UpdateDevices.Update {
         UpdateDevices.Update(id: "device-1",
                              name: "encrypted-name",

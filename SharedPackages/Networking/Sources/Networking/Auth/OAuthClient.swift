@@ -131,10 +131,10 @@ public protocol OAuthClient {
 
     // MARK: Logout
 
-    /// Logout by invalidating the current access token
+    /// Removes the backup token container, if any, then the current one, and asks the server to invalidate the current access token.
     func logout() async throws
 
-    /// Remove the tokens container stored locally
+    /// Removes the current token container. A backup token container, if any, is kept.
     func removeLocalAccount() throws
 }
 
@@ -190,21 +190,27 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var refreshOngoingTask: Task<TokenContainer, Error>?
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
     private let tokenRefresher: any TokenRefreshing
+    private let backupStore: TokenBackupStore?
 
     /// Creates a client that refreshes and decodes tokens through a `DefaultTokenRefresher` backed by `authService`.
     /// - Parameters:
     ///   - tokensStorage: Where the current token container is read from and saved to.
     ///   - authService: The auth API client.
     ///   - refreshEventMapping: Receives the token refresh step events.
+    ///   - backupStorage: Where the backup token container, an independent pair forked from the current one, is kept.
+    ///     When non-nil, a refresh also mints a new backup when there is none, or the stored one is expired, belongs to another account
+    ///     or was issued more than 14 days ago; `logout()` deletes it and `removeLocalAccount()` keeps it. When nil, no backup is created.
     public init(tokensStorage: any AuthTokenStoring,
                 authService: OAuthService,
-                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?) {
+                refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
+                backupStorage: (any AuthTokenStoring)? = nil) {
         self.init(tokensStorage: tokensStorage,
                   authService: authService,
                   refreshEventMapping: refreshEventMapping,
                   tokenRefresher: DefaultTokenRefresher(authService: authService,
                                                         clientID: Constants.clientID,
-                                                        refreshEventMapping: refreshEventMapping))
+                                                        refreshEventMapping: refreshEventMapping),
+                  backupStorage: backupStorage)
     }
 
     /// Creates a client that refreshes and decodes tokens through `tokenRefresher`.
@@ -213,14 +219,19 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///   - authService: The auth API client, used for every request other than refreshing and decoding.
     ///   - refreshEventMapping: Receives the refresh events the client reports itself: started, saving, succeeded and failed.
     ///   - tokenRefresher: Performs refreshes and decoding, and reports their steps.
+    ///   - backupStorage: Where the backup token container, an independent pair forked from the current one, is kept.
+    ///     When non-nil, a refresh also mints a new backup when there is none, or the stored one is expired, belongs to another account
+    ///     or was issued more than 14 days ago; `logout()` deletes it and `removeLocalAccount()` keeps it. When nil, no backup is created.
     init(tokensStorage: any AuthTokenStoring,
          authService: OAuthService,
          refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
-         tokenRefresher: any TokenRefreshing) {
+         tokenRefresher: any TokenRefreshing,
+         backupStorage: (any AuthTokenStoring)? = nil) {
         self.tokenStorage = tokensStorage
         self.authService = authService
         self.refreshEventMapping = refreshEventMapping
         self.tokenRefresher = tokenRefresher
+        self.backupStore = backupStorage.map { TokenBackupStore(storage: $0) }
     }
 
     // MARK: - Internal
@@ -326,15 +337,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("Starting token refresh")
 
                 do {
-                    let refreshedTokens = try await tokenRefresher.refresh(localTokenContainer, refreshID: refreshID)
+                    let (refreshedTokens, newBackup) = try await refreshPossiblyForking(localTokenContainer, refreshID: refreshID)
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
-                    do {
-                        try tokenStorage.saveTokenContainer(refreshedTokens)
-                    } catch {
-                        Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
-                        throw error
-                    }
+                    try saveRefreshedTokens(refreshedTokens, backup: newBackup)
 
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
@@ -374,6 +380,50 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
+    // MARK: Backup
+
+    /// Stores the refreshed token container, then the new backup when there is one.
+    /// - Parameters:
+    ///   - refreshedTokens: The new current token container.
+    ///   - backup: The new backup token container, or nil when the refresh didn't mint one.
+    /// - Throws: The storage error when saving `refreshedTokens` fails; the backup is then not saved. A failure to save the backup is only logged.
+    private func saveRefreshedTokens(_ refreshedTokens: TokenContainer, backup: TokenContainer?) throws {
+        do {
+            try tokenStorage.saveTokenContainer(refreshedTokens)
+        } catch {
+            Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+        if let backup {
+            backupStore?.save(backup)
+        }
+    }
+
+    /// Spends the refresh token of `source` once, or twice when the backup needs renewal.
+    /// - Parameters:
+    ///   - source: The token container to refresh.
+    ///   - refreshID: The identifier of the refresh, under which the first refresh call reports its steps.
+    /// - Returns: The new primary and, when two pairs were minted, the new backup. If the second call of a renewal fails,
+    ///   the pair from the first call is returned as the primary and no backup.
+    /// - Throws: The error of the first refresh call, as `TokenRefreshing.refresh` throws it, or
+    ///   `OAuthClientError.internalError` when `fork` returns a number of pairs other than two.
+    private func refreshPossiblyForking(_ source: TokenContainer, refreshID: String) async throws -> (primary: TokenContainer, backup: TokenContainer?) {
+        guard let backupStore, backupStore.needsRenewal(for: source) else {
+            return (try await tokenRefresher.refresh(source, refreshID: refreshID), nil)
+        }
+        do {
+            let minted = try await tokenRefresher.fork(source, count: 2, refreshID: refreshID)
+            guard minted.count == 2, let backup = minted.first, let primary = minted.last else {
+                throw OAuthClientError.internalError("Fork returned \(minted.count) token pairs instead of 2")
+            }
+            return (primary, backup)
+        } catch TokenForkError.incomplete(let minted, let underlying) {
+            guard let primary = minted.last else { throw underlying }
+            Logger.OAuthClient.error("Backup token fork incomplete, keeping the minted pair as primary: \(String(describing: underlying), privacy: .public)")
+            return (primary, nil)
+        }
+    }
+
     // MARK: Create
 
     /// Create an accounts, stores all tokens and returns them
@@ -400,8 +450,11 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     // MARK: Logout
 
+    /// Removes the backup token container, if any, then the current one, and asks the server to invalidate the current access token.
+    /// The server request is not awaited and its result is ignored.
     public func logout() async throws {
         let existingToken = try tokenStorage.getTokenContainer()?.accessToken
+        backupStore?.remove()
         try removeLocalAccount()
 
         if let existingToken {
@@ -412,6 +465,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
+    /// Removes the current token container. A backup token container, if any, is kept.
     public func removeLocalAccount() throws {
         Logger.OAuthClient.log("Removing local account")
         try tokenStorage.saveTokenContainer(nil)

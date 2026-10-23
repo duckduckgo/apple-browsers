@@ -32,8 +32,7 @@ final class SaveCredentialsPopoverUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        // A fresh class profile can show the import promo over the login form.
-        app = XCUIApplication.setUp(arguments: ["-com.duckduckgo.logins.isCredentialsImportPromptPermanantlyDismissed", "YES"])
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
     }
 
@@ -74,7 +73,7 @@ final class SaveCredentialsPopoverUITests: UITestCase {
     }
 
     private func signIn() {
-        let webView = app.windows.firstMatch.webViews[Self.loginPageTitle]
+        let webView = app.webViews.firstMatch
         let emailTextField = webView.textFields.firstMatch
         XCTAssertTrue(
             emailTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),

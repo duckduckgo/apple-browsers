@@ -22,8 +22,8 @@ on:
         required: true
         type: string
       xcode-version:
-        description: "Native Xcode version shared with the test producer"
-        required: true
+        description: "Xcode version override; defaults to the checked-out .xcode-version file"
+        required: false
         type: string
       test:
         description: "The UITestCase class to run"
@@ -50,11 +50,6 @@ on:
 
 jobs:
   run-ui-test:
-    # Match whole-class availability guards: YouTube/DuckPlayer need 15.4, new permissions need 26.
-    # Do not schedule an unsupported class and turn that expected skip into a zero-execution failure.
-    if: >-
-      ${{ !(inputs.os-version == '14' && (inputs.test == 'DuckPlayerTests' || inputs.test == 'YouTubeAdBlockingUITests')) &&
-          !((inputs.os-version == '14' || inputs.os-version == '15') && inputs.test == 'NewPermissionViewTests') }}
     # Avoid '/' in the job name: GitHub joins the reusable-workflow job name onto the caller with
     # ' / ' and the UI splits that path on ' / ', so a '/' here would break the name into fake tree
     # nodes. It is also used to build the report filename, where '/' is a path separator.
@@ -74,9 +69,11 @@ jobs:
     timeout-minutes: 120
 
     env:
+      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
       app-name: ${{ inputs.build-type == 'appstore' && 'DuckDuckGo App Store Review' || 'DuckDuckGo Review' }}
       app-bundle-id: ${{ inputs.build-type == 'appstore' && 'com.duckduckgo.mobile.ios.review' || 'com.duckduckgo.macos.browser.review' }}
       release-type: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
+      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
       # Keeps artifact names of the App Store legs apart from the DMG ones when both run in the same workflow run
       artifact-suffix: ${{ inputs.build-type == 'appstore' && '-appstore' || '' }}
       # Job identity for result markers. notify-failure in macos_ui_tests.yml parses these names
@@ -85,6 +82,13 @@ jobs:
       TEST_PLAN: ${{ inputs.test-plan }}
 
     steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
     - name: Check out the code
       uses: actions/checkout@v6
       with:
@@ -92,6 +96,24 @@ jobs:
 
     - name: Print macOS version
       run: sw_vers
+
+    - name: Initialize submodules with retry
+      run: |
+        max_attempts=3
+        retry_delay=15
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Submodule init attempt $attempt of $max_attempts"
+          if git submodule update --init --recursive; then
+            echo "Submodules initialized successfully"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All submodule init attempts failed"
+        exit 1
 
     - name: Install screenresolution
       if: inputs.os-version != '14'
@@ -110,21 +132,37 @@ jobs:
     - name: Create Default Keychain
       run: bundle exec fastlane create_keychain_ui_tests
 
+    - name: Sync code signing assets
+      id: sync-signing-first-attempt
+      continue-on-error: true
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        bundle exec fastlane sync_signing_ci
+
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_ci
+
     - name: Download app artifact
       uses: actions/download-artifact@v7
       with:
         pattern: DuckDuckGo-${{ env.release-type }}-*.app.tar.xz
-        merge-multiple: true
         path: ${{ github.workspace }}/macOS
 
-    - name: Download UI test bundle
-      uses: actions/download-artifact@v7
-      with:
-        name: DuckDuckGo-native-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}
-        path: macOS/test-artifact
-        merge-multiple: true
-
-    - name: Select native Xcode
+    - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
       with:
         xcode-version: ${{ inputs.xcode-version }}
@@ -141,25 +179,58 @@ jobs:
         log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner" OR process == "tests-server" OR (process == "logger" AND eventMessage CONTAINS "[tests-server]")' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
-    - name: Extract app and test artifacts
+    - name: Download shared UI test bundle
+      uses: actions/download-artifact@v7
+      with:
+        name: DuckDuckGo-ui-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}-xcode${{ inputs.xcode-version }}
+        path: macOS/test-artifact
+
+    - name: Extract test products
       run: |
-        set -euo pipefail
+        mkdir -p DerivedData
+        tar -xzf test-artifact/ui-test-products.tar.gz -C DerivedData
+
+    - name: Extract and Copy app to DerivedData
+      working-directory: macOS
+      run: |
         tar -xf DuckDuckGo-*.app.tar.xz
-        tar -xzf test-artifact/*.tar.gz
+
+        # Find the extracted app bundle and rename if needed
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          if [[ "${extracted_app_name}" != "${{ env.app-name }}.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to '${{ env.app-name }}.app'"
+            mv "${extracted_app}" "${{ env.app-name }}.app"
+          fi
+        fi
+
+        mv -f "${{ env.app-name }}.app" "DerivedData/Build/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
       id: run-ui-tests
-      env:
-        TEST_CLASS: ${{ inputs.test }}
-        USER_MODE: ${{ inputs.user-mode }}
+      working-directory: macOS
       run: |
-        set -o pipefail
-        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
-        python3 ui-tests/Scripts/artifact.py run ui-tests --suite ui \
-          --app "$app" \
-          --only "$TEST_CLASS" --plan "$TEST_PLAN" --user-mode "$USER_MODE" \
-          --result DerivedData/Logs/Test/portable-results \
-          | tee -a xcodebuild.log | tee ui-tests.log
+        defaults write ${{ env.app-bundle-id }} moveToApplicationsFolderAlertSuppress 1
+        test_plan_args=()
+        if [[ -n "$TEST_PLAN" ]]; then
+          test_plan_args=(-testPlan "$TEST_PLAN")
+        fi
+        set -o pipefail && xcodebuild test-without-building \
+          -scheme "${{ env.scheme }}" \
+          "${test_plan_args[@]}" \
+          -derivedDataPath DerivedData \
+          -resultBundlePath "DerivedData/Logs/Test/macOS-UI-Tests.xcresult" \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
+          '-only-testing:UI Tests/${{ inputs.test }}' \
+          ${{ env.extra-xcargs }} \
+          "TEST_RUNNER_INTERNAL_USER_MODE=${{ inputs.user-mode == 'internal' && 'true' || 'false' }}" \
+        | tee -a xcodebuild.log \
+        | tee ui-tests.log
 
     - name: Stop log stream
       if: always()
@@ -208,7 +279,7 @@ jobs:
       uses: ./.github/actions/upload-artifact-with-retry
       with:
         name: "xcresult-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
-        path: "macOS/DerivedData/Logs/Test/**/*.xcresult"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
     - name: Upload app console log (passed on retry)

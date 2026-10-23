@@ -33,13 +33,13 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "&quot;${PROJECT_DIR}/UITests/Helpers/ui-tests/pre-run.sh&quot; review --sync&#10;">
+               scriptText = "killall tests-server&#10;# integration tests resources dir&#10;pushd &quot;${METAL_LIBRARY_OUTPUT_DIR}&quot;&#10;&quot;${BUILT_PRODUCTS_DIR}/tests-server&quot; &amp;&#10;popd&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
-                     BlueprintIdentifier = "565E46DC2B2725DC0013AC2A"
-                     BuildableName = "SyncE2EUITests.xctest"
-                     BlueprintName = "SyncE2EUITests"
+                     BlueprintIdentifier = "4B1AD89C25FC27E200261379"
+                     BuildableName = "Integration Tests.xctest"
+                     BlueprintName = "Integration Tests"
                      ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
                   </BuildableReference>
                </EnvironmentBuildable>
@@ -51,25 +51,22 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "&quot;${PROJECT_DIR}/UITests/Helpers/ui-tests/post-run.sh&quot;&#10;">
-               <EnvironmentBuildable>
-                  <BuildableReference
-                     BuildableIdentifier = "primary"
-                     BlueprintIdentifier = "565E46DC2B2725DC0013AC2A"
-                     BuildableName = "SyncE2EUITests.xctest"
-                     BlueprintName = "SyncE2EUITests"
-                     ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
-                  </BuildableReference>
-               </EnvironmentBuildable>
+               scriptText = "killall tests-server&#10;">
             </ActionContent>
          </ExecutionAction>
       </PostActions>
-      <TestPlans>
-         <TestPlanReference
-            reference = "container:SyncE2EUITests/Sync End-to-End UI Tests.xctestplan"
-            default = "YES">
-         </TestPlanReference>
-      </TestPlans>
+      <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "565E46DC2B2725DC0013AC2A"
+               BuildableName = "SyncE2EUITests.xctest"
+               BlueprintName = "SyncE2EUITests"
+               ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+      </Testables>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Review"

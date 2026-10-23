@@ -40,22 +40,30 @@ jobs:
       matrix:
         runner: [macos-14-xlarge, macos-15-xlarge, macos-26-xlarge]
         include:
-          - runner: macos-14-xlarge
+          - xcode-version: "16.2"
+            runner: macos-14-xlarge
             os-version: 14
-            xcode-version: "16.2"
-          - runner: macos-15-xlarge
+          - xcode-version: "26.2"
+            runner: macos-15-xlarge
             os-version: 15
-            xcode-version: "26.2"
-          - runner: macos-26-xlarge
+          - xcode-version: "26.6"
+            runner: macos-26-xlarge
             os-version: 26
-            xcode-version: "26.6"
 
     timeout-minutes: 60
 
     steps:
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
     - name: Check out the code
       uses: actions/checkout@v6
       with:
+        submodules: recursive
         ref: ${{ inputs.branch || github.sha }}
 
     - name: Print macOS version
@@ -81,29 +89,59 @@ jobs:
         working-directory: macOS
         cache-key-prefix: macos-ruby
 
+    - name: Sync code signing assets
+      id: sync-signing-first-attempt
+      continue-on-error: true
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        bundle exec fastlane sync_signing_ci
+
+    - name: Retry sync code signing assets
+      if: steps.sync-signing-first-attempt.outcome == 'failure'
+      env:
+        APPLE_API_KEY_BASE64: ${{ secrets.APPLE_API_KEY_BASE64 }}
+        APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        APPLE_API_KEY_ISSUER: ${{ secrets.APPLE_API_KEY_ISSUER }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        SSH_PRIVATE_KEY_FASTLANE_MATCH: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+      run: |
+        echo "First attempt to sync code signing assets failed. Retrying..."
+        bundle exec fastlane sync_signing_ci
+
     - name: Download and unzip artifact
       uses: actions/download-artifact@v7
       with:
         pattern: sync-DuckDuckGo-review-*.app.tar.xz
         merge-multiple: true
-        path: macOS
+        path: macOS/sync-app
 
-    - name: Register SSH keys for private packages
-      uses: webfactory/ssh-agent@v0.10.0
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v5
       with:
-        ssh-private-key: |
-          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-
 
-    - name: Select native Xcode
+    - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
       with:
         xcode-version: ${{ matrix.xcode-version }}
-
-    - name: Build native test targets once
-      run: |
-        set -o pipefail
-        bash UITests/Helpers/ui-tests/build.sh dmg "$GITHUB_WORKSPACE/macOS/NativeTests" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= 2>&1 | tee xcodebuild.log
 
     - name: Configure system logging
       working-directory: SharedPackages/BrowserServicesKit
@@ -123,26 +161,91 @@ jobs:
       with:
         debug: true
 
-    - name: Extract app and test artifacts
+    - name: Restore Xcode Compilation Cache
+      uses: actions/cache/restore@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-sync-e2e
+        restore-keys: |
+          xcode-compilation-cache-sync-e2e-
+
+    - name: Build Sync e2e tests
+      working-directory: macOS
       run: |
-        set -euo pipefail
-        tar -xf DuckDuckGo-*.app.tar.xz
-        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
-        ditto "$app" 'NativeTests/Build/Products/Review/DuckDuckGo Review.app'
-        python3 UITests/Helpers/ui-tests/artifact.py pack --products NativeTests/Build/Products --distribution dmg --output native-tests.tar.gz
-        tar -xzf native-tests.tar.gz
+        set -o pipefail && xcodebuild build-for-testing \
+          -scheme "macOS Sync End-to-End UI Tests CI" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+        | tee xcodebuild.log \
+        | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-sync-e2e-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
+      run: |
+        cd sync-app && tar -xf DuckDuckGo-*.app.tar.xz
+
+        # Find the extracted app bundle and rename if needed
+        extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
+        if [[ -n "${extracted_app}" ]]; then
+          extracted_app_name=$(basename "${extracted_app}")
+          if [[ "${extracted_app_name}" != "DuckDuckGo Review.app" ]]; then
+            echo "Renaming extracted app from '${extracted_app_name}' to 'DuckDuckGo Review.app'"
+            mv "${extracted_app}" "DuckDuckGo Review.app"
+          fi
+        fi
+
+        mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
       id: run-ui-tests
+      working-directory: macOS
       env:
         CODE: ${{ steps.sync-recovery-code.outputs.recovery-code }}
       run: |
-        set -o pipefail
-        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
-        python3 ui-tests/Scripts/artifact.py run ui-tests --suite sync \
-          --app "$app" \
-          --result DerivedData/Logs/Test/portable-results \
-          | tee -a xcodebuild.log | tee ui-tests.log
+        # Set CODE environment variable in the scheme definition, since Xcode 15.4 doesn't
+        # seem to recognize global environment variables otherwise.
+        # We use xmlstarlet to edit the scheme XML file.
+        brew install xmlstarlet
+        xmlstarlet ed -i '/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable[1]' -t elem -n "EnvironmentVariable" \
+          -i '/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable[1]' -t attr -n "key" -v "CODE" \
+          -i '/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable[1]' -t attr -n "value" -v "$CODE" \
+          -i '/Scheme/LaunchAction/EnvironmentVariables/EnvironmentVariable[1]' -t attr -n "isEnabled" -v "YES" \
+          "DuckDuckGo-macOS.xcodeproj/xcshareddata/xcschemes/macOS Sync End-to-End UI Tests CI.xcscheme" > updated.xcscheme
+        mv -f updated.xcscheme "DuckDuckGo-macOS.xcodeproj/xcshareddata/xcschemes/macOS Sync End-to-End UI Tests CI.xcscheme"
+
+        defaults write com.duckduckgo.macos.browser.review sync.environment Development
+        defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
+        set -o pipefail && xcodebuild test-without-building \
+          -scheme "macOS Sync End-to-End UI Tests CI" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
+        | tee -a xcodebuild.log \
+        | tee ui-tests.log
 
     - name: Stop log stream
       if: always()
@@ -200,7 +303,7 @@ jobs:
       if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "xcresult-${{ matrix.runner }}"
-        path: "macOS/DerivedData/Logs/Test/**/*.xcresult"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 1
 
     - name: Upload app console log (passed on retry)
@@ -226,7 +329,6 @@ jobs:
 
         # locate and copy all files, flattening the structure with verbose output
         cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
-        cp native-tests.tar.enumeration.* "$archive_name/" || true
         cp "ui-tests.log" "$archive_name/" || echo "No ui-tests.log found"
         cp "ui-tests.xml" "$archive_name/" || echo "No ui-tests.xml found"
         cp "app-console.log" "$archive_name/" || echo "No app-console.log found"

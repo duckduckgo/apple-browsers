@@ -74,26 +74,6 @@ enum UITests {
         app.terminate()
     }
 
-    /// Reset once before a test class configures its fixture.
-    static func resetAppState() throws {
-        let application = XCUIApplication()
-        if application.state != .notRunning {
-            application.terminate()
-        }
-        let bundleID = try XCTUnwrap(application.bundleID, "The test configuration must identify the target app")
-        let script = try XCTUnwrap(Bundle(for: UITestCase.self).url(forResource: "pre-run", withExtension: "sh", subdirectory: "ui-tests"))
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/bin/bash")
-        process.arguments = [script.path, "--reset-only", "--bundle-id", bundleID]
-        process.environment = ProcessInfo.processInfo.environment
-        try process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            throw NSError(domain: "UITestStateReset", code: Int(process.terminationStatus),
-                          userInfo: [NSLocalizedDescriptionKey: "Could not reset the test app state"])
-        }
-    }
-
     /// A debug function that is going to need some other functionality in order to be useful for debugging address bar focus issues
     static func openVanillaBrowser() {
         let app = XCUIApplication.setUp()
@@ -152,6 +132,7 @@ class UITestCase: XCTestCase {
     private static let failureObserver = TestFailureObserver()
     private var cleanupPaths: Set<String> = []
 
+    private static var didCallFirstRun = false
     private static var systemPermissionPromptPollingTimer: Timer?
     var isSystemPermissionPromptPollingTimerEnabled: Bool { true }
 
@@ -164,12 +145,6 @@ class UITestCase: XCTestCase {
         _ = XCUIDevice.swizzlePerformWithKeyModifiersOnce
         super.setUp()
         XCTestObservationCenter.shared.addTestObserver(failureObserver)
-        do {
-            try UITests.resetAppState()
-            UITests.firstRun()
-        } catch {
-            XCTFail("Could not prepare test class: \(error)")
-        }
     }
 
     /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
@@ -206,6 +181,11 @@ class UITestCase: XCTestCase {
 
         if isSystemPermissionPromptPollingTimerEnabled {
             startSystemPermissionPromptDismissTimerIfNeeded()
+        }
+        if !Self.didCallFirstRun {
+            Self.didCallFirstRun = true
+            Logger.log("🥇 Resetting environment for the first run")
+            UITests.firstRun()
         }
     }
 

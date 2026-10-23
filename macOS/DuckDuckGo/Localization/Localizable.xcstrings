@@ -108905,6 +108905,18 @@
         }
       }
     },
+    "smartling.dedupe.test.two" : {
+      "comment" : "Temporary test string for checking Smartling job contents. Do not translate or merge.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Smartling macOS dedupe test string two 2e6f"
+          }
+        }
+      }
+    },
     "Speech" : {
       "comment" : "Main Menu Edit item",
       "localizations" : {

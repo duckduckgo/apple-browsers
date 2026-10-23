@@ -4,6 +4,8 @@ import argparse
 import json
 import os
 from pathlib import Path
+import plistlib
+import shutil
 import sys
 import tempfile
 import unittest
@@ -36,6 +38,21 @@ class MontereyTests(unittest.TestCase):
              mock.patch.object(monterey, 'host', side_effect=AssertionError('Adapter must not run')):
             self.assertEqual(artifact.native_host(self.root, self.target, self.root / 'Developer', {}),
                              self.root / 'Products/Review/UI Tests-Runner.app')
+
+    def test_resigned_legacy_runner_preserves_native_sandbox_grants(self):
+        host = self.root / 'Legacy-Runner.app'
+        executable = host / 'Contents/MacOS/Runner'
+        executable.parent.mkdir(parents=True)
+        shutil.copyfile('/usr/bin/true', executable)
+        executable.chmod(0o755)
+        artifact.write_plist(host / 'Contents/Info.plist', {
+            'CFBundleExecutable': 'Runner', 'CFBundleIdentifier': 'example.tests'})
+        entitlements = {'com.apple.security.app-sandbox': True,
+                        'com.apple.security.network.client': True,
+                        'com.apple.security.temporary-exception.files.absolute-path.read-only': ['/']}
+        monterey.sign_runner(host, plistlib.dumps(entitlements).decode())
+        actual = artifact.output(['codesign', '-d', '--entitlements', ':-', host]).rstrip('\0')
+        self.assertEqual(plistlib.loads(actual.encode()), entitlements)
 
     def test_adapter_rejects_other_os_and_unqualified_producers_before_mutation(self):
         for os_version, producer in (('14.8.9', self.metadata['xcode']), ('12.7.6', 'Xcode 27.0\nBuild version 27A1')):

@@ -14,6 +14,13 @@ import time
 from artifact import binary, digest, execute, loader_environment, output, read_plist, selected_tests, targets, write_plist, xcode, SUITES
 
 
+def sign_runner(host, entitlements):
+    with tempfile.NamedTemporaryFile(suffix='.entitlements', dir=host.parent) as stream:
+        stream.write(entitlements.encode())
+        stream.flush()
+        execute(['codesign', '-f', '-s', '-', '--deep', '--entitlements', stream.name, host])
+
+
 def host(root, target, developer, env):
     original = root / target['TestHostPath'].replace('__TESTROOT__/', '')
     original_bundle = original / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')
@@ -28,8 +35,11 @@ def host(root, target, developer, env):
         raise ValueError('Monterey requires installed Xcode 13.4.1')
     source = root / 'Scripts/monterey/XCTestCompat.swift'
     seal = original_bundle / 'Contents/_CodeSignature/CodeResources'
+    entitlements = output(['codesign', '-d', '--entitlements', ':-', original]).rstrip('\0')
+    if not entitlements:
+        raise ValueError('The native test runner must supply its original sandbox entitlements')
     fingerprint = hashlib.sha256((output(['xcodebuild', '-version'], env=env) + platform.machine()
-                                  + digest(binary(original_bundle)) + digest(seal) + digest(source)).encode()).hexdigest()[:20]
+                                  + digest(binary(original_bundle)) + digest(seal) + digest(source) + entitlements).encode()).hexdigest()[:20]
     final = root / 'Compatibility' / fingerprint
     if (final / 'ready').is_file():
         return final / 'Legacy-Runner.app'
@@ -65,7 +75,7 @@ def host(root, target, developer, env):
         os.replace(str(bundle_binary) + '.thin', bundle_binary)
     execute(['install_name_tool', '-change', '@rpath/XCTest.framework/Versions/A/XCTest', compat,
              '-change', '@rpath/libXCTestSwiftSupport.dylib', compat, binary(bundle)])
-    execute(['codesign', '-f', '-s', '-', '--deep', host])
+    sign_runner(host, entitlements)
     # Fail on missing symbols before any application state is touched.
     execute([sys.executable, '-c', 'import ctypes,os,sys; ctypes.CDLL(sys.argv[1], mode=os.RTLD_NOW)', binary(bundle)],
             env=loader_environment(root, host, developer))

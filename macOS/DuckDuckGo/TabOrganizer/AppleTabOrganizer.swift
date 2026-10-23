@@ -25,11 +25,11 @@ final class AppleTabOrganizer: TabOrganizing {
 
     static let maxPromptCharacters = 10_000
 
-    // No example topics: they matched the demo tabs too closely. Granularity is described in words instead.
+    // Example topics are deliberately unrelated to the demo tabs, so they steer granularity without hinting at answers.
     private static let topicInstructions = """
-    You find the few broad topics a person's open browser tabs are about, the way a person would name folders. \
-    Tabs about the same trip, project, hobby, animal or purchase share one topic. \
-    Name each topic in 1 or 2 plain words, never after a single site, product or breed. Each topic should cover several tabs.
+    You find the few broad topics a person's open browser tabs are about. \
+    Topics are general categories like Gardening, Finance, Music or Health, \
+    never a single site, product or breed. Each topic should cover several tabs.
     """
 
     private static let assignInstructions = """

@@ -254,6 +254,7 @@ let package = Package(
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "DDGSyncCrypto", package: "sync_crypto"),
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Gzip", package: "GzipSwift"),
                 .product(name: "Networking", package: "Networking"),
                 "PrivacyConfig",

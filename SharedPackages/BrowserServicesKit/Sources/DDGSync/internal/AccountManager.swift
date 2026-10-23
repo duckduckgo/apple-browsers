@@ -18,6 +18,7 @@
 
 import Foundation
 import Common
+import DDGError
 import DDGSyncCrypto
 import Networking
 import os.log
@@ -215,6 +216,49 @@ struct AccountManager: AccountManaging {
             devices: devices,
             needsCurrentDeviceInfoRepair: false,
             debugDevices: devices.map { RegisteredDeviceDebugInfo(device: $0, source: .legacy, deviceInfoIssue: nil) })
+    }
+
+    func fetchAuditLog(for account: SyncAccount, cursor: AuditLogCursor?, limit: Int? = nil) async throws -> AuditLogPage {
+        guard let token = account.token else {
+            throw SyncError.noToken
+        }
+
+        var parameters: [String: String] = [:]
+        switch cursor {
+        case .after(let value): parameters["after"] = value
+        case .before(let value): parameters["before"] = value
+        case nil: break
+        }
+        if let limit {
+            parameters["limit"] = String(limit)
+        }
+
+        let request = api.createAuthenticatedGetRequest(url: endpoints.auditLog,
+                                                        authToken: token,
+                                                        parameters: parameters)
+        let result = try await request.execute()
+
+        guard let body = result.data else {
+            throw SyncError.noResponseBody
+        }
+
+        let response: FetchAuditLogResult
+        do {
+            response = try JSONDecoder.snakeCaseKeys.decode(FetchAuditLogResult.self, from: body)
+        } catch let error as DecodingError {
+            Logger.sync.debug("Failed to decode audit log response: \(String(reflecting: error), privacy: .private)")
+            throw AuditLogError.responseDecodingFailed
+        }
+        switch cursor {
+        case .before?:
+            // Backward pages may omit `after`; the next `before` cursor is also optional at the start of history.
+            break
+        case .after?, nil:
+            guard response.auditLog.after != nil else {
+                throw AuditLogError.missingRequiredAfterCursor
+            }
+        }
+        return response.auditLog
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
@@ -472,6 +516,48 @@ struct AccountManager: AccountManaging {
 
         var devices: DeviceWrapper?
     }
+
+    struct FetchAuditLogResult: Decodable {
+        let auditLog: AuditLogPage
+    }
+}
+
+enum AuditLogCursor {
+    case after(String)
+    case before(String)
+}
+
+enum AuditLogError: DDGError {
+    case responseDecodingFailed
+    case missingRequiredAfterCursor
+
+    static var errorDomain: String { "com.duckduckgo.sync.audit-log" }
+
+    var errorCode: Int {
+        switch self {
+        case .responseDecodingFailed: 1
+        case .missingRequiredAfterCursor: 2
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .responseDecodingFailed: "Failed to decode the audit log response."
+        case .missingRequiredAfterCursor: "Audit log response is missing the required after cursor."
+        }
+    }
+}
+
+struct AuditLogPage: Decodable {
+    let entries: [AuditLogEntry]
+    let after: String?
+    let before: String?
+}
+
+struct AuditLogEntry: Decodable {
+    let id: String
+    let version: String
+    let payload: String
 }
 
 struct UpdateDevices {

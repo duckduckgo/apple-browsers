@@ -690,6 +690,11 @@ private extension BrowsingMenuEntry {
 private final class DeniedLocationManager: CLLocationManager {
 
     override var authorizationStatus: CLAuthorizationStatus { .denied }
+
+    // Core Location reports the current authorization once a delegate is set.
+    override var delegate: (any CLLocationManagerDelegate)? {
+        didSet { delegate?.locationManagerDidChangeAuthorization?(self) }
+    }
 }
 
 private final class SitePermissionsMenuURLWebView: WKWebView {

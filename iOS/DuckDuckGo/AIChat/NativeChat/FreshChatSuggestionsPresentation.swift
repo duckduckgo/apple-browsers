@@ -46,7 +46,6 @@ final class FreshChatSuggestionsPresentation {
         initialURL = tab.url ?? tab.link?.url
         webRecipient = tab.userScripts?.aiChatUserScript
         content.isHidden = true
-        content.onRetry = { [weak input] in input?.retryFreshSuggestions() }
         mount(in: tab)
         input.$freshSuggestionsState.sink { [weak self] state in self?.render(state) }.store(in: &subscriptions)
         input.textChangePublisher.sink { [weak self] _ in self?.refresh() }.store(in: &subscriptions)

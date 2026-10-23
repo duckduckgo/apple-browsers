@@ -41,11 +41,8 @@ final class FreshChatSuggestionsView: UIView {
         case unavailable
     }
 
-    var onRetry: (() -> Void)?
     private let actions = SuggestionChipFlowView()
     private let status = UILabel()
-    private let spinner = UIActivityIndicatorView(style: .medium)
-    private let retry = UIButton(type: .system)
     private var displayedTitles: [String]?
     private var lastAnimatedTitles: [String]?
 
@@ -71,18 +68,7 @@ final class FreshChatSuggestionsView: UIView {
         status.textColor = .secondaryLabel
         status.textAlignment = .center
         status.numberOfLines = 0
-        retry.setTitle("Try again", for: .normal)
-        retry.titleLabel?.font = .preferredFont(forTextStyle: .body)
-        retry.titleLabel?.adjustsFontForContentSizeCategory = true
-        retry.addAction(UIAction { [weak self] _ in self?.onRetry?() }, for: .touchUpInside)
-        let loading = UIStackView(arrangedSubviews: [spinner, status])
-        loading.axis = .horizontal
-        loading.spacing = 8
-        loading.alignment = .center
-        let loadingContainer = UIStackView(arrangedSubviews: [loading])
-        loadingContainer.axis = .vertical
-        loadingContainer.alignment = .center
-        let suggestions = UIStackView(arrangedSubviews: [loadingContainer, actions, retry])
+        let suggestions = UIStackView(arrangedSubviews: [status, actions])
         suggestions.axis = .vertical
         suggestions.spacing = 10
         let scroll = UIScrollView()
@@ -130,19 +116,10 @@ final class FreshChatSuggestionsView: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func render(_ state: State) {
-        spinner.stopAnimating()
-        spinner.isHidden = true
-        retry.isHidden = true
         switch state {
-        case .loading:
+        case .loading, .unavailable:
             actions.isHidden = true
-            status.text = "Finding ideas on this device…"
-            spinner.isHidden = false
-            spinner.startAnimating()
-        case .unavailable:
-            actions.isHidden = true
-            status.text = "Suggestions aren't available."
-            retry.isHidden = false
+            status.text = nil
         case .ready(let suggestions):
             let titles = suggestions.map(\.title)
             status.text = suggestions.isEmpty ? nil : "From your recent tabs"

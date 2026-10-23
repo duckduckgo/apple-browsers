@@ -168,6 +168,19 @@ import Testing
         #expect(run.total < .seconds(2))
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func suggestionsRejectLongVisibleLabels() {
+        let verbose = "Can you tell me all about the ducks here?"
+        let wide = String(repeating: "W", count: 61)
+        #expect(SuggestedPromptsPrompt.parse("\(verbose)\n\(wide)\nSummarize this page", max: 3).map(\.text) == ["Summarize this page"])
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let raw = "0 | \(verbose) | \(verbose)\n0 | Ducks | \(wide)\n0 | Summarize this page | \(verbose)"
+        let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
+        #expect(parsed.map(\.label) == ["Summarize this page"])
+        #expect(parsed.first?.prompt == verbose)
+    }
+
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
                                     content: String(repeating: "Ducks are waterfowl. ", count: 400), language: "en")
 

@@ -218,7 +218,7 @@ public enum SuggestedPromptsPrompt {
                             conversation: ConversationID = ConversationID(), input variant: SuggestionsVariant.Input = .headings) -> ProviderTurn {
         let instructions = """
         Suggest \(count) things a reader of this page might ask an AI assistant about it.
-        Each one is a short question or request of at most 8 words, like a button label.
+        Each one is a short question or request of at most 8 words and 60 characters, like a button label.
         Write in \(uiLanguageName). One per line. No numbering, bullets, quotes or other text.
         """
         let input = boundedInput(for: page, variant: variant)
@@ -242,7 +242,7 @@ public enum SuggestedPromptsPrompt {
 
     /// Lenient: one suggestion per non-empty line. Strips bullets ("-", "*", "•"), numbering ("1.", "1)"), surrounding
     /// quotes and whitespace. Drops lines that are headings or preambles (ending in ":"), shorter than 8 or longer than
-    /// 80 characters, and case-insensitive duplicates. Keeps order and returns at most `max`.
+    /// 60 characters, and case-insensitive duplicates. Keeps order and returns at most `max`.
     public static func parse(_ raw: String, max: Int) -> [SuggestedPrompt] {
         guard max > 0 else { return [] }
         let surroundingCharacters = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'“”‘’"))
@@ -254,7 +254,7 @@ public enum SuggestedPromptsPrompt {
                 .trimmingCharacters(in: surroundingCharacters)
                 .replacingOccurrences(of: #"^[*_`]+|[*_`]+$"#, with: "", options: .regularExpression)
                 .trimmingCharacters(in: surroundingCharacters)
-            guard (8...80).contains(text.count), !text.hasSuffix(":"), seen.insert(text.lowercased()).inserted else { continue }
+            guard (8...60).contains(text.count), text.split(whereSeparator: \.isWhitespace).count <= 8, !text.hasSuffix(":"), seen.insert(text.lowercased()).inserted else { continue }
             suggestions.append(SuggestedPrompt(text))
             if suggestions.count == max { break }
         }

@@ -60,16 +60,20 @@ final class PrivacyStatsDatabaseTests: XCTestCase {
         XCTAssertEqual(call.frequency, .dailyAndCount)
     }
 
-    func testWhenStoreFailsToLoadForAnotherReasonThenDatabaseIsNilWithoutRecreatingIt() throws {
-        // A regular file in the store's path means the store directory can't be created, which isn't corruption.
-        let blockingFile = location.appendingPathComponent("blocker")
-        try Data().write(to: blockingFile)
+    func testWhenExistingStoreCannotBeOpenedThenItIsKeptAndUnavailableIsFired() throws {
+        // Creates the store; the instance is released before the second load.
+        _ = try XCTUnwrap(PrivacyStatsDatabase(location: location, pixelFiring: nil))
+        let storeFile = location.appendingPathComponent("PrivacyStats.sqlite")
+        let fileNumber = { try FileManager.default.attributesOfItem(atPath: storeFile.path)[.systemFileNumber] as? Int }
+        let fileNumberBefore = try fileNumber()
+        // An unreadable store fails with a permission error, which isn't corruption.
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: storeFile.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: storeFile.path) }
 
-        let database = PrivacyStatsDatabase(location: blockingFile.appendingPathComponent("store"), pixelFiring: pixelKit)
-
-        XCTAssertNil(database)
+        XCTAssertNil(PrivacyStatsDatabase(location: location, pixelFiring: pixelKit))
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.parameters), [["outcome": "unavailable"]])
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.frequency), [.dailyAndCount])
+        XCTAssertEqual(try fileNumber(), fileNumberBefore)
     }
 
     func testWhenCorruptedStoreCannotBeDeletedThenDatabaseIsNilAndRecreateFailedIsFired() throws {

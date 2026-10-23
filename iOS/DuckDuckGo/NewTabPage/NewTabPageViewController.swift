@@ -27,7 +27,7 @@ import Onboarding
 import RemoteMessaging
 import Subscription
 
-final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTabPage, RemoteMessagePresenting {
+final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessagePresenting {
 
     var isShowingLogo: Bool {
         guard !newTabPageViewModel.isLogoHidden else { return false }
@@ -64,6 +64,8 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     private let onboardingCoordinator: NewTabPageOnboardingCoordinator
 
     private lazy var borderView = StyledTopBottomBorderView()
+
+    private let pageHostingController: UIHostingController<NewTabPageView>
 
     private let newTabPageViewModel: NewTabPageViewModel
     let messagesModel: NewTabPageMessagesModel
@@ -138,13 +140,16 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
                                                 pixelReporter: remoteMessagingPixelReporter,
                                                 isOpenedAfterIdle: { [weak viewModel] in viewModel?.openedAfterIdle ?? false })
 
-        super.init(rootView: NewTabPageView(isFocussedState: isFocussedState,
-                                            narrowLayoutInLandscape: narrowLayoutInLandscape,
-                                            dismissKeyboardOnScroll: dismissKeyboardOnScroll,
-                                            layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
-                                            viewModel: self.newTabPageViewModel,
-                                            messagesModel: self.messagesModel,
-                                            favoritesViewModel: self.favoritesModel))
+        let pageView = NewTabPageView(isFocussedState: isFocussedState,
+                                     narrowLayoutInLandscape: narrowLayoutInLandscape,
+                                     dismissKeyboardOnScroll: dismissKeyboardOnScroll,
+                                     layoutConfiguration: unifiedToggleInputFeature.isAvailable ? .unifiedToggleInput : .standard,
+                                     viewModel: newTabPageViewModel,
+                                     messagesModel: messagesModel,
+                                     favoritesViewModel: favoritesModel)
+        pageHostingController = UIHostingController(rootView: pageView)
+
+        super.init(nibName: nil, bundle: nil)
 
         onboardingCoordinator.page = self
         assignFavoriteModelActions()
@@ -186,7 +191,23 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        view.backgroundColor = UIColor(designSystemColor: .background)
+        embedPageHostingController()
         registerForNotifications()
+    }
+
+    private func embedPageHostingController() {
+        addChild(pageHostingController)
+        pageHostingController.view.backgroundColor = .clear
+        pageHostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(pageHostingController.view)
+        NSLayoutConstraint.activate([
+            pageHostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            pageHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            pageHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            pageHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+        pageHostingController.didMove(toParent: self)
     }
 
     override func viewDidLayoutSubviews() {
@@ -203,8 +224,6 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-
-        view.backgroundColor = UIColor(designSystemColor: .background)
 
         // If there's no tab switcher then this will be true, if there is a tabswitcher then only allow the
         // stuff below to happen if it's being dismissed
@@ -353,7 +372,7 @@ final class NewTabPageViewController: UIHostingController<NewTabPageView>, NewTa
     // MARK: -
 
     @available(*, unavailable)
-    @MainActor required dynamic init?(coder aDecoder: NSCoder) {
+    required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 }

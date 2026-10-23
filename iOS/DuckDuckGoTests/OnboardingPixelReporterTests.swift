@@ -24,6 +24,7 @@ import Onboarding
 @_spi(Testing) import PixelKit
 import PrivacyConfig
 import PixelExperimentKit
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo
 
 final class OnboardingPixelReporterTests: XCTestCase {
@@ -35,6 +36,7 @@ final class OnboardingPixelReporterTests: XCTestCase {
     private var userDefaultsMock: UserDefaults!
     private var sharedPixelHandlerMock: MockOnboardingSharedPixelHandling!
     private var sharedPixelsStorageMock: (any KeyedStoring<OnboardingSharedPixelsKeys>)!
+    private var subscriptionManagerMock: SubscriptionManagerMock!
 
     override func setUpWithError() throws {
         pixelKitMock = PixelKitMock()
@@ -47,11 +49,13 @@ final class OnboardingPixelReporterTests: XCTestCase {
         sharedPixelHandlerMock = MockOnboardingSharedPixelHandling()
         initSharedPixelsStorageMock()
         MockExperimentPixelFiring.reset()
-        sut = OnboardingPixelReporter(pixelFiring: pixelKitMock, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock, downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self))
+        subscriptionManagerMock = SubscriptionManagerMock()
+        sut = OnboardingPixelReporter(pixelFiring: pixelKitMock, statisticsStore: statisticsStoreMock, calendar: calendar, dateProvider: { self.now }, userDefaults: userDefaultsMock, sharedPixelHandler: sharedPixelHandlerMock, sharedPixelsStorage: sharedPixelsStorageMock, downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric(experimentPixelFiring: MockExperimentPixelFiring.self), subscriptionManager: subscriptionManagerMock)
         try super.setUpWithError()
     }
 
     override func tearDownWithError() throws {
+        subscriptionManagerMock = nil
         pixelKitMock = nil
         sharedPixelsStorageMock = nil
         sharedPixelHandlerMock = nil
@@ -262,6 +266,42 @@ final class OnboardingPixelReporterTests: XCTestCase {
         XCTAssertEqual(sharedPixelHandlerMock.receivedSource, .duckAICustomProductPage)
         XCTAssertEqual(sharedPixelHandlerMock.receivedFlow, .duckAI)
         XCTAssertEqual(sharedPixelHandlerMock.receivedVariant, .duckAISearch)
+    }
+
+    func testWhenMeasureStartOnboardingCTAActionAndProductsNotAvailableNorResolvedThenUnknownEligibilityPixelFires() {
+        // GIVEN
+        subscriptionManagerMock.hasAppStoreProductsAvailable = false
+        subscriptionManagerMock.hasResolvedAppStoreProducts = false
+
+        // WHEN
+        sut.measureStartOnboardingCTAAction()
+
+        // THEN
+        XCTAssertEqual(pixelKitMock.actualFireCalls, [ExpectedFireCall(pixel: OnboardingIntroPixel.purchaseEligibilityUnknown, frequency: .uniqueByName)])
+    }
+
+    func testWhenMeasureStartOnboardingCTAActionAndProductsResolvedThenUnknownEligibilityPixelDoesNotFire() {
+        // GIVEN
+        subscriptionManagerMock.hasAppStoreProductsAvailable = false
+        subscriptionManagerMock.hasResolvedAppStoreProducts = true
+
+        // WHEN
+        sut.measureStartOnboardingCTAAction()
+
+        // THEN
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+    }
+
+    func testWhenMeasureStartOnboardingCTAActionAndCachedProductsAvailableButNotResolvedThenUnknownEligibilityPixelDoesNotFire() {
+        // GIVEN
+        subscriptionManagerMock.hasAppStoreProductsAvailable = true
+        subscriptionManagerMock.hasResolvedAppStoreProducts = false
+
+        // WHEN
+        sut.measureStartOnboardingCTAAction()
+
+        // THEN
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
     }
 
     func testWhenMeasureAutoRestoreOnboardingRestoreCTAActionThenLegacyRestoreTappedUniquePixelFires() {

@@ -137,11 +137,14 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     /// Extensions whose data-clearing reload lifecycle began before their contexts were unloaded.
     private var dataClearingReloadIdentifiers: Set<String> = []
 
+    /// Store identities available before a successful first load creates the installation record.
+    var installingStoreIdentities: [String: WebExtensionStoreIdentity] = [:]
+
     /// See `WebExtensionUnloadGuard`. Settable only so tests can inject a controlled clock.
     var unloadGuard: WebExtensionUnloadGuard
 
     /// Receives the API compatibility reports of extension pages.
-    private let apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler()
+    private let apiCompatibilityHandler: WebExtensionAPICompatibilityMessageHandler
 
 #if os(macOS)
     /// The keyboard shortcuts the user picked for extension commands. `nil` without a key-value store.
@@ -152,8 +155,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     public let privacySettings: WebExtensionPrivacySettingsStore?
 #endif
 
-    /// Records the Chrome pages extensions try to open, which the browser doesn't have.
-    private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+    /// Deduplicates compatibility issues reported by JavaScript and native extension APIs.
+    private let compatibilityReporter: WebExtensionAPICompatibilityReporter
 
 #if os(macOS)
     /// Answers `chrome.idle.queryState` for extension pages.
@@ -240,6 +243,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 scriptletConfiguration: ScriptletConfiguration? = nil,
                 bundledExtensionURL: @escaping (EmbeddedWebExtensionDescriptor) -> URL? = { $0.bundledURL },
                 now: @escaping () -> Date = Date.init) {
+        let compatibilityReporter = WebExtensionAPICompatibilityReporter()
+        self.compatibilityReporter = compatibilityReporter
+        self.apiCompatibilityHandler = WebExtensionAPICompatibilityMessageHandler(reporter: compatibilityReporter)
         let controllerConfiguration = controllerConfiguration ?? WKWebExtensionController.Configuration.default()
         controllerConfiguration.webViewConfiguration.applicationNameForUserAgent = configuration.applicationNameForUserAgent
 
@@ -496,6 +502,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
         Logger.webExtensions.debug("🔄 Extension stored with identifier: \(identifier)")
 
+        var replacedContext: WKWebExtensionContext?
         do {
             if let oldIdentifier {
                 try permissionController?.copyPermissionsForUpdate(from: oldIdentifier, to: identifier)
@@ -504,6 +511,18 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 privacySettings?.copySettingsForUpdate(from: oldIdentifier, to: identifier)
 #endif
             }
+            if storeIdentity?.store == .chromeWebStore,
+               let oldIdentifier, let oldContext = context(for: oldIdentifier) {
+                // Both versions use the same origin, so only one can be loaded at a time.
+                await unloadGuard.awaitSettled(oldContext)
+                try loader.unloadExtension(identifier: oldIdentifier, from: controller)
+                replacedContext = oldContext
+                cpmNetworkProcessRecovery.stopWatching(identifier: oldIdentifier)
+                cpmDiagnosticsRecorder?.contextDidUnload(identifier: oldIdentifier)
+                unregisterHandlers(for: oldIdentifier)
+            }
+            installingStoreIdentities[identifier] = storeIdentity
+            defer { installingStoreIdentities.removeValue(forKey: identifier) }
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
@@ -537,6 +556,21 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             privacySettings?.removeSettings(for: identifier)
 #endif
             try? storageProvider.removeExtension(identifier: identifier)
+
+            if let replacedContext {
+                let oldIdentifier = replacedContext.uniqueIdentifier
+                do {
+                    try await permissionController?.prepare(replacedContext)
+                    webExtensionLoader(loader, willLoad: replacedContext, identifier: oldIdentifier)
+                    try controller.loadCopyingErrors(replacedContext)
+                    unloadGuard.recordLoad(of: oldIdentifier)
+                } catch {
+                    permissionController?.didUnload(oldIdentifier)
+                    unregisterHandlers(for: oldIdentifier)
+                    Logger.webExtensions.error("Failed to restore extension after replacement failure: \(error.localizedDescription)")
+                }
+                notifyUpdate()
+            }
 
             if let preparationError = error as? WebExtensionLoader.PermissionPreparationError,
                let permissionError = preparationError.underlyingError as? WebExtensionPermissionController.PermissionError,
@@ -1307,6 +1341,19 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return .other
         }
         return .catalog(entry)
+    }
+
+    /// Native unsupported APIs use the same log and gap accounting as extension-page reports.
+    @MainActor
+    func reportUnsupportedAPI(_ api: String, for context: WKWebExtensionContext) {
+        guard !declaresDuckDuckGoSettings(inManifest: context.webExtension.manifest),
+              let issue = WebExtensionAPICompatibilityClassifier.issue(kind: .missing, reportedAPI: api) else { return }
+        compatibilityReporter.report(kind: issue.kind, api: issue.api,
+                                     extensionName: WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.displayName),
+                                     version: WebExtensionAPICompatibilityLog.sanitizedField(context.webExtension.version))
+#if os(macOS)
+        recordAPICompatibilityIssue(issue, for: context.uniqueIdentifier)
+#endif
     }
 
 #if os(macOS)

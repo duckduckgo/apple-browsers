@@ -48,6 +48,14 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
+    var onTap: ((UUID) -> Void)?
+    var showsPromptLengthError = false {
+        didSet {
+            guard showsPromptLengthError != oldValue else { return }
+            applyAppearance()
+        }
+    }
+    private lazy var tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
     private let attachment: UnifiedToggleInputAttachment
     private let usesCompactLayout: Bool
     private var widthConstraint: NSLayoutConstraint!
@@ -66,10 +74,19 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     }
 
     private var iconSize: CGFloat {
-        if usesCompactLayout, case .tab = attachment {
+        guard usesCompactLayout else { return iconFrameSize }
+        switch attachment {
+        case .tab, .pastedText:
             return Constants.faviconSize
+        case .image, .file, .invalidFile:
+            return iconFrameSize
         }
-        return iconFrameSize
+    }
+
+    override func accessibilityActivate() -> Bool {
+        guard attachment.pastedText != nil else { return super.accessibilityActivate() }
+        onTap?(attachmentId)
+        return true
     }
 
     var minimumContentWidth: CGFloat {
@@ -182,14 +199,18 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
 private extension UnifiedToggleInputAttachmentThumbnailView {
 
+    var isErrorStyled: Bool {
+        attachment.isInvalid || (showsPromptLengthError && attachment.pastedText != nil)
+    }
+
     var borderColor: UIColor {
-        attachment.isInvalid
+        isErrorStyled
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.60 : 0.34)
             : UIColor(designSystemColor: .lines)
     }
 
     var chipBackgroundColor: UIColor {
-        attachment.isInvalid
+        isErrorStyled
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.24 : 0.18)
             : UIColor(designSystemColor: .controlsFillPrimary)
     }
@@ -202,6 +223,9 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
         chipView.addSubview(fileIconView)
         chipView.addSubview(fileNameLabel)
         chipView.addSubview(removeButton)
+        if attachment.pastedText != nil {
+            chipView.addGestureRecognizer(tapRecognizer)
+        }
 
         fileNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         removeButton.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -276,10 +300,38 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
             configureFile(fileName: fileAttachment.fileName, validationMessage: fileAttachment.validationMessage)
         case .tab(let tabAttachment):
             configureTab(title: tabAttachment.title, favicon: tabAttachment.favicon)
-        case .pastedText:
-            break
+        case .pastedText(let pastedText):
+            configurePastedText(pastedText)
         }
         applyAppearance()
+    }
+
+    private static let accessibilityValueLimit = 100
+
+    private static func cappedAccessibilityValue(_ title: String) -> String {
+        title.count > accessibilityValueLimit ? String(title.prefix(accessibilityValueLimit)) + "…" : title
+    }
+
+    func configurePastedText(_ pastedText: AIChatPastedText) {
+        imageView.image = nil
+        imageView.isHidden = true
+        fileIconView.image = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)
+        fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
+        fileNameLabel.text = pastedText.title
+        fileNameLabel.lineBreakMode = .byTruncatingTail
+        fileIconView.isHidden = false
+        fileNameLabel.isHidden = false
+        isAccessibilityElement = true
+        accessibilityTraits = .button
+        accessibilityLabel = UserText.aiChatPastedTextAccessibilityLabel
+        accessibilityValue = Self.cappedAccessibilityValue(pastedText.title)
+        accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: UserText.aiChatPastedTextRemoveAction) { [weak self] _ in
+                guard let self else { return false }
+                onRemove?(attachmentId)
+                return true
+            }
+        ]
     }
 
     func configureTab(title: String, favicon: UIImage?) {
@@ -324,6 +376,10 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
 
     @objc func removeTapped() {
         onRemove?(attachmentId)
+    }
+
+    @objc func chipTapped() {
+        onTap?(attachmentId)
     }
 }
 

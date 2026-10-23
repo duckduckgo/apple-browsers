@@ -218,6 +218,7 @@ extension TabViewController {
         contextualOnboardingLogic: ContextualOnboardingLogic = ContextualOnboardingLogicMock(),
         contextualOnboardingPixelReporter: OnboardingCustomInteractionPixelReporting = OnboardingPixelReporterMock(),
         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
+        findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
         sitePermissionsEnabled: Bool = false,
         specialErrorPageNavigationHandler: SpecialErrorPageManaging = DummySpecialErrorPageNavigationHandler(),
         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
@@ -265,7 +266,8 @@ extension TabViewController {
             eventHub: StubEventHub(),
             webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
             pixelFiring: pixelFiring,
-            sitePermissionsEnabled: sitePermissionsEnabled
+            sitePermissionsEnabled: sitePermissionsEnabled,
+            findInPageImplementation: findInPageImplementation
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), interactionStateData: interactionStateData,
                           andLoadRequest: initialRequest, consumeCookies: consumeCookies, customWebView: customWebView)

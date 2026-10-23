@@ -190,7 +190,7 @@ struct SettingsSubscriptionView: View {
         .disabled(true)
 
         SettingsCustomCell(content: {
-            Text(settingsViewModel.hasCompletedFreemiumScan
+            Text(settingsViewModel.hasStartedFreemiumScan
                  ? UserText.settingsPProFreemiumDBPShowResultsCTA
                  : UserText.settingsPProFreemiumDBPFreeScanCTA)
                 .daxBodyRegular()

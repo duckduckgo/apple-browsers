@@ -59,19 +59,16 @@ final class InactivityNotificationSchedulerService {
 
     // MARK: - Dependencies
 
-    private let featureFlagger: FeatureFlagger
     private let notificationServiceManager: NotificationServiceManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let stateStore: InactivityNotificationStateStoring
     private let userNotificationCenter: UNUserNotificationCenterRepresentable
 
-    init(featureFlagger: FeatureFlagger,
-         notificationServiceManager: NotificationServiceManaging,
+    init(notificationServiceManager: NotificationServiceManaging,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          stateStore: InactivityNotificationStateStoring,
          userNotificationCenter: UNUserNotificationCenterRepresentable = UNUserNotificationCenter.current(),
     ) {
-        self.featureFlagger = featureFlagger
         self.notificationServiceManager = notificationServiceManager
         self.privacyConfigurationManager = privacyConfigurationManager
         self.stateStore = stateStore
@@ -84,8 +81,7 @@ final class InactivityNotificationSchedulerService {
     
     @discardableResult
     func resume() -> Task<Void, Never> {
-        guard isFeatureEnabled(),
-              stateStore.interactionCount < maxInteractions else {
+        guard stateStore.interactionCount < maxInteractions else {
             cancelPendingNotifications()
             return Task {} // noop
         }
@@ -158,10 +154,6 @@ final class InactivityNotificationSchedulerService {
         }
     }
 
-    private func isFeatureEnabled() -> Bool {
-        return featureFlagger.isFeatureOn(.inactivityNotification)
-    }
-    
     private func cancelPendingNotifications() {
         userNotificationCenter.removePendingNotificationRequests(withIdentifiers: [Constants.notificationIdentifier])
     }

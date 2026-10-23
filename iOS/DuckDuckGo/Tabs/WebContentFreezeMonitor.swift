@@ -224,6 +224,14 @@ final class WebContentFreezeMonitor: NSObject {
                           frequency: .dailyAndCount)
     }
 
+    /// The tab switcher's first preview snapshot timed out, so the page may be frozen whether or not WebKit said so.
+    /// A backgrounded app cannot render either, so only a timeout while active counts.
+    func previewSnapshotTimedOut(result: WebContentHealthPixel.SnapshotResult) {
+        guard featureFlagger.isFeatureOn(.webContentFreezeTelemetry), applicationState() == .active else { return }
+        pixelFiring?.fire(WebContentHealthPixel.previewSnapshotTimeout(result: result, unresponsive: isFrozen, appState: appState),
+                          frequency: .dailyAndCount)
+    }
+
     /// Reports the freeze the previous run exited in the middle of, if any. Call once per launch.
     /// Doesn't support multiple freezing tabs.
     static func reportFreezeEndedWithApp(record: WebContentFreezeRecord = .init(),

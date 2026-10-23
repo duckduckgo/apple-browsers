@@ -25,13 +25,10 @@ final class AppleTabOrganizer: TabOrganizing {
 
     static let maxPromptCharacters = 10_000
 
-    // The examples set the level of detail only; the model is told not to reuse them.
     private static let topicInstructions = """
     You find the few broad topics a person's open browser tabs are about. \
-    Topics are general categories, for example Gardening, Finance, Music or Health. \
-    These are only examples: name topics after what these tabs are actually about. \
-    Put tabs about the same trip, animal, project or purchase into one topic. \
-    Each topic should cover several tabs.
+    Topics are general categories like Dogs, News, Shopping, Travel, Coding or Streaming, \
+    never a single site, product or breed. Each topic should cover several tabs.
     """
 
     private static let assignInstructions = """

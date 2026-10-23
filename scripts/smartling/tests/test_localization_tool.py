@@ -42,6 +42,7 @@ class FakeSmartlingClient:
                  file_status_error=None,
                  upload_code='SUCCESS',
                  polls_until_processed=0,
+                 reads_while_processing=0,
                  authorize_error=None):
         self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
         self.report = report or {}
@@ -61,6 +62,7 @@ class FakeSmartlingClient:
         self.awaiting_jobs_calls = 0
         self.upload_code = upload_code
         self.polls_until_processed = polls_until_processed
+        self.reads_while_processing = reads_while_processing
         self.refreshed = []
         self.downloaded = []
         self.authorize_error = authorize_error
@@ -117,8 +119,11 @@ class FakeSmartlingClient:
         if self.file_status_error:
             raise self.file_status_error
         if file_uri not in self.file_statuses:
-            raise RuntimeError('HTTP 404: File not found')
+            raise RuntimeError(f'HTTP 400: The file "{file_uri}" could not be found')
         status = self.file_statuses[file_uri]
+        if status.get('reads_while_processing'):
+            status['reads_while_processing'] -= 1
+            raise RuntimeError('HTTP 423: The file is currently being processed and will be available in a few minutes.')
         if status.get('processing_polls_left'):
             status['processing_polls_left'] -= 1
             if not status['processing_polls_left']:
@@ -134,6 +139,7 @@ class FakeSmartlingClient:
             status['processing_polls_left'] = self.polls_until_processed
         elif self.upload_code != 'ACCEPTED':
             status['lastUploaded'] = upload_time
+            status['reads_while_processing'] = self.reads_while_processing
         return {'code': self.upload_code, 'data': {'stringCount': 42}}
 
     async def list_jobs_awaiting_authorization(self):
@@ -651,6 +657,20 @@ class RefreshTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(client.file_statuses[XLIFF_URI]['lastUploaded'], 'upload-1')
         self.assertEqual(client.file_statuses[STRINGSDICT_URI]['lastUploaded'], 'upload-2')
+
+    async def testWhenSmartlingStillProcessesASuccessfulUploadThenTheRefreshWaitsUntilItsStatusCanBeRead(self):
+        client = FakeSmartlingClient(reads_while_processing=3)
+
+        await self.refresh(client)
+
+        self.assertEqual(client.file_statuses[XLIFF_URI]['reads_while_processing'], 0)
+        self.assertEqual(client.file_statuses[STRINGSDICT_URI]['reads_while_processing'], 0)
+
+    async def testWhenSmartlingNeverFinishesProcessingASuccessfulUploadThenTheRefreshFails(self):
+        client = FakeSmartlingClient(reads_while_processing=100)
+
+        with self.assertRaisesRegex(RuntimeError, 'did not finish processing'):
+            await self.refresh(client)
 
     async def testWhenThePreviousUploadCannotBeReadThenNothingIsUploaded(self):
         client = FakeSmartlingClient(

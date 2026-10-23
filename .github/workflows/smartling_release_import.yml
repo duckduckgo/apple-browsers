@@ -14,7 +14,11 @@ on:
           - iOS
           - macOS
       release_branch:
-        description: "Release branch, e.g. release/ios/0.1.0 (defaults to the latest one; needs a single platform)"
+        description: "Release branch, e.g. release/ios/7.200.0, or a test branch with a version (defaults to the latest release branch; needs a single platform)"
+        type: string
+        default: ""
+      version:
+        description: "Release version, e.g. 0.1.0, for a branch outside release/<platform>/ (taken from a release branch if empty)"
         type: string
         default: ""
       dry_run:
@@ -179,11 +183,13 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+          VERSION: ${{ inputs.version }}
           DRY_RUN: ${{ inputs.dry_run || false }}
           REIMPORT: ${{ inputs.reimport || false }}
           GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
         run: |
           args=("$PLATFORM" --release-branch "$RELEASE_BRANCH")
+          [ -z "$VERSION" ] || args+=(--version "$VERSION")
           [ "$DRY_RUN" != "true" ] || args+=(--dry-run)
           [ "$REIMPORT" != "true" ] || args+=(--reimport)
           ./scripts/smartling/smartling_release_import.sh "${args[@]}"

@@ -85,7 +85,6 @@ public final class CrashCollection {
                       didFinishHandlingResponse: @escaping (() -> Void) = {}) {
         crashHandler.crashDiagnosticsPayloadHandler = { payloads in
             Logger.general.log("😵 loaded \(payloads.count, privacy: .public) diagnostic payloads")
-
             let first = self.isFirstCrash
 
             // Exclude crash reports older than `maxCrashReportAgeForPixels` from crash pixels to
@@ -149,72 +148,27 @@ public final class CrashCollection {
     ///     `uploadReports` callback is used when the user accepts uploading the crash report and starts crash upload to the server.
     public func startAttachingCrashLogMessages(callStackDepthLimit: Int? = nil, didFindCrashReports: @escaping (_ pixelParameters: [[CrashReportPixelParameter: String]], _ payloads: [Data], _ uploadReports: @escaping () -> Void) -> Void) {
         start(process: { payloads in
-            payloads.compactMap { payload in
+            let extractor = CrashLogMessageExtractor()
+            // oldest report first so that the diagnostics files are consumed in crash order
+            let sortedPayloads = payloads.sorted { $0.timeStampBegin < $1.timeStampBegin }
+            return sortedPayloads.compactMap { payload in
                 var dict = payload.dictionaryRepresentation()
 
-                var pid: pid_t?
-                if #available(macOS 14.0, iOS 17.0, *) {
-                    pid = payload.crashDiagnostics?.first?.metaData.pid
-                }
                 // The `MXDiagnostic` payload may not include `crashDiagnostics`, but may instead contain `cpuExceptionDiagnostics`,
                 // `diskWriteExceptionDiagnostics`, or `hangDiagnostics`.
                 // For now, we are ignoring these.
                 if var crashDiagnostics = dict["crashDiagnostics"] as? [[AnyHashable: Any]], !crashDiagnostics.isEmpty {
-                    var crashDiagnosticsDict = crashDiagnostics[0]
-
-                    if let depthLimit = callStackDepthLimit,
-                       let callStackTree = crashDiagnosticsDict["callStackTree"] as? [AnyHashable: Any] {
-                        crashDiagnosticsDict["callStackTree"] = Self.limitCallStackTreeDepth(callStackTree, maxDepth: depthLimit)
-                    }
-                    var diagnosticMetaDataDict = crashDiagnosticsDict["diagnosticMetaData"] as? [AnyHashable: Any] ?? [:]
-                    var objCexceptionReason = diagnosticMetaDataDict["objectiveCexceptionReason"] as? [AnyHashable: Any] ?? [:]
-
-                    var exceptionMessage = (objCexceptionReason["composedMessage"] as? String)?.sanitized()
-                    var stackTrace: [String]?
-
-                    // Look up for NSException/C++ exception diagnostics data (name, reason, `userInfo` dictionary, stack trace)
-                    // by searching for the related crash diagnostics file using the provided crash event timestamp and/or the crashed process PID.
-                    // The stored data was sanitized to remove any potential filename or email occurrences.
-                    if let diagnostic = try? CrashLogMessageExtractor().crashDiagnostic(for: payload.timeStampBegin, pid: pid)?.diagnosticData(), !diagnostic.isEmpty {
-                        // append the loaded crash diagnostics message if the `MXDiagnostic` already contains one
-                        if let existingMessage = exceptionMessage, !existingMessage.isEmpty {
-                            exceptionMessage = existingMessage + "\n\n---\n\n" + diagnostic.message
-                        } else {
-                            // set the loaded diagnostics message in place of the original `MXDiagnostic` exceptionMessage if none exists
-                            exceptionMessage = diagnostic.message
+                    for index in crashDiagnostics.indices {
+                        var pid: pid_t?
+                        if #available(macOS 14.0, iOS 17.0, *), let diagnostic = payload.crashDiagnostics?[safe: index] {
+                            pid = diagnostic.metaData.pid
                         }
-                        stackTrace = diagnostic.stackTrace
+                        crashDiagnostics[index] = Self.attachCrashLogMessage(to: crashDiagnostics[index],
+                                                                              reportedAt: payload.timeStampBegin,
+                                                                              pid: pid,
+                                                                              extractor: extractor,
+                                                                              callStackDepthLimit: callStackDepthLimit)
                     }
-
-                    /** Rebuild the original `MXDiagnostic` JSON with appended crash diagnostics:
-                    ```
-                     {
-                       "crashDiagnostics": [
-                         {
-                           "callStackTree": { ... },
-                           "diagnosticMetaData": {
-                             "appVersion": "1.95.0",
-                             "objectiveCexceptionReason": {
-                               "composedMessage": "NSTableViewException: Row index 9223372036854775807 out of row range (numberOfRows: 0)",
-                               "stackTrace": [
-                                 "0   CoreFoundation                      0x00000001930072ec __exceptionPreprocess + 176",
-                                 "1   libobjc.A.dylib                     0x0000000192aee788 objc_exception_throw + 60",
-                                 "2   AppKit                              0x00000001968dc20c -[NSTableRowData _availableRowViewWhileUpdatingAtRow:] + 0,",
-                                 ...
-                               ]
-                             },
-                             ...
-                           }
-                         }
-                       ],
-                       "timeStampBegin": "2024-07-05 14:10:00",
-                     }
-                    ``` */
-                    objCexceptionReason["composedMessage"] = exceptionMessage
-                    objCexceptionReason["stackTrace"] = stackTrace
-                    diagnosticMetaDataDict["objectiveCexceptionReason"] = objCexceptionReason
-                    crashDiagnosticsDict["diagnosticMetaData"] = diagnosticMetaDataDict
-                    crashDiagnostics[0] = crashDiagnosticsDict
                     dict["crashDiagnostics"] = crashDiagnostics
                 }
 
@@ -227,12 +181,68 @@ public final class CrashCollection {
 
                 return try? JSONSerialization.data(withJSONObject: dict, options: writeOptions)
             }
-
         }, didFindCrashReports: didFindCrashReports)
     }
 
-    public func clearCRCID() {
-        self.crcidManager.crcid = nil
+    /** Rebuild the `MXCrashDiagnostic` JSON with the NSException/C++ exception diagnostics (name, reason, `userInfo`
+     dictionary, stack trace) saved by `CrashLogMessageExtractor` at crash time:
+    ```
+     {
+       "callStackTree": { ... },
+       "diagnosticMetaData": {
+         "appVersion": "1.95.0",
+         "objectiveCexceptionReason": {
+           "composedMessage": "NSTableViewException: Row index 9223372036854775807 out of row range (numberOfRows: 0)",
+           "stackTrace": [
+             "0   CoreFoundation                      0x00000001930072ec __exceptionPreprocess + 176",
+             "1   libobjc.A.dylib                     0x0000000192aee788 objc_exception_throw + 60",
+             "2   AppKit                              0x00000001968dc20c -[NSTableRowData _availableRowViewWhileUpdatingAtRow:] + 0,",
+             ...
+           ]
+         },
+         ...
+       }
+     }
+    ```
+     - Note: see `CrashLogMessageExtractor.crashDiagnostic(forMetricKitReportAt:pid:)` for how the file is found.
+       The stored data was sanitized to remove any potential filename or email occurrences.
+     */
+    static func attachCrashLogMessage(to crashDiagnosticDict: [AnyHashable: Any],
+                                      reportedAt reportTimestamp: Date,
+                                      pid: pid_t?,
+                                      extractor: CrashLogMessageExtractor,
+                                      callStackDepthLimit: Int?) -> [AnyHashable: Any] {
+        var crashDiagnosticDict = crashDiagnosticDict
+        if let depthLimit = callStackDepthLimit,
+           let callStackTree = crashDiagnosticDict["callStackTree"] as? [AnyHashable: Any] {
+            crashDiagnosticDict["callStackTree"] = Self.limitCallStackTreeDepth(callStackTree, maxDepth: depthLimit)
+        }
+        var diagnosticMetaDataDict = crashDiagnosticDict["diagnosticMetaData"] as? [AnyHashable: Any] ?? [:]
+        var objCexceptionReason = diagnosticMetaDataDict["objectiveCexceptionReason"] as? [AnyHashable: Any] ?? [:]
+
+        var exceptionMessage = (objCexceptionReason["composedMessage"] as? String)?.sanitized()
+        var stackTrace: [String]?
+
+        if Self.canBeUncaughtExceptionCrash(signal: diagnosticMetaDataDict["signal"] as? Int),
+           let crashLog = extractor.crashDiagnostic(forMetricKitReportAt: reportTimestamp, pid: pid),
+           let diagnostic = try? crashLog.diagnosticData(), !diagnostic.isEmpty {
+            // append the loaded crash diagnostics message if the `MXDiagnostic` already contains one
+            if let existingMessage = exceptionMessage, !existingMessage.isEmpty {
+                exceptionMessage = existingMessage + "\n\n---\n\n" + diagnostic.message
+            } else {
+                // set the loaded diagnostics message in place of the original `MXDiagnostic` exceptionMessage if none exists
+                exceptionMessage = diagnostic.message
+            }
+            stackTrace = diagnostic.stackTrace
+            // the file belongs to this report only
+            extractor.consume(crashLog)
+        }
+
+        objCexceptionReason["composedMessage"] = exceptionMessage
+        objCexceptionReason["stackTrace"] = stackTrace
+        diagnosticMetaDataDict["objectiveCexceptionReason"] = objCexceptionReason
+        crashDiagnosticDict["diagnosticMetaData"] = diagnosticMetaDataDict
+        return crashDiagnosticDict
     }
 
     var isFirstCrash: Bool {
@@ -284,6 +294,14 @@ public final class CrashCollection {
     ///   - tree: The call stack tree dictionary to process
     ///   - maxDepth: Maximum depth to preserve (nodes deeper than this will be truncated)
     /// - Returns: A new dictionary with depth limited to maxDepth
+    /// Uncaught NSException/C++ exceptions always terminate the process via `abort()`, i.e. with `SIGABRT`.
+    /// Reports for other signals (e.g. a segfault in a crash loop right after an exception crash) must not get
+    /// the saved exception diagnostics attached. An unknown signal is not used to reject the report.
+    static func canBeUncaughtExceptionCrash(signal: Int?) -> Bool {
+        guard let signal else { return true }
+        return signal == Int(SIGABRT)
+    }
+
     static func limitCallStackTreeDepth(_ tree: [AnyHashable: Any], maxDepth: Int) -> [AnyHashable: Any] {
         guard maxDepth > 0 else { return [:] }
 

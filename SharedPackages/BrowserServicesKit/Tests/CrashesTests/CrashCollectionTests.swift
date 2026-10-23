@@ -269,6 +269,13 @@ class CrashCollectionTests: XCTestCase {
 
     // MARK: - limitCallStackTreeDepth Tests
 
+    func testCanBeUncaughtExceptionCrash_onlyForAbortOrUnknownSignal() {
+        XCTAssertTrue(CrashCollection.canBeUncaughtExceptionCrash(signal: Int(SIGABRT)))
+        XCTAssertTrue(CrashCollection.canBeUncaughtExceptionCrash(signal: nil))
+        XCTAssertFalse(CrashCollection.canBeUncaughtExceptionCrash(signal: Int(SIGSEGV)))
+        XCTAssertFalse(CrashCollection.canBeUncaughtExceptionCrash(signal: Int(SIGTRAP)))
+    }
+
     func testLimitCallStackTreeDepth_withZeroMaxDepth_returnsEmptyDictionary() {
         let tree: [AnyHashable: Any] = ["key": "value", "nested": ["inner": "data"]]
 

@@ -70,11 +70,7 @@ on:
       - '.github/workflows/macos_build_notarized.yml'
       - '.github/workflows/macos_run_ui_test.yml'
       - '.github/workflows/should_run_pr_checks.yml'
-      - '.github/actions/measure-duration/**'
-      - '.github/actions/select-xcode-version/**'
-      - '.github/actions/send-pixel/**'
-      - '.github/actions/setup-ruby/**'
-      - '.github/actions/upload-artifact-with-retry/**'
+      - '.github/actions/**'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/Package.swift'
 

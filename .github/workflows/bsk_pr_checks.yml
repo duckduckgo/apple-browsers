@@ -34,13 +34,7 @@ jobs:
       paths: |
         .github/workflows/bsk_pr_checks.yml
         .github/workflows/should_run_pr_checks.yml
-        .github/actions/asana-failed-pr-checks/**
-        .github/actions/fetch-commit-info/**
-        .github/actions/measure-duration/**
-        .github/actions/process-test-results/**
-        .github/actions/select-ios-simulator/**
-        .github/actions/select-xcode-version/**
-        .github/actions/send-pixel/**
+        .github/actions/**
         .xcode-version
         SharedPackages/BrowserServicesKit/**
         SharedPackages/Common/**

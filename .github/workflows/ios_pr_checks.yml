@@ -65,16 +65,7 @@ jobs:
       paths: |
         .github/workflows/ios_pr_checks.yml
         .github/workflows/should_run_pr_checks.yml
-        .github/actions/asana-failed-pr-checks/**
-        .github/actions/bitrise-build-cache/**
-        .github/actions/fetch-commit-info/**
-        .github/actions/measure-duration/**
-        .github/actions/process-test-results/**
-        .github/actions/select-ios-simulator/**
-        .github/actions/select-xcode-version/**
-        .github/actions/send-pixel/**
-        .github/actions/setup-ruby/**
-        .github/actions/snapshot-failure-report/**
+        .github/actions/**
         .xcode-version
         SharedPackages/**
         iOS/**

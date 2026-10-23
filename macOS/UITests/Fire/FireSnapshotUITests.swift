@@ -99,26 +99,36 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         <button onclick="document.getElementById('count').textContent='Clicked '+(++clicks)">Increment</button>
         <p id="count">Clicked 0</p>
         """)
-        app.openURL(page)
-        let survivor = app.windows.containing(.webView, identifier: "Surviving counter").firstMatch
+        // Keep the counter on a different origin so clearing the burned window cannot reset it.
+        var counterPage = URLComponents(url: page, resolvingAgainstBaseURL: false)!
+        counterPage.host = "127.0.0.1"
+        app.openURL(counterPage.url!, waitForWebViewAccessibilityLabel: "Surviving counter")
+        let survivor = app.windows.matching(NSPredicate(format: "title == %@", "Surviving counter")).firstMatch
         let increment = survivor.webViews.buttons["Increment"]
         XCTAssertTrue(increment.waitForExistence(timeout: UITests.Timeouts.localTestServer))
+        // Covered web views can disappear from the accessibility tree. Resolve the click location
+        // before covering it, and anchor it to the window rather than its hidden content.
+        let buttonFrame = increment.frame
+        let windowFrame = survivor.frame
+        let incrementLocation = survivor.coordinate(withNormalizedOffset: .zero).withOffset(
+            CGVector(dx: buttonFrame.midX - windowFrame.minX, dy: buttonFrame.midY - windowFrame.minY)
+        )
         app.openNewWindow()
         openPage(title: "Window to burn")
         beginBurn(scope: "Window", closeTabs: true)
         waitForCleanupToStart()
 
         // Click screen coordinates so XCTest does not refuse an intentionally intercepted element.
-        increment.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        incrementLocation.click()
         // The first click may only activate a background window; the second must still be blocked.
-        increment.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
-        XCTAssertTrue(survivor.webViews.staticTexts["Clicked 0"].exists,
-                      "The remaining window must reject input while cleanup is pending")
+        incrementLocation.click()
         releaseCleanup()
         waitForBurnToFinish()
         let progress = progressWindow
         XCTAssertTrue(progress.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation))
         XCTAssertTrue(app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation))
+        XCTAssertTrue(survivor.webViews.staticTexts["Clicked 0"].exists,
+                      "The remaining window must reject input while cleanup is pending")
         increment.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
         XCTAssertTrue(survivor.webViews.staticTexts["Clicked 1"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "The blocker must release input after cleanup")

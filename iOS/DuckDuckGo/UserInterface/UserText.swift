@@ -126,6 +126,7 @@ public struct UserText {
     public static let accessibilityValueAIChatContextualSheetOpen = NSLocalizedString("accessibility.value.aiChat.contextualSheet.open", value: "Open", comment: "Accessibility value when the Duck.ai contextual sheet is open.")
     public static let accessibilityValueAIChatContextualSheetClosed = NSLocalizedString("accessibility.value.aiChat.contextualSheet.closed", value: "Closed", comment: "Accessibility value when the Duck.ai contextual sheet is closed.")
     public static let smartlingDedupeTestStringOne = NSLocalizedString("smartling.dedupe.test.one", value: "Smartling dedupe test string one 7f3a", comment: "Temporary test string for checking Smartling job contents. Do not translate or merge.")
+    public static let smartlingDedupeTestStringTwo = NSLocalizedString("smartling.dedupe.test.two", value: "Smartling dedupe test string two 9c1e", comment: "Temporary test string for checking Smartling job contents. Do not translate or merge.")
     public static let actionDuckAIVoice = NSLocalizedString("action.title.duckai.voice", value: "Duck.ai Voice", comment: "Open Duck.ai Voice mode action")
     public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "New Chat", comment: "Start new AI Chat action in the menu list")
     public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")

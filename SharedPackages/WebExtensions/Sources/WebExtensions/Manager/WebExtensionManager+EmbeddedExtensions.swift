@@ -156,6 +156,8 @@ extension WebExtensionManager {
         Logger.webExtensions.debug("🔄 Installing embedded extension: \(type.rawValue)")
 
         let identifier = UUID().uuidString
+        cpmBaseURLPolicy.pendingInstallations[identifier] = type
+        defer { cpmBaseURLPolicy.pendingInstallations[identifier] = nil }
         permissionController?.trustedInstallations.insert(identifier)
         defer { permissionController?.trustedInstallations.remove(identifier) }
         if requiresExtraction {
@@ -182,6 +184,10 @@ extension WebExtensionManager {
 
             installationStore.add(installedExtension)
             if type == .embedded {
+                // An error notification can arrive while the initial installation is still pending.
+                if let context = context(for: identifier) {
+                    cpmBaseURLPolicy.recordBackgroundLoadFailure(in: context, errors: context.errors)
+                }
                 trackEmbeddedBackgroundStartup(identifier: identifier)
             }
             reportLifecycleEvent(.loaded(identifier: identifier, type: type))

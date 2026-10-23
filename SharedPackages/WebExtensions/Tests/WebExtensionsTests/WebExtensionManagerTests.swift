@@ -102,6 +102,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                              isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                              isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                             isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                              isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                              storageProvider: WebExtensionStorageProviding? = nil,
@@ -124,6 +125,7 @@ final class WebExtensionManagerTests: XCTestCase {
             isCPMBackgroundLoadRecoveryEnabled: isCPMBackgroundLoadRecoveryEnabled,
             isApplicationInBackground: isApplicationInBackground,
             isCPMLateBackgroundDocumentRecoveryEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
+            isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
             bundledExtensionURL: bundledExtensionURL,
             now: now
         )
@@ -198,6 +200,35 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     // MARK: - Background wake selection and recovery safety
+
+    @MainActor
+    func testError6PersistsNextOriginBeforeRetryOrReloadWhileAppIsBackgrounded() async throws {
+        for enabled in [false, true] {
+            let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                      isCPMMessagingHangRecoveryEnabled: { false },
+                                      isCPMBackgroundLoadRecoveryEnabled: { false },
+                                      isCPMStableBaseURLEnabled: { enabled },
+                                      isApplicationInBackground: { true })
+            let context = try await loadDeferredEmbeddedContext(UUID().uuidString, into: manager)
+            defer { manager.unloadAllExtensions() }
+            let liveOrigin = context.baseURL
+            context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+
+            let saved = installedExtensionStoringMock.installedExtension(withUniqueIdentifier: context.uniqueIdentifier)?.cpmOriginIdentifier
+            if enabled {
+                XCTAssertNotNil(saved, "The next-launch origin must be saved synchronously before recovery can run")
+            } else {
+                XCTAssertNil(saved, "The P3 kill switch must veto error-triggered rotation")
+            }
+            XCTAssertEqual(context.baseURL, liveOrigin, "Persisting a replacement must not mutate the live context")
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+            XCTAssertEqual(installedExtensionStoringMock.installedExtension(withUniqueIdentifier: context.uniqueIdentifier)?.cpmOriginIdentifier, saved)
+            XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+            XCTAssertTrue(context.completions.isEmpty)
+        }
+    }
 
     @MainActor
     private func loadDeferredEmbeddedContext(_ identifier: String, into manager: WebExtensionManager) async throws -> DeferredCPMBackgroundContext {

@@ -71,17 +71,20 @@ public final class WebExtensionLoader: WebExtensionLoading {
     /// Writes the permissions third-party extensions lose to the API compatibility log.
     private let compatibilityReporter = WebExtensionAPICompatibilityReporter()
     private let permissionController: WebExtensionPermissionController?
+    private let baseURLProvider: @MainActor (String, WKWebExtension) -> URL?
     public weak var delegate: WebExtensionLoadingDelegate?
 
     public init(storageProvider: WebExtensionStorageProviding,
                 isInspectable: Bool = false,
-                permissionController: WebExtensionPermissionController? = nil) {
+                permissionController: WebExtensionPermissionController? = nil,
+                baseURLProvider: @escaping @MainActor (String, WKWebExtension) -> URL? = { _, _ in nil }) {
         // The loader creates every extension context, so its `errors` are
         // safe before any of them exists.
         WebExtensionErrorsSwizzling.install()
         self.storageProvider = storageProvider
         self.isInspectable = isInspectable
         self.permissionController = permissionController
+        self.baseURLProvider = baseURLProvider
     }
 
     @MainActor
@@ -248,6 +251,10 @@ public final class WebExtensionLoader: WebExtensionLoading {
         let context = WKWebExtensionContext(for: webExtension)
 
         context.uniqueIdentifier = identifier
+        if let baseURL = baseURLProvider(identifier, webExtension) {
+            // Set before permissions/delegates/load: changing it on a loaded context is unsupported.
+            context.baseURL = baseURL
+        }
         context.isInspectable = isInspectable
 
         if let permissionController {

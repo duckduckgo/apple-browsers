@@ -117,7 +117,7 @@ class FakeSmartlingClient:
         if self.file_status_error:
             raise self.file_status_error
         if file_uri not in self.file_statuses:
-            raise RuntimeError('HTTP 404: File not found')
+            raise RuntimeError(f'HTTP 400: The file "{file_uri}" could not be found')
         status = self.file_statuses[file_uri]
         if status.get('processing_polls_left'):
             status['processing_polls_left'] -= 1

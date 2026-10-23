@@ -2186,6 +2186,56 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     // MARK: - Suggestions Resolve Race Tests
 
+    func testPinnedPageRetryIgnoresCurrentDocumentCache() async {
+        await assertPinnedPageSuggestions(removeSelection: false, hasCachedSuggestions: true)
+    }
+
+    func testPinnedPageSelectionRemovalIgnoresCurrentDocumentCache() async {
+        await assertPinnedPageSuggestions(removeSelection: true, hasCachedSuggestions: true)
+    }
+
+    func testPinnedPageRetryWithoutCacheResolvesAttachedPage() async {
+        await assertPinnedPageSuggestions(removeSelection: false, hasCachedSuggestions: false)
+    }
+
+    private func assertPinnedPageSuggestions(removeSelection: Bool, hasCachedSuggestions: Bool,
+                                             file: StaticString = #filePath, line: UInt = #line) async {
+        let provider = GatedContextualSuggestedPromptsProvider()
+        provider.independentPageResolution = true
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        sessionState = AIChatContextualChatSessionState(aiChatSettings: mockSettings, pixelHandler: mockPixelHandler,
+                                                       featureFlagger: mockFeatureFlagger, suggestedPromptsProvider: provider)
+        let pinnedURL = "https://example.com/pinned"
+        sessionState.beginManualAttach()
+        sessionState.updateContext(makeTestContext(url: pinnedURL))
+        let selection = makeSelection()
+        if removeSelection {
+            sessionState.attachSelection(selection)
+        }
+        sessionState.notifyPageChanged(pageURL: URL(string: "https://example.com/current"))
+        if hasCachedSuggestions {
+            provider.cachedResult = ResolvedPageSuggestions(suggestions: makeSuggestedPrompts(ids: ["current-page"]),
+                                                           isSmart: true, pageType: .none)
+        }
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+
+        if removeSelection {
+            sessionState.removeAttachedSelection(id: selection.id)
+        } else {
+            sessionState.retrySuggestions()
+        }
+        XCTAssertTrue(sessionState.suggestions.isEmpty, file: file, line: line)
+        await yieldUntil { provider.startedCount == 1 }
+        XCTAssertEqual(provider.startedCount, 1, file: file, line: line)
+        XCTAssertEqual(provider.lastInput?.url, pinnedURL, file: file, line: line)
+        XCTAssertEqual(provider.lastInput?.scope, .page, file: file, line: line)
+        guard provider.startedCount == 1 else { return }
+        let expected = makeSuggestedPrompts(ids: ["pinned-page"])
+        provider.resume(at: 0, returning: expected)
+        await yieldUntil { self.sessionState.suggestionsLoadState == .loaded }
+        XCTAssertEqual(sessionState.suggestions, expected, file: file, line: line)
+    }
+
     func testIndependentSuggestionsStartBeforeContextAndIgnoreLateCollection() async {
         let provider = GatedContextualSuggestedPromptsProvider()
         provider.independentPageResolution = true
@@ -3007,10 +3057,15 @@ private final class GatedContextualSuggestedPromptsProvider: ContextualSuggested
     private(set) var startedCount = 0
     private(set) var lastInput: ResolvePageSuggestionsInput?
     var independentPageResolution = false
+    var cachedResult: ResolvedPageSuggestions?
     private var continuations: [CheckedContinuation<ResolvedPageSuggestions, Never>] = []
 
     func requiresPageContext(for scope: ResolvePageSuggestionsInput.Scope) -> Bool {
         !independentPageResolution || scope != .page
+    }
+
+    func cachedSuggestions(scope: ResolvePageSuggestionsInput.Scope, locale: String) -> ResolvedPageSuggestions? {
+        scope == .page ? cachedResult : nil
     }
 
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput) async -> ResolvedPageSuggestions {

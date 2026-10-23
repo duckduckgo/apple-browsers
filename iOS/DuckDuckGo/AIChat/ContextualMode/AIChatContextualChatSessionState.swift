@@ -653,6 +653,11 @@ final class AIChatContextualChatSessionState {
         suggestions = []
         suggestionsLoadState = .loading
         let scope: ResolvePageSuggestionsInput.Scope = attachedSelections.isEmpty ? .page : .selection
+        if scope == .page, shouldSuspendSuggestionsRefresh {
+            rebuildViewState()
+            resolveSuggestionsIfLoading(from: intendedAttachedContext)
+            return
+        }
         if let cached = suggestedPromptsProvider.cachedSuggestions(scope: scope, locale: Locale.current.identifier) {
             applySuggestions(cached, scope: scope)
             return

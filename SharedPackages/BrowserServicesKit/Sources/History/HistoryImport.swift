@@ -60,18 +60,21 @@ public enum HistoryImport {
 
     public enum Error: DDGError {
         case historyNotLoaded
+        case historyChanged
 
         public static var errorDomain: String { "com.duckduckgo.history.HistoryImport.Error" }
 
         public var errorCode: Int {
             switch self {
             case .historyNotLoaded: return 1
+            case .historyChanged: return 2
             }
         }
 
         public var description: String {
             switch self {
             case .historyNotLoaded: return "History has not finished loading"
+            case .historyChanged: return "History changed during import"
             }
         }
     }

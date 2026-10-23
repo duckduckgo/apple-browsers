@@ -130,6 +130,8 @@ final public class HistoryCoordinator: HistoryCoordinating {
         var importedTitle: String?
     }
 
+    @MainActor private var importedEntrySaves = [UUID: Task<Void, Error>]()
+
     @MainActor private(set) public var isHistoryLoaded = false
 
     // Source of truth
@@ -170,6 +172,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
     ///
     /// An imported title replaces the entry's title only when its visit is the entry's newest, or the entry has no title.
     /// If a save fails, the imported visits that didn't reach the store are removed again, so a retry imports them.
+    /// Removing an entry during the import stops the batch before that entry can be saved again.
     @MainActor
     public func addImportedVisits(_ visits: [HistoryImport.Visit]) async throws {
         guard isHistoryLoaded, var historyDictionary else {
@@ -207,13 +210,26 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     @MainActor
     private func saveImportedEntry(_ entry: HistoryEntry) async throws {
+        guard historyDictionary?[entry.url] === entry else {
+            throw HistoryImport.Error.historyChanged
+        }
+
         let unsavedVisits = entry.visits.filter { $0.savingState == .initialized }
         guard let entryCopy = copyForSaving(entry) else { return }
+        let saveID = UUID()
+        let saveTask = Task { try await store(entryCopy, of: entry) }
+        importedEntrySaves[saveID] = saveTask
+        defer { importedEntrySaves.removeValue(forKey: saveID) }
+
         do {
-            try await store(entryCopy, of: entry)
+            try await saveTask.value
         } catch {
             unsavedVisits.forEach { $0.savingState = .initialized }
             throw error
+        }
+
+        guard historyDictionary?[entry.url] === entry else {
+            throw HistoryImport.Error.historyChanged
         }
     }
 
@@ -313,10 +329,14 @@ final public class HistoryCoordinator: HistoryCoordinating {
     @MainActor
     public func burnAll(completion: @escaping @MainActor (Result<Void, Error>) -> Void) {
         Logger.history.debug("HistoryCoordinator: burnAll")
+        let importedSaves = Array(importedEntrySaves.values)
         self.historyDictionary = [:]
-        clean(until: .distantFuture) { result in
-            Logger.history.debug("HistoryCoordinator: burnAll completed")
-            completion(result)
+        Task {
+            await waitForImportedSaves(importedSaves)
+            clean(until: .distantFuture) { result in
+                Logger.history.debug("HistoryCoordinator: burnAll completed")
+                completion(result)
+            }
         }
     }
 
@@ -463,8 +483,10 @@ final public class HistoryCoordinator: HistoryCoordinating {
             historyDictionary?.removeValue(forKey: entry.url)
         }
 
-        // Remove from the storage
+        // Remove from the storage after any imported snapshot that could recreate these entries.
+        let importedSaves = Array(importedEntrySaves.values)
         Task {
+            await waitForImportedSaves(importedSaves)
             do {
                 try await historyStoring.removeEntries(entries)
                 Logger.history.debug("Entries removed successfully")
@@ -507,16 +529,20 @@ final public class HistoryCoordinator: HistoryCoordinating {
             }
         }
 
-        entriesToSave.forEach { entry in
-            save(entry: entry)
-        }
         // Remove from the local memory _before_ enqueuing async removal from database
         entriesToRemove.forEach { entry in
             historyDictionary?.removeValue(forKey: entry.url)
         }
 
-        // Remove from the storage
+        // An in-flight imported snapshot may still contain the visits being removed.
+        let importedSaves = Array(importedEntrySaves.values)
         Task {
+            await waitForImportedSaves(importedSaves)
+            for entry in entriesToSave {
+                guard historyDictionary?[entry.url] === entry,
+                      let entryCopy = copyForSaving(entry) else { continue }
+                await saveCopy(entryCopy, of: entry)
+            }
             do {
                 try await historyStoring.removeVisits(visits)
                 Logger.history.debug("Visits removed successfully")
@@ -531,6 +557,13 @@ final public class HistoryCoordinator: HistoryCoordinating {
                     completionHandler?(.failure(error))
                 }
             }
+        }
+    }
+
+    private func waitForImportedSaves(_ saves: [Task<Void, Error>]) async {
+        for save in saves {
+            // Deletion must still run when a pending save fails.
+            _ = await save.result
         }
     }
 
@@ -561,11 +594,15 @@ final public class HistoryCoordinator: HistoryCoordinating {
         guard let entryCopy = copyForSaving(entry) else { return }
 
         Task {
-            do {
-                try await store(entryCopy, of: entry)
-            } catch {
-                Logger.history.error("Saving of history entry failed: \(error.localizedDescription)")
-            }
+            await saveCopy(entryCopy, of: entry)
+        }
+    }
+
+    private func saveCopy(_ entryCopy: HistoryEntry, of entry: HistoryEntry) async {
+        do {
+            try await store(entryCopy, of: entry)
+        } catch {
+            Logger.history.error("Saving of history entry failed: \(error.localizedDescription)")
         }
     }
 

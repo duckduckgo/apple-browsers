@@ -550,12 +550,12 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
                 file_uris=[XLIFF_URI]
             )
 
-    async def testWhenNotReadyThenJobsAwaitingAuthorizationAreListedOldestFirst(self):
+    async def testWhenNotReadyThenJobsAwaitingAuthorizationAreListedOldestFirstWithTheirLinks(self):
         client = FakeSmartlingClient(
             file_statuses={XLIFF_URI: file_status(10, de_DE=(3, 0))},
             awaiting_jobs=[
-                {'jobName': 'pau/feature-2026-10-20', 'createdDate': '2026-10-20T10:00:00Z'},
-                {'jobName': 'keyChange', 'createdDate': '2025-04-04T14:23:00Z'},
+                {'jobName': 'pau/feature-2026-10-20', 'createdDate': '2026-10-20T10:00:00Z', 'translationJobUid': 'job-2'},
+                {'jobName': 'keyChange', 'createdDate': '2025-04-04T14:23:00Z', 'translationJobUid': 'job-1'},
             ]
         )
 
@@ -563,8 +563,16 @@ class ReleaseStatusJobsAwaitingAuthorizationTests(unittest.IsolatedAsyncioTestCa
 
         self.assertEqual(result.outcome, 'not_ready')
         self.assertEqual(result.jobs_awaiting_authorization, [
-            'keyChange (created 2025-04-04)',
-            'pau/feature-2026-10-20 (created 2026-10-20)',
+            {
+                'name': 'keyChange',
+                'created': '2025-04-04',
+                'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-1',
+            },
+            {
+                'name': 'pau/feature-2026-10-20',
+                'created': '2026-10-20',
+                'url': 'https://dashboard.smartling.com/app/projects/project-123/account-jobs/project-123:job-2',
+            },
         ])
 
     async def testWhenReadyThenJobsAwaitingAuthorizationAreNotLookedUp(self):

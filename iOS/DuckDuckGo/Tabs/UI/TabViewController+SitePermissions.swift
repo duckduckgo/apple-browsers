@@ -303,6 +303,16 @@ extension TabViewController {
         set { sitePermissionsState.uptimeProvider = newValue }
     }
 
+    /// Swipe previews attach the adjacent tab one screen width away, so being in the window isn't enough.
+    private var isOnScreenForSitePermissionDialog: Bool {
+        guard UIApplication.shared.applicationState == .active,
+              let view = viewIfLoaded, let window = view.window else {
+            return false
+        }
+        let frame = view.convert(view.bounds, to: window)
+        return window.bounds.contains(CGPoint(x: frame.midX, y: frame.midY))
+    }
+
     var sitePermissionsDialogVisibilityOverride: (() -> Bool)? {
         get { sitePermissionsState.dialogVisibilityOverride }
         set { sitePermissionsState.dialogVisibilityOverride = newValue }
@@ -311,8 +321,7 @@ extension TabViewController {
     /// Fires the pending dialog impression once the dialog can actually be seen: the tab is on screen and the app is active.
     func fireSitePermissionDialogImpressionIfVisible() {
         guard let permissionType = sitePermissionsState.pendingDialogImpression else { return }
-        let isVisible = sitePermissionsState.dialogVisibilityOverride?()
-            ?? (viewIfLoaded?.window != nil && UIApplication.shared.applicationState == .active)
+        let isVisible = sitePermissionsState.dialogVisibilityOverride?() ?? isOnScreenForSitePermissionDialog
         guard isVisible else { return }
 
         sitePermissionsState.pendingDialogImpression = nil

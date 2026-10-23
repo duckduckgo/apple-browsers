@@ -670,8 +670,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
 
-    @MainActor
-    // swiftlint:disable cyclomatic_complexity
     /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created, renewed or restored from.
     /// - Parameters:
     ///   - featureFlagger: Decides whether the backup token is enabled.
@@ -681,6 +679,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger.isFeatureOn(.authBackupToken) ? makeStorage() : nil
     }
 
+    @MainActor
+    // swiftlint:disable cyclomatic_complexity
     override init() {
         let startupProfiler = StartupProfiler()
         let profilerToken = startupProfiler.startMeasuring(.appDelegateInit)

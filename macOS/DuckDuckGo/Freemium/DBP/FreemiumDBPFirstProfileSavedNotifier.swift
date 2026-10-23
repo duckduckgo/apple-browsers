@@ -55,9 +55,10 @@ final class FreemiumDBPFirstProfileSavedNotifier: DBPProfileSavedNotifier {
                 && freemiumDBPUserStateManager.didActivate
                 && !freemiumDBPUserStateManager.didPostFirstProfileSavedNotification else { return }
 
+        // Set before posting so observers that read it on the notification see the scan as started.
+        freemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
+
         Logger.freemiumDBP.debug("[Freemium DBP] Posting Profile Saved Notification")
         notificationCenter.post(name: .pirProfileSaved, object: nil)
-
-        freemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
     }
 }

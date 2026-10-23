@@ -27,7 +27,7 @@ final class AppleTabOrganizer: TabOrganizing {
 
     private static let topicInstructions = """
     You find the few broad topics a person's open browser tabs are about. \
-    Topics are general categories like Dogs, News, Shopping, Travel, Coding or Streaming, \
+    Topics are general categories like Work, News, Shopping, Travel, Coding or Streaming, \
     never a single site, product or breed. Each topic should cover several tabs.
     """
 
@@ -68,8 +68,8 @@ final class AppleTabOrganizer: TabOrganizing {
     }
 
     private static let suggestionInstructions = """
-    You suggest ways a person could tidy their open browser tabs. \
-    Each suggestion is an action plus a broad category of tabs, like news, streaming, shopping, travel or work. \
+    You suggest ways a person could tidy the browser tabs they have open right now, listed below. \
+    Base every suggestion on the current tabs: each one is an action plus a broad category that several of these tabs share. \
     Never name a single site or brand. Use a different category for each suggestion.
     """
 
@@ -274,7 +274,7 @@ enum GeneratedSuggestionVerb {
 @Generable
 struct GeneratedSuggestion {
     var verb: GeneratedSuggestionVerb
-    @Guide(description: "Broad category of several tabs, 1 or 2 lowercase words, like news, streaming, shopping, travel. Never a site or brand name")
+    @Guide(description: "Broad category that several of the current tabs share, 1 or 2 lowercase words. Never a site or brand name")
     var category: String
 }
 

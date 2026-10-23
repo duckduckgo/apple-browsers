@@ -97,12 +97,14 @@ class AsanaClientTests(unittest.TestCase):
 
 class NotesHTMLTests(unittest.TestCase):
 
-    def testLabelsAreBoldURLsAreLinksAndTextIsEscaped(self):
+    def testLabelsAreBoldExceptOnBulletsURLsAreLinksAndTextIsEscaped(self):
         notes = (
             "🌍 Couldn't authorize the job.\n"
             "\n"
             "🔗 Job: https://dashboard.smartling.com/app/projects/p/account-jobs/p:j\n"
-            "✋ Reason: HTTP 400: \"<bad>\" & worse"
+            "✋ Reason: HTTP 400: \"<bad>\" & worse\n"
+            "⏸️ Jobs awaiting authorization:\n"
+            "- feature/x (created 2026-10-20): https://dashboard.smartling.com/app/projects/p/account-jobs/p:k"
         )
 
         html_notes = ASANA_REVIEW_TASK.notes_html(notes)
@@ -112,7 +114,10 @@ class NotesHTMLTests(unittest.TestCase):
             "\n"
             "<strong>🔗 Job:</strong> <a href=\"https://dashboard.smartling.com/app/projects/p/account-jobs/p:j\">"
             "https://dashboard.smartling.com/app/projects/p/account-jobs/p:j</a>\n"
-            "<strong>✋ Reason:</strong> HTTP 400: \"&lt;bad&gt;\" &amp; worse</body>"
+            "<strong>✋ Reason:</strong> HTTP 400: \"&lt;bad&gt;\" &amp; worse\n"
+            "⏸️ Jobs awaiting authorization:\n"
+            "- feature/x (created 2026-10-20): <a href=\"https://dashboard.smartling.com/app/projects/p/account-jobs/p:k\">"
+            "https://dashboard.smartling.com/app/projects/p/account-jobs/p:k</a></body>"
         ))
 
 

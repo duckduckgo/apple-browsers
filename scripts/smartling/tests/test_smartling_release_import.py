@@ -96,6 +96,20 @@ def git(cwd: Path, *args: str) -> str:
     ).stdout.strip()
 
 
+def github_outputs(text: str) -> dict:
+    """Parse a GITHUB_OUTPUT file, including multi-line values written as name<<DELIMITER."""
+    outputs = {}
+    lines = iter(text.splitlines())
+    for line in lines:
+        if '<<' in line and '=' not in line:
+            name, delimiter = line.split('<<', 1)
+            outputs[name] = '\n'.join(iter(lambda: next(lines), delimiter))
+        elif '=' in line:
+            name, value = line.split('=', 1)
+            outputs[name] = value
+    return outputs
+
+
 @unittest.skipUnless(shutil.which('jq') and shutil.which('git'), 'needs git and jq')
 class ReleaseImportScriptTests(unittest.TestCase):
 
@@ -160,10 +174,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
             cwd=self.repo, env=env, capture_output=True, text=True, check=False
         )
         self.assertEqual(result.returncode, expected_exit_code, result.stdout + result.stderr)
-        outputs = dict(
-            line.split('=', 1) for line in output_file.read_text(encoding='utf-8').splitlines() if '=' in line
-        )
-        return outputs
+        return github_outputs(output_file.read_text(encoding='utf-8'))
 
     def tool_calls(self):
         return (self.stub_dir / 'loc_tool.log').read_text(encoding='utf-8').splitlines()
@@ -273,12 +284,16 @@ class ReleaseImportScriptTests(unittest.TestCase):
         outputs = self.run_import(release_status={
             **READY, 'outcome': 'not_ready', 'strings_left': 120, 'incomplete_locales': ['de-DE'],
             'strings_awaiting_authorization': 96,
-            'jobs_awaiting_authorization': ['keyChange (created 2025-04-04)'],
+            'jobs_awaiting_authorization': ['keyChange (created 2025-04-04): https://j/1', 'pau/feature: https://j/2'],
         })
 
         self.assertEqual(outputs['outcome'], 'not_ready')
         self.assertEqual(outputs['strings_awaiting_authorization'], '96')
-        self.assertEqual(outputs['jobs_awaiting_authorization'], 'keyChange (created 2025-04-04)')
+        self.assertEqual(
+            outputs['jobs_awaiting_authorization'],
+            '- keyChange (created 2025-04-04): https://j/1\n- pau/feature: https://j/2'
+        )
+        self.assertEqual(outputs['integrity'], '')
 
     def testWhenTheDownloadFailsThenTheOutcomeIsAnError(self):
         (self.stub_dir / 'download_fails').touch()

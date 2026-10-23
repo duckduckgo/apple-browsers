@@ -734,9 +734,10 @@ async def describe_jobs_awaiting_authorization(client: SmartlingClient) -> List[
     for job in jobs:
         name = job.get('jobName', 'unnamed')
         created = (job.get('createdDate') or '')[:10]
-        descriptions.append(f"{name} (created {created})" if created else name)
+        description = f"{name} (created {created})" if created else name
+        descriptions.append(f"{description}: {job_url(client, job_uid(job))}")
     if descriptions:
-        log(f"✋ Jobs awaiting authorization: {', '.join(descriptions)}")
+        log("✋ Jobs awaiting authorization:" + ''.join(f"\n- {description}" for description in descriptions))
     return descriptions
 
 

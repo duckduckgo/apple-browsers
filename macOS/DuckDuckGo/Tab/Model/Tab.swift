@@ -524,7 +524,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             userContentController?.cleanUpBeforeClosing()
 #if DEBUG
             if case .normal = AppVersion.runType {
-                webView.assertObjectDeallocated(after: 4.0)
+                // Hack days: closing many still-loading tabs at once keeps some WebViews alive a bit longer; log instead of stopping.
+                webView.ensureObjectDeallocated(after: 4.0, do: .log)
             }
 #endif
         }

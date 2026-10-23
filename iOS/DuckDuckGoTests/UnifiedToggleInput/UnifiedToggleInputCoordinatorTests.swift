@@ -92,6 +92,26 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         super.tearDown()
     }
 
+    func testFreshSuggestionsRefreshFromPreviousTabDoesNotPublishState() {
+        sut.activateForTab("previous-chat")
+        sut.activateForTab("current-chat")
+        var updates: [FreshChatSuggestionsState] = []
+        sut.$freshSuggestionsState.dropFirst().sink { updates.append($0) }.store(in: &cancellables)
+
+        sut.refreshFreshSuggestions(destinationID: "previous-chat", isFresh: { false })
+
+        XCTAssertTrue(updates.isEmpty, "A background tab must not hide or replace the current tab's suggestions")
+    }
+
+    func testFreshSuggestionsRefreshWithoutActiveTabDoesNotPublishState() {
+        var updates: [FreshChatSuggestionsState] = []
+        sut.$freshSuggestionsState.dropFirst().sink { updates.append($0) }.store(in: &cancellables)
+
+        sut.refreshFreshSuggestions(destinationID: "previous-chat", isFresh: { false })
+
+        XCTAssertTrue(updates.isEmpty)
+    }
+
     func testAttachmentLayoutUsesAttachMoreTabsFlagOnEveryHost() throws {
         func findStrip(in view: UIView) -> UnifiedToggleInputAttachmentsStripView? {
             if let strip = view as? UnifiedToggleInputAttachmentsStripView { return strip }

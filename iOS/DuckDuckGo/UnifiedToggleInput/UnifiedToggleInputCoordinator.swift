@@ -89,10 +89,18 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var freshSuggestionsValidity: (@MainActor () -> Bool)?
     private var freshSuggestionsTask: Task<Void, Never>?
     private var freshSuggestionsGeneration = UUID()
+    private var freshSuggestionsDiagnosticKey: String?
     private var preparedSuggestionRequest: MultiTabAttachmentRequest?
 
     func refreshFreshSuggestions(destinationID: String, isFresh: @escaping @MainActor () -> Bool) {
-        guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally, isTabAttachmentFeatureAvailable else {
+        guard currentTabUID == destinationID else { return }
+        guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally else {
+            recordFreshSuggestionsSkip("Local suggested prompts disabled", destinationID: destinationID)
+            hideFreshSuggestions()
+            return
+        }
+        guard isTabAttachmentFeatureAvailable else {
+            recordFreshSuggestionsSkip("Tab attachments unavailable", destinationID: destinationID)
             hideFreshSuggestions()
             return
         }
@@ -109,13 +117,21 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             freshSuggestionsState = isFresh() ? freshSuggestionsCachedState : .hidden
             return
         }
-        guard isFresh(), tabAttachmentSource != nil else { freshSuggestionsState = .hidden; return }
+        guard isFresh() else { freshSuggestionsState = .hidden; return }
+        guard tabAttachmentSource != nil else {
+            recordFreshSuggestionsSkip("Tab source unavailable", destinationID: destinationID)
+            freshSuggestionsState = .hidden
+            return
+        }
         hideFreshSuggestions()
         freshSuggestionsValidity = isFresh
         freshSuggestionsDestinationID = destinationID
         freshSuggestionsCandidates = candidates
         freshSuggestionsVariant = variant
-        guard !freshSuggestionsCandidates.isEmpty else { return }
+        guard !freshSuggestionsCandidates.isEmpty else {
+            recordFreshSuggestionsSkip("No eligible recent tabs", destinationID: destinationID)
+            return
+        }
         let metadata = freshSuggestionsCandidates.enumerated().map {
             OpenTabMetadata(id: String($0.offset), title: $0.element.title, host: $0.element.url.host ?? "",
                             recentSearchQuery: $0.element.recentSearchQuery)
@@ -124,6 +140,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         freshSuggestionsState = .loading
         let generation = freshSuggestionsGeneration
         let provider = NativeChatProviderFactory.makeSuggestionsProvider(forOpenTabs: true)
+        freshSuggestionsDiagnosticKey = nil
+        LocalSuggestionsDiagnostics.shared.recordOpenTabs(outcome: "Generating", modelName: provider.descriptor.modelName,
+                                                         details: ["Eligible tabs: \(metadata.count)"])
         freshSuggestionsTask = Task { [weak self] in
             let run = await OpenTabSuggestions.run(tabs: metadata, locale: Locale.current.identifier, provider: provider)
             guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else { return }
@@ -136,6 +155,13 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             self.freshSuggestionsCachedState = run.suggestions.isEmpty ? .unavailable : .ready(run.suggestions)
             self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? self.freshSuggestionsCachedState : .hidden
         }
+    }
+
+    private func recordFreshSuggestionsSkip(_ reason: String, destinationID: String) {
+        let key = destinationID + ":" + reason
+        guard freshSuggestionsDiagnosticKey != key else { return }
+        freshSuggestionsDiagnosticKey = key
+        LocalSuggestionsDiagnostics.shared.recordOpenTabs(outcome: reason)
     }
 
     private func freshMetadataCandidates() -> [MultiTabAttachmentCandidate] {

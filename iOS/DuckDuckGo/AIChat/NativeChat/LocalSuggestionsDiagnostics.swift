@@ -34,6 +34,7 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
     }
 
     @Published private(set) var last: Entry?
+    @Published private(set) var lastOpenTabs: Entry?
 
     func record(run: SuggestedPromptsRun, variant: SuggestionsVariant, source: String, sheetTime: Duration? = nil) {
         var details = Self.details(run: run, variant: variant)
@@ -53,8 +54,12 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
         case .unusable: outcome = "Open-tab generation returned no usable questions"
         case .cancelled: outcome = "Open-tab generation cancelled"
         }
-        record(outcome: outcome, modelName: modelName,
+        recordOpenTabs(outcome: outcome, modelName: modelName,
                details: ["Source open tabs", "Total \(Self.seconds(run.total))"], raw: run.raw)
+    }
+
+    func recordOpenTabs(outcome: String, modelName: String? = nil, details: [String] = [], raw: String = "") {
+        lastOpenTabs = Entry(date: Date(), outcome: outcome, modelName: modelName, details: details, raw: raw)
     }
 
     static func details(run: SuggestedPromptsRun, variant: SuggestionsVariant) -> [String] {

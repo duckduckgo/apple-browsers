@@ -94,7 +94,22 @@ struct DuckAINativeDebugView: View {
             } footer: {
                 Text("Runs every case through the model picked for its job, keeps the device awake, and saves report.json and cases.json for scripts/duckai-native-evals/judge.py.")
             }
-            Section("Suggested prompts: last run") {
+            Section("New-chat suggestions: last run") {
+                if let last = suggestions.lastOpenTabs {
+                    LabeledContent(last.outcome, value: last.date.formatted(date: .omitted, time: .standard))
+                    if let model = last.modelName {
+                        LabeledContent("Model", value: model)
+                    }
+                    ForEach(last.details, id: \.self) { Text($0).font(.caption) }
+                    if !last.raw.isEmpty {
+                        Text(last.raw).font(.caption.monospaced()).textSelection(.enabled)
+                    }
+                } else {
+                    Text("No new-chat request yet. Open a fresh Duck.ai tab with another website tab open.")
+                        .font(.caption)
+                }
+            }
+            Section("Contextual suggestions: last run") {
                 if let last = suggestions.last {
                     LabeledContent(last.outcome, value: last.date.formatted(date: .omitted, time: .standard))
                     if let model = last.modelName {

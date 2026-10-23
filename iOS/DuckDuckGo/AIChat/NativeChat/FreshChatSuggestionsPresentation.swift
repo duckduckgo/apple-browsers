@@ -50,8 +50,9 @@ final class FreshChatSuggestionsPresentation {
         input.$freshSuggestionsState.sink { [weak self] state in self?.render(state) }.store(in: &subscriptions)
         input.textChangePublisher.sink { [weak self] _ in self?.refresh() }.store(in: &subscriptions)
         input.didSubmitPrompt.sink { [weak self] _ in
-            self?.submitted = true
-            self?.refresh()
+            guard let self, self.isActive, self.input?.currentTabUID == self.destinationID else { return }
+            self.submitted = true
+            self.refresh()
         }.store(in: &subscriptions)
         tab.urlPublisher.sink { [weak self] _ in self?.refresh() }.store(in: &subscriptions)
         observeNativeState()
@@ -71,11 +72,12 @@ final class FreshChatSuggestionsPresentation {
 
     func refresh() {
         guard let input else { return }
+        content.isHidden = !isFresh
+        guard isActive, input.currentTabUID == destinationID else { return }
         if nativeChat == nil, webRecipient !== tab?.userScripts?.aiChatUserScript {
             input.hideFreshSuggestions()
             webRecipient = tab?.userScripts?.aiChatUserScript
         }
-        content.isHidden = !isFresh
         input.refreshFreshSuggestions(destinationID: destinationID, isFresh: { [weak self] in self?.isFresh == true })
     }
 

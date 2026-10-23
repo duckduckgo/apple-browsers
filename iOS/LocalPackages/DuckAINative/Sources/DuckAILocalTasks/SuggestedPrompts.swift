@@ -219,6 +219,8 @@ public enum SuggestedPromptsPrompt {
         let instructions = """
         Suggest \(count) things a reader of this page might ask an AI assistant about it.
         Each one is a short question or request of at most 8 words and 60 characters, like a button label.
+        Keep the page's specific subject or comparison in each suggestion. Do not shorten it into a generic label.
+        For example, "Compare the treatment options discussed here" is more useful than "Compare options".
         Write in \(uiLanguageName). One per line. No numbering, bullets, quotes or other text.
         """
         let input = boundedInput(for: page, variant: variant)

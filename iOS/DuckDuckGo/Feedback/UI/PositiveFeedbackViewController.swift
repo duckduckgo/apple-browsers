@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import DesignResourcesKitIcons
 
 class PositiveFeedbackViewController: UIViewController {
 
@@ -33,17 +32,10 @@ class PositiveFeedbackViewController: UIViewController {
 
         configureLabels()
         configureButtons()
-        configureImages()
 
         decorate()
     }
 
-    private func configureImages() {
-        if AppRebrand.isAppRebranded() {
-            headerImage.image = UIImage(resource: .responseGood56)
-        }
-    }
-    
     private func configureLabels() {
         headerText.setAttributedTextString(UserText.feedbackPositiveHeader)
         

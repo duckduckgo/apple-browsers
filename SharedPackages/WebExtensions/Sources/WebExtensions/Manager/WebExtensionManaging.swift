@@ -80,6 +80,11 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func loadEmbeddedExtensionBackgroundContent() async
 
+    /// Repairs a background whose service worker belonged to a replaced Network process.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+
     /// Reloads the extensions removed by the most recent `unloadAllExtensions()` using the parsed
     /// extensions captured at unload time, skipping the disk re-parsing, installed-store reads and
     /// orphaned-file cleanup performed by `loadInstalledExtensions()`. Falls back to
@@ -146,6 +151,21 @@ public protocol WebExtensionManaging: AnyObject {
     @MainActor
     func reloadExtension(identifier: String) async throws
 
+    /// Disables an installed extension: unloads it and remembers it, so it stays disabled after relaunch.
+    /// The extension keeps its files and permissions. Embedded extensions cannot be disabled.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func disableExtension(identifier: String) async throws
+
+    /// Enables a disabled extension and loads it with its saved permissions.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func enableExtension(identifier: String) async throws
+
+    /// Returns the installed extension record for the given identifier, loaded or not.
+    @available(macOS 15.4, iOS 18.4, *)
+    func installedExtension(identifier: String) -> InstalledWebExtension?
+
     /// Returns the extension name for the given identifier.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionName(for identifier: String) -> String?
@@ -177,6 +197,16 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     @MainActor
     func performSearchTokenRefresh()
+
+    /// Returns the shared startup task before a main-frame navigation, including idle wakes.
+    /// Its identity stays stable while the same WebKit operation is pending.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>?
+
+    /// The already running startup, without waking background content or recording a navigation.
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { get }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -184,6 +214,14 @@ public extension WebExtensionManaging {
     // Preserve lightweight test and platform-specific conformers that do not own embedded content.
     @MainActor
     func loadEmbeddedExtensionBackgroundContent() async {}
+
+    @MainActor
+    func recoverEmbeddedBackgroundAfterNetworkProcessReplacement() {}
+
+    func prepareEmbeddedBackgroundForNavigation() -> Task<Void, Never>? { nil }
+
+    @MainActor
+    var pendingEmbeddedBackgroundStartup: Task<Void, Never>? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

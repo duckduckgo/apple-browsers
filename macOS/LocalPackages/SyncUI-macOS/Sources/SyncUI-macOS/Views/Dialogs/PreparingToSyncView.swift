@@ -1,7 +1,7 @@
 //
 //  PreparingToSyncView.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,114 +16,89 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
+import Lottie
 import SwiftUI
-import SwiftUIExtensions
 
 struct PreparingToSyncView: View {
-    let mode: PreparingToSyncMode
 
-    @EnvironmentObject var model: ManagementDialogModel
+    enum State {
+        case connecting
+        case waitingForOtherDevice
+    }
+
+    let state: State
+    var isAnimationPaused = false
+    var onAnimationFinished: @MainActor () -> Void = {}
 
     var body: some View {
-        SyncDialog(spacing: 20.0, bottomText: UserText.preparingToSyncDialogAction) {
-            VStack(alignment: .center, spacing: 20) {
-                Image(.sync96)
-                switch mode {
-                case .singleDeviceOrRecovery:
-                    let preparingToSyncDialogSubtitle = model.isAIChatSyncEnabled
-                        ? UserText.preparingToSyncDialogSubTitleUpdated
-                        : UserText.preparingToSyncDialogSubTitle
-                    SyncUIViews.TextHeader(text: UserText.preparingToSyncDialogTitle)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.center)
-                    SyncUIViews.TextDetailMultiline(text: preparingToSyncDialogSubtitle)
-                case .twoDevicePairing:
-                    SyncUIViews.TextHeader(text: UserText.preparingToSyncTwoDeviceDialogTitle)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .multilineTextAlignment(.center)
+        VStack(spacing: 20) {
+            artwork
+
+            Text(title)
+                .font(.title2.weight(.semibold))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Text(UserText.preparingToSyncDialogAction)
+                .font(.body)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 24)
+        .frame(width: 420)
+        .background(Color(designSystemColor: .surfaceSecondary))
+        .fixedSize()
+    }
+
+    @ViewBuilder
+    private var artwork: some View {
+        switch state {
+        case .connecting:
+            LottieView {
+                try await DotLottieFile.named("SyncLock", bundle: .module)
+            }
+            .playbackMode(isAnimationPaused
+                          ? .paused(at: .progress(0))
+                          : .playing(.fromProgress(0, toProgress: 1, loopMode: .playOnce)))
+            .animationDidFinish { finished in
+                guard finished else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    onAnimationFinished()
                 }
             }
-            .frame(width: 320)
-        } buttons: {
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: 96, height: 72)
+            .accessibilityHidden(true)
+        case .waitingForOtherDevice:
+            Image(.desktopMobileSync128)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 96, height: 72)
+                .accessibilityHidden(true)
         }
     }
 
-}
-
-struct RecoverSyncedDataView: View {
-    @EnvironmentObject var model: ManagementDialogModel
-
-    var body: some View {
-        if model.isImprovedPairingFlowEnabled {
-            improvedBody
-        } else {
-            legacyBody
-        }
-    }
-
-    private var improvedBody: some View {
-        SyncDialogV2(spacing: 20.0) {
-            VStack(alignment: .center, spacing: 20) {
-                Image(.clipboardSyncRecoverFeature128)
-                VStack(alignment: .center, spacing: 8) {
-                    SyncUIViewsV2.TextHeader(text: UserText.recoverSyncedDataDialogTitleImproved)
-                    SyncUIViewsV2.TextDetailSecondary(text: UserText.recoverSyncedDataDialogSubtitleImproved)
-                }
-            }
-        } buttons: {
-            Spacer()
-            Button(UserText.cancel) {
-                model.cancelPressed()
-            }
-            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
-
-            Button(UserText.recoverSyncedDataDialogButtonImproved) {
-                Task {
-                    await model.delegate?.enterRecoveryCodePressed()
-                }
-            }
-            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
-            .disabled(model.isAuthenticating)
-        }
-    }
-
-    private var legacyBody: some View {
-        SyncDialog(spacing: 20.0) {
-            VStack(alignment: .center, spacing: 20) {
-                Image(.syncPair96)
-                SyncUIViews.TextHeader(text: UserText.reciverSyncedDataDialogTitle)
-                SyncUIViews.TextDetailMultiline(text: UserText.reciverSyncedDataDialogSubitle)
-            }
-            .frame(width: 320)
-        } buttons: {
-            Button(UserText.cancel) {
-                model.cancelPressed()
-            }
-            .buttonStyle(DismissActionButtonStyle(stateColors: .themedDismissButton))
-            Button(UserText.reciverSyncedDataDialogButton) {
-                Task {
-                    await model.delegate?.enterRecoveryCodePressed()
-                }
-            }
-            .buttonStyle(DefaultActionButtonStyle(enabled: !model.isAuthenticating, stateColors: .themedActionButton))
-            .disabled(model.isAuthenticating)
+    private var title: String {
+        switch state {
+        case .connecting:
+            UserText.preparingToSyncDialogTitle
+        case .waitingForOtherDevice:
+            UserText.preparingToSyncCheckOtherDeviceTitle
         }
     }
 
 }
 
 #if DEBUG
-#Preview("Recover Synced Data") {
-    RecoverSyncedDataView()
-        .environmentObject(ManagementDialogModel())
+#Preview("Connecting") {
+    PreparingToSyncView(state: .connecting)
 }
 
-#Preview("Recover Synced Data - Improved Pairing Flow") {
-    RecoverSyncedDataView()
-        .environmentObject({
-            let model = ManagementDialogModel()
-            model.isImprovedPairingFlowEnabled = true
-            return model
-        }())
+#Preview("Waiting for Other Device") {
+    PreparingToSyncView(state: .waitingForOtherDevice)
 }
 #endif

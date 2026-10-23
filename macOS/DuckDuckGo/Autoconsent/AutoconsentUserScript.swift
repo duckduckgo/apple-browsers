@@ -50,7 +50,11 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private weak var selfTestWebView: WKWebView?
     private var selfTestFrameInfo: WKFrameInfo?
 
-    private var topUrl: URL?
+    private var topUrl: URL? {
+        didSet { siteRank = siteRankLookup.siteRank(for: topUrl) }
+    }
+    private let siteRankLookup = CPMSiteRankLookup()
+    private lazy var siteRank = siteRankLookup.siteRank(for: topUrl)
     private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
     private let featureFlagger: FeatureFlagger
@@ -669,10 +673,14 @@ extension AutoconsentUserScript {
         }
 
         if management.pixelCounter.isEmpty {
-            // Fire a summary pixel, containing counters of all other pixels, 2 minutes after
-            // the first event is received.
+            // Fire summary pixels, one per site rank bucket, containing counters of all other pixels,
+            // 2 minutes after the first event is received.
             DispatchQueue.main.asyncAfter(deadline: .now() + 60*2) { [additionalParams] in
-                PixelKit.fire(AutoconsentPixel.summary(events: self.management.pixelCounter), frequency: .standard, withAdditionalParameters: additionalParams)
+                for (siteRank, events) in self.management.pixelCounter {
+                    var parameters = additionalParams
+                    parameters["siteRank"] = siteRank?.rawValue
+                    PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters)
+                }
                 self.management.pixelCounter = [:]
                 self.management.detectedByPatternsCache.removeAll()
                 self.management.detectedByBothCache.removeAll()
@@ -680,7 +688,7 @@ extension AutoconsentUserScript {
             }
         }
         // increment counter
-        management.pixelCounter[pixel.key, default: 0] += 1
+        management.pixelCounter[siteRank, default: [:]][pixel.key, default: 0] += 1
 
         // fire daily pixel if needed
         PixelKit.fire(pixel, frequency: .daily, withAdditionalParameters: additionalParams)

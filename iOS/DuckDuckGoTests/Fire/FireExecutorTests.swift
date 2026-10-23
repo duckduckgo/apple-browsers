@@ -196,6 +196,7 @@ final class FireExecutorTests: XCTestCase {
         syncService: DDGSyncing? = nil,
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil,
+        pixelsReporter: DataClearingPixelsReporter = DataClearingPixelsReporter(pixelFiring: nil),
         dataStoreWarmUp: @escaping DataStoreWarmupWorker.WarmUp = { _, _ in true },
         backgroundTask: FireBackgroundTasking = MockFireBackgroundTask(),
         clearAppSwitcherSnapshots: @escaping @MainActor () async -> Void = {}
@@ -223,6 +224,7 @@ final class FireExecutorTests: XCTestCase {
             appSettings: mockAppSettings,
             sitePermissionsStore: sitePermissionsStore,
             aiChatSyncCleaner: mockAIChatSyncCleaner,
+            pixelsReporter: pixelsReporter,
             pixelFiring: pixelKitMock,
             wideEvent: wideEventMock,
             dataStoreWarmupWorker: DataStoreWarmupWorker(warmUp: dataStoreWarmUp),
@@ -507,6 +509,32 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(mockTabManager.isCurrentTabCalledWith, tabViewModel.tab)
     }
     
+    func testSingleTabBurnMetricsCoverWholeExecutorAndReadFlagForEachRequest() async {
+        let pixels = PixelKitMock()
+        var now: CFTimeInterval = 0
+        let reporter = DataClearingPixelsReporter(pixelFiring: pixels, timeProvider: { now })
+        let executor = makeFireExecutor(pixelsReporter: reporter, clearAppSwitcherSnapshots: { now += 2 })
+        let request = makeFireRequest(options: [.tabs, .data], scope: .tab(viewModel: makeTabViewModel()))
+
+        for enabled in [false, true, false] {
+            mockFeatureFlagger.enabledFeatureFlags = enabled ? [.singleTabBurnOptimization] : []
+            await executor.burn(request: request, applicationState: .unknown)
+            let calls = pixels.actualFireCalls.filter { $0.pixel is SingleTabBurnPixels }
+            XCTAssertEqual(calls.suffix(2).map(\.pixel.name), ["fire_single-tab-burn_requested", "fire_single-tab-burn_finished"])
+            XCTAssertEqual(calls.last?.pixel.parameters, [
+                "optimization_enabled": String(enabled), "duration_ms": "2000", "tab_closure_ms": "100"
+            ])
+            XCTAssertFalse(executor.burnInProgress)
+        }
+    }
+
+    func testWiderBurnDoesNotEmitSingleTabMetrics() async {
+        let pixels = PixelKitMock()
+        let executor = makeFireExecutor(pixelsReporter: DataClearingPixelsReporter(pixelFiring: pixels))
+        await executor.burn(request: makeFireRequest(options: .all), applicationState: .unknown)
+        XCTAssertFalse(pixels.actualFireCalls.contains { $0.pixel is SingleTabBurnPixels })
+    }
+
     // MARK: - burn Tabs Tests
     
     func testBurnTabsCallsDelegateAndClearsTabs() async {
@@ -781,6 +809,19 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(normalTextZoomCoordinator.resetTextZoomLevelsForVisitedExcludingDomains, ["amazon.com"])
     }
 
+    func testBurnTabClearsDataForParentAndLinkPreviewDomains() async {
+        let executor = makeFireExecutor()
+        let tabViewModel = makeTabViewModel()
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://parent.example")!]
+        tabViewModel.tab.recordLinkPreviewDomain(for: URL(string: "https://preview.example"))
+        tabViewModel.tab.recordLinkPreviewDomain(for: URL(string: "https://redirect.example"))
+
+        await executor.burn(request: makeFireRequest(options: [.tabs, .data], scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
+
+        XCTAssertEqual(mockWebsiteDataManager.clearWithDomainsCallCount, 1)
+        XCTAssertEqual(Set(mockWebsiteDataManager.clearCalledWithDomains ?? []), ["parent.example", "preview.example", "redirect.example"])
+    }
+
     // MARK: - Site Permissions Fire Worker Tests
 
     func testWhenBurningNormalModeDataThenFireproofedSitePermissionsSurvive() async {
@@ -875,6 +916,29 @@ final class FireExecutorTests: XCTestCase {
         await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: tabViewModel)), applicationState: .unknown)
 
         XCTAssertEqual(sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example")), original)
+    }
+
+    func testWhenBurningFireModeDataThenMemoryCacheCleanupIsCancelled() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockWebsiteDataManager.cancelMemoryCacheCleanupCalls, [true])
+    }
+
+    func testWhenBurningTabDataThenWebsiteDataIsClearedForTheTabsMode() async {
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://example.com")!]
+        let executor = makeFireExecutor()
+
+        let fireTab = TabViewModel(tab: Tab(uid: "fire-tab-uid", fireTab: true), historyManager: mockHistoryManager)
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: fireTab)), applicationState: .unknown)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithFireMode, true)
+
+        let normalTab = TabViewModel(tab: Tab(uid: "normal-tab-uid", fireTab: false), historyManager: mockHistoryManager)
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: normalTab)), applicationState: .unknown)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithFireMode, false)
     }
 
     func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {

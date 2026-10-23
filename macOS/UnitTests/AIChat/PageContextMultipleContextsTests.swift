@@ -106,6 +106,114 @@ struct ContextCollectionEnabledTests {
     }
 }
 
+// MARK: - Auto-attach suppression Tests
+
+/// The sidebar's page-context rules under `aiChatPageContextAutoAttach`, plus the per-page behavior
+/// kept when the flag is off.
+struct AutoPageContextSuppressionTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Nothing is suppressed at first, so opening the sidebar attaches the page", .timeLimit(.minutes(1)))
+    func startsUnsuppressed() {
+        var suppression = AutoPageContextSuppression()
+        suppression.sidebarOpened()
+        #expect(suppression.suppressesAutoAttach == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A remove stays in effect as the user keeps navigating", .timeLimit(.minutes(1)))
+    func removeLastsAcrossNavigation() {
+        var suppression = AutoPageContextSuppression()
+        suppression.userRemovedContext(keepAcrossNavigation: true)
+        suppression.navigatedToNewURL()
+        suppression.navigatedToNewURL()
+        #expect(suppression.suppressesAutoAttach == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching again resumes automatic updates on later navigations", .timeLimit(.minutes(1)))
+    func attachResumesAutoUpdates() {
+        var suppression = AutoPageContextSuppression()
+        suppression.userRemovedContext(keepAcrossNavigation: true)
+        suppression.userAttachedContext()
+        #expect(suppression.suppressesAutoAttach == false)
+        suppression.navigatedToNewURL()
+        #expect(suppression.suppressesAutoAttach == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Reopening the sidebar after a remove attaches the page again", .timeLimit(.minutes(1)))
+    func reopeningSidebarClearsRemove() {
+        var suppression = AutoPageContextSuppression()
+        suppression.userRemovedContext(keepAcrossNavigation: true)
+        suppression.sidebarOpened()
+        #expect(suppression.suppressesAutoAttach == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the flag off a remove lasts only until the next navigation", .timeLimit(.minutes(1)))
+    func removeWithoutFlagIsPerPage() {
+        var suppression = AutoPageContextSuppression()
+        suppression.userRemovedContext(keepAcrossNavigation: false)
+        #expect(suppression.suppressesAutoAttach == true)
+        suppression.navigatedToNewURL()
+        #expect(suppression.suppressesAutoAttach == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A selection action that opens the sidebar holds back only the current page", .timeLimit(.minutes(1)))
+    func selectionActionIsPerPage() {
+        var suppression = AutoPageContextSuppression()
+        suppression.selectionActionOpenedSidebar()
+        suppression.sidebarOpened()
+        #expect(suppression.suppressesAutoAttach == true)
+        suppression.navigatedToNewURL()
+        #expect(suppression.suppressesAutoAttach == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Attaching by hand also lifts a selection action's suppression", .timeLimit(.minutes(1)))
+    func attachClearsSelectionSuppression() {
+        var suppression = AutoPageContextSuppression()
+        suppression.selectionActionOpenedSidebar()
+        suppression.userAttachedContext()
+        #expect(suppression.suppressesAutoAttach == false)
+    }
+}
+
+// MARK: - Collect only while the chat is open Tests
+
+struct CollectWhileChatOpenTests {
+
+    private typealias Extension = PageContextTabExtension
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Automatic collects skip tabs without an open chat", .timeLimit(.minutes(1)))
+    func automaticCollectSkipsClosedChat() {
+        for trigger in [PageContextExtractionTrigger.navigation, .auto, .tabContent] {
+            #expect(Extension.shouldCollect(trigger: trigger, isChatOpen: false, collectsOnlyWhileChatOpen: true) == false)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A user request collects even before the chat is open", .timeLimit(.minutes(1)))
+    func userRequestAlwaysCollects() {
+        #expect(Extension.shouldCollect(trigger: .userRequest, isChatOpen: false, collectsOnlyWhileChatOpen: true) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Automatic collects run while the chat is open", .timeLimit(.minutes(1)))
+    func automaticCollectRunsWithOpenChat() {
+        #expect(Extension.shouldCollect(trigger: .navigation, isChatOpen: true, collectsOnlyWhileChatOpen: true) == true)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("With the flag off a closed chat still collects, as before", .timeLimit(.minutes(1)))
+    func flagOffCollectsWithClosedChat() {
+        #expect(Extension.shouldCollect(trigger: .navigation, isChatOpen: false, collectsOnlyWhileChatOpen: false) == true)
+    }
+}
+
 // MARK: - hasContextBeenConsumedByChat Reset Tests
 
 struct ConsumedFlagResetTests {

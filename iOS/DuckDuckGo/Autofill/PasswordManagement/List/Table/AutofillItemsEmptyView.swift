@@ -19,7 +19,6 @@
 
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 import Core
@@ -32,7 +31,7 @@ struct AutofillItemsEmptyView: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(rebrandable: "Passwords-Add-96x96")
+            Image(.passwordsAdd96X96)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)

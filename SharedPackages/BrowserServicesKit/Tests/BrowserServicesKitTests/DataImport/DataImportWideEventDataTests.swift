@@ -45,10 +45,15 @@ final class DataImportWideEventDataTests: XCTestCase {
             start: base,
             end: base.addingTimeInterval(1.0)
         )
+        eventData.historyImporterDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(1.0)
+        )
 
         eventData.bookmarkImportStatus = .success
         eventData.passwordImportStatus = .success
         eventData.creditCardImportStatus = .success
+        eventData.historyImportStatus = .success
 
         let parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.source"], "safari")
@@ -93,6 +98,10 @@ final class DataImportWideEventDataTests: XCTestCase {
             end: base.addingTimeInterval(1.0)
         )
         eventData.creditCardImporterDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(1.0)
+        )
+        eventData.historyImporterDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(1.0)
         )
@@ -267,6 +276,10 @@ final class DataImportWideEventDataTests: XCTestCase {
             end: base.addingTimeInterval(1.0)
         )
         eventData.creditCardImporterDuration = WideEvent.MeasuredInterval(
+            start: base,
+            end: base.addingTimeInterval(1.0)
+        )
+        eventData.historyImporterDuration = WideEvent.MeasuredInterval(
             start: base,
             end: base.addingTimeInterval(1.0)
         )

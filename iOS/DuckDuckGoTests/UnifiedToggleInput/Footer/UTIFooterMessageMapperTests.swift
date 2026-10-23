@@ -54,15 +54,25 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         }
     }
 
-    func test_promptTooLongMessage_showsTheCountAgainstTheLimitWithoutSeparators() {
-        let message = sut.promptTooLongMessage(count: 16_800, limit: 16_000)
+    func test_promptTooLongMessage_statesTheCountAgainstTheLimitAsAnErrorWithoutSeparators() {
+        let message = sut.promptTooLongMessage(count: 17_002, limit: 16_000)
 
         XCTAssertEqual(message.icon, .alert)
-        XCTAssertEqual(message.title, "Please try a shorter message.")
-        XCTAssertEqual(message.subtitle, "16800/16000")
+        XCTAssertEqual(message.title, "Please try a shorter message. 17002/16000")
+        XCTAssertNil(message.subtitle)
+        XCTAssertEqual(message.titleStyle, .error)
         XCTAssertNil(message.primaryAction)
         XCTAssertNil(message.link)
         XCTAssertFalse(message.isDismissible)
+    }
+
+    func test_promptLengthText_fillsPlainPlaceholdersCountFirst() {
+        XCTAssertEqual(PromptLengthText.format("%d/%d", 17_002, 16_000, locale: Locale(identifier: "en_US")), "17002/16000")
+    }
+
+    func test_promptLengthText_keepsALiteralPercentAndLeavesItUnnumbered() {
+        XCTAssertEqual(PromptLengthText.format("100%% %d/%d", 17_002, 16_000, locale: Locale(identifier: "en_US")), "100% 17002/16000")
+        XCTAssertEqual(PromptLengthText.positional("%%d %d"), "%%d %1$d")
     }
 
     // MARK: - Headlines

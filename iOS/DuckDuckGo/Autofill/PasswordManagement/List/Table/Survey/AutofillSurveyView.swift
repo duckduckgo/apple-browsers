@@ -31,7 +31,7 @@ struct AutofillSurveyView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 8) {
                 Group {
-                    Image(rebrandable: "Passwords-DDG-96x96")
+                    Image(.passwordsDDG96X96)
                         .resizable()
                         .frame(width: 50, height: 50, alignment: .center)
 

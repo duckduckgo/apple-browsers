@@ -271,14 +271,13 @@ final class PromptBarOmnibarContentLayoutTests: XCTestCase {
 
     private func makeContent() -> PromptBarOmnibarContentViewController {
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.featuresStub[FeatureFlag.appRebranding.rawValue] = true
         let appearancePreferences = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: featureFlagger,
             aiChatMenuConfig: MockAIChatConfig()
         )
-        let themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        let themeManager = ThemeManager(appearancePreferences: appearancePreferences)
         let draftStore = EphemeralPromptDraftStore()
 
         let omnibarController = AIChatOmnibarController(

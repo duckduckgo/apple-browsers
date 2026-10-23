@@ -59,7 +59,8 @@ let package = Package(
                 "ZIPFoundation",
             ],
             resources: [
-                .copy("BundledWebExtensions")
+                .copy("BundledWebExtensions"),
+                .copy("Autoconsent/site-buckets.json"),
             ]
         ),
         .target(

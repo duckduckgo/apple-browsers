@@ -706,7 +706,6 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterFaceID = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.face-id", value: "Face ID or passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode")
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterTouchID = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.touch-id", value: "Touch ID or passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing Touch ID biometry + passcode")
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterPasscode = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.passcode", value: "passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing passcode only if no biometry are available")
-    public static let autofillOnboardingKeyFeaturesSecureStorageDescription = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description", value: "Passwords are encrypted, stored on device, and locked with Face ID or passcode.", comment: "Description of autofill onboarding prompt's secure storage feature")
     public static let autofillOnboardingKeyFeaturesSyncTitle = NSLocalizedString("autofill.onboarding.key-features.sync.title", value: "Sync between devices", comment: "Title of autofill onboarding prompt's sync feature")
     public static let autofillOnboardingKeyFeaturesSyncDescription = NSLocalizedString("autofill.onboarding.key-features.sync.description", value: "End-to-end encrypted and easy to set up when you’re ready.", comment: "Description of autofill onboarding prompt's sync feature")
     public static let autofillSavePasswordSaveCTA = NSLocalizedString("autofill.save-password.save.CTA", value: "Save Password", comment: "Confirm CTA displayed on modal asking for the user to save the password")
@@ -2513,21 +2512,14 @@ public struct UserText {
 
     public static let aiChatAttachmentPromptTooLong = NSLocalizedString("aichat.attachment.prompt.too.long", value: "That message is too long to send with attachments.", comment: "Alert message shown when an AI chat message exceeds the allowed length while attachments are included")
 
-    public static let aiChatPromptTooLongTitle = NotLocalizedString("aichat.prompt.too.long.title", value: "Please try a shorter message.", comment: "Error shown below the Duck.ai input while the message is longer than the allowed number of characters")
-    public static let aiChatPromptTooLongCountFormat = NotLocalizedString("aichat.prompt.too.long.count", value: "%1$d/%2$d", comment: "Character count below the Duck.ai too-long message error, e.g. 16800/16000. %1$d is the message's character count, %2$d is the maximum allowed")
+    public static let aiChatPromptTooLongFormat = NotLocalizedString("aichat.prompt.too.long.format", value: "Please try a shorter message. %1$d/%2$d", comment: "Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed")
 
     public static let aiChatPastedTextAccessibilityLabel = NotLocalizedString("aichat.pasted.text.accessibility.label", value: "Pasted text", comment: "VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted")
     public static let aiChatPastedTextRemoveAction = NotLocalizedString("aichat.pasted.text.remove", value: "Remove", comment: "VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message")
-    public static let aiChatPastedTextSheetTitle = NotLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows and edits a long block of text the user pasted into Duck.ai")
-    public static let aiChatPastedTextFormattingNote = NotLocalizedString("aichat.pasted.text.formatting.note", value: "Formatting may be inconsistent from source.", comment: "Subtitle of the sheet that shows a long block of text the user pasted into Duck.ai")
-    public static func aiChatPastedTextCharacterCount(_ count: Int) -> String {
-        let format = NotLocalizedString("aichat.pasted.text.character.count", value: count == 1 ? "%d character" : "%d characters", comment: "Count line in the Duck.ai pasted-text sheet, giving the size of the pasted text. Not localized until complete locale-specific plural forms are available.")
-        return String.localizedStringWithFormat(format, count)
-    }
-    public static func aiChatPastedTextOverLimitCount(count: Int, limit: Int) -> String {
-        let format = NotLocalizedString("aichat.pasted.text.over.limit.count", value: "%1$d/%2$d characters", comment: "Count line in the Duck.ai pasted-text sheet while the message is over the length limit, e.g. 16800/16000 characters. %1$d is the current character count, %2$d is the most this pasted text may hold")
-        return String(format: format, count, limit)
-    }
+    public static let aiChatPastedTextSheetTitle = NotLocalizedString("aichat.pasted.text.sheet.title", value: "Pasted Text", comment: "Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent")
+    public static let aiChatPastedTextEditSheetTitle = NotLocalizedString("aichat.pasted.text.edit.sheet.title", value: "Edit Text", comment: "Title of the sheet that edits a long block of text the user pasted into Duck.ai")
+    public static let aiChatPastedTextCountFormat = NotLocalizedString("aichat.pasted.text.count", value: "%1$d/%2$d", comment: "Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently.")
+    public static let aiChatPastedTextCountAccessibilityFormat = NotLocalizedString("aichat.pasted.text.count.accessibility", value: "%1$d of %2$d characters", comment: "What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold")
 
     public static let aiChatHeaderFreePlan = NotLocalizedString("aichat.header.freePlan", value: "Free Plan", comment: "Label shown in the Duck.ai tab header for free plan users")
     public static let aiChatHeaderUpgrade = NotLocalizedString("aichat.header.upgrade", value: "Upgrade", comment: "Label shown in the Duck.ai tab header prompting free users to upgrade")

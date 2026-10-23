@@ -171,6 +171,7 @@ public extension DesignSystemImages {
             public static var favoriteGrey: DesignSystemImage { .init(resource: .favoriteGreyColor24) }
             public static var feedback: DesignSystemImage { .init(resource: .feedbackColor24) }
             public static var filePDF: DesignSystemImage { .init(resource: .filePDFColor24) }
+            public static var fileTXT: DesignSystemImage { .init(resource: .fileTXTColor24) }
             public static var fire: DesignSystemImage { .init(resource: .fireColor24) }
             public static var findSearch: DesignSystemImage { .init(resource: .findSearchColor24) }
             public static var folder: DesignSystemImage { .init(resource: .folderColor24) }

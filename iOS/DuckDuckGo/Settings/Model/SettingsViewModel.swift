@@ -255,9 +255,20 @@ final class SettingsViewModel: ObservableObject {
     }
 
     /// True once the user's first freemium scan has finished (results exist, even if no
-    /// matches). Used to switch the entry-point CTA from "start scan" to "show results".
+    /// matches).
     var hasCompletedFreemiumScan: Bool {
         freemiumDBPUserStateManager.firstScanResult != nil
+    }
+
+    /// True once the user has saved a profile, since the dashboard then shows results as they
+    /// arrive.
+    var hasStartedFreemiumScan: Bool {
+        Self.hasStartedFreemiumScan(profileState: profileStateManager.profileState,
+                                    firstScanResult: freemiumDBPUserStateManager.firstScanResult)
+    }
+
+    static func hasStartedFreemiumScan(profileState: DBPProfileState, firstScanResult: FreemiumFirstScanResult?) -> Bool {
+        profileState == .hasProfile || firstScanResult != nil
     }
 
     var isDefaultOmnibarModeEnabled: Bool {

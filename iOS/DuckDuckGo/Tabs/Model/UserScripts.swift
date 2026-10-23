@@ -63,12 +63,7 @@ final class UserScripts: UserScriptsProvider {
     var specialErrorPageUserScript: SpecialErrorPageUserScript?
 
     private(set) var faviconScript = FaviconUserScript()
-    private(set) var findInPageScript: FindInPageUserScript? = {
-        if #available(iOS 26, *) {
-            return nil
-        }
-        return FindInPageUserScript()
-    }()
+    private(set) var findInPageScript: FindInPageUserScript?
 
     private(set) var selectionFrameScript: SelectionFrameUserScript
     private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
@@ -82,6 +77,7 @@ final class UserScripts: UserScriptsProvider {
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
          sitePermissionsEnabled: Bool = false,
          mediaCaptureUserScript: MediaCaptureUserScript? = nil,
          internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
@@ -91,6 +87,7 @@ final class UserScripts: UserScriptsProvider {
          aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
 
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+        findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
         selectionFrameScript = SelectionFrameUserScript()
         self.mediaCaptureUserScript = mediaCaptureUserScript
@@ -352,12 +349,6 @@ private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDevic
             let used = Self.string(fromByteCount: Int64(memoryFootprint), countStyle: .memory)
             let total = Self.string(fromByteCount: Int64(ProcessInfo.processInfo.physicalMemory), countStyle: .memory)
             diagnostics["Memory"] = "\(used) used, \(total) total"
-        }
-
-        let homeURL = URL(fileURLWithPath: NSHomeDirectory())
-        if let values = try? homeURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
-           let freeBytes = values.volumeAvailableCapacityForImportantUsage {
-            diagnostics["Disk"] = "\(Self.string(fromByteCount: freeBytes, countStyle: .file)) free"
         }
 
         return diagnostics

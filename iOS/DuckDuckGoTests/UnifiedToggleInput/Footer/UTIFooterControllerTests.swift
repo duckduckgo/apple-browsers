@@ -1906,7 +1906,7 @@ final class UTIFooterControllerTests: XCTestCase {
 
         XCTAssertEqual(presenter.appliedStacks.count, appliedBefore + 1)
         XCTAssertEqual(sut.currentMessages.map(\.id), [.promptTooLong])
-        XCTAssertEqual(sut.currentMessage?.subtitle, "16900/16000")
+        XCTAssertEqual(sut.currentMessage?.title, "Please try a shorter message. 16900/16000")
     }
 
     func testTermsStayInEffectWhileThePromptTooLongErrorHidesThem() {

@@ -38,6 +38,11 @@ public final class Navigation {
     public private(set) var isCommitted: Bool = false
     public private(set) var didReceiveAuthenticationChallenge: Bool = false
 
+    /// Matches a public WebKit load result to this logical navigation without exposing its identity.
+    public func matches(_ navigation: WKNavigation) -> Bool {
+        identity == NavigationIdentity(navigation)
+    }
+
     /// Currently performed Navigation Action. May change for server redirects.
     public var navigationAction: NavigationAction {
         // should always have at least one NavigationAction after `navigationActionReceived` or `started`

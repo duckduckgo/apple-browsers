@@ -69,8 +69,13 @@ final class TabSwitcherStaticButton: BrowserChromeButton, TabSwitcherButton {
     private func setUpSubviews() {
         addSubview(tabSwitcherView)
 
-        tabSwitcherView.frame = bounds
-        tabSwitcherView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        tabSwitcherView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            tabSwitcherView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            tabSwitcherView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            tabSwitcherView.widthAnchor.constraint(equalTo: widthAnchor),
+            tabSwitcherView.heightAnchor.constraint(equalTo: heightAnchor),
+        ])
         tabSwitcherView.isUserInteractionEnabled = false
 
         // This is needed so the BrowserChromeButton is resized appropriately.

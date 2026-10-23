@@ -119,7 +119,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         case .downgraded: versionChange = .downgraded
         case .noChange: versionChange = nil
         }
-        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate)
+        return CPMAppSessionDiagnostics(appVersionChange: versionChange, launchDate: appLaunchDate) {
+            NSApp.isActive ? .active : .inactive
+        }
     }
     private(set) var uncleanExitRestartSourceResolver: UncleanExitRestartSourceResolver!
     private var grammarFeaturesManager = GrammarFeaturesManager()
@@ -485,6 +487,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
     }()
 
+    lazy var bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        BookmarksEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            hasTopLevelEntitiesProvider: { [bookmarkManager] in
+                bookmarkManager.hasTopLevelEntities()
+            },
+            bookmarksChangedPublisher: bookmarkManager.listPublisher.map { _ in }.eraseToAnyPublisher(),
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
+    lazy var autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate = { // swiftlint:disable:this weak_delegate
+        AutofillEmptyStatePromoDelegate(
+            featureFlagger: featureFlagger,
+            isAnyCategoryEmptyProvider: {
+                guard let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared) else { return false }
+                return (try? vault.accountsCount()) == 0 || (try? vault.identitiesCount()) == 0 || (try? vault.creditCardsCount()) == 0
+            },
+            dataImportCompletedPublisher: NotificationCenter.default.publisher(for: .dataImportComplete).map { _ in }.eraseToAnyPublisher(),
+            syncService: syncService,
+            recordResult: { [weak self] in
+                self?.promoService?.dismiss(promoId: $0, result: $1)
+            }
+        )
+    }()
+
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
     }()
@@ -793,7 +825,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagOverrides.applyUITestsFeatureFlagsIfNeeded()
         }
         self.featureFlagger = featureFlagger
-        webExtensionAutofillTakeover = WebExtensionAutofillTakeover(privacyConfigurationManager: privacyConfigurationManager)
+        webExtensionAutofillTakeover = WebExtensionAutofillTakeover()
 
         // Created at launch so the VPN issues observer catches notifications before the first report
         networkSignalsProvider = NetworkSignalsProvider(
@@ -1030,7 +1062,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
         let websitePermissionDefaults = WebsitePermissionDefaults(
@@ -1675,7 +1707,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             syncSetupBookmarksPromoManager: syncSetupBookmarksPromoManager,
             syncSetupAutofillPromoManager: syncSetupAutofillPromoManager,
             bookmarksBarSyncPromoDelegate: bookmarksBarSyncPromoDelegate,
-            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate
+            bookmarkAddedSyncPromoDelegate: bookmarkAddedSyncPromoDelegate,
+            bookmarksEmptyStatePromoDelegate: bookmarksEmptyStatePromoDelegate,
+            autofillEmptyStatePromoDelegate: autofillEmptyStatePromoDelegate
         )
         promoService = PromoServiceFactory.makePromoService(dependencies: dependencies)
         NotificationCenter.default.post(name: .promoServiceAppLaunched, object: nil)
@@ -2329,7 +2363,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self.webExtensionLifecycleCoordinator = coordinator
 
             // Load extensions asynchronously - the controller is already attached to tabs
-            coordinator.loadAndSync()
+            let initialLoad = coordinator.loadAndSync()
+            Task { @MainActor [weak self] in
+                await initialLoad.value
+                self?.startRemoteDisableEnforcer(for: webExtensionManager)
+            }
         } else {
             webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
         }
@@ -2364,6 +2402,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.webExtensionLifecycleCoordinator = coordinator
         await coordinator.loadAndSync().value
+        startRemoteDisableEnforcer(for: webExtensionManager)
+    }
+
+    /// Call it after the initial load, so an enforcement pass can't race it.
+    @available(macOS 15.4, *)
+    @MainActor
+    private func startRemoteDisableEnforcer(for webExtensionManager: WebExtensionManager) {
+        guard self.webExtensionManager === webExtensionManager else { return }
+        webExtensionManager.startRemoteDisableEnforcer(
+            configurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
     }
 
     @available(macOS 15.4, *)

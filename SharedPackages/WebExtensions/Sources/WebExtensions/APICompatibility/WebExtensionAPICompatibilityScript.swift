@@ -43,6 +43,9 @@ public enum WebExtensionAPICompatibilityScript {
         if (!api) {
             return;
         }
+        if (typeof globalThis["\(Self.reportFunctionName)"] === "function") {
+            return;
+        }
 
         // Only extension pages are served over `webkit-extension:`; websites that define their own
         // `window.chrome` are left alone. A bare `JSContext` in tests has no `location`.

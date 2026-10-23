@@ -67,7 +67,10 @@ jobs:
     uses: ./.github/workflows/should_run_pr_checks.yml
     with:
       paths: |
-        .github/**
+        .github/workflows/macos_pr_checks.yml
+        .github/workflows/macos_private_api_report.yml
+        .github/workflows/should_run_pr_checks.yml
+        .github/actions/**
         .xcode-version
         SharedPackages/**
         macOS/**

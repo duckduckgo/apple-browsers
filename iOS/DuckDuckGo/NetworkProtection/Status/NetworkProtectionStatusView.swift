@@ -169,14 +169,9 @@ struct NetworkProtectionStatusView: View {
         HStack {
             Spacer(minLength: 0)
             VStack(alignment: .center, spacing: 8) {
-                if AppRebrand.isAppRebranded() {
-                    headerAnimationView("vpn-animation", contentSize: CGSize(width: 128, height: 96))
-                        .frame(width: 128, height: 96)
-                } else if colorScheme == .light {
-                    headerAnimationView("vpn-light-mode-legacy")
-                } else {
-                    headerAnimationView("vpn-dark-mode-legacy")
-                }
+                headerAnimationView("vpn-animation", contentSize: CGSize(width: 128, height: 96))
+                    .frame(width: 128, height: 96)
+
                 Text(statusModel.headerTitle)
                     .daxTitle2()
                     .multilineTextAlignment(.center)

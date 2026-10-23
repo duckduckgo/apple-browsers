@@ -250,7 +250,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         var didConsume = false
         attach(userScript) { _ in didConsume = true }
 
-        userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
+        userScript.submitPrompt("hello", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
 
         XCTAssertTrue(didConsume)
     }
@@ -285,7 +285,7 @@ final class AIChatUserScriptSelectionDeliveryTests: XCTestCase {
         var didConsume = false
         attach(userScript) { _ in didConsume = true }
 
-        userScript.submitPrompt("hello", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil)
+        userScript.submitPrompt("hello", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil)
 
         XCTAssertFalse(didConsume)
     }

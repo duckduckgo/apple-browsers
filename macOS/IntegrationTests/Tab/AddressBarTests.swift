@@ -18,6 +18,7 @@
 
 import Carbon
 import Combine
+import Common
 import ConcurrencyExtensions
 import FeatureFlags_macOS
 import Foundation
@@ -1223,6 +1224,62 @@ class AddressBarTests: XCTestCase {
             // THEN
             XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
         }
+    }
+
+    @MainActor
+    func testWhenWindowIsClosedWhileAskAIChatButtonContracts_windowObjectsAreDeallocated() {
+        weak var addressBarButtonsViewController: AddressBarButtonsViewController?
+        weak var tabCollectionViewModel: TabCollectionViewModel?
+        var suggestionWindowDeallocated: XCTestExpectation?
+
+        autoreleasepool {
+            // GIVEN the Ask AI Chat button is expanded because the address bar has a user-typed value
+            let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
+            let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
+            window = WindowsManager.openNewWindow(with: viewModel)!
+            addressBarButtonsViewController = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
+            tabCollectionViewModel = viewModel
+            suggestionWindowDeallocated = expectSuggestionWindowDeallocation()
+
+            _=window.makeFirstResponder(addressBarTextField)
+            XCTAssertTrue(isAddressBarFirstResponder)
+            // Set the value directly rather than typing it: typing would also open the suggestions window
+            addressBarButtonsViewController?.textFieldValue = .text("cats", userTyped: true)
+            XCTAssertEqual(addressBarButtonsViewController?.isAskAIChatButtonExpanded, true)
+        }
+
+        // WHEN the address bar is deactivated, starting the button contraction animation,
+        // and the window is closed in the same run loop pass, before the animation can complete
+        autoreleasepool {
+            _=window.makeFirstResponder(nil)
+            XCTAssertEqual(addressBarButtonsViewController?.isAskAIChatButtonExpanded, false)
+
+            window.close()
+            window = nil
+        }
+
+        // THEN the window object graph is released right away, without waiting for the animation
+        // completion handler, which AppKit defers until the animation finishes (indefinitely while
+        // the display is asleep). No run loop pass happens between closing and checking, so the
+        // 0.2s animation can never have completed here, whatever the display state.
+        XCTAssertNil(addressBarButtonsViewController, "AddressBarButtonsViewController should be deallocated when its window closes")
+        XCTAssertNil(tabCollectionViewModel, "TabCollectionViewModel should be deallocated when its window closes")
+
+        // Let the suggestions window finish its (asynchronous) teardown before the test ends,
+        // so the app's DEBUG deallocation checks don't trip on it during the test cleanup
+        if let suggestionWindowDeallocated {
+            wait(for: [suggestionWindowDeallocated], timeout: 5)
+        }
+    }
+
+    @MainActor
+    private func expectSuggestionWindowDeallocation() -> XCTestExpectation? {
+        guard let suggestionWindow = NSApp.windows.first(where: { $0.contentViewController is SuggestionViewController }) else { return nil }
+        let suggestionWindowDeallocated = expectation(description: "Suggestion window deallocated")
+        suggestionWindow.onDeinit {
+            suggestionWindowDeallocated.fulfill()
+        }
+        return suggestionWindowDeallocated
     }
 }
 

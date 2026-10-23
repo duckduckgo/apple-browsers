@@ -484,7 +484,7 @@ extension DataImportViewModel.ButtonType {
                 UserText.skipBookmarksImport
             case .some(.passwords):
                 UserText.skipPasswordsImport
-            case .some(.creditCards), nil: // Shouldn't really happen
+            case .some(.creditCards), .some(.history), nil: // Shouldn't really happen
                 UserText.cancel
             }
         case .cancel:

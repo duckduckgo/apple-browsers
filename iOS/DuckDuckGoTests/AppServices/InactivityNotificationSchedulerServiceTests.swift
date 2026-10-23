@@ -28,7 +28,6 @@ final class MockNotificationServiceManager: NSObject, NotificationServiceManagin
 
 final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
-    var mockFeatureFlagger: MockFeatureFlagger!
     var mockPrivacyConfigManager: PrivacyConfigurationManagerMock!
     var mockNotificationServiceManager: MockNotificationServiceManager!
     var mockUserNotificationCenter: MockUNUserNotificationCenter!
@@ -38,13 +37,11 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockPrivacyConfigManager = PrivacyConfigurationManagerMock()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.inactivityNotification])
         mockNotificationServiceManager = MockNotificationServiceManager()
         mockUserNotificationCenter = MockUNUserNotificationCenter()
         stateStore = InactivityNotificationStateStore(keyValueStore: MockKeyValueFileStore())
 
         service = InactivityNotificationSchedulerService(
-            featureFlagger: mockFeatureFlagger,
             notificationServiceManager: mockNotificationServiceManager,
             privacyConfigurationManager: mockPrivacyConfigManager,
             stateStore: stateStore,
@@ -54,7 +51,6 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
     override func tearDown() {
         mockPrivacyConfigManager = nil
-        mockFeatureFlagger = nil
         mockNotificationServiceManager = nil
         mockUserNotificationCenter = nil
         stateStore = nil
@@ -64,22 +60,7 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     
     // MARK: - Resume
     
-    func test_resume_featureIsOff_cancelsAndDoesNotReschedule() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        
-        // When
-        await service.resume().value
-        
-        // Then
-        XCTAssertTrue(mockUserNotificationCenter.removedIdentifiers.contains { $0.contains(InactivityNotificationSchedulerService.Constants.notificationIdentifier) })
-        XCTAssertTrue(mockUserNotificationCenter.addedRequests.isEmpty)
-    }
-    
-    func test_resume_featureIsEnabled_cancelsAndReschedule() async throws {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.inactivityNotification]
-        
+    func test_resume_cancelsAndReschedule() async throws {
         // When
         await service.resume().value
         
@@ -101,7 +82,6 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
     
     func test_resume_calledManyTimes_cancelsAndReschedule() async {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.inactivityNotification]
         mockUserNotificationCenter.authorizationStatus = .provisional
 
         // When
@@ -113,32 +93,6 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
         XCTAssertTrue(mockUserNotificationCenter.removedIdentifiers.contains { $0.contains(InactivityNotificationSchedulerService.Constants.notificationIdentifier) })
         XCTAssertEqual(mockUserNotificationCenter.addedRequests.count, 1)
         XCTAssertEqual(mockUserNotificationCenter.addedRequests.first?.identifier, InactivityNotificationSchedulerService.Constants.notificationIdentifier)
-    }
-    
-    func test_resume_featureTogglesManyTimes_cancelsAndReschedule() async {
-        // Given
-        mockUserNotificationCenter.authorizationStatus = .provisional
-
-        // When
-        for _ in 0..<25 {
-            if Bool.random() {
-                mockFeatureFlagger.enabledFeatureFlags = [.inactivityNotification]
-            } else {
-                mockFeatureFlagger.enabledFeatureFlags = []
-            }
-
-            await service.resume().value
-        }
-
-        // Then
-        if mockFeatureFlagger.enabledFeatureFlags.contains(.inactivityNotification) {
-            XCTAssertTrue(mockUserNotificationCenter.removedIdentifiers.contains { $0.contains(InactivityNotificationSchedulerService.Constants.notificationIdentifier) })
-            XCTAssertEqual(mockUserNotificationCenter.addedRequests.count, 1)
-            XCTAssertEqual(mockUserNotificationCenter.addedRequests.first?.identifier, InactivityNotificationSchedulerService.Constants.notificationIdentifier)
-        } else {
-            XCTAssertTrue(mockUserNotificationCenter.removedIdentifiers.contains { $0.contains(InactivityNotificationSchedulerService.Constants.notificationIdentifier) })
-            XCTAssertEqual(mockUserNotificationCenter.addedRequests.count, 0)
-        }
     }
     
     func test_resume_whenInteractionLimitReached_cancelsAndDoesNotSchedule() async throws {
@@ -507,7 +461,6 @@ final class InactivityNotificationSchedulerServiceTests: XCTestCase {
 
     private func makeService(userNotificationCenter: UNUserNotificationCenterRepresentable) -> InactivityNotificationSchedulerService {
         InactivityNotificationSchedulerService(
-            featureFlagger: mockFeatureFlagger,
             notificationServiceManager: mockNotificationServiceManager,
             privacyConfigurationManager: mockPrivacyConfigManager,
             stateStore: stateStore,

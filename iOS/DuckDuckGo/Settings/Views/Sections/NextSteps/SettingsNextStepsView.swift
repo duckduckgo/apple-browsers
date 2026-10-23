@@ -64,9 +64,7 @@ struct SettingsNextStepsView: View {
                     NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)
                         .onDisappear { viewModel.refreshNextStepsVisibility(animated: true) }) {
                         SettingsCellView(label: UserText.enableVoiceSearch,
-                                         image: Image(uiImage: AppRebrand.isAppRebranded()
-                                                      ? DesignSystemImages.Color.Size24.microphoneAdd
-                                                      : DesignSystemImages.Color.Size24.microphone))
+                                         image: Image(uiImage: DesignSystemImages.Color.Size24.microphoneAdd))
                     }
                 }
             }

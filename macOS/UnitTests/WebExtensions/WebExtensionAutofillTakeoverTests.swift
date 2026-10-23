@@ -17,7 +17,6 @@
 //
 
 import PrivacyConfig
-import PrivacyConfigTestsUtils
 import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -29,9 +28,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private var notificationCenter: NotificationCenter!
     private var preferences: AutofillPreferencesPersistorMock!
-    private var privacyConfiguration: MockPrivacyConfiguration!
-    private var privacyConfigurationManager: MockPrivacyConfigurationManager!
-    private var isBitwardenEnabled = true
     private var managingExtension: AutofillManagingExtension?
     private var givenBackCount = 0
 
@@ -39,19 +35,11 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         super.setUp()
         notificationCenter = NotificationCenter()
         preferences = AutofillPreferencesPersistorMock()
-        privacyConfiguration = MockPrivacyConfiguration()
-        privacyConfiguration.isSubfeatureEnabledCheck = { [unowned self] subfeature, _ in
-            (subfeature as? ExtensionsCatalogSubfeature) == .bitwarden && self.isBitwardenEnabled
-        }
-        privacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: privacyConfiguration)
     }
 
     override func tearDown() {
         notificationCenter = nil
         preferences = nil
-        privacyConfiguration = nil
-        privacyConfigurationManager = nil
-        isBitwardenEnabled = true
         managingExtension = nil
         givenBackCount = 0
         super.tearDown()
@@ -59,7 +47,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
     private func makeTakeover() -> WebExtensionAutofillTakeover {
         WebExtensionAutofillTakeover(preferences: preferences,
-                                     privacyConfigurationManager: privacyConfigurationManager,
                                      notificationCenter: notificationCenter,
                                      readManagingExtension: { [unowned self] in self.managingExtension },
                                      clearSettings: { [unowned self] in self.givenBackCount += 1 })
@@ -119,28 +106,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
 
         XCTAssertEqual(takeover.managingExtension, Self.bitwarden)
         XCTAssertTrue(preferences.isManagedByExtension)
-    }
-
-    /// The first change after launch must apply: Bitwarden's catalog entry can change remotely at any time.
-    func testWhenBitwardensCatalogEntryChangesForTheFirstTime_ThenTheTakeoverIsReadAgain() {
-        let takeover = makeTakeover()
-        managingExtension = Self.bitwarden
-
-        isBitwardenEnabled = false
-        privacyConfigurationManager.updatesSubject.send()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-        XCTAssertEqual(takeover.managingExtension, Self.bitwarden)
-    }
-
-    func testWhenAConfigUpdateLeavesBitwardensCatalogEntryAsItWas_ThenNothingIsReadAgain() {
-        let takeover = makeTakeover()
-        managingExtension = Self.bitwarden
-
-        privacyConfigurationManager.updatesSubject.send()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-        XCTAssertNil(takeover.managingExtension)
     }
 
     func testWhenWebExtensionsBecomeUnavailable_ThenDuckDuckGoTakesAutofillBack() {

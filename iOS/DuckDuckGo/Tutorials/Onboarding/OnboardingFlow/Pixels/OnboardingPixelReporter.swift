@@ -26,6 +26,7 @@ import Persistence
 import PixelKit
 import PixelExperimentKit
 import FeatureFlags_iOS
+import Subscription
 
 // MARK: - OnboardingPixelReporter
 
@@ -139,6 +140,7 @@ final class OnboardingPixelReporter {
     private let sharedPixelsStorage: any KeyedStoring<OnboardingSharedPixelsKeys>
     private let siteVisitedUserDefaultsKey = "com.duckduckgo.ios.site-visited"
     private let downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric
+    private let subscriptionManager: any SubscriptionManager
 
     init(
         pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
@@ -148,7 +150,8 @@ final class OnboardingPixelReporter {
         userDefaults: UserDefaults = UserDefaults.app,
         sharedPixelHandler: OnboardingSharedPixelHandling? = nil,
         sharedPixelsStorage: (any KeyedStoring<OnboardingSharedPixelsKeys>)? = nil,
-        downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric = OnboardingDownloadReasonExperimentMetric()
+        downloadReasonExperimentMetric: OnboardingDownloadReasonExperimentMetric = OnboardingDownloadReasonExperimentMetric(),
+        subscriptionManager: any SubscriptionManager
     ) {
         self.pixelFiring = pixelFiring
         self.statisticsStore = statisticsStore
@@ -162,6 +165,7 @@ final class OnboardingPixelReporter {
         )
         self.sharedPixelsStorage = if let sharedPixelsStorage { sharedPixelsStorage } else { UserDefaults.app.keyedStoring() }
         self.downloadReasonExperimentMetric = downloadReasonExperimentMetric
+        self.subscriptionManager = subscriptionManager
     }
 
     private func fire(event: Pixel.Event, unique: Bool, additionalParameters: [String: String] = [:]) {
@@ -213,6 +217,9 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureStartOnboardingCTAAction() {
         fireSharedPixel(.welcome(.clicked(.engage)))
+        if !subscriptionManager.isPurchaseEligibilityKnown {
+            pixelFiring?.fire(OnboardingIntroPixel.purchaseEligibilityUnknown, frequency: .uniqueByName)
+        }
     }
 
     func measureSkipOnboardingCTAAction() {
@@ -677,4 +684,16 @@ struct OnboardingDownloadReasonExperimentMetric {
         )
     }
 
+}
+
+// MARK: - OnboardingIntroPixel
+
+/// Fires when the user starts onboarding while subscription purchase eligibility isn't known yet:
+/// the App Store product fetch hasn't finished and no earlier launch cached purchasable products.
+enum OnboardingIntroPixel: PixelKit.Event {
+    case purchaseEligibilityUnknown
+
+    var name: String { "onboarding-intro_purchase-eligibility-unknown_u" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

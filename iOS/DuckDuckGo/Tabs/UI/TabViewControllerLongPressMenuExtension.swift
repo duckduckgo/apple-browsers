@@ -171,7 +171,12 @@ extension TabViewController {
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()
         configuration.websiteDataStore = webView.configuration.websiteDataStore
+        tabModel.recordLinkPreviewDomain(for: url)
         tabController.attachWebView(configuration: configuration, andLoadRequest: URLRequest.userInitiated(url), consumeCookies: false)
+        tabController.linkPreviewNavigationCancellable = tabController.webView.publisher(for: \.url)
+            .sink { [weak parentTab = tabModel] url in
+                parentTab?.recordLinkPreviewDomain(for: url)
+            }
         tabController.loadViewIfNeeded()
         return tabController
     }

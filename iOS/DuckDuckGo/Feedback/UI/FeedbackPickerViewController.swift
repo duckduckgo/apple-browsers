@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import DesignResourcesKitIcons
 
 class FeedbackPickerViewController: UITableViewController {
 
@@ -140,10 +139,6 @@ extension FeedbackPickerViewController {
         headerView.backgroundColor = theme.backgroundColor
         headerText.textColor = theme.feedbackPrimaryTextColor
         supplementaryText.textColor = theme.feedbackSecondaryTextColor
-
-        if AppRebrand.isAppRebranded() {
-            headerImage.image = UIImage(resource: .responseBad56)
-        }
 
         tableView.reloadData()
     }

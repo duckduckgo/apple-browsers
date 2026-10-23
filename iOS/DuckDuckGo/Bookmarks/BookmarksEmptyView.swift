@@ -19,7 +19,6 @@
 
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckUI
 
 struct BookmarksEmptyView: View {
@@ -29,7 +28,7 @@ struct BookmarksEmptyView: View {
 
     var body: some View {
             VStack(spacing: 0) {
-                Image(rebrandable: "Bookmarks-96")
+                Image(.bookmarks96)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 96)
@@ -72,9 +71,7 @@ struct BookmarksEmptyView: View {
     }
 
     private func maxButtonWidth() -> CGFloat {
-        let labelFont = AppRebrand.isAppRebranded()
-            ? UIFont.systemFont(ofSize: 17, weight: .medium)
-            : UIFont.boldAppFont(ofSize: 15)
+        let labelFont = UIFont.systemFont(ofSize: 17, weight: .medium)
         let maxWidth = AutofillViews.maxWidthFor(title1: UserText.importBookmarksActionTitle, title2: UserText.importBookmarksActionHtmlTitle, font: labelFont)
         return min(maxWidth.rounded(.up), 300)
     }

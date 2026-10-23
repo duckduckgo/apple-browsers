@@ -26,6 +26,12 @@ class MainViewCoordinator {
         static let tabBarContainerHeight: CGFloat = 40
         // Aligns top chrome with window controls.
         static let windowControlsRowTopSpacing: CGFloat = 4
+        static let contextualSidebarWidthFraction: CGFloat = 0.32
+        /// The narrowest iPhone, which is what the contextual surface's content is laid out for.
+        static let contextualSidebarMinWidth: CGFloat = 375
+        static let contextualSidebarMaxWidth: CGFloat = 400
+        /// Below this the page beside the sidebar would be narrower than a phone, so the surface is a sheet instead.
+        static let contextualSidebarMinPageWidth: CGFloat = 400
     }
 
     enum StatusBackgroundPresentation: Equatable {
@@ -48,6 +54,8 @@ class MainViewCoordinator {
     let superview: UIView
 
     var contentContainer: UIView!
+    /// iPad only: the column beside the page that hosts the contextual Duck.ai surface.
+    var contextualSidebarContainer: UIView?
     var logo: UIImageView!
     var logoContainer: UIView!
     var topSlideContainer: UIView!
@@ -95,6 +103,7 @@ class MainViewCoordinator {
     private var isNavBarContainerBottomKeyboardBased = false
     private(set) var isOmnibarInToolbar = false
     private var isFloatingUIEnabled = false
+    private(set) var isWebInputEditing = false
     private(set) var isInMinimalChromeLayout = false
 
     var isNavigationBarContainerBottomKeyboardBased: Bool {
@@ -107,6 +116,18 @@ class MainViewCoordinator {
 
     func setFloatingUIEnabled(_ enabled: Bool) {
         isFloatingUIEnabled = enabled
+        if !enabled {
+            setWebInputEditing(false)
+        }
+    }
+
+    @discardableResult
+    func setWebInputEditing(_ editing: Bool) -> Bool {
+        let editing = editing && isFloatingUIEnabled
+        guard isWebInputEditing != editing else { return false }
+        isWebInputEditing = editing
+        applyNavigationBarContainerVisibility(updatesInteraction: false)
+        return true
     }
 
     func setMinimalChromeLayout(_ enabled: Bool) {
@@ -153,7 +174,9 @@ class MainViewCoordinator {
     }
 
     private func applyNavigationBarContainerVisibility(updatesInteraction: Bool) {
-        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout || newTabPageInputPresentation.hidesNavigationContainer
+        navigationBarContainer.isHidden = isNavigationBarContainerHiddenByLayout
+            || newTabPageInputPresentation.hidesNavigationContainer
+            || (isWebInputEditing && addressBarPosition.isBottom)
         if newTabPageInputPresentation.hidesNavigationContainer {
             navigationBarContainer.isUserInteractionEnabled = false
         } else if updatesInteraction {
@@ -169,7 +192,13 @@ class MainViewCoordinator {
     }
 
     // The default after creating the hiearchy is top
-    var addressBarPosition: AddressBarPosition = .top
+    var addressBarPosition: AddressBarPosition = .top {
+        didSet {
+            if navigationBarContainer != nil {
+                applyNavigationBarContainerVisibility(updatesInteraction: false)
+            }
+        }
+    }
 
     var standardNavigationBarContainerHeight: CGFloat {
         omniBar.barView.expectedHeight
@@ -217,6 +246,8 @@ class MainViewCoordinator {
         var contentContainerTopToSafeArea: NSLayoutConstraint!
         var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
+        var contextualSidebarShown: NSLayoutConstraint?
+        var contextualSidebarHidden: NSLayoutConstraint?
 
     }
 

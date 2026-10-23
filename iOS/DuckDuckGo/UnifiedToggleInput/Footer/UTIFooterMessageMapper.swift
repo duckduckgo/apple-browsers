@@ -74,6 +74,17 @@ struct UTIFooterMessageMapper {
         )
     }
 
+    func promptTooLongMessage(count: Int, limit: Int) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .alert,
+            title: PromptLengthText.format(UserText.aiChatPromptTooLongFormat, count, limit),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: false,
+            titleStyle: .error
+        )
+    }
+
     func multiTabPromotionMessage(title: String = UserText.aiChatMultiTabPromotion) -> UTIFooterMessage {
         let emphasizedText = title.range(of: "·").map {
             String(title[..<$0.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
@@ -165,5 +176,28 @@ struct UTIFooterMessageMapper {
         case .startUsingWeeklyLimit:
             return UserText.utiDuckAIWarningsStartUsingWeeklyLimit
         }
+    }
+}
+
+/// Writes character counts in the locale's digits without grouping separators, as the design writes them (16000, not 16,000).
+enum PromptLengthText {
+    static func number(_ value: Int, locale: Locale = .current) -> String {
+        value.formatted(.number.grouping(.never).locale(locale))
+    }
+
+    /// Fills a `%1$d`/`%2$d` format with the count and the limit.
+    static func format(_ format: String, _ count: Int, _ limit: Int, locale: Locale = .current) -> String {
+        let objectFormat = positional(format).replacingOccurrences(of: "%1$d", with: "%1$@").replacingOccurrences(of: "%2$d", with: "%2$@")
+        return String(format: objectFormat, number(count, locale: locale), number(limit, locale: locale))
+    }
+
+    /// A translation may use plain `%d`s; numbers them in order so the first is the count and the second the limit.
+    static func positional(_ format: String) -> String {
+        var result = format
+        for index in 1...2 {
+            guard let range = result.range(of: "(?<!%)%d", options: .regularExpression) else { break }
+            result.replaceSubrange(range, with: "%\(index)$d")
+        }
+        return result
     }
 }

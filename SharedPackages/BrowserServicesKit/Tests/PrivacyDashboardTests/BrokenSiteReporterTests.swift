@@ -236,8 +236,8 @@ final class BrokenSiteReporterTests: XCTestCase {
         XCTAssertEqual(parameters["contentBlockedLoads"], "6")
     }
 
-    private static let dnsError = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost))
-    private static let certificateError = PageResourceLoadError.error(NSError(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted))
+    private static let dnsError = PageResourceLoadError.error(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost)
+    private static let certificateError = PageResourceLoadError.error(domain: NSURLErrorDomain, code: NSURLErrorServerCertificateUntrusted)
 
     private func makeReport(cookieConsentInfo: CookieConsentInfo?,
                             reportFlow: BrokenSiteReport.Source = .appMenu,

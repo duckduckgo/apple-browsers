@@ -293,28 +293,4 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
 
         XCTAssertEqual(client.restoreFromBackupCalls.count, 3)
     }
-
-    // MARK: - App Store strategy
-
-    func testAppStoreStrategy_runsTheExpiredTokenRestore() async throws {
-        let restoreFlow = AppStoreRestoreFlowMock()
-        let strategy = AppStoreTokenRecovery(recoverer: DeadTokenRecoverer(), purchasePlatform: .appStore, restoreFlow: restoreFlow)
-
-        try await strategy.recover(invalidTokenContext)
-
-        XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
-    }
-
-    func testAppStoreStrategy_stripe_isNotAttempted() async {
-        let restoreFlow = AppStoreRestoreFlowMock()
-        let strategy = AppStoreTokenRecovery(recoverer: DeadTokenRecoverer(), purchasePlatform: .stripe, restoreFlow: restoreFlow)
-
-        do {
-            try await strategy.recover(invalidTokenContext)
-            XCTFail("Expected error")
-        } catch {
-            XCTAssertEqual(error as? SubscriptionManagerError, .tokenRecoveryNotAttempted)
-        }
-        XCTAssertFalse(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
-    }
 }

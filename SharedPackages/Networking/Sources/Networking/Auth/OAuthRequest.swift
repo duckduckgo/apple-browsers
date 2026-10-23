@@ -22,16 +22,24 @@ import os.log
 import Common
 import FoundationExtensions
 
+/// A request to the Auth API v2, with the status codes that decide how `OAuthService` reads its response.
 /// Auth API v2 Endpoints: https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#auth-api-v2-endpoints
 public struct OAuthRequest {
 
+    /// The HTTP request to send.
     public let apiRequest: APIRequestV2
-    public let httpSuccessCode: HTTPStatusCode
-    public let httpErrorCodes: [HTTPStatusCode]
+    /// The only status treated as success. The response is returned as is.
+    public let successCode: HTTPStatusCode
+    /// The failure statuses whose response body is decoded as a `BodyError` and thrown as `OAuthServiceError.authAPIError`,
+    /// or as `OAuthServiceError.missingResponseValue(.bodyError)` when it can't be decoded.
+    /// Any status that is neither `successCode` nor in this list is thrown as `OAuthServiceError.invalidResponseCode`.
+    public let bodyErrorDecodableCodes: [HTTPStatusCode]
+    /// The URL of `apiRequest`.
     public var url: URL {
         apiRequest.urlRequest.url!
     }
 
+    /// The `error` value of an Auth API error response body.
     public enum BodyErrorCode: String, Decodable, Equatable {
         case invalidAuthorizationRequest = "invalid_authorization_request"
         case authorizeFailed = "authorize_failed"
@@ -52,7 +60,11 @@ public struct OAuthRequest {
         case accountChangeEmailAddressFailed = "account_change_email_address_failed"
         case invalidToken = "invalid_token"
         case expiredToken = "expired_token"
+        case serviceUnavailable = "service_unavailable"
+        case internalServerError = "internal_server_error"
+        case incompatibleLoginAuthorizationScopes = "incompatible_login_authorization_scopes"
 
+        /// A human-readable explanation of the error code, as documented by the Auth API.
         public var description: String {
             switch self {
             case .invalidAuthorizationRequest:
@@ -93,6 +105,12 @@ public struct OAuthRequest {
                 return "Provided access token is missing or invalid"
             case .expiredToken:
                 return "Provided access token is expired"
+            case .serviceUnavailable:
+                return "Temporary server error"
+            case .internalServerError:
+                return "Ran into an unexpected error"
+            case .incompatibleLoginAuthorizationScopes:
+                return "The login method is not allowed for this authorization session"
             }
         }
     }
@@ -134,8 +152,11 @@ public struct OAuthRequest {
         public var underlyingError: Error? { nil }
     }
 
+    /// An Auth API error response body, `{ "error": "...", "error_code": ... }`.
     public struct BodyError: Decodable, Equatable {
+        /// The error, decoded from `error`.
         public let errorCode: BodyErrorCode
+        /// Why the token was rejected, decoded from `error_code`. Nil when the response doesn't include it.
         public let tokenStatus: TokenStatus?
 
         private enum CodingKeys: String, CodingKey {
@@ -143,6 +164,7 @@ public struct OAuthRequest {
             case tokenStatus = "error_code"
         }
 
+        /// The error code's explanation, followed by the token status when there is one.
         public var description: String {
             var result = "Error code: \(self.errorCode.description)"
             if let tokenStatus = self.tokenStatus {
@@ -153,9 +175,16 @@ public struct OAuthRequest {
     }
 
     private struct Defaults {
+        /// Up to 3 retries, 2 seconds apart.
         static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(.seconds(2)))
     }
 
+    /// The `ddg_auth_session_id` cookie that identifies an authorization session.
+    /// - Parameters:
+    ///   - domain: The cookie's domain, the Auth API host.
+    ///   - path: The path of the request the cookie is sent with.
+    ///   - authSessionID: The authorization session ID returned by `authorize`.
+    /// - Returns: The cookie, or nil if the properties don't form a valid cookie.
     static func ddgAuthSessionCookie(domain: String, path: String, authSessionID: String) -> HTTPCookie? {
         return HTTPCookie(properties: [
             .domain: domain,
@@ -167,16 +196,27 @@ public struct OAuthRequest {
 
     // MARK: -
 
+    /// - Parameters:
+    ///   - apiRequest: The HTTP request to send.
+    ///   - successCode: The only status treated as success. Defaults to `200 OK`.
+    ///   - bodyErrorDecodableCodes: The failure statuses whose response body is decoded as a `BodyError`.
+    ///     Defaults to `400 Bad Request` and `500 Internal Server Error`.
     init(apiRequest: APIRequestV2,
-         httpSuccessCode: HTTPStatusCode = HTTPStatusCode.ok,
-         httpErrorCodes: [HTTPStatusCode] = [HTTPStatusCode.badRequest, HTTPStatusCode.internalServerError]) {
+         successCode: HTTPStatusCode = HTTPStatusCode.ok,
+         bodyErrorDecodableCodes: [HTTPStatusCode] = [HTTPStatusCode.badRequest, HTTPStatusCode.internalServerError]) {
         self.apiRequest = apiRequest
-        self.httpSuccessCode = httpSuccessCode
-        self.httpErrorCodes = httpErrorCodes
+        self.successCode = successCode
+        self.bodyErrorDecodableCodes = bodyErrorDecodableCodes
     }
 
     // MARK: Authorize
 
+    /// A request that starts an authorization session. Success is a 302 redirect that sets the `ddg_auth_session_id` cookie.
+    /// Not retried.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - codeChallenge: The PKCE code challenge, S256.
+    /// - Returns: The request, or nil when `codeChallenge` is empty.
     static func authorize(baseURL: URL, codeChallenge: String) -> OAuthRequest? {
         guard codeChallenge.isEmpty == false else { return nil }
 
@@ -194,11 +234,16 @@ public struct OAuthRequest {
                                          queryItems: queryItems) else { // we don't want to retry: https://app.asana.com/1/137249556945/task/1210411170978663/comment/1210411574944338?focus=true
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
+        return OAuthRequest(apiRequest: request, successCode: HTTPStatusCode.found)
     }
 
     // MARK: Create account
 
+    /// A request that creates an account for an authorization session. Success is a 302 redirect carrying the authorization code.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - authSessionID: The authorization session ID returned by `authorize`, sent as a cookie.
+    /// - Returns: The request, or nil when `authSessionID` is empty or the cookie can't be created.
     static func createAccount(baseURL: URL, authSessionID: String) -> OAuthRequest? {
         guard authSessionID.isEmpty == false else { return nil }
 
@@ -212,12 +257,17 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(cookies: [cookie])) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
+        return OAuthRequest(apiRequest: request, successCode: HTTPStatusCode.found)
     }
 
     // MARK: Sent OTP
 
-    /// Unused in the current implementation
+    /// A request that emails a one-time password for logging in. Unused in the current implementation.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - authSessionID: The authorization session ID returned by `authorize`, sent as a cookie.
+    ///   - emailAddress: Where the one-time password is sent.
+    /// - Returns: The request, or nil when an argument is empty or the cookie can't be created.
     static func requestOTP(baseURL: URL, authSessionID: String, emailAddress: String) -> OAuthRequest? {
         guard authSessionID.isEmpty == false,
               emailAddress.isEmpty == false else { return nil }
@@ -238,6 +288,13 @@ public struct OAuthRequest {
 
     // MARK: Login
 
+    /// A request that logs in to an existing account for an authorization session. Success is a 302 redirect carrying the authorization code.
+    /// Retried with the default retry policy.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - authSessionID: The authorization session ID returned by `authorize`, sent as a cookie.
+    ///   - method: How to log in: a one-time password (`OAuthLoginMethodOTP`) or a purchase signature (`OAuthLoginMethodSignature`).
+    /// - Returns: The request, or nil when `authSessionID` is empty, the cookie or body can't be created, or `method` is of another type.
     static func login(baseURL: URL, authSessionID: String, method: OAuthLoginMethod) -> OAuthRequest? {
         guard authSessionID.isEmpty == false else { return nil }
 
@@ -290,13 +347,21 @@ public struct OAuthRequest {
                                          retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
+        return OAuthRequest(apiRequest: request, successCode: HTTPStatusCode.found)
     }
 
     // MARK: Access Token
     // Note: The API has a single endpoint for both getting a new token and refreshing an old one, but here I'll split the endpoint in 2 different calls for clarity
     // https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#access-token
 
+    /// A request that exchanges an authorization code for a token pair. Retried with the default retry policy.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - clientID: The OAuth client ID.
+    ///   - codeVerifier: The PKCE code verifier the code challenge was made from.
+    ///   - code: The authorization code from `createAccount` or `login`.
+    ///   - redirectURI: The redirect URI registered for the client.
+    /// - Returns: The request, or nil when an argument is empty.
     static func getAccessToken(baseURL: URL, clientID: String, codeVerifier: String, code: String, redirectURI: String) -> OAuthRequest? {
         guard clientID.isEmpty == false,
               codeVerifier.isEmpty == false,
@@ -323,6 +388,12 @@ public struct OAuthRequest {
 
     /// A request that exchanges `refreshToken` for a new token pair. A 400 response is decoded as an auth API error;
     /// any other failure status, a 500 included, is thrown as `OAuthServiceError.invalidResponseCode`.
+    /// Retried with the default retry policy, with a 20 second timeout.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - clientID: The OAuth client ID.
+    ///   - refreshToken: The refresh token to spend.
+    /// - Returns: The request, or nil when an argument is empty.
     static func refreshAccessToken(baseURL: URL, clientID: String, refreshToken: String) -> OAuthRequest? {
         guard clientID.isEmpty == false,
               refreshToken.isEmpty == false else { return nil }
@@ -340,12 +411,17 @@ public struct OAuthRequest {
                                          retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.badRequest])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.badRequest])
     }
 
     // MARK: Edit Account
 
-    /// Unused in the current implementation
+    /// A request that changes the account's email address. Unused in the current implementation.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - accessToken: The access token authorizing the request.
+    ///   - email: The new email address, or nil.
+    /// - Returns: The request, or nil when `accessToken` is empty.
     static func editAccount(baseURL: URL, accessToken: String, email: String?) -> OAuthRequest? {
         guard accessToken.isEmpty == false else { return nil }
 
@@ -362,10 +438,17 @@ public struct OAuthRequest {
                                             authToken: accessToken)) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.unauthorized, .internalServerError])
     }
 
-    /// Unused in the current implementation
+    /// A request that confirms an email address change. Unused in the current implementation.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - accessToken: The access token authorizing the request.
+    ///   - email: The new email address.
+    ///   - hash: The hash from the confirmation email.
+    ///   - otp: The one-time password from the confirmation email.
+    /// - Returns: The request, or nil when an argument is empty.
     static func confirmEditAccount(baseURL: URL, accessToken: String, email: String, hash: String, otp: String) -> OAuthRequest? {
         guard accessToken.isEmpty == false,
               email.isEmpty == false,
@@ -385,11 +468,16 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.unauthorized, .internalServerError])
     }
 
     // MARK: Logout
 
+    /// A request that logs out, revoking every token issued from the same login.
+    /// - Parameters:
+    ///   - baseURL: The Auth API base URL.
+    ///   - accessToken: The access token of the session to log out.
+    /// - Returns: The request, or nil when `accessToken` is empty.
     static func logout(baseURL: URL, accessToken: String) -> OAuthRequest? {
         guard accessToken.isEmpty == false else { return nil }
 
@@ -399,13 +487,15 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.unauthorized, .internalServerError])
     }
 
     // MARK: JWKs
 
     /// This endpoint is where the Auth service will publish public keys for consuming services and clients to use to independently verify access tokens. Tokens should be downloaded and cached for an hour upon first use. When rotating private keys for signing JWTs, the Auth service will publish new public keys 24 hours in advance of starting to sign new JWTs with them. This should provide consuming services with plenty of time to invalidate their public key cache and have the new key available before they can expect to start receiving JWTs signed with the old key. The old key will remain published until the next key rotation, so there should generally be two public keys available through this endpoint. The response format is a standard JWKS response, as documented in RFC 7517.
-    /// Any failure status is thrown as `OAuthServiceError.invalidResponseCode`.
+    /// Any failure status is thrown as `OAuthServiceError.invalidResponseCode`. Retried with the default retry policy.
+    /// - Parameter baseURL: The Auth API base URL.
+    /// - Returns: The request, or nil when the URL can't be built.
     static func jwks(baseURL: URL) -> OAuthRequest? {
         let path = "/api/auth/v2/.well-known/jwks.json"
 
@@ -415,7 +505,7 @@ public struct OAuthRequest {
             return nil
         }
         return OAuthRequest(apiRequest: request,
-                            httpSuccessCode: .ok,
-                            httpErrorCodes: [])
+                            successCode: .ok,
+                            bodyErrorDecodableCodes: [])
     }
 }

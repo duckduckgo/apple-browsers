@@ -125,8 +125,8 @@ public struct DefaultOAuthService: OAuthService {
         try Task.checkCancellation()
 
         let statusCode = response.httpResponse.httpStatus
-        if statusCode != request.httpSuccessCode {
-            if request.httpErrorCodes.contains(statusCode) {
+        if statusCode != request.successCode {
+            if request.bodyErrorDecodableCodes.contains(statusCode) {
                 try throwError(forResponse: response)
             } else {
                 throw OAuthServiceError.invalidResponseCode(statusCode)

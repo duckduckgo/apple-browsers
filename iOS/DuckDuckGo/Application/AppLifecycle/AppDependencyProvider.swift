@@ -148,7 +148,6 @@ final class AppDependencyProvider: DependencyProvider {
     var tokenHandlerProvider: any SubscriptionTokenHandling
     let subscriptionExpirationReminderScheduler: SubscriptionExpirationReminderScheduling
     let subscriptionOnboardingSession: SubscriptionOnboardingSessionStateManaging = SubscriptionOnboardingSessionState()
-    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionTunnelController: NetworkProtectionTunnelController
@@ -168,7 +167,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created or renewed.
+    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created, renewed or restored from.
     /// - Parameters:
     ///   - featureFlagger: Decides whether the backup token is enabled.
     ///   - makeStorage: Creates the backup token storage. Called only when the flag is on.
@@ -344,15 +343,16 @@ final class AppDependencyProvider: DependencyProvider {
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
             guard let tokenContainer = try? tokenStorageV2.getTokenContainer() else {
+                Logger.subscriptionTokensManagement.error("Unauthorized response, but no current token can be read to refresh")
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 
             if tokenContainer.decodedAccessToken.isExpired() {
-                Logger.OAuth.debug("Refreshing tokens")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an expired access token, refreshing it")
                 let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
-                Logger.general.debug("Trying to refresh valid token, using the old one")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an unexpired access token, retrying with it")
                 return tokenContainer.accessToken
             }
         }
@@ -385,9 +385,11 @@ final class AppDependencyProvider: DependencyProvider {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        subscriptionManager.tokenRecoveryHandler = {
-            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-        }
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
+        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
+                                                     restoreFlow: restoreFlow)
+        subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
+                                                                                missingTokenStrategies: [backupRecovery])
 
         self.subscriptionManager = subscriptionManager
         tokenHandler = subscriptionManager

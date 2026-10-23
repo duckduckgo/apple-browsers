@@ -23,6 +23,9 @@ import SwiftUI
 extension SharedColorPaletteDefinition {
 
     /// Gets dynamic color proxy for a specific semantic color based on the JSON import
+    ///
+    /// # Important: Please use `SingleUseColor` if you're adding a color that's not mapped to a Figma Export
+    ///
     static func dynamicColor(for designSystemColor: SharedDesignSystemColor) -> DynamicColor {
 
         switch designSystemColor {

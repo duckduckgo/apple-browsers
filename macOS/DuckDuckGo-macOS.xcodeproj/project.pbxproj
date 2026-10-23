@@ -5683,6 +5683,7 @@
 		37C3210B2F1E80A1008F4604 /* Performance Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Performance Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "macOS Performance Tests.xctestplan"; sourceTree = "<group>"; };
 		37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = MemoryUsageTests.xcconfig; sourceTree = "<group>"; };
+		3A5B483037B330A044578C5E /* UITestRunner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = UITestRunner.entitlements; sourceTree = "<group>"; };
 		37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewActionsHandler.swift; sourceTree = "<group>"; };
 		37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTabExtension.swift; sourceTree = "<group>"; };
 		37CBCA992A8966E60050218F /* SyncSettingsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsAdapter.swift; sourceTree = "<group>"; };
@@ -9038,6 +9039,7 @@
 			isa = PBXGroup;
 			children = (
 				37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */,
+				3A5B483037B330A044578C5E /* UITestRunner.entitlements */,
 				376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */,
 				376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */,
 				378B588C295CF446002C0CC0 /* UITests.xcconfig */,

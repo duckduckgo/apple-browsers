@@ -166,6 +166,15 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
+    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created or renewed.
+    /// - Parameters:
+    ///   - featureFlagger: Decides whether the backup token is enabled.
+    ///   - makeStorage: Creates the backup token storage. Called only when the flag is on.
+    static func backupTokenStorageAtLaunch(featureFlagger: FeatureFlagger,
+                                           makeStorage: () -> any AuthTokenStoring) -> (any AuthTokenStoring)? {
+        featureFlagger.isFeatureOn(.authBackupToken) ? makeStorage() : nil
+    }
+
     static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
                                                isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
         isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
@@ -295,10 +304,12 @@ final class AppDependencyProvider: DependencyProvider {
                           frequency: .legacyDailyAndCount,
                           options: .parameters(parameters))
         }
-        let backupTokenStorage = SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
-                                                                  userDefaults: subscriptionUserDefaults,
-                                                                  field: .backupTokenContainer) { accessType, error in
-            Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+        let backupTokenStorage = Self.backupTokenStorageAtLaunch(featureFlagger: featureFlagger) {
+            SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                             userDefaults: subscriptionUserDefaults,
+                                             field: .backupTokenContainer) { accessType, error in
+                Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
         }
 
         // Init V2 classes for migration

@@ -32,7 +32,9 @@ jobs:
     uses: ./.github/workflows/should_run_pr_checks.yml
     with:
       paths: |
-        .github/**
+        .github/workflows/bsk_pr_checks.yml
+        .github/workflows/should_run_pr_checks.yml
+        .github/actions/**
         .xcode-version
         SharedPackages/BrowserServicesKit/**
         SharedPackages/Common/**

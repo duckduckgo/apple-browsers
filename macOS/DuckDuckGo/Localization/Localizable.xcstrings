@@ -38003,6 +38003,18 @@
         }
       }
     },
+    "dummy.localizable-string" : {
+      "comment" : "Dummy string used to test the translation pipeline. Not shown in the UI.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Dummy localizable string"
+          }
+        }
+      }
+    },
     "duplicate.tab" : {
       "comment" : "Menu item. Duplicate as a verb",
       "extractionState" : "extracted_with_value",

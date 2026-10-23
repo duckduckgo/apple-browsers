@@ -26,6 +26,7 @@ struct UserText {
 
     static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo", comment: "Application name to be displayed in the About dialog")
     static let duckDuckGoForMacAppStore = NSLocalizedString("about.app_name_app_store", value: "DuckDuckGo for Mac App Store", comment: "Application name to be displayed in the About dialog in App Store app")
+    static let dummyLocalizableString = NSLocalizedString("dummy.localizable-string", value: "Dummy localizable string", comment: "Dummy string used to test the translation pipeline. Not shown in the UI.")
 
     // MARK: - Generic
     static let ok = NSLocalizedString("ok", value: "OK", comment: "OK button")

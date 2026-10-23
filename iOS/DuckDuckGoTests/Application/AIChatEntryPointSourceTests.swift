@@ -174,7 +174,7 @@ struct AIChatEntryPointSourceTests {
 
     private static let generatedSchemasDirectory = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()
-        .appendingPathComponent("../PixelDefinitions/wide_events/generated_schemas")
+        .appendingPathComponent("../../PixelDefinitions/wide_events/generated_schemas")
 
     private static func schemaEnum(metaType: String, version: String, path: [String]) throws -> Set<String> {
         let url = generatedSchemasDirectory.appendingPathComponent("\(metaType)-\(version).json")

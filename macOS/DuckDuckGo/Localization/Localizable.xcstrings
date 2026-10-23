@@ -5,6 +5,12 @@
       "comment" : "Continue button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortsetzen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -15,6 +21,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Continuar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continuer"
           }
         },
         "it" : {
@@ -51,10 +63,22 @@
     },
     "⚠️ Notes are deprecated." : {
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚠️ Hinweise sind veraltet."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "⚠️ Las notas están obsoletas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "⚠️ Les notes sont obsolètes."
           }
         },
         "it" : {
@@ -93,6 +117,12 @@
       "comment" : "Application name to be displayed in the About dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -100,6 +130,12 @@
           }
         },
         "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo"
+          }
+        },
+        "fr" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo"

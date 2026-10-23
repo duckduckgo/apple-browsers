@@ -49,11 +49,11 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
     func record(openTabs run: OpenTabSuggestions.Run, modelName: String) {
         let outcome: String
         switch run.outcome {
-        case .generated: outcome = "Generated \(run.suggestions.count) open-tab prompts"
-        case .timedOut: outcome = "Open-tab budget expired; retained \(run.suggestions.count) prompts"
+        case .generated: outcome = "Generated \(run.suggestions.count) open-tab topics"
+        case .timedOut: outcome = "Open-tab budget expired; retained \(run.suggestions.count) topics"
         case .failed(let error): outcome = "Open-tab generation failed: \(error)"
         case .refused: outcome = "Open-tab generation refused"
-        case .unusable: outcome = "Open-tab generation returned no usable questions"
+        case .unusable: outcome = "Open-tab generation returned no usable topics"
         case .cancelled: outcome = "Open-tab generation cancelled"
         }
         recordOpenTabs(outcome: outcome, modelName: modelName,
@@ -80,6 +80,19 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
             lines.append("Model: \(lastOpenTabs.modelName ?? "unknown")")
             lines.append(contentsOf: lastOpenTabs.details)
             lines.append("Model output:\n\(lastOpenTabs.raw)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    var contextualReport: String {
+        var lines = ["Contextual suggestions diagnostics", "Build: \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown")"]
+        if let last {
+            lines.append("Last outcome: \(last.outcome)")
+            lines.append("Model: \(last.modelName ?? "unknown")")
+            lines.append(contentsOf: last.details)
+            lines.append("Model output:\n\(last.raw)")
+        } else {
+            lines.append("No contextual request yet.")
         }
         return lines.joined(separator: "\n")
     }

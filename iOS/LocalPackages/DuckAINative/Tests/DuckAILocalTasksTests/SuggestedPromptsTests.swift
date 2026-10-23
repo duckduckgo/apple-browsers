@@ -29,10 +29,10 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func openTabsKeepCompleteRowsWhenProviderStalls() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StallingTabProvider("0 | What do ducks eat?\n9 | What is this source?\n0 | Why do ducks")
+        let provider = StallingTabProvider("0 | Duck nutrition\n9 | What is this source?\n0 | Why do ducks")
         let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, budget: .milliseconds(100))
         #expect(run.outcome == .timedOut)
-        #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
+        #expect(run.suggestions.map(\.label) == ["Duck nutrition"])
         #expect(run.raw.contains("Why do ducks"))
     }
 
@@ -40,7 +40,7 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func openTabsStopAfterThreeCompleteValidRows() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StallingTabProvider("0 | What do ducks eat?\n0 | Where do ducks live?\n0 | How do ducks fly?\n")
+        let provider = StallingTabProvider("0 | Duck nutrition\n0 | Duck habitats\n0 | Duck migration\n")
         let started = ContinuousClock.now
         let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
         #expect(run.outcome == .generated)
@@ -50,30 +50,30 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func openTabsUseBoundedMetadataAndRejectUnknownDuplicateSources() async {
+    func openTabsConsiderEverySourceAndRejectUnknownDuplicateSources() async {
         let tabs = (0..<9).map { OpenTabMetadata(id: String($0), title: String(repeating: "t", count: 200), host: "example.com") }
         let turn = OpenTabSuggestions.turn(tabs: tabs, locale: "en")
-        #expect(!turn.input.contains("\"id\":\"6\""))
+        #expect(turn.input.contains("\"id\":\"8\""))
         #expect(!turn.input.contains(String(repeating: "t", count: 101)))
         #expect(!turn.input.contains("https://"))
         #expect(turn.instructions.contains("most recently viewed to least recently viewed"))
-        #expect(turn.instructions.contains("first tab"))
+        #expect(!turn.instructions.contains("first tab"))
         let raw = """
         9 | Explain this unknown source.
         0,0 | Explain these repeated sources.
-        0,1 | Compare the topics of these two tabs.
-        1 | Compare the topics of these two tabs.
-        2 | Explain the main topic of this tab.
+        0,6,8 | AI regulation
+        1 | AI regulation
+        7 | Weekend trips to Cork
         """
         let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
-        #expect(parsed.map(\.sourceIDs) == [["0", "1"], ["2"]])
+        #expect(parsed.map(\.sourceIDs) == [["0", "6", "8"], ["7"]])
         let generated = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub(raw))
         #expect(generated.suggestions == parsed)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func openTabRequestIncludesBoundedRecentSearchAlongsideResultPage() {
+    func openTabRequestPreservesRecentSearchAlongsideResultPage() {
         let tab = OpenTabMetadata(id: "0", title: "A shoe review", host: "example.com",
                                   recentSearchQuery: "walking shoes " + String(repeating: "x", count: 200))
         let turn = OpenTabSuggestions.turn(tabs: [tab], locale: "en")
@@ -82,7 +82,7 @@ import Testing
         #expect(turn.input.contains("\"recentSearchQuery\""))
         #expect(turn.input.contains("A shoe review"))
         #expect(!turn.input.contains(String(repeating: "x", count: 101)))
-        #expect(turn.instructions.contains("relevant follow-up to that search"))
+        #expect(turn.instructions.contains("ALL supplied tabs and recent searches together"))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -93,7 +93,7 @@ import Testing
         #expect(failed.outcome == .failed(.network))
         #expect(failed.suggestions.isEmpty)
         let refused = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: StallingTabProvider(
-            "0 | What do ducks eat?\n", refusal: true))
+            "0 | Duck nutrition\n", refusal: true))
         #expect(refused.outcome == .refused)
         #expect(refused.suggestions.isEmpty)
         let unusable = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("9 | What is this source?"))
@@ -105,7 +105,7 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func cancelledOpenTabsDiscardCompletedRowsAndReturnPromptly() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StallingTabProvider("0 | What do ducks eat?\n")
+        let provider = StallingTabProvider("0 | Duck nutrition\n")
         let task = Task { await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider) }
         var iterator = provider.started.makeAsyncIterator()
         _ = await iterator.next()
@@ -120,30 +120,31 @@ import Testing
     @Test(.timeLimit(.minutes(1)))
     func openTabsAcceptTrailingRowOnlyAfterNormalCompletion() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("0 | What do ducks eat?"))
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("0 | Duck nutrition"))
         #expect(run.outcome == .generated)
-        #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
+        #expect(run.suggestions.map(\.label) == ["Duck nutrition"])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func openTabsUseTheActionForBothLabelAndPrompt() {
+    func openTabsTurnTopicsIntoExplorationPrompts() {
         let tabs = [OpenTabMetadata(id: "0", title: "Walking shoes", host: "example.com")]
-        let parsed = OpenTabSuggestions.parse("0 | Which shoes suit long walks?", tabs: tabs)
-        #expect(parsed.first?.label == "Which shoes suit long walks?")
-        #expect(OpenTabSuggestions.parse("0 | walking shoes", tabs: tabs).isEmpty)
+        let parsed = OpenTabSuggestions.parse("0 | Walking shoes", tabs: tabs)
+        #expect(parsed.first?.label == "Walking shoes")
+        #expect(parsed.first?.prompt == "Help me explore Walking shoes. Use the attached tabs as context, explain the key ideas, and suggest useful directions to investigate.")
+        #expect(parsed.first?.sourceIDs == ["0"])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func openTabsAllowModelLoadingBeforeTheGenerationBudget() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let provider = StubProvider(configuration: .init(reply: "0 | What do ducks eat?",
+        let provider = StubProvider(configuration: .init(reply: "0 | Duck nutrition",
                                                         wordsPerSecond: 10_000, loadTime: .milliseconds(200), readTime: .zero))
         for _ in 0..<2 {
             let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, budget: .milliseconds(100))
             #expect(run.outcome == .generated)
-            #expect(run.suggestions.first?.prompt == "What do ducks eat?")
+            #expect(run.suggestions.first?.label == "Duck nutrition")
         }
     }
 
@@ -175,19 +176,23 @@ import Testing
     func suggestionsRejectLongVisibleLabels() {
         let verbose = "Can you tell me all about the ducks here?"
         let wide = String(repeating: "W", count: 61)
-        #expect(SuggestedPromptsPrompt.parse("\(verbose)\n\(wide)\nSummarize this page", max: 3).map(\.text) == ["Summarize this page"])
+        let contextual = SuggestedPromptsPrompt.parse("\(verbose)\n\(wide)\nSummarize this page", max: 3)
+        #expect(contextual.map(\.text) == [verbose, wide, "Summarize this page"])
+        #expect(contextual.allSatisfy { $0.displayLabel.count <= 45 })
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
-        let raw = "0 | \(verbose)\n0 | \(wide)\n0 | Summarize this page"
+        let raw = "0 | \(verbose)\n0 | \(wide)\n0 | Duck nutrition"
         let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
-        #expect(parsed.map(\.label) == ["Summarize this page"])
-        #expect(parsed.first?.prompt == "Summarize this page")
+        #expect(parsed.map(\.label) == ["Duck nutrition"])
+        #expect(parsed.first?.prompt.contains("Duck nutrition") == true)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func contextualChipsUseTheShorterDisplayBudget() {
         let raw = "Explain these seven words about this page\n\(String(repeating: "W", count: 46))\nCompare these treatment options"
-        #expect(SuggestedPromptsPrompt.parse(raw, max: 3).map(\.text) == ["Compare these treatment options"])
+        let prompts = SuggestedPromptsPrompt.parse(raw, max: 3)
+        #expect(prompts.map(\.text) == raw.components(separatedBy: .newlines))
+        #expect(prompts.allSatisfy { $0.displayLabel.count <= 45 })
     }
 
     @available(iOS 16, macOS 13, *)
@@ -200,13 +205,13 @@ import Testing
         #expect(OpenTabSuggestions.parse("0 | https://theguardian.com", tabs: tabs).isEmpty)
         #expect(OpenTabSuggestions.parse("0 | theguardian.com", tabs: tabs).isEmpty)
         #expect(OpenTabSuggestions.parse("0 | www.theguardian.com/sport", tabs: tabs).isEmpty)
-        #expect(OpenTabSuggestions.parse("0 | 今日のスポーツニュースは？", tabs: tabs).first?.label == "今日のスポーツニュースは？")
-        #expect(OpenTabSuggestions.parse("0 | \(title)", tabs: tabs).isEmpty)
-        let provider = RepairTabProvider(replies: [raw, "0 | Which sports stories should I explore?"])
+        #expect(OpenTabSuggestions.parse("0 | 気候変動", tabs: tabs).first?.label == "気候変動")
+        #expect(OpenTabSuggestions.parse("0 | Climate change", tabs: [OpenTabMetadata(id: "0", title: "Climate change", host: "example.com")]).first?.label == "Climate change")
+        let provider = RepairTabProvider(replies: [raw, "0 | News and current affairs"])
         let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
         #expect(run.outcome == .generated)
-        #expect(run.suggestions.first?.label == "Which sports stories should I explore?")
-        #expect(run.suggestions.first?.prompt == run.suggestions.first?.label)
+        #expect(run.suggestions.first?.label == "News and current affairs")
+        #expect(run.suggestions.first?.prompt.contains("News and current affairs") == true)
         #expect(run.suggestions.first?.sourceIDs == ["0"])
         #expect(run.raw.contains(raw))
         #expect(provider.turns.count == 2)
@@ -222,11 +227,53 @@ import Testing
         let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
         #expect(run.outcome == .unusable)
         #expect(provider.turns.count == 2)
-        let slow = RepairTabProvider(replies: ["unusable", "0 | What do ducks eat?"], delay: .milliseconds(150))
+        let slow = RepairTabProvider(replies: ["unusable", "0 | Duck nutrition"], delay: .milliseconds(150))
         let timed = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: slow, budget: .milliseconds(250))
         #expect(timed.outcome == .timedOut)
         #expect(timed.suggestions.isEmpty)
         #expect(slow.turns.count == 2)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func allTabTopicsPreserveOlderSearchesAndDoNotRequireTheFirstTab() async {
+        var tabs = (0..<9).map { OpenTabMetadata(id: String($0), title: "Climate change", host: "example.com") }
+        tabs[8] = OpenTabMetadata(id: "8", title: "Cork travel guide", host: "example.com", recentSearchQuery: "weekend trips to Cork")
+        let provider = RepairTabProvider(replies: ["8 | Weekend trips to Cork\n1,2,3,4,5,6,7 | Climate change"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.outcome == .generated)
+        #expect(run.suggestions.map(\.label) == ["Weekend trips to Cork", "Climate change"])
+        #expect(run.suggestions.map(\.sourceIDs) == [["8"], ["1", "2", "3", "4", "5", "6", "7"]])
+        #expect(provider.turns.first?.input.contains("weekend trips to Cork") == true)
+        let input = provider.turns.first?.input.data(using: .utf8) ?? Data()
+        let rows = (try? JSONSerialization.jsonObject(with: input)) as? [[String: Any]]
+        #expect(rows?.count == 9)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func oversizedTabMetadataFailsExplicitlyWithoutCallingProvider() async {
+        let tabs = (0..<1_000).map { OpenTabMetadata(id: String($0), title: "Climate change", host: "example.com") }
+        let provider = RepairTabProvider(replies: ["0 | Climate change"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        guard case .failed(.inputTooLong) = run.outcome else {
+            Issue.record("Expected explicit input budget failure")
+            return
+        }
+        #expect(provider.turns.isEmpty)
+        #expect(run.suggestions.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func topicSourcesRespectTheAttachmentLimitWithoutDroppingInputTabs() async {
+        let tabs = (0..<9).map { OpenTabMetadata(id: String($0), title: "Climate change", host: "example.com") }
+        let provider = RepairTabProvider(replies: ["1,2,8 | Climate change", "2,8 | Climate change"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, maximumSourcesPerTopic: 2)
+        #expect(run.outcome == .generated)
+        #expect(run.suggestions.first?.sourceIDs == ["2", "8"])
+        #expect(provider.turns.count == 2)
+        #expect(provider.turns.allSatisfy { $0.input.contains("\"id\":\"8\"") })
     }
 
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
@@ -246,7 +293,7 @@ import Testing
         - "Why are duck feathers waterproof?"
         • What do ducks eat?
         Ok
-        * Which ducks migrate the furthest, and how do they navigate across oceans and continents every single year?
+        * \(String(repeating: "x", count: 301))
         """
 
         #expect(SuggestedPromptsPrompt.parse(raw, max: 4) == [

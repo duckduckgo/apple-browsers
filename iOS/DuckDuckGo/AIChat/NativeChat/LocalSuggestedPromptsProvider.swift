@@ -68,7 +68,7 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
 
     private static func generated(_ prompts: [SuggestedPrompt]) -> ResolvedPageSuggestions {
         let suggestions = prompts.enumerated().map { index, prompt in
-            ContextualSuggestedPrompt(id: "local-\(index)", label: prompt.text, prompt: prompt.text, icon: nil)
+            ContextualSuggestedPrompt(id: "local-\(index)", label: prompt.displayLabel, prompt: prompt.text, icon: nil)
         }
         return ResolvedPageSuggestions(suggestions: suggestions, isSmart: true, pageType: .none)
     }

@@ -117,6 +117,9 @@ struct DuckAINativeDebugView: View {
                 }
             }
             Section("Contextual suggestions: last run") {
+                Button("Copy contextual diagnostics") {
+                    UIPasteboard.general.string = suggestions.contextualReport
+                }
                 if let last = suggestions.last {
                     LabeledContent(last.outcome, value: last.date.formatted(date: .omitted, time: .standard))
                     if let model = last.modelName {

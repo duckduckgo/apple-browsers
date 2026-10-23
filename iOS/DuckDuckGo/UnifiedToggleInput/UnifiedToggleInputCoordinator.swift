@@ -144,12 +144,14 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         freshSuggestionsCachedState = .loading
         freshSuggestionsState = .loading
         let generation = freshSuggestionsGeneration
-        let provider = NativeChatProviderFactory.makeSuggestionsProvider(forOpenTabs: true)
+        let maximumSourcesPerTopic = maximumTabAttachmentCount
+        let provider = NativeChatProviderFactory.makeSuggestionsProvider(forOpenTabs: true, tabs: metadata)
         freshSuggestionsDiagnosticKey = nil
         LocalSuggestionsDiagnostics.shared.recordOpenTabs(outcome: "Generating", modelName: provider.descriptor.modelName,
                                                          details: ["Eligible tabs: \(metadata.count)", "Destination: \(destinationID)", "Generation: \(generation)"])
         freshSuggestionsTask = Task { [weak self] in
-            let run = await OpenTabSuggestions.run(tabs: metadata, locale: Locale.current.identifier, provider: provider)
+            let run = await OpenTabSuggestions.run(tabs: metadata, locale: Locale.current.identifier, provider: provider,
+                                                    maximumSourcesPerTopic: maximumSourcesPerTopic)
             guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else {
                 LocalSuggestionsDiagnostics.shared.traceOpenTabs("Discarded result destination=\(destinationID) generation=\(generation): cancelled or superseded")
                 return
@@ -175,9 +177,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     }
 
     private func freshMetadataCandidates() -> [MultiTabAttachmentCandidate] {
-        Array((tabAttachmentSource?.candidates() ?? []).filter {
+        (tabAttachmentSource?.candidates() ?? []).filter {
             !$0.isCurrentTab && ["http", "https"].contains($0.url.scheme?.lowercased() ?? "")
-        }.prefix(6))
+        }
     }
 
     private func refreshCurrentFreshSuggestions() {

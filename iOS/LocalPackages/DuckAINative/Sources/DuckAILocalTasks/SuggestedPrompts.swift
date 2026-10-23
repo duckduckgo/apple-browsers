@@ -45,6 +45,19 @@ public struct SuggestedPrompt: Hashable, Sendable {
     public init(_ text: String) {
         self.text = text
     }
+
+    public var displayLabel: String {
+        let words = text.split(whereSeparator: \.isWhitespace)
+        guard text.count > 45 || words.count > 6 else { return text }
+        var label = ""
+        for word in words.prefix(6) {
+            let candidate = label.isEmpty ? String(word) : label + " " + word
+            guard candidate.count <= 44 else { break }
+            label = candidate
+        }
+        if label.isEmpty { label = String(text.prefix(44)) }
+        return label + "…"
+    }
 }
 
 public enum SuggestedPromptsResult: Equatable, Sendable {
@@ -219,7 +232,7 @@ public enum SuggestedPromptsPrompt {
         let instructions = """
         Suggest \(count) things a reader of this page might ask an AI assistant about it.
         Each one is a short question or request of at most 6 words and 45 characters, like a button label.
-        Keep the page's specific subject or comparison in each suggestion. Do not shorten it into a generic label.
+        Put the page's specific subject or comparison early in each suggestion. Do not shorten it into a generic label.
         For example, "Compare these treatment options" is more useful than "Compare options".
         Write in \(uiLanguageName). One per line. No numbering, bullets, quotes or other text.
         """
@@ -244,7 +257,7 @@ public enum SuggestedPromptsPrompt {
 
     /// Lenient: one suggestion per non-empty line. Strips bullets ("-", "*", "•"), numbering ("1.", "1)"), surrounding
     /// quotes and whitespace. Drops lines that are headings or preambles (ending in ":"), shorter than 8 or longer than
-    /// 45 characters, and case-insensitive duplicates. Keeps order and returns at most `max`.
+    /// 300 characters, and case-insensitive duplicates. Keeps order and returns at most `max`.
     public static func parse(_ raw: String, max: Int) -> [SuggestedPrompt] {
         guard max > 0 else { return [] }
         let surroundingCharacters = CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: "\"'“”‘’"))
@@ -256,7 +269,7 @@ public enum SuggestedPromptsPrompt {
                 .trimmingCharacters(in: surroundingCharacters)
                 .replacingOccurrences(of: #"^[*_`]+|[*_`]+$"#, with: "", options: .regularExpression)
                 .trimmingCharacters(in: surroundingCharacters)
-            guard (8...45).contains(text.count), text.split(whereSeparator: \.isWhitespace).count <= 6, !text.hasSuffix(":"), seen.insert(text.lowercased()).inserted else { continue }
+            guard (8...300).contains(text.count), !text.hasSuffix(":"), seen.insert(text.lowercased()).inserted else { continue }
             suggestions.append(SuggestedPrompt(text))
             if suggestions.count == max { break }
         }

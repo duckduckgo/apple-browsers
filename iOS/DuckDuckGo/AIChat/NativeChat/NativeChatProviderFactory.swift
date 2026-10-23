@@ -20,6 +20,7 @@
 import DuckAIChatCore
 import DuckAIChatMLX
 import DuckAIChatProviders
+import DuckAILocalTasks
 import Foundation
 import UIKit
 
@@ -47,13 +48,12 @@ enum NativeChatProviderFactory {
         }
     }
 
-    static func makeSuggestionsProvider(forOpenTabs: Bool) -> any ChatProvider {
+    static func makeSuggestionsProvider(forOpenTabs: Bool, tabs: [OpenTabMetadata] = []) -> any ChatProvider {
         if forOpenTabs, resolvedModel(for: .suggestedPrompts) == .stub {
-            let reply = """
-            0 | Explain the main topic of this tab.
-            0 | What are this tab’s key points?
-            0 | What should I explore next?
-            """
+            let rows = tabs.map { "\($0.id) | \($0.recentSearchQuery ?? $0.title)" }.joined(separator: "\n")
+            let reply = OpenTabSuggestions.parse(rows, tabs: tabs).map {
+                "\($0.sourceIDs.joined(separator: ",")) | \($0.label)"
+            }.joined(separator: "\n")
             return StubProvider(configuration: .init(reply: reply, wordsPerSecond: 60,
                                                      loadTime: .milliseconds(200), readTime: .milliseconds(200)))
         }

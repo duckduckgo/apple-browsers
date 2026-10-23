@@ -57,7 +57,7 @@ import Testing
         #expect(!turn.input.contains(String(repeating: "t", count: 101)))
         #expect(!turn.input.contains("https://"))
         #expect(turn.instructions.contains("most recently viewed to least recently viewed"))
-        #expect(!turn.instructions.contains("first tab"))
+        #expect(!turn.instructions.contains("Ground at least one useful question in the first tab"))
         let raw = """
         9 | Explain this unknown source.
         0,0 | Explain these repeated sources.
@@ -264,6 +264,54 @@ import Testing
         let input = provider.turns.first?.input.data(using: .utf8) ?? Data()
         let rows = (try? JSONSerialization.jsonObject(with: input)) as? [[String: Any]]
         #expect(rows?.count == 9)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func singleTopicAcrossThreeTabsGetsOneCoveragePass() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Latest news, sport and opinion from the Guardian", host: "theguardian.com"),
+                    OpenTabMetadata(id: "1", title: "Cork travel guide", host: "example.com"),
+                    OpenTabMetadata(id: "2", title: "Solar energy", host: "example.org")]
+        let provider = RepairTabProvider(replies: ["0 | Latest news, sport and opinion from the Guardian",
+                                                  "0 | News and current affairs\n1 | Cork travel\n2 | Solar energy"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.suggestions.map(\.label) == ["News and current affairs", "Cork travel", "Solar energy"])
+        #expect(Set(run.suggestions.flatMap(\.sourceIDs)) == ["0", "1", "2"])
+        #expect(provider.turns.count == 2)
+        #expect(provider.turns[1].instructions.contains("omitted source IDs: 1,2"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func coverageFailurePreservesValidTopicsWithoutLooping() async {
+        let tabs = (0..<3).map { OpenTabMetadata(id: String($0), title: "Topic \($0)", host: "example.com") }
+        for response in ["invalid", "0 | Climate change"] {
+            let provider = RepairTabProvider(replies: ["0 | Climate change", response])
+            let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+            #expect(run.outcome == .generated)
+            #expect(run.suggestions.map(\.label) == ["Climate change"])
+            #expect(provider.turns.count == 2)
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func relatedTabsCanShareOneTopicWithoutCoveragePass() async {
+        let tabs = (0..<3).map { OpenTabMetadata(id: String($0), title: "Climate change", host: "example.com") }
+        let provider = RepairTabProvider(replies: ["0,1,2 | Climate change"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.suggestions.count == 1)
+        #expect(provider.turns.count == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func coverageMergesSourcesForTheSameTopic() async {
+        let tabs = (0..<2).map { OpenTabMetadata(id: String($0), title: "Climate change", host: "example.com") }
+        let provider = RepairTabProvider(replies: ["0 | Climate change", "1 | Climate change"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.suggestions.count == 1)
+        #expect(Set(run.suggestions[0].sourceIDs) == ["0", "1"])
     }
 
     @available(iOS 16, macOS 13, *)

@@ -37,17 +37,10 @@ import WebKit
 @available(macOS 15.4, *)
 final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessageHandlerWithReply {
 
-    /// Finds the tab a frame that asks to open the action popup belongs to.
-    private weak var windowControllersManager: WindowControllersManagerProtocol?
-
-    init(windowControllersManager: WindowControllersManagerProtocol) {
-        self.windowControllersManager = windowControllersManager
-    }
-
     /// Third-party extensions can only be installed by internal users, so nobody else needs the
     /// script.
-    static func make(isInternalUser: Bool, windowControllersManager: WindowControllersManagerProtocol) -> WebExtensionPageStubUserScript? {
-        isInternalUser ? WebExtensionPageStubUserScript(windowControllersManager: windowControllersManager) : nil
+    static func make(isInternalUser: Bool) -> WebExtensionPageStubUserScript? {
+        isInternalUser ? WebExtensionPageStubUserScript() : nil
     }
 
     /// The same scripts, in the same order, as `WebExtensionLoader` installs on the controller.
@@ -65,13 +58,11 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
 
     /// The scripts report the unsupported APIs an extension touches through the first handler, ask
     /// for the `chrome.idle` state through the second, keep `chrome.privacy` settings through the
-    /// third, ask about app permissions through the fourth and open the action popup from a frame
-    /// embedded in a website through the fifth; the last four answer.
+    /// third and ask about app permissions through the fourth; the last three answer.
     let messageNames: [String] = [WebExtensionAPICompatibilityScript.messageHandlerName,
                                   WebExtensionAPIStubScript.idleMessageHandlerName,
                                   WebExtensionAPIStubScript.privacyMessageHandlerName,
-                                  WebExtensionAPIStubScript.permissionsMessageHandlerName,
-                                  WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName]
+                                  WebExtensionAPIStubScript.permissionsMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
@@ -92,9 +83,6 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
             manager.handlePrivacyMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.permissionsMessageHandlerName {
             manager.handlePermissionsMessage(message, replyHandler: replyHandler)
-        } else if message.name == WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName {
-            let tab = windowControllersManager?.tab(for: message.webView)
-            manager.handleActionOpenPopupMessage(message, tab: tab, replyHandler: replyHandler)
         } else {
             manager.handleAPICompatibilityMessage(message)
             replyHandler(nil, nil)

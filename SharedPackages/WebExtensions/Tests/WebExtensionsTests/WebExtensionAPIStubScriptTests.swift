@@ -183,98 +183,40 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     // MARK: - Embedded Frames
 
-    func testWhenAnEmbeddedFrameHasNoOpenPopupHandler_ThenActionOpenPopupIsLeftAlone() throws {
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {}, setIcon: function() {} };
-        var top = {};
-        var originalOpenPopup = chrome.action.openPopup;
-        """)
-        try assertNoExceptions()
-
-        try evaluateStubScript()
-
-        try assertTrue("chrome.action.openPopup === originalOpenPopup")
-        try assertTrue("typeof chrome.action.setIcon === 'function'")
-    }
-
-    func testWhenPageIsTheTopFrame_ThenActionOpenPopupIsLeftAlone() throws {
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        var top = globalThis;
-        var originalOpenPopup = chrome.action.openPopup;
-        """)
-        try assertNoExceptions()
-
-        try evaluateStubScript()
-
-        try assertTrue("chrome.action.openPopup === originalOpenPopup")
-    }
-
-    func testWhenPageIsTheTopFrameWithTheOpenPopupHandler_ThenActionOpenPopupIsLeftAlone() throws {
-        try installFakeOpenPopupHandler()
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        var top = globalThis;
-        var originalOpenPopup = chrome.action.openPopup;
-        """)
-        try assertNoExceptions()
-
-        try evaluateStubScript()
-
-        try assertTrue("chrome.action.openPopup === originalOpenPopup")
-        try assertTrue("openPopupRequests.length === 0")
-    }
-
-    func testWhenAnEmbeddedFrameHasTheOpenPopupHandler_ThenOpenPopupAsksTheAppAndResolves() throws {
-        try installFakeOpenPopupHandler()
-        context.evaluateScript("""
-        var nativeOpenPopupCalls = 0;
-        chrome.action = { openPopup: function() { nativeOpenPopupCalls += 1; } };
-        var top = {};
-        """)
-        try assertNoExceptions()
+    func testWhenAFrameInAWebsiteOpensThePopup_ThenTheCallIsRelayedToTheBackgroundPage() throws {
+        try installFakeRelaySender(reply: "{}")
         try evaluateStubScript()
 
         context.evaluateScript("""
         var openPopupOutcome = 'pending';
-        chrome.action.openPopup().then(function(value) { openPopupOutcome = value; }, function() { openPopupOutcome = 'rejected'; });
+        chrome.action.openPopup().then(function(value) { openPopupOutcome = value; }, function(error) { openPopupOutcome = error.message; });
         """)
         try assertNoExceptions()
 
         try assertTrue("openPopupOutcome === undefined")
-        try assertTrue("JSON.stringify(openPopupRequests) === '[{}]'")
+        try assertTrue("JSON.stringify(sentMessages) === '[{\"__ddgActionOpenPopup\":{}}]'")
         try assertTrue("nativeOpenPopupCalls === 0")
-        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('forwarded: [action.openPopup]') !== -1; })")
+        try assertTrue("consoleMessages.some(function(m) { return m.indexOf('relayed: [action.openPopup]') !== -1; })")
     }
 
-    func testWhenAnEmbeddedFrameCallsOpenPopupWithACallback_ThenTheCallbackIsCalledWithoutAnError() throws {
-        try installFakeOpenPopupHandler()
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        var top = {};
-        """)
-        try assertNoExceptions()
+    func testWhenAFrameInAWebsitePassesOptions_ThenTheyAreRelayedAndTheCallbackSeesNoError() throws {
+        try installFakeRelaySender(reply: "{}")
         try evaluateStubScript()
 
         context.evaluateScript("""
         var callbackError = 'pending';
-        chrome.action.openPopup({}, function() {
+        chrome.action.openPopup({ windowId: 8 }, function() {
             callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
         });
         """)
         try assertNoExceptions()
 
         try assertTrue("callbackError === null")
-        try assertTrue("openPopupRequests.length === 1")
+        try assertTrue("JSON.stringify(sentMessages) === '[{\"__ddgActionOpenPopup\":{\"windowId\":8}}]'")
     }
 
-    func testWhenTheAppCannotOpenThePopup_ThenThePromiseRejectsAndTheCallbackSeesLastError() throws {
-        try installFakeOpenPopupHandler(fails: true)
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        var top = {};
-        """)
-        try assertNoExceptions()
+    func testWhenTheBackgroundPageCannotOpenThePopup_ThenThePromiseRejectsAndTheCallbackSeesLastError() throws {
+        try installFakeRelaySender(reply: "{ error: 'Invalid call to action.openPopup(). The options value is invalid.' }")
         try evaluateStubScript()
 
         context.evaluateScript("""
@@ -287,76 +229,120 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         """)
         try assertNoExceptions()
 
-        try assertTrue("openPopupOutcome === 'The caller is not in a tab'")
-        try assertTrue("callbackError === 'The caller is not in a tab'")
+        try assertTrue("openPopupOutcome === 'Invalid call to action.openPopup(). The options value is invalid.'")
+        try assertTrue("callbackError === openPopupOutcome")
         try assertTrue("chrome.runtime.lastError === undefined")
     }
 
-    func testWhenOpenPopupNamesTheFramesOwnWindow_ThenItIsForwarded() throws {
-        try installFakeOpenPopupHandler()
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        chrome.windows = { getCurrent: function() { return Promise.resolve({ id: 7 }); } };
-        var top = {};
-        """)
-        try assertNoExceptions()
+    func testWhenNoBackgroundPageAnswers_ThenThePromiseRejects() throws {
+        try installFakeRelaySender(reply: "undefined")
         try evaluateStubScript()
 
         context.evaluateScript("""
         var openPopupOutcome = 'pending';
-        chrome.action.openPopup({ windowId: 7 }).then(function(value) { openPopupOutcome = value; }, function(error) { openPopupOutcome = error.message; });
+        chrome.action.openPopup().then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
         """)
         try assertNoExceptions()
 
-        try assertTrue("openPopupOutcome === undefined")
-        try assertTrue("openPopupRequests.length === 1")
+        try assertTrue("openPopupOutcome === \"The extension's background page did not open the popup\"")
     }
 
-    func testWhenOpenPopupNamesAnotherWindow_ThenItFailsInBothStylesAndNothingOpens() throws {
-        try installFakeOpenPopupHandler()
+    func testWhenThePageIsTheTopFrame_ThenActionOpenPopupIsLeftAlone() throws {
+        try installFakeRelaySender(reply: "{}")
         context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        chrome.windows = { getCurrent: function() { return Promise.resolve({ id: 7 }); } };
-        var top = {};
+        top = globalThis;
+        var originalOpenPopup = chrome.action.openPopup;
         """)
-        try assertNoExceptions()
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
+    }
+
+    func testWhenTheFrameIsInsideAnExtensionPage_ThenActionOpenPopupIsLeftAlone() throws {
+        try installFakeRelaySender(reply: "{}")
+        context.evaluateScript("""
+        top = { location: { protocol: "webkit-extension:" } };
+        var originalOpenPopup = chrome.action.openPopup;
+        """)
+        try evaluateStubScript()
+
+        try assertTrue("chrome.action.openPopup === originalOpenPopup")
+    }
+
+    // MARK: - Background Page Relay
+
+    func testWhenTheBackgroundPageGetsARelay_ThenWebKitsOpenPopupIsCalledWithTheOptions() throws {
+        try installFakeBackgroundPage()
         try evaluateStubScript()
 
         context.evaluateScript("""
-        var openPopupOutcome = 'pending';
-        chrome.action.openPopup({ windowId: 8 }).then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
-        var callbackError = 'pending';
-        chrome.action.openPopup({ windowId: 8 }, function() {
-            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
-        });
+        var outcome = dispatch({ __ddgActionOpenPopup: { windowId: 8 } }, { id: 'extension' });
         """)
         try assertNoExceptions()
 
-        try assertTrue("openPopupOutcome === 'The popup can only open in the window of this page, not in window 8'")
-        try assertTrue("callbackError === openPopupOutcome")
-        try assertTrue("openPopupRequests.length === 0")
+        try assertTrue("outcome.keepsChannelOpen === true")
+        try assertTrue("JSON.stringify(openPopupCalls) === '[{\"windowId\":8}]'")
+        try assertTrue("JSON.stringify(outcome.responses) === '[{}]'")
     }
 
-    func testWhenOpenPopupHasAnUnknownOption_ThenItFailsAsInvalidArgumentsAndNothingOpens() throws {
+    func testWhenWebKitRefusesTheOptions_ThenTheErrorIsAnsweredAndReported() throws {
         try installFakeReporting()
-        try installFakeOpenPopupHandler()
-        context.evaluateScript("""
-        chrome.action = { openPopup: function() {} };
-        var top = {};
-        """)
+        try installFakeBackgroundPage(openPopupError: "Invalid call to action.openPopup(). The 'options' value is invalid, because it is not an object.")
+        try evaluateStubScript()
+
+        context.evaluateScript("var outcome = dispatch({ __ddgActionOpenPopup: { tabId: 3 } }, { id: 'extension' });")
         try assertNoExceptions()
+
+        let message = "Invalid call to action.openPopup(). The 'options' value is invalid, because it is not an object."
+        try assertTrue("outcome.responses.length === 1 && outcome.responses[0].error === \"\(message)\"")
+        try assertReports("[{\"kind\":\"error\",\"message\":\"\(message)\"}]")
+    }
+
+    func testWhenAnotherExtensionSendsARelay_ThenItIsIgnored() throws {
+        try installFakeBackgroundPage()
+        try evaluateStubScript()
+
+        context.evaluateScript("var outcome = dispatch({ __ddgActionOpenPopup: {} }, { id: 'someone-else' });")
+        try assertNoExceptions()
+
+        try assertTrue("outcome.keepsChannelOpen === false")
+        try assertTrue("openPopupCalls.length === 0")
+        try assertTrue("outcome.responses.length === 0")
+    }
+
+    func testWhenTheExtensionListensForMessages_ThenItSeesItsOwnButNotTheRelays() throws {
+        try installFakeBackgroundPage()
         try evaluateStubScript()
 
         context.evaluateScript("""
-        var openPopupOutcome = 'pending';
-        chrome.action.openPopup({ tabId: 3 }).then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
+        var seenByExtension = [];
+        function extensionListener(message) { seenByExtension.push(message); }
+        chrome.runtime.onMessage.addListener(extensionListener);
+        dispatch({ __ddgActionOpenPopup: {} }, { id: 'extension' });
+        dispatch({ subject: 'hello' }, { id: 'extension' });
         """)
         try assertNoExceptions()
 
-        let message = "Invalid call to action.openPopup(). The 'options' value is invalid, because it has unsupported keys: tabId."
-        try assertTrue("openPopupOutcome === \"\(message)\"")
-        try assertTrue("openPopupRequests.length === 0")
-        try assertReports("[{\"kind\":\"error\",\"message\":\"\(message)\"}]")
+        try assertTrue("JSON.stringify(seenByExtension) === '[{\"subject\":\"hello\"}]'")
+        try assertTrue("chrome.runtime.onMessage.hasListener(extensionListener) === true")
+
+        context.evaluateScript("chrome.runtime.onMessage.removeListener(extensionListener);")
+        try assertNoExceptions()
+
+        try assertTrue("chrome.runtime.onMessage.hasListener(extensionListener) === false")
+        try assertTrue("registered.length === 1")
+    }
+
+    func testWhenThePageIsNotTheBackgroundPage_ThenMessagesAreLeftAlone() throws {
+        try installFakeBackgroundPage()
+        context.evaluateScript("""
+        location.pathname = '/popup.html';
+        var originalAddListener = chrome.runtime.onMessage.addListener;
+        """)
+        try evaluateStubScript()
+
+        try assertTrue("chrome.runtime.onMessage.addListener === originalAddListener")
+        try assertTrue("registered.length === 0")
     }
 
     // MARK: - Missing Namespaces
@@ -1872,18 +1858,52 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions()
     }
 
-    /// A tab whose app opens the action popup: `openPopupRequests` collects what the script posted. With
-    /// `fails`, every message is rejected the way the app refuses a frame outside a tab.
-    private func installFakeOpenPopupHandler(fails: Bool = false) throws {
+    /// A frame inside a website, whose `runtime.sendMessage` collects what it sent in `sentMessages`
+    /// and answers `reply`, a JavaScript expression. `nativeOpenPopupCalls` counts calls that reach
+    /// WebKit's own `openPopup`.
+    private func installFakeRelaySender(reply: String) throws {
         context.evaluateScript("""
-        var openPopupRequests = [];
-        var webkit = globalThis.webkit || { messageHandlers: {} };
-        webkit.messageHandlers["\(WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName)"] = {
-            postMessage: function(payload) {
-                openPopupRequests.push(payload);
-                return \(fails ? "Promise.reject(new Error('The caller is not in a tab'))" : "Promise.resolve(null)");
-            }
+        var sentMessages = [];
+        var nativeOpenPopupCalls = 0;
+        chrome.runtime.sendMessage = function(message) {
+            sentMessages.push(message);
+            return Promise.resolve(\(reply));
         };
+        chrome.action = { openPopup: function() { nativeOpenPopupCalls += 1; } };
+        var top = {};
+        """)
+        try assertNoExceptions()
+    }
+
+    /// The extension's background page, with WebKit's `runtime.onMessage` reduced to a listener list
+    /// in `registered`. `dispatch` delivers a message to every listener the way WebKit does and returns
+    /// their responses and whether one kept the channel open. `openPopupCalls` collects the options
+    /// WebKit's own `openPopup` was called with; with `openPopupError` it rejects with that message.
+    private func installFakeBackgroundPage(openPopupError: String? = nil) throws {
+        let openPopupResult = openPopupError.map { "Promise.reject(new Error(\"\($0)\"))" } ?? "Promise.resolve()"
+        context.evaluateScript("""
+        var location = { protocol: "webkit-extension:", pathname: "/background.html" };
+        chrome.runtime.id = "extension";
+        chrome.runtime.getManifest = function() { return { background: { page: "background.html" } }; };
+        var registered = [];
+        chrome.runtime.onMessage = {
+            addListener: function(listener) { registered.push(listener); },
+            removeListener: function(listener) {
+                var index = registered.indexOf(listener);
+                if (index !== -1) { registered.splice(index, 1); }
+            },
+            hasListener: function(listener) { return registered.indexOf(listener) !== -1; }
+        };
+        function dispatch(message, sender) {
+            var outcome = { responses: [], keepsChannelOpen: false };
+            registered.slice().forEach(function(listener) {
+                var result = listener(message, sender, function(response) { outcome.responses.push(response); });
+                if (result === true) { outcome.keepsChannelOpen = true; }
+            });
+            return outcome;
+        }
+        var openPopupCalls = [];
+        chrome.action = { openPopup: function(options) { openPopupCalls.push(options); return \(openPopupResult); } };
         """)
         try assertNoExceptions()
     }

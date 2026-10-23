@@ -21,21 +21,17 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 15.4, *)
-@MainActor
 final class WebExtensionPageStubUserScriptTests: XCTestCase {
 
-    private var windowControllersManager: WindowControllersManagerMock!
     private var script: WebExtensionPageStubUserScript!
 
     override func setUp() {
         super.setUp()
-        windowControllersManager = WindowControllersManagerMock()
-        script = WebExtensionPageStubUserScript(windowControllersManager: windowControllersManager)
+        script = WebExtensionPageStubUserScript()
     }
 
     override func tearDown() {
         script = nil
-        windowControllersManager = nil
         super.tearDown()
     }
 
@@ -57,19 +53,18 @@ final class WebExtensionPageStubUserScriptTests: XCTestCase {
         XCTAssertTrue(script.requiresRunInPageContentWorld)
     }
 
-    func testThatScriptListensForCompatibilityReportsIdleRequestsPrivacySettingsPermissionsAndOpenPopup() {
+    func testThatScriptListensForCompatibilityReportsIdleRequestsPrivacySettingsAndPermissions() {
         XCTAssertEqual(script.messageNames, [WebExtensionAPICompatibilityScript.messageHandlerName,
                                              WebExtensionAPIStubScript.idleMessageHandlerName,
                                              WebExtensionAPIStubScript.privacyMessageHandlerName,
-                                             WebExtensionAPIStubScript.permissionsMessageHandlerName,
-                                             WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName])
+                                             WebExtensionAPIStubScript.permissionsMessageHandlerName])
     }
 
     func testThatScriptIsCreatedForInternalUsers() {
-        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true, windowControllersManager: windowControllersManager))
+        XCTAssertNotNil(WebExtensionPageStubUserScript.make(isInternalUser: true))
     }
 
     func testThatScriptIsNotCreatedForOtherUsers() {
-        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false, windowControllersManager: windowControllersManager))
+        XCTAssertNil(WebExtensionPageStubUserScript.make(isInternalUser: false))
     }
 }

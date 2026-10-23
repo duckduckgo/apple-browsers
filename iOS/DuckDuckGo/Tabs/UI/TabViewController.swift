@@ -288,6 +288,8 @@ class TabViewController: UIViewController {
                                                                   eventMapping: PageSignalsEventMapper(pixelFiring: pixelFiring))
     private var hasAppliedFloatingUIScrollViewInsets = false
     private var hasDeferredFloatingUIInsets = false
+    private var webViewViewportInsets: (minimum: UIEdgeInsets, maximum: UIEdgeInsets) = (.zero, .zero)
+    private var appliedLayoutParametersOverride: (minimumUnobscured: CGSize, maximumUnobscured: CGSize)?
     private var scrollViewAdjustmentBehaviorBeforeFloatingUI: WebViewScrollViewInsetUpdater.AdjustmentBehavior?
     /// Last chrome visibility fraction applied, so layout can be redone outside a visibility change.
     private var lastAppliedBarsVisibilityPercent: CGFloat = 1.0
@@ -1253,6 +1255,74 @@ class TabViewController: UIViewController {
         return true
     }
 
+    /// Tells WebKit how much of the full-bleed web view the chrome covers at each end of its
+    /// collapse, so `svh`/`lvh`/`vh` match the visible area instead of the whole frame.
+    /// `minimum` is the bars-hidden inset (largest viewport), `maximum` the bars-shown one.
+    private func setWebViewViewportInsets(minimum: UIEdgeInsets, maximum: UIEdgeInsets) {
+        guard #available(iOS 15.5, *), let webView else { return }
+        // WebKit throws if any minimum edge exceeds its maximum edge.
+        let minimum = UIEdgeInsets(top: min(minimum.top, maximum.top),
+                                   left: min(minimum.left, maximum.left),
+                                   bottom: min(minimum.bottom, maximum.bottom),
+                                   right: min(minimum.right, maximum.right))
+        if webView.minimumViewportInset != minimum || webView.maximumViewportInset != maximum {
+            webView.setMinimumViewportInset(minimum, maximumViewportInset: maximum)
+        }
+        webViewViewportInsets = (minimum, maximum)
+        overrideWebViewLayoutParameters(minimumInset: minimum, maximumInset: maximum)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        // The layout override is in absolute sizes, so refresh it when the web view resizes
+        // (rotation, split view) even if the chrome insets themselves did not change.
+        overrideWebViewLayoutParameters(minimumInset: webViewViewportInsets.minimum,
+                                        maximumInset: webViewViewportInsets.maximum)
+    }
+
+    private enum LayoutParametersSPI {
+        static let override = NSSelectorFromString(
+            "_overrideLayoutParametersWithMinimumLayoutSize:minimumUnobscuredSizeOverride:maximumUnobscuredSizeOverride:")
+        static let clear = NSSelectorFromString("_clearOverrideLayoutParameters")
+    }
+
+    /// The public viewport-inset API only feeds `svh`/`lvh`; plain `vh` still comes from the full
+    /// frame. Safari drives all of them through this SPI, so mirror it: `vh` resolves to the
+    /// maximum unobscured size, as it does there.
+    private func overrideWebViewLayoutParameters(minimumInset: UIEdgeInsets, maximumInset: UIEdgeInsets) {
+        guard let webView else { return }
+        let bounds = webView.bounds.size
+        guard bounds.width > 0, bounds.height > 0 else { return }
+        if minimumInset == .zero, maximumInset == .zero {
+            guard appliedLayoutParametersOverride != nil, webView.responds(to: LayoutParametersSPI.clear) else { return }
+            _ = webView.perform(LayoutParametersSPI.clear)
+            appliedLayoutParametersOverride = nil
+            return
+        }
+        let minimumUnobscured = CGSize(width: bounds.width - maximumInset.left - maximumInset.right,
+                                       height: bounds.height - maximumInset.top - maximumInset.bottom)
+        let maximumUnobscured = CGSize(width: bounds.width - minimumInset.left - minimumInset.right,
+                                       height: bounds.height - minimumInset.top - minimumInset.bottom)
+        if let applied = appliedLayoutParametersOverride,
+           applied.minimumUnobscured == minimumUnobscured, applied.maximumUnobscured == maximumUnobscured {
+            return
+        }
+        guard let method = class_getInstanceMethod(object_getClass(webView), LayoutParametersSPI.override) else { return }
+        typealias Function = @convention(c) (AnyObject, Selector, CGSize, CGSize, CGSize) -> Void
+        let implementation = unsafeBitCast(method_getImplementation(method), to: Function.self)
+        implementation(webView, LayoutParametersSPI.override, minimumUnobscured, minimumUnobscured, maximumUnobscured)
+        appliedLayoutParametersOverride = (minimumUnobscured, maximumUnobscured)
+    }
+
+    private func floatingViewportInsets(for barsVisibilityPercent: CGFloat,
+                                        isUnifiedToggleInputAffectingLayout: Bool,
+                                        contextualOnboardingTopInset: CGFloat) -> UIEdgeInsets {
+        guard !isUnifiedToggleInputAffectingLayout else { return .zero }
+        var insets = chromeDelegate?.floatingWebViewChromeInsets(for: barsVisibilityPercent) ?? .zero
+        insets.top = max(0, insets.top - contextualOnboardingTopInset)
+        return insets
+    }
+
     private func updateWebViewLayoutForFloatingUI(for barsVisibilityPercent: CGFloat, forceInsets: Bool = false) {
         guard #available(iOS 26, *) else {
             assertionFailure("Floating UI requires iOS 26")
@@ -1320,6 +1390,13 @@ class TabViewController: UIViewController {
             // Keep WebKit's viewport stable too. Changing it on every display-link tick can
             // relayout page-fixed content while the glass is morphing over a full-bleed web view.
             setWebViewObscuredContentInsetsIfSupported(obscuredInsets)
+            setWebViewViewportInsets(
+                minimum: floatingViewportInsets(for: 0,
+                                                isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
+                                                contextualOnboardingTopInset: effectiveContextualOnboardingTopInset),
+                maximum: floatingViewportInsets(for: 1,
+                                                isUnifiedToggleInputAffectingLayout: isUnifiedToggleInputAffectingLayout,
+                                                contextualOnboardingTopInset: effectiveContextualOnboardingTopInset))
         }
         // A short bounce may finish before the chrome morph; preserve smooth alignment at its endpoint.
         hasDeferredFloatingUIInsets = hadDeferredInsets && !shouldUpdateScrollInsets
@@ -1333,6 +1410,7 @@ class TabViewController: UIViewController {
         borderView.bottomAlpha = AppWidthObserver.shared.isLargeWidth ? 0 : barsVisibilityPercent
         pullToRefreshViewAdapter?.setTopOffset(0)
         setWebViewObscuredContentInsetsIfSupported(.zero)
+        setWebViewViewportInsets(minimum: .zero, maximum: .zero)
         if hasAppliedFloatingUIScrollViewInsets {
             WebViewScrollViewInsetUpdater.update(webView.scrollView, insets: .zero)
             hasAppliedFloatingUIScrollViewInsets = false

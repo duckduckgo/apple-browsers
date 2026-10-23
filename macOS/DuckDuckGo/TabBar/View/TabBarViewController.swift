@@ -48,21 +48,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         static let duckAIControlSpacingBeforeFireButton: CGFloat = 5
     }
 
-    /// Represents an item in the tab bar - either a regular tab or a group header
-    enum TabBarDisplayItem {
-        case tab(AnyTab)
-        case groupHeader(TabGroup)
-
-        var tab: AnyTab? {
-            if case .tab(let tab) = self { return tab }
-            return nil
-        }
-
-        var groupHeader: TabGroup? {
-            if case .groupHeader(let group) = self { return group }
-            return nil
-        }
-    }
 
     private let standardTabHeight: CGFloat
     private let pinnedTabHeight: CGFloat
@@ -198,37 +183,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     // MARK: - Tab Group Display Items
 
-    /// Builds the list of display items for the unpinned tabs collection view.
-    /// Inserts group headers before each group's first tab and hides tabs in collapsed groups.
-    private var displayItems: [TabBarDisplayItem] {
-        let tabGroupManager = tabCollectionViewModel.tabGroupManager
-        let tabs = tabCollectionViewModel.tabCollection.tabs
-
-        var items: [TabBarDisplayItem] = []
-        var seenGroups: Set<UUID> = []
-
-        for tab in tabs {
-            if let groupID = tabGroupManager.groupID(for: tab),
-               let group = tabGroupManager.groups.first(where: { $0.id == groupID }) {
-                // Tab is in a group
-                if !seenGroups.contains(groupID) {
-                    // First tab of this group - insert header
-                    seenGroups.insert(groupID)
-                    items.append(.groupHeader(group))
-                }
-
-                // Only show tab if group is not collapsed
-                if !tabGroupManager.isCollapsed(groupID: groupID) {
-                    items.append(.tab(tab))
-                }
-            } else {
-                // Ungrouped tab - always show
-                items.append(.tab(tab))
-            }
-        }
-
-        return items
-    }
 
     // TabBarRemoteMessagePresentable
     var tabBarRemoteMessageViewModel: TabBarRemoteMessageViewModel
@@ -704,86 +658,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         applyThemeStyle()
     }
 
-    private func subscribeToTabGroupChanges() {
-        let tabGroupManager = tabCollectionViewModel.tabGroupManager
 
-        // One reload once group changes settle: applying a proposal changes many tabs and moves them,
-        // and reloads in the middle of that, while the tab bar animates, can leave stale items behind.
-        Publishers.Merge3(tabGroupManager.$tabToGroup.map { _ in () },
-                          tabGroupManager.$collapsedGroups.map { _ in () },
-                          tabGroupManager.$groups.map { _ in () })
-            .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.reloadForTabGroupChange()
-            }
-            .store(in: &cancellables)
-    }
 
-#if DEBUG
-    /// Hack days diagnostics: what the model says vs what the tab bar shows.
-    private func logTabGroupState(_ reason: String) {
-        let manager = tabCollectionViewModel.tabGroupManager
-        let tabs = tabCollectionViewModel.tabCollection.tabs.enumerated().map { index, tab in
-            "\(index):\((tab.title ?? "").prefix(12))[\(manager.group(for: tab)?.name ?? "-")]"
-        }
-        let expected = displayItems.enumerated().map { index, item -> String in
-            switch item {
-            case .groupHeader(let group): return "\(index):HEADER(\(group.name))"
-            case .tab(let tab): return "\(index):\((tab.title ?? "").prefix(12))"
-            }
-        }
-        let shown = collectionView.indexPathsForVisibleItems().sorted().map { indexPath -> String in
-            guard let item = collectionView.item(at: indexPath) as? TabBarViewItem else { return "\(indexPath.item):?" }
-            if let group = item.currentHeaderGroup { return "\(indexPath.item):HEADER(\(group.name))" }
-            return "\(indexPath.item):\((item.tabViewModel?.title ?? "").prefix(12))"
-        }
-        print("TABGROUPS \(reason) items=\(collectionView.numberOfItems(inSection: 0)) expected=\(expected.count)")
-        print("TABGROUPS tabs     \(tabs.joined(separator: " | "))")
-        print("TABGROUPS expected \(expected.joined(separator: " | "))")
-        print("TABGROUPS shown    \(shown.joined(separator: " | "))")
-    }
-#endif
 
-    private func reloadForTabGroupChange() {
-#if DEBUG
-        defer {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-                self?.logTabGroupState("0.5s after group change")
-            }
-        }
-#endif
-        // Keeps every group's tabs together whichever way the groups changed.
-        tabCollectionViewModel.tabGroupManager.removeEmptyGroups(keeping: tabCollectionViewModel.tabCollection.tabs)
-        tabCollectionViewModel.arrangeTabsByGroup()
-        reloadDataAndSelectWithoutAnimation()
-        updateTabMode()
-        enableScrollButtons()
-        // A selection animation started elsewhere swallows reloads made while it runs; redo once it's over.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
-            self?.reloadDataAndSelectWithoutAnimation()
-        }
-    }
 
-    private func reloadDataAndSelectWithoutAnimation() {
-        reloadDataAndLayout()
-        guard let selectionIndex = tabCollectionViewModel.selectionIndex, selectionIndex.isUnpinnedTab,
-              let tab = tabCollectionViewModel.tabCollection.tabs[safe: selectionIndex.item],
-              let displayIndex = displayItemIndex(for: tab) else { return }
-        collectionView.selectItems(at: [IndexPath(item: displayIndex)], scrollPosition: [])
-    }
-
-    private func refreshTabGroupBackgrounds() {
-        for indexPath in collectionView.indexPathsForVisibleItems() {
-            if let item = collectionView.item(at: indexPath) as? TabBarViewItem {
-                item.updateGroupBackground()
-            }
-        }
-        for indexPath in pinnedTabsCollectionView?.indexPathsForVisibleItems() ?? [] {
-            if let item = pinnedTabsCollectionView?.item(at: indexPath) as? TabBarViewItem {
-                item.updateGroupBackground()
-            }
-        }
-    }
 
     override func viewWillAppear() {
         updateEmptyTabArea()
@@ -1885,21 +1763,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         collectionView.scrollToBeginning()
     }
 
-    /// Group changes reload the collection view on the next run loop pass; a selection change in between
-    /// would scroll with a stale item count and crash, so reload first when the counts differ.
-    private func reloadIfItemCountIsStale() {
-        if collectionView.numberOfItems(inSection: 0) != displayItems.count {
-            reloadDataAndLayout()
-        }
-    }
 
-    /// An animated scroll right after `reloadData`, before layout, can keep showing the old cells,
-    /// e.g. a tab where a group header now belongs. Lay out first.
-    private func reloadDataAndLayout() {
-        collectionView.reloadData()
-        collectionView.collectionViewLayout?.invalidateLayout()
-        collectionView.layoutSubtreeIfNeeded()
-    }
 
     private func reloadSelection() {
         reloadIfItemCountIsStale()
@@ -1961,45 +1825,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         selectionNeedsLayoutInvalidation = false
     }
 
-    /// With groups, collection view items include headers, so incremental updates by tab index are replaced by a reload.
-    private var hasTabGroups: Bool {
-        !tabCollectionViewModel.tabGroupManager.tabToGroup.isEmpty
-    }
 
-    private func displayIndex(forUnpinnedTabIndex tabIndex: Int) -> Int {
-        guard hasTabGroups, let tab = tabCollectionViewModel.tabCollection.tabs[safe: tabIndex] else { return tabIndex }
-        return displayItemIndex(for: tab) ?? tabIndex
-    }
 
-    /// Finds the displayItems index for a given tab
-    private func displayItemIndex(for tab: some TabGroupMember) -> Int? {
-        displayItems.firstIndex { $0.tab?.uuid == tab.uuid }
-    }
 
-    /// Selects the next available (visible) tab when the current selection becomes hidden
-    private func selectNextAvailableTab() {
-        let tabGroupManager = tabCollectionViewModel.tabGroupManager
-
-        // Find the first visible unpinned tab (not in a collapsed group)
-        for (index, tab) in tabCollectionViewModel.tabCollection.tabs.enumerated() {
-            if let group = tabGroupManager.group(for: tab) {
-                // Tab is in a group - check if group is collapsed
-                if !tabGroupManager.isCollapsed(group) {
-                    tabCollectionViewModel.select(at: .unpinned(index))
-                    return
-                }
-            } else {
-                // Tab is not in any group - it's visible
-                tabCollectionViewModel.select(at: .unpinned(index))
-                return
-            }
-        }
-
-        // If no unpinned tabs available, try pinned tabs
-        if !tabCollectionViewModel.pinnedTabs.isEmpty {
-            tabCollectionViewModel.select(at: .pinned(0))
-        }
-    }
 
     private func refreshPinnedTabsLastSeparator() {
         guard let pinnedTabsCollectionView else {
@@ -2034,10 +1862,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         // For unpinned tabs, convert displayItems index to tab index
         if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
-            let items = displayItems
-            if indexPath.item < items.count,
-               let tab = items[indexPath.item].tab,
-               let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) {
+            if let tabIndex = unpinnedTabIndex(forDisplayIndex: indexPath.item) {
                 tabCollectionViewModel.select(at: .unpinned(tabIndex))
             }
             return
@@ -2813,12 +2638,8 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         }
 
         // Check if this displayItem corresponds to the selected tab
-        var isItemSelected = false
-        if indexPath.item < items.count,
-           let tab = items[indexPath.item].tab,
-           let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) {
-            isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(tabIndex)
-        }
+        let isItemSelected = unpinnedTabIndex(forDisplayIndex: indexPath.item)
+            .map { tabCollectionViewModel.selectionIndex == .unpinned($0) } ?? false
 
         return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
@@ -2953,10 +2774,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
                 tabCollectionViewModel.select(at: .pinned(indexPath.item))
             } else {
                 // For unpinned tabs, convert displayItems index to tab index
-                let items = displayItems
-                if indexPath.item < items.count,
-                   let tab = items[indexPath.item].tab,
-                   let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) {
+                if let tabIndex = unpinnedTabIndex(forDisplayIndex: indexPath.item) {
                     tabCollectionViewModel.select(at: .unpinned(tabIndex))
                 }
             }
@@ -2985,10 +2803,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
             tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: .pinned(indexPath.item))
         } else {
             // For unpinned tabs, convert displayItems index to tab index
-            let items = displayItems
-            if indexPath.item < items.count,
-               let tab = items[indexPath.item].tab,
-               let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) {
+            if let tabIndex = unpinnedTabIndex(forDisplayIndex: indexPath.item) {
                 tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: .unpinned(tabIndex))
             }
         }
@@ -3033,11 +2848,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
         }
 
         // For unpinned tabs, convert displayItems index to tab index
-        let displayIndex = proposedDropIndexPath.pointee.item
-        let items = displayItems
-        guard displayIndex < items.count,
-              let tab = items[displayIndex].tab,
-              let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) else {
+        guard let tabIndex = unpinnedTabIndex(forDisplayIndex: proposedDropIndexPath.pointee.item) else {
             return .none
         }
 
@@ -3069,13 +2880,9 @@ extension TabBarViewController: NSCollectionViewDelegate {
         }
 
         // For unpinned tabs, convert displayItems index to tab index
-        let items = displayItems
-        let displayIndex = indexPath.item
-
         // Find the tab index for insertion
         var tabIndex: TabIndex
-        if displayIndex < items.count, let tab = items[displayIndex].tab,
-           let existingTabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) {
+        if let existingTabIndex = unpinnedTabIndex(forDisplayIndex: indexPath.item) {
             tabIndex = .unpinned(existingTabIndex + 1)
         } else {
             // Insert at end
@@ -3195,10 +3002,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        let items = displayItems
-        guard indexPath.item < items.count,
-              let tab = items[indexPath.item].tab,
-              let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(of: tab) else {
+        guard let tabIndex = unpinnedTabIndex(forDisplayIndex: indexPath.item) else {
             return
         }
 
@@ -3604,77 +3408,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
     // MARK: - Tab Groups
 
-    private func tab(for tabBarViewItem: TabBarViewItem) -> AnyTab? {
-        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
 
-        // For pinned tabs, indexPath maps directly to tabs array
-        if isPinned {
-            guard let indexPath = pinnedTabsCollectionView?.indexPath(for: tabBarViewItem),
-                  let tab = tabCollectionViewModel.pinnedTabsCollection?.tabs[safe: indexPath.item] else {
-                return nil
-            }
-            return tab
-        }
 
-        // For unpinned tabs, indexPath maps to displayItems, so look up the tab from there
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
-            return nil
-        }
 
-        let items = displayItems
-        guard indexPath.item < items.count else { return nil }
 
-        return items[indexPath.item].tab
-    }
-
-    func tabBarViewItemCurrentTabGroup(_ tabBarViewItem: TabBarViewItem) -> TabGroup? {
-        // For headers, return the header's group directly
-        if let headerGroup = tabBarViewItem.currentHeaderGroup {
-            return headerGroup
-        }
-        guard let tab = tab(for: tabBarViewItem) else { return nil }
-        return tabCollectionViewModel.tabGroupManager.group(for: tab)
-    }
-
-    func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, perform operation: TabGroupOperations.Operation) {
-        guard let group = tabBarViewItem.currentHeaderGroup else { return }
-        TabGroupOperations(tabCollectionViewModel: tabCollectionViewModel).perform(operation, on: group)
-    }
-
-    func tabBarViewItemIsGroupCollapsed(_ tabBarViewItem: TabBarViewItem) -> Bool {
-        tabBarViewItem.currentHeaderGroup.map(tabCollectionViewModel.tabGroupManager.isCollapsed) ?? false
-    }
-
-    func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem) {
-        guard let tab = tab(for: tabBarViewItem),
-              let window = view.window else { return }
-
-        let tabGroupManager = tabCollectionViewModel.tabGroupManager
-
-        var hostingController: NSHostingController<TabGroupsManagementView>?
-
-        let onAddToGroup: (TabGroup) -> Void = { [weak tabGroupManager] group in
-            // The tab bar puts the tab next to its group once the change settles.
-            tabGroupManager?.setGroup(group.id, for: tab)
-        }
-
-        let onRemoveFromGroup: () -> Void = { [weak tabGroupManager] in
-            tabGroupManager?.setGroup(nil, for: tab)
-        }
-
-        let tabGroupsView = TabGroupsManagementView(
-            tabGroupManager: tabGroupManager,
-            currentTabUUID: tab.uuid,
-            onAddToGroup: onAddToGroup,
-            onRemoveFromGroup: onRemoveFromGroup,
-            onDismiss: {
-                hostingController?.dismiss(nil)
-            }
-        )
-
-        hostingController = NSHostingController(rootView: tabGroupsView)
-        window.contentViewController?.presentAsSheet(hostingController!)
-    }
 
 }
 
@@ -3701,9 +3438,7 @@ private extension TabBarViewController {
             return .pinned(indexPath.item)
         }
         // Group headers are extra items, so map the item through the display list.
-        let items = displayItems
-        guard indexPath.item < items.count, let tab = items[indexPath.item].tab,
-              let tabIndex = tabCollectionViewModel.tabCollection.tabs.firstIndex(where: { $0.uuid == tab.uuid }) else {
+        guard let tabIndex = unpinnedTabIndex(forDisplayIndex: indexPath.item) else {
             return nil
         }
         return .unpinned(tabIndex)
@@ -3788,4 +3523,230 @@ final class TabBarViewItemPasteboardWriter: NSObject, NSPasteboardWriting {
         [String: Any]()
     }
 
+}
+
+// MARK: - Tab Groups (hack days)
+
+/// Everything the tab bar needs for tab groups: the mixed list of headers and tabs it shows, mapping between
+/// that list and tab indices, and reloading after group changes.
+extension TabBarViewController {
+
+    /// Represents an item in the tab bar - either a regular tab or a group header
+    enum TabBarDisplayItem {
+        case tab(AnyTab)
+        case groupHeader(TabGroup)
+
+        var tab: AnyTab? {
+            if case .tab(let tab) = self { return tab }
+            return nil
+        }
+
+        var groupHeader: TabGroup? {
+            if case .groupHeader(let group) = self { return group }
+            return nil
+        }
+    }
+
+    /// Builds the list of display items for the unpinned tabs collection view.
+    /// Inserts group headers before each group's first tab and hides tabs in collapsed groups.
+    private var displayItems: [TabBarDisplayItem] {
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
+        let tabs = tabCollectionViewModel.tabCollection.tabs
+
+        var items: [TabBarDisplayItem] = []
+        var seenGroups: Set<UUID> = []
+
+        for tab in tabs {
+            if let groupID = tabGroupManager.groupID(for: tab),
+               let group = tabGroupManager.groups.first(where: { $0.id == groupID }) {
+                // Tab is in a group
+                if !seenGroups.contains(groupID) {
+                    // First tab of this group - insert header
+                    seenGroups.insert(groupID)
+                    items.append(.groupHeader(group))
+                }
+
+                // Only show tab if group is not collapsed
+                if !tabGroupManager.isCollapsed(groupID: groupID) {
+                    items.append(.tab(tab))
+                }
+            } else {
+                // Ungrouped tab - always show
+                items.append(.tab(tab))
+            }
+        }
+
+        return items
+    }
+
+    private func subscribeToTabGroupChanges() {
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
+
+        // One reload once group changes settle: applying a proposal changes many tabs and moves them,
+        // and reloads in the middle of that, while the tab bar animates, can leave stale items behind.
+        Publishers.Merge3(tabGroupManager.$tabToGroup.map { _ in () },
+                          tabGroupManager.$collapsedGroups.map { _ in () },
+                          tabGroupManager.$groups.map { _ in () })
+            .debounce(for: .milliseconds(100), scheduler: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.reloadForTabGroupChange()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func reloadForTabGroupChange() {
+        // Keeps every group's tabs together whichever way the groups changed.
+        tabCollectionViewModel.tabGroupManager.removeEmptyGroups(keeping: tabCollectionViewModel.tabCollection.tabs)
+        tabCollectionViewModel.arrangeTabsByGroup()
+        reloadDataAndSelectWithoutAnimation()
+        updateTabMode()
+        enableScrollButtons()
+        // A selection animation started elsewhere swallows reloads made while it runs; redo once it's over.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            self?.reloadDataAndSelectWithoutAnimation()
+        }
+    }
+
+    private func reloadDataAndSelectWithoutAnimation() {
+        reloadDataAndLayout()
+        guard let selectionIndex = tabCollectionViewModel.selectionIndex, selectionIndex.isUnpinnedTab,
+              let tab = tabCollectionViewModel.tabCollection.tabs[safe: selectionIndex.item],
+              let displayIndex = displayItemIndex(for: tab) else { return }
+        collectionView.selectItems(at: [IndexPath(item: displayIndex)], scrollPosition: [])
+    }
+
+    /// Finds the displayItems index for a given tab
+    private func displayItemIndex(for tab: some TabGroupMember) -> Int? {
+        displayItems.firstIndex { $0.tab?.uuid == tab.uuid }
+    }
+
+    /// Selects the next available (visible) tab when the current selection becomes hidden
+    private func selectNextAvailableTab() {
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
+
+        // Find the first visible unpinned tab (not in a collapsed group)
+        for (index, tab) in tabCollectionViewModel.tabCollection.tabs.enumerated() {
+            if let group = tabGroupManager.group(for: tab) {
+                // Tab is in a group - check if group is collapsed
+                if !tabGroupManager.isCollapsed(group) {
+                    tabCollectionViewModel.select(at: .unpinned(index))
+                    return
+                }
+            } else {
+                // Tab is not in any group - it's visible
+                tabCollectionViewModel.select(at: .unpinned(index))
+                return
+            }
+        }
+
+        // If no unpinned tabs available, try pinned tabs
+        if !tabCollectionViewModel.pinnedTabs.isEmpty {
+            tabCollectionViewModel.select(at: .pinned(0))
+        }
+    }
+
+    /// Group changes reload the collection view on the next run loop pass; a selection change in between
+    /// would scroll with a stale item count and crash, so reload first when the counts differ.
+    private func reloadIfItemCountIsStale() {
+        if collectionView.numberOfItems(inSection: 0) != displayItems.count {
+            reloadDataAndLayout()
+        }
+    }
+
+    /// An animated scroll right after `reloadData`, before layout, can keep showing the old cells,
+    /// e.g. a tab where a group header now belongs. Lay out first.
+    private func reloadDataAndLayout() {
+        collectionView.reloadData()
+        collectionView.collectionViewLayout?.invalidateLayout()
+        collectionView.layoutSubtreeIfNeeded()
+    }
+
+    /// With groups, collection view items include headers, so incremental updates by tab index are replaced by a reload.
+    private var hasTabGroups: Bool {
+        !tabCollectionViewModel.tabGroupManager.tabToGroup.isEmpty
+    }
+
+    private func displayIndex(forUnpinnedTabIndex tabIndex: Int) -> Int {
+        guard hasTabGroups, let tab = tabCollectionViewModel.tabCollection.tabs[safe: tabIndex] else { return tabIndex }
+        return displayItemIndex(for: tab) ?? tabIndex
+    }
+
+    private func tab(for tabBarViewItem: TabBarViewItem) -> AnyTab? {
+        let isPinned = tabBarViewItem.tabViewModel?.isPinned == true
+
+        // For pinned tabs, indexPath maps directly to tabs array
+        if isPinned {
+            guard let indexPath = pinnedTabsCollectionView?.indexPath(for: tabBarViewItem),
+                  let tab = tabCollectionViewModel.pinnedTabsCollection?.tabs[safe: indexPath.item] else {
+                return nil
+            }
+            return tab
+        }
+
+        // For unpinned tabs, indexPath maps to displayItems, so look up the tab from there
+        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
+            return nil
+        }
+
+        let items = displayItems
+        guard indexPath.item < items.count else { return nil }
+
+        return items[indexPath.item].tab
+    }
+
+    func tabBarViewItemCurrentTabGroup(_ tabBarViewItem: TabBarViewItem) -> TabGroup? {
+        // For headers, return the header's group directly
+        if let headerGroup = tabBarViewItem.currentHeaderGroup {
+            return headerGroup
+        }
+        guard let tab = tab(for: tabBarViewItem) else { return nil }
+        return tabCollectionViewModel.tabGroupManager.group(for: tab)
+    }
+
+    func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, perform operation: TabGroupOperations.Operation) {
+        guard let group = tabBarViewItem.currentHeaderGroup else { return }
+        TabGroupOperations(tabCollectionViewModel: tabCollectionViewModel).perform(operation, on: group)
+    }
+
+    func tabBarViewItemIsGroupCollapsed(_ tabBarViewItem: TabBarViewItem) -> Bool {
+        tabBarViewItem.currentHeaderGroup.map(tabCollectionViewModel.tabGroupManager.isCollapsed) ?? false
+    }
+
+    func tabBarViewItemManageTabGroups(_ tabBarViewItem: TabBarViewItem) {
+        guard let tab = tab(for: tabBarViewItem),
+              let window = view.window else { return }
+
+        let tabGroupManager = tabCollectionViewModel.tabGroupManager
+
+        var hostingController: NSHostingController<TabGroupsManagementView>?
+
+        let onAddToGroup: (TabGroup) -> Void = { [weak tabGroupManager] group in
+            // The tab bar puts the tab next to its group once the change settles.
+            tabGroupManager?.setGroup(group.id, for: tab)
+        }
+
+        let onRemoveFromGroup: () -> Void = { [weak tabGroupManager] in
+            tabGroupManager?.setGroup(nil, for: tab)
+        }
+
+        let tabGroupsView = TabGroupsManagementView(
+            tabGroupManager: tabGroupManager,
+            currentTabUUID: tab.uuid,
+            onAddToGroup: onAddToGroup,
+            onRemoveFromGroup: onRemoveFromGroup,
+            onDismiss: {
+                hostingController?.dismiss(nil)
+            }
+        )
+
+        hostingController = NSHostingController(rootView: tabGroupsView)
+        window.contentViewController?.presentAsSheet(hostingController!)
+    }
+
+    /// Group headers are extra items in the unpinned collection view, so item and tab indices differ.
+    func unpinnedTabIndex(forDisplayIndex displayIndex: Int) -> Int? {
+        let items = displayItems
+        guard displayIndex < items.count, let tab = items[displayIndex].tab else { return nil }
+        return tabCollectionViewModel.tabCollection.tabs.firstIndex { $0.uuid == tab.uuid }
+    }
 }

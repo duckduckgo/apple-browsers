@@ -458,6 +458,7 @@
 		29F4D27D3D66B84E637C12C2 /* AppleTabOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */; };
 		5B00B8E09E208BA016D88554 /* TabOrganizerDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */; };
 		D554A5E8E9EECD58A507D0E9 /* TabOrganizerPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */; };
+		ADC691A71C74D0518F5556B8 /* TabOrganizerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9948C87F9CD454D8C355F9E0 /* TabOrganizerViewModel.swift */; };
 		FB8B56EE351EA6527EA3C8F5 /* TabOrganizerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */; };
 		A9361E52E13F779F10CBBCEF /* TabGroupOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */; };
 		9A5E22049423068CB0691679 /* TabOrganizerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5273963E8AABCE4D3382A5 /* TabOrganizerModels.swift */; };
@@ -466,6 +467,7 @@
 		C2D6987C39A72F30D493678E /* AppleTabOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */; };
 		A8A9D4496E78CB9C385CB66C /* TabOrganizerDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */; };
 		EDE153711096A09910B621A7 /* TabOrganizerPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */; };
+		9481B1BBF84DA93C2FD856DF /* TabOrganizerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9948C87F9CD454D8C355F9E0 /* TabOrganizerViewModel.swift */; };
 		24F66710724640D5FBB2DCDA /* TabOrganizerActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */; };
 		15AAF6BF937BD4B21FC28382 /* TabGroupOperations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */; };
 		31A2FD172BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */; };
@@ -5478,6 +5480,7 @@
 		8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleTabOrganizer.swift; sourceTree = "<group>"; };
 		043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerDebugMenu.swift; sourceTree = "<group>"; };
 		228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerPopover.swift; sourceTree = "<group>"; };
+		9948C87F9CD454D8C355F9E0 /* TabOrganizerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerViewModel.swift; sourceTree = "<group>"; };
 		25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabOrganizerActions.swift; sourceTree = "<group>"; };
 		D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabGroupOperations.swift; sourceTree = "<group>"; };
 		31A2FD162BAB41C500D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionFeatureGatekeeperTests.swift; sourceTree = "<group>"; };
@@ -12452,6 +12455,7 @@
 				8735F7586E33D0D2F98652B5 /* AppleTabOrganizer.swift */,
 				043B6123D2740C8F3C472AA2 /* TabOrganizerDebugMenu.swift */,
 				228CD357EBF201F01F39D6A1 /* TabOrganizerPopover.swift */,
+				9948C87F9CD454D8C355F9E0 /* TabOrganizerViewModel.swift */,
 				25311BA956EFD40B6FE7A83F /* TabOrganizerActions.swift */,
 				D84A5365DFE76F899C98BB43 /* TabGroupOperations.swift */,
 			);
@@ -16450,6 +16454,7 @@
 				C2D6987C39A72F30D493678E /* AppleTabOrganizer.swift in Sources */,
 				A8A9D4496E78CB9C385CB66C /* TabOrganizerDebugMenu.swift in Sources */,
 				EDE153711096A09910B621A7 /* TabOrganizerPopover.swift in Sources */,
+				9481B1BBF84DA93C2FD856DF /* TabOrganizerViewModel.swift in Sources */,
 				24F66710724640D5FBB2DCDA /* TabOrganizerActions.swift in Sources */,
 				15AAF6BF937BD4B21FC28382 /* TabGroupOperations.swift in Sources */,
 				3706FB4C293F65D500E42796 /* SharingMenu.swift in Sources */,
@@ -19433,6 +19438,7 @@
 				29F4D27D3D66B84E637C12C2 /* AppleTabOrganizer.swift in Sources */,
 				5B00B8E09E208BA016D88554 /* TabOrganizerDebugMenu.swift in Sources */,
 				D554A5E8E9EECD58A507D0E9 /* TabOrganizerPopover.swift in Sources */,
+				ADC691A71C74D0518F5556B8 /* TabOrganizerViewModel.swift in Sources */,
 				FB8B56EE351EA6527EA3C8F5 /* TabOrganizerActions.swift in Sources */,
 				A9361E52E13F779F10CBBCEF /* TabGroupOperations.swift in Sources */,
 				EE098E772C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,

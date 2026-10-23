@@ -1043,22 +1043,6 @@ final class TabCollectionViewModel: NSObject {
         // selection animations, and NSCollectionView drops reloads made while one is running.
     }
 
-    /// Moves a tab to be adjacent to other tabs in its group.
-    func moveTabToGroup(_ tab: some TabGroupMember, group: TabGroup?, using tabGroupManager: TabGroupManager) {
-        guard changesEnabled else { return }
-        guard let currentIndex = tabCollection.tabs.firstIndex(where: { $0.uuid == tab.uuid }) else { return }
-        let targetIndex = tabGroupManager.insertionIndex(for: tab, joiningGroup: group, in: tabCollection.tabs)
-        guard currentIndex != targetIndex else { return }
-
-        tabCollection.moveTab(at: currentIndex, to: targetIndex)
-
-        if let selectionIndex, selectionIndex.item == currentIndex {
-            selectWithoutResettingState(at: .unpinned(targetIndex))
-        }
-
-        delegate?.tabCollectionViewModel(self, didMoveTabAt: .unpinned(currentIndex), to: .unpinned(targetIndex))
-    }
-
     func replaceTab(at index: TabIndex, with tab: Tab, forceChange: Bool = false, keepHistory: Bool = true) -> Result<Void, Error> {
         return replaceTab(at: index, with: .loaded(tab), forceChange: forceChange, keepHistory: keepHistory)
     }

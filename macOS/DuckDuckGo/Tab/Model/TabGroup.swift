@@ -181,61 +181,6 @@ final class TabGroupManager: ObservableObject {
         tabToGroup.filter { $0.value == group.id }.map { $0.key }
     }
 
-    // MARK: - Group Bounds & Ordering
-
-    /// Returns the index range for a specific group in the given tab array.
-    /// Returns nil if the group has no tabs in the array.
-    func bounds(of group: TabGroup, in tabs: [some TabGroupMember]) -> Range<Int>? {
-        var start: Int?
-        var end: Int?
-
-        for (index, tab) in tabs.enumerated() {
-            if tabToGroup[tab.uuid] == group.id {
-                if start == nil { start = index }
-                end = index + 1
-            }
-        }
-
-        guard let start, let end else { return nil }
-        return start..<end
-    }
-
-    /// Returns the insertion index for a tab joining or leaving a group.
-    /// Note: Call this BEFORE updating tabToGroup, so the tab being moved isn't counted.
-    /// - When joining a group: returns position after the last tab in that group
-    /// - When leaving a group (nil): returns the end of the array (ungrouped section)
-    /// - If the group has no tabs yet: returns position after the last grouped tab
-    func insertionIndex(for tab: some TabGroupMember, joiningGroup group: TabGroup?, in tabs: [some TabGroupMember]) -> Int {
-        // Find current index of the tab
-        guard let currentIndex = tabs.firstIndex(where: { $0.uuid == tab.uuid }) else {
-            return tabs.count
-        }
-
-        if let group = group {
-            // Joining a group - find the last tab in this group
-            if let groupRange = bounds(of: group, in: tabs) {
-                // Group has tabs - insert at end of group
-                let targetIndex = groupRange.upperBound
-                // Adjust if current tab is before target (removal shifts indices)
-                return currentIndex < targetIndex ? targetIndex - 1 : targetIndex
-            } else {
-                // Group has no tabs yet - insert after last grouped tab
-                let lastGroupedIndex = tabs.lastIndex(where: { tabToGroup[$0.uuid] != nil }) ?? -1
-                return lastGroupedIndex + 1
-            }
-        } else {
-            // Leaving group (becoming ungrouped) - move to end
-            return tabs.count - 1
-        }
-    }
-
-    /// Returns the group ID for a tab at a given index position.
-    /// Useful for drag & drop validation.
-    func groupID(atIndex index: Int, in tabs: [some TabGroupMember]) -> UUID? {
-        guard index >= 0 && index < tabs.count else { return nil }
-        return tabToGroup[tabs[index].uuid]
-    }
-
     // MARK: - Persistence
 
 //    func encode() -> Data

@@ -206,17 +206,6 @@ final class TabBarItemCellView: NSView {
         }
     }
 
-    /// Label for displaying group name when in header mode
-    fileprivate let groupHeaderNameLabel: NSTextField = {
-        let label = NSTextField(labelWithString: "")
-        label.font = .systemFont(ofSize: 11, weight: .medium)
-        label.textColor = .labelColor
-        label.alignment = .center
-        label.lineBreakMode = .byTruncatingTail
-        label.isHidden = true
-        return label
-    }()
-
     /// Whether this cell is displaying a group header instead of a tab
     fileprivate var isGroupHeader: Bool = false
 
@@ -297,9 +286,6 @@ final class TabBarItemCellView: NSView {
         // Group background color view (above mouseOverView)
         addSubview(groupBackgroundColorView)
 
-        // Group header name label (for header mode)
-        addSubview(groupHeaderNameLabel)
-
         faviconView.setAccessibilityIdentifier("TabBarViewItem.favicon")
         titleView.setAccessibilityIdentifier("TabBarViewItem.title")
 
@@ -353,15 +339,6 @@ final class TabBarItemCellView: NSView {
                                                 y: bounds.origin.y + 4,
                                                 width: max(0, bounds.width - (underlineInset * 2)),
                                                 height: 2)
-
-        // Group header name label - centered in the cell
-        if isGroupHeader {
-            let labelHeight: CGFloat = 14
-            groupHeaderNameLabel.frame = NSRect(x: bounds.origin.x + 8,
-                                                y: bounds.midY - (labelHeight / 2),
-                                                width: bounds.width - 16,
-                                                height: labelHeight)
-        }
 
         if backgroundView.frame != bounds {
             withoutAnimation {
@@ -490,8 +467,6 @@ final class TabBarItemCellView: NSView {
     func clear() {
         // Reset header state
         isGroupHeader = false
-        groupHeaderNameLabel.isHidden = true
-        groupHeaderNameLabel.stringValue = ""
         groupHeaderPillView = nil
         faviconView.reset()
         titleView.reset()
@@ -1021,7 +996,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.isGroupHeader = true
 
         cell.groupBackgroundColorView.isHidden = true
-        cell.groupHeaderNameLabel.isHidden = true
         cell.groupHeaderPillView = PassThroughHostingView(rootView: TabGroupHeaderPill(
             name: group.name,
             color: Color(group.color.nsColor),
@@ -1044,7 +1018,6 @@ final class TabBarViewItem: NSCollectionViewItem {
     func resetFromGroupHeader() {
         currentHeaderGroup = nil
         cell.isGroupHeader = false
-        cell.groupHeaderNameLabel.isHidden = true
         cell.groupHeaderPillView = nil
         cell.toolTip = nil
 

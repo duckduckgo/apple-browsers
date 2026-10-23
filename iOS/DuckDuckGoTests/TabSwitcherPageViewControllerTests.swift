@@ -154,4 +154,102 @@ final class TabSwitcherPageViewControllerTests: XCTestCase {
             }
         }
     }
+
+    func testReorderingPreservesSelectedTabAndNotifiesAfterDropAnimation() throws {
+        for isEditing in [false, true] {
+            let tabs = (0..<3).map { _ in Tab(fireTab: true) }
+            let page = makePage(tabs: tabs)
+            let selectedTab = tabs[isEditing ? 1 : 0]
+            page.tabsModel.select(tab: selectedTab)
+            page.currentSelection = page.tabsModel.currentIndex
+            page.view.frame = CGRect(x: 0, y: 0, width: 390, height: 844)
+            page.view.layoutIfNeeded()
+            let delegate = ReorderDelegate(isEditing: isEditing)
+            page.pageDelegate = delegate
+            let source = IndexPath(item: 0, section: 0)
+            let destination = IndexPath(item: 2, section: 0)
+            let drop = Drop(source: source, destination: destination)
+            let expectedOrder = [tabs[1].uid, tabs[2].uid, tabs[0].uid]
+            var reorderCount = 0
+            delegate.onReorder = {
+                reorderCount += 1
+                XCTAssertEqual(page.tabsModel.tabs.map(\.uid), expectedOrder)
+                XCTAssertIdentical(page.selectedTab, selectedTab)
+            }
+
+            UIView.performWithoutAnimation {
+                page.collectionView(page.collectionView, performDropWith: drop)
+            }
+
+            XCTAssertEqual(page.tabsModel.tabs.map(\.uid), expectedOrder)
+            XCTAssertIdentical(page.tabsModel.currentTab, selectedTab)
+            XCTAssertIdentical(page.selectedTab, selectedTab)
+            XCTAssertEqual(reorderCount, 0)
+            XCTAssertEqual(drop.droppedAt, destination)
+            let completion = try XCTUnwrap(drop.completion)
+
+            completion(.end)
+
+            XCTAssertEqual(reorderCount, 1)
+            if isEditing {
+                XCTAssertEqual(page.selectedIndexPaths, [destination])
+            }
+        }
+    }
+
+    private final class ReorderDelegate: TabSwitcherPageDelegate {
+        let isEditing: Bool
+        var isProcessingUpdates = false
+        var canDismissOnEmpty = true
+        var onReorder: (() -> Void)?
+
+        init(isEditing: Bool) {
+            self.isEditing = isEditing
+        }
+
+        func page(_ page: TabSwitcherPageViewController, didReorderTabs: Void) { onReorder?() }
+        func page(_ page: TabSwitcherPageViewController, didSelectTabAt index: Int) {}
+        func page(_ page: TabSwitcherPageViewController, didDeselectTab: Void) {}
+        func page(_ page: TabSwitcherPageViewController, willDeleteTabs tabs: [Tab], allDeleted: Bool) {}
+        func pageDidDeleteTabs(_ page: TabSwitcherPageViewController, allDeleted: Bool) {}
+        func page(_ page: TabSwitcherPageViewController, contextMenuForTabsAt indexPaths: [IndexPath]) -> UIMenu? { nil }
+        func pageDidRequestDismiss(_ page: TabSwitcherPageViewController) {}
+        func pageCellDidBeginSwipe(_ page: TabSwitcherPageViewController) {}
+        func pageCellDidEndSwipe(_ page: TabSwitcherPageViewController) {}
+        func pageCellDidBeginDrag(_ page: TabSwitcherPageViewController) {}
+        func pageCellDidEndDrag(_ page: TabSwitcherPageViewController) {}
+    }
+
+    private final class Drop: NSObject, UICollectionViewDropCoordinator, UICollectionViewDropItem, UIDragAnimating {
+        var items: [UICollectionViewDropItem] { [self] }
+        let dragItem = UIDragItem(itemProvider: NSItemProvider())
+        let sourceIndexPath: IndexPath?
+        let destinationIndexPath: IndexPath?
+        let previewSize = CGSize(width: 120, height: 40)
+        let proposal = UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+        var completion: ((UIViewAnimatingPosition) -> Void)?
+        var droppedAt: IndexPath?
+        var session: UIDropSession { fatalError("The page does not access the drop session") }
+
+        init(source: IndexPath, destination: IndexPath) {
+            sourceIndexPath = source
+            destinationIndexPath = destination
+        }
+
+        func addAnimations(_ animations: @escaping () -> Void) { animations() }
+        func addCompletion(_ completion: @escaping (UIViewAnimatingPosition) -> Void) { self.completion = completion }
+        func drop(_ dragItem: UIDragItem, toItemAt indexPath: IndexPath) -> UIDragAnimating {
+            droppedAt = indexPath
+            return self
+        }
+        func drop(_ dragItem: UIDragItem, intoItemAt indexPath: IndexPath, rect: CGRect) -> UIDragAnimating {
+            fatalError("The page does not drop into an item")
+        }
+        func drop(_ dragItem: UIDragItem, to target: UIDragPreviewTarget) -> UIDragAnimating {
+            fatalError("The page does not use a preview target")
+        }
+        func drop(_ dragItem: UIDragItem, to placeholder: UICollectionViewDropPlaceholder) -> UICollectionViewDropPlaceholderContext {
+            fatalError("The page does not use placeholder drops")
+        }
+    }
 }

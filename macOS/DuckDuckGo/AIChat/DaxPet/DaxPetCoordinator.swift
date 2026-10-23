@@ -20,6 +20,7 @@ import AIChat
 import AppKit
 import Combine
 import ConcurrencyExtensions
+import os.log
 import PrivacyConfig
 import SwiftUI
 
@@ -271,6 +272,7 @@ final class DaxPetCoordinator: NSObject {
     }
 
     private func responseStateChanged(to status: AIChatStatusValue, on page: AnyObject?) {
+        Logger.aiChat.notice("Dax: Duck.ai answer state \(String(describing: status), privacy: .public)")
         switch answers.update(status, on: page) {
         case .started:
             model?.answerStarted()

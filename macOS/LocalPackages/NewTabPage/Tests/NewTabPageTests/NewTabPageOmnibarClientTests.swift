@@ -1032,38 +1032,45 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
     // MARK: - Suggested prompts
 
     @MainActor
-    func testGetConfigIncludesSuggestedPromptsStateFromProvider() async throws {
+    func testGetConfigIncludesShowSuggestedPromptsFromProvider() async throws {
         configProvider.showSuggestedPrompts = true
-        configProvider.suggestedPromptsPromptCount = 3
-        configProvider.suggestedPromptsPromptLimit = 7
 
         let config: NewTabPageDataModel.OmnibarConfig = try await messageHelper.handleMessage(named: .getConfig)
 
         XCTAssertEqual(config.showSuggestedPrompts, true)
-        XCTAssertEqual(config.suggestedPromptsPromptCount, 3)
-        XCTAssertEqual(config.suggestedPromptsPromptLimit, 7)
     }
 
     @MainActor
-    func testWhenSetConfigRaisesSuggestedPromptsPromptCountThenItIsPersisted() async throws {
-        configProvider.suggestedPromptsPromptCount = 2
-        var newConfig = makeSetConfig()
-        newConfig.suggestedPromptsPromptCount = 3
+    func testWhileChipsAreShownEverySubmittedPromptIsCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        var chipPrompt = NewTabPageDataModel.SubmitChatAction(chat: "Hi", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+        chipPrompt.suggestedPromptId = "jobapplication"
+        let typedPrompt = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
 
-        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: chipPrompt)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: typedPrompt)
 
-        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 3)
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 2)
     }
 
     @MainActor
-    func testWhenSetConfigEchoesALowerSuggestedPromptsPromptCountThenItIsIgnored() async throws {
-        configProvider.suggestedPromptsPromptCount = 4
-        var newConfig = makeSetConfig()
-        newConfig.suggestedPromptsPromptCount = 1
+    func testWhenChipsAreNotShownPromptsAreNotCounted() async throws {
+        configProvider.showSuggestedPrompts = false
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "pizza", target: .sameTab, modelId: nil, images: nil, mode: nil, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
 
-        try await messageHelper.handleMessageExpectingNilResponse(named: .setConfig, parameters: newConfig)
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
 
-        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 4)
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
+    }
+
+    @MainActor
+    func testVoiceChatIsNotCounted() async throws {
+        configProvider.showSuggestedPrompts = true
+        let action = NewTabPageDataModel.SubmitChatAction(chat: "", target: .sameTab, modelId: nil, images: nil, mode: AIChatNativePrompt.voiceMode, toolChoice: nil, reasoningEffort: nil, pageContext: nil, files: nil)
+
+        try await messageHelper.handleMessageExpectingNilResponse(named: .submitChat, parameters: action)
+
+        XCTAssertEqual(configProvider.suggestedPromptsPromptCount, 0)
     }
 
     @MainActor
@@ -1085,10 +1092,6 @@ final class NewTabPageOmnibarClientTests: XCTestCase {
 
         let handler = try XCTUnwrap(actionHandler as? MockNewTabPageOmnibarActionsHandler)
         XCTAssertEqual(handler.suggestedPromptSubmittedIds, [])
-    }
-
-    private func makeSetConfig() -> NewTabPageDataModel.OmnibarConfig {
-        NewTabPageDataModel.OmnibarConfig(mode: .ai, enableAi: true, showAiSetting: nil, showCustomizePopover: nil, enableRecentAiChats: nil, showViewAllAiChats: nil, enableAiChatTools: nil, enableImageGeneration: nil, enableWebSearch: nil, enableCustomizeResponses: nil, customizeSubLabel: nil, hasCustomization: nil, customizationActive: nil, enableVoiceChatAccess: nil, enableAskAiSuggestion: nil, selectedModelId: nil, aiModelSections: nil, selectedReasoningEffort: nil, enableAttachTabs: nil, attachmentLimits: nil, isEligibleForFreeTrial: nil, enableAiChatDeletion: nil, enableSearchSuggestionDeletion: nil)
     }
 
     @MainActor

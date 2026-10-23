@@ -220,7 +220,6 @@ final class MockNewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProvidin
 
     var showSuggestedPrompts: Bool = false
     var suggestedPromptsPromptCount: Int = 0
-    var suggestedPromptsPromptLimit: Int = 5
 
     let suggestedPromptsSubject = PassthroughSubject<Void, Never>()
     var suggestedPromptsPublisher: AnyPublisher<Void, Never> {

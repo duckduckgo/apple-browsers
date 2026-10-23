@@ -196,9 +196,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
-            showSuggestedPrompts: configProvider.showSuggestedPrompts,
-            suggestedPromptsPromptCount: configProvider.suggestedPromptsPromptCount,
-            suggestedPromptsPromptLimit: configProvider.suggestedPromptsPromptLimit
+            showSuggestedPrompts: configProvider.showSuggestedPrompts
         )
     }
 
@@ -229,17 +227,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             }
         }
         persistReasoningEffort(from: config)
-        persistSuggestedPrompts(from: config)
         return nil
-    }
-
-    /// The count only moves forward, so a stale config echoed by another open NTP can't
-    /// bring the chips back.
-    @MainActor
-    private func persistSuggestedPrompts(from config: NewTabPageDataModel.OmnibarConfig) {
-        if let count = config.suggestedPromptsPromptCount, count > configProvider.suggestedPromptsPromptCount {
-            configProvider.suggestedPromptsPromptCount = count
-        }
     }
 
     /// Only persists when the feature is on, the selected model isn't gated, and the value is
@@ -298,9 +286,7 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
             usageLimits: configProvider.usageLimits(),
             requiresAiTermsAcceptance: configProvider.requiresAiTermsAcceptance,
             launcherPromo: configProvider.launcherPromo(),
-            showSuggestedPrompts: configProvider.showSuggestedPrompts,
-            suggestedPromptsPromptCount: configProvider.suggestedPromptsPromptCount,
-            suggestedPromptsPromptLimit: configProvider.suggestedPromptsPromptLimit
+            showSuggestedPrompts: configProvider.showSuggestedPrompts
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }
@@ -373,6 +359,11 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         )
         if let suggestedPromptId = action.suggestedPromptId {
             actionHandler.suggestedPromptSubmitted(promptId: suggestedPromptId)
+        }
+        // Chip and typed prompts both count toward hiding the chips; voice chats don't. Only counted
+        // while the chips are on, so prompts sent with the feature off don't use them up.
+        if configProvider.showSuggestedPrompts, action.mode != AIChatNativePrompt.voiceMode {
+            configProvider.suggestedPromptsPromptCount += 1
         }
         if action.launcherPromoVisible == true {
             configProvider.launcherPromoIgnored()

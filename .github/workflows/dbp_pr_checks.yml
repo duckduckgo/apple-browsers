@@ -26,7 +26,15 @@ jobs:
     uses: ./.github/workflows/should_run_pr_checks.yml
     with:
       paths: |
-        .github/**
+        .github/workflows/dbp_pr_checks.yml
+        .github/workflows/should_run_pr_checks.yml
+        .github/actions/asana-failed-pr-checks/**
+        .github/actions/fetch-commit-info/**
+        .github/actions/measure-duration/**
+        .github/actions/process-test-results/**
+        .github/actions/select-ios-simulator/**
+        .github/actions/select-xcode-version/**
+        .github/actions/send-pixel/**
         .xcode-version
         SharedPackages/DataBrokerProtectionCore/**
 

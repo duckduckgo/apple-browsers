@@ -63,7 +63,7 @@ struct TabViewModel {
 
     /// Returns unique domains visited in this tab's session
     func visitedDomains() async throws -> Set<String> {
-        Set(try await tabHistory().compactMap(\.host))
+        Set(try await tabHistory().compactMap(\.host)).union(tab.linkPreviewDomains)
     }
 
     // MARK: - AI Chat

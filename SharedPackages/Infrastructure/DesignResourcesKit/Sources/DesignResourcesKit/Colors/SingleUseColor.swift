@@ -56,9 +56,6 @@ public enum SingleUseColor {
     /// Stop-generating button background in the unified toggle input bar: translucent overlay on the card (6% black in light, 12% white in dark).
     case unifiedToggleInputStopButtonBackground
 
-    /// Tab switcher tracker count info panel background color
-    case tabSwitcherTrackerCountBackground
-
     /// Colors introduced for the 2026 rebrand. Some have the same value as a `DesignSystemColor` (e.g. `accentPrimary`,
     /// `destructivePrimary`) – for new code, prefer using the `DesignSystemColor` instead.
     case rebranding(Rebranding)

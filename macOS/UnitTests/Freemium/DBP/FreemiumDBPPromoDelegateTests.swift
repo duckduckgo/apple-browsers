@@ -159,6 +159,22 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         XCTAssertTrue(sut.isEligible)
     }
 
+    // MARK: - First scan in progress (eligibility)
+
+    func testIsEligible_falseWhileFirstScanIsInProgress() {
+        mockUserStateManager.didPostFirstProfileSavedNotification = true
+        mockUserStateManager.firstScanResults = nil
+
+        XCTAssertFalse(sut.isEligible)
+    }
+
+    func testIsEligible_trueWhenDashboardWasOpenedButNoProfileSaved() {
+        mockUserStateManager.didActivate = true
+        mockUserStateManager.didPostFirstProfileSavedNotification = false
+
+        XCTAssertTrue(sut.isEligible)
+    }
+
     // MARK: - show()
 
     func testShow_suspendsAndWaitsForUserAction() async {
@@ -254,6 +270,45 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
 
     // MARK: - isEligiblePublisher
 
+    func testIsEligiblePublisher_emitsFalseWhenProfileIsSaved() {
+        var emissions: [Bool] = []
+        let expectation = XCTestExpectation(description: "publisher emits false after profile saved")
+        expectation.expectedFulfillmentCount = 2
+
+        sut.isEligiblePublisher
+            .sink { eligible in
+                emissions.append(eligible)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        mockUserStateManager.didPostFirstProfileSavedNotification = true
+        NotificationCenter.default.post(name: .pirProfileSaved, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertEqual(emissions, [true, false])
+    }
+
+    func testIsEligiblePublisher_emitsTrueWhenResultsArriveAfterScanStarted() {
+        mockUserStateManager.didPostFirstProfileSavedNotification = true
+        var emissions: [Bool] = []
+        let expectation = XCTestExpectation(description: "publisher emits true after results arrive")
+        expectation.expectedFulfillmentCount = 2
+
+        sut.isEligiblePublisher
+            .sink { eligible in
+                emissions.append(eligible)
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        mockUserStateManager.firstScanResults = FreemiumDBPMatchResults(matchesCount: 2, brokerCount: 1)
+        NotificationCenter.default.post(name: .freemiumDBPResultPollingComplete, object: nil)
+
+        wait(for: [expectation], timeout: 2.0)
+        XCTAssertEqual(emissions, [false, true])
+    }
+
     func testIsEligiblePublisher_emitsTrueWhenAllConditionsMet() {
         let expectation = XCTestExpectation(description: "publisher emits true")
         sut.isEligiblePublisher
@@ -314,10 +369,10 @@ final class FreemiumDBPPromoDelegateTests: XCTestCase {
         XCTAssertEqual(emissions.last, true)
     }
 
-    func testScanResultsNotification_callsOnScanResultsUpdated() {
-        let expectation = XCTestExpectation(description: "onScanResultsUpdated called via notification")
-        let originalCallback = coordinator.onScanResultsUpdated
-        coordinator.onScanResultsUpdated = {
+    func testScanResultsNotification_callsOnScanStateChanged() {
+        let expectation = XCTestExpectation(description: "onScanStateChanged called via notification")
+        let originalCallback = coordinator.onScanStateChanged
+        coordinator.onScanStateChanged = {
             originalCallback?()
             expectation.fulfill()
         }

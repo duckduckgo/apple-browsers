@@ -146,7 +146,6 @@ final class AddressBarButtonsViewController: NSViewController {
     private(set) var trailingButtonsContainer: NSStackView!
     private(set) var aiChatButton: AddressBarMenuButton!
     private(set) var askAIChatButton: AddressBarMenuButton!
-    private(set) var trailingButtonsBackground: ColorView!
 
     private(set) var animationWrapperView: NSView!
     var shieldAnimationView: LottieAnimationView!
@@ -257,16 +256,6 @@ final class AddressBarButtonsViewController: NSViewController {
         self.tabViewModel?.tab.content == .newtab && theme.addressBarStyleProvider.shouldShowNewSearchIcon
     }
 
-    /// Drop this subview when `.appRebranding` ships
-    var trailingButtonsBackgroundColor: NSColor? {
-        get {
-            trailingButtonsBackground.backgroundColor
-        }
-        set {
-            trailingButtonsBackground.backgroundColor = newValue
-        }
-    }
-
     private var isInPopUpWindow: Bool {
         tabCollectionViewModel.isPopup
     }
@@ -313,8 +302,6 @@ final class AddressBarButtonsViewController: NSViewController {
         static let cancelButtonCornerRadius: CGFloat = 4
         static let cancelButtonPadding: CGFloat = 6
         static let trailingStackSpacing: CGFloat = 2
-        static let trailingBackgroundCornerRadius: CGFloat = 6
-        static let trailingBackgroundLeadingOverhang: CGFloat = -6
         static let animationWrapperSize = CGSize(width: 100, height: 30)
         static let notificationAnimationHeight: CGFloat = 29
         static let notificationAnimationMinWidth: CGFloat = 50
@@ -414,11 +401,6 @@ final class AddressBarButtonsViewController: NSViewController {
         trailingButtonsContainer.spacing = LayoutConstants.trailingStackSpacing
         trailingButtonsContainer.detachesHiddenViews = true
 
-        trailingButtonsBackground = ColorView(frame: .zero,
-                                              backgroundColor: NSColor(resource: .addressBarBackground),
-                                              cornerRadius: LayoutConstants.trailingBackgroundCornerRadius)
-        trailingButtonsBackground.translatesAutoresizingMaskIntoConstraints = false
-
         // MARK: Leading buttons
         privacyDashboardButton = MouseOverAnimationButton(frame: .zero)
         configureAddressBarButton(privacyDashboardButton, image: nil,
@@ -474,7 +456,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         view.addSubview(animationWrapperView)
         view.addSubview(notificationAnimationView)
-        view.addSubview(trailingButtonsBackground)
         view.addSubview(trailingButtonsContainer)
         view.addSubview(buttonsContainer)
 
@@ -521,12 +502,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 .constraint(greaterThanOrEqualToConstant: LayoutConstants.notificationAnimationMinWidth),
             notificationAnimationView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             notificationAnimationView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 2),
-
-            trailingButtonsBackground.leadingAnchor.constraint(equalTo: trailingButtonsContainer.leadingAnchor,
-                                                               constant: LayoutConstants.trailingBackgroundLeadingOverhang),
-            trailingButtonsBackground.trailingAnchor.constraint(equalTo: trailingButtonsContainer.trailingAnchor),
-            trailingButtonsBackground.topAnchor.constraint(equalTo: trailingButtonsContainer.topAnchor),
-            trailingButtonsBackground.bottomAnchor.constraint(equalTo: trailingButtonsContainer.bottomAnchor),
 
             trailingButtonsContainer.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             trailingStackViewTrailingViewConstraint,
@@ -663,7 +638,6 @@ final class AddressBarButtonsViewController: NSViewController {
             privacyDashboardButton.position = .free
             bookmarkButton.isHidden = true
             trailingButtonsContainer.isHidden = true
-            trailingButtonsBackground.isHidden = true
         } else {
             bookmarkButton.position = .right
             privacyDashboardButton.position = .left
@@ -1622,8 +1596,6 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyDashboardButton.setCornerRadius(cornerRadius)
         permissionCenterButton.setCornerRadius(cornerRadius)
         youTubeAdBlockButton.setCornerRadius(cornerRadius)
-
-        trailingButtonsBackground.setCornerRadius(cornerRadius)
     }
 
     private func setupButtonsSize() {
@@ -1771,7 +1743,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateAIChatDividerVisibility()
     }
 
-    private var isAskAIChatButtonExpanded: Bool = false
+    private(set) var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
         let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && aiChatSettings.isAIFeaturesEnabled
@@ -1902,8 +1874,11 @@ final class AddressBarButtonsViewController: NSViewController {
             context.timingFunction = CAMediaTimingFunction(name: .easeOut)
 
             askAIChatButtonWidthConstraint.animator().constant = theme.addressBarStyleProvider.addressBarButtonSize
-        } completionHandler: {
-            guard !self.isAskAIChatButtonExpanded else { return }
+        } completionHandler: { [weak self] in
+            // The completion is deferred until the animation finishes, which can be indefinitely
+            // while the display link is paused (e.g. the display is asleep), so it must not retain
+            // the controller and, through it, the window's object graph.
+            guard let self, !self.isAskAIChatButtonExpanded else { return }
             self.askAIChatButton.title = ""
         }
     }

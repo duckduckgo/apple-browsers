@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import SwiftUI
 import DesignResourcesKit
 
@@ -54,9 +55,15 @@ private struct DynamicWidthButtonStyle: ButtonStyle {
 public struct BookmarksEmptyStateView: View {
     @ObservedObject private var syncButtonModel = SyncDeviceButtonModel()
     @State private var maxButtonWidth: CGFloat = 0
+    @State private var isPromoActive = false
     let content: BookmarksEmptyStateContent
+    let isPromoActivePublisher: AnyPublisher<Bool, Never>
     let onImportClicked: () -> Void
     let onSyncClicked: () -> Void
+
+    private var showsPromoContent: Bool {
+        !content.isPromo || isPromoActive
+    }
 
     public var body: some View {
         VStack(spacing: 16) {
@@ -75,27 +82,29 @@ public struct BookmarksEmptyStateView: View {
                     .frame(width: 300)
                     .accessibilityIdentifier(BookmarksEmptyStateContent.titleAccessibilityIdentifier)
 
-                Text(content.description)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(.labelColor))
-                    .multilineTextAlignment(.center)
-                    .frame(width: 300)
-                    .accessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
+                if showsPromoContent {
+                    Text(content.description)
+                        .font(.system(size: 13))
+                        .foregroundColor(Color(.labelColor))
+                        .multilineTextAlignment(.center)
+                        .frame(width: 300)
+                        .accessibilityIdentifier(BookmarksEmptyStateContent.descriptionAccessibilityIdentifier)
+                }
             }
 
             HStack(spacing: 10) {
-                if !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
+                if showsPromoContent, !content.shouldHideSyncButton, syncButtonModel.shouldShowSyncButton {
                     Button(UserText.bookmarksEmptyStateSyncButtonTitle) {
                         onSyncClicked()
                     }
                     .buttonStyle(DynamicWidthButtonStyle(
                         maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
-                        defaultBackgroundColor: .buttonsSecondaryFillDefault,
-                        pressedBackgroundColor: .buttonsSecondaryFillPressed,
-                        textColor: .buttonsSecondaryFillText
+                        defaultBackgroundColor: .controlsFillSecondary,
+                        pressedBackgroundColor: .controlsFillTertiary,
+                        textColor: .textPrimary
                     ))
                 }
-                if !content.shouldHideImportButton {
+                if showsPromoContent, !content.shouldHideImportButton {
                     Button(UserText.bookmarksEmptyStateImportButtonTitle) {
                         onImportClicked()
                     }
@@ -114,6 +123,7 @@ public struct BookmarksEmptyStateView: View {
             Spacer()
         }
         .frame(width: 300, height: 383)
+        .onReceive(isPromoActivePublisher) { isPromoActive = $0 }
     }
 }
 

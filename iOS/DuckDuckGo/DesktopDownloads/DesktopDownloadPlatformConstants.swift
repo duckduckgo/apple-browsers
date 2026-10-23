@@ -26,14 +26,14 @@ enum DesktopDownloadPlatform {
 struct DesktopDownloadPlatformConstants {
     let platform: DesktopDownloadPlatform
 
-    var imageName: String {
+    var image: ImageResource {
         switch platform {
         case .windows:
-            return "WindowsWaitlistJoinWaitlist"
+            return .windowsWaitlistJoinWaitlist
         case .mac:
-            return "WaitlistMacComputer"
+            return .waitlistMacComputer
         case .desktop:
-            return "App-Download-128"
+            return .appDownload128
         }
     }
     var title: String {

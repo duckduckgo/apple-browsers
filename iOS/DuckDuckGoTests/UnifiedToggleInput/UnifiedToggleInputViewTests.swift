@@ -165,6 +165,26 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(visible, [.usageWarning])
     }
 
+    func testFooterErrorWhileEditingHidesTheEditDisclaimerAndItReturnsWhenTheErrorClears() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(sut)
+        defer { sut.removeFromSuperview() }
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        let label = try XCTUnwrap(allDescendants(of: UILabel.self, in: sut).first { $0.text == UserText.aiChatEditReplaceResponseDisclaimer })
+        let disclaimer = try XCTUnwrap(sequence(first: label as UIView, next: \.superview).first { $0.superview === sut })
+        let error = UTIFooterItem(id: .promptTooLong, message: UTIFooterMessageMapper().promptTooLongMessage(count: 16_100, limit: 16_000))
+
+        sut.setEditMode(true, showsReplaceDisclaimer: true)
+        XCTAssertEqual(disclaimer.alpha, 1)
+
+        sut.setFooterMessages([error])
+        XCTAssertEqual(disclaimer.alpha, 0)
+
+        sut.setFooterMessages([])
+        XCTAssertEqual(disclaimer.alpha, 1)
+    }
+
     func testWhenTheHandlerAsksForTheAskButtonThenSubmitReadsAsk() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
@@ -366,6 +386,54 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.frame.size.width = 1024
         sut.layoutIfNeeded()
         XCTAssertEqual(stack.arrangedSubviews.map { $0.bounds.width }, [240, 240, 196, 82])
+    }
+
+    func testPastedTextChipCapsTheVoiceOverValueForALongSingleLine() throws {
+        let paste = AIChatPastedText(content: String(repeating: "a", count: 5_000))
+        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)
+
+        XCTAssertEqual(sut.accessibilityValue, String(repeating: "a", count: 100) + "…")
+    }
+
+    func testPastedTextChipIsOneVoiceOverButtonThatOpensTheSheetAndOffersRemove() throws {
+        let paste = AIChatPastedText(content: "\n  First line of the paste \nsecond line")
+        let sut = UnifiedToggleInputAttachmentThumbnailView(attachment: .pastedText(paste), usesCompactLayout: true)
+        var tapped: [UUID] = []
+        var removed: [UUID] = []
+        sut.onTap = { tapped.append($0) }
+        sut.onRemove = { removed.append($0) }
+
+        XCTAssertTrue(sut.isAccessibilityElement)
+        XCTAssertTrue(sut.accessibilityTraits.contains(.button))
+        XCTAssertEqual(sut.accessibilityLabel, "Pasted text")
+        XCTAssertEqual(sut.accessibilityValue, "First line of the paste")
+        XCTAssertEqual(sut.intrinsicContentSize.width, UnifiedToggleInputAttachmentThumbnailView.Constants.fileChipWidth)
+        let label = try XCTUnwrap(firstDescendant(of: UILabel.self, in: sut))
+        XCTAssertEqual(label.text, "First line of the paste")
+
+        XCTAssertTrue(sut.accessibilityActivate())
+        XCTAssertEqual(tapped, [paste.id])
+
+        let actions = try XCTUnwrap(sut.accessibilityCustomActions)
+        XCTAssertEqual(actions.map(\.name), ["Remove"])
+        XCTAssertTrue(actions[0].actionHandler?(actions[0]) ?? false)
+        XCTAssertEqual(removed, [paste.id])
+    }
+
+    func testChipsStayGreyWhileThePromptIsTooLongAndOnlyInvalidFilesTurnRed() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.addAttachment(.pastedText(AIChatPastedText(content: "pasted")))
+        sut.addAttachment(makeFileAttachment())
+        sut.addAttachment(makeInvalidFileAttachment())
+        let chips = allDescendants(of: UnifiedToggleInputAttachmentThumbnailView.self, in: sut)
+        XCTAssertEqual(chips.count, 3)
+        let normalBorder = chips[0].subviews[0].layer.borderColor
+
+        sut.isPromptOverLimit = true
+
+        XCTAssertEqual(chips[0].subviews[0].layer.borderColor, normalBorder, "The pasted-text chip stays grey")
+        XCTAssertEqual(chips[1].subviews[0].layer.borderColor, normalBorder, "The file chip stays grey")
+        XCTAssertNotEqual(chips[2].subviews[0].layer.borderColor, normalBorder, "Invalid files keep their own red style")
     }
 
     func testWhenCompactLayoutIsDisabledThenImageRemainsThumbnailBesideRemoveButton() throws {
@@ -1227,6 +1295,10 @@ final class UnifiedToggleInputViewTests: XCTestCase {
     private func makePageContext(title: String, url: String) -> AIChatPageContext {
         let data = AIChatPageContextData(title: title, favicon: [], url: url, content: "", truncated: false, fullContentLength: 0)
         return AIChatPageContext(contextData: data, favicon: nil)
+    }
+
+    private func allDescendants<T: UIView>(of type: T.Type, in view: UIView) -> [T] {
+        view.subviews.flatMap { [$0 as? T].compactMap { $0 } + allDescendants(of: type, in: $0) }
     }
 
     private func firstDescendant<T: UIView>(of type: T.Type, in view: UIView) -> T? {

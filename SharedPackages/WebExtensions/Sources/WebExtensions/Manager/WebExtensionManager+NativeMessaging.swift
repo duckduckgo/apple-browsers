@@ -58,6 +58,14 @@ extension WebExtensionManager: WebExtensionLoadingDelegate {
     public func webExtensionLoader(_ loader: WebExtensionLoading,
                                    willLoad context: WKWebExtensionContext,
                                    identifier: String) {
+        // Keep Chrome Web Store origins stable across launches while retaining the installation UUID.
+        if let identity = installingStoreIdentities[identifier]
+            ?? installationStore.installedExtension(withUniqueIdentifier: identifier)?.storeIdentity,
+           identity.store == .chromeWebStore,
+           let baseURL = URL(string: "webkit-extension://\(identity.id)/") {
+            context.baseURL = baseURL
+            Logger.webExtensions.debug("Chrome Web Store extension base URL: \(baseURL.absoluteString, privacy: .public)")
+        }
         registerHandlersForExtension(identifier: identifier, context: context)
 #if os(macOS)
         // Saved shortcuts are in place before the extension runs. The app loads extensions on the main thread.

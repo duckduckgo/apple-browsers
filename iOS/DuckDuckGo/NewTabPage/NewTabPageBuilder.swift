@@ -43,6 +43,7 @@ struct NewTabPageBuilder {
     let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let subscriptionManager: any SubscriptionManager
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
@@ -75,10 +76,10 @@ struct NewTabPageBuilder {
                                           daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
-        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, aiChatAddressBarExperience, toggleModeStorage, voiceSearchHelper] in
             NewTabPageSearchInputModel.Settings(
                 isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                isAIChatShortcutEnabled: aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton,
                 isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })

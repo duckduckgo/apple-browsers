@@ -460,27 +460,40 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("JSON.stringify(permissionsLog.request) === '[{\"permissions\":[\"nativeMessaging\"]}]'")
     }
 
-    // MARK: - Virtual Permissions
-
-    func testWhenPrivacyIsUnknownToTheHost_ThenContainsResolvesTrueWithoutAskingTheHost() throws {
+    func testWhenOffscreenIsAskedAbout_ThenTheVirtualPermissionIsGrantedWithoutAskingTheHost() throws {
         try installFakePermissions()
-        try declareManifestPermissions(["privacy"])
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['offscreen'] })")
 
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.contains.length === 0")
     }
 
-    func testWhenContainsMixesPrivacyWithAHostPermission_ThenTheHostAnswersForTheRest() throws {
+    // MARK: - App Permissions
+
+    func testWhenPrivacyIsAskedAbout_ThenTheAppAnswersAndTheHostIsNotAsked() throws {
         try installFakePermissions()
-        try declareManifestPermissions(["privacy"])
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === false")
+
+        context.evaluateScript("appGranted.push('privacy');")
+        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsLog.contains.length === 0")
+        try assertTrue("JSON.stringify(appRequests[0]) === '{\"action\":\"contains\",\"permissions\":[\"privacy\"]}'")
+    }
+
+    func testWhenContainsMixesPrivacyWithAHostPermission_ThenBothMustHoldIt() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(granted: ["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'tabs'] })")
         try assertTrue("permissionsResult === false")
-        try assertTrue("permissionsLog.contains.length === 1")
         try assertTrue("permissionsLog.contains[0].permissions.join(',') === 'tabs'")
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'nativeMessaging'] })")
@@ -489,7 +502,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenContainsMixesPrivacyWithAnUnknownPermission_ThenItResolvesFalse() throws {
         try installFakePermissions()
-        try declareManifestPermissions(["privacy"])
+        try installFakePermissionsHandler(granted: ["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy', 'downloads'] })")
@@ -497,14 +510,15 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("permissionsResult === false")
     }
 
-    func testWhenPrivacyIsRequested_ThenRequestResolvesTrueWithBothStyles() throws {
+    func testWhenPrivacyIsRequested_ThenTheAppDecidesWithBothStyles() throws {
         try installFakePermissions()
-        try declareManifestPermissions(["privacy"])
+        try installFakePermissionsHandler()
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy'] })")
         try assertTrue("permissionsResult === true")
         try assertTrue("permissionsLog.request.length === 0")
+        try assertTrue("appGranted.indexOf('privacy') !== -1")
 
         // Bitwarden's popup asks this way from its click handler.
         context.evaluateScript("""
@@ -515,20 +529,44 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("requestCallbackResult === true")
     }
 
-    func testWhenOnlyPrivacyIsRemoved_ThenRemoveResolvesFalseAndTheHostIsNotAsked() throws {
+    func testWhenTheHostRefusesPartOfARequest_ThenTheAppIsNotAsked() throws {
         try installFakePermissions()
-        try declareManifestPermissions(["privacy"])
+        try installFakePermissionsHandler()
+        try evaluateStubScript()
+
+        try evaluatePermissionsCall("chrome.permissions.request({ permissions: ['privacy', 'downloads'] })")
+
+        try assertTrue("permissionsResult === false")
+        try assertTrue("appRequests.length === 0")
+    }
+
+    func testWhenPrivacyIsRemoved_ThenTheAppTakesItBackAndTheHostIsNotAsked() throws {
+        try installFakePermissions()
+        try installFakePermissionsHandler(granted: ["privacy"])
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.remove({ permissions: ['privacy'] })")
 
-        try assertTrue("permissionsResult === false")
+        try assertTrue("permissionsResult === true")
+        try assertTrue("appGranted.length === 0")
         try assertTrue("permissionsLog.remove.length === 0")
     }
 
-    func testWhenTheManifestDoesNotDeclarePrivacy_ThenItIsNotGranted() throws {
+    func testWhenTheAppCannotBeAsked_ThenPrivacyIsNotHeldAndCallbacksStillRun() throws {
         try installFakePermissions()
-        try declareManifestPermissions(["storage"])
+        try installFakePermissionsHandler(fails: true)
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var requestCallbackResult = 'pending';
+        chrome.permissions.request({ permissions: ['privacy'] }, function(granted) { requestCallbackResult = granted; });
+        """)
+        try assertNoExceptions()
+        try assertTrue("requestCallbackResult === false")
+    }
+
+    func testWhenThereIsNoPermissionsHandler_ThenPrivacyIsNotHeld() throws {
+        try installFakePermissions()
         try evaluateStubScript()
 
         try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
@@ -538,14 +576,14 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("permissionsResult === false")
     }
 
-    func testWhenTheManifestDeclaresPrivacyAsOptional_ThenItIsGranted() throws {
+    func testWhenTheExtensionHoldsPrivacy_ThenGetAllListsIt() throws {
         try installFakePermissions()
-        try declareManifestPermissions([], optional: ["privacy"])
+        try installFakePermissionsHandler(granted: ["privacy"])
         try evaluateStubScript()
 
-        try evaluatePermissionsCall("chrome.permissions.contains({ permissions: ['privacy'] })")
+        try evaluatePermissionsCall("chrome.permissions.getAll()")
 
-        try assertTrue("permissionsResult === true")
+        try assertTrue("permissionsResult.permissions.join(',') === 'nativeMessaging,privacy'")
     }
 
     // MARK: - Privacy Settings Kept by the App
@@ -1126,14 +1164,13 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("consoleMessages.filter(function(message) { return message.indexOf(\"'downloads' permission\") !== -1; }).length === 1")
     }
 
-    func testWhenPermissionsIsWrapped_ThenTheNamespaceEventsAndGetAllAreUntouched() throws {
+    func testWhenPermissionsIsWrapped_ThenTheNamespaceAndEventsAreUntouched() throws {
         try installFakePermissions()
         try evaluateStubScript()
 
         try assertTrue("chrome.permissions === originalPermissions")
         try assertTrue("chrome.permissions.onAdded === originalPermissionsOnAdded")
         try assertTrue("chrome.permissions.onRemoved === originalPermissionsOnRemoved")
-        try assertTrue("chrome.permissions.getAll === originalPermissionsGetAll")
         try assertTrue("globalThis.\(WebExtensionAPIStubScript.retentionPropertyName).indexOf(originalPermissions) !== -1")
         try assertTrue("consoleMessages[0].indexOf('wrapped: [permissions]') !== -1")
     }
@@ -1485,8 +1522,8 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     /// Mirrors WebKit's `chrome.permissions`: it answers for the permissions it implements and
     /// rejects the whole call with its validation error as soon as one name is not among them.
-    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy` and `idle` are
-    /// unknown — the stub script answers for those itself, so `downloads` stands in for a truly unknown name.
+    /// `nativeMessaging` is granted, `tabs` is implemented but not granted, `privacy`, `idle` and
+    /// `offscreen` are unknown but handled by the stub script, so `downloads` stands in for a truly unknown name.
     private func installFakePermissions() throws {
         context.evaluateScript("""
         var unknownPermissions = ['privacy', 'idle', 'offscreen', 'downloads'];
@@ -1588,17 +1625,6 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertNoExceptions()
     }
 
-    /// Gives the page a manifest that asks for `permissions` and `optional` permissions.
-    private func declareManifestPermissions(_ permissions: [String], optional: [String] = []) throws {
-        func list(_ names: [String]) -> String { "[" + names.map { "'\($0)'" }.joined(separator: ", ") + "]" }
-        context.evaluateScript("""
-        chrome.runtime.getManifest = function() {
-            return { permissions: \(list(permissions)), optional_permissions: \(list(optional)) };
-        };
-        """)
-        try assertNoExceptions()
-    }
-
     /// A page whose app keeps the `chrome.privacy.services` settings: `privacyState` holds what `get`
     /// answers per setting, `set` and `clear` update it the way the app does for the only extension, and
     /// `privacyRequests` collects what the script posted. With `refusesSet`, every `set` is rejected.
@@ -1623,6 +1649,41 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
                     }
                     delete privacyState[payload.setting];
                     return Promise.resolve(null);
+                }
+            }
+        } };
+        """)
+        try assertNoExceptions()
+    }
+
+    /// A page whose app answers about app permissions: `appGranted` holds what the extension holds,
+    /// `request` grants, `remove` takes back, and `appRequests` collects what the script posted. With
+    /// `fails`, every message is rejected.
+    private func installFakePermissionsHandler(granted: [String] = [], fails: Bool = false) throws {
+        let grantedList = granted.map { "'\($0)'" }.joined(separator: ", ")
+        context.evaluateScript("""
+        var appRequests = [];
+        var appGranted = [\(grantedList)];
+        var webkit = { messageHandlers: {
+            "\(WebExtensionAPIStubScript.permissionsMessageHandlerName)": {
+                postMessage: function(payload) {
+                    appRequests.push(payload);
+                    if (\(fails)) {
+                        return Promise.reject(new Error('nope'));
+                    }
+                    if (payload.action === 'getAll') {
+                        return Promise.resolve(appGranted.slice());
+                    }
+                    var names = payload.permissions;
+                    if (payload.action === 'request') {
+                        names.forEach(function(name) { if (appGranted.indexOf(name) === -1) { appGranted.push(name); } });
+                        return Promise.resolve(true);
+                    }
+                    if (payload.action === 'remove') {
+                        appGranted = appGranted.filter(function(name) { return names.indexOf(name) === -1; });
+                        return Promise.resolve(true);
+                    }
+                    return Promise.resolve(names.every(function(name) { return appGranted.indexOf(name) !== -1; }));
                 }
             }
         } };

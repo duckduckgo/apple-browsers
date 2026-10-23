@@ -62,6 +62,10 @@ public final class WebExtensionPrivacySettingsStore {
     /// Whether an installation may control settings: it is loaded and declares `privacy`.
     public var canControl: (String) -> Bool = { _ in false }
 
+    /// Called when an installation turns password saving off, which makes it the default password manager.
+    /// For usage pixels.
+    public var onDefaultPasswordManagerSet: (_ identifier: String) -> Void = { _ in }
+
     private let keyValueStore: any ThrowingKeyValueStoring
     private let now: () -> Date
 
@@ -107,8 +111,12 @@ public final class WebExtensionPrivacySettingsStore {
     /// Records the value `identifier` set. Throws, changing nothing, when it may not control settings.
     public func set(_ value: Bool, for setting: WebExtensionPrivacySetting, by identifier: String) throws {
         guard canControl(identifier) else { throw ChangeError.notControllable }
+        let wasTurnedOff = isTurnedOff(setting, by: identifier)
         update { overrides in
             overrides[identifier, default: [:]][setting.rawValue] = Override(value: value, date: now())
+        }
+        if setting == .passwordSavingEnabled, !value, !wasTurnedOff {
+            onDefaultPasswordManagerSet(identifier)
         }
     }
 
@@ -160,6 +168,11 @@ public final class WebExtensionPrivacySettingsStore {
     }
 
     // MARK: - Storage
+
+    /// Whether `identifier` has turned `setting` off, whether or not it controls the setting.
+    private func isTurnedOff(_ setting: WebExtensionPrivacySetting, by identifier: String) -> Bool {
+        loadOverrides()[identifier]?[setting.rawValue]?.value == false
+    }
 
     private func controller(of setting: WebExtensionPrivacySetting) -> (identifier: String, override: Override)? {
         loadOverrides()

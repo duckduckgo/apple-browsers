@@ -526,6 +526,7 @@ final class AIChatCoordinatorTests: XCTestCase {
         // Set up the sidebar with a test URL that includes a placement parameter
         let testURL = URL(string: "https://example.com")!.forAIChatSidebar()
         let chatState = AIChatState(initialAIChatURL: testURL)
+        chatState.setSidebar()
         mockSessionStore.restoreState([tabID: chatState])
 
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
@@ -559,6 +560,7 @@ final class AIChatCoordinatorTests: XCTestCase {
         let restorationData = AIChatRestorationData()
         let chatState = AIChatState()
         chatState.restorationData = restorationData
+        chatState.setSidebar()
         mockSessionStore.restoreState([tabID: chatState])
 
         mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
@@ -576,6 +578,43 @@ final class AIChatCoordinatorTests: XCTestCase {
         } else {
             XCTFail("Expected .restoration content type")
         }
+    }
+
+    func testDidClickOpenInNewTabButton_withKeepSession_resetsChatInOriginalTab() {
+        // Given - the mock store always drops sessions, so keep-session needs the real store
+        let tabID = "test-tab"
+        mockSidebarHost.currentTabID = tabID
+        mockFeatureFlagger.enableFeatures([.aiChatSidebarResizable, .aiChatKeepSession])
+        let sessionStore = AIChatSessionStore(featureFlagger: mockFeatureFlagger)
+        let coordinator = AIChatCoordinator(
+            sidebarHost: mockSidebarHost,
+            sessionStore: sessionStore,
+            aiChatMenuConfig: mockAIChatMenuConfig,
+            aiChatTabOpener: mockAIChatTabOpener,
+            windowControllersManager: mockWindowControllersManager,
+            pixelFiring: mockPixelFiring,
+            featureFlagger: mockFeatureFlagger
+        )
+
+        let restorationData = AIChatRestorationData()
+        let session = sessionStore.getOrCreateSession(for: tabID, burnerMode: .regular)
+        session.state.aiChatURL = URL(string: "https://duck.ai/?chatID=moved-chat")!.forAIChatSidebar()
+        session.state.restorationData = restorationData
+        session.state.setSidebar()
+        _ = session.makeChatViewController(tabID: tabID)
+
+        mockAIChatTabOpener.openMethodCalledExpectation = expectation(description: "AIChatTabOpener did open a new tab")
+        expectation(for: NSPredicate { _, _ in session.chatViewController == nil }, evaluatedWith: nil)
+
+        // When
+        coordinator.didClickOpenInNewTabButton()
+
+        // Then
+        waitForExpectations(timeout: 5)
+        XCTAssertEqual(mockAIChatTabOpener.lastRestorationData, restorationData)
+        XCTAssertTrue(sessionStore.sessions[tabID] === session)
+        XCTAssertNil(session.state.restorationData)
+        XCTAssertNil(session.state.currentAIChatURL.duckAIChatID)
     }
 
     func testDidClickCloseButton_firesPixelAndTogglesSidebar() {

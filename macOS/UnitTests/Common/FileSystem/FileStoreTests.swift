@@ -17,122 +17,141 @@
 //
 
 import CryptoKit
+import Foundation
 import SharedTestUtilities
+import Testing
 import Utilities
-import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
-final class FileStoreTests: XCTestCase {
-    private let testFileName = "TestFile"
-    private lazy var testFileLocation = URL.persistenceLocation(for: testFileName)
+final class FileStoreTests {
     private let testData = "Hello, World".data(using: .utf8)!
 
-    override func setUp() {
-        super.setUp()
-        removeTestFiles()
+    private func getTestFileLocation(for testName: String) -> URL {
+        return URL.persistenceLocation(for: "FileStoreTest_\(testName)")
     }
 
-    override func tearDown() {
-        super.tearDown()
-        removeTestFiles()
-    }
-
+    @available(iOS 16, macOS 13, *)
+    @Test("Data can be stored without encryption", .timeLimit(.minutes(1)))
     func testStoringDataWithoutEncryption() {
+        let testFileLocation = getTestFileLocation(for: "StoringDataWithoutEncryption")
         let store = EncryptedFileStore()
         let success = store.persist(testData, url: testFileLocation)
 
-        XCTAssertTrue(success)
+        #expect(success == true)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Reading non-existent data returns nil", .timeLimit(.minutes(1)))
     func testReadingNonExistentData() {
+        let testFileLocation = getTestFileLocation(for: "ReadingNonExistentData")
         let store = EncryptedFileStore()
         let data = store.loadData(at: testFileLocation)
 
-        XCTAssertNil(data)
+        #expect(data == nil)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Data can be read without encryption", .timeLimit(.minutes(1)))
     func testReadingDataWithoutEncryption() {
+        let testFileLocation = getTestFileLocation(for: "ReadingDataWithoutEncryption")
         let store = EncryptedFileStore()
 
         _ = store.persist(testData, url: testFileLocation)
         let readData = store.loadData(at: testFileLocation)
 
-        XCTAssertEqual(testData, readData)
+        #expect(testData == readData)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    func testStoringAndRetrievingEncryptedData() {
+    @available(iOS 16, macOS 13, *)
+    @Test("Data can be stored and retrieved with encryption", .timeLimit(.minutes(1)))
+    func testStoringAndRetrievingEncryptedData() throws {
+        let testFileLocation = getTestFileLocation(for: "StoringAndRetrievingEncryptedData")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
-        let key = try? keyStore.readKey()
-        let encryptedStore = EncryptedFileStore(encryptionKey: key!)
+        let key = try keyStore.readKey()
+        let encryptedStore = EncryptedFileStore(encryptionKey: key)
 
-        XCTAssertTrue(encryptedStore.persist(testData, url: testFileLocation))
+        #expect(encryptedStore.persist(testData, url: testFileLocation) == true)
 
         // A new key should have been generated in the key store.
-        XCTAssertEqual(keyStore.storedKeys.count, 1)
+        #expect(keyStore.storedKeys.count == 1)
 
         // Verify that there is data at the location that was written to.
-        XCTAssertTrue(encryptedStore.hasData(at: testFileLocation))
+        #expect(encryptedStore.hasData(at: testFileLocation) == true)
 
         // Data should come back decrypted, so it should be equal to the original test data.
         let data = encryptedStore.loadData(at: testFileLocation)
-        XCTAssertEqual(data, testData)
+        #expect(data == testData)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("LoadData from encrypted store decrypts by default", .timeLimit(.minutes(1)))
     func testThatLoadDataFromEncryptedStoreDecryptsByDefault() throws {
+        let testFileLocation = getTestFileLocation(for: "LoadDataFromEncryptedStoreDecryptsByDefault")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
-        let key = try? keyStore.readKey()
-        let encryptedStore = EncryptedFileStore(encryptionKey: key!)
+        let key = try keyStore.readKey()
+        let encryptedStore = EncryptedFileStore(encryptionKey: key)
 
         _ = encryptedStore.persist(testData, url: testFileLocation)
-        let readData = try XCTUnwrap(encryptedStore.loadData(at: testFileLocation))
-
-        XCTAssertEqual(testData, readData)
+        let readData = try #require(encryptedStore.loadData(at: testFileLocation), "Failed to load data")
+        #expect(testData == readData)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("LoadData without decryption returns encrypted data", .timeLimit(.minutes(1)))
     func testWhenLoadDataIsCalledWithoutDecryptionThenDataIsNotDecrypted() throws {
+        let testFileLocation = getTestFileLocation(for: "LoadDataWithoutDecryptionReturnsEncryptedData")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
-        let key = try? keyStore.readKey()
-        let encryptedStore = EncryptedFileStore(encryptionKey: key!)
+        let key = try keyStore.readKey()
+        let encryptedStore = EncryptedFileStore(encryptionKey: key)
 
         _ = encryptedStore.persist(testData, url: testFileLocation)
-        let readData = try XCTUnwrap(encryptedStore.loadData(at: testFileLocation, decryptIfNeeded: false))
-
-        XCTAssertNotEqual(testData, readData)
-        XCTAssertEqual(encryptedStore.decrypt(readData), testData)
+        let readData = try #require(encryptedStore.loadData(at: testFileLocation, decryptIfNeeded: false), "Failed to load encrypted data")
+        #expect(testData != readData)
+        #expect(encryptedStore.decrypt(readData) == testData)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
-    func testOverwritingStoredFiles() {
+    @available(iOS 16, macOS 13, *)
+    @Test("Stored files can be overwritten", .timeLimit(.minutes(1)))
+    func testOverwritingStoredFiles() throws {
+        let testFileLocation = getTestFileLocation(for: "OverwritingStoredFiles")
         let keyStore = MockEncryptionKeyStore(generator: EncryptionKeyGenerator(), account: "mock-account")
-        let key = try? keyStore.readKey()
-        let encryptedStore = EncryptedFileStore(encryptionKey: key!)
+        let key = try keyStore.readKey()
+        let encryptedStore = EncryptedFileStore(encryptionKey: key)
 
-        XCTAssertTrue(encryptedStore.persist("First Write".data(using: .utf8)!, url: testFileLocation))
-        XCTAssertTrue(encryptedStore.persist("Second Write".data(using: .utf8)!, url: testFileLocation))
-        XCTAssertTrue(encryptedStore.persist("Third Write".data(using: .utf8)!, url: testFileLocation))
+        #expect(encryptedStore.persist("First Write".data(using: .utf8)!, url: testFileLocation) == true)
+        #expect(encryptedStore.persist("Second Write".data(using: .utf8)!, url: testFileLocation) == true)
+        #expect(encryptedStore.persist("Third Write".data(using: .utf8)!, url: testFileLocation) == true)
 
         let data = encryptedStore.loadData(at: testFileLocation)
-        XCTAssertEqual("Third Write".data(using: .utf8), data)
+        #expect("Third Write".data(using: .utf8) == data)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("File presence can be checked", .timeLimit(.minutes(1)))
     func testCheckingFilePresence() {
+        let testFileLocation = getTestFileLocation(for: "CheckingFilePresence")
         let store = EncryptedFileStore()
 
         let data = "Hello, World".data(using: .utf8)!
-        XCTAssertTrue(store.persist(data, url: testFileLocation))
-        XCTAssertTrue(store.hasData(at: testFileLocation))
+        #expect(store.persist(data, url: testFileLocation) == true)
+        #expect(store.hasData(at: testFileLocation) == true)
+        try? FileManager.default.removeItem(at: testFileLocation)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Persistence location is correctly constructed", .timeLimit(.minutes(1)))
     func testPersistenceLocation() {
-        let fileName = "TestFile"
+        let fileName = "FileStoreTest_PersistenceLocation"
         let location = URL.persistenceLocation(for: fileName)
         let components = location.pathComponents
 
-        XCTAssertEqual(components.last!, fileName)
+        #expect(components.last! == fileName)
     }
-
-    private func removeTestFiles() {
-        try? FileManager.default.removeItem(at: URL.persistenceLocation(for: testFileName))
-    }
-
 }

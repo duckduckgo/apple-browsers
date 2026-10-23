@@ -39,6 +39,8 @@ extension DataImportPreview {
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
         case .creditCards:
             return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
+        case .history:
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.history)
         }
     }
 
@@ -50,6 +52,9 @@ extension DataImportPreview {
             return UserText.zipContentSelectionPasswords
         case .creditCards:
             return UserText.zipContentSelectionCreditCards
+        case .history:
+            assertionFailure("History is not imported from zip archives on iOS")
+            return ""
         }
     }
 }

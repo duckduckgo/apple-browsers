@@ -57,11 +57,12 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
     let requiresRunInPageContentWorld: Bool = true
 
     /// The scripts report the unsupported APIs an extension touches through the first handler, ask
-    /// for the `chrome.idle` state through the second and keep `chrome.privacy` settings through the
-    /// third; those two answer.
+    /// for the `chrome.idle` state through the second, keep `chrome.privacy` settings through the
+    /// third and ask about app permissions through the fourth; the last three answer.
     let messageNames: [String] = [WebExtensionAPICompatibilityScript.messageHandlerName,
                                   WebExtensionAPIStubScript.idleMessageHandlerName,
-                                  WebExtensionAPIStubScript.privacyMessageHandlerName]
+                                  WebExtensionAPIStubScript.privacyMessageHandlerName,
+                                  WebExtensionAPIStubScript.permissionsMessageHandlerName]
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         (NSApp.delegateTyped.webExtensionManager as? WebExtensionManager)?.handleAPICompatibilityMessage(message)
@@ -80,6 +81,8 @@ final class WebExtensionPageStubUserScript: NSObject, UserScript, WKScriptMessag
             manager.handleIdleMessage(message, replyHandler: replyHandler)
         } else if message.name == WebExtensionAPIStubScript.privacyMessageHandlerName {
             manager.handlePrivacyMessage(message, replyHandler: replyHandler)
+        } else if message.name == WebExtensionAPIStubScript.permissionsMessageHandlerName {
+            manager.handlePermissionsMessage(message, replyHandler: replyHandler)
         } else {
             manager.handleAPICompatibilityMessage(message)
             replyHandler(nil, nil)

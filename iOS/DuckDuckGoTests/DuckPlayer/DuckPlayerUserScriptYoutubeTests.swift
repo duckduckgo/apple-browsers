@@ -64,6 +64,7 @@ class DuckPlayerUserScriptYoutubeTests: XCTestCase {
         mockDuckPlayer = nil
         mockWebView = nil
         mockHostView = nil
+        super.tearDown()
     }
     
     // MARK: - Test Page Type Detection
@@ -198,38 +199,22 @@ class DuckPlayerUserScriptYoutubeTests: XCTestCase {
         await fulfillment(of: [expectation], timeout: 1.0)
     }
     
-    func testInitialSetupHandlerWithDifferentURLs() async {
-        // Test with YouTube URL
-        mockWebView.setCurrentURL(URL(string: "https://www.youtube.com/watch?v=testVideo")!)
-        if let handler = userScript.handler(forMethodNamed: DuckPlayerUserScript.Handlers.initialSetup),
-           let result = try? await handler([:], WKScriptMessage.mock()) as? [String: String] {
-            XCTAssertEqual(result[DuckPlayerUserScript.Constants.pageType], DuckPlayerUserScript.PageType.YOUTUBE)
-            XCTAssertEqual(result[DuckPlayerUserScript.Constants.playbackPaused], "false")
-            XCTAssertNotNil(result[DuckPlayerUserScript.Constants.locale])
-        } else {
-            XCTFail("Handler should return valid result")
-        }
-        
-        // Test with DuckDuckGo URL
-        mockWebView.setCurrentURL(URL(string: "https://duckduckgo.com/?q=test")!)
-        if let handler = userScript.handler(forMethodNamed: DuckPlayerUserScript.Handlers.initialSetup),
-           let result = try? await handler([:], WKScriptMessage.mock()) as? [String: String] {
-            XCTAssertEqual(result[DuckPlayerUserScript.Constants.pageType], DuckPlayerUserScript.PageType.SERP)
-            XCTAssertEqual(result[DuckPlayerUserScript.Constants.playbackPaused], "false")
-            XCTAssertNotNil(result[DuckPlayerUserScript.Constants.locale])
-        } else {
-            XCTFail("Handler should return valid result")
-        }
-        
-        // Test with non-video YouTube URL
-        mockWebView.setCurrentURL(URL(string: "https://www.youtube.com/feed/trending")!)
-        if let handler = userScript.handler(forMethodNamed: DuckPlayerUserScript.Handlers.initialSetup),
-           let result = try? await handler([:], WKScriptMessage.mock()) as? [String: String] {
-            XCTAssertEqual(result[DuckPlayerUserScript.Constants.pageType], DuckPlayerUserScript.PageType.UNKNOWN)
-            XCTAssertEqual(result[DuckPlayerUserScript.Constants.playbackPaused], "false")
-            XCTAssertNotNil(result[DuckPlayerUserScript.Constants.locale])
-        } else {
-            XCTFail("Handler should return valid result")
+    func testInitialSetupHandlerWithDifferentURLs() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: DuckPlayerUserScript.Handlers.initialSetup))
+        for (url, pageType) in [
+            ("https://www.youtube.com/watch?v=testVideo", DuckPlayerUserScript.PageType.YOUTUBE),
+            ("https://duckduckgo.com/?q=test", DuckPlayerUserScript.PageType.SERP),
+            ("https://www.youtube.com/feed/trending", DuckPlayerUserScript.PageType.UNKNOWN)
+        ] {
+            mockWebView.setCurrentURL(try XCTUnwrap(URL(string: url)))
+            let response = try await handler([:], WKScriptMessage.mock())
+            let unwrappedResponse = try XCTUnwrap(response)
+            let data = try JSONEncoder().encode(unwrappedResponse)
+            let result = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+            XCTAssertEqual(result[DuckPlayerUserScript.Constants.pageType] as? String, pageType)
+            XCTAssertEqual(result[DuckPlayerUserScript.Constants.playbackPaused] as? Bool, false)
+            XCTAssertNotNil(result[DuckPlayerUserScript.Constants.locale] as? String)
         }
     }
     

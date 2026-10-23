@@ -25,139 +25,50 @@ import XCTest
 @MainActor
 final class GeolocationUserScriptTests: XCTestCase {
 
-    func testScriptUsesPageWorldAtDocumentStartInEveryFrame() {
+    func testSubfeatureServesThePageWorldFeatureAndEveryBridgeOperation() {
         let script = GeolocationUserScript()
 
-        XCTAssertEqual(script.injectionTime, .atDocumentStart)
-        XCTAssertFalse(script.forMainFrameOnly)
-        XCTAssertTrue(script.requiresRunInPageContentWorld)
-        XCTAssertEqual(script.messageNames, ["sitePermissionsGeolocation", "sitePermissionsGeolocationWatch"])
-        XCTAssertEqual(script.policyScript.injectionTime, .atDocumentStart)
-        XCTAssertFalse(script.policyScript.forMainFrameOnly)
-        XCTAssertFalse(script.policyScript.requiresRunInPageContentWorld)
-        XCTAssertTrue(script.policyScript.messageNames.isEmpty)
-    }
-
-    func testScriptSourceLoadsFromPackageAndContainsAllBridgeOperations() {
-        let script = GeolocationUserScript()
-        let source = script.source
-        let policySource = script.policyScript.source
-
-        for operation in ["registerFrame", "getCurrentPosition", "watchPosition", "clearWatch", "queryPermission",
-                          "receiveWatchResult", "receiveTerminalWatchResult", "receivePermissionState"] {
-            XCTAssertTrue(source.contains(operation), "Expected shim source to contain \(operation)")
+        XCTAssertEqual(script.featureName, "sitePermissionsGeolocation")
+        XCTAssertEqual(GeolocationUserScript.policyFeatureName, "sitePermissionsGeolocationPolicy")
+        guard case .all = script.messageOriginPolicy else {
+            return XCTFail("Every origin must reach the native policy checks")
         }
-        XCTAssertTrue(source.contains("!apply(mapHas, activeWatches, [requestID])"), "A cleared watch must compensate if native start wins the race")
-        XCTAssertTrue(source.contains("postMessage.bind"), "Page code must not replace the captured native bridge functions")
-        XCTAssertTrue(source.contains("const isSecureContext = globalThis.isSecureContext === true"),
-                      "The secure-context constraint must be captured before page scripts run")
-        XCTAssertTrue(source.contains("globalThis.top.location.origin === globalThis.location.origin"),
-                      "Only frames with the top-level origin may use the v1 fallback")
-        XCTAssertTrue(source.contains("globalThis.location.hostname.length > 0"),
-                      "Opaque and synthetic documents must fail closed")
-        XCTAssertTrue(source.contains("globalThis.origin !== \"null\""))
-        XCTAssertTrue(source.contains("globalThis.location.protocol === \"https:\" || globalThis.location.protocol === \"http:\""),
-                      "Only network documents may use the shim")
-        XCTAssertTrue(source.contains("return globalThis.top === globalThis;\n        } catch (_)"),
-                      "Missing Permissions Policy introspection must deny subframes")
-        XCTAssertTrue(policySource.contains("isPolicyAllowed: requestedDocumentID !== null && isFramePolicyEligible && policyAllowsGeolocation()"),
-                      "Every request and permission query must share the same policy constraint")
-        XCTAssertTrue(source.contains("const nativePermissionsPolicy = document.permissionsPolicy ?? document.featurePolicy"))
-        XCTAssertTrue(source.contains("apply(nativePolicyAllowsFeature, nativePermissionsPolicy, [\"geolocation\"])"),
-                      "Page code must not replace the captured policy API before a later resample")
-        XCTAssertTrue(policySource.contains("embeddingFrameForSource(source)"),
-                      "The parent must map each authenticated child to its direct embedding element")
-        XCTAssertTrue(policySource.contains("attributeOldValue: true"),
-                      "Sandbox removal must retain the prior attribute value")
-        XCTAssertTrue(policySource.contains("sandboxedEmbeddingFrames"),
-                      "An embedding frame that was ever sandboxed must stay fail-closed for its surviving document")
-        XCTAssertTrue(policySource.contains("apply(weakSetHas, sandboxedEmbeddingFrames, [embeddingFrame])"))
-        XCTAssertTrue(policySource.contains("callThen(sandboxVerdict, (ancestorSandboxed) => {"),
-                      "A child must inherit the sandbox verdict from every ancestor")
-        XCTAssertTrue(policySource.contains("signHMAC(\"HMAC\""),
-                      "The page-visible probe must authenticate without exposing the native capability")
-        XCTAssertTrue(policySource.contains("sandboxProbeTimeout = scheduleTask(() => finishSandboxProbe(true)"),
-                      "An unanswered parent probe must fail closed")
-        XCTAssertTrue(source.contains("const registration = registerFrame()"),
-                      "Every operation must register with native policy enforcement")
-        XCTAssertTrue(source.contains("message(\"registerFrame\")"), "Each frame must authenticate before sending requests")
-        XCTAssertTrue(source.contains("const capability ="), "Every message must carry the native bridge capability")
-        XCTAssertTrue(source.contains("documentID: frameNonce"), "Requests must identify the exact page document")
-        XCTAssertFalse(source.contains("signHMAC"), "Signing must be absent from the page world")
-        XCTAssertFalse(source.contains("signingToken"))
-        XCTAssertFalse(policySource.contains(GeolocationUserScript.capabilityToken), "The signing token must differ from the page capability")
-        XCTAssertFalse(policySource.contains("${SIGNING_TOKEN}"))
-        XCTAssertTrue(source.contains("configurable: false"), "The installed API must not reveal native methods after deletion")
-        XCTAssertTrue(source.contains("Object.getPrototypeOf(nativeGeolocation)"), "Direct native-prototype calls must route through the shim")
-        XCTAssertTrue(source.contains("Object.getPrototypeOf(nativePermissions)"), "Direct Permissions prototype calls must route through the shim")
-        XCTAssertTrue(source.contains("scheduleTask(() => { throw exception; }, 0)"),
-                      "Callback exceptions must be reported in a later task without terminating native watch routing")
-        XCTAssertFalse(source.contains("${CAPABILITY_TOKEN}"), "The package must replace the native bridge capability")
-        XCTAssertFalse(source.contains("${INSTALL_IMMEDIATELY}"), "The package must replace the installation mode")
-        XCTAssertTrue(source.contains("const installImmediately = false"), "The default script must leave non-tab WebViews untouched")
-
-        let terminalStart = try? XCTUnwrap(source.range(of: "const receiveTerminalWatchResult"))
-        let delete = terminalStart.flatMap { source.range(of: "apply(mapDelete, activeWatches, [requestID])", range: $0.lowerBound..<source.endIndex) }
-        let callback = terminalStart.flatMap { source.range(of: "settlePosition(result", range: $0.lowerBound..<source.endIndex) }
-        XCTAssertNotNil(delete)
-        XCTAssertNotNil(callback)
-        if let delete, let callback {
-            XCTAssertLessThan(delete.lowerBound, callback.lowerBound, "Terminal delivery must remove page state before invoking callbacks")
+        for method in ["getCurrentPosition", "queryPermission", "startWatch", "clearWatch"] {
+            XCTAssertNotNil(script.handler(forMethodNamed: method), "Expected a handler for \(method)")
         }
+        XCTAssertNil(script.handler(forMethodNamed: "registerFrame"), "Frames need no registration")
+        XCTAssertNil(script.handler(forMethodNamed: "requestPermission"))
     }
 
-    func testImmediateInstallationHardensBeforeRegistrationAndBypassesOnlyDuckAIHosts() {
-        let source = GeolocationUserScript(installImmediately: true).source
+    func testFeatureSettingsCarryOnlyTheCapability() {
+        let settings = GeolocationUserScript().featureSettings
 
-        XCTAssertTrue(source.contains("const installImmediately = true"))
-        XCTAssertTrue(source.contains("initialHostname === \"duck.ai\""))
-        XCTAssertTrue(source.contains("initialHostname.endsWith(\".duck.ai\")"))
-        XCTAssertFalse(source.contains("initialHostname === \"duckduckgo.com\""))
-        let install = source.range(of: "if (installImmediately) {\n        installShim();")
-        let registrationReply = source.range(of: "callThen(registration, (enabled) => {\n        if (enabled && !installImmediately)")
-        XCTAssertNotNil(install)
-        XCTAssertNotNil(registrationReply)
-        if let install, let registrationReply {
-            XCTAssertLessThan(install.lowerBound, registrationReply.lowerBound)
-        }
+        XCTAssertEqual(Set(settings.keys), ["capability"])
+        XCTAssertEqual(settings["capability"] as? String, GeolocationUserScript.capabilityToken)
     }
 
-    func testEachOperationRefreshesNativeFrameRegistration() {
-        let source = GeolocationUserScript().source
+    func testPolicyFeatureSettingsEnableItWithoutTheCapability() {
+        let settings = GeolocationUserScript.policyFeatureSettings
 
-        XCTAssertTrue(source.contains("const registerFrame = () => callThen(postOneShot(message(\"registerFrame\"))"))
-        XCTAssertEqual(source.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
-                       "Position requests, permission queries, watch starts, and watch cancellation must recover after native registration resets")
+        XCTAssertEqual(Set(settings.keys), ["enabled"])
+        XCTAssertEqual(settings["enabled"] as? Bool, true)
     }
 
-    func testPolicyIsResampledForRegistrationAndImmediatelyBeforeOperations() {
-        let source = GeolocationUserScript().source
+    func testUnauthenticatedMessagesAreDeniedBeforeAnyOtherCheck() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = PolicyTestWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        var body = requestBody(kind: "getCurrentPosition")
+        body["capability"] = "forged"
+        let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
 
-        XCTAssertTrue(source.contains("isPolicyAllowed: result.constraints?.isPolicyAllowed === true"))
-        XCTAssertTrue(source.contains("constraints.isPolicyAllowed && policyAllowsGeolocation() && !constraints.isSandboxed"))
-        let policySource = GeolocationUserScript().policyScript.source
-        XCTAssertTrue(policySource.contains("const getConstraints = () => {"))
-        XCTAssertTrue(policySource.contains("isFramePolicyEligible && policyAllowsGeolocation()"))
-        XCTAssertTrue(source.contains("const receiveWatchResult = (requestID, result) => {"))
-        XCTAssertTrue(source.contains("if (!isAllowedByPlatform()) {\n                apply(mapDelete, activeWatches, [requestID]);"),
-                      "A restrictive policy change must stop later watch deliveries")
-        XCTAssertTrue(source.contains("settlePosition(isAllowedByPlatform() ? result : deniedResult(), success, error)"),
-                      "A newly restrictive policy must suppress an in-flight one-shot result")
-        XCTAssertTrue(source.contains("record.initialize(isAllowedByPlatform() ? normalizedPermissionState(result?.state) : \"denied\")"),
-                      "A newly restrictive policy must suppress an in-flight query result")
-        XCTAssertTrue(source.contains("record.update(isAllowedByPlatform() ? state : \"denied\")"),
-                      "A policy change must fail closed when native refreshes an existing status")
-        XCTAssertTrue(source.contains("result?.status === \"started\" && !isAllowedByPlatform()"),
-                      "A newly restrictive policy must cancel an in-flight watch start")
-        XCTAssertFalse(source.contains("staticConstraints"))
-    }
+        let reply = await script.userContentController(WKUserContentController(), didReceive: message)
 
-    func testScriptPayloadsDoNotDefineHostOriginOrURLFields() {
-        let source = GeolocationUserScript().source.lowercased()
-
-        XCTAssertFalse(source.contains("host:"))
-        XCTAssertFalse(source.contains("origin:"))
-        XCTAssertFalse(source.contains("url:"))
+        let payload = try XCTUnwrap(reply.0 as? [String: Any])
+        XCTAssertEqual(payload["status"] as? String, "error")
+        XCTAssertEqual(payload["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
     }
 
     func testOptionsAcceptFiniteNonnegativeValues() {
@@ -224,9 +135,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
         let controller = WKUserContentController()
-        var body = registrationBody()
-        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
-        _ = await script.userContentController(controller, didReceive: registration)
+        var body = requestBody()
 
         var delegate: TestGeolocationUserScriptDelegate? = TestGeolocationUserScriptDelegate()
         weak let weakDelegate = delegate
@@ -252,35 +161,35 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertEqual(permission["state"] as? String, GeolocationPermissionState.denied.rawValue)
     }
 
-    func testFrameRegistrationIsDisabledUntilTheAppExplicitlyActivatesIt() async throws {
-        let script = GeolocationUserScript()
+    func testRequestsAreDeniedUntilTheAppActivatesTheFrame() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
-        let message = MockWKScriptMessageObject(webView: webView,
-                                                frameInfo: frame,
-                                                body: registrationBody()).scriptMessage
+        let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: requestBody()).scriptMessage
 
         let response = await script.userContentController(WKUserContentController(), didReceive: message)
         let payload = try XCTUnwrap(response.0 as? [String: Any])
 
-        XCTAssertEqual(payload["status"] as? String, "registered")
-        XCTAssertEqual(payload["enabled"] as? Bool, false)
+        XCTAssertEqual(payload["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 0)
     }
 
-    func testFrameRegistrationRejectsInvalidNonce() async throws {
-        let script = GeolocationUserScript()
+    func testRequestRejectsInvalidDocumentIdentity() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
         script.activationHandler = { _ in true }
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
-        var body = registrationBody()
-        body["nonce"] = String(repeating: "a", count: 129)
+        var body = requestBody()
+        body["documentID"] = String(repeating: "b", count: 129)
         let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
 
         let response = await script.userContentController(WKUserContentController(), didReceive: message)
         let payload = try XCTUnwrap(response.0 as? [String: Any])
 
-        XCTAssertEqual(payload["status"] as? String, "error")
         XCTAssertEqual(payload["code"] as? Int, GeolocationPositionError.Code.permissionDenied.rawValue)
+        XCTAssertEqual(delegate.positionRequestCount, 0)
     }
 
     func testWatchStartRejectsUnboundedRequestID() async throws {
@@ -289,20 +198,36 @@ final class GeolocationUserScriptTests: XCTestCase {
         script.activationHandler = { _ in true }
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
-        let registrationMessage = MockWKScriptMessageObject(webView: webView,
-                                                            frameInfo: frame,
-                                                            body: registrationBody()).scriptMessage
-        _ = await script.userContentController(WKUserContentController(), didReceive: registrationMessage)
 
-        var body = registrationBody()
-        body["kind"] = "startWatch"
-        body["requestID"] = String(repeating: "a", count: 32) + ":" + String(repeating: "1", count: 96)
+        var body = requestBody(kind: "startWatch")
+        body["requestID"] = String(repeating: "b", count: 32) + ":" + String(repeating: "1", count: 96)
         let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
         let response = await script.userContentController(WKUserContentController(), didReceive: message)
         let payload = try XCTUnwrap(response.0 as? [String: Any])
 
         XCTAssertEqual(payload["status"] as? String, "error")
         XCTAssertEqual(payload["code"] as? Int, GeolocationPositionError.Code.positionUnavailable.rawValue)
+    }
+
+    func testCallbacksMustBelongToTheRequestingDocument() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = PolicyTestWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        let otherDocumentCallback = String(repeating: "c", count: 32) + ":1"
+
+        for kind in ["startWatch", "queryPermission"] {
+            var body = requestBody(kind: kind)
+            body["requestID"] = otherDocumentCallback
+            body["statusID"] = otherDocumentCallback
+            let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+            _ = await script.userContentController(WKUserContentController(), didReceive: message)
+        }
+
+        XCTAssertEqual(delegate.watchCount, 0)
+        XCTAssertEqual(delegate.permissionQueryCount, 0)
+        XCTAssertFalse(script.send(.granted, toPermissionStatusWithID: otherDocumentCallback))
     }
 
     func testNonceAndRequestIDValidationUsesExactBoundedFormats() {
@@ -315,67 +240,55 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":0"))
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":1:2"))
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":" + String(repeating: "1", count: 96)))
+        XCTAssertTrue(GeolocationUserScript.isCallbackID(nonce + ":1", ownedBy: nonce))
+        XCTAssertFalse(GeolocationUserScript.isCallbackID(nonce + ":1", ownedBy: String(repeating: "b", count: 32)))
     }
 
-    func testEnabledRegistrationAuthenticatesLaterMessagesAcrossFrameInfoWrappers() async throws {
+    func testRequestsAuthenticateAcrossFrameInfoWrappers() async throws {
         let script = GeolocationUserScript()
         script.activationHandler = { _ in true }
         let webView = PolicyTestWebView()
-        let firstFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
-        let registrationMessage = MockWKScriptMessageObject(webView: webView,
-                                                            frameInfo: firstFrame,
-                                                            body: registrationBody()).scriptMessage
-        let registrationResponse = await script.userContentController(WKUserContentController(), didReceive: registrationMessage)
 
-        XCTAssertEqual((registrationResponse.0 as? [String: Any])?["enabled"] as? Bool, true)
+        for _ in 0..<2 {
+            let frameWrapper = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+            var queryBody = requestBody(kind: "queryPermission")
+            queryBody["statusID"] = String(repeating: "b", count: 32) + ":\(Int.random(in: 1...1_000_000))"
+            let queryMessage = MockWKScriptMessageObject(webView: webView, frameInfo: frameWrapper, body: queryBody).scriptMessage
+            let queryResponse = await script.userContentController(WKUserContentController(), didReceive: queryMessage)
+            let queryPayload = try XCTUnwrap(queryResponse.0 as? [String: Any])
 
-        let laterFrameWrapper = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
-        var queryBody = registrationBody()
-        queryBody["kind"] = "queryPermission"
-        queryBody["statusID"] = String(repeating: "b", count: 32) + ":1"
-        let queryMessage = MockWKScriptMessageObject(webView: webView,
-                                                     frameInfo: laterFrameWrapper,
-                                                     body: queryBody).scriptMessage
-        let queryResponse = await script.userContentController(WKUserContentController(), didReceive: queryMessage)
-        let queryPayload = try XCTUnwrap(queryResponse.0 as? [String: Any])
-
-        XCTAssertEqual(queryPayload["status"] as? String, "permission")
-        XCTAssertEqual(queryPayload["state"] as? String, "denied")
+            XCTAssertEqual(queryPayload["status"] as? String, "permission")
+            XCTAssertEqual(queryPayload["state"] as? String, "denied")
+        }
     }
 
-    func testWhenRegistrationBelongsToAnotherTabOrPreviousPageThenRequestNeverReachesDelegate() async throws {
+    func testWhenRequestNamesAnotherTabsOrAPreviousDocumentThenItNeverReachesDelegate() async throws {
         let delegate = TestGeolocationUserScriptDelegate()
         let script = GeolocationUserScript(delegate: delegate)
         script.activationHandler = { _ in true }
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
         let controller = WKUserContentController()
-        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
-        _ = await script.userContentController(controller, didReceive: registration)
 
-        var body = registrationBody()
-        body["kind"] = "getCurrentPosition"
-        let validRequest = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+        let validRequest = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: requestBody()).scriptMessage
         _ = await script.userContentController(controller, didReceive: validRequest)
         XCTAssertEqual(delegate.positionRequestCount, 1)
 
+        // Another tab's isolated world reports its own page document.
         let otherWebView = PolicyTestWebView()
+        otherWebView.pageDocumentID = String(repeating: "d", count: 32)
         let otherFrame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: otherWebView)
-        let otherTabRequest = MockWKScriptMessageObject(webView: otherWebView, frameInfo: otherFrame, body: body).scriptMessage
+        let otherTabRequest = MockWKScriptMessageObject(webView: otherWebView, frameInfo: otherFrame, body: requestBody()).scriptMessage
         let otherTabResponse = await script.userContentController(controller, didReceive: otherTabRequest)
         XCTAssertEqual((otherTabResponse.0 as? [String: Any])?["code"] as? Int,
                        GeolocationPositionError.Code.permissionDenied.rawValue)
         XCTAssertEqual(delegate.positionRequestCount, 1)
 
-        script.cancelAllWatches()
+        webView.pageDocumentID = String(repeating: "d", count: 32)
         let staleResponse = await script.userContentController(controller, didReceive: validRequest)
         XCTAssertEqual((staleResponse.0 as? [String: Any])?["code"] as? Int,
                        GeolocationPositionError.Code.permissionDenied.rawValue)
-        XCTAssertEqual(delegate.positionRequestCount, 1)
-
-        _ = await script.userContentController(controller, didReceive: registration)
-        _ = await script.userContentController(controller, didReceive: validRequest)
-        XCTAssertEqual(delegate.positionRequestCount, 2, "The new page must authenticate before requesting permission")
+        XCTAssertEqual(delegate.positionRequestCount, 1, "A request from a replaced document must not reach the delegate")
     }
 
     func testPermissionStatusRegistryClearsOnPageReset() async throws {
@@ -384,13 +297,8 @@ final class GeolocationUserScriptTests: XCTestCase {
         script.activationHandler = { _ in true }
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
-        let registrationMessage = MockWKScriptMessageObject(webView: webView,
-                                                            frameInfo: frame,
-                                                            body: registrationBody()).scriptMessage
-        _ = await script.userContentController(WKUserContentController(), didReceive: registrationMessage)
         let statusID = String(repeating: "b", count: 32) + ":1"
-        var queryBody = registrationBody()
-        queryBody["kind"] = "queryPermission"
+        var queryBody = requestBody(kind: "queryPermission")
         queryBody["statusID"] = statusID
         let queryMessage = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: queryBody).scriptMessage
 
@@ -408,9 +316,9 @@ final class GeolocationUserScriptTests: XCTestCase {
         var firstScripts = [String]()
         var secondScripts = [String]()
 
-        XCTAssertTrue(registry.register("frame-a:1", nonce: "a") { script, completion in firstScripts.append(script); completion(true) })
-        XCTAssertTrue(registry.register("frame-b:1", nonce: "b") { script, completion in secondScripts.append(script); completion(true) })
-        XCTAssertFalse(registry.register("frame-a:1", nonce: "a") { _, completion in completion(true) })
+        XCTAssertTrue(registry.register("frame-a:1", owner: "a", documentID: "isolated-document") { script, completion in firstScripts.append(script); completion(true) })
+        XCTAssertTrue(registry.register("frame-b:1", owner: "b", documentID: "isolated-document") { script, completion in secondScripts.append(script); completion(true) })
+        XCTAssertFalse(registry.register("frame-a:1", owner: "a", documentID: "isolated-document") { _, completion in completion(true) })
 
         XCTAssertTrue(registry.send("first", to: "frame-a:1"))
         XCTAssertTrue(registry.send("second", to: "frame-a:1"))
@@ -418,15 +326,15 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertEqual(firstScripts, ["first", "second"])
         XCTAssertEqual(secondScripts, ["other-frame"])
 
-        XCTAssertFalse(registry.remove("frame-a:1", nonce: "forged"))
-        XCTAssertTrue(registry.remove("frame-a:1", nonce: "a"))
+        XCTAssertFalse(registry.remove("frame-a:1", owner: "forged"))
+        XCTAssertTrue(registry.remove("frame-a:1", owner: "a"))
         XCTAssertFalse(registry.send("late", to: "frame-a:1"))
         XCTAssertEqual(firstScripts, ["first", "second"])
     }
 
     func testWatchRegistryReportsWhenAFrameCannotEvaluate() {
         let registry = GeolocationWatchRegistry()
-        XCTAssertTrue(registry.register("frame:1", nonce: "nonce") { _, completion in completion(false) })
+        XCTAssertTrue(registry.register("frame:1", owner: "owner", documentID: "isolated-document") { _, completion in completion(false) })
 
         var succeeded = true
         XCTAssertTrue(registry.send("result", to: "frame:1") { succeeded = $0 })
@@ -436,8 +344,8 @@ final class GeolocationUserScriptTests: XCTestCase {
     func testRemovingAllWatchesPreventsLateCallbacks() {
         let registry = GeolocationWatchRegistry()
         var callbackCount = 0
-        XCTAssertTrue(registry.register("frame:1", nonce: "a") { _, completion in callbackCount += 1; completion(true) })
-        XCTAssertTrue(registry.register("frame:2", nonce: "b") { _, completion in callbackCount += 1; completion(true) })
+        XCTAssertTrue(registry.register("frame:1", owner: "a", documentID: "isolated-document") { _, completion in callbackCount += 1; completion(true) })
+        XCTAssertTrue(registry.register("frame:2", owner: "b", documentID: "isolated-document") { _, completion in callbackCount += 1; completion(true) })
 
         XCTAssertEqual(Set(registry.removeAll()), Set(["frame:1", "frame:2"]))
         XCTAssertEqual(registry.count, 0)
@@ -447,45 +355,13 @@ final class GeolocationUserScriptTests: XCTestCase {
 
     func testTakingTerminalWatchRemovesItBeforeDelivery() throws {
         let registry = GeolocationWatchRegistry()
-        XCTAssertTrue(registry.register("frame:1", nonce: "nonce") { _, completion in completion(true) })
+        XCTAssertTrue(registry.register("frame:1", owner: "owner", documentID: "isolated-document") { _, completion in completion(true) })
 
         let callback = try XCTUnwrap(registry.take("frame:1"))
 
         XCTAssertEqual(registry.count, 0)
         XCTAssertFalse(registry.send("late", to: "frame:1"))
         callback("terminal") { _ in }
-    }
-
-    func testFrameRegistrationRejectsForgedNonceAndOverwrite() throws {
-        let store = GeolocationFrameRegistrationStore()
-        let webView = PolicyTestWebView()
-        let frame = GeolocationNativeFrameIdentity(webViewID: ObjectIdentifier(webView),
-                                                   scheme: "https",
-                                                   host: "example.com",
-                                                   port: 0,
-                                                   isMainFrame: true)
-        let otherFrame = GeolocationNativeFrameIdentity(webViewID: ObjectIdentifier(webView),
-                                                        scheme: "https",
-                                                        host: "frame.example.com",
-                                                        port: 0,
-                                                        isMainFrame: false)
-        XCTAssertTrue(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "page-document"))
-        XCTAssertTrue(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "page-document"))
-        XCTAssertFalse(store.register(nonce: "native-nonce", frame: otherFrame, documentID: "isolated-document", pageDocumentID: "page-document"))
-        XCTAssertFalse(store.register(nonce: "native-nonce", frame: frame, documentID: "other-isolated-document", pageDocumentID: "page-document"))
-        XCTAssertFalse(store.register(nonce: "native-nonce", frame: frame, documentID: "isolated-document", pageDocumentID: "other-page-document"))
-        XCTAssertEqual(store.count, 1)
-
-        XCTAssertNil(store.registration(for: "forged-nonce", frame: frame))
-        XCTAssertNil(store.registration(for: "native-nonce", frame: otherFrame))
-        let registration = try XCTUnwrap(store.registration(for: "native-nonce", frame: frame))
-        XCTAssertEqual(registration.frame, frame)
-        XCTAssertEqual(registration.documentID, "isolated-document")
-        XCTAssertEqual(registration.pageDocumentID, "page-document")
-
-        store.removeAll()
-        XCTAssertEqual(store.count, 0)
-        XCTAssertNil(store.registration(for: "native-nonce", frame: frame))
     }
 
     func testNativePolicyIsRequiredAndRecheckedForEveryOperation() async throws {
@@ -495,13 +371,9 @@ final class GeolocationUserScriptTests: XCTestCase {
         let webView = PolicyTestWebView()
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
         let controller = WKUserContentController()
-        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
-        let registered = await script.userContentController(controller, didReceive: registration)
-        XCTAssertEqual((registered.0 as? [String: Any])?["enabled"] as? Bool, true)
 
         for kind in ["getCurrentPosition", "queryPermission", "startWatch"] {
-            var body = registrationBody()
-            body["kind"] = kind
+            var body = requestBody(kind: kind)
             body["requestID"] = String(repeating: "b", count: 32) + ":1"
             body["statusID"] = String(repeating: "b", count: 32) + ":2"
             let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
@@ -514,11 +386,10 @@ final class GeolocationUserScriptTests: XCTestCase {
         let allowedPolicy = webView.policy
         for policy in [nil,
                        allowedPolicy?.merging(["isSandboxed": true]) { _, new in new },
-                       allowedPolicy?.merging(["documentID": String(repeating: "d", count: 32)]) { _, new in new }] {
+                       allowedPolicy?.merging(["pageDocumentID": String(repeating: "d", count: 32)]) { _, new in new }] {
             webView.policy = policy
             for kind in ["getCurrentPosition", "queryPermission", "startWatch"] {
-                var body = registrationBody()
-                body["kind"] = kind
+                var body = requestBody(kind: kind)
                 body["requestID"] = String(repeating: "b", count: 32) + ":3"
                 body["statusID"] = String(repeating: "b", count: 32) + ":4"
                 let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
@@ -534,8 +405,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         }
         webView.policy = allowedPolicy
         webView.pageDocumentID = String(repeating: "d", count: 32)
-        var body = registrationBody()
-        body["kind"] = "getCurrentPosition"
+        let body = requestBody()
         let staleDocumentRequest = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
         let staleDocumentReply = await script.userContentController(controller, didReceive: staleDocumentRequest)
         XCTAssertEqual((staleDocumentReply.0 as? [String: Any])?["code"] as? Int,
@@ -545,7 +415,7 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertEqual(delegate.watchCount, 1)
     }
 
-    func testRegistrationCannotCompleteAfterLifecycleResetOrDocumentReplacement() async throws {
+    func testRequestCannotCompleteAfterLifecycleResetOrDocumentReplacement() async throws {
         for documentReplaced in [false, true] {
             let delegate = TestGeolocationUserScriptDelegate()
             let script = GeolocationUserScript(delegate: delegate)
@@ -556,8 +426,8 @@ final class GeolocationUserScriptTests: XCTestCase {
             webView.suspendsPolicyEvaluation = true
             let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
             let controller = WKUserContentController()
-            let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
-            let task = Task { await script.userContentController(controller, didReceive: registration) }
+            let request = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: requestBody()).scriptMessage
+            let task = Task { await script.userContentController(controller, didReceive: request) }
             await fulfillment(of: [evaluationStarted], timeout: 2)
 
             if documentReplaced {
@@ -569,26 +439,19 @@ final class GeolocationUserScriptTests: XCTestCase {
             let response = await task.value
             XCTAssertEqual((response.0 as? [String: Any])?["code"] as? Int,
                            GeolocationPositionError.Code.permissionDenied.rawValue)
-
-            var body = registrationBody()
-            body["kind"] = "getCurrentPosition"
-            let request = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
-            let result = await script.userContentController(controller, didReceive: request)
-            XCTAssertEqual((result.0 as? [String: Any])?["code"] as? Int,
-                           GeolocationPositionError.Code.permissionDenied.rawValue)
             XCTAssertEqual(delegate.positionRequestCount, 0)
+
+            // After a reset, the same document may ask again; a replaced document's requests stay denied.
+            _ = await script.userContentController(controller, didReceive: request)
+            XCTAssertEqual(delegate.positionRequestCount, documentReplaced ? 0 : 1)
         }
     }
 
-    private func registrationBody() -> [String: Any] {
+    private func requestBody(kind: String = "getCurrentPosition") -> [String: Any] {
         [
-            "kind": "registerFrame",
+            "kind": kind,
             "capability": GeolocationUserScript.capabilityToken,
-            "nonce": String(repeating: "a", count: 32),
-            "documentID": String(repeating: "b", count: 32),
-            "isSecureContext": true,
-            "isSandboxed": false,
-            "isPolicyAllowed": true
+            "documentID": String(repeating: "b", count: 32)
         ]
     }
 }
@@ -643,6 +506,7 @@ private final class PolicyTestWebView: WKWebView {
         "isSandboxed": false,
         "isPolicyAllowed": true
     ]
+    /// The page feature's identity, which the isolated world reports alongside `policy`.
     var pageDocumentID = String(repeating: "b", count: 32)
     var suspendsPolicyEvaluation = false
     var policyEvaluationStarted: XCTestExpectation?
@@ -659,23 +523,27 @@ private final class PolicyTestWebView: WKWebView {
             policyCompletion = completionHandler
             policyEvaluationStarted?.fulfill()
         } else {
-            completionHandler?(policy, nil)
+            completionHandler?(policyReply, nil)
         }
+    }
+
+    private var policyReply: [String: Any]? {
+        policy?.merging(["pageDocumentID": pageDocumentID]) { reported, _ in reported }
     }
 
     func completePolicyEvaluation() {
         let completion = policyCompletion
         policyCompletion = nil
         suspendsPolicyEvaluation = false
-        completion?(policy, nil)
+        completion?(policyReply, nil)
     }
 
     override func __evaluateJavaScript(_ javaScriptString: String,
                                        inFrame frame: WKFrameInfo?,
                                        in contentWorld: WKContentWorld,
                                        completionHandler: (@MainActor @Sendable (Any?, Error?) -> Void)?) {
-        XCTAssertEqual(contentWorld, .page)
+        XCTAssertEqual(contentWorld, .defaultClient)
         XCTAssertNotNil(frame)
-        completionHandler?(javaScriptString.contains("__ddgSitePermissionsGeolocationDocumentID") ? pageDocumentID : true, nil)
+        completionHandler?(true, nil)
     }
 }

@@ -311,7 +311,7 @@ extension TabViewController {
     ) -> AnyPublisher<ContentBlockingUpdating.NewContent, Never> {
         // Content updates rebuild UserScripts, but geolocation owns frame registrations and watch callbacks.
         let geolocationUserScript = sitePermissionsState.geolocationUserScript
-            ?? GeolocationUserScript(installImmediately: true)
+            ?? GeolocationUserScript()
         geolocationUserScript.activationHandler = { [weak self] frame in
             self?.shouldActivateSitePermissionsGeolocation(in: frame) ?? false
         }
@@ -345,8 +345,8 @@ extension TabViewController {
             sitePermissionsState.mediaCaptureUserScript = nil
         }
 
-        // Install before navigation, even when content-blocking assets are not ready.
-        // The bridge delegates to the legacy WebKit flow when site permissions is disabled.
+        // The content-scope script carries the bridge once content-blocking assets are ready. Navigation waits for
+        // them while site permissions is enabled; otherwise the bridge delegates to the legacy WebKit flow.
         let userScript = MediaCaptureUserScript()
         sitePermissionsState.mediaCaptureUserScript = userScript
         userScript.delegate = self

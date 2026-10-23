@@ -97,6 +97,16 @@ final class UserScripts: UserScriptsProvider {
         autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
+        // Site permission features run only when these settings are present, so they stay off in other web views.
+        var sitePermissionsFeatures = [String: [String: Any]]()
+        var sitePermissionsIsolatedFeatures = [String: [String: Any]]()
+        if let mediaCaptureUserScript {
+            sitePermissionsFeatures[MediaCaptureUserScript.featureNameValue] = mediaCaptureUserScript.featureSettings
+        }
+        if let geolocationUserScript = self.geolocationUserScript {
+            sitePermissionsFeatures[GeolocationUserScript.featureNameValue] = geolocationUserScript.featureSettings
+            sitePermissionsIsolatedFeatures[GeolocationUserScript.policyFeatureName] = GeolocationUserScript.policyFeatureSettings
+        }
         do {
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
@@ -106,12 +116,22 @@ final class UserScripts: UserScriptsProvider {
             contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                 properties: sourceProvider.contentScopeProperties,
                                                                 scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
-                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue],
-                                                                privacyConfigurationJSONGenerator: configGenerator)
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName,
+                                                                                             PrintingSubfeature.featureNameValue,
+                                                                                             TrackerProtectionSubfeature.featureNameValue,
+                                                                                             MediaCaptureUserScript.featureNameValue,
+                                                                                             GeolocationUserScript.featureNameValue],
+                                                                privacyConfigurationJSONGenerator: ContentScopeNativeFeaturesConfigurationJSONGenerator(
+                                                                    base: configGenerator,
+                                                                    fallbackConfiguration: sourceProvider.privacyConfigurationManager.currentConfig,
+                                                                    features: sitePermissionsFeatures))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
                                                                         properties: sourceProvider.contentScopeProperties,
                                                                         scriptContext: .contentScopeIsolated,
-                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+                                                                        privacyConfigurationJSONGenerator: ContentScopeNativeFeaturesConfigurationJSONGenerator(
+                                                                            base: isolatedConfigGenerator,
+                                                                            fallbackConfiguration: sourceProvider.privacyConfigurationManager.currentConfig,
+                                                                            features: sitePermissionsIsolatedFeatures))
         } catch {
             if let error = error as? UserScriptError {
                 error.fireLoadJSFailedPixelIfNeeded()
@@ -189,6 +209,8 @@ final class UserScripts: UserScriptsProvider {
         contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
         contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
         contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
+        mediaCaptureUserScript.map { contentScopeUserScript.registerSubfeature(delegate: $0) }
+        self.geolocationUserScript.map { contentScopeUserScript.registerSubfeature(delegate: $0) }
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()
@@ -211,9 +233,6 @@ final class UserScripts: UserScriptsProvider {
         var scripts: [UserScript?] = [
             findInPageScript,
             fullScreenVideoScript,
-            mediaCaptureUserScript,
-            geolocationUserScript?.policyScript,
-            geolocationUserScript,
             autofillUserScript,
             loginFormDetectionScript,
             contentScopeUserScript,

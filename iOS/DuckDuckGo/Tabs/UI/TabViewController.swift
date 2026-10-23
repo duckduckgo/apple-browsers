@@ -1515,10 +1515,8 @@ class TabViewController: UIViewController {
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
             privacyConfigurationManager: privacyConfigurationManager,
-            earlyAccessHandlers: [mediaCaptureUserScript],
             replyToUnavailableHandlers: isSitePermissionsEnabled
         )
-        userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
         userContentController.delegate = self
 

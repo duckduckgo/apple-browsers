@@ -1304,19 +1304,44 @@ public enum WebExtensionAPIStubScript {
             }
         }
 
+        // The app opens the popup in the window of the frame's tab and can't target any other, since
+        // WebKit gives it no window to match a `windowId` against. A call meant for another window, or
+        // with an option this doesn't know, fails rather than opening the popup somewhere else. Unknown
+        // options fail with WebKit's wording for a rejected argument, and are reported as such, so the
+        // API compatibility log counts them as invalid arguments to `action.openPopup`.
+        function forwardOpenPopup(handler, options) {
+            var unknownOptions = options ? Object.keys(options).filter(function(key) {
+                return key !== "windowId" && options[key] !== undefined;
+            }) : [];
+            if (unknownOptions.length > 0) {
+                var message = "Invalid call to action.openPopup(). The 'options' value is invalid, because it has unsupported keys: "
+                    + unknownOptions.join(", ") + ".";
+                reportAPI("error", message);
+                return Promise.reject(new Error(message));
+            }
+            var windowId = options ? options.windowId : undefined;
+            var isThisWindow = windowId === undefined ? Promise.resolve(true) : Promise.resolve().then(function() {
+                return api.windows.getCurrent();
+            }).then(function(currentWindow) {
+                return !!currentWindow && currentWindow.id === windowId;
+            });
+            return isThisWindow.then(function(matches) {
+                if (!matches) {
+                    throw new Error("The popup can only open in the window of this page, not in window " + windowId);
+                }
+                return handler.postMessage({});
+            }).then(function() {
+                return undefined;
+            });
+        }
+
         function makeForwardedOpenPopup(handler) {
             return function() {
                 var last = arguments.length > 0 ? arguments[arguments.length - 1] : undefined;
                 var callback = typeof last === "function" ? last : undefined;
-                var promise;
-                try {
-                    promise = Promise.resolve(handler.postMessage({}));
-                } catch (error) {
-                    promise = Promise.reject(error);
-                }
-                return answerBothStyles(promise.then(function() {
-                    return undefined;
-                }), callback);
+                var first = arguments.length > 0 ? arguments[0] : undefined;
+                var options = first !== null && typeof first === "object" ? first : undefined;
+                return answerBothStyles(forwardOpenPopup(handler, options), callback);
             };
         }
 

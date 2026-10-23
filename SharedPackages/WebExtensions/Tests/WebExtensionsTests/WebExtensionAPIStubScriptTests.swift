@@ -292,6 +292,73 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.runtime.lastError === undefined")
     }
 
+    func testWhenOpenPopupNamesTheFramesOwnWindow_ThenItIsForwarded() throws {
+        try installFakeOpenPopupHandler()
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        chrome.windows = { getCurrent: function() { return Promise.resolve({ id: 7 }); } };
+        var top = {};
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup({ windowId: 7 }).then(function(value) { openPopupOutcome = value; }, function(error) { openPopupOutcome = error.message; });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === undefined")
+        try assertTrue("openPopupRequests.length === 1")
+    }
+
+    func testWhenOpenPopupNamesAnotherWindow_ThenItFailsInBothStylesAndNothingOpens() throws {
+        try installFakeOpenPopupHandler()
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        chrome.windows = { getCurrent: function() { return Promise.resolve({ id: 7 }); } };
+        var top = {};
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup({ windowId: 8 }).then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
+        var callbackError = 'pending';
+        chrome.action.openPopup({ windowId: 8 }, function() {
+            callbackError = chrome.runtime.lastError ? chrome.runtime.lastError.message : null;
+        });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("openPopupOutcome === 'The popup can only open in the window of this page, not in window 8'")
+        try assertTrue("callbackError === openPopupOutcome")
+        try assertTrue("openPopupRequests.length === 0")
+    }
+
+    func testWhenOpenPopupHasAnUnknownOption_ThenItFailsAsInvalidArgumentsAndNothingOpens() throws {
+        try installFakeReporting()
+        try installFakeOpenPopupHandler()
+        context.evaluateScript("""
+        chrome.action = { openPopup: function() {} };
+        var top = {};
+        """)
+        try assertNoExceptions()
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var openPopupOutcome = 'pending';
+        chrome.action.openPopup({ tabId: 3 }).then(function() { openPopupOutcome = 'resolved'; }, function(error) { openPopupOutcome = error.message; });
+        """)
+        try assertNoExceptions()
+
+        let message = "Invalid call to action.openPopup(). The 'options' value is invalid, because it has unsupported keys: tabId."
+        try assertTrue("openPopupOutcome === \"\(message)\"")
+        try assertTrue("openPopupRequests.length === 0")
+        try assertReports("[{\"kind\":\"error\",\"message\":\"\(message)\"}]")
+    }
+
     // MARK: - Missing Namespaces
 
     func testWhenNamespaceIsMissing_ThenItsEventsExposeListenerAPI() throws {
@@ -1810,14 +1877,13 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     private func installFakeOpenPopupHandler(fails: Bool = false) throws {
         context.evaluateScript("""
         var openPopupRequests = [];
-        var webkit = { messageHandlers: {
-            "\(WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName)": {
-                postMessage: function(payload) {
-                    openPopupRequests.push(payload);
-                    return \(fails ? "Promise.reject(new Error('The caller is not in a tab'))" : "Promise.resolve(null)");
-                }
+        var webkit = globalThis.webkit || { messageHandlers: {} };
+        webkit.messageHandlers["\(WebExtensionAPIStubScript.actionOpenPopupMessageHandlerName)"] = {
+            postMessage: function(payload) {
+                openPopupRequests.push(payload);
+                return \(fails ? "Promise.reject(new Error('The caller is not in a tab'))" : "Promise.resolve(null)");
             }
-        } };
+        };
         """)
         try assertNoExceptions()
     }

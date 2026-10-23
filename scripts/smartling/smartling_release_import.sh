@@ -2,7 +2,8 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z> [--dry-run] [--reimport]" >&2
+	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z|other branch> [--version x.y.z] [--dry-run] [--reimport]" >&2
+	echo "A branch outside release/<platform>/ needs --version." >&2
 	exit 1
 }
 
@@ -10,12 +11,14 @@ PLATFORM="${1:-}"
 shift || true
 
 RELEASE_BRANCH=""
+VERSION=""
 DRY_RUN="false"
 REIMPORT="false"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--release-branch) RELEASE_BRANCH="${2:-}"; shift 2 ;;
+		--version) VERSION="${2:-}"; shift 2 ;;
 		--dry-run) DRY_RUN="true"; shift ;;
 		--reimport) REIMPORT="true"; shift ;;
 		*) usage ;;
@@ -39,11 +42,25 @@ case "$PLATFORM" in
 		;;
 esac
 
-if [[ "$RELEASE_BRANCH" != "release/$PLATFORM_SLUG/"* ]]; then
+if [[ "$RELEASE_BRANCH" =~ ^release/([^/]+)/([^/]+)$ ]]; then
+	if [ "${BASH_REMATCH[1]}" != "$PLATFORM_SLUG" ]; then
+		echo "Branch '$RELEASE_BRANCH' is a release branch for '${BASH_REMATCH[1]}', not '$PLATFORM_SLUG'." >&2
+		exit 1
+	fi
+	if [ -n "$VERSION" ] && [ "$VERSION" != "${BASH_REMATCH[2]}" ]; then
+		echo "Version '$VERSION' doesn't match release branch '$RELEASE_BRANCH'." >&2
+		exit 1
+	fi
+	VERSION="${BASH_REMATCH[2]}"
+elif [ -z "$RELEASE_BRANCH" ] || [ -z "$VERSION" ]; then
 	usage
 fi
 
-VERSION="${RELEASE_BRANCH#"release/$PLATFORM_SLUG/"}"
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+	echo "Can't resolve a release version from version '$VERSION' and branch '$RELEASE_BRANCH'." >&2
+	exit 1
+fi
+
 JOB_NAME="Release $PLATFORM $VERSION"
 IMPORT_BRANCH="smartling/release-$PLATFORM_SLUG-$VERSION"
 REFRESH_PREFIX="$RELEASE_BRANCH/current"

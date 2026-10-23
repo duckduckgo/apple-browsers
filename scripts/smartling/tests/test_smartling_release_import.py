@@ -13,6 +13,7 @@ SCRIPT_PATH = Path(__file__).parents[1] / 'smartling_release_import.sh'
 RELEASE_BRANCH = 'release/ios/0.1.0'
 REFRESH_PREFIX = 'release/ios/0.1.0/current'
 IMPORT_BRANCH = 'smartling/release-ios-0.1.0'
+TEST_BRANCH = 'test/smartling-release-0.1.0'
 STRINGS_PATH = 'iOS/App/de.lproj/Localizable.strings'
 ENGLISH_STRINGS_PATH = 'iOS/App/en.lproj/Localizable.strings'
 EXPORTED_XLIFF = './iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff'
@@ -134,7 +135,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
         git(self.repo, 'remote', 'add', 'origin', str(self.origin))
         git(self.repo, 'push', '-q', 'origin', 'HEAD')
 
-    def run_import(self, *args, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
+    def run_import(self, *args, release_branch=RELEASE_BRANCH, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
                    integrity_passes=True, release_status=None, refresh_passes=True, expected_exit_code=0):
         (self.stub_dir / 'existing_pr').write_text(existing_pr, encoding='utf-8')
         (self.stub_dir / 'release_status.json').write_text(json.dumps(release_status or READY), encoding='utf-8')
@@ -156,7 +157,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
         env.pop('GITHUB_STEP_SUMMARY', None)
         env.pop('GITHUB_RUN_ID', None)
         result = subprocess.run(
-            ['./scripts/smartling/smartling_release_import.sh', 'iOS', '--release-branch', RELEASE_BRANCH, *args],
+            ['./scripts/smartling/smartling_release_import.sh', 'iOS', '--release-branch', release_branch, *args],
             cwd=self.repo, env=env, capture_output=True, text=True, check=False
         )
         self.assertEqual(result.returncode, expected_exit_code, result.stdout + result.stderr)
@@ -337,6 +338,30 @@ class ReleaseImportScriptTests(unittest.TestCase):
 
         self.assertEqual(outputs['outcome'], 'no_changes')
         self.assertFalse(any(call.startswith('pr close') for call in self.gh_calls()))
+
+    def testWhenATestBranchHasAVersionThenItIsImportedUnderThatBranch(self):
+        outputs = self.run_import('--version', '0.1.0', release_branch=TEST_BRANCH)
+
+        self.assertEqual(outputs['outcome'], 'pr_opened')
+        self.assertEqual(outputs['version'], '0.1.0')
+        self.assertEqual(outputs['job_name'], 'Release iOS 0.1.0')
+        self.assertIn(f'--file-uri-prefix {TEST_BRANCH}/current', self.tool_calls()[1])
+        self.assertTrue(any(f'pr create --base {TEST_BRANCH} --head {IMPORT_BRANCH}' in call for call in self.gh_calls()))
+
+    def testWhenATestBranchHasNoVersionThenNothingIsExported(self):
+        self.run_import(release_branch=TEST_BRANCH, expected_exit_code=1)
+
+        self.assertEqual(self.tool_calls(), [])
+
+    def testWhenTheVersionDoesNotMatchTheReleaseBranchThenNothingIsExported(self):
+        self.run_import('--version', '0.2.0', expected_exit_code=1)
+
+        self.assertEqual(self.tool_calls(), [])
+
+    def testWhenTheReleaseBranchIsForTheOtherPlatformThenNothingIsExported(self):
+        self.run_import(release_branch='release/macos/0.1.0', expected_exit_code=1)
+
+        self.assertEqual(self.tool_calls(), [])
 
 
 if __name__ == '__main__':

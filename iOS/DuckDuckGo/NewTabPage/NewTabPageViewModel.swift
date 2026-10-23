@@ -25,8 +25,6 @@ import PixelKit
 
 final class NewTabPageViewModel: ObservableObject {
 
-    let daxAnchor = NewTabPageDaxAnchor()
-
     @Published var canEditFavorites = true
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?

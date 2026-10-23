@@ -132,8 +132,7 @@ struct NewTabPageBuilder {
         let page = RedesignedNewTabPageViewController(blocks: [
             NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
                 model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
-                                             contextChanges: daxGreetingChanges),
-                daxAnchor: pageModel.daxAnchor)),
+                                             contextChanges: daxGreetingChanges))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
             NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(
                 favoritesModel: favoritesModel,

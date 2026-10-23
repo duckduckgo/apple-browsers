@@ -343,21 +343,6 @@ extension RedesignedNewTabPageViewController: HomeScreenTransitionSource {
     var snapshotView: UIView { view }
 
     var rootContainerView: UIView { view }
-
-    var transitionLogo: HomeScreenTransitionLogo? {
-        guard let circle = pageModel?.daxAnchor.circle, view.window != nil,
-              let welcome = blocks.first(where: { $0.id == .welcome })?.viewController.view,
-              !welcome.isHidden, welcome.alpha > 0.01, contentContainerView.alpha > 0.01 else { return nil }
-        let circleInView = view.convert(circle, from: nil)
-        let background = UIGraphicsImageRenderer(bounds: circleInView).image { context in
-            view.backgroundColor?.setFill()
-            context.fill(circleInView)
-            // Rendering a layer ignores its position.
-            context.cgContext.translateBy(x: backgroundImageView.frame.minX, y: backgroundImageView.frame.minY)
-            backgroundImageView.layer.render(in: context.cgContext)
-        }
-        return HomeScreenTransitionLogo(circle: circle, background: background)
-    }
 }
 
 /// The welcome block and favorites participate in the content handoff.

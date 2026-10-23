@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import WebKit
 import DesignResourcesKit
 
 class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
@@ -30,73 +29,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         /// Appear animation for the live floating toolbar, once the destination page is on screen.
         static let floatingToolbarRevealDuration: TimeInterval = 0.22
         static let floatingToolbarRevealScale: CGFloat = 0.94
-        static let displayCornerRadius: CGFloat = 55
-    }
-
-    /// Spring curves measured frame-by-frame from Safari's tab overview on iOS 26.
-    struct Spring {
-        let response: TimeInterval
-        let dampingRatio: CGFloat
-
-        static let present = Spring(response: 0.38, dampingRatio: 0.9)
-        static let dismiss = Spring(response: Constants.floatingDuration / 1.25, dampingRatio: 0.9)
-        static let swipeCommit = Spring(response: 0.51, dampingRatio: 0.825)
-        static let swipeCancel = Spring(response: 0.42, dampingRatio: 0.86)
-
-        /// Time for the spring to visually settle, used where UIKit needs a fixed duration.
-        var settleDuration: TimeInterval { response * 1.25 }
-
-        func animator(initialVelocity: CGVector = .zero) -> UIViewPropertyAnimator {
-            let angularFrequency = 2 * .pi / response
-            let timing = UISpringTimingParameters(mass: 1,
-                                                  stiffness: angularFrequency * angularFrequency,
-                                                  damping: 2 * dampingRatio * angularFrequency,
-                                                  initialVelocity: initialVelocity)
-            return UIViewPropertyAnimator(duration: settleDuration, timingParameters: timing)
-        }
-
-        /// Runs keyframe animations with this spring as their overall timing.
-        func animateKeyframes(animations: @escaping () -> Void, completion: @escaping (UIViewAnimatingPosition) -> Void) {
-            let animator = animator()
-            animator.addAnimations {
-                UIView.animateKeyframes(withDuration: 0, delay: 0, options: .calculationModeLinear, animations: animations)
-            }
-            animator.addCompletion(completion)
-            animator.startAnimation()
-        }
-    }
-
-    /// A web view that was just attached for a different tab can take a few hundred milliseconds to paint.
-    /// Revealing it before then flashes the background (black in dark mode), so callers wait for this.
-    /// A one-pixel snapshot completes only once the web content has rendered; the timeout covers stalls.
-    /// Waiting is invisible: by then the card already fills the screen.
-    static func whenRendered(_ webView: WKWebView, timeout: TimeInterval = 0.6, _ completion: @escaping () -> Void) {
-        var hasCompleted = false
-        let complete = {
-            guard !hasCompleted else { return }
-            hasCompleted = true
-            completion()
-        }
-        let configuration = WKSnapshotConfiguration()
-        configuration.rect = CGRect(x: 0, y: 0, width: 1, height: 1)
-        configuration.snapshotWidth = 1
-        webView.takeSnapshot(with: configuration) { _, _ in
-            // The snapshot reports the web content has painted, but compositing it on screen can lag
-            // a few frames behind.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.08, execute: complete)
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: complete)
-    }
-
-    /// Whether the page travels between the screen and its cell as a card, like Safari's tab overview.
-    static func usesCardTransition(for mainViewController: MainViewController) -> Bool {
-        mainViewController.isFloatingUIEnabled
-    }
-
-    /// Approximates the physical display corner so a full-screen card is indistinguishable from the screen.
-    static func screenCornerRadius(for view: UIView) -> CGFloat {
-        let bottomInset = view.window?.safeAreaInsets.bottom ?? 0
-        return bottomInset > 0 ? Constants.displayCornerRadius : 0
     }
 
     static func duration(isFloatingUIEnabled: Bool) -> TimeInterval {
@@ -153,9 +85,9 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         cardShadow.frame = frame
         cardShadow.layer.cornerRadius = cornerRadius
         cardShadow.layer.shadowOpacity = shadowOpacity
-        cardShadow.layer.shadowPath = tabSwitcherViewController.transitionStyle == .modern
-            ? nil
-            : UIBezierPath(roundedRect: cardShadow.bounds, cornerRadius: cornerRadius).cgPath
+        cardShadow.layer.shadowPath = UIBezierPath(
+            roundedRect: cardShadow.bounds,
+            cornerRadius: cornerRadius).cgPath
 
         imageContainer.frame = frame
         imageContainer.layer.cornerRadius = cornerRadius
@@ -186,12 +118,12 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         snapshot.autoresizingMask = [.flexibleWidth]
         imageContainer.addSubview(snapshot)
         gridChromeSnapshot = snapshot
-        applyGridChromePose(isVisible: initiallyVisible)
+        applyGridChromePose(isVisible: initiallyVisible, in: imageContainer.bounds)
     }
 
-    func applyGridChromePose(isVisible: Bool) {
+    func applyGridChromePose(isVisible: Bool, in _: CGRect) {
         guard let gridChromeSnapshot else { return }
-        gridChromeSnapshot.transform = isVisible || tabSwitcherViewController.transitionStyle == .modern
+        gridChromeSnapshot.transform = isVisible
             ? .identity
             : CGAffineTransform(translationX: 0, y: -TabViewGridCell.Constants.headerHeight)
         gridChromeSnapshot.alpha = isVisible ? 1 : 0
@@ -264,164 +196,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         return snapshot
     }
 
-    /// The bars' glass draws as a solid fill in a copy, so instead of copying them, the transition's views
-    /// move in under the live bars, which then fade in over the growing page like Safari's. Returns a closure
-    /// that moves what is left back into `containerView` for UIKit to tidy up, or nil when the bars stay put.
-    func revealLiveChrome(of mainViewController: MainViewController,
-                          over containerView: UIView,
-                          response: TimeInterval) -> (() -> Void)? {
-        guard mainViewController.isFloatingUIEnabled else { return nil }
-        let coordinator: MainViewCoordinator = mainViewController.viewCoordinator
-        let stage = coordinator.superview
-        let toolbar: BrowserToolbarView = coordinator.toolbar
-        let bars: [UIView] = [toolbar, coordinator.navigationBarContainer].filter {
-            $0.superview === stage && !$0.isHidden && ($0 === toolbar || $0.alpha > 0.01)
-        }
-        let lowestBar = bars.min { (stage.subviews.firstIndex(of: $0) ?? 0) < (stage.subviews.firstIndex(of: $1) ?? 0) }
-        guard let lowestBar else { return nil }
-
-        let transitionViews = containerView.subviews
-        for view in transitionViews {
-            view.center = stage.convert(view.center, from: containerView)
-            stage.insertSubview(view, belowSubview: lowestBar)
-        }
-
-        let revealScale = CGAffineTransform(scaleX: Constants.floatingToolbarRevealScale, y: Constants.floatingToolbarRevealScale)
-        for bar in bars {
-            bar.alpha = 0
-            bar.transform = revealScale
-        }
-        UIView.animate(withDuration: 0.2, delay: response * 0.3, options: [.curveEaseOut]) {
-            for bar in bars {
-                bar.alpha = 1
-                bar.transform = .identity
-            }
-        }
-
-        return {
-            for view in transitionViews where view.superview === stage {
-                view.center = containerView.convert(view.center, from: stage)
-                containerView.addSubview(view)
-            }
-        }
-    }
-
-    /// Grows `cardView` from the cell back to the full screen, mirroring how `TabSwitcherSwipeUpTransition`
-    /// shrank it. Near the end the card fades to reveal the live page and toolbar underneath, so the toolbar
-    /// arrives with the page instead of after it.
-    func runCardDismiss(_ cardView: TabSwitcherCardView,
-                        rowIndex: Int,
-                        layoutAttributes: UICollectionViewLayoutAttributes,
-                        pageColor: UIColor,
-                        using transitionContext: UIViewControllerContextTransitioning,
-                        mainViewController: MainViewController,
-                        whenPageReady: (@escaping () -> Void) -> Void) {
-        let containerView = transitionContext.containerView
-        let collectionView = tabSwitcherViewController.collectionView
-        cardView.applyCellPose(cellFrame: collectionView.convert(layoutAttributes.frame, to: tabSwitcherViewController.view))
-        scrollIfOutsideViewport(collectionView: collectionView, rowIndex: rowIndex, attributes: layoutAttributes)
-
-        // Keeps the tab switcher's backdrop behind the growing card once the other cells have faded, and
-        // hides the live page until the card hands over to it.
-        let backdrop = UIView(frame: containerView.bounds)
-        backdrop.backgroundColor = tabSwitcherViewController.view.backgroundColor
-        containerView.insertSubview(backdrop, belowSubview: tabSwitcherViewController.view)
-        containerView.addSubview(cardView)
-
-        let cell = collectionView.cellForItem(at: IndexPath(row: rowIndex, section: 0)) as? TabViewCell
-        if let cell {
-            cardView.installChrome(from: cell, isVisible: true)
-            // A list row shows none of the page, so the card starts out as the row.
-            cardView.setFace(visible: cardView.cellStyle == .list)
-            cell.alpha = 0
-        }
-
-        let spring = TabSwitcherTransition.Spring.dismiss
-        let animator = spring.animator()
-        animator.addAnimations {
-            cardView.applyScreenPose(cardFrame: containerView.bounds)
-        }
-        let pageFadeDuration: TimeInterval = 0.12
-        if cardView.cellStyle == .list {
-            cardView.setPage(visible: false)
-            UIView.animate(withDuration: pageFadeDuration, delay: 0, options: [.curveEaseOut]) {
-                cardView.setPage(visible: true)
-            }
-        }
-        // Switch to the page's colour quickly: blending from the cell's white over the whole spring
-        // reads as a pale band above the page. A list row's page is still fading in over it at first.
-        UIView.animate(withDuration: 0.1, delay: cardView.cellStyle == .list ? pageFadeDuration : 0, options: [.curveEaseOut]) {
-            cardView.setBackgroundColor(pageColor)
-        }
-        UIView.animate(withDuration: spring.response * 0.35, delay: 0, options: [.curveEaseOut]) {
-            cardView.setChrome(visible: false)
-        }
-        UIView.animate(withDuration: pageFadeDuration, delay: 0, options: [.curveEaseOut]) {
-            cardView.setFace(visible: false)
-        }
-        UIView.animate(withDuration: spring.response * 0.55, delay: 0, options: [.curveEaseOut]) {
-            self.tabSwitcherViewController.view.alpha = 0
-        }
-        let restoreTransitionViews = revealLiveChrome(of: mainViewController, over: containerView, response: spring.response)
-
-        var isHandOffDue = false
-        var isPageReady = false
-        var isHandOffStarted = false
-        var isHandOffFinished = false
-        var isAnimationFinished = false
-
-        let finish = {
-            guard isHandOffFinished, isAnimationFinished else { return }
-            cardView.removeFromSuperview()
-            backdrop.removeFromSuperview()
-            cell?.alpha = 1
-            self.removeTransitionViews()
-            restoreTransitionViews?()
-            transitionContext.completeTransition(true)
-        }
-        let handOff = {
-            guard isHandOffDue, isPageReady, !isHandOffStarted else { return }
-            isHandOffStarted = true
-            // The card covers the screen by now; drop the backdrop outright so the card fades straight
-            // into the live page rather than through the backdrop's colour.
-            backdrop.isHidden = true
-            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: restoreTransitionViews != nil)
-            UIView.animate(withDuration: spring.settleDuration * 0.25, delay: 0, options: [.curveEaseInOut], animations: {
-                cardView.alpha = 0
-            }, completion: { _ in
-                isHandOffFinished = true
-                finish()
-            })
-        }
-
-        whenPageReady {
-            isPageReady = true
-            handOff()
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + spring.response * 0.75) {
-            isHandOffDue = true
-            handOff()
-        }
-        animator.addCompletion { _ in
-            isAnimationFinished = true
-            finish()
-        }
-        animator.startAnimation()
-    }
-
-    func animateDismissKeyframes(isFloating: Bool,
-                                 animations: @escaping () -> Void,
-                                 completion: @escaping () -> Void) {
-        if tabSwitcherViewController.transitionStyle == .modern {
-            Spring.dismiss.animateKeyframes(animations: animations) { _ in completion() }
-        } else {
-            UIView.animateKeyframes(withDuration: Self.duration(isFloatingUIEnabled: isFloating),
-                                    delay: 0,
-                                    options: .calculationModeLinear,
-                                    animations: animations) { _ in completion() }
-        }
-    }
-
     // MARK: UIViewControllerAnimatedTransitioning
 
     // Override - Abstract function
@@ -454,9 +228,7 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
 }
 
 class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDelegate {
-
-    weak var swipeUpTransition: TabSwitcherSwipeUpTransition?
-
+    
     func animationController(forPresented presented: UIViewController,
                              presenting: UIViewController,
                              source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
@@ -464,12 +236,6 @@ class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDele
             let tabSwitcherVC = presented as? TabSwitcherViewController else {
             return nil
         }
-
-        if let swipeUpTransition, swipeUpTransition.presentsTabSwitcher {
-            tabSwitcherVC.transitionStyle = .modern
-            return swipeUpTransition
-        }
-        tabSwitcherVC.transitionStyle = .legacy
         
         if mainVC.newTabPageViewController != nil {
             return FromHomeScreenTransition(mainViewController: mainVC,
@@ -480,21 +246,13 @@ class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDele
                                      tabSwitcherViewController: tabSwitcherVC)
     }
 
-    func interactionControllerForPresentation(using animator: UIViewControllerAnimatedTransitioning) -> UIViewControllerInteractiveTransitioning? {
-        animator as? TabSwitcherSwipeUpTransition
-    }
-
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         guard let tabSwitcherVC = dismissed as? TabSwitcherViewController else { return nil }
-        swipeUpTransition?.finishLanding()
-
-        let transition: TabSwitcherTransition
+        
         if let tab = tabSwitcherVC.tabsModel.currentTab, tab.link == nil {
-            transition = ToHomeScreenTransition(tabSwitcherViewController: tabSwitcherVC)
-        } else {
-            transition = ToWebViewTransition(tabSwitcherViewController: tabSwitcherVC)
+            return ToHomeScreenTransition(tabSwitcherViewController: tabSwitcherVC)
         }
-        return transition
+        return ToWebViewTransition(tabSwitcherViewController: tabSwitcherVC)
     }
 }
 

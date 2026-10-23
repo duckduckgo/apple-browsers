@@ -364,10 +364,10 @@ class TabSwitcherPageViewController: UIViewController {
         }
     }
     
-    func scrollToInitialTab(at position: UICollectionView.ScrollPosition = .bottom) {
+    func scrollToInitialTab() {
         guard let index = tabsModel.currentIndex,
               index < collectionView.numberOfItems(inSection: 0) else { return }
-        collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: position, animated: false)
+        collectionView.scrollToItem(at: IndexPath(row: index, section: 0), at: .bottom, animated: false)
     }
 
     func enterEditingMode() {

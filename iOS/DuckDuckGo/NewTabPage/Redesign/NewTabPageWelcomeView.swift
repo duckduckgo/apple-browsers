@@ -23,7 +23,6 @@ import SwiftUI
 struct NewTabPageWelcomeView: View {
 
     @ObservedObject var model: NewTabPageWelcomeModel
-    var daxAnchor: NewTabPageDaxAnchor?
     @State private var isVisible = false
 
     var body: some View {
@@ -31,7 +30,6 @@ struct NewTabPageWelcomeView: View {
             Image("Logo")
                 .resizable()
                 .frame(width: Metrics.logoSize, height: Metrics.logoSize)
-                .reportingDaxCircle(to: daxAnchor)
             Text(verbatim: model.greeting)
                 .daxTitle2()
                 .foregroundColor(Color(designSystemColor: .textPrimary))

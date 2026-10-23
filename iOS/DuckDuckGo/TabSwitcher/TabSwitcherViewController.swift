@@ -25,6 +25,7 @@ import DDGSync
 import WebKit
 import Bookmarks
 import Persistence
+import os.log
 import SwiftUI
 import Combine
 import DesignResourcesKit
@@ -92,13 +93,6 @@ class TabSwitcherViewController: UIViewController {
         }
 
     }
-
-    enum TransitionStyle {
-        case legacy
-        case modern
-    }
-
-    var transitionStyle: TransitionStyle = .legacy
 
     private(set) var chrome: TabSwitcherChrome!
 
@@ -542,16 +536,11 @@ class TabSwitcherViewController: UIViewController {
         
     }
 
-    func prepareForPresentation(centerCurrentTab: Bool = false) {
+    func prepareForPresentation() {
         prepareChromeForPresentation()
         view.layoutIfNeeded()
         syncPagingScrollViewToCurrentMode(animated: false)
-        if centerCurrentTab {
-            // The swipe needs only its active destination, already at its final position.
-            activePageController.scrollToInitialTab(at: .centeredVertically)
-        } else {
-            scrollToInitialTab()
-        }
+        scrollToInitialTab()
     }
 
     private func prepareChromeForPresentation() {

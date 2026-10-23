@@ -383,23 +383,6 @@ final class BrowserToolbarViewTests: XCTestCase {
         XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
     }
 
-    func testWhenAnimatedMaterialRefreshKeepsSameStyleThenItReplacesEffectWithoutReplacingContent() throws {
-        let sut = makeSUT(embeddedOmnibar: false)
-        let fire = makeToolbarButton(identifier: "Browser.Toolbar.Button.Fire", width: 44)
-        sut.setToolbarButtons([fire])
-        sut.refreshMaterialAppearance(interfaceStyle: .light)
-        let glassView = try XCTUnwrap(firstVisualEffectView(in: sut))
-        let previousEffect = try XCTUnwrap(glassView.effect)
-        let buttonSuperview = fire.superview
-
-        sut.refreshMaterialAppearance(interfaceStyle: .light, animated: true)
-
-        XCTAssertNotNil(glassView.effect)
-        XCTAssertFalse(glassView.effect === previousEffect)
-        XCTAssertTrue(firstVisualEffectView(in: sut) === glassView)
-        XCTAssertTrue(fire.superview === buttonSuperview)
-    }
-
     func testWhenStandaloneGlassUsesDarkInterfaceStyleThenItRemainsAdaptive() throws {
         guard #available(iOS 26.0, *) else { return }
         let sut = makeSUT(embeddedOmnibar: false)

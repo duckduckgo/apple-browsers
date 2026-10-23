@@ -120,31 +120,12 @@ final class DDGSyncTests: XCTestCase {
 
     // MARK: - Tests
 
-    func testFetchAuditLogForDebugReturnsOnlyPageSummary() async throws {
-        let accountManager = dependencies.account as! AccountManagingMock
-        accountManager.fetchAuditLogStub = AuditLogPage(
-            entries: [AuditLogEntry(id: "event-id", version: "1", payload: "encrypted-payload")],
-            after: "head-cursor",
-            before: "older-cursor")
-        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
-
-        let summary = try await syncService.fetchAuditLogForDebug()
-
-        XCTAssertEqual(summary.entryCount, 1)
-        XCTAssertTrue(summary.hasAfterCursor)
-        XCTAssertTrue(summary.hasBeforeCursor)
-        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
-        XCTAssertEqual(accountManager.fetchAuditLogCalls.first?.0.userId, SyncAccount.mock.userId)
-        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.1)
-        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.2)
-    }
-
-    func testFetchAuditLogForDebugWithoutAccountThrows() async {
+    func testAuditLogDumpForDebugWithoutAccountThrows() async {
         (dependencies.secureStore as! SecureStorageStub).theAccount = nil
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         do {
-            _ = try await syncService.fetchAuditLogForDebug()
+            _ = try await syncService.auditLogDumpForDebug()
             XCTFail("Expected missing account to throw")
         } catch let error as SyncError {
             XCTAssertEqual(error, .accountNotFound)
@@ -153,13 +134,13 @@ final class DDGSyncTests: XCTestCase {
         }
     }
 
-    func testFetchAuditLogForDebugPropagatesRequestFailure() async {
+    func testAuditLogDumpForDebugPropagatesRequestFailure() async {
         let accountManager = dependencies.account as! AccountManagingMock
         accountManager.fetchAuditLogError = SyncError.unexpectedStatusCode(418)
         let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
 
         do {
-            _ = try await syncService.fetchAuditLogForDebug()
+            _ = try await syncService.auditLogDumpForDebug()
             XCTFail("Expected request failure to throw")
         } catch let error as SyncError {
             XCTAssertEqual(error, .unexpectedStatusCode(418))
@@ -167,6 +148,24 @@ final class DDGSyncTests: XCTestCase {
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
+    }
+
+    func testAuditLogDumpForDebugDumpsDecodedPageReturnedByAccountManager() async throws {
+        let accountManager = dependencies.account as! AccountManagingMock
+        accountManager.fetchAuditLogStub = AuditLogPage(
+            entries: [.unreadable(id: "event-id", reason: .keyUnavailable)],
+            after: "head-cursor",
+            before: "older-cursor")
+        let syncService = DDGSync(dataProvidersSource: dataProvidersSource, dependencies: dependencies)
+
+        let report = try await syncService.auditLogDumpForDebug()
+
+        XCTAssertTrue(report.contains("event-id"))
+        XCTAssertTrue(report.contains("head-cursor"))
+        XCTAssertTrue(report.contains("older-cursor"))
+        XCTAssertEqual(accountManager.fetchAuditLogCalls.count, 1)
+        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.1)
+        XCTAssertNil(accountManager.fetchAuditLogCalls.first?.2)
     }
 
     func testRecoveryCodeWhenScopedAccessCredentialsAndPairingV2CodeAreEnabledReturnsV2Code() throws {

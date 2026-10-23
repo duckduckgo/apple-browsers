@@ -526,13 +526,28 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testImportButtonPressed_filterOnSafariWithBookmarksOnly_asksForArchiveWithoutPasswords() {
-        model = sourceFilterModel(importSource: .safari, isFilterOn: true) { _, _, _, _ in ImporterMock(importableTypes: []) }
+    func testImportButtonPressed_filterOnSafariWithBookmarksOnly_asksForArchiveWithoutPasswordsButWithCreditCards() throws {
+        try enableSafariCreditCardImport()
+        model = sourceFilterModel(importSource: .safari, isFilterOn: true, dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: []) })
         model.selectDataTypes([.bookmarks])
 
         model.importButtonPressed()
 
-        XCTAssertEqual(model.screen, .archiveImport(dataTypes: model.selectableImportTypes.subtracting([.passwords])))
+        XCTAssertEqual(model.screen, .archiveImport(dataTypes: [.bookmarks, .creditCards]))
+    }
+
+    @MainActor
+    func testSelectFile_filterOnFileImportWithBookmarksOnly_offersOnlyHTMLFiles() {
+        var offeredFileTypes: [UTType]?
+        model = sourceFilterModel(importSource: .fileImport, isFilterOn: true, openPanelCallback: { fileTypes in
+            offeredFileTypes = fileTypes
+            return nil
+        })
+        model.selectDataTypes([.bookmarks])
+
+        model.selectFile()
+
+        XCTAssertEqual(offeredFileTypes, [.html])
     }
 
     func testDataTypesToImport_keepsTypesTheFilterDoesNotCover() {
@@ -2803,6 +2818,14 @@ final class DataImportViewModelTests: XCTestCase {
         )
     }
 
+    private func enableSafariCreditCardImport() throws {
+        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
+        let key = FeatureFlag.dataImportNewSafariFilePicker.rawValue
+        let originalValue = featureFlagger.featuresStub[key]
+        featureFlagger.featuresStub[key] = true
+        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
     private var sourceFilterSources: [Source] {
         [.chrome, .safari, .tor, .fileImport, .onePassword8, .bitwarden]
     }
@@ -2810,7 +2833,8 @@ final class DataImportViewModelTests: XCTestCase {
     private func sourceFilterModel(
         importSource: Source,
         isFilterOn: Bool,
-        dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() }
+        dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() },
+        openPanelCallback: @escaping ([UTType]) -> URL? = { _ in nil }
     ) -> DataImportViewModel {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
@@ -2819,10 +2843,10 @@ final class DataImportViewModelTests: XCTestCase {
             availableImportSources: sourceFilterSources,
             syncFeatureVisibility: .hide,
             loadProfiles: { browser in
-                let defaultProfile = BrowserProfile.default(fileStore: self.fileStore)(browser)
-                return .init(browser: browser, profiles: [defaultProfile])
+                .init(browser: browser, profiles: [BrowserProfile.test(fileStore: self.fileStore)(browser)])
             },
             dataImporterFactory: dataImporterFactory,
+            openPanelCallback: openPanelCallback,
             featureFlagger: featureFlagger,
             directoryAccessAvailability: .mockUnavailable()
         )

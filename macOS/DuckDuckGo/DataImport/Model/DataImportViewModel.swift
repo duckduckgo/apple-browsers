@@ -535,7 +535,8 @@ struct DataImportViewModel {
         case .archiveImport:
             dataTypes = Array(importSource.archiveImportSupportedFiles)
         case .sourceAndDataTypesPicker:
-            dataTypes = importSource.supportedDataTypes.flatMap { $0.allowedFileTypes }
+            let fileDataTypes = isSourceFilterEnabled ? selectedDataTypes : importSource.supportedDataTypes
+            dataTypes = fileDataTypes.flatMap { $0.allowedFileTypes }
         default:
             assertionFailure("Expected File Import")
             return
@@ -586,6 +587,11 @@ struct DataImportViewModel {
         // Detection should always succeed since the file picker filters to CSV/HTML files
         guard let detectedDataType = detectDataType(from: fileURL) else {
             assertionFailure("Failed to detect data type for file: \(fileURL.path). Expected only a CSV or HTML file.")
+            return false
+        }
+
+        if isSourceFilterEnabled, !dataTypeFilter.contains(detectedDataType) {
+            assertionFailure("The file picker should only offer files for the data types in the filter")
             return false
         }
 
@@ -1225,7 +1231,10 @@ extension DataImportViewModel {
                                 /* primaryPassword: */ nil)
         }), selectedDataTypes.intersects(importer.importableTypes) else {
             if #available(macOS 15.2, *), .safari == importSource {
-                screen = .archiveImport(dataTypes: isSourceFilterEnabled ? selectedDataTypes : importSource.supportedDataTypes)
+                let archiveDataTypes = isSourceFilterEnabled
+                    ? Self.dataTypesToImport(availableTypes: importSource.supportedDataTypes, filter: dataTypeFilter)
+                    : importSource.supportedDataTypes
+                screen = .archiveImport(dataTypes: archiveDataTypes)
                 return
             }
 

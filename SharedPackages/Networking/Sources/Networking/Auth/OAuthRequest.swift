@@ -28,12 +28,12 @@ public struct OAuthRequest {
 
     /// The HTTP request to send.
     public let apiRequest: APIRequestV2
-    /// The status of a successful response.
-    public let httpSuccessCode: HTTPStatusCode
+    /// The only status treated as success. The response is returned as is.
+    public let successCode: HTTPStatusCode
     /// The failure statuses whose response body is decoded as a `BodyError` and thrown as `OAuthServiceError.authAPIError`,
     /// or as `OAuthServiceError.missingResponseValue(.bodyError)` when it can't be decoded.
-    /// Any other status than `httpSuccessCode` is thrown as `OAuthServiceError.invalidResponseCode`.
-    public let httpErrorCodes: [HTTPStatusCode]
+    /// Any status that is neither `successCode` nor in this list is thrown as `OAuthServiceError.invalidResponseCode`.
+    public let bodyErrorDecodableCodes: [HTTPStatusCode]
     /// The URL of `apiRequest`.
     public var url: URL {
         apiRequest.urlRequest.url!
@@ -60,6 +60,9 @@ public struct OAuthRequest {
         case accountChangeEmailAddressFailed = "account_change_email_address_failed"
         case invalidToken = "invalid_token"
         case expiredToken = "expired_token"
+        case serviceUnavailable = "service_unavailable"
+        case internalServerError = "internal_server_error"
+        case incompatibleLoginAuthorizationScopes = "incompatible_login_authorization_scopes"
 
         /// A human-readable explanation of the error code, as documented by the Auth API.
         public var description: String {
@@ -102,6 +105,12 @@ public struct OAuthRequest {
                 return "Provided access token is missing or invalid"
             case .expiredToken:
                 return "Provided access token is expired"
+            case .serviceUnavailable:
+                return "Temporary server error"
+            case .internalServerError:
+                return "Ran into an unexpected error"
+            case .incompatibleLoginAuthorizationScopes:
+                return "The login method is not allowed for this authorization session"
             }
         }
     }
@@ -189,14 +198,15 @@ public struct OAuthRequest {
 
     /// - Parameters:
     ///   - apiRequest: The HTTP request to send.
-    ///   - httpSuccessCode: The status of a successful response.
-    ///   - httpErrorCodes: The failure statuses whose response body is decoded as a `BodyError`.
+    ///   - successCode: The only status treated as success. Defaults to `200 OK`.
+    ///   - bodyErrorDecodableCodes: The failure statuses whose response body is decoded as a `BodyError`.
+    ///     Defaults to `400 Bad Request` and `500 Internal Server Error`.
     init(apiRequest: APIRequestV2,
-         httpSuccessCode: HTTPStatusCode = HTTPStatusCode.ok,
-         httpErrorCodes: [HTTPStatusCode] = [HTTPStatusCode.badRequest, HTTPStatusCode.internalServerError]) {
+         successCode: HTTPStatusCode = HTTPStatusCode.ok,
+         bodyErrorDecodableCodes: [HTTPStatusCode] = [HTTPStatusCode.badRequest, HTTPStatusCode.internalServerError]) {
         self.apiRequest = apiRequest
-        self.httpSuccessCode = httpSuccessCode
-        self.httpErrorCodes = httpErrorCodes
+        self.successCode = successCode
+        self.bodyErrorDecodableCodes = bodyErrorDecodableCodes
     }
 
     // MARK: Authorize
@@ -224,7 +234,7 @@ public struct OAuthRequest {
                                          queryItems: queryItems) else { // we don't want to retry: https://app.asana.com/1/137249556945/task/1210411170978663/comment/1210411574944338?focus=true
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
+        return OAuthRequest(apiRequest: request, successCode: HTTPStatusCode.found)
     }
 
     // MARK: Create account
@@ -247,7 +257,7 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(cookies: [cookie])) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
+        return OAuthRequest(apiRequest: request, successCode: HTTPStatusCode.found)
     }
 
     // MARK: Sent OTP
@@ -337,7 +347,7 @@ public struct OAuthRequest {
                                          retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpSuccessCode: HTTPStatusCode.found)
+        return OAuthRequest(apiRequest: request, successCode: HTTPStatusCode.found)
     }
 
     // MARK: Access Token
@@ -401,7 +411,7 @@ public struct OAuthRequest {
                                          retryPolicy: Defaults.defaultRetryPolicy) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.badRequest])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.badRequest])
     }
 
     // MARK: Edit Account
@@ -428,7 +438,7 @@ public struct OAuthRequest {
                                             authToken: accessToken)) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.unauthorized, .internalServerError])
     }
 
     /// A request that confirms an email address change. Unused in the current implementation.
@@ -458,7 +468,7 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.unauthorized, .internalServerError])
     }
 
     // MARK: Logout
@@ -477,7 +487,7 @@ public struct OAuthRequest {
                                          headers: APIRequestV2.HeadersV2(authToken: accessToken)) else {
             return nil
         }
-        return OAuthRequest(apiRequest: request, httpErrorCodes: [.unauthorized, .internalServerError])
+        return OAuthRequest(apiRequest: request, bodyErrorDecodableCodes: [.unauthorized, .internalServerError])
     }
 
     // MARK: JWKs
@@ -495,7 +505,7 @@ public struct OAuthRequest {
             return nil
         }
         return OAuthRequest(apiRequest: request,
-                            httpSuccessCode: .ok,
-                            httpErrorCodes: [])
+                            successCode: .ok,
+                            bodyErrorDecodableCodes: [])
     }
 }

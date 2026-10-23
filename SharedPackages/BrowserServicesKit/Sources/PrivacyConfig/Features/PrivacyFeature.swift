@@ -738,6 +738,11 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
     /// change covers every platform.
     case partnershipsHub
+
+    /// Gates the AuthV2 backup token: when off, the main apps neither create, renew nor restore from it.
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219771272198496
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1219810901971905
+    case authBackupToken
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

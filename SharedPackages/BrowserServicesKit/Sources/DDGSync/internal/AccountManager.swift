@@ -265,8 +265,8 @@ struct AccountManager: AccountManaging {
                                            thirdPartyPasswordRecoveryCache: pagePasswordRecoveryCache)
         var entries = [AuditLogEntryDecodingResult]()
         entries.reserveCapacity(response.auditLog.entries.count)
-        // Map each event before continuing so an unreadable snapshot does not prevent another event
-        // from using its cached third-party password.
+        // Validate third-party passwords against each event's snapshots separately.
+        // Process events sequentially because they share mutable page caches.
         for entry in response.auditLog.entries {
             try Task.checkCancellation()
             entries.append(try await decoder.decode(entry, for: account))

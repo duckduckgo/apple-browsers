@@ -73,6 +73,35 @@ final class NavigationBarOverflowTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenToggleIsExpandedAndAllButtonsArePinned_ThenToggleCollapsesAndWindowShrinksToMinimumWidth() throws {
+        // Until the user interacts with it, the Search/Duck.ai toggle shows expanded in an empty focused address bar
+        let toggleDefaults = ["aichat.enabled": true, "aichat.showSearchAndDuckAIToggle": true, "aichat.hasInteractedWithSearchDuckAIToggle": false]
+        let originalToggleDefaults = toggleDefaults.keys.map { ($0, UserDefaults.standard.object(forKey: $0)) }
+        toggleDefaults.forEach { UserDefaults.standard.set($0.value, forKey: $0.key) }
+        defer { originalToggleDefaults.forEach { UserDefaults.standard.set($0.1, forKey: $0.0) } }
+        openWindow()
+        addExtraToolbarButtons()
+        let addressBar = try XCTUnwrap(navigationBar.addressBarViewController)
+        let addressBarButtons = try XCTUnwrap(addressBar.addressBarButtonsViewController)
+        _ = window.makeFirstResponder(addressBar.addressBarTextField)
+        settleLayout(file: #filePath, line: #line)
+        XCTAssertTrue(addressBarButtons.isSearchModeToggleShown, "The Search/Duck.ai toggle isn't shown in the new tab address bar")
+        XCTAssertTrue(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle isn't expanded before the user interacted with it")
+
+        resizeWindow(toWidth: MainWindow.minWindowWidth)
+
+        XCTAssertEqual(window.frame.width, MainWindow.minWindowWidth, "The window couldn't shrink to its minimum width")
+        XCTAssertFalse(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle stayed expanded without room for its labels")
+        XCTAssertFalse(navigationBar.overflowButton.isHidden, "No pinned buttons moved to the overflow menu")
+        assertRequiredHorizontalSpacingIsSatisfied()
+
+        resizeWindow(toWidth: 1200)
+
+        XCTAssertTrue(addressBarButtons.isSearchModeToggleExpanded, "The Search/Duck.ai toggle didn't expand again once there was room for its labels")
+        XCTAssertTrue(navigationBar.overflowButton.isHidden, "Pinned buttons stayed in the overflow menu")
+    }
+
+    @MainActor
     func testWhenWindowIsWidenedAgain_ThenPinnedButtonsLeaveOverflowMenu() {
         openWindow()
         addExtraToolbarButtons()

@@ -179,6 +179,9 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         self.contentView = contentView
 
         navigationBar.translatesAutoresizingMaskIntoConstraints = false
+        navigationBar.insetsLayoutMarginsFromSafeArea = false
+        navigationBar.preservesSuperviewLayoutMargins = false
+        navigationBar.layoutMargins = .zero
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         toolbar.insetsLayoutMarginsFromSafeArea = false
         toolbar.preservesSuperviewLayoutMargins = false
@@ -445,8 +448,8 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
         var constraints = [
             navigationBar.topAnchor.constraint(equalTo: topGuide.topAnchor, constant: Metrics.topFloatingInset),
-            navigationBar.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),
-            navigationBar.trailingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.trailingAnchor),
+            navigationBar.leadingAnchor.constraint(equalTo: hostView.layoutMarginsGuide.leadingAnchor),
+            navigationBar.trailingAnchor.constraint(equalTo: hostView.layoutMarginsGuide.trailingAnchor),
 
             contentView.topAnchor.constraint(equalTo: hostView.topAnchor),
             contentView.leadingAnchor.constraint(equalTo: hostView.safeAreaLayoutGuide.leadingAnchor),

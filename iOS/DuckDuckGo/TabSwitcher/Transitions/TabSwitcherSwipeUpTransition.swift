@@ -93,6 +93,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
     private var blurAnimator: UIViewPropertyAnimator?
     private var previewTask: Task<TabSwitcherViewController?, Never>?
     private var previewedTabSwitcher: TabSwitcherViewController?
+    private var previewLayoutMargins: NSDirectionalEdgeInsets?
     private var revealProgress: CGFloat = 0
     private var cardView: TabSwitcherCardView?
     private var chromeSnapshots: [UIView] = []
@@ -335,8 +336,11 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         previewTask = Task { @MainActor [weak self, weak mainViewController, weak cardView] in
             guard let controller = await mainViewController?.makeTabSwitcher(),
                   !Task.isCancelled,
-                  let self, let cardView, self.cardView === cardView, self.isActive else { return nil }
+                  let self, let mainViewController, let cardView, self.cardView === cardView, self.isActive else { return nil }
 
+            self.previewLayoutMargins = controller.view.directionalLayoutMargins
+            // A detached preview has no system margins until UIKit presents it.
+            controller.view.directionalLayoutMargins = mainViewController.systemMinimumLayoutMargins
             controller.view.frame = self.previewContainer.bounds
             self.previewContainer.addSubview(controller.view)
             controller.prepareForPresentation(centerCurrentTab: true)
@@ -472,6 +476,9 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         tabSwitcher.view.frame = context.finalFrame(for: tabSwitcher)
         tabSwitcher.view.alpha = tabSwitcher === previewedTabSwitcher ? 1 : 0
         context.containerView.insertSubview(tabSwitcher.view, aboveSubview: backdrop)
+        if tabSwitcher === previewedTabSwitcher, let previewLayoutMargins {
+            tabSwitcher.view.directionalLayoutMargins = previewLayoutMargins
+        }
         if tabSwitcher !== previewedTabSwitcher || previewSize != tabSwitcher.view.bounds.size {
             tabSwitcher.prepareForPresentation(centerCurrentTab: true)
         } else {
@@ -680,6 +687,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         previewCover.layer.removeAllAnimations()
         previewContainer.subviews.forEach { $0.removeFromSuperview() }
         previewedTabSwitcher = nil
+        previewLayoutMargins = nil
         hiddenCell?.contentView.alpha = 1
         hiddenCell = nil
         previewContainer.removeFromSuperview()

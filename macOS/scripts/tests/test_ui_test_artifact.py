@@ -80,6 +80,16 @@ class PortableTests(unittest.TestCase):
                     spec = plistlib.load(packed.extractfile('ui-tests/source.xctestrun'))
                     self.assertEqual(metadata['app'], app.name)
                     self.assertEqual(artifact.targets(spec)[0]['UITargetAppPath'], '__TESTROOT__/Products/Review/' + app.name)
+                unpacked = root / 'unpacked'
+                unpacked.mkdir()
+                artifact.extract(archive, unpacked)
+                run_root = unpacked / 'ui-tests'
+                run_args = argparse.Namespace(root=run_root, app=app, environment_file=None, preflight_only=False, suite='ui')
+                with mock.patch.object(artifact, 'xcode', return_value=(root / 'Developer', {})), \
+                     mock.patch.object(artifact, 'native_host', side_effect=RuntimeError('native launch boundary')), \
+                     self.assertRaisesRegex(RuntimeError, 'native launch boundary'):
+                    artifact.execute_tests(run_args)
+                self.assertEqual(artifact.binary(run_root / 'Products/Review' / app.name).read_bytes(), b'unchanged signed binary')
                 self.assertEqual(artifact.binary(app).read_bytes(), b'unchanged signed binary')
 
     def test_native_build_restores_caller_lockfiles_after_success_and_failure(self):

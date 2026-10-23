@@ -129,7 +129,9 @@ jobs:
 
       run: |
         set -o pipefail
+        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
         python3 ui-tests/Scripts/artifact.py run ui-tests --suite performance \
+          --app "$app" \
           --result DerivedData/Logs/Test/portable-results \
           | tee -a xcodebuild.log | tee ui-tests.log
 

@@ -146,8 +146,6 @@ jobs:
         set -euo pipefail
         tar -xf DuckDuckGo-*.app.tar.xz
         tar -xzf test-artifact/*.tar.gz
-        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
-        ditto "$app" "ui-tests/Products/Review/${{ env.app-name }}.app"
 
     - name: Run UI Tests
       id: run-ui-tests
@@ -156,7 +154,9 @@ jobs:
         USER_MODE: ${{ inputs.user-mode }}
       run: |
         set -o pipefail
+        app=$(find . -maxdepth 1 -type d -name '*.app' -print -quit)
         python3 ui-tests/Scripts/artifact.py run ui-tests --suite ui \
+          --app "$app" \
           --only "$TEST_CLASS" --plan "$TEST_PLAN" --user-mode "$USER_MODE" \
           --result DerivedData/Logs/Test/portable-results \
           | tee -a xcodebuild.log | tee ui-tests.log

@@ -97,6 +97,17 @@ class DownloadsUITests: UITestCase {
 
     /// Closing a Fire window with an in‑progress download should present a warning
     func testFireWindowWithInProgressDownloadShowsWarning() {
+        assertFireWindowWithInProgressDownloadShowsWarning(snapshotEnabled: false)
+    }
+
+    func testSnapshotFireWindowWithInProgressDownloadShowsWarning() {
+        assertFireWindowWithInProgressDownloadShowsWarning(snapshotEnabled: true)
+    }
+
+    private func assertFireWindowWithInProgressDownloadShowsWarning(snapshotEnabled: Bool) {
+        app.terminate()
+        app = XCUIApplication.setUp(environment: ["FIRE_UI_TEST_PLAY_ANIMATIONS": "1"],
+                                   featureFlags: ["fireWindowSnapshotAnimation": snapshotEnabled])
         configureDownloadPreferences(alwaysAskWhereToSave: false,
                                      openDownloadsPopupOnCompletion: false,
                                      switchToNewTabWhenOpened: false)

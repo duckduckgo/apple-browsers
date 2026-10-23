@@ -63,12 +63,27 @@ extension Fire.BurningData {
 final class FireViewModel {
 
     let fire: FireProtocol
+    let animationLoader = DefaultFireAnimationLoader()
 
     @Published private(set) var isAnimationPlaying = false
+    private var isLegacyAnimationPlaying = false
+    private(set) var isDataClearingAnimationPlaying = false
+    private var closingWindowAnimationCount = 0
+    private var hasPresentedCurrentSnapshotBurn = false
+    private var snapshotPresentationCancellable: AnyCancellable?
+
+    /// A synchronous completion must not let another window present the same published burn.
+    @MainActor
+    func claimSnapshotPresentation() -> Bool {
+        guard !hasPresentedCurrentSnapshotBurn else { return false }
+        hasPresentedCurrentSnapshotBurn = true
+        return true
+    }
 
     func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
-        guard self.isAnimationPlaying != isAnimationPlaying else { return }
-        self.isAnimationPlaying = isAnimationPlaying
+        guard isLegacyAnimationPlaying != isAnimationPlaying else { return }
+        isLegacyAnimationPlaying = isAnimationPlaying
+        updateAnimationPlaying()
 
         if !isFireWindow {
             if isAnimationPlaying {
@@ -76,6 +91,36 @@ final class FireViewModel {
             } else {
                 fire.fireAnimationDidFinish()
             }
+        }
+    }
+
+    func setSnapshotAnimationPlaying(_ isPlaying: Bool, isFireWindow: Bool) {
+        if isFireWindow {
+            if isPlaying {
+                closingWindowAnimationCount += 1
+            } else {
+                guard closingWindowAnimationCount > 0 else { return }
+                closingWindowAnimationCount -= 1
+            }
+        } else {
+            guard isDataClearingAnimationPlaying != isPlaying else { return }
+            isDataClearingAnimationPlaying = isPlaying
+        }
+        updateAnimationPlaying()
+
+        if !isFireWindow {
+            if isPlaying {
+                fire.fireAnimationDidStart()
+            } else {
+                fire.fireAnimationDidFinish()
+            }
+        }
+    }
+
+    private func updateAnimationPlaying() {
+        let isAnyAnimationPlaying = isLegacyAnimationPlaying || isDataClearingAnimationPlaying || closingWindowAnimationCount > 0
+        if isAnimationPlaying != isAnyAnimationPlaying {
+            isAnimationPlaying = isAnyAnimationPlaying
         }
     }
 
@@ -97,11 +142,16 @@ final class FireViewModel {
     @MainActor
     init(fire: FireProtocol) {
         self.fire = fire
+        snapshotPresentationCancellable = fire.burningDataPublisher.sink { [weak self] burningData in
+            if burningData == nil {
+                self?.hasPresentedCurrentSnapshotBurn = false
+            }
+        }
     }
 
     @MainActor
-    init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
-        fire = Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+    convenience init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
+        self.init(fire: Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider))
     }
 
     var isBurning: Bool {

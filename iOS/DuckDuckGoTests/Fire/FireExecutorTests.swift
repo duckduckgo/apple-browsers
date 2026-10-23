@@ -918,6 +918,29 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertEqual(sitePermissionsStore.permissions(for: makeSitePermissionKey("preserved.example")), original)
     }
 
+    func testWhenBurningFireModeDataThenMemoryCacheCleanupIsCancelled() async {
+        mockFeatureFlagger.enabledFeatureFlags.append(.fireMode)
+        FireModeCapability.resolve(using: mockFeatureFlagger)
+        let executor = makeFireExecutor()
+
+        await executor.burn(request: makeFireRequest(options: .data, scope: .fireMode), applicationState: .unknown)
+
+        XCTAssertEqual(mockWebsiteDataManager.cancelMemoryCacheCleanupCalls, [true])
+    }
+
+    func testWhenBurningTabDataThenWebsiteDataIsClearedForTheTabsMode() async {
+        mockHistoryManager.tabHistoryResult = [URL(string: "https://example.com")!]
+        let executor = makeFireExecutor()
+
+        let fireTab = TabViewModel(tab: Tab(uid: "fire-tab-uid", fireTab: true), historyManager: mockHistoryManager)
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: fireTab)), applicationState: .unknown)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithFireMode, true)
+
+        let normalTab = TabViewModel(tab: Tab(uid: "normal-tab-uid", fireTab: false), historyManager: mockHistoryManager)
+        await executor.burn(request: makeFireRequest(options: .data, scope: .tab(viewModel: normalTab)), applicationState: .unknown)
+        XCTAssertEqual(mockWebsiteDataManager.clearCalledWithFireMode, false)
+    }
+
     func testWhenSitePermissionsFeatureIsOffThenBurnStillClearsSitePermissions() async {
         XCTAssertFalse(mockFeatureFlagger.enabledFeatureFlags.contains(.sitePermissions))
         storePermission(for: "cleared.example")

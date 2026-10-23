@@ -687,7 +687,9 @@ final class MainCoordinator {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
                         dataStoreIDManager: dataStoreIDManager,
-                        featureFlagger: featureFlagger)
+                        featureFlagger: featureFlagger,
+                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
+                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
     }
 
     // MARK: - Public API

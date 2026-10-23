@@ -70,7 +70,9 @@ final class SingleTabBurnPerformanceTests: XCTestCase {
                                       dataStoreIDManager: DataStoreIDManager(store: keyValueStore),
                                       dataStoreCleaner: MockDataStoreCleaner(),
                                       observationsCleaner: MockObservationsCleaner(),
-                                      featureFlagger: flags)
+                                      featureFlagger: flags,
+                                      memoryCacheCleaner: MockMemoryCacheCleaner(),
+                                      fireModeMemoryCacheCleaner: MockMemoryCacheCleaner())
         var samples: [[String: Any]] = []
         for fixture in [Fixture.dense, Fixture.small] {
             for pair in 0..<(warmups + iterations) {
@@ -78,7 +80,7 @@ final class SingleTabBurnPerformanceTests: XCTestCase {
                     flags.enabledFeatureFlags = enabled ? [.singleTabBurnOptimization] : []
                     try await prepare(fixture, store: store)
                     let start = ProcessInfo.processInfo.systemUptime
-                    let result = await manager.clear(dataStore: WebsiteDataStoreWrapper(wrapped: store), forDomains: fixture.visitedDomains)
+                    let result = await manager.clear(dataStore: WebsiteDataStoreWrapper(wrapped: store), forDomains: fixture.visitedDomains, isFireMode: false)
                     let milliseconds = (ProcessInfo.processInfo.systemUptime - start) * 1_000
                     try result.safelyRemovableData.result.get()
                     try result.fireproofableData.result.get()

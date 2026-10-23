@@ -390,7 +390,8 @@ class MainViewController: UIViewController {
     }
 
     /// Call only once transition overlays are gone: glass snapshotted mid-morph samples the wrong background and lands dark.
-    func revealFloatingToolbarAfterTabSwitcherTransition() {
+    /// Pass `isAlreadyShowing` when the transition faded the toolbar in itself, to hand it back without a second entrance.
+    func revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: Bool = false) {
         isTabSwitcherTransitionOwningToolbar = false
         // Non-floating transitions never conceal the toolbar or reset chrome, so forcing
         // alpha here would desync `lastChromeVisibilityPercent` and break tap-to-show-bars.
@@ -398,8 +399,9 @@ class MainViewController: UIViewController {
 
         let toolbar: BrowserToolbarView = viewCoordinator.toolbar
         _ = themeColorManager.updateThemeColor()
-        refreshSettledFloatingGlassAppearance()
+        refreshSettledFloatingGlassAppearance(animated: isAlreadyShowing)
         toolbar.layoutIfNeeded()
+        guard !isAlreadyShowing else { return }
 
         guard !UIAccessibility.isReduceMotionEnabled else {
             toolbar.transform = .identity
@@ -420,10 +422,10 @@ class MainViewController: UIViewController {
         }
     }
 
-    private func refreshSettledFloatingGlassAppearance() {
+    private func refreshSettledFloatingGlassAppearance(animated: Bool = false) {
         guard isFloatingUIEnabled else { return }
         let interfaceStyle = settledFloatingGlassInterfaceStyle
-        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle)
+        viewCoordinator.toolbar.refreshMaterialAppearance(interfaceStyle: interfaceStyle, animated: animated)
         // The toolbar only refreshes an omnibar it hosts. With a top address bar the omnibar sits
         // in the navigation bar container instead, so its glass keeps the style it was snapshotted
         // with and lands opaque before flipping translucent a frame later.
@@ -496,6 +498,7 @@ class MainViewController: UIViewController {
     let bookmarksCachingSearch: BookmarksCachingSearch
 
     lazy var tabSwitcherTransition = TabSwitcherTransitionDelegate()
+    lazy var tabSwitcherSwipeUpTransition = TabSwitcherSwipeUpTransition()
     var currentTab: TabViewController? {
         return tabManager.current(createIfNeeded: false)
     }
@@ -1293,6 +1296,7 @@ class MainViewController: UIViewController {
             viewCoordinator.toolbar,
         ]
         installTabSwipeOverlay()
+        installTabSwitcherSwipeUpGesture()
     }
 
     private func installTabSwipeOverlay() {
@@ -1319,7 +1323,9 @@ class MainViewController: UIViewController {
            self.tabManager.current()?.link == nil,
            let tab = self.tabManager.currentTabsModel.currentTab {
             // Preview is optional; run completion even if the snapshot fails so the switcher opens on the first tap.
-            if let image = viewCoordinator.logoContainer.createImageSnapshot(inBounds: viewCoordinator.contentContainer.frame) {
+            // Snapshotting stalls the swipe-up animation, and the grid draws this tab as a logo anyway.
+            if !tabSwitcherSwipeUpTransition.isActive,
+               let image = viewCoordinator.logoContainer.createImageSnapshot(inBounds: viewCoordinator.contentContainer.frame) {
                 previewsSource.update(preview: image, forTab: tab)
             }
             completion?()
@@ -1336,7 +1342,8 @@ class MainViewController: UIViewController {
             })
         } else if let tab = self.tabManager.currentTabsModel.currentTab {
             // Favorites, etc
-            if let image = viewCoordinator.contentContainer.createImageSnapshot() {
+            if !tabSwitcherSwipeUpTransition.isActive,
+               let image = viewCoordinator.contentContainer.createImageSnapshot() {
                 previewsSource.update(preview: image, forTab: tab)
             }
             completion?()
@@ -8687,12 +8694,20 @@ extension MainViewController: TabSwitcherButtonDelegate {
 extension MainViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Swiping up to the tab switcher owns the touch; letting the address bar's own recognizers
+        // run alongside would focus the field when a short swipe is cancelled.
+        if gestureRecognizer is TabSwitcherSwipeUpGestureRecognizer || otherGestureRecognizer is TabSwitcherSwipeUpGestureRecognizer {
+            return false
+        }
         return true
     }
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         if let pan = gestureRecognizer as? UnifiedInputSwipeTabsPanGestureRecognizer {
             return shouldBeginUnifiedInputSwipeTabsPan(pan)
+        }
+        if let pan = gestureRecognizer as? TabSwitcherSwipeUpGestureRecognizer {
+            return shouldBeginTabSwitcherSwipeUp(pan)
         }
         return true
     }

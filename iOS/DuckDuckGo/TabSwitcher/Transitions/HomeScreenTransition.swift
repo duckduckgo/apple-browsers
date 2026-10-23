@@ -22,6 +22,16 @@ import Core
 protocol HomeScreenTransitionSource: AnyObject {
     var snapshotView: UIView { get }
     var rootContainerView: UIView { get }
+
+    var transitionLogo: HomeScreenTransitionLogo? { get }
+}
+
+/// The Dax a page shows, so a transition can carry it to and from the tab switcher cell's logo.
+struct HomeScreenTransitionLogo {
+    /// Dax's circle, in window coordinates.
+    let circle: CGRect
+    /// What the page draws behind Dax, to hide it in a snapshot of the page.
+    let background: UIImage?
 }
 
 class HomeScreenTransition: TabSwitcherTransition {
@@ -134,6 +144,8 @@ class FromHomeScreenTransition: HomeScreenTransition {
             return
         }
 
+        TabSwitcherCellFrameCache.store(tabSwitcherCellFrame(for: layoutAttr), row: rowIndex, in: tabSwitcherViewController)
+
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
         let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
@@ -192,9 +204,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
             if self.tabSwitcherSettings.isGridViewEnabled {
                 UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.55) {
-                    self.applyGridChromePose(
-                        isVisible: true,
-                        in: CGRect(origin: .zero, size: self.tabSwitcherCellFrame(for: layoutAttr).size))
+                    self.applyGridChromePose(isVisible: true)
                 }
             }
 
@@ -277,10 +287,21 @@ class ToHomeScreenTransition: HomeScreenTransition {
         mainViewController.view.alpha = 1
 
         let isFloating = mainViewController.isFloatingUIEnabled
-        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         if isFloating {
             mainViewController.chromeManager.reset(animated: false)
             concealLiveFloatingToolbar(of: mainViewController)
+        }
+
+        if tabSwitcherViewController.transitionStyle == .modern,
+           TabSwitcherTransition.usesCardTransition(for: mainViewController),
+           tab.viewed,
+           animateCardDismiss(using: transitionContext,
+                              mainViewController: mainViewController,
+                              homeScreen: homeScreen,
+                              tab: tab,
+                              rowIndex: rowIndex,
+                              layoutAttr: layoutAttr) {
+            return
         }
 
         let theme = ThemeManager.shared.currentTheme
@@ -315,7 +336,12 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
         
-        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
+        let restoreTransitionViews = tabSwitcherViewController.transitionStyle == .modern
+            ? revealLiveChrome(of: mainViewController,
+                               over: transitionContext.containerView,
+                               response: TabSwitcherTransition.Spring.dismiss.response)
+            : nil
+        animateDismissKeyframes(isFloating: isFloating, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
@@ -337,14 +363,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
             if self.tabSwitcherSettings.isGridViewEnabled {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
-                    let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
-                    let destinationFrame = isFloating
-                        ? homeScreenFrame
-                        : self.adjustFrame(homeScreenFrame,
-                                           forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
-                    self.applyGridChromePose(isVisible: false,
-                                             in: CGRect(origin: .zero, size: destinationFrame.size))
+                    self.applyGridChromePose(isVisible: false)
                 }
             }
 
@@ -365,11 +384,48 @@ class ToHomeScreenTransition: HomeScreenTransition {
                 self.tabSwitcherViewController.view.alpha = 0
             }
 
-        }, completion: { _ in
+        }, completion: {
             self.removeTransitionViews()
             self.settingsButtonSnapshot?.removeFromSuperview()
-            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: restoreTransitionViews != nil)
+            restoreTransitionViews?()
             transitionContext.completeTransition(true)
         })
+    }
+
+    /// The cell grows back into the page while its logo travels to where the page draws it.
+    /// Returns false when the page shows no logo.
+    private func animateCardDismiss(using transitionContext: UIViewControllerContextTransitioning,
+                                    mainViewController: MainViewController,
+                                    homeScreen: any NewTabPage,
+                                    tab: Tab,
+                                    rowIndex: Int,
+                                    layoutAttr: UICollectionViewLayoutAttributes) -> Bool {
+        let containerView = transitionContext.containerView
+        mainViewController.view.layoutIfNeeded()
+        guard let logo = homeScreen.transitionLogo,
+              let snapshot = homeScreen.snapshotView.snapshotView(afterScreenUpdates: false) else { return false }
+
+        let pageColor = homeScreen.view.backgroundColor ?? ThemeManager.shared.currentTheme.backgroundColor
+        let cardView = TabSwitcherCardView(content: snapshot,
+                                           contentFrameInScreen: homeScreen.snapshotView.convert(homeScreen.snapshotView.bounds,
+                                                                                                 to: containerView),
+                                           contentCropTop: 0,
+                                           screenBounds: containerView.bounds,
+                                           screenCornerRadius: TabSwitcherTransition.screenCornerRadius(for: containerView),
+                                           screenBackgroundColor: pageColor)
+        // The page may not have drawn yet, so Dax travels as the cell draws it.
+        cardView.installDax(circleInScreen: containerView.convert(logo.circle, from: nil),
+                            pageDax: nil,
+                            pageBackground: logo.background,
+                            cellImage: TabViewCell.logoImage(for: tab))
+        runCardDismiss(cardView,
+                       rowIndex: rowIndex,
+                       layoutAttributes: layoutAttr,
+                       pageColor: pageColor,
+                       using: transitionContext,
+                       mainViewController: mainViewController,
+                       whenPageReady: { $0() })
+        return true
     }
 }

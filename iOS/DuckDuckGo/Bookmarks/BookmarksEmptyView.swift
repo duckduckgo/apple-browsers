@@ -39,6 +39,7 @@ struct BookmarksEmptyView: View {
                     .padding(.top, 16)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)
+                    .accessibilityIdentifier("Bookmarks.EmptyState")
 
                 Text(UserText.emptyBookmarksSubtitle)
                     .daxBodyRegular()

@@ -510,6 +510,40 @@ final class OAuthClientTests: XCTestCase {
         XCTAssertEqual(trigger.rawValue, "create_if_needed")
     }
 
+    func testGetToken_createIfNeeded_expiredToken_unknownAccount_createsAccount() async throws {
+        let bodyError = OAuthRequest.BodyError(errorCode: .unknownAccount, tokenStatus: nil)
+        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.authAPIError(OAuthRequestError(from: bodyError)))
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.createAccountResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeExpiredTokenContainer())
+        await oAuthClient.setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        let tokenContainer = try await oAuthClient.getTokens(policy: .createIfNeeded)
+
+        XCTAssertFalse(tokenContainer.decodedAccessToken.isExpired())
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), tokenContainer)
+    }
+
+    func testGetToken_createIfNeeded_expiredToken_transientRefreshFailure_throwsAndKeepsStoredToken() async throws {
+        mockOAuthService.refreshAccessTokenResponse = .failure(OAuthServiceError.invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+        mockOAuthService.authorizeResponse = .success("auth_session_id")
+        mockOAuthService.createAccountResponse = .success("auth_code")
+        mockOAuthService.getAccessTokenResponse = .success(OAuthTokensFactory.makeValidOAuthTokenResponse())
+        let storedToken = OAuthTokensFactory.makeExpiredTokenContainer()
+        try tokenStorage.saveTokenContainer(storedToken)
+        await oAuthClient.setTestingDecodedTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
+
+        do {
+            _ = try await oAuthClient.getTokens(policy: .createIfNeeded)
+            XCTFail("Error expected")
+        } catch {
+            XCTAssertEqual(error as? OAuthServiceError, .invalidResponseCode(HTTPStatusCode.gatewayTimeout))
+        }
+
+        XCTAssertEqual(try tokenStorage.getTokenContainer(), storedToken)
+    }
+
     // MARK: - Event Mapping
 
     func testEventMapping_successfulRefresh() async throws {

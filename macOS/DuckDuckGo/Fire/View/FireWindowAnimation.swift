@@ -25,6 +25,17 @@ import QuartzCore
 /// The visible replacement is installed before the source is ordered out. It owns no browser views.
 @MainActor
 final class FireWindowAnimationController: NSWindowController {
+    private enum Constants {
+        static let shadowPadding: CGFloat = 80
+        static let reducedMotionDuration: TimeInterval = 0.15
+    }
+
+    struct Playback {
+        var isEnabled = FireAnimationTestSupport.playsAnimations
+        var reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        var load: (() async -> DefaultFireAnimation?)?
+    }
+
     final class SnapshotWindow: NSWindow {
         override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect {
             // The captured shadow can extend above the screen's visible area. AppKit's default
@@ -41,19 +52,16 @@ final class FireWindowAnimationController: NSWindowController {
     private var animationTask: Task<Void, Never>?
     private var fireAnimationView: LottieAnimationView?
     private var didFinish = false
+    private let animationLoader: DefaultFireAnimationLoader
 
-    init?(sourceWindow: NSWindow) {
+    init?(sourceWindow: NSWindow, animationLoader: DefaultFireAnimationLoader = DefaultFireAnimationLoader(),
+          capture: (NSWindow, CGFloat) -> CGImage? = FireWindowAnimationController.captureImage) {
         guard sourceWindow.isVisible else { return nil }
         let sourceFrame = sourceWindow.frame
         // Capture the native shadow in a known screen rectangle instead of approximating it.
-        let padding: CGFloat = 80
+        let padding = Constants.shadowPadding
         let frame = sourceFrame.insetBy(dx: -padding, dy: -padding)
-        let windowID = CGWindowID(sourceWindow.windowNumber)
-        guard let info = CGWindowListCopyWindowInfo(.optionIncludingWindow, windowID) as? [[String: Any]],
-              let bounds = info.first?[kCGWindowBounds as String] as? [String: Any],
-              let captureBounds = CGRect(dictionaryRepresentation: bounds as CFDictionary),
-              let image = CGWindowListCreateImage(captureBounds.insetBy(dx: -padding, dy: -padding),
-                                                  .optionIncludingWindow, windowID, [.bestResolution]) else { return nil }
+        guard let image = capture(sourceWindow, padding) else { return nil }
         contentBounds = CGRect(origin: CGPoint(x: padding, y: padding), size: sourceFrame.size)
         let window = SnapshotWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -64,6 +72,7 @@ final class FireWindowAnimationController: NSWindowController {
         window.level = sourceWindow.level
         window.collectionBehavior = [.fullScreenAuxiliary, .stationary, .ignoresCycle]
         window.animationBehavior = .none
+        self.animationLoader = animationLoader
         super.init(window: window)
         let view = NSView(frame: CGRect(origin: .zero, size: frame.size))
         view.wantsLayer = true
@@ -93,21 +102,40 @@ final class FireWindowAnimationController: NSWindowController {
         fatalError("FireWindowAnimationController: Bad initializer")
     }
 
+    private static func captureImage(_ sourceWindow: NSWindow, padding: CGFloat) -> CGImage? {
+        let windowID = CGWindowID(sourceWindow.windowNumber)
+        guard let info = CGWindowListCopyWindowInfo(.optionIncludingWindow, windowID) as? [[String: Any]],
+              let bounds = info.first?[kCGWindowBounds as String] as? [String: Any],
+              let captureBounds = CGRect(dictionaryRepresentation: bounds as CFDictionary) else { return nil }
+        return CGWindowListCreateImage(captureBounds.insetBy(dx: -padding, dy: -padding),
+                                       .optionIncludingWindow, windowID, [.bestResolution])
+    }
+
     deinit {
         animationTask?.cancel()
     }
 
-    func start(completion: @escaping () -> Void) {
+    func start(playback: Playback = .init(), completion: @escaping () -> Void) {
         self.completion = completion
         // Test runs skip the visual treatment, but preserve start/finish notifications.
-        guard case .normal = AppVersion.runType else {
+        guard playback.isEnabled else {
             finish()
             return
         }
-        if !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+        if !playback.reduceMotion {
+            let animationLoader = animationLoader
             animationTask = Task { [weak self] in
-                let fire = await DefaultFireAnimationLoader.shared.load()
-                guard !Task.isCancelled, let self else { return }
+                let fire: DefaultFireAnimation?
+                if let load = playback.load {
+                    fire = await load()
+                } else {
+                    fire = await animationLoader.load()
+                }
+                guard let self else { return }
+                guard !Task.isCancelled, !didFinish else {
+                    finish()
+                    return
+                }
                 guard let fire else {
                     finish()
                     return
@@ -123,7 +151,7 @@ final class FireWindowAnimationController: NSWindowController {
         let fade = CABasicAnimation(keyPath: "opacity")
         fade.fromValue = 1
         fade.toValue = 0
-        fade.duration = 0.15
+        fade.duration = Constants.reducedMotionDuration
         snapshotLayer.opacity = 0
         snapshotLayer.add(fade, forKey: "fade")
         CATransaction.commit()
@@ -134,6 +162,7 @@ final class FireWindowAnimationController: NSWindowController {
         didFinish = true
         fireAnimationView?.stop()
         fireAnimationView = nil
+        animationTask?.cancel()
         animationTask = nil
         window?.orderOut(nil)
         window?.close()
@@ -145,7 +174,10 @@ final class FireWindowAnimationController: NSWindowController {
 
     /// The bundled GPU-rendered Lottie asset supplies both the flames and the wipe geometry.
     private func animateFire(_ fire: DefaultFireAnimation) {
-        guard let view = window?.contentView else { return }
+        guard let view = window?.contentView else {
+            finish()
+            return
+        }
         let animationView = LottieAnimationView(animation: fire.animation, configuration: LottieConfiguration(renderingEngine: .coreAnimation))
         animationView.identifier = .init(rawValue: DefaultFireAnimationLoader.assetName)
         animationView.frame = contentBounds
@@ -194,22 +226,31 @@ struct DefaultFireAnimation: Sendable {
     let burnFronts: [[CGFloat]]
 }
 
-/// Prepare the bundled asset and its wipe off the main actor, once for all browser windows.
+/// Cache the bundled asset for one Fire view model. Lottie's mutable layer renderer stays on the main actor.
 actor DefaultFireAnimationLoader {
-    static let shared = DefaultFireAnimationLoader()
     static let assetName = "02_Fire_rebranded"
     private var cached: DefaultFireAnimation?
+    private var loadingTask: Task<DefaultFireAnimation?, Never>?
 
-    func load() -> DefaultFireAnimation? {
+    func load() async -> DefaultFireAnimation? {
         if let cached { return cached }
-        guard let animation = LottieAnimation.named(Self.assetName, animationCache: LottieAnimationCache.shared),
-              let fronts = sampleBurnFronts(animation) else { return nil }
-        let fire = DefaultFireAnimation(animation: animation, burnFronts: fronts)
+        if let loadingTask { return await loadingTask.value }
+        guard let animation = LottieAnimation.named(Self.assetName, animationCache: LottieAnimationCache.shared) else { return nil }
+        let task = Task { @MainActor in
+            // Updating currentFrame can enqueue Lottie work on the main queue. Sampling elsewhere
+            // would mutate the same renderer concurrently with those queued updates.
+            guard let fronts = Self.sampleBurnFronts(animation) else { return Optional<DefaultFireAnimation>.none }
+            return DefaultFireAnimation(animation: animation, burnFronts: fronts)
+        }
+        loadingTask = task
+        let fire = await task.value
+        loadingTask = nil
         cached = fire
         return fire
     }
 
-    private func sampleBurnFronts(_ animation: LottieAnimation) -> [[CGFloat]]? {
+    @MainActor
+    private static func sampleBurnFronts(_ animation: LottieAnimation) -> [[CGFloat]]? {
         let width = 136
         let height = max(1, Int((CGFloat(width) * animation.bounds.height / animation.bounds.width).rounded()))
         guard let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
@@ -242,7 +283,8 @@ actor DefaultFireAnimationLoader {
         }
     }
 
-    private func paintFlameShapes(_ layer: CALayer, relativeTo root: CALayer, in context: CGContext) {
+    @MainActor
+    private static func paintFlameShapes(_ layer: CALayer, relativeTo root: CALayer, in context: CGContext) {
         guard !layer.isHidden, layer.opacity > 0 else { return }
         context.saveGState()
         if layer.masksToBounds { context.clip(to: layer.convert(layer.bounds, to: root)) }
@@ -266,6 +308,16 @@ actor DefaultFireAnimationLoader {
 /// A standalone progress window survives the browser closing and cancels its delayed presentation.
 @MainActor
 final class FireProgressWindowController: NSWindowController {
+    private enum Constants {
+        static let windowSize = NSSize(width: 380, height: 150)
+        static let contentWidth: CGFloat = 320
+        static let messageFontSize: CGFloat = 15
+        static let spacing: CGFloat = 24
+        static let postAnimationDelay: TimeInterval = 0.15
+        static let minimumVisibleDuration: TimeInterval = 1
+    }
+
+    static let presentationDelay: TimeInterval = 0.3
     private static var active = [UUID: FireProgressWindowController]()
     private let identifier = UUID()
     private let fireViewModel: FireViewModel
@@ -299,7 +351,10 @@ final class FireProgressWindowController: NSWindowController {
     }
 
     private func createWindow() {
-        let window = NSPanel(contentRect: CGRect(x: sourceFrame.midX - 190, y: sourceFrame.midY - 75, width: 380, height: 150),
+        let frame = CGRect(x: sourceFrame.midX - Constants.windowSize.width / 2,
+                           y: sourceFrame.midY - Constants.windowSize.height / 2,
+                           width: Constants.windowSize.width, height: Constants.windowSize.height)
+        let window = NSPanel(contentRect: frame,
                              styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.titlebarAppearsTransparent = true
@@ -310,7 +365,7 @@ final class FireProgressWindowController: NSWindowController {
         window.setAccessibilityIdentifier("FireProgressWindowController.window")
         window.collectionBehavior = [.fullScreenAuxiliary]
         let label = NSTextField(wrappingLabelWithString: message)
-        label.font = .systemFont(ofSize: 15, weight: .semibold)
+        label.font = .systemFont(ofSize: Constants.messageFontSize, weight: .semibold)
         label.alignment = .center
         let spinner = NSProgressIndicator()
         self.progressIndicator = spinner
@@ -318,14 +373,14 @@ final class FireProgressWindowController: NSWindowController {
         spinner.isIndeterminate = true
         let stack = NSStackView(views: [label, spinner])
         stack.orientation = .vertical
-        stack.spacing = 24
+        stack.spacing = Constants.spacing
         stack.translatesAutoresizingMaskIntoConstraints = false
         window.contentView?.addSubview(stack)
         if let contentView = window.contentView {
             NSLayoutConstraint.activate([
                 stack.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
                 stack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-                stack.widthAnchor.constraint(equalToConstant: 320)
+                stack.widthAnchor.constraint(equalToConstant: Constants.contentWidth)
             ])
         }
         self.window = window
@@ -380,7 +435,7 @@ final class FireProgressWindowController: NSWindowController {
         animationFinished = true
         guard !isDismissed, !burnFinished, fireViewModel.isBurning else { return }
         // Let a completed cleanup publish nil before deciding whether a progress window is needed.
-        schedulePresentation(after: 0.15)
+        schedulePresentation(after: Constants.postAnimationDelay)
     }
 
     private func dismiss() {
@@ -389,7 +444,7 @@ final class FireProgressWindowController: NSWindowController {
         pendingPresentation?.cancel()
         pendingPresentation = nil
         progressIndicator?.stopAnimation(nil)
-        let remaining = max(0, 1 - (presentedAt.map { Date().timeIntervalSince($0) } ?? 1))
+        let remaining = max(0, Constants.minimumVisibleDuration - (presentedAt.map { Date().timeIntervalSince($0) } ?? Constants.minimumVisibleDuration))
         let pending = DispatchWorkItem { [weak self] in
             guard let self, !fireViewModel.isBurning else { return }
             closeProgress()

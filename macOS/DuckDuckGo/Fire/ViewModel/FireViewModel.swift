@@ -63,8 +63,10 @@ extension Fire.BurningData {
 final class FireViewModel {
 
     let fire: FireProtocol
+    let animationLoader = DefaultFireAnimationLoader()
 
     @Published private(set) var isAnimationPlaying = false
+    private var isLegacyAnimationPlaying = false
     private(set) var isDataClearingAnimationPlaying = false
     private var closingWindowAnimationCount = 0
     private var hasPresentedCurrentSnapshotBurn = false
@@ -79,8 +81,9 @@ final class FireViewModel {
     }
 
     func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
-        guard self.isAnimationPlaying != isAnimationPlaying else { return }
-        self.isAnimationPlaying = isAnimationPlaying
+        guard isLegacyAnimationPlaying != isAnimationPlaying else { return }
+        isLegacyAnimationPlaying = isAnimationPlaying
+        updateAnimationPlaying()
 
         if !isFireWindow {
             if isAnimationPlaying {
@@ -103,10 +106,7 @@ final class FireViewModel {
             guard isDataClearingAnimationPlaying != isPlaying else { return }
             isDataClearingAnimationPlaying = isPlaying
         }
-        let isAnyAnimationPlaying = isDataClearingAnimationPlaying || closingWindowAnimationCount > 0
-        if isAnimationPlaying != isAnyAnimationPlaying {
-            isAnimationPlaying = isAnyAnimationPlaying
-        }
+        updateAnimationPlaying()
 
         if !isFireWindow {
             if isPlaying {
@@ -114,6 +114,13 @@ final class FireViewModel {
             } else {
                 fire.fireAnimationDidFinish()
             }
+        }
+    }
+
+    private func updateAnimationPlaying() {
+        let isAnyAnimationPlaying = isLegacyAnimationPlaying || isDataClearingAnimationPlaying || closingWindowAnimationCount > 0
+        if isAnimationPlaying != isAnyAnimationPlaying {
+            isAnimationPlaying = isAnyAnimationPlaying
         }
     }
 

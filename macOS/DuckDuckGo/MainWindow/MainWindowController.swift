@@ -724,6 +724,7 @@ extension MainWindowController: NSWindowDelegate {
         return true
     }
 
+    @MainActor
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
         guard !isClosingAndBurning else { return }
         isClosingAndBurning = true

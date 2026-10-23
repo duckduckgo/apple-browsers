@@ -569,6 +569,7 @@ final class Fire: FireProtocol {
                 // windows are closed by MainViewController.closeWindowIfNeeded
                 self.reopenWindowIfNeeded(customURL: entity.customURLToOpen)
                 self.burningData = nil
+                FireAnimationTestSupport.didFinishCleanup()
             }
 
             await self.reloadWebExtensions()
@@ -700,6 +701,7 @@ final class Fire: FireProtocol {
                     self.reopenWindowIfNeeded(customURL: url)
                 }
                 self.burningData = nil
+                FireAnimationTestSupport.didFinishCleanup()
             }
 
             await self.reloadWebExtensions()
@@ -887,6 +889,7 @@ final class Fire: FireProtocol {
     // MARK: - Web cache
 
     private func burnWebCache(dataClearingWideEventService: DataClearingWideEventService?) async {
+        await FireAnimationTestSupport.waitForCleanupRelease()
         await unloadWebExtensions()
         Logger.fire.debug("WebsiteDataStore began cookie deletion")
         await webCacheManager.clear(dataClearingWideEventService: dataClearingWideEventService)
@@ -894,6 +897,7 @@ final class Fire: FireProtocol {
     }
 
     private func burnWebCache(baseDomains: Set<String>? = nil, dataClearingWideEventService: DataClearingWideEventService?) async {
+        await FireAnimationTestSupport.waitForCleanupRelease()
         await unloadWebExtensions()
         Logger.fire.debug("WebsiteDataStore began cookie deletion")
         await webCacheManager.clear(baseDomains: baseDomains, dataClearingWideEventService: dataClearingWideEventService)
@@ -1107,7 +1111,9 @@ final class Fire: FireProtocol {
     @MainActor
     private func prepareWindowClosingPresentation() {
         // Keep a running burn on one path even if a remote or local override changes mid-cleanup.
-        isSnapshotEnabledForCurrentBurn = isWindowSnapshotEnabled
+        // Per-window pins retain their browser window, so that burn needs its in-window presentation.
+        let sourceHasPinnedTabs = windowControllersManager.lastKeyMainWindowController.map(hasPerWindowPinnedTabs) ?? false
+        isSnapshotEnabledForCurrentBurn = isWindowSnapshotEnabled && !sourceHasPinnedTabs
         // Captured window identities belong to one burn; stale entries must not close windows in a later burn.
         windowsWithClosingPresentation.removeAll()
         // Hiding the source changes window focus. Freeze which window qualifies for replacement before
@@ -1119,7 +1125,14 @@ final class Fire: FireProtocol {
 
     @MainActor
     func beginWindowClosingPresentation(for windowController: MainWindowController) {
+        guard !hasPerWindowPinnedTabs(windowController) else { return }
         windowsWithClosingPresentation.insert(ObjectIdentifier(windowController))
+    }
+
+    @MainActor
+    private func hasPerWindowPinnedTabs(_ windowController: MainWindowController) -> Bool {
+        pinnedTabsManagerProvider.pinnedTabsMode == .separate
+            && !windowController.mainViewController.tabCollectionViewModel.pinnedTabs.isEmpty
     }
 
     @MainActor
@@ -1127,6 +1140,7 @@ final class Fire: FireProtocol {
         // Close windows registered for snapshot presentation even if capture failed. Windows without
         // that registration follow the tab-replacement and window-retention rules in burnTabs.
         for controller in controllers where windowsWithClosingPresentation.contains(ObjectIdentifier(controller))
+            && !hasPerWindowPinnedTabs(controller)
             && windowControllersManager.mainWindowControllers.contains(controller) {
             controller.close()
         }

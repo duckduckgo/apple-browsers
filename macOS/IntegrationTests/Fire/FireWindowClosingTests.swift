@@ -49,6 +49,11 @@ final class FireWindowClosingTests: XCTestCase {
         featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = initialSnapshotFlagValue
         cancellables = []
         autoreleasepool {
+            // End address-bar editing so its field editor and suggestions panel release the window.
+            for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+                controller.window?.endEditing(for: nil)
+                controller.window?.makeFirstResponder(nil)
+            }
             WindowsManager.closeWindows()
             for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
                 Application.appDelegate.windowControllersManager.unregister(controller)
@@ -117,9 +122,20 @@ final class FireWindowClosingTests: XCTestCase {
     }
 
     @MainActor
-    private func assertSnapshotClosingLifecycle(historyVisits: Bool, snapshotEnabled: Bool = true) async throws {
+    func testSnapshotBurnWithAnimationDisabledStillClosesSourceAndUsesIndependentProgress() async throws {
+        try await assertSnapshotClosingLifecycle(historyVisits: false, animationEnabled: false)
+    }
+
+    @MainActor
+    func testLegacyBurnWithAnimationDisabledKeepsSourceAndUsesInWindowProgress() async throws {
+        try await assertSnapshotClosingLifecycle(historyVisits: false, snapshotEnabled: false, animationEnabled: false)
+    }
+
+    @MainActor
+    private func assertSnapshotClosingLifecycle(historyVisits: Bool, snapshotEnabled: Bool = true, animationEnabled: Bool = true) async throws {
         let cache = HeldSnapshotCache()
         let app = Application.appDelegate!
+        app.dataClearingPreferences.isFireAnimationEnabled = animationEnabled
         featureFlagger.featuresStub[FeatureFlag.fireWindowSnapshotAnimation.rawValue] = snapshotEnabled
         let fire = Fire(cacheManager: cache,
                         historyCoordinating: HistoryCoordinatingMock(),
@@ -374,7 +390,7 @@ final class FireWindowClosingTests: XCTestCase {
     }
 }
 
-private final class HeldSnapshotCache: WebCacheManager {
+final class HeldSnapshotCache: WebCacheManager {
     @MainActor var onClear: (() -> Void)?
     @MainActor private var continuation: CheckedContinuation<Void, Never>?
 

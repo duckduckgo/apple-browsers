@@ -639,6 +639,11 @@ final class AIChatContextualChatSessionState {
         rebuildViewState()
     }
 
+    func retrySuggestions() {
+        beginLoadingSuggestions()
+        resolveSuggestionsIfLoading(from: lastCollectedContext)
+    }
+
     func beginLoadingSuggestions() {
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts), !hasActiveChat else { return }
         suggestionsRequestID = UUID()

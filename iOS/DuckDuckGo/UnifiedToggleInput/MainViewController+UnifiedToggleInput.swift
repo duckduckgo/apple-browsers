@@ -872,7 +872,7 @@ private extension MainViewController {
         return true
     }
 
-    func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
+    internal func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
         defer { tab.bindFreshChatSuggestions(to: coordinator) }
         if let nativeChat = tab.nativeChat {
             configureNativeChatWebContinuation(nativeChat, in: tab, webURL: tab.url ?? aiChatSettings.aiChatURL)

@@ -74,7 +74,7 @@ extension TabViewController {
 
     private func bindLocalSuggestionsToCurrentPage() {
         localSuggestions.bind(webView: webView, isAttachable: { [weak self] in
-            self?.pageContextHandler.isCurrentPageAttachable() ?? false
+            self?.aiChatContextualSheetCoordinator.pageContextHandler.isCurrentPageAttachable() ?? false
         })
     }
 

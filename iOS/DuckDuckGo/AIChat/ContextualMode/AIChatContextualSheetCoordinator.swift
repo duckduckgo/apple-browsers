@@ -1285,8 +1285,7 @@ extension AIChatContextualSheetCoordinator: AIChatContextualInputViewControllerD
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt) {
         if suggestion.id == "local-retry" {
-            sessionState.beginLoadingSuggestions()
-            sessionState.resolveSuggestionsIfLoading(from: nil)
+            sessionState.retrySuggestions()
             return
         }
         promoteFloatingInputToSheet()

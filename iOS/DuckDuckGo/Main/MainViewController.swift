@@ -2993,7 +2993,8 @@ class MainViewController: UIViewController {
                 hostingTab = existing
             }
             // Check if an existing tab with the same URL should be reused.
-            else if reuseExisting != .none, let existing = tabManager.first(withUrl: navigationURL) {
+            else if reuseExisting != .none, let existing = tabManager.first(withUrl: url),
+                    nativeChat == nil || (nativeChat?.session.state.context.opening == nil && existing.nativeChatWasOpen) {
                 selectTab(existing)
                 completion?(existing)
                 return

@@ -182,6 +182,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             }
         }
         guard let request = takeTabAttachmentRequest() else { discardTabAttachments(); return }
+        let attachmentIDs = viewController.currentAttachments.map(\.id)
+        let destinationID = currentTabUID
         freshSuggestionsState = .loading
         freshSuggestionsTask = Task { [weak self] in
             let pages = await request.contexts()
@@ -191,6 +193,9 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                   selected.allSatisfy({ source.candidates().contains($0) }), pages.count == selected.count,
                   request.validate(pages).count == selected.count else {
                 request.cancel()
+                if let self, self.currentTabUID == destinationID {
+                    attachmentIDs.forEach { self.removeAttachment(id: $0) }
+                }
                 if let self, self.freshSuggestionsGeneration == generation {
                     self.freshSuggestionsCachedState = .unavailable
                     self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? .unavailable : .hidden

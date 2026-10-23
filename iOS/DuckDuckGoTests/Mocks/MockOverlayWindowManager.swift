@@ -26,6 +26,8 @@ final class MockOverlayWindowManager: OverlayWindowManaging {
     var displayBlankSnapshotWindowCalled = false
     var displayOverlayCalled = false
     var removeOverlayCalled = false
+    var removeAnyOverlayCallCount = 0
+    var onRemoveAnyOverlay: (() -> Void)?
     var removeNonAuthenticationOverlayCalled = false
 
     var lastDisplayedViewController: UIViewController?
@@ -45,6 +47,8 @@ final class MockOverlayWindowManager: OverlayWindowManaging {
 
     func removeAnyOverlay() {
         removeOverlayCalled = true
+        removeAnyOverlayCallCount += 1
+        onRemoveAnyOverlay?()
     }
 
     func removeBlankSnapshotWindow(for reason: DuckDuckGo.BlankSnapshotOverlayReason) {

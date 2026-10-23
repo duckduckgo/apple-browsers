@@ -84,8 +84,11 @@ def pack(args):
     if len(sources) != 1:
         raise ValueError('Expected exactly one artifact-production xctestrun; found ' + str(sources))
     data = read_plist(sources[0])
-    app_name = 'DuckDuckGo App Store Review.app' if args.distribution == 'appstore' else 'DuckDuckGo Review.app'
-    app = products / 'Review' / app_name
+    apps = list((products / 'Review').glob('DuckDuckGo*.app'))
+    if len(apps) != 1:
+        raise ValueError('Expected exactly one exported DuckDuckGo application; found ' + str(apps))
+    app = apps[0]
+    app_name = app.name
     app_info = read_plist(app / 'Contents/Info.plist')
     architectures = [platform.machine()]
     with tempfile.TemporaryDirectory(prefix='ddg-test-artifact-') as temporary:

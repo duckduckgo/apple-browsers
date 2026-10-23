@@ -49,6 +49,39 @@ class PortableTests(unittest.TestCase):
         (self.root / 'Plans').mkdir()
         (self.root / 'Plans/UI Tests.xctestplan').write_text(json.dumps({'testTargets': [{'target': {'name': 'UI Tests'}}]}))
 
+    def test_pack_preserves_versioned_export_name_for_both_distributions(self):
+        for distribution in ('dmg', 'appstore'):
+            with self.subTest(distribution=distribution), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                products = root / 'Build/Products'
+                review = products / 'Review'
+                app = review / ('DuckDuckGo-' + distribution + '-1.213.0.858.app')
+                runner = review / 'UI Tests-Runner.app'
+                bundle = runner / 'Contents/PlugIns/UI Tests.xctest'
+                for item in (app, runner, bundle):
+                    (item / 'Contents/MacOS').mkdir(parents=True)
+                    (item / 'Contents/MacOS/Executable').write_bytes(b'unchanged signed binary')
+                    artifact.write_plist(item / 'Contents/Info.plist', {
+                        'CFBundleExecutable': 'Executable', 'CFBundleIdentifier': 'example.review',
+                        'CFBundleShortVersionString': '1.213.0', 'CFBundleVersion': '858'})
+                (review / 'tests-server').write_bytes(b'server')
+                target = dict(self.target, TestHostPath='__TESTROOT__/Review/UI Tests-Runner.app')
+                scheme = 'macOS UI Test Artifacts' + (' App Store' if distribution == 'appstore' else '')
+                artifact.write_plist(products / (scheme + '.xctestrun'), {
+                    'TestConfigurations': [{'TestTargets': [target]}], '__xctestrun_metadata__': {'FormatVersion': 2}})
+                archive = root / 'tests.tar.gz'
+                def output(command, **_kwargs):
+                    return 'arm64' if command[0] == 'lipo' else 'test revision'
+                args = argparse.Namespace(products=products, developer=root / 'Developer', distribution=distribution, output=archive)
+                with mock.patch.object(artifact, 'output', side_effect=output):
+                    artifact.pack(args)
+                with tarfile.open(archive) as packed:
+                    metadata = json.load(packed.extractfile('ui-tests/manifest.json'))
+                    spec = plistlib.load(packed.extractfile('ui-tests/source.xctestrun'))
+                    self.assertEqual(metadata['app'], app.name)
+                    self.assertEqual(artifact.targets(spec)[0]['UITargetAppPath'], '__TESTROOT__/Products/Review/' + app.name)
+                self.assertEqual(artifact.binary(app).read_bytes(), b'unchanged signed binary')
+
     def test_native_build_restores_caller_lockfiles_after_success_and_failure(self):
         for version, exit_code in [('16.2', 0), ('26.2', 65), ('27.0', 0)]:
             with self.subTest(version=version, exit_code=exit_code), tempfile.TemporaryDirectory() as temporary:

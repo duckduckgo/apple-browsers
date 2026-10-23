@@ -231,6 +231,9 @@ def specification(root, target, host, developer, identifiers, plan, mode):
     data['TestHostPath'] = str(host)
     data['TestBundlePath'] = '__TESTHOST__/Contents/PlugIns/' + target['BlueprintName'] + '.xctest'
     data['UITargetAppPath'] = str(app)
+    # TEST_TARGET_NAME= avoids rebuilding the app, but marks it as supplied by
+    # the tests. Restore the normal target-app configuration for this paired app.
+    data['UseUITargetAppProvidedByTests'] = False
     data['DependentProductPaths'] = [str(host), str(host / 'Contents/PlugIns' / (target['BlueprintName'] + '.xctest')), str(app)]
     if identifiers:
         data['OnlyTestIdentifiers'] = identifiers
@@ -305,18 +308,22 @@ def stop_owned_app(host):
             pass
 
 
-def execution_summary(log, code, result, expected, retrying=False, allow_all_skipped=False):
+def execution_summary(log, code, result, expected, retrying=False, allow_all_skipped=False, env=None):
     counts = re.findall(r'Executed (\d+) tests?, with (?:(\d+) tests? skipped and )?(\d+) failures?', log)
     count, skipped, failed = tuple(int(v or 0) for v in counts[-1]) if counts else (0, 0, 0)
-    count = max((int(item[0]) for item in counts), default=0)
     # XCTest and our observer both report each skip, sometimes with different
     # module qualification. Count methods, not duplicated log messages.
     skipped_cases = {re.sub(r'^-\[(?:\w+\.)+', '-[', case)
                      for case in re.findall(r"Test Case '([^']+)' skipped(?: |\()", log)}
     skipped = max(max((int(item[1] or 0) for item in counts), default=0), len(skipped_cases))
-    # XCTest's exit status accounts for successful retries across attempts. A textual
-    # suite summary only describes one attempt and can still contain failures.
-    passed = code == 0 and count >= expected and (count > skipped or allow_all_skipped) and (retrying or failed == 0) and result.is_dir()
+    successful = failed == 0
+    if retrying and result.is_dir():
+        # xcodebuild can exit zero after a class setup exception. The result bundle
+        # records the final outcome, including native retries, without observer counts.
+        report = json.loads(output(['xcrun', 'xcresulttool', 'get', 'test-results', 'summary', '--path', result, '--compact'], env=env))
+        count, skipped, failed = report['totalTestCount'], report['skippedTests'], report['failedTests']
+        successful = report['result'] == 'Passed' and failed == 0
+    passed = code == 0 and count >= expected and (count > skipped or allow_all_skipped) and successful and result.is_dir()
     return dict(exit_code=code, executed=count, skipped=skipped, failed=failed, passed=passed)
 
 
@@ -402,7 +409,7 @@ def execute_tests(args):
         print(log, end='', flush=True)
         summary = dict(tests=batch, **execution_summary(log, code, directory / 'tests.xcresult', 1,
                                                       retrying=not getattr(args, '_monterey_method', False),
-                                                      allow_all_skipped=getattr(args, '_monterey_method', False)))
+                                                      allow_all_skipped=getattr(args, '_monterey_method', False), env=env))
         executed += summary['executed']
         skipped += summary['skipped']
         failures += not summary['passed']

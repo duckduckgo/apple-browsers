@@ -8643,16 +8643,6 @@ extension MainViewController: TabSwitcherButtonDelegate {
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
         recordNewTabPageSessionAction { $0.tapTabViewerToolbar() }
-        // The way back shows a copy of the toolbar taken as the tab switcher opens; the button's pressed
-        // look would otherwise still be fading out then.
-        if let button = button as? UIButton {
-            UIView.performWithoutAnimation {
-                button.isHighlighted = false
-                button.updateConfiguration()
-                button.layoutIfNeeded()
-            }
-        }
-        tabSwitcherSwipeUpTransition.beginFromButton()
         requestTabSwitcher()
     }
 

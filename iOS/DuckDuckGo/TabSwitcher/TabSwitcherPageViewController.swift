@@ -675,13 +675,13 @@ extension TabSwitcherPageViewController: UICollectionViewDropDelegate {
               let source = item.sourceIndexPath
         else { return }
 
-        guard let tab = tabsModel.get(tabAt: source.row) else { return }
         collectionView.performBatchUpdates {
+            guard let tab = tabsModel.get(tabAt: source.row) else { return }
             tabsModel.move(tab: tab, to: destination.row)
             currentSelection = tabsModel.currentIndex
-            collectionView.moveItem(at: source, to: destination)
-        }
-        coordinator.drop(item.dragItem, toItemAt: destination).addCompletion { [weak self] _ in
+            collectionView.deleteItems(at: [source])
+            collectionView.insertItems(at: [destination])
+        } completion: { [weak self] _ in
             guard let self else { return }
             if self.pageDelegate?.isEditing == true {
                 self.reloadData()
@@ -690,6 +690,7 @@ extension TabSwitcherPageViewController: UICollectionViewDropDelegate {
                 collectionView.reloadItems(at: [IndexPath(row: self.currentSelection ?? 0, section: 0)])
             }
             self.pageDelegate?.page(self, didReorderTabs: ())
+            coordinator.drop(item.dragItem, toItemAt: destination)
         }
     }
 }

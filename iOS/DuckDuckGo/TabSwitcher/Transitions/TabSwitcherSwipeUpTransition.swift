@@ -69,8 +69,7 @@ private final class TouchDownObserver: UIGestureRecognizer {
     }
 }
 
-/// Presents the tab switcher by turning the page into a card that shrinks into its cell, either
-/// following a swipe on the bottom address bar or straight away from the tab switcher button.
+/// Presents the tab switcher by turning the page into a card that follows a swipe on the bottom address bar.
 ///
 /// Building the tab switcher is asynchronous and lays out a lot of views, so the card never waits for it:
 /// it lives in an overlay on the window, heads for where the cell was last seen, and the tab switcher is
@@ -173,14 +172,6 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         return neighboringTabs.first {
             $0.offset == offset && mainViewController?.tabManager.currentTabsModel.indexOf(tab: $0.tab) != nil
         }
-    }
-
-    /// Starts shrinking the page into the tab switcher immediately. The caller then requests the tab
-    /// switcher as usual; this object animates its presentation unless it declined to begin, in which
-    /// case the regular transition runs.
-    func beginFromButton() {
-        guard begin() else { return }
-        commit(with: .present)
     }
 
     /// Whether the current page can shrink into the tab switcher as a card. AI tabs are drawn differently in

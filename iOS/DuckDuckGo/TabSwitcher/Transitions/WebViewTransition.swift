@@ -129,77 +129,81 @@ class FromWebViewTransition: WebViewTransition {
         solidBackground.backgroundColor = theme.backgroundColor
         solidBackground.frame = webViewFrame
 
+        TabSwitcherCellFrameCache.store(tabSwitcherCellFrame(for: layoutAttr), row: rowIndex, in: tabSwitcherViewController)
+
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
                                                      afterScreenUpdates: false)
 
-        let initialCard = initialCardGeometry(webViewFrame: webViewFrame,
-                                              containerView: transitionContext.containerView,
-                                              isFloating: isFloating)
-        setCardFrame(initialCard.frame, cornerRadius: initialCard.cornerRadius, shadowOpacity: 0)
-        imageContainer.backgroundColor = isFloating
-            ? mainViewController.viewCoordinator.statusBackground.backgroundColor ?? theme.backgroundColor
-            : theme.backgroundColor
+        var initialContainerFrame = mainViewController.viewCoordinator.contentContainer.frame
+        if isFloating {
+            initialContainerFrame = webViewFrame
+        } else {
+            initialContainerFrame = adjustFrame(initialContainerFrame,
+                                                forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
+                                                byHeight: -mainViewController.omniBar.barView.expectedHeight)
+        }
+        setCardFrame(initialContainerFrame, cornerRadius: 0, shadowOpacity: 0)
+        imageContainer.backgroundColor = theme.backgroundColor
         imageView.frame = WebViewTransitionGeometry.destinationImageFrame(
-            for: initialCard.contentFrame.size,
+            for: imageContainer.bounds.size,
             previewSize: preview.size,
             alignsWithContainerBottom: isFloating)
-            .offsetBy(dx: initialCard.contentFrame.minX, dy: initialCard.contentFrame.minY)
         imageView.image = preview
 
         let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
-        prepareOutgoingListChrome(at: indexPath)
+        prepareOutgoingTabChrome(at: indexPath, cellSnapshot: cellSnapshot)
 
-        let isGrid = tabSwitcherSettings.isGridViewEnabled
-        let cellFrame = tabSwitcherCellFrame(for: layoutAttr)
-        TabSwitcherCellFrameCache.store(cellFrame, row: rowIndex, in: tabSwitcherViewController)
-        let spring = TabSwitcherTransition.Spring.present
-        let animator = spring.animator()
-        animator.addAnimations {
-            self.setCardFrame(cellFrame,
-                              cornerRadius: TabViewCell.Constants.cellCornerRadius,
-                              shadowOpacity: 1)
-            self.imageContainer.backgroundColor = theme.backgroundColor
-            self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: cellFrame.size,
-                                                                          previewSize: preview.size,
-                                                                          isGridViewEnabled: isGrid)
-            if !isGrid {
-                self.applyListChromePose(isVisible: true)
-            }
-        }
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
 
-        let response = spring.response
-        UIView.animate(withDuration: response * 0.8, delay: response * 0.1, options: [.curveEaseOut]) {
-            self.tabSwitcherViewController.view.alpha = 1
-        }
-
-        if let cellSnapshot {
-            UIView.animate(withDuration: response * 0.5, delay: 0, options: [.curveEaseInOut]) {
-                self.imageView.alpha = 0
-                cellSnapshot.alpha = 1
-            }
-        } else if !isGrid {
-            // The row's own content only appears once the transition completes, so the preview fades out
-            // just before then rather than leaving an empty row.
-            let fadeDuration = response * 0.3
-            UIView.animate(withDuration: fadeDuration, delay: spring.settleDuration - fadeDuration, options: [.curveEaseInOut]) {
-                self.imageView.alpha = 0
-            }
-        }
-
-        if let toolbarSnapshot {
-            UIView.animate(withDuration: response * 0.6, delay: 0, options: [.curveEaseOut]) {
-                if !reduceMotion {
-                    toolbarSnapshot.transform = TabSwitcherTransition.collapsedToolbarTransform(for: toolbarSnapshot)
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
+                self.setCardFrame(containerFrame,
+                                  cornerRadius: TabViewCell.Constants.cellCornerRadius,
+                                  shadowOpacity: 1)
+                self.imageView.frame = WebViewTransitionGeometry.previewFrame(for: containerFrame.size,
+                                                                              previewSize: preview.size,
+                                                                              isGridViewEnabled: self.tabSwitcherSettings.isGridViewEnabled)
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: true)
                 }
-                toolbarSnapshot.alpha = 0
             }
-        }
 
-        animator.addCompletion { _ in
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.55) {
+                    self.applyGridChromePose(isVisible: true)
+                }
+            }
+
+            UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.7) {
+                self.tabSwitcherViewController.view.alpha = 1
+            }
+
+            if let cellSnapshot {
+                // Crossfade webview preview out / cell snapshot in over the first half.
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
+                    self.imageView.alpha = 0
+                    cellSnapshot.alpha = 1
+                }
+            } else if !self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0.3, relativeDuration: 0.5) {
+                    self.imageView.alpha = 0
+                }
+            }
+
+            if let toolbarSnapshot {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                    if !reduceMotion {
+                        toolbarSnapshot.transform = TabSwitcherTransition.collapsedToolbarTransform(for: toolbarSnapshot)
+                    }
+                    toolbarSnapshot.alpha = 0
+                }
+            }
+        }, completion: { _ in
             self.removeTransitionViews()
             toolbarSnapshot?.removeFromSuperview()
             if isFloating {
@@ -207,43 +211,18 @@ class FromWebViewTransition: WebViewTransition {
                 self.mainViewController.endTabSwitcherToolbarOwnership()
             }
             transitionContext.completeTransition(true)
-        }
-        animator.startAnimation()
-        if cellSnapshot == nil {
-            revealGridChromeAfterAnimationStarts(at: indexPath, response: response)
-        }
+        })
+
     }
 
-    private func initialCardGeometry(webViewFrame: CGRect,
-                                     containerView: UIView,
-                                     isFloating: Bool) -> (frame: CGRect, contentFrame: CGRect, cornerRadius: CGFloat) {
-        if isFloating {
-            return screenCardGeometry(webViewFrame: webViewFrame, in: containerView)
-        }
-
-        let frame = adjustFrame(mainViewController.viewCoordinator.contentContainer.frame,
-                                forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                byHeight: -mainViewController.omniBar.barView.expectedHeight)
-        return (frame, CGRect(origin: .zero, size: frame.size), 0)
-    }
-
-    private func prepareOutgoingListChrome(at indexPath: IndexPath) {
-        guard !tabSwitcherSettings.isGridViewEnabled,
-              let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell else { return }
-        prepareListChrome(for: cell, initiallyVisible: false)
-    }
-
-    /// Snapshotting the header forces a render pass, so it runs after the card has started moving
-    /// rather than delaying the first frame.
-    private func revealGridChromeAfterAnimationStarts(at indexPath: IndexPath, response: TimeInterval) {
-        guard tabSwitcherSettings.isGridViewEnabled else { return }
-        DispatchQueue.main.async {
-            guard self.imageContainer.superview != nil,
-                  let cell = self.tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell else { return }
-            self.prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
-            UIView.animate(withDuration: 0.2, delay: response * 0.35, options: [.curveEaseOut]) {
-                self.applyGridChromePose(isVisible: true)
-            }
+    private func prepareOutgoingTabChrome(at indexPath: IndexPath, cellSnapshot: UIView?) {
+        if tabSwitcherSettings.isGridViewEnabled,
+           cellSnapshot == nil,
+           let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell {
+            prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
+        } else if !tabSwitcherSettings.isGridViewEnabled,
+                  let cell = tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewListCell {
+            prepareListChrome(for: cell, initiallyVisible: false)
         }
     }
 }
@@ -313,7 +292,8 @@ class ToWebViewTransition: WebViewTransition {
             concealLiveFloatingToolbar(of: mainViewController)
         }
 
-        if TabSwitcherTransition.usesCardTransition(for: mainViewController),
+        if tabSwitcherViewController.transitionStyle == .modern,
+           TabSwitcherTransition.usesCardTransition(for: mainViewController),
            let preview = tabSwitcherViewController.previewsSource.preview(for: tab) {
             animateCardDismiss(using: transitionContext,
                                mainViewController: mainViewController,
@@ -346,6 +326,16 @@ class ToWebViewTransition: WebViewTransition {
         preparePreview(preview, rowIndex: rowIndex)
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
+
+        if tabSwitcherViewController.transitionStyle == .legacy {
+            animateLegacyDismiss(using: transitionContext,
+                                 mainViewController: mainViewController,
+                                 webView: webView,
+                                 preview: preview,
+                                 isFloating: isFloating,
+                                 usesFloatingTopBackdrop: usesFloatingTopBackdrop)
+            return
+        }
 
         let isGrid = tabSwitcherSettings.isGridViewEnabled
         let destination = destinationCardGeometry(for: mainViewController,
@@ -399,6 +389,48 @@ class ToWebViewTransition: WebViewTransition {
             finish()
         }
         animator.startAnimation()
+    }
+
+    private func animateLegacyDismiss(using transitionContext: UIViewControllerContextTransitioning,
+                                      mainViewController: MainViewController,
+                                      webView: WKWebView,
+                                      preview: UIImage?,
+                                      isFloating: Bool,
+                                      usesFloatingTopBackdrop: Bool) {
+        UIView.animateKeyframes(withDuration: TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating), delay: 0, options: .calculationModeLinear, animations: {
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
+                var destinationFrame = mainViewController.viewCoordinator.contentContainer.frame
+                if isFloating {
+                    destinationFrame = webView.convert(webView.bounds, to: transitionContext.containerView)
+                }
+                self.setCardFrame(destinationFrame, cornerRadius: 0, shadowOpacity: 0)
+                self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
+                                                                                       previewSize: preview?.size,
+                                                                                       alignsWithContainerBottom: isFloating)
+                self.imageView.alpha = 1
+                self.solidBackground.alpha = 1
+                if !self.tabSwitcherSettings.isGridViewEnabled {
+                    self.applyListChromePose(isVisible: false)
+                }
+            }
+
+            UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {
+                self.tabSwitcherViewController.view.alpha = 0
+            }
+
+            if self.tabSwitcherSettings.isGridViewEnabled {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
+                    self.applyGridChromePose(isVisible: false)
+                }
+            }
+        }, completion: { _ in
+            self.removeTransitionViews()
+            if usesFloatingTopBackdrop {
+                mainViewController.viewCoordinator.navigationBarContainer.backgroundColor = .clear
+            }
+            mainViewController.revealFloatingToolbarAfterTabSwitcherTransition()
+            transitionContext.completeTransition(true)
+        })
     }
 
     /// The cell's preview grows back into the page.

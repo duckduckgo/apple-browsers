@@ -153,8 +153,9 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         cardShadow.frame = frame
         cardShadow.layer.cornerRadius = cornerRadius
         cardShadow.layer.shadowOpacity = shadowOpacity
-        // No shadowPath: UIView animations don't interpolate it, so it would jump to the destination frame.
-        cardShadow.layer.shadowPath = nil
+        cardShadow.layer.shadowPath = tabSwitcherViewController.transitionStyle == .modern
+            ? nil
+            : UIBezierPath(roundedRect: cardShadow.bounds, cornerRadius: cornerRadius).cgPath
 
         imageContainer.frame = frame
         imageContainer.layer.cornerRadius = cornerRadius
@@ -189,7 +190,11 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
     }
 
     func applyGridChromePose(isVisible: Bool) {
-        gridChromeSnapshot?.alpha = isVisible ? 1 : 0
+        guard let gridChromeSnapshot else { return }
+        gridChromeSnapshot.transform = isVisible || tabSwitcherViewController.transitionStyle == .modern
+            ? .identity
+            : CGAffineTransform(translationX: 0, y: -TabViewGridCell.Constants.headerHeight)
+        gridChromeSnapshot.alpha = isVisible ? 1 : 0
     }
 
     func prepareListChrome(for cell: TabViewListCell, initiallyVisible: Bool) {
@@ -404,6 +409,19 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         animator.startAnimation()
     }
 
+    func animateDismissKeyframes(isFloating: Bool,
+                                 animations: @escaping () -> Void,
+                                 completion: @escaping () -> Void) {
+        if tabSwitcherViewController.transitionStyle == .modern {
+            Spring.dismiss.animateKeyframes(animations: animations) { _ in completion() }
+        } else {
+            UIView.animateKeyframes(withDuration: Self.duration(isFloatingUIEnabled: isFloating),
+                                    delay: 0,
+                                    options: .calculationModeLinear,
+                                    animations: animations) { _ in completion() }
+        }
+    }
+
     // MARK: UIViewControllerAnimatedTransitioning
 
     // Override - Abstract function
@@ -448,8 +466,10 @@ class TabSwitcherTransitionDelegate: NSObject, UIViewControllerTransitioningDele
         }
 
         if let swipeUpTransition, swipeUpTransition.presentsTabSwitcher {
+            tabSwitcherVC.transitionStyle = .modern
             return swipeUpTransition
         }
+        tabSwitcherVC.transitionStyle = .legacy
         
         if mainVC.newTabPageViewController != nil {
             return FromHomeScreenTransition(mainViewController: mainVC,

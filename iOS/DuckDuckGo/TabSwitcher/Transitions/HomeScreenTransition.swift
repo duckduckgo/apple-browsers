@@ -148,6 +148,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
         let toolbar: BrowserToolbarView = mainViewController.viewCoordinator.toolbar
         let isFloating = mainViewController.isFloatingUIEnabled
+        let duration = TabSwitcherTransition.duration(isFloatingUIEnabled: isFloating)
         let reduceMotion = UIAccessibility.isReduceMotionEnabled
         let toolbarSnapshot = installToolbarSnapshot(for: mainViewController,
                                                      transitionContext: transitionContext,
@@ -184,7 +185,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
             prepareListChrome(for: cell, initiallyVisible: false)
         }
         
-        TabSwitcherTransition.Spring.present.animateKeyframes(animations: {
+        UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let containerFrame = self.tabSwitcherCellFrame(for: layoutAttr)
@@ -291,7 +292,8 @@ class ToHomeScreenTransition: HomeScreenTransition {
             concealLiveFloatingToolbar(of: mainViewController)
         }
 
-        if TabSwitcherTransition.usesCardTransition(for: mainViewController),
+        if tabSwitcherViewController.transitionStyle == .modern,
+           TabSwitcherTransition.usesCardTransition(for: mainViewController),
            tab.viewed,
            animateCardDismiss(using: transitionContext,
                               mainViewController: mainViewController,
@@ -334,10 +336,12 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
         
-        let restoreTransitionViews = revealLiveChrome(of: mainViewController,
-                                                      over: transitionContext.containerView,
-                                                      response: TabSwitcherTransition.Spring.dismiss.response)
-        TabSwitcherTransition.Spring.dismiss.animateKeyframes(animations: {
+        let restoreTransitionViews = tabSwitcherViewController.transitionStyle == .modern
+            ? revealLiveChrome(of: mainViewController,
+                               over: transitionContext.containerView,
+                               response: TabSwitcherTransition.Spring.dismiss.response)
+            : nil
+        animateDismissKeyframes(isFloating: isFloating, animations: {
             
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 1.0) {
                 let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
@@ -380,7 +384,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
                 self.tabSwitcherViewController.view.alpha = 0
             }
 
-        }, completion: { _ in
+        }, completion: {
             self.removeTransitionViews()
             self.settingsButtonSnapshot?.removeFromSuperview()
             mainViewController.revealFloatingToolbarAfterTabSwitcherTransition(isAlreadyShowing: restoreTransitionViews != nil)

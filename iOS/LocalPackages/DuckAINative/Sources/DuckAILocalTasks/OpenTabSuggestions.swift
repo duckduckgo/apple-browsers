@@ -81,41 +81,115 @@ public enum OpenTabSuggestions {
         }.prefix(3))
     }
 
-    public static func generate(tabs: [OpenTabMetadata], locale: String, provider: any ChatProvider) async -> [OpenTabSuggestion] {
-        guard !tabs.isEmpty else { return [] }
+    public enum Outcome: Equatable, Sendable {
+        case generated
+        case timedOut
+        case failed(ChatError)
+        case refused
+        case unusable
+        case cancelled
+    }
+
+    public struct Run: Equatable, Sendable {
+        public let outcome: Outcome
+        public let suggestions: [OpenTabSuggestion]
+        public let raw: String
+        public let total: Duration
+    }
+
+    private enum Event: Sendable {
+        case provider(ProviderEvent)
+        case ended
+        case failed(ChatError)
+        case deadline
+        case cancelled
+    }
+
+    private static func forwardReply(provider: any ChatProvider, turn: ProviderTurn, stop: StopSignal,
+                                     to continuation: AsyncStream<Event>.Continuation) async {
+        do {
+            for try await event in provider.reply(to: turn, stop: stop) {
+                guard !Task.isCancelled else { return }
+                continuation.yield(.provider(event))
+            }
+            continuation.yield(.ended)
+        } catch {
+            continuation.yield(.failed(error as? ChatError ?? .unknown(String(describing: error))))
+        }
+    }
+
+    public static func run(tabs: [OpenTabMetadata], locale: String, provider: any ChatProvider,
+                           budget: Duration = .seconds(12)) async -> Run {
+        let started = ContinuousClock.now
+        guard !tabs.isEmpty else { return Run(outcome: .unusable, suggestions: [], raw: "", total: .zero) }
         let turn = turn(tabs: tabs, locale: locale)
         let stop = StopSignal()
-        let (stream, continuation) = AsyncStream<String>.makeStream()
+        let (events, continuation) = AsyncStream<Event>.makeStream()
         let worker = Task {
-            var raw = ""
-            do {
-                for try await event in provider.reply(to: turn, stop: stop) {
-                    guard !Task.isCancelled else { break }
-                    if case .textDelta(let text) = event { raw += text }
-                    if case .refusal = event { raw = ""; break }
-                    if raw.count > 2_000 { raw = ""; break }
-                }
-                if !Task.isCancelled { continuation.yield(raw) }
-            } catch { continuation.yield("") }
-            continuation.finish()
+            await forwardReply(provider: provider, turn: turn, stop: stop, to: continuation)
         }
         let timeout = Task {
-            try? await Task.sleep(for: .seconds(12))
+            try? await Task.sleep(for: budget)
             guard !Task.isCancelled else { return }
-            stop.raise()
-            continuation.finish()
+            continuation.yield(.deadline)
         }
         return await withTaskCancellationHandler {
-            var iterator = stream.makeAsyncIterator()
-            let raw = await iterator.next() ?? ""
-            worker.cancel()
-            timeout.cancel()
-            stop.raise()
-            return Task.isCancelled ? [] : parse(raw, tabs: tabs)
+            defer {
+                stop.raise()
+                worker.cancel()
+                timeout.cancel()
+                continuation.finish()
+            }
+            var raw = ""
+            var suggestions: [OpenTabSuggestion] = []
+            var outcome: Outcome = .cancelled
+            consume: for await event in events {
+                guard !Task.isCancelled else { break }
+                switch event {
+                case .provider(.textDelta(let text)):
+                    raw += text
+                    guard raw.count <= 2_000 else {
+                        raw = String(raw.prefix(2_000))
+                        outcome = .unusable
+                        suggestions = []
+                        break consume
+                    }
+                    if let newline = raw.lastIndex(where: { $0.isNewline }) {
+                        suggestions = parse(String(raw[...newline]), tabs: tabs)
+                    }
+                    if suggestions.count == 3 {
+                        outcome = .generated
+                        break consume
+                    }
+                case .provider(.refusal):
+                    outcome = .refused
+                    suggestions = []
+                    break consume
+                case .ended, .provider(.finished):
+                    suggestions = parse(raw, tabs: tabs)
+                    outcome = suggestions.isEmpty ? .unusable : .generated
+                    break consume
+                case .failed(let error):
+                    outcome = .failed(error)
+                    suggestions = []
+                    break consume
+                case .deadline:
+                    outcome = .timedOut
+                    break consume
+                case .cancelled:
+                    break consume
+                default:
+                    break
+                }
+            }
+            if Task.isCancelled { outcome = .cancelled }
+            if outcome == .cancelled { suggestions = [] }
+            return Run(outcome: outcome, suggestions: suggestions, raw: raw, total: started.duration(to: .now))
         } onCancel: {
             stop.raise()
             worker.cancel()
             timeout.cancel()
+            continuation.yield(.cancelled)
             continuation.finish()
         }
     }

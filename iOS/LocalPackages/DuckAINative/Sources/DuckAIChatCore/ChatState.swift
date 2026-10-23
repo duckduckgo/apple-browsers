@@ -49,7 +49,12 @@ public struct ChatState: Equatable, Sendable {
 
     public var status: ChatStatus {
         switch phase {
-        case .idle: .ready
+        case .idle:
+            if case .unsupported(let reason) = availability {
+                .error(.modelUnavailable(reason: reason))
+            } else {
+                .ready
+            }
         case .failed(let error): .error(error)
         case .responding(let live): live.parts.isEmpty ? .loading(live.stage) : .streaming
         }

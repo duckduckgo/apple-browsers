@@ -43,6 +43,20 @@ final class LocalSuggestionsDiagnostics: ObservableObject {
                details: details, raw: run.raw)
     }
 
+    func record(openTabs run: OpenTabSuggestions.Run, modelName: String) {
+        let outcome: String
+        switch run.outcome {
+        case .generated: outcome = "Generated \(run.suggestions.count) open-tab prompts"
+        case .timedOut: outcome = "Open-tab budget expired; retained \(run.suggestions.count) prompts"
+        case .failed(let error): outcome = "Open-tab generation failed: \(error)"
+        case .refused: outcome = "Open-tab generation refused"
+        case .unusable: outcome = "Open-tab generation returned no usable questions"
+        case .cancelled: outcome = "Open-tab generation cancelled"
+        }
+        record(outcome: outcome, modelName: modelName,
+               details: ["Source open tabs", "Total \(Self.seconds(run.total))"], raw: run.raw)
+    }
+
     static func details(run: SuggestedPromptsRun, variant: SuggestionsVariant) -> [String] {
         [
             "\(variant.input.rawValue) · \(variant.count) prompts · \(variant.locale) · budget \(variant.budgetSeconds) s",

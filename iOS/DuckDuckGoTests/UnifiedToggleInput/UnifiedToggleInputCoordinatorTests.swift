@@ -722,7 +722,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     func testNativeUnavailableSubmissionKeepsDraftAndAttachmentUntilRecovery() throws {
         let context = try ChatContext(page: nil, selections: [], opening: nil)
         let unavailable = StubProvider(configuration: .init(acknowledgesImages: true, availability: .unsupported(reason: "Unavailable")))
-        sut.nativeSession = ChatSession(context: context, provider: unavailable)
+        let unavailableSession = ChatSession(context: context, provider: unavailable)
+        sut.nativeSession = unavailableSession
         sut.refreshNativeInputCapabilities()
         sut.setText("Describe this")
         let image = UIGraphicsImageRenderer(size: CGSize(width: 16, height: 16)).image { context in
@@ -734,7 +735,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(mockDelegate.submittedPrompt)
         XCTAssertEqual(sut.currentText, "Describe this")
         XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
-        sut.nativeSession = ChatSession(context: context, provider: StubProvider(configuration: .init(acknowledgesImages: true)))
+        let readySession = ChatSession(context: context, provider: StubProvider(configuration: .init(acknowledgesImages: true)))
+        sut.nativeSession = readySession
         sut.refreshNativeInputCapabilities()
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "Describe this", mode: .aiChat, trigger: .sendButton)
         XCTAssertEqual(mockDelegate.submittedPrompt, "Describe this")

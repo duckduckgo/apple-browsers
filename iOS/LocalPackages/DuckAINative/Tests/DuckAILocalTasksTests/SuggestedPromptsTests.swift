@@ -30,8 +30,10 @@ import Testing
     func openTabsKeepCompleteRowsWhenProviderStalls() async {
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
         let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n9 | Unknown | What is this source?\n0 | Partial | Why do ducks")
-        let suggestions = await OpenTabSuggestions.generate(tabs: tabs, locale: "en", provider: provider)
-        #expect(suggestions.map(\.prompt) == ["What do ducks eat?"])
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, budget: .milliseconds(100))
+        #expect(run.outcome == .timedOut)
+        #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
+        #expect(run.raw.contains("Why do ducks"))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -40,8 +42,9 @@ import Testing
         let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
         let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n0 | Duck homes | Where do ducks live?\n0 | Duck flight | How do ducks fly?\n")
         let started = ContinuousClock.now
-        let suggestions = await OpenTabSuggestions.generate(tabs: tabs, locale: "en", provider: provider)
-        #expect(suggestions.count == 3)
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider)
+        #expect(run.outcome == .generated)
+        #expect(run.suggestions.count == 3)
         #expect(started.duration(to: .now) < .seconds(2))
     }
 
@@ -64,8 +67,8 @@ import Testing
         """
         let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
         #expect(parsed.map(\.sourceIDs) == [["0", "1"], ["2"]])
-        let generated = await OpenTabSuggestions.generate(tabs: tabs, locale: "en", provider: stub(raw))
-        #expect(generated == parsed)
+        let generated = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub(raw))
+        #expect(generated.suggestions == parsed)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -78,6 +81,46 @@ import Testing
         #expect(turn.input.contains("0 | A shoe review | example.com | Recent search: walking shoes"))
         #expect(!turn.input.contains(String(repeating: "x", count: 101)))
         #expect(turn.instructions.contains("relevant follow-up to that search"))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsDistinguishRefusalFailureAndUnusableOutput() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let failed = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: StallingTabProvider("", failure: .network))
+        #expect(failed.outcome == .failed(.network))
+        #expect(failed.suggestions.isEmpty)
+        let refused = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: StallingTabProvider(
+            "0 | Duck food | What do ducks eat?\n", refusal: true))
+        #expect(refused.outcome == .refused)
+        #expect(refused.suggestions.isEmpty)
+        let unusable = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("9 | Unknown | What is this source?"))
+        #expect(unusable.outcome == .unusable)
+        #expect(unusable.suggestions.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func cancelledOpenTabsDiscardCompletedRowsAndReturnPromptly() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let provider = StallingTabProvider("0 | Duck food | What do ducks eat?\n")
+        let task = Task { await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider) }
+        var iterator = provider.started.makeAsyncIterator()
+        _ = await iterator.next()
+        task.cancel()
+        let run = await task.value
+        #expect(run.outcome == .cancelled)
+        #expect(run.suggestions.isEmpty)
+        #expect(run.total < .seconds(2))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsAcceptTrailingRowOnlyAfterNormalCompletion() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: stub("0 | Duck food | What do ducks eat?"))
+        #expect(run.outcome == .generated)
+        #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
     }
 
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
@@ -391,11 +434,20 @@ private actor SuggestionsGate {
     }
 }
 
-private final class StallingTabProvider: ChatProvider, @unchecked Sendable {
+private final class StallingTabProvider: ChatProvider {
     let descriptor = ProviderDescriptor(id: ProviderID(rawValue: "stall"), displayName: "Stall", modelName: "Stall", contextWindowTokens: 4096)
     let availability: ProviderAvailability = .ready
     let text: String
-    init(_ text: String) { self.text = text }
+    let failure: ChatError?
+    let refusal: Bool
+    let started: AsyncStream<Void>
+    let start: AsyncStream<Void>.Continuation
+    init(_ text: String, failure: ChatError? = nil, refusal: Bool = false) {
+        self.text = text
+        self.failure = failure
+        self.refusal = refusal
+        (started, start) = AsyncStream<Void>.makeStream()
+    }
     func availabilityUpdates() -> AsyncStream<ProviderAvailability> { AsyncStream { $0.finish() } }
     func download() async throws { }
     func prepare() async { }
@@ -403,6 +455,10 @@ private final class StallingTabProvider: ChatProvider, @unchecked Sendable {
     func reply(to turn: ProviderTurn, stop: StopSignal) -> AsyncThrowingStream<ProviderEvent, Error> {
         AsyncThrowingStream { continuation in
             continuation.yield(.textDelta(text))
+            start.yield(())
+            start.finish()
+            if refusal { continuation.yield(.refusal(Refusal(detectedBy: "test"))) }
+            if let failure { continuation.finish(throwing: failure) }
         }
     }
 }

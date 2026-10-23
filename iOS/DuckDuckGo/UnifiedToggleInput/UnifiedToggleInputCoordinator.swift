@@ -125,14 +125,15 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let generation = freshSuggestionsGeneration
         let provider = NativeChatProviderFactory.makeSuggestionsProvider(forOpenTabs: true)
         freshSuggestionsTask = Task { [weak self] in
-            let suggestions = await OpenTabSuggestions.generate(tabs: metadata, locale: Locale.current.identifier, provider: provider)
+            let run = await OpenTabSuggestions.run(tabs: metadata, locale: Locale.current.identifier, provider: provider)
             guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else { return }
             guard self.freshMetadataCandidates() == self.freshSuggestionsCandidates,
                   DuckAINativeSettings.shared.suggestionsVariant() == variant, self.isTabAttachmentFeatureAvailable else {
                 self.refreshCurrentFreshSuggestions()
                 return
             }
-            self.freshSuggestionsCachedState = suggestions.isEmpty ? .unavailable : .ready(suggestions)
+            LocalSuggestionsDiagnostics.shared.record(openTabs: run, modelName: provider.descriptor.modelName)
+            self.freshSuggestionsCachedState = run.suggestions.isEmpty ? .unavailable : .ready(run.suggestions)
             self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? self.freshSuggestionsCachedState : .hidden
         }
     }
@@ -2420,6 +2421,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     private func handleAIChatSubmission(text: String, trigger: TextSubmissionTrigger) {
+        if let nativeSession, !nativeSession.state.canSend { return }
         if viewController.tabAttachmentsRequirePromptText,
            text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
            !viewController.currentAttachments.isEmpty,
@@ -2741,6 +2743,7 @@ extension UnifiedToggleInputCoordinator {
 private extension UnifiedToggleInputCoordinator {
 
     func submitCurrentInputFromCoordinator() {
+        if inputMode == .aiChat, let nativeSession, !nativeSession.state.canSend { return }
         if inputMode == .aiChat, let currentTabUID, tabsPreparingInitialPrompt.contains(currentTabUID) { return }
         let hasText = !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         let hasValidAttachment = inputMode == .aiChat && viewController.currentAttachments.contains { !$0.isInvalid }

@@ -37,7 +37,7 @@ def host(root, target, developer, env):
     seal = original_bundle / 'Contents/_CodeSignature/CodeResources'
     entitlements = output(['codesign', '-d', '--entitlements', ':-', original]).rstrip('\0')
     if not entitlements:
-        raise ValueError('The native test runner must supply its original sandbox entitlements')
+        raise ValueError('The native test runner must supply its original code-signing entitlements')
     fingerprint = hashlib.sha256((output(['xcodebuild', '-version'], env=env) + platform.machine()
                                   + digest(binary(original_bundle)) + digest(seal) + digest(source) + entitlements).encode()).hexdigest()[:20]
     final = root / 'Compatibility' / fingerprint

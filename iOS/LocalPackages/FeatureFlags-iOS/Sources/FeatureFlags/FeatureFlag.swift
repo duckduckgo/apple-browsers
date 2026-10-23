@@ -1031,8 +1031,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .floatingUIiOS27:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
         case .tabSwitcherSwipeUpGesture:
-            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSwitcherSwipeUpGesture))
-
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabSwitcherSwipeUpGesture))
         case .legacyFindInPage:
             Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
         case .aiChatTabSwitcherRichCard:

@@ -25,7 +25,7 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
-    func testTabSwitcherSwipeUpGestureIsDefaultEnabledRemoteReleasableAndLocallyOverridable() {
+    func testTabSwitcherSwipeUpGestureIsDefaultDisabledRemoteReleasableAndLocallyOverridable() {
         let flag = FeatureFlag.tabSwitcherSwipeUpGesture
         guard case let .remoteReleasable(subfeature) = flag.source else {
             XCTFail("Expected remote-releasable source")
@@ -34,14 +34,14 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .tabSwitcherSwipeUpGesture)
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
         XCTAssertEqual(subfeature.rawValue, "tabSwitcherSwipeUpGesture")
-        guard case .enabled = flag.defaultValue else {
-            XCTFail("Expected enabled default")
+        guard case .disabled = flag.defaultValue else {
+            XCTFail("Expected disabled default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
-    func testTabSwitcherSwipeUpGestureDefaultsOnAndFollowsRemoteChanges() {
+    func testTabSwitcherSwipeUpGestureDefaultsOffAndFollowsRemoteChanges() {
         setenv("TESTS_FEATUREFLAGGER_MODE", "1", 1)
         defer { unsetenv("TESTS_FEATUREFLAGGER_MODE") }
 
@@ -50,13 +50,15 @@ final class FeatureFlagsTests: XCTestCase {
                                            privacyConfigManager: manager,
                                            experimentManager: nil)
 
-        XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
-        manager.reload(etag: "disabled", data: swipeUpConfigurationData(state: "disabled"))
         XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
         manager.reload(etag: "enabled", data: swipeUpConfigurationData(state: "enabled"))
         XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
-        manager.reload(etag: "removed", data: swipeUpConfigurationData())
+        manager.reload(etag: "disabled", data: swipeUpConfigurationData(state: "disabled"))
+        XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
+        manager.reload(etag: "enabled-again", data: swipeUpConfigurationData(state: "enabled"))
         XCTAssertTrue(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
+        manager.reload(etag: "removed", data: swipeUpConfigurationData())
+        XCTAssertFalse(flagger.isFeatureOn(for: FeatureFlag.tabSwitcherSwipeUpGesture))
     }
 
     func testTabSwitcherSwipeUpGestureSupportsChangingAndClearingLocalOverrides() throws {
@@ -77,16 +79,16 @@ final class FeatureFlagsTests: XCTestCase {
         let flag = FeatureFlag.tabSwitcherSwipeUpGesture
 
         overrides.toggleOverride(for: flag)
-        XCTAssertFalse(flagger.isFeatureOn(for: flag))
-        overrides.clearOverride(for: flag)
         XCTAssertTrue(flagger.isFeatureOn(for: flag))
+        overrides.clearOverride(for: flag)
+        XCTAssertFalse(flagger.isFeatureOn(for: flag))
 
-        manager.reload(etag: "disabled", data: swipeUpConfigurationData(state: "disabled"))
-        XCTAssertFalse(flagger.isFeatureOn(for: flag))
-        overrides.toggleOverride(for: flag)
+        manager.reload(etag: "enabled", data: swipeUpConfigurationData(state: "enabled"))
         XCTAssertTrue(flagger.isFeatureOn(for: flag))
-        overrides.clearOverride(for: flag)
+        overrides.toggleOverride(for: flag)
         XCTAssertFalse(flagger.isFeatureOn(for: flag))
+        overrides.clearOverride(for: flag)
+        XCTAssertTrue(flagger.isFeatureOn(for: flag))
     }
 
     private func makeSwipeUpConfigurationManager() -> PrivacyConfigurationManager {

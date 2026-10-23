@@ -106,22 +106,23 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         let survivor = app.windows.matching(NSPredicate(format: "title == %@", "Surviving counter")).firstMatch
         let increment = survivor.webViews.buttons["Increment"]
         XCTAssertTrue(increment.waitForExistence(timeout: UITests.Timeouts.localTestServer))
-        // Covered web views can disappear from the accessibility tree. Resolve the click location
-        // before covering it, and anchor it to the window rather than its hidden content.
+        // Covered browser windows can disappear from the accessibility tree. Resolve the screen
+        // location before covering it; the click must not resolve that window again.
         let buttonFrame = increment.frame
-        let windowFrame = survivor.frame
-        let incrementLocation = survivor.coordinate(withNormalizedOffset: .zero).withOffset(
-            CGVector(dx: buttonFrame.midX - windowFrame.minX, dy: buttonFrame.midY - windowFrame.minY)
-        )
+        let incrementPoint = CGPoint(x: buttonFrame.midX, y: buttonFrame.midY)
         app.openNewWindow()
         openPage(title: "Window to burn")
         beginBurn(scope: "Window", closeTabs: true)
         waitForCleanupToStart()
 
         // Click screen coordinates so XCTest does not refuse an intentionally intercepted element.
-        incrementLocation.click()
         // The first click may only activate a background window; the second must still be blocked.
-        incrementLocation.click()
+        for _ in 0..<2 {
+            let applicationOrigin = app.coordinate(withNormalizedOffset: .zero)
+            let originPoint = applicationOrigin.screenPoint
+            applicationOrigin.withOffset(CGVector(dx: incrementPoint.x - originPoint.x,
+                                                  dy: incrementPoint.y - originPoint.y)).click()
+        }
         releaseCleanup()
         waitForBurnToFinish()
         let progress = progressWindow
@@ -303,8 +304,8 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
         verifyNewTabPageIsOpen()
         app.enforceSingleWindow()
         try FileManager.default.removeItem(at: release)
-        try? FileManager.default.removeItem(atPath: release.path + ".started")
-        try? FileManager.default.removeItem(atPath: release.path + ".finished")
+        try FileManager.default.removeItem(atPath: release.path + ".started")
+        try FileManager.default.removeItem(atPath: release.path + ".finished")
     }
 
     private func openPage(title: String) {
@@ -337,7 +338,12 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
     }
 
     private func releaseCleanup() {
-        if let cleanupRelease { try? Data().write(to: cleanupRelease) }
+        guard let cleanupRelease else { return }
+        do {
+            try Data().write(to: cleanupRelease)
+        } catch {
+            XCTFail("Unable to release pending Fire cleanup: \(error)")
+        }
     }
 
     private func waitForBurnToFinish() {

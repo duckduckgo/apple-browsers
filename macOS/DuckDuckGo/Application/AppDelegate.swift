@@ -76,7 +76,31 @@ import WebKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
+    /// Where the app keeps its key-value store files.
+    /// Integration tests use their own directory, emptied on launch (see `prepareIntegrationTestsKeyValueStoresLocation`),
+    /// so they neither read nor change the developer's app data.
+    static var keyValueStoresLocation: URL {
 #if DEBUG
+        if AppVersion.runType == .integrationTests {
+            return URL.sandboxApplicationSupportURL.appendingPathComponent("IntegrationTestsKeyValueStores", isDirectory: true)
+        }
+#endif
+        return URL.sandboxApplicationSupportURL
+    }
+
+#if DEBUG
+    /// Called before the key-value stores are created: `URL.sandboxApplicationSupportURL` needs `NSApp`.
+    private static func prepareIntegrationTestsKeyValueStoresLocation() {
+        guard AppVersion.runType == .integrationTests else { return }
+        let location = keyValueStoresLocation
+        try? FileManager.default.removeItem(at: location)
+        do {
+            try FileManager.default.createDirectory(at: location, withIntermediateDirectories: true)
+        } catch {
+            fatalError("Could not prepare the integration tests key value stores location: \(error)")
+        }
+    }
+
     let disableCVDisplayLinkLogs: Void = {
         // Disable noisy CVDisplayLink logs
         CFPreferencesSetValue("cv_note" as CFString,
@@ -697,8 +721,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Self.configurePixelKit(isInternalUser: internalUserDecider.isInternalUser)
         }
 
+#if DEBUG
+        Self.prepareIntegrationTestsKeyValueStoresLocation()
+#endif
         do {
-            keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+            keyValueStore = try KeyValueFileStore(location: Self.keyValueStoresLocation, name: "AppKeyValueStore")
             // perform a dummy read to ensure that KVS is accessible
             _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
@@ -1264,7 +1291,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // `try?` — telemetry runs in memory rather than failing launch.
         eventHubIntegration = MacOSEventHubIntegration(
             privacyConfigurationManager: privacyConfigurationManager,
-            keyValueStore: try? KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "EventHubKeyValueStore"))
+            keyValueStore: try? KeyValueFileStore(location: Self.keyValueStoresLocation, name: "EventHubKeyValueStore"))
 
         if AppVersion.runType.requiresEnvironment {
             let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)

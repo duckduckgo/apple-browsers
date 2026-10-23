@@ -288,7 +288,7 @@ struct UserDefaultsWrapper<T> {
         if case .normal = AppVersion.runType {
             return .standard
         } else {
-            return UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+            return UserDefaults(suiteName: UserDefaults.testRunSuiteName)!
         }
 #else
         return .standard
@@ -411,3 +411,38 @@ extension UserDefaultsWrapper where T == Any {
         sharedDefaults.removeObject(forKey: key.rawValue)
     }
 }
+
+#if DEBUG
+extension UserDefaults {
+
+    /// The defaults suite used instead of the app's own defaults when running tests.
+    static var testRunSuiteName: String {
+        "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)"
+    }
+
+    /// Integration tests run the whole app, which reads and writes `UserDefaults.standard` directly in many places.
+    /// Points `UserDefaults.standard` at the test run suite, emptied first, so every run starts from the default
+    /// settings and the tests neither read nor change the developer's own app settings.
+    static func isolateStandardDefaultsForIntegrationTests() {
+        guard AppVersion.runType == .integrationTests else { return }
+        UserDefaults.standard.removePersistentDomain(forName: testRunSuiteName)
+        _ = swizzleStandardDefaultsOnce
+    }
+
+    private static let integrationTestsDefaults = UserDefaults(suiteName: testRunSuiteName)!
+
+    @objc private class var integrationTestsStandardDefaults: UserDefaults {
+        integrationTestsDefaults
+    }
+
+    private static let swizzleStandardDefaultsOnce: () = {
+        guard let originalMethod = class_getClassMethod(UserDefaults.self, #selector(getter: UserDefaults.standard)),
+              let swizzledMethod = class_getClassMethod(UserDefaults.self, #selector(getter: UserDefaults.integrationTestsStandardDefaults)) else {
+            assertionFailure("UserDefaults.standard getter not found")
+            return
+        }
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
+
+}
+#endif

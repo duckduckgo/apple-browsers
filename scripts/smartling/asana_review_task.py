@@ -42,7 +42,7 @@ def notes_html(notes: str) -> str:
     """Asana rich text for plain notes: "Label: value" lines get a bold label, and URLs become links."""
     lines = []
     for line in notes.strip().split('\n'):
-        line = html.escape(line, quote=True)
+        line = html.escape(line, quote=False)  # Asana shows &#x27; and &quot; literally in text.
         line = re.sub(r'(https?://\S+)', r'<a href="\1">\1</a>', line)
         line = re.sub(r'^([^:<]{1,60}):(\s)', r'<strong>\1:</strong>\2', line)
         lines.append(line)

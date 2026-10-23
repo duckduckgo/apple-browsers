@@ -281,6 +281,44 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         XCTAssertFalse(title.isEmpty)
     }
 
+    func testInitWithHistoryImportShowsVisitCountWithoutShortcut() {
+        let summary: DataImportSummary = [
+            .history: .success(DataImport.DataTypeSummary(successful: 120, duplicate: 0, failed: 0))
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        guard case .success(let item) = viewModel.items.first else {
+            return XCTFail("Expected success item")
+        }
+        XCTAssertEqual(item.primaryText, UserText.importSummaryHistoryImported(120))
+        XCTAssertNil(item.shortcut)
+    }
+
+    func testInitWithHistoryFailureShowsHistoryFailureTitle() {
+        let summary: DataImportSummary = [
+            .history: .failure(MockDataImportError())
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        XCTAssertEqual(viewModel.items, [.failure(title: UserText.importCouldNotImportHistory)])
+    }
+
+    func testInitListsHistoryAfterOtherDataTypes() {
+        let imported = DataImport.DataTypeSummary(successful: 1, duplicate: 0, failed: 0)
+        let summary: DataImportSummary = [
+            .history: .success(imported),
+            .creditCards: .success(imported),
+            .passwords: .success(imported),
+            .bookmarks: .success(imported)
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        XCTAssertEqual(viewModel.items.map(\.id), ["bookmarks", "passwords", "creditCards", "history"])
+    }
+
     func testDidTriggerShortcutOnFailureItemDoesNothing() {
         // Given
         let summary: DataImportSummary = [
@@ -429,6 +467,10 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         } else {
             XCTFail("Expected success item for passwords")
         }
+    }
+
+    private func makeViewModel(summary: DataImportSummary) -> NewImportSummaryViewModel {
+        NewImportSummaryViewModel(summary: summary, prefs: mockPreferences, pinningManager: mockPinningManager)
     }
 }
 

@@ -30,15 +30,22 @@ final class NativeTabChat: NativeChatDelegate {
     let session: ChatSession
     private(set) lazy var viewController: UIViewController = DuckAINative.makeChatViewController(
         session: session, surface: .tab,
-        emptyState: ChatEmptyState(image: UIImage(resource: .duckAIDefault), title: "All chats are local"), delegate: self)
+        emptyState: ChatEmptyState(image: UIImage(resource: .duckAIDefault), title: restoredAfterRelaunch ? "Start a new local chat. Previous messages were not saved." : "All chats are local"), delegate: self)
     var onContinueInWeb: (() -> Void)?
 
     private weak var input: UnifiedToggleInputCoordinator?
     private var stopSubscription: AnyCancellable?
     private static weak var attached: NativeTabChat?
 
-    init(context: ChatContext) {
-        session = ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: .chat))
+    init(session: ChatSession, restoredAfterRelaunch: Bool = false) {
+        self.session = session
+        self.restoredAfterRelaunch = restoredAfterRelaunch
+    }
+
+    private let restoredAfterRelaunch: Bool
+
+    convenience init(context: ChatContext) {
+        self.init(session: ChatSession(context: context, provider: NativeChatProviderFactory.makeProvider(for: .chat)))
     }
 
     /// The header title: which model answers, on this device.
@@ -104,8 +111,11 @@ extension TabViewController {
 
     /// Covers the web view with the native chat; the tab stays a Duck.ai tab underneath.
     func showNativeChat(_ chat: NativeTabChat) {
-        removeNativeChat()
+        if let previousSession = tabModel.nativeChatSession, previousSession !== chat.session { previousSession.close() }
+        removeNativeChat(preservingSession: true)
         nativeChat = chat
+        tabModel.nativeChatSession = chat.session
+        tabModel.nativeChatWasOpen = true
         let chatView = chat.viewController.view!
         addChild(chat.viewController)
         chatView.translatesAutoresizingMaskIntoConstraints = false
@@ -120,7 +130,12 @@ extension TabViewController {
         webView.isHidden = true
     }
 
-    func removeNativeChat() {
+    func removeNativeChat(preservingSession: Bool = false) {
+        if !preservingSession {
+            tabModel.nativeChatSession?.close()
+            tabModel.nativeChatSession = nil
+            tabModel.nativeChatWasOpen = false
+        }
         guard let chat = nativeChat else { return }
         nativeChat = nil
         chat.detach()
@@ -140,5 +155,37 @@ extension URL {
                                         AIChatURLParameters.flowQueryName, AIChatURLParameters.toolChoiceName]
         components.queryItems = components.queryItems?.filter { !promptItems.contains($0.name) }
         return components.url ?? self
+    }
+}
+
+/// Explicit web destinations must stay web even when new chats default to local inference.
+enum DuckAIChatDestination: Equatable {
+    case web
+    case native(prompt: String?)
+
+    static func forURL(_ url: URL, opensNatively: Bool) -> Self {
+        guard opensNatively, url.isDuckAIURL,
+              url.path.isEmpty || url.path == "/",
+              url.fragment == nil,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return .web }
+        let items = components.queryItems ?? []
+        let webParameters: Set<String> = ["chatID", AIChatURLParameters.settingsName, AIChatURLParameters.sidebarName,
+                                          AIChatURLParameters.chatProtectionName, AIChatURLParameters.customizeResponsesName,
+                                          AIChatURLParameters.modeName, AIChatURLParameters.toolChoiceName, AIChatURLParameters.flowQueryName]
+        guard !items.contains(where: { webParameters.contains($0.name) }) else { return .web }
+        let prompt = items.first { $0.name == AIChatURLParameters.promptQueryName }?.value
+        // A non-submitted URL prompt belongs to the web draft. Never silently drop it.
+        if let prompt, !prompt.isEmpty {
+            guard items.contains(where: { $0.name == AIChatURLParameters.autoSubmitPromptQueryName && $0.value == "1" }) else { return .web }
+            return .native(prompt: prompt)
+        }
+        return .native(prompt: nil)
+    }
+
+    @MainActor
+    func makeNativeChat() -> NativeTabChat? {
+        guard case .native(let prompt) = self,
+              let context = try? ChatContext(page: nil, selections: [], opening: prompt.map(Opening.prompt)) else { return nil }
+        return NativeTabChat(context: context)
     }
 }

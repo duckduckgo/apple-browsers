@@ -28,6 +28,48 @@ import WebExtensions
 
 class TabTests: XCTestCase {
 
+    func testNativeRoutingPreservesExplicitWebDestinations() throws {
+        let webURLs = [
+            "https://duck.ai/?chatID=existing", "https://duck.ai/?settings=open", "https://duck.ai/?sidebar=open",
+            "https://duck.ai/?chatProtection=open", "https://duck.ai/?customize-responses=full", "https://duck.ai/?mode=voice",
+            "https://duck.ai/?mode=image", "https://duck.ai/?toolChoice=Search", "https://duck.ai/?q=unsent",
+            "https://duck.ai/revoke-duckai-access", "https://duck.ai/#existing", "https://example.com/"
+        ]
+        for address in webURLs {
+            let url = try XCTUnwrap(URL(string: address))
+            XCTAssertEqual(DuckAIChatDestination.forURL(url, opensNatively: true), .web, address)
+        }
+    }
+
+    func testFreshDuckAIURLRoutingUsesNativePreferenceAndPreservesSubmittedPrompt() throws {
+        for address in ["https://duck.ai", "https://duck.ai/", "https://duck.ai/?native-input=true", "https://duckduckgo.com/?ia=chat"] {
+            let url = try XCTUnwrap(URL(string: address))
+            XCTAssertEqual(DuckAIChatDestination.forURL(url, opensNatively: true), .native(prompt: nil))
+            XCTAssertEqual(DuckAIChatDestination.forURL(url, opensNatively: false), .web)
+        }
+        let promptedURL = try XCTUnwrap(URL(string: "https://duck.ai/?q=Hello&prompt=1&native-input=true"))
+        XCTAssertEqual(DuckAIChatDestination.forURL(promptedURL, opensNatively: true), .native(prompt: "Hello"))
+        XCTAssertEqual(promptedURL.withoutDuckAIPrompt.absoluteString, "https://duck.ai/?native-input=true")
+    }
+
+    func testNativeDestinationSurvivesArchivalSnapshotAndDecoding() throws {
+        let original = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duck.ai/"))))
+        original.nativeChatWasOpen = true
+        let snapshot = original.archivalSnapshot()
+        let data = try NSKeyedArchiver.archivedData(withRootObject: snapshot, requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+        XCTAssertTrue(restored.nativeChatWasOpen)
+        original.nativeChatWasOpen = false
+        XCTAssertTrue(snapshot.nativeChatWasOpen)
+    }
+
+    func testWebDuckAITabIsNeverReclassifiedOnDecode() throws {
+        let original = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duck.ai/"))))
+        let data = try NSKeyedArchiver.archivedData(withRootObject: original, requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+        XCTAssertFalse(restored.nativeChatWasOpen)
+    }
+
     struct Constants {
         static let title = "A title"
         static let url = URL(string: "https://example.com")!

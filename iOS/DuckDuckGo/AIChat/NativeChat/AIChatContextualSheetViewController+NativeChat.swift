@@ -69,6 +69,17 @@ extension AIChatContextualSheetViewController: NativeChatDelegate {
         return true
     }
 
+    /// Expansion changes the presentation, keeping the same conversation and any active reply.
+    func takeNativeChatForExpansion() -> NativeTabChat? {
+        guard let binding = nativeChatBinding as? NativeChatInputBinding else { return nil }
+        binding.unbind()
+        let chat = NativeTabChat(session: binding.session)
+        nativeChatBinding = nil
+        nativeChatViewController = nil
+        nativeChatOrigin = nil
+        return chat
+    }
+
     /// New Chat, or leaving for the web. Puts the sheet's own input back.
     func tearDownNativeChat() {
         guard nativeChatViewController != nil else { return }

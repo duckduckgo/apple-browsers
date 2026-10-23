@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DuckAIChatCore
 import Core
 import AIChat
 
@@ -40,6 +41,7 @@ public class Tab: NSObject, NSCoding {
     }
     
     struct NSCodingKeys {
+        static let nativeChatWasOpen = "nativeChatWasOpen"
         static let uid = "uid"
         static let link = "link"
         static let viewed = "viewed"
@@ -130,6 +132,13 @@ public class Tab: NSObject, NSCoding {
 
     /// URL of the contextual AI chat session for this tab, used to restore chat state across app restarts.
     var contextualChatURL: String?
+
+    /// The transcript stays alive across controller eviction, without retaining a UIKit hierarchy.
+    @MainActor var nativeChatSession: ChatSession?
+    /// Only the destination is persisted. Native transcripts are currently memory-only.
+    var nativeChatWasOpen = false {
+        didSet { if oldValue != nativeChatWasOpen { notifyObservers() } }
+    }
 
     /// Whether this NTP was shown by the idle-return flow. One-shot: cleared when the user leaves the NTP.
     var openedAfterIdle: Bool = false
@@ -248,6 +257,7 @@ public class Tab: NSObject, NSCoding {
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
 
         self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL, contextualChatURL: contextualChatURL, supportsTabHistory: supportsTabHistory, fireTab: fireTab, isExternalLaunch: isExternalLaunch, shouldSuppressTrackerAnimationOnFirstLoad: shouldSuppressTrackerAnimationOnFirstLoad, unifiedInputState: unifiedInputState, duckAIEntrySource: duckAIEntrySource)
+        nativeChatWasOpen = decoder.containsValue(forKey: NSCodingKeys.nativeChatWasOpen) && decoder.decodeBool(forKey: NSCodingKeys.nativeChatWasOpen)
         hasPendingSessionRestoration = true
     }
 
@@ -259,6 +269,7 @@ public class Tab: NSObject, NSCoding {
     public func encode(with coder: NSCoder) {
         Logger.daxEasterEgg.debug("Tab encode - Saving logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
 
+        coder.encode(nativeChatWasOpen, forKey: NSCodingKeys.nativeChatWasOpen)
         coder.encode(uid, forKey: NSCodingKeys.uid)
         coder.encode(link, forKey: NSCodingKeys.link)
         coder.encode(viewed, forKey: NSCodingKeys.viewed)
@@ -278,7 +289,7 @@ public class Tab: NSObject, NSCoding {
 
     /// Returns a frozen deep copy containing only the fields that are persisted via NSCoding.
     func archivalSnapshot() -> Tab {
-        Tab(uid: uid,
+        let snapshot = Tab(uid: uid,
             link: link?.copy() as? Link,
             viewed: viewed,
             desktop: isDesktop,
@@ -289,6 +300,8 @@ public class Tab: NSObject, NSCoding {
             fireTab: fireTab,
             unifiedInputState: unifiedInputState,
             duckAIEntrySource: duckAIEntrySource)
+        snapshot.nativeChatWasOpen = nativeChatWasOpen
+        return snapshot
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

@@ -1674,9 +1674,7 @@ class TabViewController: UIViewController {
     }
 
     public func load(url: URL) {
-        if !url.isDuckAIURL {
-            removeNativeChat()
-        }
+        removeNativeChat()
         load(url: url, shouldCancelPendingAIChatTabAttachmentPrompt: true)
     }
 

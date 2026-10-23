@@ -88,11 +88,19 @@ extension TabViewController: AITabController {
 
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction() {
+        if nativeChat != nil {
+            load(url: AIChatURLParameters.settingsOpenURL(from: aiChatSettings.aiChatURL))
+            return
+        }
         aiChatContentHandler.submitOpenSettingsAction()
     }
 
     /// Submits a toggle sidebar action to open/close the sidebar.
     func submitToggleSidebarAction() {
+        if nativeChat != nil {
+            load(url: AIChatURLParameters.sidebarOpenURL(from: aiChatSettings.aiChatURL))
+            return
+        }
         aiChatContentHandler.submitToggleSidebarAction()
     }
     
@@ -104,7 +112,7 @@ extension TabViewController: AITabController {
             flowType: .default,
             tools: nil
         )
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: newChatURL, entrySource: source, nativeChat: nil)
     }
 
     /// Opens the Duck.ai chats sidebar in a new tab. Mirrors the contextual sheet's "View all chats"
@@ -120,6 +128,10 @@ extension TabViewController: AITabController {
     }
 
     func submitOpenChatProtectionAction() {
+        if nativeChat != nil {
+            load(url: AIChatURLParameters.chatProtectionURL(from: aiChatSettings.aiChatURL))
+            return
+        }
         aiChatContentHandler.submitOpenChatProtectionAction()
     }
 

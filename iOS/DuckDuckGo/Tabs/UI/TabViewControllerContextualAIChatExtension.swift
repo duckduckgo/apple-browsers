@@ -31,6 +31,7 @@ extension TabViewController {
     /// - Parameter presentingViewController: The view controller to present the sheet from.
     func presentContextualAIChatSheet(from presentingViewController: UIViewController, attachingPage: Bool = false) {
         Task { @MainActor in
+            bindLocalSuggestionsToCurrentPage()
             await aiChatContextualSheetCoordinator.presentSheet(
                 from: presentingViewController,
                 restoreURL: restoreURLForContextualSheet(),
@@ -41,11 +42,13 @@ extension TabViewController {
 
     @MainActor
     func presentContextualAIChat(withSearchQuery query: String, from presentingViewController: UIViewController) async {
+        bindLocalSuggestionsToCurrentPage()
         await aiChatContextualSheetCoordinator.submitSearchQuery(query, from: presentingViewController)
     }
 
     func presentContextualFloatingInput(from presentingViewController: UIViewController) {
         Task { @MainActor in
+            bindLocalSuggestionsToCurrentPage()
             await aiChatContextualSheetCoordinator.presentFloatingInput(from: presentingViewController)
         }
     }
@@ -55,6 +58,7 @@ extension TabViewController {
     @MainActor
     func presentContextualAIChat(withSelectedText text: String,
                                  from presentingViewController: UIViewController) async {
+        bindLocalSuggestionsToCurrentPage()
         let url = webView.url
         await aiChatContextualSheetCoordinator.handleSelectionAction(
             .ask,
@@ -66,6 +70,12 @@ extension TabViewController {
             restoreURL: restoreURLForContextualSheet(),
             from: presentingViewController
         )
+    }
+
+    private func bindLocalSuggestionsToCurrentPage() {
+        localSuggestions.bind(webView: webView, isAttachable: { [weak self] in
+            self?.pageContextHandler.isCurrentPageAttachable() ?? false
+        })
     }
 
     /// A conversation this tab can return to: either still live in the coordinator, or persisted by an
@@ -122,7 +132,8 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: true,
                                    hasPrompt: false)
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: entrySource)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: entrySource,
+                      nativeChat: coordinator.sheetViewController?.takeNativeChatForExpansion())
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {

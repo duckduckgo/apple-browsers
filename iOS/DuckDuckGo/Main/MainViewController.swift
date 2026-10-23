@@ -2976,9 +2976,11 @@ class MainViewController: UIViewController {
     ///     Timing relative to UI refresh differs by exit path: the URL-reuse branch fires this before
     ///     `refreshOmniBar`/tab-bar refresh; all other branches fire it after. Callers should not rely
     ///     on chrome state being settled inside the closure.
-    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, completion: ((Tab) -> Void)? = nil) {
+    func loadUrlInNewTab(_ url: URL, reuseExisting: ExistingTabReusePolicy? = .none, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false, opensNativeChat: Bool = true, completion: ((Tab) -> Void)? = nil) {
 
         func worker() {
+            let nativeChat = DuckAIChatDestination.forURL(url, opensNatively: opensNativeChat && !voiceMode && DuckAINativeSettings.shared.opensNewChatsNatively).makeNativeChat()
+            let navigationURL = nativeChat == nil ? url : url.withoutDuckAIPrompt
             allowContentUnderflow = false
             viewCoordinator.navigationBarContainer.alpha = 1
             loadViewIfNeeded()
@@ -2991,7 +2993,7 @@ class MainViewController: UIViewController {
                 hostingTab = existing
             }
             // Check if an existing tab with the same URL should be reused.
-            else if reuseExisting != .none, let existing = tabManager.first(withUrl: url) {
+            else if reuseExisting != .none, let existing = tabManager.first(withUrl: navigationURL) {
                 selectTab(existing)
                 completion?(existing)
                 return
@@ -3002,12 +3004,12 @@ class MainViewController: UIViewController {
                     autoClearShouldRefreshUIAfterClear = false
                 }
                 tabManager.select(existing, dismissCurrent: false)
-                loadUrl(url, fromExternalLink: fromExternalLink)
+                loadUrl(navigationURL, fromExternalLink: fromExternalLink)
                 hostingTab = existing
             }
             // Add a new tab if no existing tab is reused.
             else {
-                hostingTab = addTab(url: url, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
+                hostingTab = addTab(url: navigationURL, inheritedAttribution: inheritedAttribution, fromExternalLink: fromExternalLink, voiceMode: voiceMode)
             }
 
             refreshOmniBar()
@@ -3015,6 +3017,7 @@ class MainViewController: UIViewController {
             refreshControls()
             tabsBarController?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
             swipeTabsCoordinator?.refresh(tabsModel: tabManager.currentTabsModel, scrollToSelected: true)
+            if let nativeChat { installNativeChat(nativeChat, in: hostingTab, webURL: url) }
             completion?(hostingTab)
         }
 
@@ -5107,10 +5110,12 @@ class MainViewController: UIViewController {
         }
         fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
         let chat = NativeTabChat(context: context)
-        chat.onContinueInWeb = { [weak self] in
-            guard let self, let tab = self.currentTab, tab.nativeChat === chat else { return }
+        chat.onContinueInWeb = { [weak self, weak chat] in
+            guard let self, let chat, let tab = self.currentTab, tab.nativeChat === chat else { return }
             tab.removeNativeChat()
-            self.openAIChatOnWeb(request, from: tab)
+            let webRequest = AIChatOpeningRequest(url: request.url, payload: request.payload, source: request.source,
+                                                 opensNewTab: false, prompt: request.prompt)
+            self.openAIChatOnWeb(webRequest, from: tab)
         }
         openNativeChatTab(chat, url: request.url.withoutDuckAIPrompt, inNewTab: request.opensNewTab, from: originatingTab)
     }
@@ -5118,28 +5123,49 @@ class MainViewController: UIViewController {
     /// Demo branch: a Duck.ai tab whose web view is covered by the native chat.
     func openNativeChatTab(_ chat: NativeTabChat, url: URL, inNewTab: Bool, from originatingTab: TabViewController?) {
         if inNewTab || originatingTab == nil {
-            loadUrlInNewTab(url, inheritedAttribution: nil) { [weak self] _ in
-                self?.showNativeChatInCurrentTab(chat)
+            loadUrlInNewTab(url.withoutDuckAIPrompt, inheritedAttribution: nil, opensNativeChat: false) { [weak self] model in
+                self?.installNativeChat(chat, in: model, webURL: url)
             }
-        } else {
-            originatingTab?.load(url: url)
-            showNativeChatInCurrentTab(chat)
+        } else if let originatingTab {
+            originatingTab.load(url: url.withoutDuckAIPrompt)
+            showNativeChat(chat, in: originatingTab, webURL: url)
         }
     }
 
-    private func showNativeChatInCurrentTab(_ chat: NativeTabChat) {
-        guard let tab = currentTab else { return }
-        tab.showNativeChat(chat)
-        if let unifiedToggleInputCoordinator {
-            chat.attach(to: unifiedToggleInputCoordinator)
+    func configureNativeChatWebContinuation(_ chat: NativeTabChat, in tab: TabViewController, webURL: URL) {
+        if chat.onContinueInWeb == nil {
+            chat.onContinueInWeb = { [weak self, weak tab] in
+                guard let self, let tab else { return }
+                tab.load(url: webURL)
+                if self.currentTab === tab, let coordinator = self.unifiedToggleInputCoordinator {
+                    self.bindAITabIfPossible(tab: tab, coordinator: coordinator, hasExistingChat: true)
+                }
+            }
         }
-        aiChatTabChatHeaderView?.setNativeChatTitle(chat.title)
+    }
+
+    private func installNativeChat(_ chat: NativeTabChat, in model: Tab, webURL: URL) {
+        model.nativeChatSession = chat.session
+        model.nativeChatWasOpen = true
+        if let controller = tabManager.controller(for: model) { showNativeChat(chat, in: controller, webURL: webURL) }
+    }
+
+    private func showNativeChat(_ chat: NativeTabChat, in tab: TabViewController, webURL: URL) {
+        configureNativeChatWebContinuation(chat, in: tab, webURL: webURL)
+        tab.showNativeChat(chat)
+        if currentTab === tab {
+            if let unifiedToggleInputCoordinator {
+                chat.attach(to: unifiedToggleInputCoordinator)
+            }
+            aiChatTabChatHeaderView?.setNativeChatTitle(chat.title)
+        }
     }
 
     private func openAIChatOnWeb(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
         fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
         // Record NTP use before ending the idle session.
         if !request.opensNewTab {
+            originatingTab.removeNativeChat()
             measureAIChatUseFromNewTabPage(originatingTab)
         }
         if request.shouldMeasureOpening {
@@ -5150,7 +5176,7 @@ class MainViewController: UIViewController {
             if case .sharedHandler(let query, _, _) = request.prompt {
                 // This helper preserves deferred opening during clearing and configures the selected recipient in completion.
                 if let prompt = query.sharedPrompt { AIChatPromptHandler.shared.setData(prompt) }
-                loadUrlInNewTab(request.url, inheritedAttribution: nil) { [weak self] tab in
+                loadUrlInNewTab(request.url, inheritedAttribution: nil, opensNativeChat: false) { [weak self] tab in
                     self?.prepareTabForDuckAILoad(tab, recipient: self?.currentTab, request: request)
                     self?.updateAIChatSelectedModel(for: request)
                     if let payload = request.payload {
@@ -5949,6 +5975,12 @@ extension MainViewController: BrowserChromeDelegate {
             }
             loadUrlInNewTab(url, inheritedAttribution: nil, fromExternalLink: fromExternalLink, completion: completion)
         case .loadInPlace:
+            if let tab = currentTab,
+               let chat = DuckAIChatDestination.forURL(url, opensNatively: DuckAINativeSettings.shared.opensNewChatsNatively).makeNativeChat() {
+                openNativeChatTab(chat, url: url, inNewTab: false, from: tab)
+                completion?(tab.tabModel)
+                return
+            }
             currentTab?.isDuckAIDeepLinkSurfaceRequested = url.isDuckAIChatProtectionOpen
             loadUrl(url, fromExternalLink: fromExternalLink)
             if let currentTab = tabManager.currentTabsModel.currentTab {
@@ -7823,13 +7855,18 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?) {
+             entrySource: AIChatEntryPointSource?,
+             nativeChat: NativeTabChat?) {
         recordUserOpenedTab()
-        if DuckAINativeSettings.shared.opensNewChatsNatively, let chat = NativeTabChat.newChat() {
-            openNativeChatTab(chat, url: url, inNewTab: true, from: tab)
+        if let nativeChat {
+            loadUrlInNewTab(url.withoutDuckAIPrompt, inheritedAttribution: nil, opensNativeChat: false) { [weak self] model in
+                model.duckAIEntrySource = entrySource
+                self?.installNativeChat(nativeChat, in: model, webURL: url)
+            }
             return
         }
-        openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
+        openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil,
+                   opensNativeChat: entrySource != .contextualChat) {
             $0.duckAIEntrySource = entrySource
         }
     }
@@ -7872,6 +7909,7 @@ extension MainViewController: TabDelegate {
                             url: URL,
                             openedByPage: Bool,
                             inheritedAttribution attribution: AdClickAttributionLogic.State?,
+                            opensNativeChat: Bool = true,
                             completion: ((Tab) -> Void)? = nil) {
         if !openedByPage {
             recordDuckAISessionPendingExit(.newTabOpened)
@@ -7891,7 +7929,7 @@ extension MainViewController: TabDelegate {
             capturePreviewForTab(tab)
             showBars()
             newTabAnimation {
-                self.loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
+                self.loadUrlInNewTab(url, inheritedAttribution: attribution, opensNativeChat: opensNativeChat, completion: completion)
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
@@ -7902,7 +7940,7 @@ extension MainViewController: TabDelegate {
                 self.omniBarTabSwitcherButton?.tabCount += 1
             }
         } else {
-            loadUrlInNewTab(url, inheritedAttribution: attribution, completion: completion)
+            loadUrlInNewTab(url, inheritedAttribution: attribution, opensNativeChat: opensNativeChat, completion: completion)
             self.currentTab?.adClickExternalOpenDetector.invalidateForUserInitiated()
             self.currentTab?.openingTab = tab
         }
@@ -8466,6 +8504,10 @@ extension MainViewController: TabSwitcherDelegate {
         case .createNewChat:
             let aiChatLink = Link(title: nil, url: aiChatSettings.aiChatURL)
             let newTab = Tab(link: aiChatLink, fireTab: tabManager.currentTabsModel.shouldCreateFireTabs)
+            if let chat = DuckAIChatDestination.forURL(aiChatLink.url, opensNatively: DuckAINativeSettings.shared.opensNewChatsNatively).makeNativeChat() {
+                newTab.nativeChatSession = chat.session
+                newTab.nativeChatWasOpen = true
+            }
             replaceTabWith(newTab: newTab)
         case .onlyClose:
             tabManager.remove(tab: tab, clearTabHistory: clearTabHistory)

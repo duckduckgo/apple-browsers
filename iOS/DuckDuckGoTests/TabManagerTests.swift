@@ -34,6 +34,71 @@ import WebKit
 @MainActor
 final class TabManagerTests: XCTestCase {
 
+    func testNativeSessionSurvivesControllerEvictionWithoutRetainingItsPresentation() throws {
+        let nativeTab = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duck.ai/"))))
+        let otherTab = Tab()
+        let model = TabsModel(tabs: [nativeTab, otherTab], desktop: false)
+        let manager = try makeManager(model)
+        let originalController = try XCTUnwrap(manager.current(createIfNeeded: true))
+        weak var oldPresentation: UIViewController?
+        do {
+            let chat = try XCTUnwrap(NativeTabChat.newChat())
+            originalController.showNativeChat(chat)
+            oldPresentation = chat.viewController
+        }
+        let session = try XCTUnwrap(nativeTab.nativeChatSession)
+        _ = manager.select(otherTab)
+        manager.invalidateCache(forController: originalController, reloadCurrent: false)
+        XCTAssertNil(originalController.nativeChat)
+        XCTAssertNil(oldPresentation)
+        XCTAssertTrue(nativeTab.nativeChatSession === session)
+
+        _ = manager.select(nativeTab)
+        let recreatedController = try XCTUnwrap(manager.controller(for: nativeTab))
+        XCTAssertFalse(recreatedController === originalController)
+        XCTAssertTrue(recreatedController.nativeChat?.session === session)
+        XCTAssertEqual(recreatedController.nativeChat?.session.state.conversation, session.state.conversation)
+    }
+
+    func testExplicitWebNavigationClearsNativeDestinationAndSession() throws {
+        let tab = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duck.ai/"))))
+        let model = TabsModel(tabs: [tab], desktop: false)
+        let manager = try makeManager(model)
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        for address in ["https://duck.ai/?chatID=history", "https://duck.ai/?settings=open", "https://duck.ai/"] {
+            controller.showNativeChat(try XCTUnwrap(NativeTabChat.newChat()))
+            controller.load(url: try XCTUnwrap(URL(string: address)))
+            XCTAssertNil(controller.nativeChat)
+            XCTAssertNil(tab.nativeChatSession)
+            XCTAssertFalse(tab.nativeChatWasOpen)
+            XCTAssertFalse(tab.archivalSnapshot().nativeChatWasOpen)
+        }
+    }
+
+    func testNativeChatMenuWebActionsRemoveTheNativeOverlay() throws {
+        let tab = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duck.ai/"))))
+        let manager = try makeManager(TabsModel(tabs: [tab], desktop: false))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let actions = [controller.submitOpenSettingsAction, controller.submitToggleSidebarAction, controller.submitOpenChatProtectionAction]
+        for action in actions {
+            controller.showNativeChat(try XCTUnwrap(NativeTabChat.newChat()))
+            action()
+            XCTAssertNil(controller.nativeChat)
+            XCTAssertNil(tab.nativeChatSession)
+            XCTAssertFalse(tab.nativeChatWasOpen)
+        }
+    }
+
+    func testColdRestorationRestoresNativeDestinationWithAnEmptyConversation() throws {
+        let tab = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duck.ai/"))))
+        tab.nativeChatWasOpen = true
+        let manager = try makeManager(TabsModel(tabs: [tab], desktop: false))
+        let controller = try XCTUnwrap(manager.current(createIfNeeded: true))
+        let chat = try XCTUnwrap(controller.nativeChat)
+        XCTAssertTrue(tab.nativeChatSession === chat.session)
+        XCTAssertTrue(chat.session.state.messages.isEmpty)
+    }
+
     override func tearDown() {
         UserDefaults.app.removeObject(forKey: FireModeCapability.isFireModeEnabledKey)
         UserDefaults.app.removeObject(forKey: UserDefaultsWrapper<Bool>.Key.faviconTabsCacheNeedsCleanup.rawValue)

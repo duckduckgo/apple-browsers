@@ -492,6 +492,13 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         controller.delegate = delegate
         controller.aiChatContentHandlingDelegate = aiChatContentDelegate
         controller.loadViewIfNeeded()
+        if tab.nativeChatWasOpen {
+            if let session = tab.nativeChatSession {
+                controller.showNativeChat(NativeTabChat(session: session))
+            } else if let chat = NativeTabChat.newChat() {
+                controller.showNativeChat(NativeTabChat(session: chat.session, restoredAfterRelaunch: true))
+            }
+        }
         return controller
     }
 
@@ -835,6 +842,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
         if reason != .webContentProcessTermination {
             interactionStateSource?.saveState(controller.webView.interactionState, for: controller.tabModel)
         }
+        controller.removeNativeChat(preservingSession: true)
         removeFromCache(controller)
         cacheDelegate?.tabManager(self, didEvictController: controller, reason: reason)
     }
@@ -1017,6 +1025,10 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     private func clean(tabs: [Tab], clearTabHistory: Bool) {
         let tabIDs = tabs.map { $0.uid }
         tabs.forEach { tab in
+            tab.nativeChatSession?.close()
+            tab.nativeChatSession = nil
+            tab.nativeChatWasOpen = false
+            controller(for: tab)?.removeNativeChat()
             tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {
@@ -1067,12 +1079,18 @@ extension TabManager {
     func removeAll(browsingMode: BrowsingMode? = nil) -> Result<Void, Error> {
         let tabsData = tabsRemovalData(browsingMode: browsingMode)
 
-        tabsData.tabsToDelete.forEach { $0.iPadOmnibarDraft.invalidate() }
+        tabsData.tabsToDelete.forEach {
+            $0.nativeChatSession?.close()
+            $0.nativeChatSession = nil
+            $0.nativeChatWasOpen = false
+            $0.iPadOmnibarDraft.invalidate()
+        }
 
         let previewsResult = previewsSource.removePreviewsWithIdNotIn(tabsData.tabIDsToPreserve)
         tabsModelProvider.clearTabs(for: browsingMode)
 
         for controller in tabsData.tabControllersToDelete {
+            controller.removeNativeChat()
             removeFromCache(controller)
         }
 

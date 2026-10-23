@@ -93,44 +93,92 @@ final class FireSnapshotUITests: UITestCase, FireDialogUITests {
     }
 
     private func assertSurvivingWindowRejectsClicks(snapshotEnabled: Bool) throws {
-        try launch(snapshotEnabled: snapshotEnabled, simplified: false)
-        let page = UITests.simpleServedPage(titled: "Surviving counter", body: """
-        <script>let clicks = 0; document.cookie="fire-regression=1; path=/";</script>
-        <button onclick="document.getElementById('count').textContent='Clicked '+(++clicks)">Increment</button>
-        <p id="count">Clicked 0</p>
+        try launch(snapshotEnabled: snapshotEnabled)
+        app.openPreferencesWindow()
+        app.preferencesGoToGeneralPane()
+        app.preferencesWindow.popUpButtons["PreferencesGeneralView.pinnedTabsModePicker"].click()
+        app.menuItems["Separate in each window"].click()
+        app.closePreferencesWindow()
+
+        let directory = cleanupRelease!.deletingLastPathComponent()
+        let clickMarker = directory.appendingPathComponent("click-was-blocked")
+        let reloadMarker = directory.appendingPathComponent("waiting-for-pinned-page")
+        let clickURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: clickMarker.path)
+        let reloadURL = URL.testsServer.appendingParameter(name: "deleteFiles", value: reloadMarker.path)
+        // These markers live outside WebKit, so reloading pins or clearing site data cannot erase a click.
+        let clickJavaScript = String(data: try JSONEncoder().encode(clickURL.absoluteString), encoding: .utf8)!
+        let reloadJavaScript = String(data: try JSONEncoder().encode(reloadURL.absoluteString), encoding: .utf8)!
+        let page = UITests.simpleServedPage(titled: "Surviving pinned page", body: """
+        <button onclick="recordClick()">Increment</button>
+        <script>
+        function recordClick() {
+            const request = new XMLHttpRequest();
+            request.open('GET', \(clickJavaScript), false);
+            request.setRequestHeader('Cache-Control', 'no-store');
+            request.send();
+        }
+        addEventListener('load', () => fetch(\(reloadJavaScript), { cache: 'no-store' }));
+        </script>
         """)
-        // Keep the counter on a different origin so clearing the burned window cannot reset it.
-        var counterPage = URLComponents(url: page, resolvingAgainstBaseURL: false)!
-        counterPage.host = "127.0.0.1"
-        app.openURL(counterPage.url!, waitForWebViewAccessibilityLabel: "Surviving counter")
-        let survivor = app.windows.matching(NSPredicate(format: "title == %@", "Surviving counter")).firstMatch
+        app.openURL(page, waitForWebViewAccessibilityLabel: "Surviving pinned page")
+        app.pinCurrentTab()
+        XCTAssertEqual(app.pinnedTabs.count, 1)
+        let survivor = app.windows.matching(NSPredicate(format: "title == %@", "Surviving pinned page")).firstMatch
         let increment = survivor.webViews.buttons["Increment"]
         XCTAssertTrue(increment.waitForExistence(timeout: UITests.Timeouts.localTestServer))
-        // Covered browser windows can disappear from the accessibility tree. Resolve the screen
-        // location before covering it; the click must not resolve that window again.
         let buttonFrame = increment.frame
         let incrementPoint = CGPoint(x: buttonFrame.midX, y: buttonFrame.midY)
+        try Data().write(to: clickMarker)
+        clickScreenPoint(incrementPoint)
+        waitForMarkerDeletion(clickMarker)
+        try Data().write(to: clickMarker)
+
         app.openNewWindow()
         openPage(title: "Window to burn")
-        beginBurn(scope: "Window", closeTabs: true)
+        let source = app.windows.matching(NSPredicate(format: "title == %@", "Window to burn")).firstMatch
+        moveBurnSourceAwayFromSurvivingPage(source, point: incrementPoint)
+        try Data().write(to: reloadMarker)
+        beginBurn(scope: "All data", closeTabs: true)
         waitForCleanupToStart()
-
-        // Click screen coordinates so XCTest does not refuse an intentionally intercepted element.
-        // The first click may only activate a background window; the second must still be blocked.
+        // Burn all retains this window because its pins are separate, and replaces its pinned page.
+        // Wait for that replacement to load before testing input interception.
+        waitForMarkerDeletion(reloadMarker)
         for _ in 0..<2 {
             clickScreenPoint(incrementPoint)
         }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: clickMarker.path),
+                      "The pinned window must reject input while cleanup is pending")
         releaseCleanup()
         waitForBurnToFinish()
-        let progress = progressWindow
-        XCTAssertTrue(progress.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation))
+        XCTAssertTrue(progressWindow.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation))
         XCTAssertTrue(app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation))
-        XCTAssertTrue(survivor.webViews.staticTexts["Clicked 0"].exists,
-                      "The remaining window must reject input while cleanup is pending")
-        // Reuse the same location to verify that these screen clicks actually reach the button.
-        clickScreenPoint(incrementPoint)
-        XCTAssertTrue(survivor.webViews.staticTexts["Clicked 1"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The blocker must release input after cleanup")
+        XCTAssertTrue(survivor.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: clickMarker.path),
+                      "Blocked clicks must not be delivered after cleanup")
+        for _ in 0..<2 {
+            clickScreenPoint(incrementPoint)
+        }
+        waitForMarkerDeletion(clickMarker)
+    }
+
+    private func moveBurnSourceAwayFromSurvivingPage(_ source: XCUIElement, point: CGPoint) {
+        // Keep the source and its progress panel away from the tested page; otherwise they could
+        // consume clicks and hide a missing input blocker in the surviving window.
+        let origin = source.coordinate(withNormalizedOffset: .zero)
+        source.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1))
+            .withOffset(CGVector(dx: -1, dy: -1))
+            .click(forDuration: 0.3, thenDragTo: origin.withOffset(CGVector(dx: 800, dy: 650)))
+        let titleBar = source.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 400, dy: 15))
+        let offset = max(0, point.x + 100 - source.frame.minX)
+        titleBar.click(forDuration: 0.3, thenDragTo: titleBar.withOffset(CGVector(dx: offset, dy: 0)))
+        XCTAssertGreaterThan(source.frame.minX, point.x, "The source must not cover the input test point")
+    }
+
+    private func waitForMarkerDeletion(_ marker: URL) {
+        let deleted = expectation(for: NSPredicate { _, _ in
+            !FileManager.default.fileExists(atPath: marker.path)
+        }, evaluatedWith: nil)
+        wait(for: [deleted], timeout: UITests.Timeouts.fireAnimation)
     }
 
     func testWholeWindowBurnUsesIndependentProgressAndLeavesUsableFreshWindow() throws {

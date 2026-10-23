@@ -55,6 +55,11 @@ protocol BrowserChromeDelegate: AnyObject {
     /// visibility, used to drive `WKWebView.obscuredContentInsets` on iOS 26.
     func floatingWebViewObscuredInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets
 
+    /// Insets covered by the chrome alone at the given visibility, ignoring the keyboard. Used for
+    /// WebKit's viewport insets, which define the page's `svh`/`lvh`/`vh` and so must not move
+    /// with the keyboard.
+    func floatingWebViewChromeInsets(for barsVisibilityPercent: CGFloat) -> UIEdgeInsets
+
     /// Height obscured at the top of the new tab page by the focused unified toggle input card, for page
     /// content that must sit below it (the contextual onboarding dialogs).
     var floatingNewTabPageTopObscuredHeight: CGFloat { get }

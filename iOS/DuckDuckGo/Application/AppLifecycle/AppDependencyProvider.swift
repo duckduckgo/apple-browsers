@@ -167,7 +167,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
 
-    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created or renewed.
+    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created, renewed or restored from.
     /// - Parameters:
     ///   - featureFlagger: Decides whether the backup token is enabled.
     ///   - makeStorage: Creates the backup token storage. Called only when the flag is on.

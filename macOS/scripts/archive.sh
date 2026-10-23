@@ -306,31 +306,24 @@ copy_app_from_archive() {
 
 notarize() {
 	local notarization_zip_path="${workdir}/DuckDuckGo-for-notarization.zip"
-	local submission_path="${workdir}/notarization.json"
-	local credentials=()
-	if [[ -n $CI ]]; then
-		credentials=(--key "${APPLE_API_KEY_PATH}" --key-id "${APPLE_API_KEY_ID}" --issuer "${APPLE_API_KEY_ISSUER}")
-	else
-		credentials=(--apple-id "${developer_apple_id}" --password "${developer_password}" --team-id "${team_id}")
-	fi
 
 	echo "Uploading app for notarization ..."
 
 	ditto -c -k --keepParent "${app_path}" "${notarization_zip_path}"
-	local submit_status=0
-	xcrun notarytool submit "${credentials[@]}" --wait --output-format json \
-		"${notarization_zip_path}" > "${submission_path}" || submit_status=$?
-	cat "${submission_path}"
-	# notarytool can exit zero for an Invalid submission. Never staple that result.
-	if [[ "$submit_status" != 0 ]] || ! python3 -c \
-		'import json, sys; sys.exit(json.load(open(sys.argv[1])).get("status") != "Accepted")' "${submission_path}"; then
-		local submission_id
-		submission_id=$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1])).get("id", ""))' "${submission_path}" 2>/dev/null) || submission_id=
-		if [[ -n "$submission_id" ]]; then
-			xcrun notarytool log "$submission_id" "${credentials[@]}" "${workdir}/notarization-log.json" || true
-			[[ ! -f "${workdir}/notarization-log.json" ]] || cat "${workdir}/notarization-log.json"
-		fi
-		die "Notarization was not accepted; see notarization.json and notarization-log.json"
+	if [[ -n $CI ]]; then
+		${filter_output} xcrun notarytool submit \
+			--key "${APPLE_API_KEY_PATH}" \
+			--key-id "${APPLE_API_KEY_ID}" \
+			--issuer "${APPLE_API_KEY_ISSUER}" \
+			--wait \
+			"${notarization_zip_path}"
+	else
+		${filter_output} xcrun notarytool submit \
+			--apple-id "${developer_apple_id}" \
+			--password "${developer_password}" \
+			--team-id "${team_id}" \
+			--wait \
+			"${notarization_zip_path}"
 	fi
 }
 

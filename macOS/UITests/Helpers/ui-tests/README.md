@@ -1,104 +1,55 @@
-# Native macOS test artifacts
+# Optional macOS 12 test execution
 
-The notarized application uses the existing archive/export workflow. Test artifacts are built
-separately, once per macOS/Xcode environment and app flavor, with `build-for-testing`.
-The artifact schemes build only test targets and tests-server (`TEST_TARGET_NAME=`); they do not
-compile the application. UI classes and both user modes share that environment's test artifact.
-Sync and Performance each have one workload per environment, so they build native tests in their
-own job before executing them.
+The parent PR shares the existing `build-for-testing` products between native CI jobs.
+It keeps their Xcode schemes, test plans and `test-without-building` invocation unchanged.
+No compatibility code runs on macOS 14 or later.
 
-Each native compiler resolves its package graph from the packages' versioned manifests;
-the app compiler's lockfile can describe different dependencies. On Xcode <27, build.sh
-temporarily saves the project/local package lockfiles and restores their original contents
-after success or failure; surplus pins can crash those Xcode versions during resolution.
+`monterey.py` is a separate, explicit consumer for macOS 12. It accepts the ordinary
+`Build/Products` archive from the macOS 14 / Xcode 16.2 producer. The test bundle's
+`DTXcodeBuild` must be `16C5032a`; the destination must have Xcode 13.4.1 and Python 3.9+.
+Other combinations fail before test-profile cleanup or app launch.
 
-CI pins Xcode using the existing select-xcode-version action. UI uses macOS 14 / Xcode 16.2,
-macOS 15 / Xcode 26.2 and macOS 27 / Xcode 27.0. Sync also uses macOS 26 / Xcode 26.6.
-The app archive remains universal; test products use the producer's native architecture.
-Consumers must match the producer's macOS major version, architecture, and exact Xcode build.
-A mismatch fails before an app is launched or its state is reset, except for the explicit macOS 12 adapter described below.
-
-The macOS 14+ path has no XCTest binary patches, symbol forwarders, replacement runners or copied XCTest
-runtimes. Xcode creates its own runner; the consumer uses that runner and the installed native
-frameworks. Updating Xcode means changing the normal CI version setting, rebuilding the test
-artifact, and running qualification on that environment. These checks do not establish that
-arbitrary Xcode versions can exchange test bundles.
-
-## Local Xcode
-
-The normal app workspace and schemes remain available. Scheme pre/post actions and artifacts
-use the same pre-run.sh / post-run.sh scripts for tests-server readiness and owned-process cleanup.
-An occupied port fails instead of stopping an unrelated server.
-
-UITestCase resets the selected Debug/Review app profile once before each class configures its
-fixture. State persists between methods. Performance and Sync reset at class setup too; Sync
-retains its per-method cleanup. A local live run removes the selected test profile's data.
-
-## Dedicated Mac or SSH
-
-The native UI producer publishes a run-native.json URL in its job summary. Select the producer
-for the destination Mac's OS, architecture and Xcode; a macOS 14 artifact cannot run on macOS 12.
-The manifest pairs the notarized app and native test archive using revision and SHA-256 checksums.
+On a dedicated Monterey Mac, download the artifacts from the **same workflow run and revision**:
 
 ```bash
-python3 remote.py --ssh-config /path/to/pinned-config \
-  --results /path/to/results test-mac https://example.com/path/run-native.json \
-  --only AddressBarUrlEditingTests
+gh run download RUN_ID --repo duckduckgo/apple-browsers \
+  --name DuckDuckGo-ui-tests-dmg-macos14-xcode16.2 --dir native-tests
+mkdir -p native-tests/DerivedData
+tar -xzf native-tests/ui-test-products.tar.gz -C native-tests/DerivedData
+# Download and extract that run's notarized DuckDuckGo-review-*.app.tar.xz separately.
+python3 macOS/UITests/Helpers/ui-tests/monterey.py \
+  --products native-tests/DerivedData/Build/Products \
+  --preflight-only --result results/loader
+python3 macOS/UITests/Helpers/ui-tests/monterey.py \
+  --products native-tests/DerivedData/Build/Products \
+  --app '/absolute/path/DuckDuckGo Review.app' \
+  --only AddressBarSearchQueryEditingTests --user-mode production --result results/search
 ```
 
-The remote Mac needs the matching full Xcode, Python 3, a logged-in unlocked desktop and configured
-UI Automation. The launcher runs a native UI probe first, then the test workload with a temporary
-keychain. It restores the prior SSH/GUI keychain selection and fetches results even on failure.
-It does not enable unattended Automation or grant folder permissions. Provision those explicitly
-on the dedicated test host. Only one UI workload may use an account at a time.
-The default remote directory is ~/workspace/ddg-ui-tests; --remote-root selects a lease workspace.
+Keep this branch's `macOS/UITests` helpers/plans and existing `macOS/clean-app.sh`
+available on the Mac. `--plan` accepts another existing test-plan path; `--only` may
+be repeated for classes or `Class/method`. For App Store execution, use the matching
+App Store artifact and notarized application. This child PR keeps both architectures
+in the app artifact so an Intel Monterey Mac can use it too.
 
-To download and run directly on the matching Mac:
+The consumer copies the installed Xcode 13 runner, compiles the small XCTest
+forwarder, changes only the copied test bundle's XCTest linkage and signs that copy.
+The copied legacy runner disables its own App Sandbox for the Monterey fixture's
+defaults helper; the original producer runner and notarized app are not changed.
+The explicit Swift symbol bridge is custom compatibility code, not an Apple-supported
+guarantee that arbitrary Xcode versions can exchange test bundles.
 
-```bash
-curl -fL https://example.com/path/run-ui-tests.py -o runner.py
-python3 runner.py download https://example.com/path/run-native.json --output run
-python3 run/ui-tests/Scripts/prepare-host.py --result readiness
-python3 run/ui-tests/Scripts/with-keychain.py --result keychain-session -- \
-  python3 run/ui-tests/Scripts/artifact.py run run/ui-tests --only AddressBarUrlEditingTests
-```
+Loader preflight does not launch the app and does not qualify UI execution. A real run
+requires a logged-in unlocked GUI account, configured UI Automation, working keychain
+access and the runner's required folder permissions. This command does not grant TCC
+permissions or enable Screen Sharing. Run only one UI workload in that account.
 
-Use --suite performance, --suite sync, or --suite sync-appstore for the other targets.
---plan 'UI Tests App Store' selects the broader App Store plan; --only Class/method filters a method.
-Sync recovery CODE is supplied at runtime and is not included in artifacts. Results include
-xcresults, logs and JSON summaries. Missing results, incomplete execution or all-skipped runs fail.
+Execution resets only the selected **Review** profile once before each class, using
+the existing cleanup script. Methods run in separate Xcode 13 processes, each with
+a five-minute limit. Results contain per-method xcresults/logs and JSON summaries
+from `xcresulttool`; missing results, setup failures and an entirely skipped suite fail.
+Only the test server started by this command is stopped. `CODE`, when needed by a
+provided Sync target/plan, comes from the environment and is never packaged.
 
-## Optional macOS 12 support (stacked PR)
-
-Only macOS 12 loads monterey.py. macOS 14+ keeps the native path above, including its original
-runner and frameworks. The 14 / Xcode 16.2 producer builds both arm64 and x86_64 for this optional
-consumer. Monterey requires Xcode 13.4.1 and Python 3.9+; other producer/runtime combinations fail.
-
-The adapter copies Xcode 13's runner and this artifact's test bundle, compiles the small
-monterey/XCTestCompat.swift forwarder, redirects the copied bundle's XCTest dependencies and
-ad-hoc signs that copy. The notarized app is not modified. One bridge exports a specific Swift
-symbol and omits issue severity unsupported by XCTest 13. Future XCTest/compiler changes require
-requalification; this path is not an Apple-supported cross-version bundle guarantee.
-
-Before launching the app, a loader check verifies all symbols. Monterey-only discovery asks
-XCTest 13 for method names. Each method then runs in a fresh xcodebuild process, limited to five
-minutes, with one full profile reset per class. Persisted state remains between methods. The old
-runner's event queue cannot reliably continue across methods. A completely skipped workload fails.
-
-Monterey fixtures configure autocomplete through its stored preference before app launch and
-avoid the polling timer's nested keyboard/mouse synthesis; XCTest's interruption monitor remains.
-The App Store NTP wait uses the navigation timeout. These changes are confined to test support.
-
-The previous mixed implementation's bounded Monterey evidence does not qualify this new Xcode
-16.2-produced artifact. A fresh macOS 12 run, including the sandbox Downloads/FileProvider path,
-is still required. Do not count the native macOS 14 CI results as Monterey passes.
-
-## Validation
-
-```bash
-python3 -B -m unittest discover -s macOS/scripts/tests -v
-bash macOS/UITests/Helpers/ui-tests/build.sh dmg /absolute/path/to/DerivedData CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM=
-```
-
-On each environment, verify a real UI execution with the native runtime, the full selected suite,
-and the App Store sandbox leg. Loader checks and old cross-version CI results are insufficient.
+Full runtime qualification of this revised adapter is still required. Earlier loader
+passes and results from the superseded implementation do not establish a suite pass.

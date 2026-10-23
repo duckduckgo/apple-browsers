@@ -20,7 +20,6 @@ CODE_SIGN_STYLE[config=Review][sdk=macosx*] = Manual
 CODE_SIGNING_ALLOWED[config=Review][sdk=macosx*] = NO
 CODE_SIGN_IDENTITY[config=CI][sdk=macosx*] =
 CODE_SIGN_STYLE[config=CI][sdk=macosx*] = Manual
-CODE_SIGN_ENTITLEMENTS = Configuration/UITests/UITestRunner.entitlements
 CODE_SIGNING_ALLOWED[config=CI][sdk=macosx*] = NO
 COPY_PHASE_STRIP = NO
 DEAD_CODE_STRIPPING = YES

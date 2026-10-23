@@ -57,29 +57,8 @@ final class CriticalPathsTests: XCTestCase {
     var app: XCUIApplication!
     var debugMenuBarItem: XCUIElement!
 
-    override class func setUp() {
-        super.setUp()
-        if #unavailable(macOS 13), ProcessInfo.processInfo.environment["UITEST_RESET_CLASS_STATE"] == "0" {
-            return
-        }
-        do {
-            let application = XCUIApplication()
-            application.terminate()
-            let bundleID = try XCTUnwrap(application.value(forKey: "bundleID") as? String)
-            let script = try XCTUnwrap(ProcessInfo.processInfo.environment["UITEST_LIFECYCLE_SCRIPT"])
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/bin/bash")
-            process.arguments = [script, "--reset-only", "--bundle-id", bundleID, "--sync"]
-            try process.run()
-            process.waitUntilExit()
-            XCTAssertEqual(process.terminationStatus, 0, "Could not reset the Sync test app state")
-        } catch {
-            XCTFail("Could not prepare Sync test class: \(error)")
-        }
-    }
-
     override func setUp() {
-        app = XCUIApplication()
+        app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
         app.launchEnvironment["FEATURE_FLAGS"] = "syncImprovedPairingFlow=true"
         app.launch()

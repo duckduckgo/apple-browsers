@@ -21,20 +21,12 @@ import Foundation
 
 final class StartupPerformanceTests: XCTestCase {
 
-    override class func setUp() {
-        super.setUp()
-        do {
-            try UITests.resetAppState()
-        } catch {
-            XCTFail("Could not prepare test class: \(error)")
-        }
-        UITests.firstRun()
-    }
-
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
 
+        /// Avoids First-Run State
+        UITests.firstRun()
     }
 
     func testStartupSequenceDurationWithoutStateRestoration() throws {

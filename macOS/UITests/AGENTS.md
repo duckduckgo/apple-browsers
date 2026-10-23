@@ -6,11 +6,9 @@ Read this before writing, fixing or running a test in `macOS/UITests/`. Helpers 
 
 - Launch with `XCUIApplication.setUp(featureFlags:)`. Each key must be a macOS `FeatureFlag` raw
   value whose config allows local overriding; any other key crashes the app at launch.
-- CI builds test artifacts once per macOS/Xcode environment. Consumers use the same native Xcode
-  version and build as their producer. The optional macOS 12 adapter lives only in Helpers/ui-tests/monterey.py and monterey/. Never extend it to native macOS 14+ execution.
-- Class setup resets the Review app defaults and container data before the class configures its
-  fixture. State persists between methods of that class. Tell the user before a local live run.
-- Scheme pre/post actions and portable artifacts share `Helpers/ui-tests/pre-run.sh` and
-  `post-run.sh`; these own only their tests-server process.
+- Full CI runs, as opposed to PR runs, compile the tests with Xcode 16.2 on macOS 14, so test code
+  sticks to APIs that SDK has.
+- Running the `macOS UI Tests` scheme first runs `clean-app.sh review`, which deletes the Review
+  app's defaults and container data. Tell the user before running it on their machine.
 - Run one class with
   `xcodebuild test -workspace DuckDuckGo.xcworkspace -scheme "macOS UI Tests" -only-testing:"UI Tests/<TestClass>"`.

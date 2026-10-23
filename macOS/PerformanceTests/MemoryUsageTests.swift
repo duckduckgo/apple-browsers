@@ -25,11 +25,6 @@ final class MemoryUsageTests: XCTestCase {
 
     override class func setUp() {
         super.setUp()
-        do {
-            try UITests.resetAppState()
-        } catch {
-            XCTFail("Could not prepare test class: \(error)")
-        }
 
         /// Avoids First-Run State
         XCUIApplication.notificationCenter.dismissSystemPermissionPromptIfPresent(logIfNotFound: false)

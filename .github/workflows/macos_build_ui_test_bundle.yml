@@ -1,4 +1,4 @@
-name: macOS - Build native test bundle
+name: macOS - Build shared UI test bundle
 
 on:
   workflow_call:
@@ -18,93 +18,187 @@ on:
       build-type:
         type: string
         default: dmg
-      app-artifact-prefix:
+      test-plan:
         type: string
         default: ''
 
 jobs:
   build:
-    name: Native tests (macOS ${{ inputs.os-version }}, Xcode ${{ inputs.xcode-version }}, ${{ inputs.build-type }})
+    name: UI test bundle (macOS ${{ inputs.os-version }}, ${{ inputs.build-type }})
     runs-on: ${{ fromJSON(inputs.runner) }}
     timeout-minutes: 90
     defaults:
       run:
         working-directory: macOS
     env:
-      RELEASE_TYPE: ${{ inputs.build-type == 'appstore' && 'sandbox-review' || 'review' }}
-      # Monterey reuses this source-built bundle on ARM and Intel; native 14 still uses its own XCTest.
-      UI_TEST_ARTIFACT_ARCHS: ${{ inputs.os-version == '14' && 'arm64 x86_64' || '' }}
+      scheme: ${{ inputs.build-type == 'appstore' && 'macOS UI Tests App Store CI' || 'macOS UI Tests CI' }}
+      extra-xcargs: ${{ inputs.build-type == 'appstore' && 'UI_TESTS_TARGET_APP=sandbox' || '' }}
+      TEST_PLAN: ${{ inputs.test-plan }}
     steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ inputs.branch }}
-      - name: Register SSH keys for private packages
-        uses: webfactory/ssh-agent@v0.10.0
-        with:
-          ssh-private-key: |
-            ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
-            ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
-      - name: Select native Xcode
-        uses: ./.github/actions/select-xcode-version
-        with:
-          xcode-version: ${{ inputs.xcode-version }}
-      - name: Build test targets once
-        run: |
-          set -o pipefail
-          bash UITests/Helpers/ui-tests/build.sh '${{ inputs.build-type }}' "$GITHUB_WORKSPACE/macOS/NativeTests" \
-            CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= 2>&1 | tee native-test-build.log
-      - name: Download notarized application
-        uses: actions/download-artifact@v7
-        with:
-          pattern: ${{ inputs.app-artifact-prefix }}DuckDuckGo-${{ env.RELEASE_TYPE }}-*.app.tar.xz
-          merge-multiple: true
-          path: macOS
-      - name: Package native test products
-        run: |
-          set -euo pipefail
-          tar -xf DuckDuckGo-*.app.tar.xz -C NativeTests/Build/Products/Review
-          python3 UITests/Helpers/ui-tests/artifact.py pack --products NativeTests/Build/Products \
-            --distribution '${{ inputs.build-type }}' --output native-tests.tar.gz
-      - uses: actions/upload-artifact@v6
-        with:
-          name: DuckDuckGo-native-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}
-          path: macOS/native-tests.tar.gz
-      - uses: actions/upload-artifact@v6
-        if: failure()
-        with:
-          name: native-test-build-${{ inputs.build-type }}-macos${{ inputs.os-version }}
-          path: |
-            macOS/native-test-build.log
-            macOS/native-tests.tar.enumeration.*
-      - name: Publish native app/test pair
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_RELEASE_S3 }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_RELEASE_S3 }}
-          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-          BUCKET_ROOT: s3://${{ vars.RELEASE_BUCKET_NAME }}/${{ vars.RELEASE_BUCKET_PREFIX }}/
-          URL_ROOT: ${{ vars.DMG_URL_ROOT }}
-          PAIR_PATH: native-ui-tests/${{ github.sha }}/${{ github.run_id }}/${{ github.run_attempt }}/macos${{ inputs.os-version }}/${{ inputs.build-type }}/
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import hashlib, json, os, subprocess
-          from pathlib import Path
-          archive = next(Path('.').glob('DuckDuckGo-*.app.tar.xz'))
-          prefix = os.environ['URL_ROOT'] + os.environ['PAIR_PATH']
-          def item(path, name):
-              value = hashlib.sha256()
-              with path.open('rb') as stream:
-                  for chunk in iter(lambda: stream.read(1024 * 1024), b''):
-                      value.update(chunk)
-              return {'url': prefix + name, 'sha256': value.hexdigest()}
-          descriptor = {'format': 1, 'git_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-                        'app': item(archive, 'app.tar.xz'), 'tests': item(Path('native-tests.tar.gz'), 'tests.tar.gz')}
-          Path('run-native.json').write_text(json.dumps(descriptor, indent=2) + '\n')
-          Path('app-archive.txt').write_text(str(archive))
-          PY
-          destination="${BUCKET_ROOT}${PAIR_PATH}"
-          aws s3 cp "$(cat app-archive.txt)" "${destination}app.tar.xz" --acl public-read
-          aws s3 cp native-tests.tar.gz "${destination}tests.tar.gz" --acl public-read
-          aws s3 cp UITests/Helpers/ui-tests/artifact.py "${destination}run-ui-tests.py" --acl public-read
-          aws s3 cp run-native.json "${destination}run-native.json" --acl public-read
-          echo "Native app/test pair: ${URL_ROOT}${PAIR_PATH}run-native.json" >> "$GITHUB_STEP_SUMMARY"
+    - name: Register SSH keys for private repos
+      uses: webfactory/ssh-agent@v0.10.0
+      with:
+        ssh-private-key: |
+          ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
+          ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+    - name: Check out the code
+      uses: actions/checkout@v6
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Initialize submodules with retry
+      run: |
+        max_attempts=3
+        retry_delay=15
+        for attempt in $(seq 1 $max_attempts); do
+          echo "Submodule init attempt $attempt of $max_attempts"
+          if git submodule update --init --recursive; then
+            echo "Submodules initialized successfully"
+            exit 0
+          fi
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Failed, retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "All submodule init attempts failed"
+        exit 1
+
+    - name: Ensure GNU timeout is available
+      shell: bash
+      timeout-minutes: 5
+      run: |
+        if ! command -v gtimeout >/dev/null && ! command -v timeout >/dev/null; then
+          brew install coreutils
+        fi
+
+    - name: Select Xcode
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ inputs.xcode-version }}
+
+    - name: Set cache key hash
+      run: |
+        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
+        if [[ "$has_only_tags" == "true" ]]; then
+          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
+        else
+          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
+        fi
+
+    - name: Cache SPM
+      if: env.cache_key_hash
+      uses: actions/cache@v5
+      with:
+        path: macOS/DerivedData/SourcePackages
+        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
+        restore-keys: |
+          ${{ runner.os }}-macos-
+
+    - name: Resolve package dependencies
+      id: resolve-packages
+      working-directory: macOS
+      shell: bash
+      timeout-minutes: 30
+      env:
+        RESOLVE_SCHEME: ${{ env.scheme }}
+      run: |
+        max_attempts=5
+        retry_delay=10
+        TIMEOUT_BIN="$(command -v gtimeout || command -v timeout)"
+
+        for attempt in $(seq 1 $max_attempts); do
+          attempt_directory="package-resolution/attempt-${attempt}"
+          mkdir -p "$attempt_directory"
+          echo "Attempt $attempt of $max_attempts"
+          if "$TIMEOUT_BIN" --verbose --kill-after=10s 5m \
+            xcodebuild -resolvePackageDependencies \
+            -scheme "$RESOLVE_SCHEME" \
+            -derivedDataPath DerivedData \
+            2>&1 | tee "$attempt_directory/resolve.log"; then
+            echo "Package resolution succeeded"
+            exit 0
+          else
+            status=$?
+            echo "Package resolution exited with status $status (attempt $attempt)"
+            if [[ $status -eq 130 || $status -eq 143 ]]; then
+              exit "$status"
+            fi
+          fi
+
+          if [[ $attempt -lt $max_attempts ]]; then
+            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
+            sleep $retry_delay
+          fi
+        done
+        echo "Package resolution failed after $max_attempts attempts"
+        exit 1
+
+    - name: Upload package resolution logs
+      if: always() && steps.resolve-packages.outcome != 'skipped'
+      uses: ./.github/actions/upload-artifact-with-retry
+      with:
+        name: "package-resolution-ui-bundle-${{ inputs.build-type }}-macos${{ inputs.os-version }}"
+        path: macOS/package-resolution/
+        retention-days: 7
+
+    - name: Restore Xcode Compilation Cache
+      if: runner.environment != 'self-hosted'
+      uses: actions/cache/restore@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests
+        restore-keys: |
+          xcode-compilation-cache-ui-tests-
+
+    - name: Build for testing
+      working-directory: macOS
+      run: |
+        test_plan_args=()
+        if [[ -n "$TEST_PLAN" ]]; then
+          test_plan_args=(-testPlan "$TEST_PLAN")
+        fi
+        set -o pipefail && xcodebuild build-for-testing \
+          -scheme "${{ env.scheme }}" \
+          "${test_plan_args[@]}" \
+          -derivedDataPath DerivedData \
+          -skipPackagePluginValidation \
+          -skipMacroValidation \
+          COMPILATION_CACHE_ENABLE_CACHING=YES \
+          CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= \
+          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
+          ${{ env.extra-xcargs }} \
+        | tee xcodebuild.log \
+        | xcbeautify
+
+    - name: Compute Compilation Cache hash
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
+      id: compilation-cache-hash
+      run: |
+        if [ -d "DerivedData/CompilationCache.noindex" ]; then
+          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
+          echo "hash=${hash}" >> $GITHUB_OUTPUT
+        else
+          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
+        fi
+
+    - name: Save Xcode Compilation Cache
+      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
+      uses: actions/cache/save@v5
+      with:
+        path: macOS/DerivedData/CompilationCache.noindex
+        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+
+    - name: Archive test products
+      run: |
+        # tar preserves the runner executable bits and framework symlinks.
+        # Consumers install the existing notarized app artifact separately.
+        tar -czf ui-test-products.tar.gz --exclude='Build/Products/Review/DuckDuckGo*.app' -C DerivedData Build/Products
+
+    - name: Upload shared UI test bundle
+      uses: actions/upload-artifact@v6
+      with:
+        name: DuckDuckGo-ui-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}-xcode${{ inputs.xcode-version }}
+        path: macOS/ui-test-products.tar.gz
+        retention-days: 1

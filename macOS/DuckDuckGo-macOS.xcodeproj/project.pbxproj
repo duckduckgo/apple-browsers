@@ -4997,8 +4997,6 @@
 		FEE12B412E520E4D00AD9809 /* PromoHistoryRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */; };
 		FFA1DFE4967209A9C47D7160 /* QuitSurveyPromoObserverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E03DA09FC744669CD57C604C /* QuitSurveyPromoObserverTests.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
-		68FEB6F45BE15139FFAB4F73 /* ui-tests in Resources */ = {isa = PBXBuildFile; fileRef = 47846FF7AA15E03798D522CF /* ui-tests */; };
-		6ED47284C4FEF142D56785C7 /* ui-tests in Resources */ = {isa = PBXBuildFile; fileRef = 47846FF7AA15E03798D522CF /* ui-tests */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -5027,8 +5025,8 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = AA585D76248FD31100E9A3E2 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = B6EC37E729B5DA2A001ACE79;
-			remoteInfo = "tests-server";
+			remoteGlobalIDString = 3706FA6A293F65D500E42796;
+			remoteInfo = "DuckDuckGo Privacy Browser App Store";
 		};
 		37C320B82F1E80A1008F4604 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -5683,7 +5681,6 @@
 		37C3210B2F1E80A1008F4604 /* Performance Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Performance Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		37C321132F1E81CA008F4604 /* macOS Performance Tests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "macOS Performance Tests.xctestplan"; sourceTree = "<group>"; };
 		37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = MemoryUsageTests.xcconfig; sourceTree = "<group>"; };
-		3A5B483037B330A044578C5E /* UITestRunner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = UITestRunner.entitlements; sourceTree = "<group>"; };
 		37C749392D55FE690065B48B /* HistoryViewActionsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewActionsHandler.swift; sourceTree = "<group>"; };
 		37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTabExtension.swift; sourceTree = "<group>"; };
 		37CBCA992A8966E60050218F /* SyncSettingsAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsAdapter.swift; sourceTree = "<group>"; };
@@ -7660,7 +7657,6 @@
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
 		FE6295B8821741B1BF7FDCF6 /* BookmarksBarPromptViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarPromptViewModelTests.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
-		47846FF7AA15E03798D522CF /* ui-tests */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ui-tests; path = UITests/Helpers/ui-tests; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -9039,7 +9035,6 @@
 			isa = PBXGroup;
 			children = (
 				37C321172F1E8230008F4604 /* MemoryUsageTests.xcconfig */,
-				3A5B483037B330A044578C5E /* UITestRunner.entitlements */,
 				376113C52B29BCD600E794BB /* SyncE2EUITests.xcconfig */,
 				376113D72B29D0F800E794BB /* SyncE2EUITestsAppStore.xcconfig */,
 				378B588C295CF446002C0CC0 /* UITests.xcconfig */,
@@ -11509,7 +11504,6 @@
 		AA585D75248FD31100E9A3E2 = {
 			isa = PBXGroup;
 			children = (
-				47846FF7AA15E03798D522CF /* ui-tests */,
 				378B5886295CF2A4002C0CC0 /* Configuration */,
 				AA585D80248FD31100E9A3E2 /* DuckDuckGo */,
 				9D9AE9132AAA3B450026E7DC /* DuckDuckGoDBPBackgroundAgent */,
@@ -15272,7 +15266,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6ED47284C4FEF142D56785C7 /* ui-tests in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -15363,7 +15356,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				68FEB6F45BE15139FFAB4F73 /* ui-tests in Resources */,
 				8409BD782ED878C400E39FA7 /* popup-delayed.html in Resources */,
 				8409BD792ED878C400E39FA7 /* popup-servicenow.html in Resources */,
 				8409BD7A2ED878C400E39FA7 /* popup-links.html in Resources */,
@@ -20443,7 +20435,7 @@
 		};
 		376113D62B29CD6800E794BB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = B6EC37E729B5DA2A001ACE79 /* tests-server */;
+			target = 3706FA6A293F65D500E42796 /* DuckDuckGo Privacy Browser App Store */;
 			targetProxy = 376113D52B29CD6800E794BB /* PBXContainerItemProxy */;
 		};
 		37C320B72F1E80A1008F4604 /* PBXTargetDependency */ = {

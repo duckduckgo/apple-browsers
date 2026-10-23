@@ -29,6 +29,7 @@ struct UserText {
 
     // MARK: - Generic
     static let ok = NSLocalizedString("ok", value: "OK", comment: "OK button")
+    static let smartlingDedupeTestStringOne = NSLocalizedString("smartling.dedupe.test.one", value: "Smartling macOS dedupe test string one 4b8d", comment: "Temporary test string for checking Smartling job contents. Do not translate or merge.")
     static let cancel = NSLocalizedString("cancel", value: "Cancel", comment: "Cancel button")
     static let none = NSLocalizedString("none", value: "None", comment: "Generic 'None' label")
     static let searchBarSearch = NSLocalizedString("searchBar.search", value: "Search", comment: "Generic placeholder for search fields")

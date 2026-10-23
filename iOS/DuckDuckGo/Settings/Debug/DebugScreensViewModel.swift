@@ -162,7 +162,7 @@ class DebugScreensViewModel: ObservableObject {
 
     func navigateToController(_ screen: DebugScreen) {
         switch screen {
-        case .controller(_, let controllerBuilder):
+        case .controller(_, _, let controllerBuilder):
             pushController?(controllerBuilder(self.dependencies))
         case .view, .action:
             assertionFailure("Should not be pushing SwiftUI view as controller")

@@ -134,6 +134,16 @@
                                         </tableViewCellContentView>
                                         <listContentConfiguration key="contentConfiguration" text="Reset Email Protection InContext Signup Prompt"/>
                                     </tableViewCell>
+                                    <tableViewCell clipsSubviews="YES" tag="216" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" id="ePS-gn-216">
+                                        <rect key="frame" x="20" y="768" width="374" height="53"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="ePS-gn-216" id="ePS-cv-216">
+                                            <rect key="frame" x="0.0" y="0.0" width="374" height="53"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                        </tableViewCellContentView>
+                                        <listContentConfiguration key="contentConfiguration" text="Clear Email Protection Sign-in State"/>
+                                        <accessibility key="accessibilityConfiguration" identifier="Debug.Autofill.ClearEmailProtectionSignInState"/>
+                                    </tableViewCell>
                                     <tableViewCell clipsSubviews="YES" tag="203" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" id="zG5-R0-kxQ">
                                         <rect key="frame" x="20" y="768" width="374" height="53"/>
                                         <autoresizingMask key="autoresizingMask"/>

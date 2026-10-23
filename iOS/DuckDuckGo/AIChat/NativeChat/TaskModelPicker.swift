@@ -39,8 +39,10 @@ struct TaskModelPicker: View {
                 Section("MLX") {
                     ForEach(ModelCatalog.all) { model in
                         let downloaded = Self.isDownloaded(model)
-                        option(downloaded ? model.displayName : "\(model.displayName), not downloaded", .mlx(id: model.id),
-                               enabled: downloaded)
+                        let label = model.runtimeUnsupportedReason == nil
+                            ? (downloaded ? model.displayName : "\(model.displayName), not downloaded")
+                            : "\(model.displayName), unavailable"
+                        option(label, .mlx(id: model.id), enabled: downloaded && model.runtimeUnsupportedReason == nil)
                     }
                 }
             } label: {

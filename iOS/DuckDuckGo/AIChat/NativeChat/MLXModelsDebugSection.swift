@@ -54,6 +54,7 @@ struct MLXModelsDebugSection: View {
     }
 
     private func detail(for model: Model) -> String {
+        if let reason = model.runtimeUnsupportedReason { return reason }
         let fits = ModelCatalog.fits(model, physicalMemory: ProcessInfo.processInfo.physicalMemory) ? "" : " · needs \(model.minimumPhysicalMemoryGB) GB"
         switch states[model.id] ?? store.state(of: model) {
         case .notDownloaded:
@@ -72,7 +73,7 @@ struct MLXModelsDebugSection: View {
         switch states[model.id] ?? store.state(of: model) {
         case .notDownloaded, .failed:
             Button("Get") { Task { try? await store.download(model) } }
-                .disabled(store.isDownloading)
+                .disabled(store.isDownloading || model.runtimeUnsupportedReason != nil)
         case .downloading:
             Button("Cancel") { store.cancelDownload() }
         case .downloaded:

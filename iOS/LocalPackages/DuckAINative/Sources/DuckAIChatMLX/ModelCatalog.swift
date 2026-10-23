@@ -44,6 +44,11 @@ public struct Model: Identifiable, Equatable, Sendable {
     }
     public var capabilities: InputCapabilities { inferenceFamily == .vision ? .vision : .textOnly }
 
+    public var runtimeUnsupportedReason: String? {
+        guard id == "mlx-community/gemma-4-e2b-it-4bit" else { return nil }
+        return "Gemma 4 is unavailable with this app's current model runtime."
+    }
+
     /// Below this much physical memory the model is too big to share the browser's budget.
     public let minimumPhysicalMemoryGB: Int
 }
@@ -69,7 +74,7 @@ public enum ModelCatalog {
                                                approximateBytes: 1_820_000_000, licence: "Llama 3.2",
                                                extraEOSTokens: ["<|eot_id|>"], minimumPhysicalMemoryGB: 6)
 
-    // Gemma remains catalogued, although the pinned MLX version cannot load its KV-shared layers.
+    // Keep unsupported downloads visible so they can still be deleted.
     public static let all: [Model] = [qwen35Mini, qwen35, qwen35Large, gemma4E2B, llama32Mini, llama32]
 
     public static func model(withID id: String) -> Model? {

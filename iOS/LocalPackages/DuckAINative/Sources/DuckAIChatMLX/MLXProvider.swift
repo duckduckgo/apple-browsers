@@ -49,6 +49,7 @@ public final class MLXProvider: ChatProvider, Sendable {
     }
 
     public var availability: ProviderAvailability {
+        if let reason = model.runtimeUnsupportedReason { return .unsupported(reason: reason) }
         #if targetEnvironment(simulator)
         return .unsupported(reason: "MLX requires a device.")
         #else
@@ -57,6 +58,12 @@ public final class MLXProvider: ChatProvider, Sendable {
     }
 
     public func availabilityUpdates() -> AsyncStream<ProviderAvailability> {
+        if let reason = model.runtimeUnsupportedReason {
+            return AsyncStream { continuation in
+                continuation.yield(.unsupported(reason: reason))
+                continuation.finish()
+            }
+        }
         #if targetEnvironment(simulator)
         return AsyncStream { _ in }
         #else

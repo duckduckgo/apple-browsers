@@ -197,7 +197,9 @@ class AppStoreSandboxUITests: UITestCase {
     }
 
     private func waitForNewTabPage() {
-        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        let timeout = ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 12
+            ? UITests.Timeouts.navigation : UITests.Timeouts.elementExistence
+        XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: timeout))
     }
 
     private func openDownloadsPopup() {

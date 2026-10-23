@@ -95,7 +95,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
+      build-arm64-only: false # The optional macOS 12 consumer also supports Intel Macs.
     secrets: inherit
 
   # The App Store sandbox test case (AppStoreSandboxUITests) runs along every full (unfiltered) DMG run,
@@ -112,7 +112,7 @@ jobs:
       create-dmg: false
       branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
-      build-arm64-only: true # UI Test runners are Apple Silicon, so their prebuilt app does not need x86_64.
+      build-arm64-only: false # The optional macOS 12 consumer also supports Intel Macs.
     secrets: inherit
 
   # This job sets up the matrix strategy arguments for the ui-tests jobs

@@ -65,6 +65,24 @@ enum UITests {
     /// does.
     /// - Parameter requestedToggleState: How the autocomplete checkbox state should be set
     static func setAutocompleteToggleBeforeTestcaseRuns(_ requestedToggleState: Bool) {
+        guard #available(macOS 13, *) else {
+            // Xcode 13 hangs querying this Settings checkbox on Monterey.
+            let app = XCUIApplication()
+            app.terminate()
+            do {
+                let bundleID = try XCTUnwrap(app.bundleID)
+                let process = Process()
+                process.executableURL = URL(fileURLWithPath: "/usr/bin/defaults")
+                process.arguments = ["write", bundleID, "preferences.appearance.show-autocomplete-suggestions",
+                                     "-bool", requestedToggleState ? "true" : "false"]
+                try process.run()
+                process.waitUntilExit()
+                XCTAssertEqual(process.terminationStatus, 0, "Could not configure the autocomplete fixture")
+            } catch {
+                XCTFail("Could not configure the autocomplete fixture: \(error)")
+            }
+            return
+        }
         let app = XCUIApplication.setUp()
         // Settings opens as a tab, so it needs a browser window to host it
         app.enforceSingleWindow()
@@ -150,6 +168,8 @@ class UITestCase: XCTestCase {
     /// System TCC alerts can appear asynchronously mid-test and steal key focus. A repeating timer
     /// on the main run loop fires during XCTest waits and dismisses them before the next click.
     private func startSystemPermissionPromptDismissTimerIfNeeded() {
+        // The old XCTest event queue cannot synthesize nested input events.
+        guard #available(macOS 13, *) else { return }
         guard Self.systemPermissionPromptPollingTimer == nil else { return }
 
         let timer = Timer(timeInterval: 5, repeats: true) { _ in
@@ -181,6 +201,9 @@ class UITestCase: XCTestCase {
 
         if isSystemPermissionPromptPollingTimerEnabled {
             startSystemPermissionPromptDismissTimerIfNeeded()
+        }
+        if #unavailable(macOS 13), ProcessInfo.processInfo.environment["UITEST_RESET_CLASS_STATE"] == "0" {
+            Self.didCallFirstRun = true
         }
         if !Self.didCallFirstRun {
             Self.didCallFirstRun = true

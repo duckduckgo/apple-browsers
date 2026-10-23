@@ -41,8 +41,8 @@ struct UnifiedSuggestionsView: View {
             logoLayer
             fireLayer
         }
-        // UIKit already bounds this host with its keyboard layout guide. Keep container
-        // safe areas and the input-bar inset, without a second SwiftUI keyboard adjustment.
+        // Native bounds or scroll content clearance handle the keyboard. Keep container
+        // safe areas without a second SwiftUI keyboard adjustment.
         .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 

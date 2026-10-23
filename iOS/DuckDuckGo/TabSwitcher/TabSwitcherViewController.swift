@@ -271,6 +271,7 @@ class TabSwitcherViewController: UIViewController {
         let source = modeChangeFromSwipe ? "swipe" : "tap"
         modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
+        activePageController.prepareForDisplay()
         PixelKit.fire(Pixel.Event.tabSwitcherModeToggled, options: .parameters([
             PixelParameters.browsingMode: newMode.pixelParamValue,
             PixelParameters.source: source
@@ -393,7 +394,7 @@ class TabSwitcherViewController: UIViewController {
             duckAIVoiceSessionTracker: duckAIVoiceSessionTracker)
         normalPageController.pageDelegate = self
         embedPageController(normalPageController, in: normalPageContainer)
-
+        activePageController.prepareForDisplay()
     }
 
     private func embedPageController(_ pageController: TabSwitcherPageViewController?, in container: UIView) {
@@ -486,6 +487,8 @@ class TabSwitcherViewController: UIViewController {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.tabManagerUsed()
         showFireButtonPulseIfNeeded()
+        // Prepare offscreen Fire content after presentation so it doesn't block the drag.
+        firePageController?.prepareForDisplay()
     }
 
     private func showFireButtonPulseIfNeeded() {
@@ -507,11 +510,7 @@ class TabSwitcherViewController: UIViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        refreshTitleViews()
-        currentSelection = tabsModel.currentIndex
-        updateUIForSelectionMode()
-        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
-        firePageController?.updateEmptyStateVisibility()
+        prepareChromeForPresentation()
     }
 
     override func viewDidLayoutSubviews() {
@@ -538,9 +537,18 @@ class TabSwitcherViewController: UIViewController {
     }
 
     func prepareForPresentation() {
+        prepareChromeForPresentation()
         view.layoutIfNeeded()
         syncPagingScrollViewToCurrentMode(animated: false)
-        self.scrollToInitialTab()
+        scrollToInitialTab()
+    }
+
+    private func prepareChromeForPresentation() {
+        refreshTitleViews()
+        currentSelection = tabsModel.currentIndex
+        updateUIForSelectionMode()
+        chrome.layout(addressBarPosition: appSettings.currentAddressBarPosition, interfaceMode: interfaceMode)
+        firePageController?.updateEmptyStateVisibility()
     }
 
     private func syncPagingScrollViewToCurrentMode(animated: Bool) {
@@ -738,6 +746,11 @@ extension TabSwitcherViewController {
 // MARK: - UIScrollViewDelegate (paging)
 
 extension TabSwitcherViewController: UIScrollViewDelegate {
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        guard scrollView === pagingScrollView else { return }
+        firePageController?.prepareForDisplay()
+    }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         guard scrollView === pagingScrollView else { return }

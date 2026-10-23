@@ -81,7 +81,12 @@ protocol TabSwitcherPageDelegate: AnyObject {
 }
 
 class TabSwitcherPageViewController: UIViewController {
-    
+
+    enum Constants {
+        static let listCellMaxWidth: CGFloat = 664
+        static let listCellHeight: CGFloat = 70
+    }
+
     private(set) var collectionView: UICollectionView!
     let tabsModel: TabsModelManaging
     weak var pageDelegate: TabSwitcherPageDelegate?
@@ -101,6 +106,8 @@ class TabSwitcherPageViewController: UIViewController {
     private var trackerInfoModel: InfoPanelView.Model?
     private var fireModeEmptyStateHostingController: UIHostingController<FireModeEmptyStateView>?
     private var fireModeEmptyStateTopConstraint: NSLayoutConstraint?
+    private var floatingTopClearance = FireModeEmptyStateMetrics.estimatedFloatingTopClearance
+    private var isPreparedForDisplay = false
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
     private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
     private var voiceSessionChangesCancellable: AnyCancellable?
@@ -189,13 +196,12 @@ class TabSwitcherPageViewController: UIViewController {
         subscribeToVoiceSessionChanges()
         bindTrackerCount()
         trackerCountViewModel?.refresh()
-        setupFireModeEmptyState()
     }
 
     private var lastLayoutSize: CGSize = .zero
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
         let currentSize = view.bounds.size
         guard currentSize != lastLayoutSize, currentSize != .zero else { return }
         lastLayoutSize = currentSize
@@ -218,7 +224,7 @@ class TabSwitcherPageViewController: UIViewController {
     }
 
     private func setupFireModeEmptyState() {
-        guard browsingMode == .fire, isFireModeEnabled else { return }
+        guard browsingMode == .fire, isFireModeEnabled, fireModeEmptyStateHostingController == nil else { return }
         let emptyStateView = FireModeEmptyStateView(type: .tabSwitcher(onNewFireTab: { [weak self] in
             PixelKit.fire(Pixel.Event.fireModeEmptyStateNewTab)
             self?.onNewFireTab?()
@@ -238,7 +244,7 @@ class TabSwitcherPageViewController: UIViewController {
             // `mainTopPadding` then adds 24pt above the pictogram.
             topConstraint = hostingController.view.topAnchor.constraint(
                 equalTo: view.topAnchor,
-                constant: FireModeEmptyStateMetrics.estimatedFloatingTopClearance)
+                constant: floatingTopClearance)
             fireModeEmptyStateTopConstraint = topConstraint
         } else {
             topConstraint = hostingController.view.topAnchor.constraint(equalTo: view.topAnchor)
@@ -263,12 +269,22 @@ class TabSwitcherPageViewController: UIViewController {
 
     func applyFloatingTopClearance(_ topBarBottomOffset: CGFloat) {
         guard isFloatingTabSwitcherEnabled else { return }
-        fireModeEmptyStateTopConstraint?.constant = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
+        floatingTopClearance = topBarBottomOffset + FireModeEmptyStateMetrics.spacingBelowNavbar
+        fireModeEmptyStateTopConstraint?.constant = floatingTopClearance
+    }
+
+    func prepareForDisplay() {
+        loadViewIfNeeded()
+        isPreparedForDisplay = true
+        updateEmptyStateVisibility()
     }
 
     func updateEmptyStateVisibility() {
         guard browsingMode == .fire else { return }
         let shouldShowEmptyState = tabsModel.tabs.isEmpty
+        if shouldShowEmptyState && isPreparedForDisplay {
+            setupFireModeEmptyState()
+        }
         fireModeEmptyStateHostingController?.view.isHidden = !shouldShowEmptyState
         collectionView.isHidden = shouldShowEmptyState
     }
@@ -568,8 +584,8 @@ extension TabSwitcherPageViewController: UICollectionViewDelegateFlowLayout {
         } else {
             let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
             let spacing = layout?.sectionInset.left ?? 0.0
-            let width = min(664, collectionView.bounds.size.width - 2 * spacing)
-            return CGSize(width: width, height: 70)
+            let width = min(Constants.listCellMaxWidth, collectionView.bounds.size.width - 2 * spacing)
+            return CGSize(width: width, height: Constants.listCellHeight)
         }
     }
 

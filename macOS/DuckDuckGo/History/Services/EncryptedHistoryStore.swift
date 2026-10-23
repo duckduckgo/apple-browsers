@@ -205,7 +205,7 @@ actor EncryptedHistoryStore: HistoryStoring {
                         ($0.identifier, try self.insertOrUpdate($0, storedEntry: storedEntries[$0.identifier], in: self.context))
                     }, uniquingKeysWith: { first, second in first + second })
                 } catch {
-                    Self.fireSaveFailedPixels(error: error)
+                    self.fireSaveFailedPixels(error: error)
                     self.context.reset()
                     continuation.resume(throwing: error)
                     return
@@ -215,7 +215,7 @@ actor EncryptedHistoryStore: HistoryStoring {
                     try self.context.save()
                     Logger.history.debug("HistoryStore: saved \(entries.count) entries")
                 } catch {
-                    Self.fireSaveFailedPixels(error: error)
+                    self.fireSaveFailedPixels(error: error)
                     self.context.reset()
                     continuation.resume(throwing: HistoryStoreError.savingFailed)
                     return
@@ -268,7 +268,7 @@ actor EncryptedHistoryStore: HistoryStoring {
         return try insertNewVisits(of: entry, into: historyEntryManagedObject, context: context).get()
     }
 
-    private static func fireSaveFailedPixels(error: Error) {
+    nonisolated private func fireSaveFailedPixels(error: Error) {
         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailed, error: error))
         PixelKit.fire(DebugEvent(GeneralPixel.historySaveFailedDaily, error: error), frequency: .legacyDailyNoSuffix)
     }

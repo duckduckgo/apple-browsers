@@ -123,6 +123,51 @@ import Testing
         #expect(run.suggestions.map(\.prompt) == ["What do ducks eat?"])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsShowTheGeneratedQuestionInsteadOfAnEchoedTitle() {
+        let tabs = [OpenTabMetadata(id: "0", title: "Walking shoes", host: "example.com")]
+        let parsed = OpenTabSuggestions.parse("0 | Walking shoes | Which shoes suit long walks?", tabs: tabs)
+        #expect(parsed.first?.label == "Which shoes suit long walks?")
+        #expect(OpenTabSuggestions.parse("0 | Walking shoes | walking shoes", tabs: tabs).isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsAllowModelLoadingBeforeTheGenerationBudget() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let provider = StubProvider(configuration: .init(reply: "0 | Duck food | What do ducks eat?",
+                                                        wordsPerSecond: 10_000, loadTime: .milliseconds(200), readTime: .zero))
+        for _ in 0..<2 {
+            let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider, budget: .milliseconds(100))
+            #expect(run.outcome == .generated)
+            #expect(run.suggestions.first?.prompt == "What do ducks eat?")
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsBoundWaitingForAProviderThatNeverStarts() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: StallingTabProvider("", emitsText: false),
+                                              budget: .seconds(10), loadBudget: .milliseconds(50))
+        #expect(run.outcome == .timedOut)
+        #expect(run.suggestions.isEmpty)
+        #expect(run.total < .seconds(2))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsBoundReadingInputAfterLoading() async {
+        let tabs = [OpenTabMetadata(id: "0", title: "Ducks", host: "example.com")]
+        let provider = StallingTabProvider("", emitsText: false, emitsReading: true)
+        let run = await OpenTabSuggestions.run(tabs: tabs, locale: "en", provider: provider,
+                                              budget: .milliseconds(50), loadBudget: .seconds(10))
+        #expect(run.outcome == .timedOut)
+        #expect(run.suggestions.isEmpty)
+        #expect(run.total < .seconds(2))
+    }
+
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
                                     content: String(repeating: "Ducks are waterfowl. ", count: 400), language: "en")
 
@@ -440,12 +485,16 @@ private final class StallingTabProvider: ChatProvider {
     let text: String
     let failure: ChatError?
     let refusal: Bool
+    let emitsText: Bool
+    let emitsReading: Bool
     let started: AsyncStream<Void>
     let start: AsyncStream<Void>.Continuation
-    init(_ text: String, failure: ChatError? = nil, refusal: Bool = false) {
+    init(_ text: String, failure: ChatError? = nil, refusal: Bool = false, emitsText: Bool = true, emitsReading: Bool = false) {
         self.text = text
         self.failure = failure
         self.refusal = refusal
+        self.emitsText = emitsText
+        self.emitsReading = emitsReading
         (started, start) = AsyncStream<Void>.makeStream()
     }
     func availabilityUpdates() -> AsyncStream<ProviderAvailability> { AsyncStream { $0.finish() } }
@@ -454,7 +503,8 @@ private final class StallingTabProvider: ChatProvider {
     func unload() { }
     func reply(to turn: ProviderTurn, stop: StopSignal) -> AsyncThrowingStream<ProviderEvent, Error> {
         AsyncThrowingStream { continuation in
-            continuation.yield(.textDelta(text))
+            if emitsReading { continuation.yield(.stage(.readingInput(estimatedTokens: 1, fraction: nil))) }
+            if emitsText { continuation.yield(.textDelta(text)) }
             start.yield(())
             start.finish()
             if refusal { continuation.yield(.refusal(Refusal(detectedBy: "test"))) }

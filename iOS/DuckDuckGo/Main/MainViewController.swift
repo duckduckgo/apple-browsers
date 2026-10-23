@@ -5128,8 +5128,10 @@ class MainViewController: UIViewController {
                 self?.installNativeChat(chat, in: model, webURL: url)
             }
         } else if let originatingTab {
-            originatingTab.load(url: url.withoutDuckAIPrompt)
-            showNativeChat(chat, in: originatingTab, webURL: url)
+            prepareTabForRequest {
+                originatingTab.load(url: url.withoutDuckAIPrompt)
+                showNativeChat(chat, in: originatingTab, webURL: url)
+            }
         }
     }
 

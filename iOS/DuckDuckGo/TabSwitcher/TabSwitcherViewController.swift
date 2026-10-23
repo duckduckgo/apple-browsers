@@ -93,13 +93,6 @@ class TabSwitcherViewController: UIViewController {
 
     }
 
-    enum TransitionStyle {
-        case legacy
-        case modern
-    }
-
-    var transitionStyle: TransitionStyle = .legacy
-
     private(set) var chrome: TabSwitcherChrome!
 
     private(set) var pagingScrollView: UIScrollView!

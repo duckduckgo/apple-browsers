@@ -688,7 +688,8 @@ final class MainCoordinator {
                         fireproofing: fireproofing,
                         dataStoreIDManager: dataStoreIDManager,
                         featureFlagger: featureFlagger,
-                        memoryCacheCleaner: MemoryCacheCleaner())
+                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
+                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
     }
 
     // MARK: - Public API

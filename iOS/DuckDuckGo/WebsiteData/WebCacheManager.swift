@@ -152,6 +152,7 @@ public class WebCacheManager: WebsiteDataManaging {
     let observationsCleaner: ObservationsDataCleaning
     private let featureFlagger: FeatureFlagger
     private let memoryCacheCleaner: MemoryCacheCleaning
+    private let fireModeMemoryCacheCleaner: MemoryCacheCleaning
 
     init(cookieStorage: MigratableCookieStorage,
          fireproofing: Fireproofing,
@@ -159,7 +160,8 @@ public class WebCacheManager: WebsiteDataManaging {
          dataStoreCleaner: WebsiteDataStoreCleaning = DefaultWebsiteDataStoreCleaner(),
          observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner(),
          featureFlagger: FeatureFlagger,
-         memoryCacheCleaner: MemoryCacheCleaning) {
+         memoryCacheCleaner: MemoryCacheCleaning,
+         fireModeMemoryCacheCleaner: MemoryCacheCleaning) {
         self.cookieStorage = cookieStorage
         self.fireproofing = fireproofing
         self.dataStoreIDManager = dataStoreIDManager
@@ -167,6 +169,7 @@ public class WebCacheManager: WebsiteDataManaging {
         self.observationsCleaner = observationsCleaner
         self.featureFlagger = featureFlagger
         self.memoryCacheCleaner = memoryCacheCleaner
+        self.fireModeMemoryCacheCleaner = fireModeMemoryCacheCleaner
     }
 
     /// The previous version saved cookies externally to the data so we can move them between containers.  We now use
@@ -203,7 +206,7 @@ public class WebCacheManager: WebsiteDataManaging {
 
     public func clear(dataStore: any DDGWebsiteDataStore) async -> WebsiteDataClearingResult {
         // Burn all removes the whole memory cache itself, so queued single-tab removals are redundant.
-        memoryCacheCleaner.cancelRemovals(isFireMode: false)
+        memoryCacheCleaner.cancelRemovals()
 
         let count = await dataStoreCleaner.countContainers()
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
@@ -250,15 +253,19 @@ public class WebCacheManager: WebsiteDataManaging {
     }
 
     public func cancelMemoryCacheCleanup(isFireMode: Bool) async {
-        await memoryCacheCleaner.cancelRemovalsAndWaitForRunningOne(isFireMode: isFireMode)
+        await memoryCacheCleaner(forFireMode: isFireMode).cancelRemovalsAndWaitForRunningOne()
     }
 
     /// With the flag on, the burn skips the memory cache and the cleaner removes it for these sites right after;
     /// everything else is still removed before the burn returns. Returns the data types the burn skips.
     private func scheduleDeferredRemovalIfEnabled(ofSites sites: Set<String>, isFireMode: Bool) -> Set<String> {
         guard featureFlagger.isFeatureOn(.deferredMemoryCacheDelete) else { return [] }
-        memoryCacheCleaner.scheduleRemoval(ofSites: sites, isFireMode: isFireMode)
+        memoryCacheCleaner(forFireMode: isFireMode).scheduleRemoval(ofSites: sites)
         return MemoryCacheCleaner.memoryCacheDataTypes
+    }
+
+    private func memoryCacheCleaner(forFireMode isFireMode: Bool) -> MemoryCacheCleaning {
+        isFireMode ? fireModeMemoryCacheCleaner : memoryCacheCleaner
     }
 
 }

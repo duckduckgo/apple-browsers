@@ -40,11 +40,11 @@ struct MemoryCacheCleanerTests {
         let cleaner = makeCleaner()
         store.holdsListing = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForListing(count: 1)
-        cleaner.scheduleRemoval(ofSites: ["b.com"], isFireMode: false)
-        cleaner.scheduleRemoval(ofSites: ["c.com"], isFireMode: false)
-        cleaner.scheduleRemoval(ofSites: ["d.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["b.com"])
+        cleaner.scheduleRemoval(ofSites: ["c.com"])
+        cleaner.scheduleRemoval(ofSites: ["d.com"])
         store.releaseListings()
         await store.waitForListing(count: 2)
         store.releaseListings()
@@ -60,18 +60,18 @@ struct MemoryCacheCleanerTests {
         let cleaner = makeCleaner()
         store.holdsListing = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForListing(count: 1)
-        cleaner.scheduleRemoval(ofSites: ["b.com"], isFireMode: false)
-        cleaner.cancelRemovals(isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["b.com"])
+        cleaner.cancelRemovals()
         store.releaseListings()
-        await cleaner.cancelRemovalsAndWaitForRunningOne(isFireMode: false)
+        await cleaner.cancelRemovalsAndWaitForRunningOne()
 
         #expect(store.removedRecordNames.isEmpty)
         #expect(pixelKit.actualFireCalls.isEmpty)
 
         store.holdsListing = false
-        cleaner.scheduleRemoval(ofSites: ["c.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["c.com"])
         await store.waitForRemoval(count: 1)
         #expect(store.removedRecordNames == [["c.com"]])
     }
@@ -82,29 +82,29 @@ struct MemoryCacheCleanerTests {
         let cleaner = makeCleaner(runningRemovalWaitTimeout: 0.05)
         store.holdsListing = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: true)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForListing(count: 1)
-        await cleaner.cancelRemovalsAndWaitForRunningOne(isFireMode: true)
+        await cleaner.cancelRemovalsAndWaitForRunningOne()
 
         #expect(store.removedRecordNames.isEmpty)
         store.releaseListings()
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Each removal asks for the current store of its mode", .timeLimit(.minutes(1)))
-    func eachRemovalAsksForCurrentStoreOfItsMode() async {
-        var requestedModes: [Bool] = []
-        let cleaner = makeCleaner { isFireMode in
-            requestedModes.append(isFireMode)
+    @Test("Each removal and preflight cache clear asks for the current store", .timeLimit(.minutes(1)))
+    func eachRemovalAsksForCurrentStore() async {
+        var storeRequests = 0
+        let cleaner = makeCleaner {
+            storeRequests += 1
             return store
         }
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: true)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForRemoval(count: 1)
-        cleaner.scheduleRemoval(ofSites: ["b.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["b.com"])
         await store.waitForRemoval(count: 2)
 
-        #expect(requestedModes == [true, true, false, false])
+        #expect(storeRequests == 4)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -113,8 +113,8 @@ struct MemoryCacheCleanerTests {
         let cleaner = makeCleaner()
         store.holdsListing = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
-        cleaner.scheduleRemoval(ofSites: ["b.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
+        cleaner.scheduleRemoval(ofSites: ["b.com"])
         await store.waitForRecordlessRemoval(count: 2)
 
         #expect(store.removedRecordNames.isEmpty)
@@ -129,11 +129,11 @@ struct MemoryCacheCleanerTests {
         let waitEnded = WaitEnded()
         store.holdsRecordlessRemoval = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: true)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForRemoval(count: 1)
         await backgroundTasks.waitForEnd(count: 1)
         let wait = Task {
-            await cleaner.cancelRemovalsAndWaitForRunningOne(isFireMode: true)
+            await cleaner.cancelRemovalsAndWaitForRunningOne()
             waitEnded.value = true
         }
         for _ in 0..<10 { await Task.yield() }
@@ -149,7 +149,7 @@ struct MemoryCacheCleanerTests {
     func finishedRemovalEndsBackgroundTaskAndFiresPixel() async {
         let cleaner = makeCleaner()
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForRemoval(count: 1)
         await backgroundTasks.waitForEnd(count: 1)
 
@@ -164,7 +164,7 @@ struct MemoryCacheCleanerTests {
         let cleaner = makeCleaner()
         store.holdsListing = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForListing(count: 1)
         backgroundTasks.expire()
         store.holdsListing = false
@@ -186,35 +186,18 @@ struct MemoryCacheCleanerTests {
         let cleaner = makeCleaner()
         store.holdsListing = true
 
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["a.com"])
         await store.waitForListing(count: 1)
-        cleaner.cancelRemovals(isFireMode: false)
+        cleaner.cancelRemovals()
         backgroundTasks.expire()
         store.holdsListing = false
         store.releaseListings()
         await backgroundTasks.waitForEnd(count: 1)
 
         notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
-        cleaner.scheduleRemoval(ofSites: ["b.com"], isFireMode: false)
+        cleaner.scheduleRemoval(ofSites: ["b.com"])
         await store.waitForRemoval(count: 1)
         #expect(store.removedRecordNames == [["b.com"]])
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A held normal mode removal doesn't hold up Fire mode, and cancelling one mode leaves the other", .timeLimit(.minutes(1)))
-    func modesRunIndependently() async {
-        let normalStore = HeldWebsiteDataStore(recordNames: ["a.com"])
-        let cleaner = makeCleaner { isFireMode in isFireMode ? store : normalStore }
-        normalStore.holdsListing = true
-
-        cleaner.scheduleRemoval(ofSites: ["a.com"], isFireMode: false)
-        await normalStore.waitForListing(count: 1)
-        cleaner.scheduleRemoval(ofSites: ["b.com"], isFireMode: true)
-        cleaner.cancelRemovals(isFireMode: false)
-        await store.waitForRemoval(count: 1)
-
-        #expect(store.removedRecordNames == [["b.com"]])
-        normalStore.releaseListings()
     }
 
     @MainActor
@@ -224,7 +207,7 @@ struct MemoryCacheCleanerTests {
 
     private func makeCleaner(runningRemovalWaitTimeout: TimeInterval = 60,
                              dataStoreProvider: MemoryCacheCleaner.DataStoreProvider? = nil) -> MemoryCacheCleaner {
-        MemoryCacheCleaner(dataStoreProvider: dataStoreProvider ?? { [store] _ in store },
+        MemoryCacheCleaner(dataStoreProvider: dataStoreProvider ?? { [store] in store },
                            backgroundTaskRunner: backgroundTasks,
                            notificationCenter: notificationCenter,
                            pixelFiring: pixelKit,

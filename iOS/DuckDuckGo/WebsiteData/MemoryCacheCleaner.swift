@@ -23,7 +23,7 @@ import UIKit
 import WebKit
 import WKAbstractions
 
-/// Removes sites' memory cache after a single-tab burn returns.
+/// Removes sites' memory cache after a single-tab burn returns. Normal and Fire mode each have their own cleaner.
 ///
 /// Listing the memory cache waits for every live web view to respond, so a page still loading in another tab
 /// would otherwise hold up the burn. The burnt tab is gone by then, and a new tab can't read its cached resources.
@@ -32,13 +32,13 @@ import WKAbstractions
 protocol MemoryCacheCleaning: AnyObject {
 
     /// Queues removal of the memory cache for `sites`, matched against data record display names (eTLD+1).
-    func scheduleRemoval(ofSites sites: Set<String>, isFireMode: Bool)
+    func scheduleRemoval(ofSites sites: Set<String>)
 
     /// Drops queued removals. A removal WebKit already started may still finish, but nothing waits for it.
-    func cancelRemovals(isFireMode: Bool)
+    func cancelRemovals()
 
     /// Drops queued removals, then waits a bounded time for started ones, so their data store can be released.
-    func cancelRemovalsAndWaitForRunningOne(isFireMode: Bool) async
+    func cancelRemovalsAndWaitForRunningOne() async
 
 }
 
@@ -68,7 +68,7 @@ struct ApplicationBackgroundTaskRunner: BackgroundTaskRunning {
 @MainActor
 final class MemoryCacheCleaner: MemoryCacheCleaning {
 
-    typealias DataStoreProvider = @MainActor (_ isFireMode: Bool) -> any DDGWebsiteDataStore
+    typealias DataStoreProvider = @MainActor () -> any DDGWebsiteDataStore
 
     static let memoryCacheDataTypes: Set<String> = [WKWebsiteDataTypeMemoryCache]
 
@@ -83,19 +83,16 @@ final class MemoryCacheCleaner: MemoryCacheCleaning {
         var expired = false
     }
 
-    /// Normal and Fire mode each keep at most one running removal and one set of sites waiting for it.
-    private struct Lane {
-        var running: RunningRemoval?
-        var pendingSites: Set<String> = []
-        var runningPreflightCacheClears = 0
-        /// Set when iOS ended the background time; pending sites wait until the app is active again.
-        var waitsForForeground = false
-        var idleWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
+    /// At most one removal runs; sites scheduled meanwhile wait for it and are removed together.
+    private var running: RunningRemoval?
+    private var pendingSites: Set<String> = []
+    private var runningPreflightCacheClears = 0
+    /// Set when iOS ended the background time; pending sites wait until the app is active again.
+    private var waitsForForeground = false
+    private var idleWaiters: [UUID: CheckedContinuation<Void, Never>] = [:]
 
-        var isIdle: Bool { running == nil && runningPreflightCacheClears == 0 }
-    }
+    private var isIdle: Bool { running == nil && runningPreflightCacheClears == 0 }
 
-    private var lanes: [Bool: Lane] = [:]
     private let dataStoreProvider: DataStoreProvider
     private let backgroundTaskRunner: BackgroundTaskRunning
     private let pixelFiring: (any PixelFiring)?
@@ -103,7 +100,7 @@ final class MemoryCacheCleaner: MemoryCacheCleaning {
     private var didBecomeActiveObserver: NSObjectProtocol?
 
     /// - Parameter dataStoreProvider: Called when each removal starts, so no data store is held between removals.
-    init(dataStoreProvider: @escaping DataStoreProvider = { DDGWebsiteDataStoreProvider.current(fireMode: $0) },
+    init(dataStoreProvider: @escaping DataStoreProvider,
          backgroundTaskRunner: BackgroundTaskRunning = ApplicationBackgroundTaskRunner(),
          notificationCenter: NotificationCenter = .default,
          pixelFiring: (any PixelFiring)? = PixelKit.shared,
@@ -119,64 +116,58 @@ final class MemoryCacheCleaner: MemoryCacheCleaning {
         }
     }
 
-    func scheduleRemoval(ofSites sites: Set<String>, isFireMode: Bool) {
-        startPreflightCacheClear(isFireMode: isFireMode)
-        lanes[isFireMode, default: Lane()].pendingSites.formUnion(sites)
-        startNextRemovalIfIdle(isFireMode: isFireMode)
+    func scheduleRemoval(ofSites sites: Set<String>) {
+        startPreflightCacheClear()
+        pendingSites.formUnion(sites)
+        startNextRemovalIfIdle()
     }
 
-    func cancelRemovals(isFireMode: Bool) {
-        lanes[isFireMode]?.pendingSites.removeAll()
-        lanes[isFireMode]?.running?.task.cancel()
+    func cancelRemovals() {
+        pendingSites.removeAll()
+        running?.task.cancel()
     }
 
-    func cancelRemovalsAndWaitForRunningOne(isFireMode: Bool) async {
-        cancelRemovals(isFireMode: isFireMode)
-        guard lanes[isFireMode]?.isIdle == false else { return }
+    func cancelRemovalsAndWaitForRunningOne() async {
+        cancelRemovals()
+        guard !isIdle else { return }
 
         let waiterID = UUID()
         let timeout = runningRemovalWaitTimeout
         await withCheckedContinuation { continuation in
-            lanes[isFireMode]?.idleWaiters[waiterID] = continuation
+            idleWaiters[waiterID] = continuation
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                self?.resumeWaiter(waiterID, isFireMode: isFireMode)
+                self?.resumeWaiter(waiterID)
             }
         }
     }
 
     private func resumeRemovalsAfterForegrounding() {
-        for isFireMode in Array(lanes.keys) {
-            lanes[isFireMode]?.waitsForForeground = false
-            startNextRemovalIfIdle(isFireMode: isFireMode)
-        }
+        waitsForForeground = false
+        startNextRemovalIfIdle()
     }
 
-    private func startNextRemovalIfIdle(isFireMode: Bool) {
-        guard var lane = lanes[isFireMode],
-              lane.running == nil,
-              !lane.waitsForForeground,
-              !lane.pendingSites.isEmpty else { return }
+    private func startNextRemovalIfIdle() {
+        guard running == nil, !waitsForForeground, !pendingSites.isEmpty else { return }
 
-        let sites = lane.pendingSites
-        lane.pendingSites.removeAll()
+        let sites = pendingSites
+        pendingSites.removeAll()
         let backgroundTask = backgroundTaskRunner.beginBackgroundTask(withName: "MemoryCacheCleanup") { [weak self] in
-            self?.backgroundTimeDidExpire(isFireMode: isFireMode)
+            self?.backgroundTimeDidExpire()
         }
         let task = Task { [weak self] in
-            await self?.removeMemoryCache(ofSites: sites, isFireMode: isFireMode)
-            self?.removalDidFinish(isFireMode: isFireMode)
+            await self?.removeMemoryCache(ofSites: sites)
+            self?.removalDidFinish()
         }
-        lane.running = RunningRemoval(task: task, sites: sites, backgroundTask: backgroundTask)
-        lanes[isFireMode] = lane
+        running = RunningRemoval(task: task, sites: sites, backgroundTask: backgroundTask)
     }
 
-    private func startPreflightCacheClear(isFireMode: Bool) {
-        let dataStore = dataStoreProvider(isFireMode)
-        lanes[isFireMode, default: Lane()].runningPreflightCacheClears += 1
+    private func startPreflightCacheClear() {
+        let dataStore = dataStoreProvider()
+        runningPreflightCacheClears += 1
         Task { [weak self] in
             await Self.clearPreflightCache(in: dataStore)
-            self?.preflightCacheClearDidFinish(isFireMode: isFireMode)
+            self?.preflightCacheClearDidFinish()
         }
     }
 
@@ -186,13 +177,13 @@ final class MemoryCacheCleaner: MemoryCacheCleaning {
         await dataStore.removeData(ofTypes: memoryCacheDataTypes, for: [])
     }
 
-    private func preflightCacheClearDidFinish(isFireMode: Bool) {
-        lanes[isFireMode]?.runningPreflightCacheClears -= 1
-        resumeIdleWaiters(isFireMode: isFireMode)
+    private func preflightCacheClearDidFinish() {
+        runningPreflightCacheClears -= 1
+        resumeIdleWaiters()
     }
 
-    private func removeMemoryCache(ofSites sites: Set<String>, isFireMode: Bool) async {
-        await Self.removeMemoryCache(ofSites: sites, from: dataStoreProvider(isFireMode))
+    private func removeMemoryCache(ofSites sites: Set<String>) async {
+        await Self.removeMemoryCache(ofSites: sites, from: dataStoreProvider())
     }
 
     private static func removeMemoryCache(ofSites sites: Set<String>, from dataStore: some DDGWebsiteDataStore) async {
@@ -202,45 +193,43 @@ final class MemoryCacheCleaner: MemoryCacheCleaning {
     }
 
     /// iOS is about to suspend the app; the sites run again once it's active, unless the removal was cancelled.
-    private func backgroundTimeDidExpire(isFireMode: Bool) {
-        guard var lane = lanes[isFireMode], var running = lane.running else { return }
-        running.expired = true
-        endBackgroundTask(of: &running)
-        if !running.task.isCancelled {
-            lane.pendingSites.formUnion(running.sites)
+    private func backgroundTimeDidExpire() {
+        guard running != nil else { return }
+        running?.expired = true
+        endBackgroundTaskOfRunningRemoval()
+        if let running, !running.task.isCancelled {
+            pendingSites.formUnion(running.sites)
         }
-        lane.running = running
-        lane.waitsForForeground = true
-        lanes[isFireMode] = lane
+        waitsForForeground = true
     }
 
-    private func removalDidFinish(isFireMode: Bool) {
-        guard var lane = lanes[isFireMode], var running = lane.running else { return }
-        if !running.task.isCancelled {
-            fireFinishedPixel(duration: CACurrentMediaTime() - running.start, expired: running.expired)
+    private func removalDidFinish() {
+        guard let finished = running else { return }
+        if !finished.task.isCancelled {
+            fireFinishedPixel(duration: CACurrentMediaTime() - finished.start, expired: finished.expired)
         }
-        endBackgroundTask(of: &running)
-        lane.running = nil
-        lanes[isFireMode] = lane
+        endBackgroundTaskOfRunningRemoval()
+        running = nil
 
-        resumeIdleWaiters(isFireMode: isFireMode)
-        startNextRemovalIfIdle(isFireMode: isFireMode)
+        resumeIdleWaiters()
+        startNextRemovalIfIdle()
     }
 
-    private func resumeIdleWaiters(isFireMode: Bool) {
-        guard let lane = lanes[isFireMode], lane.isIdle else { return }
-        lanes[isFireMode]?.idleWaiters.removeAll()
-        lane.idleWaiters.values.forEach { $0.resume() }
+    private func resumeIdleWaiters() {
+        guard isIdle else { return }
+        let waiters = idleWaiters.values
+        idleWaiters.removeAll()
+        waiters.forEach { $0.resume() }
     }
 
-    private func resumeWaiter(_ waiterID: UUID, isFireMode: Bool) {
-        lanes[isFireMode]?.idleWaiters.removeValue(forKey: waiterID)?.resume()
+    private func resumeWaiter(_ waiterID: UUID) {
+        idleWaiters.removeValue(forKey: waiterID)?.resume()
     }
 
-    private func endBackgroundTask(of running: inout RunningRemoval) {
-        guard running.backgroundTask != .invalid else { return }
-        backgroundTaskRunner.endBackgroundTask(running.backgroundTask)
-        running.backgroundTask = .invalid
+    private func endBackgroundTaskOfRunningRemoval() {
+        guard let backgroundTask = running?.backgroundTask, backgroundTask != .invalid else { return }
+        backgroundTaskRunner.endBackgroundTask(backgroundTask)
+        running?.backgroundTask = .invalid
     }
 
     private func fireFinishedPixel(duration: CFTimeInterval, expired: Bool) {

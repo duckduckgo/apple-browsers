@@ -38,6 +38,7 @@ class WebCacheManagerTests: XCTestCase {
     let observationsCleaner = MockObservationsCleaner()
     let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     let memoryCacheCleaner = MockMemoryCacheCleaner()
+    let fireModeMemoryCacheCleaner = MockMemoryCacheCleaner()
 
     func test_whenClearingData_ThenCookiesAreRemoved() async {
         let cookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
@@ -502,6 +503,7 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(dataStore.requestedDataRecordTypes.first, WKWebsiteDataStore.allWebsiteDataTypes())
         XCTAssertEqual(dataStore.removedDataOfTypesForRecords.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes)
         XCTAssertTrue(memoryCacheCleaner.scheduledRemovals.isEmpty)
+        XCTAssertTrue(fireModeMemoryCacheCleaner.scheduledRemovals.isEmpty)
     }
 
     func test_WhenClearingForDomains_AndDeferralIsOn_ThenBurnSkipsMemoryCacheAndSchedulesItsSites() async {
@@ -515,9 +517,19 @@ class WebCacheManagerTests: XCTestCase {
         XCTAssertEqual(dataStore.requestedDataRecordTypes.first, WKWebsiteDataStore.allWebsiteDataTypes().subtracting(memoryCache))
         XCTAssertEqual(dataStore.removedDataOfTypesForRecords.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes.subtracting(memoryCache))
         XCTAssertEqual(dataStore.removedDataOfTypesForRecords.first?.records.map(\.displayName), ["example.com"])
-        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals.count, 1)
-        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals.first?.sites, ["example.com", "test.com"])
-        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals.first?.isFireMode, true)
+        XCTAssertEqual(fireModeMemoryCacheCleaner.scheduledRemovals, [["example.com", "test.com"]])
+        XCTAssertTrue(memoryCacheCleaner.scheduledRemovals.isEmpty)
+    }
+
+    func test_WhenClearingForDomainsInNormalMode_AndDeferralIsOn_ThenNormalModeCleanerSchedulesTheSites() async {
+        featureFlagger.enabledFeatureFlags = [.deferredMemoryCacheDelete]
+        let dataStore = MockWebsiteDataStore(httpCookieStore: MockHTTPCookieStore(),
+                                             dataRecordsOfTypesReturnValue: [MockWebsiteDataRecord(displayName: "example.com")])
+
+        await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["www.example.com"], isFireMode: false)
+
+        XCTAssertEqual(memoryCacheCleaner.scheduledRemovals, [["example.com"]])
+        XCTAssertTrue(fireModeMemoryCacheCleaner.scheduledRemovals.isEmpty)
     }
 
     func test_WhenClearingAllData_ThenQueuedMemoryCacheRemovalsAreCancelledAndMemoryCacheIsRemoved() async {
@@ -526,14 +538,16 @@ class WebCacheManagerTests: XCTestCase {
 
         await makeWebCacheManager().clear(dataStore: dataStore)
 
-        XCTAssertEqual(memoryCacheCleaner.cancelledModes, [false])
+        XCTAssertEqual(memoryCacheCleaner.cancelCount, 1)
+        XCTAssertEqual(fireModeMemoryCacheCleaner.cancelCount, 0)
         XCTAssertEqual(dataStore.removedDataOfTypesModifiedSince.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes)
     }
 
     func test_WhenCancellingMemoryCacheCleanup_ThenCleanerWaitsForTheRunningRemoval() async {
         await makeWebCacheManager().cancelMemoryCacheCleanup(isFireMode: true)
 
-        XCTAssertEqual(memoryCacheCleaner.cancelledAndWaitedModes, [true])
+        XCTAssertEqual(fireModeMemoryCacheCleaner.cancelAndWaitCount, 1)
+        XCTAssertEqual(memoryCacheCleaner.cancelAndWaitCount, 0)
     }
 
     @MainActor
@@ -545,7 +559,8 @@ class WebCacheManagerTests: XCTestCase {
             dataStoreCleaner: dataStoreCleaner,
             observationsCleaner: observationsCleaner,
             featureFlagger: featureFlagger,
-            memoryCacheCleaner: memoryCacheCleaner
+            memoryCacheCleaner: memoryCacheCleaner,
+            fireModeMemoryCacheCleaner: fireModeMemoryCacheCleaner
         )
     }
 }

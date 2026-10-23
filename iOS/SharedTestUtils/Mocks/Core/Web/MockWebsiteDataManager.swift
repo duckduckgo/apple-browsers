@@ -67,19 +67,19 @@ class MockWebsiteDataManager: WebsiteDataManaging {
 
 final class MockMemoryCacheCleaner: MemoryCacheCleaning {
 
-    private(set) var scheduledRemovals: [(sites: Set<String>, isFireMode: Bool)] = []
-    private(set) var cancelledModes: [Bool] = []
-    private(set) var cancelledAndWaitedModes: [Bool] = []
+    private(set) var scheduledRemovals: [Set<String>] = []
+    private(set) var cancelCount = 0
+    private(set) var cancelAndWaitCount = 0
 
-    func scheduleRemoval(ofSites sites: Set<String>, isFireMode: Bool) {
-        scheduledRemovals.append((sites, isFireMode))
+    func scheduleRemoval(ofSites sites: Set<String>) {
+        scheduledRemovals.append(sites)
     }
 
-    func cancelRemovals(isFireMode: Bool) {
-        cancelledModes.append(isFireMode)
+    func cancelRemovals() {
+        cancelCount += 1
     }
 
-    func cancelRemovalsAndWaitForRunningOne(isFireMode: Bool) async {
-        cancelledAndWaitedModes.append(isFireMode)
+    func cancelRemovalsAndWaitForRunningOne() async {
+        cancelAndWaitCount += 1
     }
 }

@@ -71,7 +71,8 @@ final class SingleTabBurnPerformanceTests: XCTestCase {
                                       dataStoreCleaner: MockDataStoreCleaner(),
                                       observationsCleaner: MockObservationsCleaner(),
                                       featureFlagger: flags,
-                                      memoryCacheCleaner: MockMemoryCacheCleaner())
+                                      memoryCacheCleaner: MockMemoryCacheCleaner(),
+                                      fireModeMemoryCacheCleaner: MockMemoryCacheCleaner())
         var samples: [[String: Any]] = []
         for fixture in [Fixture.dense, Fixture.small] {
             for pair in 0..<(warmups + iterations) {

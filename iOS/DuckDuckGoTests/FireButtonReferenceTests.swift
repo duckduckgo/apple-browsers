@@ -91,7 +91,8 @@ final class FireButtonReferenceTests: XCTestCase {
                                   fireproofing: fireproofing,
                                   dataStoreIDManager: DataStoreIDManager(store: MockKeyValueStore()),
                                   featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                  memoryCacheCleaner: MockMemoryCacheCleaner()).clear(dataStore: dataStore)
+                                  memoryCacheCleaner: MockMemoryCacheCleaner(),
+                                  fireModeMemoryCacheCleaner: MockMemoryCacheCleaner()).clear(dataStore: dataStore)
 
             let cookieWasRemoved = cookieStore.cookiesThatWereDeleted.contains(where: { $0.name == test.cookieName })
             XCTAssertEqual(cookieWasRemoved, test.expectCookieRemoved)

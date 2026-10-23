@@ -14,7 +14,11 @@ on:
           - iOS
           - macOS
       release_branch:
-        description: "Release branch, e.g. release/ios/0.1.0 (defaults to the latest one; needs a single platform)"
+        description: "Release branch, e.g. release/ios/7.200.0, or a test branch with a version (defaults to the latest release branch; needs a single platform)"
+        type: string
+        default: ""
+      version:
+        description: "Release version, e.g. 0.1.0, for a branch outside release/<platform>/ (taken from a release branch if empty)"
         type: string
         default: ""
       dry_run:
@@ -179,11 +183,13 @@ jobs:
         env:
           PLATFORM: ${{ matrix.platform }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+          VERSION: ${{ inputs.version }}
           DRY_RUN: ${{ inputs.dry_run || false }}
           REIMPORT: ${{ inputs.reimport || false }}
           GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
         run: |
           args=("$PLATFORM" --release-branch "$RELEASE_BRANCH")
+          [ -z "$VERSION" ] || args+=(--version "$VERSION")
           [ "$DRY_RUN" != "true" ] || args+=(--dry-run)
           [ "$REIMPORT" != "true" ] || args+=(--reimport)
           ./scripts/smartling/smartling_release_import.sh "${args[@]}"
@@ -227,10 +233,11 @@ jobs:
             📝 String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}
             🌍 Incomplete locales: ${{ steps.import.outputs.incomplete_locales || 'unavailable' }}
             🔒 String translations not authorized, either in a job awaiting authorization or in no job (send those with the PR labels): ${{ steps.import.outputs.strings_awaiting_authorization || 'unavailable' }}
-            ⏸️ Jobs awaiting authorization, which keep their strings out of other jobs: ${{ steps.import.outputs.jobs_awaiting_authorization || 'none' }}
             ✋ Reason: ${{ steps.import.outputs.reason || 'A step failed before the import ran. See the workflow logs.' }}
             🌿 Release branch: ${{ steps.release.outputs.branch || 'not found' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            ⏸️ Jobs awaiting authorization, which keep their strings out of other jobs: ${{ steps.import.outputs.jobs_awaiting_authorization == '' && 'none' || '' }}
+            ${{ steps.import.outputs.jobs_awaiting_authorization }}
         run: |
           task_args=()
           [ "$TASK_KIND" != not_ready ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")

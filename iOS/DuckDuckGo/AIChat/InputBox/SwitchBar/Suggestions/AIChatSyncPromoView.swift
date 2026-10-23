@@ -35,7 +35,7 @@ struct AIChatSyncPromoView: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 16) {
-                Image(rebrandable: "Sync-AI-Feature-96")
+                Image(.syncAIFeature96)
                     .resizable()
                     .frame(width: 72, height: 72)
 

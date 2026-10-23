@@ -1433,6 +1433,49 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertEqual(error.localizedDescription, "Unsupported extension API: tabs.setZoom")
     }
 
+    // MARK: - Native messaging ports
+
+    /// iCloud Passwords posts its hello in the same JS turn as `connectNative()`. WebKit drops every port
+    /// message posted before the connect delegate calls its completion handler, so the hello must reach
+    /// the host even though the host takes a while to start.
+    @MainActor
+    func testWhenAnExtensionPostsInTheSameTurnAsConnectNative_ThenTheHostReceivesTheMessage() async throws {
+        let host = SlowStartingNativeMessagingHandler(startupDelay: .milliseconds(300))
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storageProvidingMock,
+                                          installationStore: installedExtensionStoringMock,
+                                          loader: webExtensionLoadingMock,
+                                          lifecycleDelegate: lifecycleDelegateMock,
+                                          nativeMessagingHandler: host)
+        let directory = try makeTestExtensionDirectory(permissions: ["nativeMessaging"])
+        let manifestURL = directory.appendingPathComponent("manifest.json")
+        var manifest = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: manifestURL)) as? [String: Any])
+        manifest["background"] = ["page": "bg.html"]
+        try JSONSerialization.data(withJSONObject: manifest).write(to: manifestURL)
+        try #"<!DOCTYPE html><html><head><meta charset="utf-8"></head><body><script src="bg.js"></script></body></html>"#
+            .write(to: directory.appendingPathComponent("bg.html"), atomically: true, encoding: .utf8)
+        try """
+        const port = chrome.runtime.connectNative("com.example.host");
+        port.onMessage.addListener(function() {});
+        port.postMessage({ cmd: "hello" });
+        """.write(to: directory.appendingPathComponent("bg.js"), atomically: true, encoding: .utf8)
+
+        let webExtension = try await WKWebExtension(resourceBaseURL: directory)
+        XCTAssertTrue(webExtension.needsChromeCompatibility)
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = "native-messaging-hello"
+        for permission in webExtension.requestedPermissions {
+            context.setPermissionStatus(.grantedExplicitly, for: permission)
+        }
+        try manager.controller.load(context)
+        addTeardownBlock { try? manager.controller.unload(context) }
+        context.loadBackgroundContent { _ in }
+
+        await fulfillment(of: [host.receivedFirstMessage], timeout: 5)
+        XCTAssertEqual(host.receivedMessages.first as? [String: String], ["cmd": "hello"])
+    }
+
     // MARK: - Autofill Takeover Flag
 
     /// The app's flag decides whether any extension may take over autofill, read each time, so turning it
@@ -1875,5 +1918,38 @@ private final class ApprovingPermissionPrompter: WebExtensionPermissionPrompting
 
     func confirmPermissions(_ permissions: WebExtensionPermissionRequest, for context: WKWebExtensionContext) async -> WebExtensionPermissionPromptResult {
         .granted
+    }
+}
+
+/// A native messaging host that takes a while to start, like a real host process, and then records
+/// every message the port delivers.
+@available(macOS 15.4, iOS 18.4, *)
+@MainActor
+private final class SlowStartingNativeMessagingHandler: WebExtensionNativeMessagingHandling {
+    let receivedFirstMessage = XCTestExpectation(description: "The host received a port message")
+    private(set) var receivedMessages: [Any] = []
+    private let startupDelay: Duration
+
+    init(startupDelay: Duration) {
+        self.startupDelay = startupDelay
+    }
+
+    func connect(_ port: WKWebExtension.MessagePort,
+                 applicationIdentifier: String?,
+                 for context: WKWebExtensionContext) async throws {
+        try await Task.sleep(for: startupDelay)
+        port.messageHandler = { [weak self] message, _ in
+            guard let self, let message else { return }
+            Task { @MainActor in
+                self.receivedMessages.append(message)
+                self.receivedFirstMessage.fulfill()
+            }
+        }
+    }
+
+    func sendMessage(_ message: Any,
+                     applicationIdentifier: String?,
+                     for context: WKWebExtensionContext) async throws -> Any? {
+        nil
     }
 }

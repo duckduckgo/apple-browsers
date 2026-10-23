@@ -21,6 +21,7 @@ import AIChat
 import AppKit
 import Combine
 import Foundation
+import WebKit
 
 typealias MockWindowControllerManager = WindowControllersManagerMock
 final class WindowControllersManagerMock: WindowControllersManagerProtocol, AIChatTabManaging {
@@ -49,6 +50,16 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol, AICh
             }
         }
     }
+    func tab(for webView: WKWebView?) -> Tab? {
+        guard let webView else { return nil }
+        for viewModel in allTabCollectionViewModels {
+            for case .loaded(let tab) in viewModel.tabCollection.tabs where tab.webView === webView {
+                return tab
+            }
+        }
+        return nil
+    }
+
     var selectedWindowIndex: Int
     var selectedTab: Tab? {
         // Matches the real WindowControllersManager: no window means nil, not a crash.

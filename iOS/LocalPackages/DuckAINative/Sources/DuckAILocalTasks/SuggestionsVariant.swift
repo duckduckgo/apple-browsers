@@ -81,14 +81,15 @@ public final class CurrentDocumentSuggestions {
 
     public func start(key: SuggestionsKey,
                       operation: @escaping @Sendable (@escaping @Sendable ([SuggestedPrompt]) async -> Void) async -> SuggestedPromptsRun) {
-        guard self.key != key else { return }
+        if self.key == key {
+            if run == nil, task != nil { return }
+            if case .generated = run?.result { return }
+        }
         invalidate()
         self.key = key
         let generation = generation
         task = Task { [weak self] in
-            let result = await operation { [weak self] prompts in
-                await self?.publish(prompts, for: key, generation: generation)
-            }
+            let result = await operation { _ in }
             guard !Task.isCancelled, let self, self.key == key, self.generation == generation else { return nil }
             self.run = result
             if case .generated(let prompts, _) = result.result { self.publish(prompts, for: key, generation: generation) }

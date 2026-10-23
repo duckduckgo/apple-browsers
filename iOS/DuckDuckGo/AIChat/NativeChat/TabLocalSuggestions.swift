@@ -63,6 +63,11 @@ final class TabLocalSuggestions {
         cache.invalidate()
     }
 
+    func bind(webView: WKWebView, isAttachable: @escaping () -> Bool) {
+        self.webView = webView
+        self.isAttachable = isAttachable
+    }
+
     func pageDidFinish(webView: WKWebView, isAttachable: @escaping () -> Bool) {
         self.webView = webView
         self.isAttachable = isAttachable
@@ -93,7 +98,7 @@ final class TabLocalSuggestions {
             recordFallback("No current document is connected")
             return nil
         }
-        guard input.url == url.absoluteString else {
+        guard input.url == nil || input.url == url.absoluteString else {
             recordFallback(input.url == nil ? "Page context URL is unavailable" : "Page context belongs to another URL")
             return nil
         }
@@ -114,7 +119,23 @@ final class TabLocalSuggestions {
     }
 
     private func recordFallback(_ reason: String) {
-        LocalSuggestionsDiagnostics.shared.record(outcome: "Catalog fallback: \(reason)")
+        LocalSuggestionsDiagnostics.shared.record(outcome: "Suggestions unavailable: \(reason)")
+    }
+
+    private func hasReusableRun(for key: SuggestionsKey) -> Bool {
+        guard cache.key == key else { return false }
+        guard let run = cache.run else { return true }
+        if case .generated = run.result { return true }
+        return false
+    }
+
+    private func waitUntilReady(_ webView: WKWebView, url: URL) async -> Bool {
+        let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+        while webView.isLoading, ContinuousClock.now < deadline {
+            do { try await Task.sleep(for: .milliseconds(50)) } catch { return false }
+            guard self.webView === webView, webView.url == url else { return false }
+        }
+        return !Task.isCancelled
     }
 
     private func startIfNeeded(locale: String) async {
@@ -123,13 +144,14 @@ final class TabLocalSuggestions {
             recordFallback("No HTTP document is connected")
             return
         }
+        guard await waitUntilReady(webView, url: url) else { return }
         guard !webView.isLoading, isAttachable() else {
             recordFallback(webView.isLoading ? "Page is still loading" : "Page is not attachable")
             return
         }
         let variant = DuckAINativeSettings.shared.suggestionsVariant(locale: locale)
         let key = SuggestionsKey(document: document, url: url, variant: variant)
-        if cache.key == key { return }
+        if hasReusableRun(for: key) { return }
         let body = variant.input == .body ? "(document.body?.innerText || '').slice(0, 1200)" : "''"
         let script = """
         (() => ({title: document.title.slice(0, 100),

@@ -217,6 +217,24 @@ import Testing
     @MainActor
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func failedSameDocumentCanRetryAndPublishesOnlyTheFinalSet() async {
+        let cache = CurrentDocumentSuggestions()
+        let key = SuggestionsKey(document: UUID(), url: URL(string: "https://example.com")!,
+                                 variant: SuggestionsVariant(modelID: "stub", locale: "en"))
+        cache.start(key: key) { _ in SuggestedPromptsRun(result: .timedOut, raw: "", total: .zero) }
+        _ = await cache.resolve { _ in Issue.record("Failure must not publish chips") }
+        cache.start(key: key) { update in
+            await update([SuggestedPrompt("Temporary partial question")])
+            return SuggestedPromptsRun(result: .generated([SuggestedPrompt("Complete final question")], stats: nil), raw: "", total: .zero)
+        }
+        var updates: [[SuggestedPrompt]] = []
+        _ = await cache.resolve { updates.append($0) }
+        #expect(updates == [[SuggestedPrompt("Complete final question")]])
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func replacedDocumentRejectsLateCallbacksAndReusesMatchingRequest() async {
         let cache = CurrentDocumentSuggestions()
         let variant = SuggestionsVariant(modelID: "stub", locale: "en")

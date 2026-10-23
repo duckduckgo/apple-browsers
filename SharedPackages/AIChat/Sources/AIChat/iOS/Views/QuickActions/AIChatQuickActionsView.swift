@@ -123,8 +123,18 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             loadingView = view
             stackView.insertArrangedSubview(view, at: 0)
         } else {
+            let wasLoading = loadingView != nil
             loadingView?.removeFromSuperview()
             loadingView = nil
+            guard wasLoading else { return }
+            let views = chips
+            views.forEach {
+                $0.alpha = 0
+                $0.transform = UIAccessibility.isReduceMotionEnabled ? .identity : CGAffineTransform(translationX: 0, y: 4)
+            }
+            UIView.animate(withDuration: 0.2) {
+                views.forEach { $0.alpha = 1; $0.transform = .identity }
+            }
         }
     }
 }

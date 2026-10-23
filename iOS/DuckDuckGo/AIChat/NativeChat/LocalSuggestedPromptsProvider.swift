@@ -39,21 +39,21 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
     @MainActor
     func resolveSuggestions(_ input: ResolvePageSuggestionsInput,
                             onUpdate: @escaping @MainActor (ResolvedPageSuggestions) -> Void) async -> ResolvedPageSuggestions {
-        let resolved = await base.resolveSuggestions(input)
-        guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally, input.scope == .page, let local else { return resolved }
-        onUpdate(resolved)
-        let run = await local.resolve(input) { prompts in
-            onUpdate(Self.merging(prompts, into: resolved))
+        guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally, input.scope == .page else {
+            return await base.resolveSuggestions(input)
         }
-        guard !Task.isCancelled, case .generated(let prompts, _) = run?.result else { return resolved }
-        return Self.merging(prompts, into: resolved)
+        guard let local, let run = await local.resolve(input, onUpdate: { _ in }),
+              !Task.isCancelled, case .generated(let prompts, _) = run.result, !prompts.isEmpty else {
+            return ResolvedPageSuggestions(suggestions: [ContextualSuggestedPrompt(id: "local-retry", label: "Retry suggestions", prompt: "", icon: nil)], isSmart: true, pageType: .none)
+        }
+        return Self.generated(prompts)
+
     }
 
     @MainActor
     func cachedSuggestions(scope: ResolvePageSuggestionsInput.Scope, locale: String) -> ResolvedPageSuggestions? {
-        guard scope == .page, let cached = local?.cachedPrompts(locale: locale), let catalog = SuggestionCatalog.bundled else { return nil }
-        let input = ResolvePageSuggestionsInput(pageTypeSignals: nil, url: cached.url.absoluteString, uiLocale: locale)
-        return Self.merging(cached.prompts, into: ContextualSuggestionsMatcher.resolve(input, catalog: catalog))
+        guard scope == .page, let cached = local?.cachedPrompts(locale: locale) else { return nil }
+        return Self.generated(cached.prompts)
     }
 
     @MainActor
@@ -61,11 +61,10 @@ struct LocalSuggestedPromptsProvider: ContextualSuggestedPromptsProviding {
         local?.cancelGeneration()
     }
 
-    private static func merging(_ prompts: [SuggestedPrompt], into resolved: ResolvedPageSuggestions) -> ResolvedPageSuggestions {
-        let actions = resolved.suggestions.filter { ["summarize-page", "translate-page"].contains($0.id) }
-        let local = prompts.enumerated().map { index, prompt in
+    private static func generated(_ prompts: [SuggestedPrompt]) -> ResolvedPageSuggestions {
+        let suggestions = prompts.enumerated().map { index, prompt in
             ContextualSuggestedPrompt(id: "local-\(index)", label: prompt.text, prompt: prompt.text, icon: nil)
         }
-        return ResolvedPageSuggestions(suggestions: actions + local, isSmart: true, pageType: resolved.pageType)
+        return ResolvedPageSuggestions(suggestions: suggestions, isSmart: true, pageType: .none)
     }
 }

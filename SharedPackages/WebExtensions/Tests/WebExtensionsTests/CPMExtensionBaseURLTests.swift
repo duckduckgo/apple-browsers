@@ -204,8 +204,9 @@ final class CPMExtensionBaseURLTests: XCTestCase {
 
     func testOriginRotationPreservesDisabledStateAndDecodesSavedOrigin() async throws {
         let store = InstalledWebExtensionStoringMock()
-        store.add(InstalledWebExtension(uniqueIdentifier: identifier, filename: "test", name: "CPM", version: "1",
-                                       embeddedType: .embedded, isDisabled: true))
+        var expected = InstalledWebExtension(uniqueIdentifier: identifier, filename: "test", name: "CPM", version: "1",
+                                             embeddedType: .embedded, isDisabled: true)
+        store.add(expected)
         let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
         let context = WKWebExtensionContext(for: try await webExtension())
         context.uniqueIdentifier = identifier
@@ -216,8 +217,10 @@ final class CPMExtensionBaseURLTests: XCTestCase {
                 policy.prepareForDataClearingReload(of: context)
             }
             let record = try XCTUnwrap(store.installedExtension(withUniqueIdentifier: identifier))
-            XCTAssertTrue(record.isDisabled)
             XCTAssertNotNil(record.cpmOriginIdentifier)
+            XCTAssertNotEqual(record.cpmOriginIdentifier, expected.cpmOriginIdentifier)
+            expected.cpmOriginIdentifier = record.cpmOriginIdentifier
+            XCTAssertEqual(record, expected, "Origin rotation must preserve all other installation metadata")
             let restored = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(record))
             XCTAssertEqual(restored, record)
         }

@@ -411,11 +411,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             guard let context = notification.object as? WKWebExtensionContext else { return }
             MainActor.assumeIsolated {
                 guard let self, self.context(for: context.uniqueIdentifier) === context,
-                      let error = context.errors.first(where: {
-                    let error = $0 as NSError
-                    return error.domain == "WKWebExtensionContextErrorDomain" &&
-                        error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
-                }) else { return }
+                      let error = context.errors.first(where: { NSError.webKitSafe($0).isBackgroundContentLoadFailure }) else { return }
                 self.cpmBaseURLPolicy.recordBackgroundLoadFailure(in: context, errors: [error])
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.
@@ -1032,9 +1028,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @discardableResult
     @MainActor
     func recoverEmbeddedBackgroundLoadFailure(_ error: Error, context: WKWebExtensionContext) async -> Bool {
-        let error = error as NSError
-        guard error.domain == "WKWebExtensionContextErrorDomain",
-              error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue,
+        let error = NSError.webKitSafe(error)
+        guard error.isBackgroundContentLoadFailure,
               context.webExtension.duckDuckGoWebExtensionType == .embedded,
               self.context(for: context.uniqueIdentifier) === context,
               embeddedBackgroundContextForNavigation === context,

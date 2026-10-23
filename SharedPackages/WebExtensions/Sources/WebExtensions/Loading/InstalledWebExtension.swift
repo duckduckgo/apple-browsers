@@ -48,7 +48,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
 
     /// CPM's private origin after data clearing, rollback or a background-load failure.
     /// Nil preserves the installation UUID for existing records.
-    public let cpmOriginIdentifier: UUID?
+    public var cpmOriginIdentifier: UUID?
 
     public var id: String { uniqueIdentifier }
 

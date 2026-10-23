@@ -37,8 +37,8 @@ final class CPMExtensionBaseURLPolicy {
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
         guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
         guard isEnabled() else {
-            // WebKit removes the old origin's service-worker data when migrating to its random origin.
-            // Re-enabling must use a fresh origin, never that abandoned worker registration.
+            // Moving to WebKit's random origin leaves this origin's service-worker registration behind.
+            // Re-enabling must use a fresh origin, never that abandoned registration.
             if let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) {
                 rotateOrigin(of: installed)
             }
@@ -56,11 +56,8 @@ final class CPMExtensionBaseURLPolicy {
     /// Save a fresh origin before retry/reload can be skipped or the app can terminate.
     /// The live context keeps its origin. Repeated errors from it must preserve the saved replacement.
     func recordBackgroundLoadFailure(in context: WKWebExtensionContext, errors: [Error]) {
-        guard isEnabled(), !failedBackgroundContexts.contains(context), errors.contains(where: {
-            let error = $0 as NSError
-            return error.domain == WKWebExtensionContext.errorDomain &&
-                error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
-        }) else { return }
+        guard isEnabled(), !failedBackgroundContexts.contains(context),
+              errors.contains(where: { NSError.webKitSafe($0).isBackgroundContentLoadFailure }) else { return }
         if rotateOrigin(of: context) {
             failedBackgroundContexts.add(context)
         }
@@ -76,11 +73,9 @@ final class CPMExtensionBaseURLPolicy {
     }
 
     private func rotateOrigin(of installed: InstalledWebExtension) {
-        installationStore.update(InstalledWebExtension(
-            uniqueIdentifier: installed.uniqueIdentifier, filename: installed.filename, name: installed.name, version: installed.version,
-            embeddedType: installed.embeddedType, storeIdentity: installed.storeIdentity,
-            isDisabled: installed.isDisabled, cpmOriginIdentifier: UUID()
-        ))
+        var updated = installed
+        updated.cpmOriginIdentifier = UUID()
+        installationStore.update(updated)
     }
 
     private func originIdentifier(for identifier: String, webExtension: WKWebExtension) -> UUID? {

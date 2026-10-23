@@ -873,6 +873,7 @@ private extension MainViewController {
     }
 
     func bindAITabIfPossible(tab: TabViewController, coordinator: UnifiedToggleInputCoordinator, hasExistingChat: Bool) {
+        defer { tab.bindFreshChatSuggestions(to: coordinator) }
         if let nativeChat = tab.nativeChat {
             nativeChat.attach(to: coordinator)
             aiChatTabChatHeaderView?.setNativeChatTitle(nativeChat.title)

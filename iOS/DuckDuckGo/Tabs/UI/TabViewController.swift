@@ -164,6 +164,7 @@ class TabViewController: UIViewController {
     var outerContainer: UIView!
     /// Demo branch: set while a native Duck.ai chat covers the web view.
     var nativeChat: NativeTabChat?
+    var freshChatSuggestionsPresentation: FreshChatSuggestionsPresentation?
     var webViewContainer: UIView!
     var webViewTopAnchorConstraint: NSLayoutConstraint?
     var webViewBottomAnchorConstraint: NSLayoutConstraint?
@@ -1096,6 +1097,8 @@ class TabViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         setSitePermissionsGeolocationActive(false)
+        freshChatSuggestionsPresentation?.deactivate()
+        freshChatSuggestionsPresentation = nil
 
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 

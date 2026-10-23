@@ -77,8 +77,8 @@ final class IPadOmnibarAttachmentController {
     /// Requested after a picker completes, so the omnibar can ensure it stays expanded.
     var onExpandRequested: (() -> Void)?
 
-    /// What a paste may grow to in its sheet with the rest of the draft as it is; the omnibar's length gate answers.
-    var pastedTextSheetLimit: ((AIChatPastedText) -> Int)?
+    /// The prompt limit and the rest of the draft the sheet counts with the paste; the omnibar's length gate answers.
+    var pastedTextSheetMode: ((AIChatPastedText) -> PastedTextSheetMode)?
 
     /// Runs once per sheet however it closed, so the omnibar can bring the input back.
     var onPastedTextSheetDismissed: (() -> Void)?
@@ -175,10 +175,10 @@ final class IPadOmnibarAttachmentController {
         guard let pastedText = currentAttachments.first(where: { $0.id == id })?.pastedText,
               let host = presenterProvider?() else { return }
         let draft = currentDraft
-        let limit = pastedTextSheetLimit?(pastedText) ?? 0
+        let mode = pastedTextSheetMode?(pastedText) ?? .editable(limit: 0)
         firePastedTextPixel(.sheetOpened)
         isPresentingPastedTextSheet = true
-        PastedTextSheetPresenter.present(pastedText, mode: .editable(limit: limit), from: host) { [weak self] outcome in
+        PastedTextSheetPresenter.present(pastedText, mode: mode, from: host) { [weak self] outcome in
             guard let self else { return }
             isPresentingPastedTextSheet = false
             if case .saved(let edited) = outcome {

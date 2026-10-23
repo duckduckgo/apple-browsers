@@ -195,7 +195,7 @@ Real test sites you can crib from. References mirror each test's path inside the
 ### iOS — preview-backed screen with mocks (`.screen`)
 - View: `iOS/DuckDuckGo/VoiceSearchFeedbackView.swift`
 - Preview mocks: `iOS/DuckDuckGo/VoiceSearchFeedbackView_PreviewMocks.swift`
-- Test: `iOS/DuckDuckGoTests/VoiceSearchFeedbackViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/Application/VoiceSearchFeedbackViewTests.swift`
 - Keep `PreviewProvider`, `typealias State`, and `static let snapshots` in the view file; move mocks to the sibling `_PreviewMocks.swift` under `#if DEBUG`.
 
 ### iOS — package test target, several states per view (`.screen`)

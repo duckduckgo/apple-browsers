@@ -19,7 +19,6 @@
 
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import Core
 import DuckUI
 import MetricBuilder
@@ -61,7 +60,7 @@ struct ImportPasswordsViaSyncView: View {
 
         var body: some View {
             VStack(spacing: 8) {
-                Image(rebrandable: "Desktop-Sync-Passwords-128")
+                Image(.desktopSyncPasswords128)
 
                 VStack(spacing: 4) {
                     Text(UserText.autofillImportPasswordsViaSyncTitle)
@@ -151,27 +150,18 @@ struct ImportPasswordsViaSyncView: View {
 }
 
 struct NumberBadge: View {
-    @Environment(\.colorScheme) var colorScheme
-
     var number: Int
-
-    let lightBulletColor = Color(baseColor: .blue0).opacity(0.5)
-    let darkBulletColor = Color(baseColor: .blue50).opacity(0.12)
 
     var body: some View {
         Text("\(number)")
             .daxHeadline()
             .background(
                 Circle()
-                    .fill(AppRebrand.isAppRebranded() ?
-                          Color(designSystemColor: .accentGlowSecondary)
-                          : colorScheme == .dark ? darkBulletColor : lightBulletColor)
+                    .fill(Color(designSystemColor: .accentGlowSecondary))
                     .frame(width: 24, height: 24)
             )
             .frame(width: 10)
-            .foregroundColor(AppRebrand.isAppRebranded() ?
-                             Color(designSystemColor: .accentTextPrimary)
-                             : Color(designSystemColor: .accentPrimary))
+            .foregroundColor(Color(designSystemColor: .accentTextPrimary))
             .fixedSize()
             .padding(10)
     }

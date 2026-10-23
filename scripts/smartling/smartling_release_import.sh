@@ -2,7 +2,8 @@
 set -euo pipefail
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z> [--dry-run] [--reimport]" >&2
+	echo "Usage: $0 <iOS|macOS> --release-branch <release/ios/x.y.z|release/macos/x.y.z|other branch> [--version x.y.z] [--dry-run] [--reimport]" >&2
+	echo "A branch outside release/<platform>/ needs --version." >&2
 	exit 1
 }
 
@@ -10,12 +11,14 @@ PLATFORM="${1:-}"
 shift || true
 
 RELEASE_BRANCH=""
+VERSION=""
 DRY_RUN="false"
 REIMPORT="false"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--release-branch) RELEASE_BRANCH="${2:-}"; shift 2 ;;
+		--version) VERSION="${2:-}"; shift 2 ;;
 		--dry-run) DRY_RUN="true"; shift ;;
 		--reimport) REIMPORT="true"; shift ;;
 		*) usage ;;
@@ -39,11 +42,25 @@ case "$PLATFORM" in
 		;;
 esac
 
-if [[ "$RELEASE_BRANCH" != "release/$PLATFORM_SLUG/"* ]]; then
+if [[ "$RELEASE_BRANCH" =~ ^release/([^/]+)/([^/]+)$ ]]; then
+	if [ "${BASH_REMATCH[1]}" != "$PLATFORM_SLUG" ]; then
+		echo "Branch '$RELEASE_BRANCH' is a release branch for '${BASH_REMATCH[1]}', not '$PLATFORM_SLUG'." >&2
+		exit 1
+	fi
+	if [ -n "$VERSION" ] && [ "$VERSION" != "${BASH_REMATCH[2]}" ]; then
+		echo "Version '$VERSION' doesn't match release branch '$RELEASE_BRANCH'." >&2
+		exit 1
+	fi
+	VERSION="${BASH_REMATCH[2]}"
+elif [ -z "$RELEASE_BRANCH" ] || [ -z "$VERSION" ]; then
 	usage
 fi
 
-VERSION="${RELEASE_BRANCH#"release/$PLATFORM_SLUG/"}"
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+	echo "Can't resolve a release version from version '$VERSION' and branch '$RELEASE_BRANCH'." >&2
+	exit 1
+fi
+
 JOB_NAME="Release $PLATFORM $VERSION"
 IMPORT_BRANCH="smartling/release-$PLATFORM_SLUG-$VERSION"
 REFRESH_PREFIX="$RELEASE_BRANCH/current"
@@ -86,7 +103,9 @@ finish() {
 			echo "strings_left=$STRINGS_LEFT"
 			echo "incomplete_locales=$INCOMPLETE_LOCALES"
 			echo "strings_awaiting_authorization=$STRINGS_AWAITING_AUTHORIZATION"
-			echo "jobs_awaiting_authorization=$JOBS_AWAITING_AUTHORIZATION"
+			echo "jobs_awaiting_authorization<<JOBS_AWAITING_AUTHORIZATION_EOF"
+			echo "$JOBS_AWAITING_AUTHORIZATION"
+			echo "JOBS_AWAITING_AUTHORIZATION_EOF"
 			echo "integrity=$INTEGRITY"
 			echo "pr_url=$PR_URL"
 			echo "reason=$REASON"
@@ -103,7 +122,7 @@ finish() {
 			[ -z "$STRINGS_LEFT" ] || echo "- String translations left: \`$STRINGS_LEFT\` of \`$TOTAL_STRINGS\`"
 			[ -z "$INCOMPLETE_LOCALES" ] || echo "- Incomplete locales: \`$INCOMPLETE_LOCALES\`"
 			[ -z "$STRINGS_AWAITING_AUTHORIZATION" ] || [ "$STRINGS_AWAITING_AUTHORIZATION" = "0" ] || echo "- String translations not authorized (in a job awaiting authorization or in no job): \`$STRINGS_AWAITING_AUTHORIZATION\`"
-			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || echo "- Jobs awaiting authorization: $JOBS_AWAITING_AUTHORIZATION"
+			[ -z "$JOBS_AWAITING_AUTHORIZATION" ] || printf -- '- Jobs awaiting authorization:\n  %s\n' "${JOBS_AWAITING_AUTHORIZATION//$'\n'/$'\n'  }"
 			[ -z "$INTEGRITY" ] || echo "- Integrity check: \`$INTEGRITY\`"
 			[ -z "$PR_URL" ] || echo "- Pull request: $PR_URL"
 			[ -z "$REASON" ] || echo "- Reason: $REASON"
@@ -166,7 +185,7 @@ TOTAL_STRINGS="$(jq -r '.total_strings // empty' "$RESULT_FILE")"
 STRINGS_LEFT="$(jq -r '.strings_left // empty' "$RESULT_FILE")"
 INCOMPLETE_LOCALES="$(jq -r '.incomplete_locales | join(", ")' "$RESULT_FILE")"
 STRINGS_AWAITING_AUTHORIZATION="$(jq -r '.strings_awaiting_authorization // empty' "$RESULT_FILE")"
-JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | join(", ")' "$RESULT_FILE")"
+JOBS_AWAITING_AUTHORIZATION="$(jq -r '(.jobs_awaiting_authorization // []) | map("- [\(.name)](\(.url))" + (if .created != "" then " (created \(.created))" else "" end)) | join("\n")' "$RESULT_FILE")"
 REASON="$(jq -r '.reason' "$RESULT_FILE")"
 
 case "$status_outcome" in

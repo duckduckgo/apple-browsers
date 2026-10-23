@@ -156,22 +156,18 @@ struct TabSwitcherSwipeUpGeometryTests {
     @Test("A slow horizontal drag selects an adjacent tab after eighteen percent of the screen", .timeLimit(.minutes(1)),
           arguments: [
             (horizontal: CGFloat(0), width: CGFloat(400), offset: 0),
+            (horizontal: CGFloat(-100), width: CGFloat(400), offset: 1),
+            (horizontal: CGFloat(-40), width: CGFloat(400), offset: 0),
+            (horizontal: CGFloat(40), width: CGFloat(400), offset: 0),
+            (horizontal: CGFloat(100), width: CGFloat(400), offset: -1),
             (horizontal: CGFloat(-72), width: CGFloat(400), offset: 0),
+            (horizontal: CGFloat(72), width: CGFloat(400), offset: 0),
             (horizontal: CGFloat(-73), width: CGFloat(400), offset: 1),
             (horizontal: CGFloat(73), width: CGFloat(400), offset: -1),
             (horizontal: CGFloat(-200), width: CGFloat(0), offset: 0),
           ])
     func selectedTabOffset(horizontal: CGFloat, width: CGFloat, offset: Int) {
         #expect(TabSwitcherSwipeUpGeometry.selectedTabOffset(horizontalTravel: horizontal, screenWidth: width) == offset)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Reversing the finger restores the current tab or selects the other neighbor", .timeLimit(.minutes(1)))
-    func reversedHorizontalSelection() {
-        let offsets = [CGFloat(-100), -40, 0, 40, 100].map {
-            TabSwitcherSwipeUpGeometry.selectedTabOffset(horizontalTravel: $0, screenWidth: 400)
-        }
-        #expect(offsets == [1, 0, 0, 0, -1])
     }
 
     @available(iOS 16, macOS 13, *)
@@ -197,16 +193,20 @@ struct TabSwitcherSwipeUpGeometryTests {
 
     @available(iOS 16, macOS 13, *)
     @Test("All Tabs stays blurred while held and uses lighter blur when released", .timeLimit(.minutes(1)),
-          arguments: [CGFloat(0), 160, 280, 800, 1500])
-    func retainedInteractiveBlur(travel: CGFloat) {
+          arguments: [
+            (travel: CGFloat(0), held: CGFloat(1), released: CGFloat(0.3)),
+            (travel: CGFloat(160), held: CGFloat(0.5), released: CGFloat(0.3)),
+            (travel: CGFloat(208), held: CGFloat(0.3), released: CGFloat(0.3)),
+            (travel: CGFloat(280), held: CGFloat(0.3), released: CGFloat(0)),
+            (travel: CGFloat(800), held: CGFloat(0.3), released: CGFloat(0)),
+            (travel: CGFloat(1500), held: CGFloat(0.3), released: CGFloat(0)),
+          ])
+    func retainedInteractiveBlur(travel: CGFloat, held: CGFloat, released: CGFloat) {
         let reveal = TabSwitcherSwipeUpGeometry.revealProgress(forTravel: travel, screenHeight: 1000)
         let blur = TabSwitcherSwipeUpGeometry.blurProgress(forRevealProgress: reveal, isCommitted: false)
-        #expect(blur >= 0.3)
-        #expect(blur <= 1)
+        #expect(abs(blur - held) < 0.001)
         let releasedBlur = TabSwitcherSwipeUpGeometry.blurProgress(forRevealProgress: reveal, isCommitted: true)
-        #expect(releasedBlur <= 0.3)
-        #expect(releasedBlur <= blur)
-        #expect(TabSwitcherSwipeUpGeometry.blurProgress(forRevealProgress: 1, isCommitted: true) == 0)
+        #expect(abs(releasedBlur - released) < 0.001)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -346,6 +346,7 @@ struct TabSwitcherSwipeUpGeometryTests {
         #expect(TabSwitcherSwipeUpGeometry.shouldCommit(travel: travel, velocity: velocity) == commits)
     }
 
+    @MainActor
     @available(iOS 16, macOS 13, *)
     @Test("The card heads for where the current tab's cell was last laid out", .timeLimit(.minutes(1)))
     func storedCellFrame() {
@@ -358,6 +359,7 @@ struct TabSwitcherSwipeUpGeometryTests {
         #expect(TabSwitcherCellFrameCache.frame(forRow: 3, in: screen, isGrid: false) != cellFrame)
     }
 
+    @MainActor
     @available(iOS 16, macOS 13, *)
     @Test("Before any cell was laid out, the card heads for the cell's place in the grid", .timeLimit(.minutes(1)))
     func estimatedCellFrame() {
@@ -372,6 +374,7 @@ struct TabSwitcherSwipeUpGeometryTests {
         #expect(third.minY > first.minY)
     }
 
+    @MainActor
     @available(iOS 16, macOS 13, *)
     @Test("Before any list row was laid out, the card heads for the row's place in the list", .timeLimit(.minutes(1)))
     func estimatedListRowFrame() {

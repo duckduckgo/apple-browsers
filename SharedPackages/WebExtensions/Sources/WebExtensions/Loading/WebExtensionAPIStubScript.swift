@@ -1286,8 +1286,9 @@ public enum WebExtensionAPIStubScript {
         // So the frame hands the call to the extension's background page through runtime
         // messaging, and the background page makes it with WebKit's own `openPopup`. WebKit then
         // presents and tracks the popup as it does for any `openPopup` call, with the options as
-        // given and without the user gesture a toolbar click marks. The extension's own
-        // `runtime.onMessage` listeners never see the relay messages.
+        // given and without the user gesture a toolbar click marks. `runtime.sendMessage` reaches
+        // every page of the extension, so the extension's own `runtime.onMessage` listeners are kept
+        // from relay messages in all of them, and only the background page answers.
         var actionOpenPopupRelayKey = "__ddgActionOpenPopup";
 
         function isActionOpenPopupRelay(message) {
@@ -1343,14 +1344,16 @@ public enum WebExtensionAPIStubScript {
             };
         }
 
-        function installActionOpenPopupRelay() {
+        // Returns a function that registers a listener directly, past the filter, or `null` when the
+        // listeners couldn't be wrapped.
+        function hideActionOpenPopupRelays() {
             var onMessage = api.runtime.onMessage;
             var addListener = onMessage.addListener;
             var removeListener = onMessage.removeListener;
             var hasListener = onMessage.hasListener;
             if (typeof addListener !== "function" || typeof removeListener !== "function"
                 || typeof hasListener !== "function") {
-                return false;
+                return null;
             }
 
             // Each extension listener is registered through one wrapper that skips relay messages,
@@ -1378,10 +1381,15 @@ public enum WebExtensionAPIStubScript {
                 return hasListener.call(onMessage, wrapperFor(listener));
             });
             if (!isWrapped) {
-                return false;
+                return null;
             }
+            return function(listener) {
+                addListener.call(onMessage, listener);
+            };
+        }
 
-            addListener.call(onMessage, function(message, sender, sendResponse) {
+        function installActionOpenPopupRelay(addListenerDirectly) {
+            addListenerDirectly(function(message, sender, sendResponse) {
                 if (!isActionOpenPopupRelay(message) || !sender || sender.id !== api.runtime.id) {
                     return undefined;
                 }
@@ -1398,18 +1406,19 @@ public enum WebExtensionAPIStubScript {
                 });
                 return true;
             });
-            return true;
         }
 
         var relayedMembers = [];
         try {
             if (api.action && api.action.openPopup !== undefined && api.runtime) {
+                var addListenerDirectly = api.runtime.onMessage ? hideActionOpenPopupRelays() : null;
                 if (isEmbeddedInWebsite()) {
                     if (typeof api.runtime.sendMessage === "function"
                         && define(api.action, "openPopup", makeRelayedOpenPopup())) {
                         relayedMembers.push("action.openPopup");
                     }
-                } else if (isBackgroundPage() && api.runtime.onMessage && installActionOpenPopupRelay()) {
+                } else if (addListenerDirectly !== null && isBackgroundPage()) {
+                    installActionOpenPopupRelay(addListenerDirectly);
                     relayedMembers.push("runtime.onMessage");
                 }
             }

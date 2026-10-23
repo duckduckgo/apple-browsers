@@ -333,10 +333,31 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("registered.length === 1")
     }
 
-    func testWhenThePageIsNotTheBackgroundPage_ThenMessagesAreLeftAlone() throws {
+    func testWhenAnotherExtensionPageGetsARelay_ThenItsListenersDontSeeItAndNothingAnswers() throws {
+        try installFakeBackgroundPage()
+        context.evaluateScript("location.pathname = '/popup.html';")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var seenByExtension = [];
+        chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+            seenByExtension.push(message);
+            sendResponse({ answeredBy: 'popup' });
+        });
+        var outcome = dispatch({ __ddgActionOpenPopup: {} }, { id: 'extension' });
+        """)
+        try assertNoExceptions()
+
+        try assertTrue("seenByExtension.length === 0")
+        try assertTrue("outcome.responses.length === 0")
+        try assertTrue("outcome.keepsChannelOpen === false")
+        try assertTrue("openPopupCalls.length === 0")
+    }
+
+    func testWhenTheExtensionHasNoAction_ThenItsMessageListenersAreLeftAlone() throws {
         try installFakeBackgroundPage()
         context.evaluateScript("""
-        location.pathname = '/popup.html';
+        delete chrome.action;
         var originalAddListener = chrome.runtime.onMessage.addListener;
         """)
         try evaluateStubScript()

@@ -24,6 +24,7 @@ import WebKit
 import os.log
 import PixelKit
 import WideEvent
+import PrivacyConfig
 
 import WKAbstractions
 
@@ -145,17 +146,20 @@ public class WebCacheManager: WebsiteDataManaging {
     let dataStoreIDManager: DataStoreIDManaging
     let dataStoreCleaner: WebsiteDataStoreCleaning
     let observationsCleaner: ObservationsDataCleaning
+    private let featureFlagger: FeatureFlagger
 
     public init(cookieStorage: MigratableCookieStorage,
                 fireproofing: Fireproofing,
                 dataStoreIDManager: DataStoreIDManaging,
                 dataStoreCleaner: WebsiteDataStoreCleaning = DefaultWebsiteDataStoreCleaner(),
-                observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner()) {
+                observationsCleaner: ObservationsDataCleaning = DefaultObservationsDataCleaner(),
+                featureFlagger: FeatureFlagger) {
         self.cookieStorage = cookieStorage
         self.fireproofing = fireproofing
         self.dataStoreIDManager = dataStoreIDManager
         self.dataStoreCleaner = dataStoreCleaner
         self.observationsCleaner = observationsCleaner
+        self.featureFlagger = featureFlagger
     }
 
     /// The previous version saved cookies externally to the data so we can move them between containers.  We now use
@@ -216,6 +220,8 @@ public class WebCacheManager: WebsiteDataManaging {
     /// checks fireproofing on the displayName, then filters by whether the domain was visited.
     /// This matches the behavior of "Burn All" for consistency.
     public func clear(dataStore: any DDGWebsiteDataStore, forDomains domains: [String]) async -> WebsiteDataClearingResult {
+        let optimized = featureFlagger.isFeatureOn(.singleTabBurnOptimization)
+
         // Normalize visited domains to eTLD+1 upfront for matching against data records
         let tld = TLD()
         let visitedETLDplus1 = Set(domains.compactMap { tld.eTLDplus1($0) ?? $0 })
@@ -230,7 +236,7 @@ public class WebCacheManager: WebsiteDataManaging {
 
         let scope = Scope.limited(dataRecords: dataRecordInScope, cookies: cookieInScope)
         await performMigrationIfNeeded(dataStoreIDManager: dataStoreIDManager, cookieStorage: cookieStorage, destinationStore: dataStore)
-        return await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: scope)
+        return await clearData(inDataStore: dataStore, withFireproofing: fireproofing, scope: scope, optimized: optimized)
     }
 
 }
@@ -276,11 +282,12 @@ extension WebCacheManager {
 
     private func clearData(inDataStore dataStore: any DDGWebsiteDataStore,
                            withFireproofing fireproofing: Fireproofing,
-                           scope: Scope) async -> WebsiteDataClearingResult {
+                           scope: Scope,
+                           optimized: Bool = false) async -> WebsiteDataClearingResult {
         let startTime = CACurrentMediaTime()
 
         var safelyRemovableInterval = WideEvent.MeasuredInterval.startingNow()
-        let safelyRemovableResult = await clearDataForSafelyRemovableDataTypes(fromStore: dataStore, scope: scope)
+        let safelyRemovableResult = await clearDataForSafelyRemovableDataTypes(fromStore: dataStore, scope: scope, optimized: optimized)
         safelyRemovableInterval.complete()
 
         var fireproofableDataInterval = WideEvent.MeasuredInterval.startingNow()
@@ -288,7 +295,7 @@ extension WebCacheManager {
         fireproofableDataInterval.complete()
 
         var cookiesInterval = WideEvent.MeasuredInterval.startingNow()
-        let cookiesResult = await clearCookiesForNonFireproofedDomains(fromStore: dataStore, usingFireproofing: fireproofing, scope: scope)
+        let cookiesResult = await clearCookiesForNonFireproofedDomains(fromStore: dataStore, usingFireproofing: fireproofing, scope: scope, optimized: optimized)
         cookiesInterval.complete()
 
         var observationsInterval = WideEvent.MeasuredInterval.startingNow()
@@ -319,12 +326,14 @@ extension WebCacheManager {
 
     @MainActor
     private func clearDataForSafelyRemovableDataTypes(fromStore dataStore: some DDGWebsiteDataStore,
-                                                      scope: Scope) async -> Result<Void, Error> {
+                                                      scope: Scope,
+                                                      optimized: Bool) async -> Result<Void, Error> {
         switch scope {
         case .all:
             await dataStore.removeData(ofTypes: Self.safelyRemovableWebsiteDataTypes, modifiedSince: Date.distantPast)
         case .limited(let dataRecords, _):
-            let allRecords = await dataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
+            let types = optimized ? Self.safelyRemovableWebsiteDataTypes : WKWebsiteDataStore.allWebsiteDataTypes()
+            let allRecords = await dataStore.dataRecords(ofTypes: types)
             let removableRecords = allRecords.filter { record in
                 dataRecords(record.displayName)
             }
@@ -350,7 +359,10 @@ extension WebCacheManager {
     }
 
     @MainActor
-    private func clearCookiesForNonFireproofedDomains(fromStore dataStore: any DDGWebsiteDataStore, usingFireproofing fireproofing: Fireproofing, scope: Scope) async -> Result<Void, Error> {
+    private func clearCookiesForNonFireproofedDomains(fromStore dataStore: any DDGWebsiteDataStore,
+                                                      usingFireproofing fireproofing: Fireproofing,
+                                                      scope: Scope,
+                                                      optimized: Bool) async -> Result<Void, Error> {
         let cookieStore = dataStore.httpCookieStore
         let cookies = await cookieStore.allCookies()
 
@@ -359,8 +371,23 @@ extension WebCacheManager {
             return !fireproofed && scope.cookiesEvaluator(cookie)
         }
 
-        for cookie in cookiesToRemove {
-            await cookieStore.deleteCookie(cookie)
+        if optimized {
+            await withTaskGroup(of: Void.self) { group in
+                var cookies = cookiesToRemove.makeIterator()
+                for _ in 0..<8 {
+                    guard let cookie = cookies.next() else { break }
+                    group.addTask { await cookieStore.deleteCookie(cookie) }
+                }
+                while await group.next() != nil {
+                    if let cookie = cookies.next() {
+                        group.addTask { await cookieStore.deleteCookie(cookie) }
+                    }
+                }
+            }
+        } else {
+            for cookie in cookiesToRemove {
+                await cookieStore.deleteCookie(cookie)
+            }
         }
         return .success(())
     }

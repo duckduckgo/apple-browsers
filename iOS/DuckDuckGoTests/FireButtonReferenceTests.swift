@@ -87,7 +87,10 @@ final class FireButtonReferenceTests: XCTestCase {
                                                     MockWebsiteDataRecord(displayName: test.cookieDomain)
                                                 ])
 
-            await WebCacheManager(cookieStorage: MigratableCookieStorage(), fireproofing: fireproofing, dataStoreIDManager: DataStoreIDManager(store: MockKeyValueStore())).clear(dataStore: dataStore)
+            await WebCacheManager(cookieStorage: MigratableCookieStorage(),
+                                  fireproofing: fireproofing,
+                                  dataStoreIDManager: DataStoreIDManager(store: MockKeyValueStore()),
+                                  featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [])).clear(dataStore: dataStore)
 
             let cookieWasRemoved = cookieStore.cookiesThatWereDeleted.contains(where: { $0.name == test.cookieName })
             XCTAssertEqual(cookieWasRemoved, test.expectCookieRemoved)

@@ -35,6 +35,7 @@ class WebCacheManagerTests: XCTestCase {
     lazy var dataStoreIDManager = DataStoreIDManager(store: keyValueStore)
     let dataStoreCleaner = MockDataStoreCleaner()
     let observationsCleaner = MockObservationsCleaner()
+    let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
 
     func test_whenClearingData_ThenCookiesAreRemoved() async {
         let cookieStore = MockHTTPCookieStore(allCookiesReturnValue: [
@@ -199,6 +200,98 @@ class WebCacheManagerTests: XCTestCase {
         await makeWebCacheManager().clear(dataStore: dataStore, forDomains: ["example.com"])
 
         XCTAssertEqual(dataStore.requestedDataRecordTypes.last, WebCacheManager.fireproofableDataTypesExceptCookies)
+    }
+
+    func testScopedCleanupPreservesFiltersAndWaitsForBoundedCookieDeletionsAsFlagChanges() async {
+        fireproofing.isAllowedCookieDomainHandler = { $0 == "protected.com" }
+        fireproofing.isAllowedFireproofDomainHandler = { $0 == "protected.com" }
+        let manager = makeWebCacheManager()
+
+        for enabled in [false, true, false] {
+            featureFlagger.enabledFeatureFlags = enabled ? [.singleTabBurnOptimization] : []
+            let firstBatch = expectation(description: "Cookie deletions started")
+            firstBatch.expectedFulfillmentCount = enabled ? 8 : 1
+            let cookies = (0..<20).map { HTTPCookie.make(name: "cookie-\($0)", value: "value", domain: "example.com") }
+            let cookieStore = SuspendedCookieStore(cookies: cookies + [
+                .make(name: "protected", value: "value", domain: "protected.com"),
+                .make(name: "unrelated", value: "value", domain: "unrelated.com")
+            ], onDelete: { firstBatch.fulfill() })
+            let dataStore = MockWebsiteDataStore(httpCookieStore: cookieStore, dataRecordsOfTypesReturnValue: [
+                MockWebsiteDataRecord(displayName: "example.com"),
+                MockWebsiteDataRecord(displayName: "protected.com"),
+                MockWebsiteDataRecord(displayName: "unrelated.com")
+            ])
+            var completed = false
+            let clear = Task {
+                _ = await manager.clear(dataStore: dataStore, forDomains: ["example.com", "protected.com"])
+                completed = true
+            }
+
+            await fulfillment(of: [firstBatch], timeout: 5)
+            XCTAssertFalse(completed)
+            XCTAssertEqual(cookieStore.pendingCount, enabled ? 8 : 1)
+            XCTAssertEqual(cookieStore.maxPendingCount, enabled ? 8 : 1)
+            XCTAssertEqual(dataStore.requestedDataRecordTypes, [
+                enabled ? WebCacheManager.safelyRemovableWebsiteDataTypes : WKWebsiteDataStore.allWebsiteDataTypes(),
+                WebCacheManager.fireproofableDataTypesExceptCookies
+            ])
+            XCTAssertEqual(dataStore.removedDataOfTypesForRecords.map { $0.records.map(\.displayName) }, [
+                ["example.com", "protected.com"], ["example.com"]
+            ])
+
+            featureFlagger.enabledFeatureFlags = enabled ? [] : [.singleTabBurnOptimization]
+            cookieStore.releaseDeletions()
+            await clear.value
+
+            XCTAssertTrue(completed)
+            XCTAssertEqual(Set(cookieStore.deletedNames), Set(cookies.map(\.name)))
+            XCTAssertEqual(cookieStore.deletedNames.count, cookies.count)
+            XCTAssertEqual(cookieStore.pendingCount, 0)
+            XCTAssertLessThanOrEqual(cookieStore.maxPendingCount, enabled ? 8 : 1)
+        }
+    }
+
+    func testScopedCleanupRemovesRealWebKitCookiesAndPreservesExcludedCookiesInBothFlagStates() async {
+        fireproofing.isAllowedCookieDomainHandler = { $0 == "protected.com" }
+        let manager = makeWebCacheManager()
+        for enabled in [false, true] {
+            featureFlagger.enabledFeatureFlags = enabled ? [.singleTabBurnOptimization] : []
+            let store = WKWebsiteDataStore.nonPersistent()
+            let cookies = (0..<20).map { HTTPCookie.make(name: "cookie-\($0)", value: "value", domain: "example.com") } + [
+                .make(name: "protected", value: "value", domain: "protected.com"),
+                .make(name: "unrelated", value: "value", domain: "unrelated.com")
+            ]
+            for cookie in cookies {
+                await store.httpCookieStore.setCookie(cookie)
+            }
+            let before = await store.httpCookieStore.allCookies()
+            XCTAssertEqual(before.count, cookies.count)
+
+            _ = await manager.clear(dataStore: WebsiteDataStoreWrapper(wrapped: store), forDomains: ["example.com", "protected.com"])
+
+            let remaining = await store.httpCookieStore.allCookies()
+            XCTAssertEqual(Set(remaining.map(\.name)), ["protected", "unrelated"])
+        }
+    }
+
+    func testFullCleanupKeepsSerialCookieDeletionWhenOptimizationIsEnabled() async {
+        featureFlagger.enabledFeatureFlags = [.singleTabBurnOptimization]
+        let firstDeletion = expectation(description: "First cookie deletion")
+        let cookieStore = SuspendedCookieStore(cookies: [
+            .make(name: "one", value: "value", domain: "example.com"),
+            .make(name: "two", value: "value", domain: "example.com")
+        ], onDelete: { firstDeletion.fulfill() })
+        let dataStore = MockWebsiteDataStore(httpCookieStore: cookieStore)
+        let clear = Task { await makeWebCacheManager().clear(dataStore: dataStore) }
+
+        await fulfillment(of: [firstDeletion], timeout: 5)
+        XCTAssertEqual(cookieStore.pendingCount, 1)
+        cookieStore.releaseDeletions()
+        _ = await clear.value
+
+        XCTAssertEqual(cookieStore.maxPendingCount, 1)
+        XCTAssertEqual(Set(cookieStore.deletedNames), ["one", "two"])
+        XCTAssertEqual(dataStore.removedDataOfTypesModifiedSince.first?.types, WebCacheManager.safelyRemovableWebsiteDataTypes)
     }
 
     // MARK: - Domain-Specific Clearing Tests
@@ -403,7 +496,8 @@ class WebCacheManagerTests: XCTestCase {
             fireproofing: fireproofing,
             dataStoreIDManager: dataStoreIDManager,
             dataStoreCleaner: dataStoreCleaner,
-            observationsCleaner: observationsCleaner
+            observationsCleaner: observationsCleaner,
+            featureFlagger: featureFlagger
         )
     }
 }
@@ -434,4 +528,44 @@ class MockObservationsCleaner: ObservationsDataCleaning {
         return .success(())
     }
 
+}
+
+@MainActor
+private final class SuspendedCookieStore: DDGHTTPCookieStore {
+    private let cookies: [HTTPCookie]
+    private var onDelete: (() -> Void)?
+    private var continuations: [CheckedContinuation<Void, Never>] = []
+    private var released = false
+    private(set) var pendingCount = 0
+    private(set) var maxPendingCount = 0
+    private(set) var deletedNames: [String] = []
+
+    init(cookies: [HTTPCookie], onDelete: @escaping () -> Void) {
+        self.cookies = cookies
+        self.onDelete = onDelete
+    }
+
+    func allCookies() async -> [HTTPCookie] { cookies }
+    func setCookie(_ cookie: HTTPCookie) async { XCTFail("Unexpected cookie migration") }
+
+    func deleteCookie(_ cookie: HTTPCookie) async {
+        pendingCount += 1
+        maxPendingCount = max(maxPendingCount, pendingCount)
+        if !released {
+            await withCheckedContinuation { continuation in
+                continuations.append(continuation)
+                onDelete?()
+            }
+        }
+        deletedNames.append(cookie.name)
+        pendingCount -= 1
+    }
+
+    func releaseDeletions() {
+        released = true
+        onDelete = nil
+        let pending = continuations
+        continuations = []
+        pending.forEach { $0.resume() }
+    }
 }

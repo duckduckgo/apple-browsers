@@ -64,6 +64,29 @@
     // Some WebKit versions don't expose whether an embedded page (iframe) may use media.
     // Fall back to its HTML allow attribute and retain the parent's restrictions for nested
     // frames. This is a best-effort precheck; WebKit makes the final capture decision.
+    // Like WebKit, use the embedding attributes from when this document loaded; a later change
+    // applies on the next navigation. The rest waits for the first check, since most frames
+    // never request media.
+    const embeddingFrame = (() => {
+        if (!isSameOriginAsTopLevel || globalThis.top === globalThis) {
+            return null;
+        }
+        try {
+            const frame = globalThis.frameElement;
+            if (!frame) {
+                return null;
+            }
+            const getAttribute = Element.prototype.getAttribute;
+            const source = apply(getAttribute, frame, ["srcdoc"]) === null ? apply(getAttribute, frame, ["src"]) : null;
+            return {
+                policy: apply(getAttribute, frame, ["allow"]) ?? "",
+                source,
+                baseURI: source === null ? null : apply(getOwnPropertyDescriptor(Node.prototype, "baseURI").get, frame, [])
+            };
+        } catch (_) {
+            return null;
+        }
+    })();
     const fallbackPolicyAllows = (feature) => {
         if (!isSameOriginAsTopLevel) {
             return false;
@@ -74,21 +97,14 @@
         try {
             const parent = globalThis.parent;
             const inheritedPolicy = parent[inheritedPolicyProperty];
-            if (typeof inheritedPolicy !== "function" || !inheritedPolicy(feature)) {
+            if (typeof inheritedPolicy !== "function" || !inheritedPolicy(feature) || !embeddingFrame) {
                 return false;
             }
-            const frame = globalThis.frameElement;
-            if (!frame) {
-                return false;
-            }
-            const getAttribute = Element.prototype.getAttribute;
-            const policy = apply(getAttribute, frame, ["allow"]) ?? "";
-            const source = apply(getAttribute, frame, ["src"]);
+            const { policy, source, baseURI } = embeddingFrame;
             let sourceOrigin = parent.location.origin;
-            if (source !== null && apply(getAttribute, frame, ["srcdoc"]) === null) {
+            if (source !== null) {
                 try {
-                    const baseURIGetter = getOwnPropertyDescriptor(Node.prototype, "baseURI").get;
-                    const sourceURL = new URL(source, apply(baseURIGetter, frame, []));
+                    const sourceURL = new URL(source, baseURI);
                     sourceOrigin = sourceURL.protocol === "http:" || sourceURL.protocol === "https:"
                         ? sourceURL.origin : origin;
                 } catch (_) {}
@@ -128,11 +144,16 @@
             return false;
         }
     };
-    const fallbackCameraAllowed = fallbackPolicyAllows("camera");
-    const fallbackMicrophoneAllowed = fallbackPolicyAllows("microphone");
+    let fallbackCameraAllowed;
+    let fallbackMicrophoneAllowed;
     const policyAllows = (feature) => {
         if (!hasPolicyIntrospection) {
-            return feature === "camera" ? fallbackCameraAllowed : fallbackMicrophoneAllowed;
+            if (feature === "camera") {
+                fallbackCameraAllowed ??= fallbackPolicyAllows("camera");
+                return fallbackCameraAllowed;
+            }
+            fallbackMicrophoneAllowed ??= fallbackPolicyAllows("microphone");
+            return fallbackMicrophoneAllowed;
         }
         try {
             return toBoolean(apply(allowsFeature, permissionsPolicy, [feature]));

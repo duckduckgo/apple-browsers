@@ -55,6 +55,10 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/iframe-cross-origin"] = { _ in
             .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/geolocation-frame")))
         }
+        server["/iframe-blank"] = { _ in .ok(.html(Self.blankFrameHTML)) }
+        server["/camera-frame"] = { _ in .ok(.html(Self.cameraFrameHTML)) }
+        server["/iframe-camera"] = { _ in .ok(.html(Self.iframeHTML(src: "/camera-frame", allow: "camera"))) }
+        server["/iframe-camera-blocked"] = { _ in .ok(.html(Self.iframeHTML(src: "/camera-frame", allow: "camera 'none'"))) }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
     }
@@ -347,21 +351,17 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "location")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
-        // maximumAge: 0 needs a fix timestamped after authorization and acquisition begin.
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         openPermissionsSheet()
         assertSheetDecision("Geolocation", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
 
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 2 37.3317,-122.0301")
+        try assertLocationResult("location success 2", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
         reloadPermissionPage()
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
     }
 
@@ -373,16 +373,14 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "location")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         openPermissionsSheet()
         assertSheetDecision("Geolocation", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
 
         reloadPermissionPage()
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
     }
 
@@ -544,8 +542,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "location", fireMode: true)
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: true)
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.Geolocation"))
         tap(app.buttons["Always Allow"])
@@ -554,16 +551,14 @@ final class SitePermissionsXCUITests: XCTestCase {
 
         // A completed one-shot location must not turn Always Allow into Allow Once.
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 2 37.3317,-122.0301")
+        try assertLocationResult("location success 2", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
         reloadPermissionPage()
         openPermissionsSheet()
         assertSheetDecision("Geolocation", contains: "Always Allow")
         tap(element("SitePermissions.Sheet.Close"))
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
         openPermissionSettings()
         tap(element("Settings.SitePermissions.Site.127.0.0.1"))
@@ -577,8 +572,7 @@ final class SitePermissionsXCUITests: XCTestCase {
             request("location")
             assertSiteDialog(permission: "location", fireMode: fireMode)
             tap(element("SitePermissions.Dialog.AllowOnce"))
-            try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-            assertResult("location success 1 37.3317,-122.0301")
+            try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         }
     }
 
@@ -590,8 +584,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "location", fireMode: true)
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: true)
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.Geolocation"))
         tap(app.buttons["Never Allow"])
@@ -615,8 +608,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertFalse(element("SitePermissions.Sheet.ReloadCaption").exists)
         tap(element("SitePermissions.Sheet.Close"))
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
 
         openPermissionsSheet()
@@ -630,8 +622,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location success 1 37.3317,-122.0301")
         assertNoPermissionPrompt()
         request("location")
-        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
-        assertResult("location success 2 51.5007,-0.1246")
+        try assertLocationResult("location success 2", latitude: 51.5007, longitude: -0.1246)
         assertNoPermissionPrompt()
         openPermissionSettings()
         tap(element("Settings.SitePermissions.Site.127.0.0.1"))
@@ -648,9 +639,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "location")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
-        // maximumAge: 0 needs a fix timestamped after authorization and acquisition begin.
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("Frame result: success 37.3317,-122.0301")
+        try assertLocationResult("Frame result: success", latitude: 37.3317, longitude: -122.0301)
     }
 
     func testWhenCrossOriginIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
@@ -661,6 +650,28 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-opaque-sandbox")
     }
 
+    func testWhenBlankIframeRequestsLocationThenItIsDeniedWithoutSiteWebKitOrSystemPrompt() {
+        // A frame left with WebKit's own API would reach WebKit's location prompt instead of the site's decision.
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-blank")
+    }
+
+    func testWhenSameOriginIframeRequestsCameraThenSiteDialogPrecedesSystemPromptAndFrameGetsVideo() {
+        launchApp()
+        openPermissionPage(path: "/iframe-camera")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame camera"])
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("Frame result: success video=1")
+    }
+
+    func testWhenIframeAllowAttributeBlocksCameraThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-camera-blocked",
+                                                      button: "Frame camera",
+                                                      result: "Frame result: NotAllowedError")
+    }
+
     func testWhenActiveLocationWatchIsDeniedThenItStopsAndReallowDoesNotRestartIt() throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp()
@@ -668,8 +679,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(app.webViews.buttons["Watch location"])
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("watch success 37.3317,-122.0301")
+        try assertLocationResult("watch success", latitude: 37.3317, longitude: -122.0301)
 
         openPermissionsSheet()
         tap(element("SitePermissions.Sheet.Geolocation"))
@@ -681,13 +691,50 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(app.buttons["Always Allow"])
         tap(element("SitePermissions.Sheet.Close"))
         request("location")
-        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
-        assertResult("location success 1 51.5007,-0.1246")
+        try assertLocationResult("location success 1", latitude: 51.5007, longitude: -0.1246)
         assertNoPermissionPrompt()
         // A new request proves delivery resumed; the old watch must remain terminated.
         let restartedWatch = app.webViews.staticTexts.containing(NSPredicate(format: "label BEGINSWITH 'watch success'")).firstMatch
         XCTAssertFalse(restartedWatch.waitForExistence(timeout: 2))
         assertResult("watch error 1")
+    }
+
+    func testWhenPageQueriesLocationPermissionThenStatusFollowsEachDecisionWithoutReload() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp()
+        openPermissionPage()
+        tap(app.webViews.buttons["Query location"])
+        assertResult("permission prompt")
+
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
+        // The status from the first query changes without the page querying again.
+        assertResult("permission change granted")
+
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.Geolocation"))
+        tap(app.buttons["Never Allow"])
+        tap(element("SitePermissions.Sheet.Close"))
+        assertResult("permission change denied")
+        tap(app.webViews.buttons["Query location"])
+        assertResult("permission denied")
+    }
+
+    func testWhenPageClearsLocationWatchBeforeItStartsThenNoPromptAppears() {
+        launchApp()
+        openPermissionPage()
+        tap(app.webViews.buttons["Watch and clear location"])
+        assertResult("watch cleared")
+        // The site has no saved decision, so a watch that started would show the site dialog.
+        XCTAssertFalse(element("SitePermissions.Dialog").waitForExistence(timeout: 2))
+        assertNoPermissionPrompt()
+        assertResult("watch cleared")
+
+        request("location")
+        assertSiteDialog(permission: "location")
     }
 
     func testWhenCameraSettingsChangeThenMicrophoneAndLocationSettingsAreUnchanged() {
@@ -792,8 +839,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         request("location")
         tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
         answerSystemAlert(for: "location", allow: true)
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
 
         // Establish OS authorization first so this checks the native site prompt independently.
         app.terminate()
@@ -1163,20 +1209,16 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertSiteDialog(permission: "location", fireMode: fireMode)
         tap(element("SitePermissions.Dialog.AllowOnce"))
         answerSystemAlert(for: "location", allow: true)
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
 
         // Each one-shot completes before the next request; no active capture keeps the grant alive.
         request("location")
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 2 37.3317,-122.0301")
+        try assertLocationResult("location success 2", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
         tap(app.webViews.buttons["Watch location"])
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("watch success 37.3317,-122.0301")
+        try assertLocationResult("watch success", latitude: 37.3317, longitude: -122.0301)
         assertNoPermissionPrompt()
-        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
-        assertResult("watch success 51.5007,-0.1246")
+        try assertLocationResult("watch success", latitude: 51.5007, longitude: -0.1246)
         assertNoPermissionPrompt()
         openPermissionSettings()
         XCTAssertFalse(element("Settings.SitePermissions.Site.127.0.0.1").exists)
@@ -1186,8 +1228,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         request("location")
         assertSiteDialog(permission: "location", fireMode: fireMode)
         tap(element("SitePermissions.Dialog.AllowOnce"))
-        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
-        assertResult("location success 1 37.3317,-122.0301")
+        try assertLocationResult("location success 1", latitude: 37.3317, longitude: -122.0301)
 
         // A different document on the same site must also need a new temporary grant.
         openPermissionPage(path: "/camera?next")
@@ -1198,13 +1239,15 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location error 1 1")
     }
 
-    private func assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: String) {
+    private func assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: String,
+                                                               button: String = "Frame location",
+                                                               result: String = "Frame result: error 1") {
         launchApp()
         openPermissionPage(path: path)
         assertResult("Frame result: ready")
-        tap(app.webViews.buttons["Frame location"])
-        assertResult("Frame result: error 1")
-        // Location authorization is reset in setUp, so a native request would still show the iOS alert.
+        tap(app.webViews.buttons[button])
+        assertResult(result)
+        // Authorization is reset in setUp, so a native request would still show the iOS alert.
         XCTAssertFalse(element("SitePermissions.Dialog").waitForExistence(timeout: 2))
         XCTAssertFalse(springboard.alerts.firstMatch.waitForExistence(timeout: 2))
         assertNoPermissionPrompt()
@@ -1217,6 +1260,27 @@ final class SitePermissionsXCUITests: XCTestCase {
         let originalLocation = XCUIDevice.shared.location
         addTeardownBlock { XCUIDevice.shared.location = originalLocation }
         XCUIDevice.shared.location = XCUILocation(location: CLLocation(latitude: latitude, longitude: longitude))
+    }
+
+    /// Sends fixes until the page shows `result` followed by these coordinates. Requests ask for a fresh fix
+    /// (maximumAge: 0), so a fix sent before native acquisition starts doesn't count, and the simulator sends
+    /// a new fix only when the location moves. A nudge smaller than the page's rounding keeps fixes coming,
+    /// however long a tap takes to reach the page.
+    private func assertLocationResult(_ result: String, latitude: Double, longitude: Double,
+                                      file: StaticString = #filePath, line: UInt = #line) throws {
+        try simulateLocation(latitude: latitude, longitude: longitude)
+        guard #available(iOS 16.4, *) else { return }
+        let expected = "\(result) \(String(format: "%.4f,%.4f", latitude, longitude))"
+        let deadline = Date().addingTimeInterval(timeout)
+        var nudge = 0.0
+        while !app.webViews.staticTexts[expected].waitForExistence(timeout: 1) {
+            guard Date() < deadline else {
+                XCTFail("Missing \(expected)\n\(app.debugDescription)", file: file, line: line)
+                return
+            }
+            nudge = nudge == 0 ? 0.000_01 : 0
+            XCUIDevice.shared.location = XCUILocation(location: CLLocation(latitude: latitude + nudge, longitude: longitude))
+        }
     }
 
     private func assertResult(_ result: String, file: StaticString = #filePath, line: UInt = #line) {
@@ -1426,12 +1490,15 @@ final class SitePermissionsXCUITests: XCTestCase {
       <button onclick="requestMedia({video: true, audio: true})">Request camera and microphone</button>
       <button onclick="requestLocation()">Request location</button>
       <button onclick="watchLocation()">Watch location</button>
+      <button onclick="watchAndClearLocation()">Watch and clear location</button>
+      <button onclick="queryLocation()">Query location</button>
       <button onclick="document.getElementById('result').textContent = 'reloading'; location.reload()">Reload fixture</button>
       <p id="result" role="status">ready</p>
       <p id="tracks" role="status">tracks video=0 audio=0</p>
       <p id="liveTracks" role="status">live video=0 audio=0</p>
       <p id="locationResult" role="status">location ready</p>
       <p id="watchResult" role="status">watch ready</p>
+      <p id="permissionResult" role="status">permission ready</p>
       <script>
         let requestCount = 0;
         let locationRequestCount = 0;
@@ -1469,7 +1536,7 @@ final class SitePermissionsXCUITests: XCTestCase {
           navigator.geolocation.getCurrentPosition(
             position => result.textContent = 'location success ' + count + ' ' + coordinates(position),
             error => result.textContent = 'location error ' + count + ' ' + error.code,
-            {maximumAge: 0, timeout: 15000, enableHighAccuracy: true});
+            {maximumAge: 0, enableHighAccuracy: true});
         }
         function watchLocation() {
           const result = document.getElementById('watchResult');
@@ -1479,12 +1546,28 @@ final class SitePermissionsXCUITests: XCTestCase {
             error => result.textContent = 'watch error ' + error.code,
             {maximumAge: 0, enableHighAccuracy: true});
         }
+        function watchAndClearLocation() {
+          const result = document.getElementById('watchResult');
+          const watchID = navigator.geolocation.watchPosition(
+            position => result.textContent = 'watch success ' + coordinates(position),
+            error => result.textContent = 'watch error ' + error.code);
+          navigator.geolocation.clearWatch(watchID);
+          result.textContent = 'watch cleared';
+        }
+        // Keep the status so that its change events keep updating the page.
+        let permissionStatus;
+        async function queryLocation() {
+          const result = document.getElementById('permissionResult');
+          permissionStatus = await navigator.permissions.query({name: 'geolocation'});
+          result.textContent = 'permission ' + permissionStatus.state;
+          permissionStatus.onchange = () => result.textContent = 'permission change ' + permissionStatus.state;
+        }
       </script>
     </body>
     </html>
     """
 
-    private static func iframeHTML(src: String, sandbox: String? = nil) -> String {
+    private static func iframeHTML(src: String, allow: String = "geolocation", sandbox: String? = nil) -> String {
         let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""
         return """
         <!doctype html>
@@ -1493,7 +1576,7 @@ final class SitePermissionsXCUITests: XCTestCase {
         <body>
           <h1>Permissions fixture</h1>
           <p role="status">ready</p>
-          <iframe src="\(src)" allow="geolocation"\(sandboxAttribute)></iframe>
+          <iframe src="\(src)" allow="\(allow)"\(sandboxAttribute)></iframe>
         </body>
         </html>
         """
@@ -1514,6 +1597,53 @@ final class SitePermissionsXCUITests: XCTestCase {
               + position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4),
             error => result.textContent = 'Frame result: error ' + error.code,
             {maximumAge: 0});
+        }
+      </script>
+    </body>
+    </html>
+    """
+
+    /// A script-created iframe stays on about:blank: it shares this page's origin but has no URL of its own.
+    private static let blankFrameHTML = """
+    <!doctype html>
+    <html lang="en">
+    <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Permissions fixture</title></head>
+    <body>
+      <h1>Permissions fixture</h1>
+      <p role="status">ready</p>
+      <button onclick="requestFrameLocation()">Frame location</button>
+      <p id="frameResult" role="status">Frame result: ready</p>
+      <script>
+        const blankFrame = document.body.appendChild(document.createElement('iframe'));
+        function requestFrameLocation() {
+          const result = document.getElementById('frameResult');
+          result.textContent = 'Frame result: pending';
+          blankFrame.contentWindow.navigator.geolocation.getCurrentPosition(
+            () => result.textContent = 'Frame result: success',
+            error => result.textContent = 'Frame result: error ' + error.code,
+            {maximumAge: 0});
+        }
+      </script>
+    </body>
+    </html>
+    """
+
+    private static let cameraFrameHTML = """
+    <!doctype html>
+    <html lang="en">
+    <body>
+      <button onclick="requestFrameCamera()">Frame camera</button>
+      <p id="frameResult" role="status">Frame result: ready</p>
+      <script>
+        async function requestFrameCamera() {
+          const result = document.getElementById('frameResult');
+          result.textContent = 'Frame result: pending';
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({video: true});
+            result.textContent = 'Frame result: success video=' + stream.getVideoTracks().length;
+          } catch (error) {
+            result.textContent = 'Frame result: ' + error.name;
+          }
         }
       </script>
     </body>

@@ -185,10 +185,10 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
         snapshot.autoresizingMask = [.flexibleWidth]
         imageContainer.addSubview(snapshot)
         gridChromeSnapshot = snapshot
-        applyGridChromePose(isVisible: initiallyVisible, in: imageContainer.bounds)
+        applyGridChromePose(isVisible: initiallyVisible)
     }
 
-    func applyGridChromePose(isVisible: Bool, in _: CGRect) {
+    func applyGridChromePose(isVisible: Bool) {
         gridChromeSnapshot?.alpha = isVisible ? 1 : 0
     }
 
@@ -310,7 +310,6 @@ class TabSwitcherTransition: NSObject, UIViewControllerAnimatedTransitioning {
                         pageColor: UIColor,
                         using transitionContext: UIViewControllerContextTransitioning,
                         mainViewController: MainViewController,
-                        tab: Tab,
                         whenPageReady: (@escaping () -> Void) -> Void) {
         let containerView = transitionContext.containerView
         let collectionView = tabSwitcherViewController.collectionView

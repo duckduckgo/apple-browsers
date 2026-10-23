@@ -210,7 +210,7 @@ class FromWebViewTransition: WebViewTransition {
         }
         animator.startAnimation()
         if cellSnapshot == nil {
-            revealGridChromeAfterAnimationStarts(at: indexPath, cellSize: cellFrame.size, response: response)
+            revealGridChromeAfterAnimationStarts(at: indexPath, response: response)
         }
     }
 
@@ -235,14 +235,14 @@ class FromWebViewTransition: WebViewTransition {
 
     /// Snapshotting the header forces a render pass, so it runs after the card has started moving
     /// rather than delaying the first frame.
-    private func revealGridChromeAfterAnimationStarts(at indexPath: IndexPath, cellSize: CGSize, response: TimeInterval) {
+    private func revealGridChromeAfterAnimationStarts(at indexPath: IndexPath, response: TimeInterval) {
         guard tabSwitcherSettings.isGridViewEnabled else { return }
         DispatchQueue.main.async {
             guard self.imageContainer.superview != nil,
                   let cell = self.tabSwitcherViewController.collectionView.cellForItem(at: indexPath) as? TabViewGridCell else { return }
             self.prepareGridChromeSnapshot(for: cell, initiallyVisible: false)
             UIView.animate(withDuration: 0.2, delay: response * 0.35, options: [.curveEaseOut]) {
-                self.applyGridChromePose(isVisible: true, in: CGRect(origin: .zero, size: cellSize))
+                self.applyGridChromePose(isVisible: true)
             }
         }
     }
@@ -317,7 +317,6 @@ class ToWebViewTransition: WebViewTransition {
            let preview = tabSwitcherViewController.previewsSource.preview(for: tab) {
             animateCardDismiss(using: transitionContext,
                                mainViewController: mainViewController,
-                               tab: tab,
                                webView: webView,
                                preview: preview,
                                rowIndex: rowIndex,
@@ -376,7 +375,7 @@ class ToWebViewTransition: WebViewTransition {
 
         if isGrid {
             UIView.animate(withDuration: spring.response * 0.45, delay: 0, options: [.curveEaseOut]) {
-                self.applyGridChromePose(isVisible: false, in: CGRect(origin: .zero, size: destination.frame.size))
+                self.applyGridChromePose(isVisible: false)
             }
         }
 
@@ -405,7 +404,6 @@ class ToWebViewTransition: WebViewTransition {
     /// The cell's preview grows back into the page.
     private func animateCardDismiss(using transitionContext: UIViewControllerContextTransitioning,
                                     mainViewController: MainViewController,
-                                    tab: Tab,
                                     webView: WKWebView,
                                     preview: UIImage,
                                     rowIndex: Int,
@@ -437,7 +435,6 @@ class ToWebViewTransition: WebViewTransition {
                        pageColor: statusAreaColor,
                        using: transitionContext,
                        mainViewController: mainViewController,
-                       tab: tab,
                        whenPageReady: { TabSwitcherTransition.whenRendered(webView, $0) })
     }
 

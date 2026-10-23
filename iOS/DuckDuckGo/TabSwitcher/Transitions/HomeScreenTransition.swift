@@ -203,9 +203,7 @@ class FromHomeScreenTransition: HomeScreenTransition {
 
             if self.tabSwitcherSettings.isGridViewEnabled {
                 UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.55) {
-                    self.applyGridChromePose(
-                        isVisible: true,
-                        in: CGRect(origin: .zero, size: self.tabSwitcherCellFrame(for: layoutAttr).size))
+                    self.applyGridChromePose(isVisible: true)
                 }
             }
 
@@ -361,14 +359,7 @@ class ToHomeScreenTransition: HomeScreenTransition {
 
             if self.tabSwitcherSettings.isGridViewEnabled {
                 UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.55) {
-                    let homeScreenFrame = homeScreen.view.convert(homeScreen.rootContainerView.frame, to: nil)
-                    let destinationFrame = isFloating
-                        ? homeScreenFrame
-                        : self.adjustFrame(homeScreenFrame,
-                                           forAddressBarPosition: mainViewController.appSettings.currentAddressBarPosition,
-                                           byHeight: -mainViewController.omniBar.barView.expectedHeight)
-                    self.applyGridChromePose(isVisible: false,
-                                             in: CGRect(origin: .zero, size: destinationFrame.size))
+                    self.applyGridChromePose(isVisible: false)
                 }
             }
 
@@ -430,7 +421,6 @@ class ToHomeScreenTransition: HomeScreenTransition {
                        pageColor: pageColor,
                        using: transitionContext,
                        mainViewController: mainViewController,
-                       tab: tab,
                        whenPageReady: { $0() })
         return true
     }

@@ -307,9 +307,7 @@ final class TabSwitcherSwipeUpTransition: NSObject {
         let configuration = WKSnapshotConfiguration()
         configuration.rect = rect
         // Grid previews are capped at a column's width; the returning card needs native screen detail.
-        configuration.snapshotWidth = NSNumber(value: WebViewPreviewSnapshotGeometry.snapshotWidth(for: rect,
-                                                                                                   windowSize: screenBounds.size,
-                                                                                                   isFullScreen: true))
+        configuration.snapshotWidth = NSNumber(value: rect.width)
         configuration.afterScreenUpdates = true
         webView.takeSnapshot(with: configuration) { [weak self] image, _ in
             if let self, self.isReturning == isReturning,

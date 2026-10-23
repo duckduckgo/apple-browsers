@@ -244,14 +244,19 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
         var draftsToRemove = [HistoryEntry]()
         for (url, draft) in drafts {
+            // Burned during the save: an entry browsing created since must not get the burned imported visits.
+            if isRemoved(url) {
+                if historyDictionary[url]?.identifier != draft.identifier {
+                    draftsToRemove.append(draft)
+                }
+                continue
+            }
+
             let visitIDs = storedVisitIDs[draft.identifier] ?? []
             guard let entry = historyDictionary[url] else {
-                // A draft of an entry that was burned during the save would bring its burned visits back.
-                if newURLs.contains(url) && !isRemoved(url) {
+                if newURLs.contains(url) {
                     updateVisitIdentifiers(visitIDs, in: draft)
                     historyDictionary[url] = draft
-                } else if newURLs.contains(url) {
-                    draftsToRemove.append(draft)
                 }
                 continue
             }
@@ -508,12 +513,14 @@ final public class HistoryCoordinator: HistoryCoordinating {
     @MainActor
     private func removeEntries(_ entries: some Sequence<HistoryEntry>, completionHandler: (@MainActor (Result<Void, Error>) -> Void)? = nil) {
         // Remove from the local memory
+        var removedURLs = Set<URL>()
         entries.forEach { entry in
             historyDictionary?.removeValue(forKey: entry.url)
+            removedURLs.insert(entry.url)
         }
 
         // Remove from the storage after any import that could recreate these entries.
-        let importTasks = markPendingImportsChanged()
+        let importTasks = markPendingImportsChanged(removingURLsWhere: removedURLs.contains)
         Task {
             await waitFor(importTasks)
             do {

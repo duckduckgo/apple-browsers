@@ -355,9 +355,7 @@ final class AIChatContextualSheetCoordinator {
         startObservingContextUpdates()
         let isCollectingPageContext: Bool
         if attachingPage {
-            if sessionState.showsSuggestionsStartSurface {
-                sessionState.beginLoadingSuggestions()
-            }
+            sessionState.beginLoadingSuggestions()
             requestManualPageContextAttach()
             isCollectingPageContext = true
         } else {
@@ -402,9 +400,7 @@ final class AIChatContextualSheetCoordinator {
         } else {
             // "Ask About Page" is an explicit attach request, so the page attaches outright rather than
             // going down the signals-only path an auto-collect would take with auto-attach off.
-            if sessionState.showsSuggestionsStartSurface {
-                sessionState.beginLoadingSuggestions()
-            }
+            sessionState.beginLoadingSuggestions()
             requestManualPageContextAttach()
         }
 
@@ -629,9 +625,7 @@ final class AIChatContextualSheetCoordinator {
             pageContextHandler.reportAttachabilityMeasurement(trigger: .navigation)
             return false
         } else if currentPageURL != nil, sessionState.shouldTriggerAutoCollect(for: currentPageURL) {
-            if sessionState.showsSuggestionsStartSurface {
-                sessionState.beginLoadingSuggestions()
-            }
+            sessionState.beginLoadingSuggestions()
             sessionState.beginAutomaticAttach()
             let didTrigger = pageContextHandler.triggerContextCollection(trigger: .auto)
             if !didTrigger {
@@ -762,9 +756,7 @@ final class AIChatContextualSheetCoordinator {
         sessionState.notifyPageChanged()
 
         if sessionState.shouldTriggerAutoCollect() {
-            if sessionState.showsSuggestionsStartSurface {
-                sessionState.beginLoadingSuggestions()
-            }
+            sessionState.beginLoadingSuggestions()
             sessionState.beginAutomaticAttach()
             let didTrigger = pageContextHandler.triggerContextCollection(trigger: .navigation)
             if !didTrigger {
@@ -792,8 +784,7 @@ final class AIChatContextualSheetCoordinator {
     }
 
     private func shouldCollectSignalsOnly(forColdRestore: Bool = false) -> Bool {
-        featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
-            && (forColdRestore || !sessionState.hasActiveChat)
+        (forColdRestore || !sessionState.hasActiveChat)
             && !sessionState.shouldAutoCollectContext
             && !sessionState.shouldSuspendSuggestionsRefresh
     }
@@ -1136,14 +1127,6 @@ private extension AIChatContextualSheetCoordinator {
                 guard let self else { return nil }
                 guard reason == .userAction else { return nil }
 
-                guard self.featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
-                    self.sessionState.beginManualAttach(fromFrontend: true)
-                    if !self.pageContextHandler.triggerContextCollection(trigger: .userRequest) {
-                        self.sessionState.cancelManualAttach()
-                    }
-                    return nil
-                }
-
                 if let cached = self.sessionState.latestContext?.contextData,
                    cached.attached != false, cached.hasAttachedPage {
                     return cached
@@ -1415,7 +1398,6 @@ extension AIChatContextualSheetCoordinator: AIChatContextualSheetViewControllerD
     }
 
     func aiChatContextualSheetViewControllerAttachContextForSuggestion(_ viewController: AIChatContextualSheetViewController) async {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return }
         if case .attached = sessionState.chipState { return }
         guard let context = await collectFreshContextAndWait(timeout: Self.contextualContextCollectionTimeout) else { return }
         guard isSheetPresented else { return }

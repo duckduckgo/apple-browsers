@@ -28,6 +28,31 @@ import WebExtensions
 
 class TabTests: XCTestCase {
 
+    func testRecentSearchSurvivesResultNavigationButIsNotArchived() throws {
+        let tab = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duckduckgo.com/?q=walking%20shoes"))))
+        XCTAssertEqual(tab.recentSearchQuery, "walking shoes")
+        tab.link = Link(title: "Review", url: try XCTUnwrap(URL(string: "https://example.com/review")))
+        XCTAssertEqual(tab.recentSearchQuery, "walking shoes")
+
+        let data = try NSKeyedArchiver.archivedData(withRootObject: tab, requiringSecureCoding: false)
+        let restored = try XCTUnwrap(NSKeyedUnarchiver.unarchiveTopLevelObjectWithData(data) as? Tab)
+        XCTAssertNil(restored.recentSearchQuery)
+        tab.link = nil
+        XCTAssertNil(tab.recentSearchQuery)
+    }
+
+    func testOnlyDuckDuckGoSearchUpdatesRecentSearch() throws {
+        let tab = Tab(link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duckduckgo.com/?q=first"))))
+        for address in ["https://example.com/?q=private", "https://duck.ai/?q=prompt",
+                        "https://duckduckgo.com/?q=prompt&ia=chat", "https://duckduckgo.com/?q=%21ai%20prompt"] {
+            tab.link = Link(title: nil, url: try XCTUnwrap(URL(string: address)))
+            XCTAssertEqual(tab.recentSearchQuery, "first", address)
+            XCTAssertNil(Tab(link: tab.link).recentSearchQuery, address)
+        }
+        tab.link = Link(title: nil, url: try XCTUnwrap(URL(string: "https://duckduckgo.com/?q=second")))
+        XCTAssertEqual(tab.recentSearchQuery, "second")
+    }
+
     func testNativeRoutingPreservesExplicitWebDestinations() throws {
         let webURLs = [
             "https://duck.ai/?chatID=existing", "https://duck.ai/?settings=open", "https://duck.ai/?sidebar=open",

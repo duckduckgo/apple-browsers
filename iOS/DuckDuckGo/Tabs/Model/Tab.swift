@@ -87,10 +87,15 @@ public class Tab: NSObject, NSCoding {
     /// Remembers input focus across tab switches for this page; deliberately not persisted.
     var wasInputFocusedBeforeTabSwitch = false
 
+    private(set) var recentSearchQuery: String?
+
     var link: Link? {
         didSet {
-            if link != nil {
+            if let link {
                 wasInputFocusedBeforeTabSwitch = false
+                if let query = Self.searchQuery(from: link.url) { recentSearchQuery = query }
+            } else {
+                recentSearchQuery = nil
             }
             notifyObservers()
         }
@@ -213,6 +218,7 @@ public class Tab: NSObject, NSCoding {
                 aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
+        self.recentSearchQuery = link.flatMap { Self.searchQuery(from: $0.url) }
         self.viewed = viewed
         self.isDesktop = desktop
         self.lastViewedDate = lastViewedDate
@@ -225,6 +231,12 @@ public class Tab: NSObject, NSCoding {
         self.unifiedInputState = unifiedInputState
         self.duckAIEntrySource = duckAIEntrySource
         self.aichatDebugSettings = aichatDebugSettings
+    }
+
+    private static func searchQuery(from url: URL) -> String? {
+        guard !url.isDuckAIURL, let query = url.searchQuery else { return nil }
+        let normalized = query.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        return normalized.isEmpty ? nil : String(normalized.prefix(100))
     }
 
     public convenience required init?(coder decoder: NSCoder) {

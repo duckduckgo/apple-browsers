@@ -48,6 +48,18 @@ import Testing
         #expect(generated == parsed)
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabRequestIncludesBoundedRecentSearchAlongsideResultPage() {
+        let tab = OpenTabMetadata(id: "0", title: "A shoe review", host: "example.com",
+                                  recentSearchQuery: "walking shoes " + String(repeating: "x", count: 200))
+        let turn = OpenTabSuggestions.turn(tabs: [tab], locale: "en")
+        #expect(tab.recentSearchQuery?.count == 100)
+        #expect(turn.input.contains("0 | A shoe review | example.com | Recent search: walking shoes"))
+        #expect(!turn.input.contains(String(repeating: "x", count: 101)))
+        #expect(turn.instructions.contains("relevant follow-up to that search"))
+    }
+
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
                                     content: String(repeating: "Ducks are waterfowl. ", count: 400), language: "en")
 

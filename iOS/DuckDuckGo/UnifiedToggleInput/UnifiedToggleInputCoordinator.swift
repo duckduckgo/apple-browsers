@@ -117,7 +117,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         freshSuggestionsVariant = variant
         guard !freshSuggestionsCandidates.isEmpty else { return }
         let metadata = freshSuggestionsCandidates.enumerated().map {
-            OpenTabMetadata(id: String($0.offset), title: $0.element.title, host: $0.element.url.host ?? "")
+            OpenTabMetadata(id: String($0.offset), title: $0.element.title, host: $0.element.url.host ?? "",
+                            recentSearchQuery: $0.element.recentSearchQuery)
         }
         freshSuggestionsCachedState = .loading
         freshSuggestionsState = .loading

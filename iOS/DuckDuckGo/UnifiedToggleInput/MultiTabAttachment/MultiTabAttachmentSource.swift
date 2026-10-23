@@ -26,12 +26,14 @@ struct MultiTabAttachmentCandidate: Equatable {
     let title: String
     let url: URL
     let isCurrentTab: Bool
+    let recentSearchQuery: String?
 
-    init(tabId: TabUID, title: String, url: URL, isCurrentTab: Bool = false) {
+    init(tabId: TabUID, title: String, url: URL, isCurrentTab: Bool = false, recentSearchQuery: String? = nil) {
         self.tabId = tabId
         self.title = title
         self.url = url
         self.isCurrentTab = isCurrentTab
+        self.recentSearchQuery = recentSearchQuery
     }
 }
 
@@ -63,7 +65,7 @@ struct MultiTabAttachmentSource {
                       !AIChatTabMetadata.shouldExcludeFromTabPicker(link.url),
                       seen.insert(tab.uid).inserted else { return nil }
                 return MultiTabAttachmentCandidate(tabId: tab.uid, title: link.displayTitle, url: link.url,
-                                                   isCurrentTab: tab.uid == currentTabID)
+                                                   isCurrentTab: tab.uid == currentTabID, recentSearchQuery: tab.recentSearchQuery)
             }
     }
 }

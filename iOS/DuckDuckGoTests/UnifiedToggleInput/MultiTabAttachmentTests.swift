@@ -96,6 +96,18 @@ final class MultiTabAttachmentTests: XCTestCase {
         XCTAssertEqual(fire.candidates().map(\.tabId), ["fire-two", "fire-one"])
     }
 
+    func test_sourceCarriesRecentSearchOnlyWithinItsBrowsingMode() throws {
+        let searchURL = try XCTUnwrap(URL(string: "https://duckduckgo.com/?q=walking%20shoes"))
+        let normal = Tab(uid: "normal", link: Link(title: nil, url: searchURL), fireTab: false)
+        let fire = Tab(uid: "fire", link: Link(title: nil, url: try XCTUnwrap(URL(string: "https://duckduckgo.com/?q=private%20search"))), fireTab: true)
+        normal.link = Link(title: "Review", url: try XCTUnwrap(URL(string: "https://example.com/review")))
+        let source = MultiTabAttachmentSource(currentTabID: "chat", mode: .normal, tabsProvider: { [normal, fire] })
+        let candidate = try XCTUnwrap(source.candidates().first)
+        XCTAssertEqual(source.candidates().count, 1)
+        XCTAssertEqual(candidate.recentSearchQuery, "walking shoes")
+        XCTAssertNotEqual(candidate, MultiTabAttachmentCandidate(tabId: candidate.tabId, title: candidate.title, url: candidate.url))
+    }
+
     func test_sourceFiltersIneligiblePagesAndDeduplicatesIdentity() {
         let page = tab(id: "page")
         let empty = Tab(uid: "empty", fireTab: false)

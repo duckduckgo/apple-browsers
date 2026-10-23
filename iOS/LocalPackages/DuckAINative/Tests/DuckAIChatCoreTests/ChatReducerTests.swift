@@ -25,6 +25,23 @@ import Testing
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
+    func explicitTurnContextPreservesEveryPageInOrderWithoutDuplicatingInitialContext() throws {
+        let second = PageContext(title: "Geese", url: URL(string: "https://example.com/geese"), content: "Geese migrate together.")
+        var state = try Fixture.state(page: Fixture.page)
+        _ = state.apply(.send("Compare birds", context: [.page(Fixture.page), .page(second)], at: Fixture.time(0)))
+        #expect(state.userMessages.first?.parts == [.context(.page(Fixture.page)), .context(.page(second)), .text("Compare birds")])
+        let turn = try Fixture.expectedTurn(for: state)
+        #expect(turn.input.contains("Ducks are waterfowl."))
+        #expect(turn.input.contains("Geese migrate together."))
+        finishReply(.id(2), text: "Both are waterfowl", in: &state)
+        _ = state.apply(.send("Tell me more", at: Fixture.time(3)))
+        #expect(state.userMessages.last?.parts == [.text("Tell me more")])
+        let followUp = try Fixture.expectedTurn(for: state)
+        #expect(!followUp.history.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
     func openingPromptSendsOnceWithContextOnTheFirstMessage() throws {
         var state = try Fixture.state(page: Fixture.page, opening: .prompt("What are ducks?"))
 

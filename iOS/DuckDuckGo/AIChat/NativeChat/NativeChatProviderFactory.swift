@@ -47,6 +47,19 @@ enum NativeChatProviderFactory {
         }
     }
 
+    static func makeSuggestionsProvider(forOpenTabs: Bool) -> any ChatProvider {
+        if forOpenTabs, resolvedModel(for: .suggestedPrompts) == .stub {
+            let reply = """
+            0 | Explain this tab | Explain the main topic of this tab.
+            0 | Find the key points | What are the key points of this tab?
+            0 | Suggest next steps | What should I explore next about this tab?
+            """
+            return StubProvider(configuration: .init(reply: reply, wordsPerSecond: 60,
+                                                     loadTime: .milliseconds(200), readTime: .milliseconds(200)))
+        }
+        return makeProvider(for: .suggestedPrompts)
+    }
+
     static func inputCapabilities(for task: DuckAINativeSettings.LocalTask) -> InputCapabilities {
         switch resolvedModel(for: task) {
         case .automatic, .stub:

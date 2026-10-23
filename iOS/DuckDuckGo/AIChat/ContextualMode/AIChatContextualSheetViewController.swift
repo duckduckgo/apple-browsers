@@ -985,6 +985,11 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
     /// promotes to this sheet first so the web view exists to receive the prompt.
     func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
+        if suggestion.id == "local-retry" {
+            sessionState.beginLoadingSuggestions()
+            sessionState.resolveSuggestionsIfLoading(from: nil)
+            return
+        }
         guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
             abandonAwaitedSubmittedChat()
             return

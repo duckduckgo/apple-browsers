@@ -91,6 +91,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             chipView.onTap = { [weak self] in
                 self?.onActionSelected?(action)
             }
+            chipView.isHidden = loadingView != nil
             stackView.addArrangedSubview(chipView)
         }
     }
@@ -122,6 +123,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             let view = AIChatSuggestionsLoadingView()
             loadingView = view
             stackView.insertArrangedSubview(view, at: 0)
+            chips.forEach { $0.isHidden = true }
         } else {
             let wasLoading = loadingView != nil
             loadingView?.removeFromSuperview()
@@ -129,6 +131,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
             guard wasLoading else { return }
             let views = chips
             views.forEach {
+                $0.isHidden = false
                 $0.alpha = 0
                 $0.transform = UIAccessibility.isReduceMotionEnabled ? .identity : CGAffineTransform(translationX: 0, y: 4)
             }

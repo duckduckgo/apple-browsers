@@ -21,16 +21,21 @@ import Foundation
 
 /// What the app hands the package for one chat. Validated once here; everything downstream trusts it.
 public struct ChatContext: Equatable, Sendable {
-    public let page: PageContext?
+    public let pages: [PageContext]
+    public var page: PageContext? { pages.first }
     public let selections: [Selection]
     public let opening: Opening?
     public let attachments: [Attachment]
 
     public init(page: PageContext?, selections: [Selection], opening: Opening?, attachments: [Attachment] = []) throws(ChatContextError) {
-        if case .request = opening, page == nil, selections.isEmpty {
+        try self.init(pages: page.map { [$0] } ?? [], selections: selections, opening: opening, attachments: attachments)
+    }
+
+    public init(pages: [PageContext], selections: [Selection], opening: Opening?, attachments: [Attachment] = []) throws(ChatContextError) {
+        if case .request = opening, pages.isEmpty, selections.isEmpty {
             throw .requestWithoutSource
         }
-        self.page = page
+        self.pages = pages
         self.selections = selections
         self.opening = opening
         self.attachments = attachments
@@ -42,9 +47,7 @@ public struct ChatContext: Equatable, Sendable {
         if case .request(let request) = opening {
             parts.append(.request(request))
         }
-        if let page {
-            parts.append(.page(page))
-        }
+        parts += pages.map(ContextPart.page)
         parts += selections.map(ContextPart.selection)
         return parts
     }

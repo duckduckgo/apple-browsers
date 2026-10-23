@@ -86,6 +86,8 @@ public final class AIChatSuggestionsLoadingView: UIView {
     // MARK: - Private
 
     private func setupUI() {
+        isAccessibilityElement = true
+        accessibilityLabel = NSLocalizedString("duckai.suggestions.loading", value: "Generating suggestions", comment: "Accessibility label while local suggestions load")
         backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         layer.cornerRadius = Constants.cornerRadius
         layer.borderWidth = Constants.borderWidth

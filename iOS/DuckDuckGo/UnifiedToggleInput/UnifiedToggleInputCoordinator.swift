@@ -19,6 +19,7 @@
 
 import AIChat
 import DuckAIChatCore
+import DuckAILocalTasks
 import BrowserServicesKit
 import Combine
 import Core
@@ -67,10 +68,115 @@ struct SubscriptionState {
     static let free = SubscriptionState(userTier: .free, hasActiveSubscription: false)
 }
 
+enum FreshChatSuggestionsState: Equatable {
+    case hidden
+    case loading
+    case ready([OpenTabSuggestion])
+    case unavailable
+}
+
 // MARK: - Coordinator
 
 @MainActor
 final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
+
+    @Published private(set) var freshSuggestionsState: FreshChatSuggestionsState = .hidden
+    private var freshSuggestionsCachedState: FreshChatSuggestionsState = .hidden
+    private var freshSuggestionsDestinationID: String?
+    private var freshSuggestionsCandidates: [MultiTabAttachmentCandidate] = []
+    private var freshSuggestionsValidity: (@MainActor () -> Bool)?
+    private var freshSuggestionsTask: Task<Void, Never>?
+    private var freshSuggestionsGeneration = UUID()
+    private var preparedSuggestionRequest: MultiTabAttachmentRequest?
+
+    func refreshFreshSuggestions(destinationID: String, isFresh: @escaping @MainActor () -> Bool) {
+        guard DuckAINativeSettings.shared.generatesSuggestedPromptsLocally, isTabAttachmentFeatureAvailable else {
+            hideFreshSuggestions()
+            return
+        }
+        freshSuggestionsValidity = isFresh
+        if freshSuggestionsDestinationID == destinationID {
+            freshSuggestionsState = isFresh() ? freshSuggestionsCachedState : .hidden
+            return
+        }
+        guard isFresh(), let source = tabAttachmentSource else { freshSuggestionsState = .hidden; return }
+        hideFreshSuggestions()
+        freshSuggestionsValidity = isFresh
+        freshSuggestionsDestinationID = destinationID
+        freshSuggestionsCandidates = Array(source.candidates().filter {
+            !$0.isCurrentTab && ["http", "https"].contains($0.url.scheme?.lowercased() ?? "")
+        }.prefix(6))
+        guard !freshSuggestionsCandidates.isEmpty else { return }
+        let metadata = freshSuggestionsCandidates.enumerated().map {
+            OpenTabMetadata(id: String($0.offset), title: $0.element.title, host: $0.element.url.host ?? "")
+        }
+        freshSuggestionsCachedState = .loading
+        freshSuggestionsState = .loading
+        let generation = freshSuggestionsGeneration
+        let provider = NativeChatProviderFactory.makeSuggestionsProvider(forOpenTabs: true)
+        freshSuggestionsTask = Task { [weak self] in
+            let suggestions = await OpenTabSuggestions.generate(tabs: metadata, locale: Locale.current.identifier, provider: provider)
+            guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation else { return }
+            self.freshSuggestionsCachedState = suggestions.isEmpty ? .unavailable : .ready(suggestions)
+            self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? self.freshSuggestionsCachedState : .hidden
+        }
+    }
+
+    func hideFreshSuggestions() {
+        freshSuggestionsGeneration = UUID()
+        freshSuggestionsTask?.cancel()
+        freshSuggestionsTask = nil
+        freshSuggestionsDestinationID = nil
+        freshSuggestionsCandidates = []
+        freshSuggestionsCachedState = .hidden
+        freshSuggestionsState = .hidden
+        freshSuggestionsValidity = nil
+    }
+
+    func retryFreshSuggestions() {
+        guard let destination = freshSuggestionsDestinationID, let isFresh = freshSuggestionsValidity else { return }
+        hideFreshSuggestions()
+        refreshFreshSuggestions(destinationID: destination, isFresh: isFresh)
+    }
+
+    func selectFreshSuggestion(_ suggestion: OpenTabSuggestion) {
+        guard freshSuggestionsValidity?() == true, currentText.isEmpty,
+              case .ready(let suggestions) = freshSuggestionsState, suggestions.contains(suggestion),
+              viewController.currentAttachments.isEmpty, let source = tabAttachmentSource else { return }
+        let generation = freshSuggestionsGeneration
+        let selected = suggestion.sourceIDs.compactMap { Int($0).flatMap { freshSuggestionsCandidates.indices.contains($0) ? freshSuggestionsCandidates[$0] : nil } }
+        guard selected.count == suggestion.sourceIDs.count, !selected.isEmpty,
+              selected.allSatisfy({ source.candidates().contains($0) }) else { retryFreshSuggestions(); return }
+        for candidate in selected {
+            guard attachmentController.setTabAttachment(candidate, isAttached: true, attachmentSource: .recentTabs).isSuccessful else {
+                discardTabAttachments()
+                return
+            }
+        }
+        guard let request = takeTabAttachmentRequest() else { discardTabAttachments(); return }
+        freshSuggestionsState = .loading
+        freshSuggestionsTask = Task { [weak self] in
+            let pages = await request.contexts()
+            guard let self, !Task.isCancelled, self.freshSuggestionsGeneration == generation,
+                  self.freshSuggestionsValidity?() == true, self.currentText.isEmpty,
+                  let source = self.tabAttachmentSource,
+                  selected.allSatisfy({ source.candidates().contains($0) }), pages.count == selected.count,
+                  request.validate(pages).count == selected.count else {
+                request.cancel()
+                if let self, self.freshSuggestionsGeneration == generation {
+                    self.freshSuggestionsCachedState = .unavailable
+                    self.freshSuggestionsState = self.freshSuggestionsValidity?() == true ? .unavailable : .hidden
+                }
+                return
+            }
+            self.preparedSuggestionRequest = MultiTabAttachmentRequest(contexts: { pages }, didConsume: request.didConsume,
+                                                                       cancel: request.cancel, validate: request.validate, didDispatch: request.didDispatch)
+            self.freshSuggestionsCachedState = .hidden
+            self.freshSuggestionsState = .hidden
+            self.submitProgrammatic(text: suggestion.prompt)
+            self.preparedSuggestionRequest = nil
+        }
+    }
 
     weak var nativeSession: ChatSession? {
         didSet { attachmentController?.resetPasteConversation() }
@@ -2347,10 +2453,10 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
 
-        let tabAttachmentRequest = isContextualChatState
+        let tabAttachmentRequest = preparedSuggestionRequest ?? (isContextualChatState
             ? userScript?.attachedTabContextsProvider?()
-            : takeTabAttachmentRequest()
-        if !isContextualChatState, userScript == nil, let tabAttachmentRequest {
+            : takeTabAttachmentRequest())
+        if !isContextualChatState, userScript == nil, nativeSession == nil, let tabAttachmentRequest {
             let prompt = AIChatNativePrompt.queryPrompt(text, autoSubmit: true, toolChoice: tools?.map(\.rawValue),
                                                        attachments: attachments, modelId: configuration.modelId,
                                                        reasoningEffort: configuration.reasoningEffort)

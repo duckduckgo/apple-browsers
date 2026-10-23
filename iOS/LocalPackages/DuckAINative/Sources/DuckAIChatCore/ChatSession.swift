@@ -73,10 +73,10 @@ public final class ChatSession {
         try descriptor.capabilities.validate(attachments: attachments, retainedBytes: retained)
     }
 
-    public func send(_ text: String, attachments: [Attachment] = []) {
+    public func send(_ text: String, attachments: [Attachment] = [], context: [ContextPart]? = nil) {
         do {
             try validateAttachments(attachments)
-            dispatch(.send(text, attachments: attachments, at: now()))
+            dispatch(.send(text, attachments: attachments, context: context, at: now()))
         } catch {
             reject(error as? ChatError ?? .unknown(error.localizedDescription))
         }

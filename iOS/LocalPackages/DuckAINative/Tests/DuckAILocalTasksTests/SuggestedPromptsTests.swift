@@ -25,6 +25,27 @@ import Testing
 
 @Suite struct SuggestedPromptsTests {
 
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func openTabsUseBoundedMetadataAndRejectUnknownDuplicateSources() async {
+        let tabs = (0..<9).map { OpenTabMetadata(id: String($0), title: String(repeating: "t", count: 200), host: "example.com") }
+        let turn = OpenTabSuggestions.turn(tabs: tabs, locale: "en")
+        #expect(!turn.input.contains("6 |"))
+        #expect(!turn.input.contains(String(repeating: "t", count: 101)))
+        #expect(!turn.input.contains("https://"))
+        let raw = """
+        9 | Unknown source | Explain this unknown source.
+        0,0 | Repeated source | Explain these repeated sources.
+        0,1 | Compare these tabs | Compare the topics of these two tabs.
+        1 | Duplicate question | Compare the topics of these two tabs.
+        2 | Explain this tab | Explain the main topic of this tab.
+        """
+        let parsed = OpenTabSuggestions.parse(raw, tabs: tabs)
+        #expect(parsed.map(\.sourceIDs) == [["0", "1"], ["2"]])
+        let generated = await OpenTabSuggestions.generate(tabs: tabs, locale: "en", provider: stub(raw))
+        #expect(generated == parsed)
+    }
+
     private let page = PageSnapshot(title: "Duck", url: URL(string: "https://en.wikipedia.org/wiki/Duck"),
                                     content: String(repeating: "Ducks are waterfowl. ", count: 400), language: "en")
 

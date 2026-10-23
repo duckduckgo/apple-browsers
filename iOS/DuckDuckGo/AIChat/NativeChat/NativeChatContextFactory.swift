@@ -61,12 +61,20 @@ enum NativeChatContextFactory {
               nativeQuery.mode == nil else { return nil }
         let text = promptText(query.query ?? "", attachments: nativeQuery.attachments)
         let images = try decode(nativeQuery.attachments)
-        let page: AIChatPageContextData? = if case .single(let data)? = query.nativePrompt.pageContext { data } else { nil }
+        let pages = pageParts(query.nativePrompt.pageContext)
         let opening: Opening? = (text.isEmpty && images.isEmpty) || !query.autoSend ? nil : .prompt(text)
-        return try? DuckAIChatCore.ChatContext(page: page.map(PageContext.init),
+        return try? DuckAIChatCore.ChatContext(pages: pages,
                                                selections: (query.nativePrompt.selections ?? []).map(DuckAIChatCore.Selection.init),
                                                opening: opening, attachments: images)
     }
+    private static func pageParts(_ context: AIChatPageContextPayload?) -> [PageContext] {
+        switch context {
+        case .single(let page): return [PageContext(page)]
+        case .multiple(let pages): return pages.map(PageContext.init)
+        case nil: return []
+        }
+    }
+
     static func promptText(_ text: String, attachments: AIChatPromptAttachments) -> String {
         ([text] + (attachments.textPasted ?? []).map(\.content)).filter { !$0.isEmpty }.joined(separator: "\n\n")
     }
@@ -91,8 +99,9 @@ enum NativeChatContextFactory {
     }
 
     @MainActor
-    static func send(_ prompt: String, attachments: AIChatPromptAttachments, to session: ChatSession) {
-        do { session.send(promptText(prompt, attachments: attachments), attachments: try decode(attachments)) } catch { session.reject(error as? ChatError ?? .unknown(error.localizedDescription)) }
+    static func send(_ prompt: String, attachments: AIChatPromptAttachments, pages: [AIChatPageContextData]? = nil, to session: ChatSession) {
+        do { session.send(promptText(prompt, attachments: attachments), attachments: try decode(attachments),
+                          context: pages.map { $0.map { .page(PageContext($0)) } }) } catch { session.reject(error as? ChatError ?? .unknown(error.localizedDescription)) }
     }
 
 }

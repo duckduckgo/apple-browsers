@@ -67,10 +67,10 @@ public extension ChatState {
             lastID += 1
             messages.append(.user(UserMessage(id: MessageID(rawValue: lastID), createdAt: at, parts: parts)))
             replyAt = at
-        case .send(let text, let attachments, let at):
+        case .send(let text, let attachments, let turnContext, let at):
             let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
             guard canSend, !text.isEmpty || !attachments.isEmpty else { return [] }
-            let parts = messages.isEmpty ? context.contextParts.map(UserPart.context) : []
+            let parts = (turnContext ?? (messages.isEmpty ? context.contextParts : [])).map(UserPart.context)
             lastID += 1
             messages.append(.user(UserMessage(id: MessageID(rawValue: lastID), createdAt: at, parts: parts + attachments.map(UserPart.attachment) + [.text(text)])))
             replyAt = at

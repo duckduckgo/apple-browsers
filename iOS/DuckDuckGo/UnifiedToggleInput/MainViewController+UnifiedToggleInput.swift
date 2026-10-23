@@ -1429,8 +1429,24 @@ extension MainViewController: UnifiedToggleInputDelegate {
         // Recorded before the branches below, which end the visit on their own terminals.
         recordNewTabPageSessionAction { $0.hitSubmit() }
 
-        if let nativeChat = currentTab?.nativeChat, tabAttachmentRequest == nil {
-            NativeChatContextFactory.send(prompt, attachments: attachments, to: nativeChat.session)
+        if let destination = currentTab, let nativeChat = destination.nativeChat {
+            guard let request = tabAttachmentRequest else {
+                NativeChatContextFactory.send(prompt, attachments: attachments, to: nativeChat.session)
+                return
+            }
+            Task { @MainActor [weak self, weak destination, weak nativeChat] in
+                let pages = await request.contexts()
+                guard let self, let destination, let nativeChat, !Task.isCancelled,
+                      self.currentTab === destination, destination.nativeChat === nativeChat else {
+                    request.cancel()
+                    return
+                }
+                let validated = request.validate(pages)
+                guard !validated.isEmpty, validated.count == pages.count else { request.cancel(); return }
+                NativeChatContextFactory.send(prompt, attachments: attachments, pages: validated, to: nativeChat.session)
+                request.didConsume()
+                request.didDispatch(.init(totalTabCount: validated.count, deliveredAttachmentCount: validated.count))
+            }
             return
         }
 

@@ -192,6 +192,24 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.pixelSurface, .contextualChat)
     }
 
+    func testPreparedNativeTurnKeepsAllSelectedPagesOnExistingSession() throws {
+        let context = try ChatContext(page: nil, selections: [], opening: nil)
+        let session = ChatSession(context: context, provider: StubProvider())
+        let pages = ["first", "second"].map {
+            AIChatPageContextData(title: $0, favicon: [], url: "https://example.com/\($0)", content: "\($0) page content",
+                                  truncated: false, fullContentLength: 20, tabId: $0)
+        }
+        NativeChatContextFactory.send("Compare these", attachments: .none, pages: pages, to: session)
+        guard case .user(let message) = session.state.messages.first else { return XCTFail("Expected one user turn") }
+        let pageParts = message.parts.compactMap { part -> PageContext? in
+            if case .context(.page(let page)) = part { return page }
+            return nil
+        }
+        XCTAssertEqual(pageParts.map(\.title), ["first", "second"])
+        XCTAssertEqual(pageParts.map(\.content), ["first page content", "second page content"])
+        XCTAssertEqual(session.state.messages.count, 1)
+    }
+
     // MARK: - Tab mentions
 
     func testWhenSurfaceChangesBeforeMentionDismissalThenReportsOriginalSurfaceUnlessFeatureWasDisabled() async throws {

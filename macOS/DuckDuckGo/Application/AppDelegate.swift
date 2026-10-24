@@ -1613,9 +1613,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         grammarFeaturesManager.manage()
 
         // Must run before the first web view starts a passkey request
-        if featureFlagger.isFeatureOn(.passkeyRequestCancellation) {
-            WebKitPasskeyRequestCanceller.install()
-        }
+        WebKitPasskeyRequestCanceller.install()
 
         configurationManager.start()
 

@@ -117,9 +117,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
-    /// Cancels WebKit's pending passkey request before WebKit starts the next one
-    case passkeyRequestCancellation
-
     /// App rebranding feature flag
     case appRebranding
 

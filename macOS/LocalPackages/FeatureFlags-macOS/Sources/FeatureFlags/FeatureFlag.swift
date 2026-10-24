@@ -237,12 +237,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215330116840129?focus=true
     case osSupportWarning
 
-    /// Remote kill switch for cancelling WebKit's pending passkey request before WebKit starts the next one.
-    /// WebKit replaces a pending request without cancelling it, and the system passkey agent then rejects every
-    /// later passkey request from the app. Disable via privacy config (`macOSBrowserConfig.passkeyRequestCancellation`).
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219508943990182
-    case passkeyRequestCancellation
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -870,8 +864,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.osSupportWarning), category: .osSupportWarnings)
-        case .passkeyRequestCancellation:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.passkeyRequestCancellation))
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:

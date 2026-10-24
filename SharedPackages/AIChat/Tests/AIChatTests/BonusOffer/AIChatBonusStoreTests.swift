@@ -17,28 +17,42 @@
 //
 
 import Foundation
-import Security
 import Testing
 @testable import AIChat
 
 @Suite("AIChatBonus - Store Tests")
 struct AIChatBonusStoreTests {
-    private let serviceName = (Bundle.main.bundleIdentifier ?? "com.duckduckgo") + ".aichat.bonus-offer.record"
+    private let directoryURL = URL(fileURLWithPath: "/AIChatBonus", isDirectory: true)
+    private var fileURL: URL { directoryURL.appendingPathComponent("record.json") }
 
     private let claimedRecord = AIChatBonusRecordMock.active
 
-    private let keychain = MockAIChatBonusKeychainService()
+    private let fileSystem = MockAIChatBonusFileSystem()
     private let sut: AIChatBonusStore
 
     init() {
-        sut = AIChatBonusStore(keychainService: keychain)
+        sut = AIChatBonusStore(directoryURL: directoryURL, fileSystem: fileSystem)
     }
 
     // MARK: - Read
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check reading with no item returns no record", .timeLimit(.minutes(1)))
-    func readWithNoItemReturnsNil() throws {
+    @Test("Check reading with no file returns no record", .timeLimit(.minutes(1)))
+    func readWithNoFileReturnsNil() throws {
+        // WHEN
+        let result = try sut.read()
+
+        // THEN
+        #expect(result == nil)
+        #expect(fileSystem.operations == [.read(fileURL)])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a missing file reported by POSIX returns no record", .timeLimit(.minutes(1)))
+    func missingFileReportedByPOSIXReturnsNil() throws {
+        // GIVEN
+        fileSystem.readError = POSIXError(.ENOENT)
+
         // WHEN
         let result = try sut.read()
 
@@ -60,34 +74,26 @@ struct AIChatBonusStoreTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check a Keychain failure makes the read throw its status", .timeLimit(.minutes(1)), arguments: [errSecInteractionNotAllowed, errSecNotAvailable, errSecAuthFailed])
-    func keychainFailureMakesReadThrow(_ status: OSStatus) {
+    @Test("Check a read failure other than a missing file makes the read throw", .timeLimit(.minutes(1)), arguments: [
+        NSError(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError),
+        NSError(domain: NSCocoaErrorDomain, code: NSFileReadUnknownError),
+        NSError(domain: NSPOSIXErrorDomain, code: Int(EACCES))
+    ])
+    func readFailureMakesReadThrow(_ error: NSError) {
         // GIVEN
-        keychain.itemMatchingStatus = status
+        fileSystem.readError = error
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.readFailed(status)) {
+        #expect(throws: AIChatBonusStoreError.readFailed(domain: error.domain, code: error.code)) {
             try sut.read()
         }
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check an item that is not data makes the read throw", .timeLimit(.minutes(1)))
-    func itemThatIsNotDataMakesReadThrow() {
+    @Test("Check a file that is not JSON makes the read throw", .timeLimit(.minutes(1)))
+    func fileThatIsNotJSONMakesReadThrow() {
         // GIVEN
-        keychain.itemOverride = "not data" as CFString
-
-        // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.unexpectedItemType) {
-            try sut.read()
-        }
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Check an item that is not JSON makes the read throw", .timeLimit(.minutes(1)))
-    func itemThatIsNotJSONMakesReadThrow() {
-        // GIVEN
-        keychain.storedData = Data("garbage".utf8)
+        fileSystem.files[fileURL] = Data("garbage".utf8)
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.decodingFailed) {
@@ -99,7 +105,7 @@ struct AIChatBonusStoreTests {
     @Test("Check record fields that do not decode make the read throw", .timeLimit(.minutes(1)))
     func recordFieldsThatDoNotDecodeMakeReadThrow() {
         // GIVEN
-        keychain.storedData = Data(#"{"schemaVersion":1,"record":{"dismissed":"yes"}}"#.utf8) // wrong type for `dismissed`, should be `true` or `false`
+        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"dismissed":"yes"}}"#.utf8) // wrong type for `dismissed`, should be `true` or `false`
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.decodingFailed) {
@@ -111,7 +117,7 @@ struct AIChatBonusStoreTests {
     @Test("Check an unknown schema version makes the read throw", .timeLimit(.minutes(1)))
     func unknownSchemaVersionMakesReadThrow() {
         // GIVEN
-        keychain.storedData = Data(#"{"schemaVersion":2,"somethingNew":true}"#.utf8)
+        fileSystem.files[fileURL] = Data(#"{"schemaVersion":2,"somethingNew":true}"#.utf8)
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.unsupportedSchemaVersion(2)) {
@@ -123,7 +129,7 @@ struct AIChatBonusStoreTests {
     @Test("Check a stored record that breaks the invariant makes the read throw", .timeLimit(.minutes(1)))
     func storedRecordThatBreaksTheInvariantMakesReadThrow() {
         // GIVEN
-        keychain.storedData = Data(#"{"schemaVersion":1,"record":{"bonusId":"id","dismissed":false}}"#.utf8)
+        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"bonusId":"id","dismissed":false}}"#.utf8)
 
         // WHEN / THEN
         #expect(throws: AIChatBonusStoreError.invariantViolated) {
@@ -131,40 +137,21 @@ struct AIChatBonusStoreTests {
         }
     }
 
-    @available(iOS 16, macOS 13, *)
-    @Test("Check the read queries the bonus item", .timeLimit(.minutes(1)))
-    func readQueriesTheBonusItem() throws {
-        // WHEN
-        _ = try sut.read()
-
-        // THEN
-        let query = keychain.latestItemMatchingQuery
-        expectBaseQuery(query)
-        #expect(query[kSecReturnData as String] as? Bool == true)
-        #expect(query[kSecMatchLimit as String] as? String == kSecMatchLimitOne as String)
-    }
-
     // MARK: - Write
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check the first write adds the item with its attributes", .timeLimit(.minutes(1)))
-    func firstWriteAddsTheItemWithItsAttributes() throws {
+    @Test("Check a write prepares the directory before writing the file", .timeLimit(.minutes(1)))
+    func writePreparesTheDirectoryBeforeWritingTheFile() throws {
         // WHEN
         try sut.write(claimedRecord)
 
         // THEN
-        #expect(keychain.addCallCount == 1)
-        #expect(keychain.updateCallCount == 0)
-        let attributes = keychain.latestAddAttributes
-        expectBaseQuery(attributes)
-        #expect(attributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
-        #expect(attributes[kSecAttrAccessGroup as String] == nil)
-        #expect(attributes[kSecValueData as String] is Data)
+        #expect(fileSystem.operations == [.prepareDirectory(directoryURL), .write(fileURL)])
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check a write over an existing item updates it in place", .timeLimit(.minutes(1)))
-    func writeOverAnExistingItemUpdatesItInPlace() throws {
+    @Test("Check every write prepares the directory", .timeLimit(.minutes(1)))
+    func everyWritePreparesTheDirectory() throws {
         // GIVEN
         try sut.write(AIChatBonusRecord(dismissed: true))
 
@@ -172,12 +159,26 @@ struct AIChatBonusStoreTests {
         try sut.write(claimedRecord)
 
         // THEN
-        // The second add finds the item and falls back to an update.
-        #expect(keychain.addCallCount == 2)
-        #expect(keychain.updateCallCount == 1)
-        expectBaseQuery(keychain.latestUpdateQuery)
-        #expect(keychain.latestUpdateAttributes[kSecAttrAccessible as String] as? String == kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String)
+        #expect(fileSystem.operations == [
+            .prepareDirectory(directoryURL), .write(fileURL),
+            .prepareDirectory(directoryURL), .write(fileURL)
+        ])
         #expect(try sut.read() == claimedRecord)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a failed directory preparation makes the write throw without writing", .timeLimit(.minutes(1)))
+    func failedDirectoryPreparationMakesWriteThrowWithoutWriting() {
+        // GIVEN
+        let error = NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError)
+        fileSystem.prepareDirectoryError = error
+
+        // WHEN / THEN
+        #expect(throws: AIChatBonusStoreError.excludeFromBackupFailed(domain: error.domain, code: error.code)) {
+            try sut.write(claimedRecord)
+        }
+        #expect(fileSystem.operations == [.prepareDirectory(directoryURL)])
+        #expect(fileSystem.files.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -187,37 +188,24 @@ struct AIChatBonusStoreTests {
         try sut.write(claimedRecord)
 
         // THEN
-        let data = try #require(keychain.storedData)
+        let data = try #require(fileSystem.files[fileURL])
         let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
         #expect(json["schemaVersion"] as? Int == 1)
         #expect(json["record"] is [String: Any])
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check a failed update makes the write throw its status", .timeLimit(.minutes(1)))
-    func failedUpdateMakesWriteThrow() {
+    @Test("Check a failed write makes the write throw", .timeLimit(.minutes(1)))
+    func failedWriteMakesWriteThrow() throws {
         // GIVEN
-        keychain.storedData = Data()
-        keychain.updateStatuses = [errSecInteractionNotAllowed]
+        let error = NSError(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)
+        fileSystem.writeError = error
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.writeFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.writeFailed(domain: error.domain, code: error.code)) {
             try sut.write(claimedRecord)
         }
-        #expect(keychain.addCallCount == 1)
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Check a failed add makes the write throw its status", .timeLimit(.minutes(1)))
-    func failedAddMakesWriteThrow() throws {
-        // GIVEN
-        keychain.addStatus = errSecNotAvailable
-
-        // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.writeFailed(errSecNotAvailable)) {
-            try sut.write(claimedRecord)
-        }
-        #expect(try sut.read() == nil)
+        #expect(fileSystem.files.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -227,8 +215,7 @@ struct AIChatBonusStoreTests {
         #expect(throws: AIChatBonusStoreError.invariantViolated) {
             try sut.write(AIChatBonusRecord(bonusId: "id"))
         }
-        #expect(keychain.addCallCount == 0)
-        #expect(keychain.updateCallCount == 0)
+        #expect(fileSystem.operations.isEmpty)
     }
 
     // MARK: - Delete
@@ -245,12 +232,19 @@ struct AIChatBonusStoreTests {
 
         // THEN
         #expect(try sut.read() == nil)
-        expectBaseQuery(keychain.latestDeleteQuery)
+        #expect(fileSystem.operations.contains(.remove(fileURL)))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check deleting a missing record succeeds", .timeLimit(.minutes(1)))
-    func deletingAMissingRecordSucceeds() {
+    @Test("Check deleting a missing record succeeds", .timeLimit(.minutes(1)), arguments: [
+        CocoaError(.fileNoSuchFile) as Error,
+        CocoaError(.fileReadNoSuchFile) as Error,
+        POSIXError(.ENOENT) as Error
+    ])
+    func deletingAMissingRecordSucceeds(_ error: Error) {
+        // GIVEN
+        fileSystem.removeError = error
+
         // WHEN / THEN
         #expect(throws: Never.self) {
             try sut.delete()
@@ -258,25 +252,16 @@ struct AIChatBonusStoreTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Check a failed delete throws its status", .timeLimit(.minutes(1)))
+    @Test("Check a failed delete throws", .timeLimit(.minutes(1)))
     func failedDeleteThrows() {
         // GIVEN
-        keychain.deleteStatus = errSecInteractionNotAllowed
+        let error = NSError(domain: NSCocoaErrorDomain, code: NSFileWriteNoPermissionError)
+        fileSystem.removeError = error
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.deleteFailed(errSecInteractionNotAllowed)) {
+        #expect(throws: AIChatBonusStoreError.deleteFailed(domain: error.domain, code: error.code)) {
             try sut.delete()
         }
-    }
-
-    // MARK: - Helpers
-
-    func expectBaseQuery(_ query: [String: Any], sourceLocation: SourceLocation = #_sourceLocation) {
-        #expect(query[kSecClass as String] as? String == kSecClassGenericPassword as String, sourceLocation: sourceLocation)
-        #expect(query[kSecAttrService as String] as? String == serviceName, sourceLocation: sourceLocation)
-        #expect(query[kSecAttrAccount as String] as? String == "record", sourceLocation: sourceLocation)
-        #expect(query[kSecAttrSynchronizable as String] as? Bool == false, sourceLocation: sourceLocation)
-        #expect(query[kSecUseDataProtectionKeychain as String] as? Bool == true, sourceLocation: sourceLocation)
     }
 
 }

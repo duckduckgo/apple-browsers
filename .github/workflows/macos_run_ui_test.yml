@@ -119,14 +119,6 @@ jobs:
       if: inputs.os-version != '14'
       run: brew install screenresolution
 
-    - name: Ensure GNU timeout is available
-      shell: bash
-      timeout-minutes: 5
-      run: |
-        if ! command -v gtimeout >/dev/null && ! command -v timeout >/dev/null; then
-          brew install coreutils
-        fi
-
     - name: Change screen resolution
       if: inputs.os-version != '14'
       run: screenresolution set 1920x1080x32@60
@@ -170,24 +162,6 @@ jobs:
         pattern: DuckDuckGo-${{ env.release-type }}-*.app.tar.xz
         path: ${{ github.workspace }}/macOS
 
-    - name: Set cache key hash
-      run: |
-        has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved)
-        if [[ "$has_only_tags" == "true" ]]; then
-          echo "cache_key_hash=${{ hashFiles('macOS/DuckDuckGo-macOS.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}" >> $GITHUB_ENV
-        else
-          echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
-        fi
-
-    - name: Cache SPM
-      if: env.cache_key_hash
-      uses: actions/cache@v5
-      with:
-        path: macOS/DerivedData/SourcePackages
-        key: ${{ runner.os }}-macos-${{ env.cache_key_hash }}
-        restore-keys: |
-          ${{ runner.os }}-macos-
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
       with:
@@ -205,98 +179,16 @@ jobs:
         log stream --debug --info --predicate 'process == "${{ env.app-name }}" OR process == "UI Tests-Runner" OR process == "tests-server" OR (process == "logger" AND eventMessage CONTAINS "[tests-server]")' --style syslog > app-console.log 2>&1 &
         echo $! > log_stream.pid
 
-    - name: Resolve package dependencies
-      id: resolve-packages
-      working-directory: macOS
-      shell: bash
-      timeout-minutes: 30
-      env:
-        RESOLVE_SCHEME: ${{ env.scheme }}
-      run: |
-        max_attempts=5
-        retry_delay=10
-        TIMEOUT_BIN="$(command -v gtimeout || command -v timeout)"
-
-        for attempt in $(seq 1 $max_attempts); do
-          attempt_directory="package-resolution/attempt-${attempt}"
-          mkdir -p "$attempt_directory"
-          echo "Attempt $attempt of $max_attempts"
-          if "$TIMEOUT_BIN" --verbose --kill-after=10s 5m \
-            xcodebuild -resolvePackageDependencies \
-            -scheme "$RESOLVE_SCHEME" \
-            -derivedDataPath DerivedData \
-            2>&1 | tee "$attempt_directory/resolve.log"; then
-            echo "Package resolution succeeded"
-            exit 0
-          else
-            status=$?
-            echo "Package resolution exited with status $status (attempt $attempt)"
-            if [[ $status -eq 130 || $status -eq 143 ]]; then
-              exit "$status"
-            fi
-          fi
-
-          if [[ $attempt -lt $max_attempts ]]; then
-            echo "Package resolution failed (attempt $attempt), retrying in ${retry_delay}s..."
-            sleep $retry_delay
-          fi
-        done
-        echo "Package resolution failed after $max_attempts attempts"
-        exit 1
-
-    - name: Upload package resolution logs
-      if: always() && steps.resolve-packages.outcome != 'skipped'
-      uses: ./.github/actions/upload-artifact-with-retry
+    - name: Download shared UI test bundle
+      uses: actions/download-artifact@v7
       with:
-        name: "package-resolution-${{ inputs.test }}-macos${{ inputs.os-version }}-${{ inputs.user-mode }}${{ env.artifact-suffix }}"
-        path: macOS/package-resolution/
-        retention-days: 7
+        name: DuckDuckGo-ui-tests-${{ inputs.build-type }}-macos${{ inputs.os-version }}-xcode${{ inputs.xcode-version }}
+        path: macOS/test-artifact
 
-    - name: Restore Xcode Compilation Cache
-      if: runner.environment != 'self-hosted'
-      uses: actions/cache/restore@v5
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests
-        restore-keys: |
-          xcode-compilation-cache-ui-tests-
-
-    - name: Build for testing
-      working-directory: macOS
+    - name: Extract test products
       run: |
-        test_plan_args=()
-        if [[ -n "$TEST_PLAN" ]]; then
-          test_plan_args=(-testPlan "$TEST_PLAN")
-        fi
-        set -o pipefail && xcodebuild build-for-testing \
-          -scheme "${{ env.scheme }}" \
-          "${test_plan_args[@]}" \
-          -derivedDataPath DerivedData \
-          -skipPackagePluginValidation \
-          -skipMacroValidation \
-          COMPILATION_CACHE_ENABLE_CACHING=YES \
-          OTHER_CODE_SIGN_FLAGS=--timestamp=none \
-          ${{ env.extra-xcargs }} \
-        | tee xcodebuild.log \
-        | xcbeautify
-
-    - name: Compute Compilation Cache hash
-      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main'
-      id: compilation-cache-hash
-      run: |
-        if [ -d "DerivedData/CompilationCache.noindex" ]; then
-          hash=$(find DerivedData/CompilationCache.noindex -type f \( -name "*.index" -o -name "*.actions" \) 2>/dev/null | sort | xargs cat | shasum -a 256 | cut -d' ' -f1)
-          echo "hash=${hash}" >> $GITHUB_OUTPUT
-        else
-          echo "No compilation cache directory found (Xcode version may not support compilation caching)"
-        fi
-
-    - name: Save Xcode Compilation Cache
-      if: runner.environment != 'self-hosted' && github.ref == 'refs/heads/main' && steps.compilation-cache-hash.outputs.hash
-      uses: actions/cache/save@v5
-      with:
-        path: macOS/DerivedData/CompilationCache.noindex
-        key: xcode-compilation-cache-ui-tests-${{ steps.compilation-cache-hash.outputs.hash }}
+        mkdir -p DerivedData
+        tar -xzf test-artifact/ui-test-products.tar.gz -C DerivedData
 
     - name: Extract and Copy app to DerivedData
       working-directory: macOS

@@ -47,6 +47,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAllNonRemovedBrokers() throws -> [DataBroker]
     func fetchAllBrokers() throws -> [DataBroker]
     func fetchAllBrokerResources() throws -> [BrokerResource]
+    func resetBrokerVersionsAndETags() throws
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
     func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
@@ -224,6 +225,10 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
 
         return try self.providers.database.fetchAllBrokers().map(mapper.mapToResource(_:))
+    }
+
+    public func resetBrokerVersionsAndETags() throws {
+        try self.providers.database.resetBrokerVersionsAndETags()
     }
 
     public func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker] {

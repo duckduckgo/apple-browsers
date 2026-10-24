@@ -1327,5 +1327,29 @@
             },
             "channel"
         ]
+    },
+    "m_mac_dbp_bundle_verification_failure": {
+        "description": "Fired when a downloaded PIR broker bundle fails signature, rollback or digest verification, or when another error stops verification. The update is skipped and retried on the next check.",
+        "owners": ["noisysocks", "quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "description": "Why verification failed",
+                "type": "string",
+                "enum": ["signature_missing", "signature_invalid", "rollback", "digest_mismatch", "other"]
+            }
+        ]
+    },
+    "m_mac_dbp_bundle_verification_success": {
+        "description": "Fired when a PIR broker update check passes bundle verification, including when the main config hasn't changed. Compare with m_mac_dbp_bundle_verification_failure to see whether verification is working.",
+        "owners": ["noisysocks", "quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

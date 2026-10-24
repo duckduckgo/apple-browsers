@@ -178,6 +178,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates the `debug://` custom URL scheme handler and Debug menu entries for UI test / debug pages.
     case debugURLScheme
 
+    /// Exposes the hovered-link tooltip window identifier for UI tests that explicitly opt in.
+    case hoveredLinkTooltipAccessibilityIdentifier
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
@@ -831,6 +834,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugging:
             Config(source: .disabled)
         case .debugURLScheme:
+            Config(source: .disabled)
+        case .hoveredLinkTooltipAccessibilityIdentifier:
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))

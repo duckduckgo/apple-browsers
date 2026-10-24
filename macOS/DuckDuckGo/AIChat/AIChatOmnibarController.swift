@@ -287,6 +287,12 @@ final class AIChatOmnibarController {
         surface.supportsSubscriptionUpsell && featureFlagger.isFeatureOn(.aiChatOmnibarSubscriptionUpsell)
     }
 
+    /// A free user can only upgrade where the storefront sells a subscription. Subscribers keep
+    /// upgrading, since theirs may have been bought on Stripe.
+    var allowsSubscriptionUpsell: Bool {
+        userTier != .free || subscriptionManager.isSubscriptionPurchaseEligible
+    }
+
     /// Whether the subscription-upsell CTA (tag + dialog primary button) should read "Try for
     /// free" rather than "Upgrade". `SubscriptionManager.isUserEligibleForFreeTrial()` reflects
     /// StoreKit's on-device introductory-offer eligibility (has this Apple ID/device already used
@@ -415,6 +421,7 @@ final class AIChatOmnibarController {
                 requirementsProvider: { [weak self] in self?.chatCapabilityRequirements ?? .plainText }
             ),
             isTrialEligible: { [weak self] in self?.shouldOfferFreeTrial ?? false },
+            allowsSubscriptionUpsell: { [weak self] in self?.allowsSubscriptionUpsell ?? false },
             isFireMode: { [weak self] in self?.isBurner ?? false }
         )
         usageWarningViewModel?.onAction = { [weak self] action in
@@ -1766,7 +1773,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels, allowsSubscriptionUpsell else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {
@@ -1788,6 +1795,7 @@ extension AIChatOmnibarController {
         for effort in pickerReasoningEfforts {
             let requiredTier = requiredTier(for: effort)
             let isGated = requiredTier != nil
+            if isGated && !allowsSubscriptionUpsell { continue }
             // Only the first gated effort heads the section.
             let sectionTitle = isGated && isSubscriptionUpsellEnabled && !titledGatedSection
                 ? AIChatPickerSectionCopy.gatedEffortsHeader(requiredTier: requiredTier, userTier: userTier, isEligibleForFreeTrial: shouldOfferFreeTrial)

@@ -3765,6 +3765,19 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "")
     }
 
+    func test_unifiedToggleInputVCDidTapAIChatShortcut_afterDismissAndRefocusWithEmptyField_forwardsEmpty() {
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.unifiedToggleInputVC(sut.viewController, didChangeText: "foo")
+        sut.deactivateToOmnibar()
+        sut.clearText()
+        sut.activateFromOmnibar(inputMode: .search)
+        sut.onAnimatedDismissToOmnibar = { completion in completion?() }
+
+        sut.unifiedToggleInputVCDidTapAIChatShortcut(sut.viewController)
+
+        XCTAssertEqual(mockDelegate.didRequestAIChatPrefilledText, "")
+    }
+
     func test_unifiedToggleInputVCDidTapAIChatShortcut_afterEditingPrefilledURLToDifferentURL_forwardsEditedURL() {
         // A user-edited URL is submitted as the prompt, not treated as an untouched prefill.
         sut.activateFromOmnibar(prefilledText: "https://privacy-test-pages.site", inputMode: .search)

@@ -2565,8 +2565,9 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             return
         }
         // Untouched prefill (== omnibarPrefilledText) opens Duck.ai with no prompt; typed/edited text is the prompt.
+        // An empty field sends nothing: `currentText` still holds the text scrubbed by `clearForDismiss()`.
         let isUnmodifiedPrefill = omnibarPrefilledText.map { !$0.isEmpty && currentText == $0 } ?? false
-        let prefilledText = isUnmodifiedPrefill ? "" : currentText
+        let prefilledText = isUnmodifiedPrefill || textState == .empty ? "" : currentText
         // Defer to the dismiss completion — its side-effects clobber the in-flight UTI mid-collapse otherwise.
         vc.applyDismissSnapshot(delegate?.unifiedToggleInputDismissSnapshot() ?? .empty)
         onAnimatedDismissToOmnibar?({ [weak self] in

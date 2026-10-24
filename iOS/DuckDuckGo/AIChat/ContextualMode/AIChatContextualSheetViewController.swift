@@ -189,7 +189,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     private lazy var contextualInputViewController = AIChatContextualInputViewController(
         voiceSearchHelper: voiceSearchHelper,
         showsBasicNativeInput: persistentUTIHost == nil,
-        showsWelcomeMessage: !featureFlagger.isFeatureOn(.contextualSuggestedPrompts),
+        showsWelcomeMessage: false,
         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(
             feature: DuckAiNativeTermsOfServiceFeature(featureFlagger: featureFlagger)
         )
@@ -704,11 +704,7 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     func handleFirstUTISubmission() {
         cancelSuggestionSubmission()
-        if beginWaitingForInitialPromptResponseStateIfNeeded() {
-            return
-        }
-        transitionToWebView()
-        expandToLargeDetent()
+        beginWaitingForInitialPromptResponseState()
     }
 
 }
@@ -996,9 +992,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
         switch action {
         case .askAboutPage:
             pixelHandler.fireQuickActionAskAboutPageSelected()
-            if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
-                pixelHandler.fireAskAboutPageSuggestionSelected(pageType: sessionState.viewState.suggestionsPageType)
-            }
+            pixelHandler.fireAskAboutPageSuggestionSelected(pageType: sessionState.viewState.suggestionsPageType)
             delegate?.aiChatContextualSheetViewControllerDidRequestAttachPage(self)
             if let persistentUTIHost {
                 persistentUTIHost.activateInput()
@@ -1028,10 +1022,6 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     /// Attaches context, waits for the frontend, then submits. Also used by the floating input, which
     /// promotes to this sheet first so the web view exists to receive the prompt.
     func submitSuggestion(_ suggestion: ContextualSuggestedPrompt) {
-        guard featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else {
-            abandonAwaitedSubmittedChat()
-            return
-        }
         // Promotion submits while this sheet is still presenting, and delivery bails on a gate that only
         // opens once it appears — so hold it until then. Not while dismissing: that submission belongs to
         // a surface the user has left, and would otherwise resurface on the next presentation.
@@ -1417,7 +1407,7 @@ private extension AIChatContextualSheetViewController {
             Logger.aiChat.debug("[TermsOfService] Contextual prompt sent without Ask: acceptance not recorded, termsAccepted=false")
             termsAccepted = false
         }
-        beginWaitingForInitialPromptResponseStateIfNeeded()
+        beginWaitingForInitialPromptResponseState()
         delegate?.aiChatContextualSheetViewController(self, didSubmitPrompt: prompt, termsAccepted: termsAccepted)
     }
 
@@ -1439,14 +1429,9 @@ private extension AIChatContextualSheetViewController {
         revealInitialPromptWebViewIfNeeded()
     }
 
-    @discardableResult
-    func beginWaitingForInitialPromptResponseStateIfNeeded() -> Bool {
-        // A sheet opened onto a submitted chat always waits, whatever the flag says: its reveal is what brings
-        // the input in alongside the chat, and it carries the fallback that guarantees the reveal happens.
-        guard opensOntoSubmittedChat || featureFlagger.isFeatureOn(.contextualSuggestedPrompts) else { return false }
+    func beginWaitingForInitialPromptResponseState() {
         isWaitingForInitialPromptResponseState = true
         scheduleInitialPromptRevealFallback()
-        return true
     }
 
     func cancelWaitingForInitialPromptResponseState() {
@@ -1514,26 +1499,22 @@ private extension AIChatContextualSheetViewController {
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.contentView.addSubview(leftButtonStack)
         leadingButtons.forEach(leftButtonStack.addArrangedSubview)
-        if featureFlagger.isFeatureOn(.contextualSuggestedPrompts) {
-            let tapControl = makeTitleTapControl()
-            titleTapControl = tapControl
-            headerView.addSubview(tapControl)
-            titleContainer.isUserInteractionEnabled = false
-            tapControl.addSubview(titleContainer)
-            NSLayoutConstraint.activate([
-                titleContainer.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
-                titleContainer.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
-                titleContainer.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
-                tapControl.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
-            ])
-            titleContainer.addArrangedSubview(titleIconView)
-            NSLayoutConstraint.activate([
-                titleIconView.widthAnchor.constraint(equalToConstant: 24),
-                titleIconView.heightAnchor.constraint(equalToConstant: 24),
-            ])
-        } else {
-            headerView.addSubview(titleContainer)
-        }
+        let tapControl = makeTitleTapControl()
+        titleTapControl = tapControl
+        headerView.addSubview(tapControl)
+        titleContainer.isUserInteractionEnabled = false
+        tapControl.addSubview(titleContainer)
+        NSLayoutConstraint.activate([
+            titleContainer.leadingAnchor.constraint(equalTo: tapControl.leadingAnchor, constant: Constants.titleTapHorizontalPadding),
+            titleContainer.trailingAnchor.constraint(equalTo: tapControl.trailingAnchor, constant: -Constants.titleTapHorizontalPadding),
+            titleContainer.centerYAnchor.constraint(equalTo: tapControl.centerYAnchor),
+            tapControl.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
+        ])
+        titleContainer.addArrangedSubview(titleIconView)
+        NSLayoutConstraint.activate([
+            titleIconView.widthAnchor.constraint(equalToConstant: 24),
+            titleIconView.heightAnchor.constraint(equalToConstant: 24),
+        ])
         titleContainer.addArrangedSubview(titleLabel)
 
         headerView.addSubview(rightButtonContainer)

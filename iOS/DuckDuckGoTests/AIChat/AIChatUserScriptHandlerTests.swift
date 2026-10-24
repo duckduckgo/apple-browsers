@@ -593,6 +593,32 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
         XCTAssertEqual(configValues?.supportsAIChatContextualMode, true)
+        XCTAssertEqual(configValues?.supportsSuggestions, true)
+    }
+
+    func testSuggestionsSupportFollowsContextualModeAvailabilityWhileRunning() {
+        aiChatUserScriptHandler.displayMode = .contextual
+
+        for isAvailable in [false, true, false] {
+            mockAIChatContextualModeFeature.isAvailable = isAvailable
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(
+                params: [], message: MockUserScriptMessage(name: "test", body: [:])
+            ) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsSuggestions, isAvailable)
+        }
+    }
+
+    func testFullTabDoesNotSupportContextualSuggestions() {
+        mockAIChatContextualModeFeature.isAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(
+            params: [], message: MockUserScriptMessage(name: "test", body: [:])
+        ) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsSuggestions, false)
     }
 
     func testGetAIChatNativeConfigValuesWithContextualModeFeatureAvailable() {
@@ -605,6 +631,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsAIChatContextualMode, true)
+        XCTAssertEqual(configValues?.supportsSuggestions, true)
     }
 
     func testGetAIChatNativeConfigValuesWithContextualModeFeatureUnavailable() {
@@ -617,6 +644,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsAIChatContextualMode, false)
+        XCTAssertEqual(configValues?.supportsSuggestions, false)
     }
 
     func testGetAIChatNativeHandoffData() {

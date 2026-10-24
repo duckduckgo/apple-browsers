@@ -254,8 +254,8 @@ public class EmailConfirmationJob: Operation, @unchecked Sendable {
                 delegate: webRunner,
                 isFakeBroker: broker.isFakeBroker,
                 executionConfig: jobDependencies.executionConfig,
-                challengePixelDataBroker: broker.url,
-                challengePixelBrokerVersion: broker.version,
+                dataBroker: broker,
+                isChallengeSolverEnabled: jobDependencies.featureFlagger.isChallengeSolverOn,
                 shouldContinueActionHandler: { [weak self] in
                     guard let self = self else { return false }
                     return !self.isCancelled && !Task.isCancelled

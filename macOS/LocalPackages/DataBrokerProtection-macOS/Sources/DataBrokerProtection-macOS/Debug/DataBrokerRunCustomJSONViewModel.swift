@@ -182,6 +182,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var presetsText: String = ""
     @Published var presets: [ProfilePreset] = []
     @Published var usesConfiguredTimeouts = true
+    @Published var hidesWebView = false
 
     var alert: AlertUI?
     var selectedDataBroker: DataBroker?
@@ -318,6 +319,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                 let brokerProfileQueryData = createBrokerProfileQueryData(for: dataBroker)
                 let group = DispatchGroup()
                 let scanTimeout = self.usesConfiguredTimeouts ? self.brokerJobExecutionConfig.scanJobTimeout : nil
+                let showWebView = !self.hidesWebView
 
                 for query in brokerProfileQueryData {
                     group.enter()
@@ -326,17 +328,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                         do {
                             addScanStartedEvent(for: query)
                             let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                                let profileQuery = self?.profileQueryText(for: query.profileQuery) ?? "-"
-                                let summary = self?.actionSummary(stepType: .scan,
-                                                                  actionType: actionType) ?? "-"
-                                let progressText = self?.currentActionText(stepType: .scan,
-                                                                           actionType: actionType,
-                                                                           prefix: kind.rawValue) ?? "-"
-                                self?.addDebugEvent(kind: kind,
-                                                    summary: summary,
-                                                    profileQueryLabel: profileQuery,
-                                                    details: details,
-                                                    progressText: progressText)
+                                self?.addRunnerDebugEvent(
+                                    kind: kind,
+                                    actionType: actionType,
+                                    details: details,
+                                    stepType: .scan,
+                                    brokerProfileQueryData: query)
                             }
                             let runner = BrokerProfileScanSubJobWebRunner(
                                 privacyConfig: self.privacyConfigManager,
@@ -352,7 +349,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 shouldRunNextStep: { true }
                             )
                             let extractedProfiles = try await self.withOptionalTimeout(scanTimeout) {
-                                try await runner.scan(showWebView: true) { true }
+                                try await runner.scan(showWebView: showWebView) { true }
                             }
                             let brokerId = DebugHelper.stableId(for: query.dataBroker)
                             let profileQueryId = DebugHelper.stableId(for: query.profileQuery)
@@ -415,6 +412,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         progressText = "Starting opt-out..."
         addOptOutStartedEvent(for: scanResult)
         let optOutTimeout = usesConfiguredTimeouts ? brokerJobExecutionConfig.optOutJobTimeout : nil
+        let showWebView = !hidesWebView
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: dataBroker,
             profileQuery: scanResult.profileQuery,
@@ -427,16 +425,12 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         Task {
             do {
                 let stageCalculator = FakeStageDurationCalculator { [weak self] kind, actionType, details in
-                    let profileQuery = self?.profileQueryText(for: brokerProfileQueryData.profileQuery) ?? "-"
-                    let summary = self?.actionSummary(stepType: .optOut, actionType: actionType) ?? "-"
-                    let progressText = self?.currentActionText(stepType: .optOut,
-                                                               actionType: actionType,
-                                                               prefix: kind.rawValue) ?? "-"
-                    self?.addDebugEvent(kind: kind,
-                                        summary: summary,
-                                        profileQueryLabel: profileQuery,
-                                        details: details,
-                                        progressText: progressText)
+                    self?.addRunnerDebugEvent(
+                        kind: kind,
+                        actionType: actionType,
+                        details: details,
+                        stepType: .optOut,
+                        brokerProfileQueryData: brokerProfileQueryData)
                 }
                 let runner = BrokerProfileOptOutSubJobWebRunner(
                     privacyConfig: self.privacyConfigManager,
@@ -455,7 +449,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
                 try await self.withOptionalTimeout(optOutTimeout) {
                     try await runner.optOut(extractedProfile: scanResult.extractedProfile,
-                                            showWebView: true) { true }
+                                            showWebView: showWebView) { true }
                 }
 
                 if scanResult.dataBroker.requiresEmailConfirmationDuringOptOut() {
@@ -611,6 +605,26 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             self.debugEvents.append(event)
         }
         updateProgress(progressText)
+    }
+
+    func addRunnerDebugEvent(kind: DebugEventKind,
+                             actionType: ActionType?,
+                             details: String,
+                             stepType: StepType,
+                             brokerProfileQueryData: BrokerProfileQueryData) {
+        let broker = brokerProfileQueryData.dataBroker
+        let summary = kind == .challenge
+            ? "\(broker.name) > Challenge"
+            : actionSummary(stepType: stepType, actionType: actionType)
+        let progressText = kind == .challenge
+            ? "Challenge: \(broker.name)"
+            : currentActionText(stepType: stepType, actionType: actionType, prefix: kind.rawValue)
+        addDebugEvent(
+            kind: kind,
+            summary: summary,
+            profileQueryLabel: profileQueryText(for: brokerProfileQueryData.profileQuery),
+            details: details,
+            progressText: progressText)
     }
 
     func addHistoryDebugEvent(summary: String, details: String) {

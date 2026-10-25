@@ -301,6 +301,33 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":0"))
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":1:2"))
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":" + String(repeating: "1", count: 96)))
+        XCTAssertTrue(GeolocationUserScript.isCallbackID(nonce + ":1", ownedBy: nonce))
+        XCTAssertFalse(GeolocationUserScript.isCallbackID(nonce + ":1", ownedBy: String(repeating: "b", count: 32)))
+    }
+
+    func testCallbacksMustBelongToTheRequestingDocument() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = PolicyTestWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        let controller = WKUserContentController()
+        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
+        _ = await script.userContentController(controller, didReceive: registration)
+        let otherDocumentCallback = String(repeating: "c", count: 32) + ":1"
+
+        for kind in ["startWatch", "queryPermission"] {
+            var body = registrationBody()
+            body["kind"] = kind
+            body["requestID"] = otherDocumentCallback
+            body["statusID"] = otherDocumentCallback
+            let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+            _ = await script.userContentController(controller, didReceive: message)
+        }
+
+        XCTAssertEqual(delegate.watchCount, 0)
+        XCTAssertEqual(delegate.permissionQueryCount, 0)
+        XCTAssertFalse(script.send(.granted, toPermissionStatusWithID: otherDocumentCallback))
     }
 
     func testEnabledRegistrationAuthenticatesLaterMessagesAcrossFrameInfoWrappers() async throws {

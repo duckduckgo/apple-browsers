@@ -99,6 +99,42 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
+    func testWhenFocusedContentIsConfiguredBeforeLoadingThenHostedPageIsTransparent() throws {
+        let (configuration, _) = makeConfiguration(withScheduledMessage: false)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
+        XCTAssertFalse(controller.isViewLoaded)
+
+        controller.setFocusedContent(LegacyFocusedNewTabPageContent(isAddressBarAtBottom: false))
+        XCTAssertFalse(controller.isViewLoaded)
+        controller.loadViewIfNeeded()
+
+        let page = try XCTUnwrap(controller.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+        XCTAssertEqual(controller.children.count, 1)
+        XCTAssertTrue(page.parent === controller)
+        XCTAssertTrue(page.view.superview === controller.view)
+        XCTAssertEqual(controller.view.backgroundColor, .clear)
+        XCTAssertEqual(page.view.backgroundColor, .clear)
+    }
+
+    func testWhenLoadedPageChangesFocusedContentThenItRetainsHostAndRestoresBackground() throws {
+        let restingBackground = try XCTUnwrap(hvc.view.backgroundColor)
+        let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+
+        hvc.setFocusedContent(LegacyFocusedNewTabPageContent(isAddressBarAtBottom: true))
+        XCTAssertEqual(hvc.view.backgroundColor, .clear)
+        XCTAssertEqual(page.view.backgroundColor, .clear)
+
+        hvc.setFocusedContent(nil)
+        let restoredBackground = try XCTUnwrap(hvc.view.backgroundColor)
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            XCTAssertEqual(restoredBackground.resolvedColor(with: traits), restingBackground.resolvedColor(with: traits))
+        }
+        XCTAssertEqual(page.view.backgroundColor, .clear)
+        XCTAssertEqual(hvc.children.count, 1)
+        XCTAssertTrue(hvc.children.first === page)
+    }
+
     func testWhenPageResizesThenHostedContentFillsContainerAndInheritsSafeArea() throws {
         let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
         XCTAssertTrue(page.parent === hvc)

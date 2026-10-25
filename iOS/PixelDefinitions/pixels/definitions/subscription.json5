@@ -484,14 +484,14 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "subscriptionPageOrigin"]
     },
     "m_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user taps the Subscribe CTA on the subscription offer page. Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["legacy_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "subscriptionPageOrigin"]
     },
 
     "m_subscribe": {
@@ -499,7 +499,18 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appmenu_ios", "funnel_appsettings_ios", "funnel_onboarding_ios", "funnel_appsettings_ios_winback"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
 
     // Defined in https://app.asana.com/1/137249556945/task/1210959493759232

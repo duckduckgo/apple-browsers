@@ -147,69 +147,74 @@ final public class HistoryStore: HistoryStoring {
     }
 
     public func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        try await save(entries: [entry])[entry.identifier] ?? []
+    }
+
+    public func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]] {
         try await withCheckedThrowingContinuation { continuation in
             context.perform {
-                // Check for existence
-                let fetchRequest = BrowsingHistoryEntryManagedObject.fetchRequest()
-                fetchRequest.returnsObjectsAsFaults = false
-                fetchRequest.fetchLimit = 1
-                fetchRequest.predicate = NSPredicate(format: "identifier == %@", entry.identifier as CVarArg)
-                let fetchedObjects: [BrowsingHistoryEntryManagedObject]
+                let visitMOsByEntry: [UUID: [PageVisitManagedObject]]
                 do {
-                    fetchedObjects = try self.context.fetch(fetchRequest)
+                    let storedEntries = try self.fetchEntries(identifiedBy: entries.map(\.identifier))
+                    visitMOsByEntry = try Dictionary(entries.map { ($0.identifier, try self.insertOrUpdate($0, storedEntry: storedEntries[$0.identifier])) },
+                                                     uniquingKeysWith: { first, second in first + second })
                 } catch {
                     self.eventMapper.fire(.saveFailed, error: error)
+                    self.context.reset()
                     continuation.resume(throwing: error)
                     return
                 }
 
-                assert(fetchedObjects.count <= 1, "More than 1 history entry with the same identifier")
-
-                let historyEntryManagedObject: BrowsingHistoryEntryManagedObject
-                if let fetchedObject = fetchedObjects.first {
-                    // Update existing
-                    fetchedObject.update(with: entry)
-                    historyEntryManagedObject = fetchedObject
-                } else {
-                    // Add new
-                    let insertedObject = NSEntityDescription.insertNewObject(forEntityName: BrowsingHistoryEntryManagedObject.entityName, into: self.context)
-                    guard let historyEntryMO = insertedObject as? BrowsingHistoryEntryManagedObject else {
-                        continuation.resume(throwing: HistoryDatabaseError.saveFailed)
-                        return
-                    }
-                    historyEntryMO.update(with: entry, afterInsertion: true)
-                    historyEntryManagedObject = historyEntryMO
-                }
-
-                let insertionResult = self.insertNewVisits(of: entry,
-                                                           into: historyEntryManagedObject,
-                                                           context: self.context)
-                switch insertionResult {
-                case .failure(let error):
+                do {
+                    try self.context.save()
+                } catch {
                     self.eventMapper.fire(.saveFailed, error: error)
                     self.context.reset()
-                    continuation.resume(throwing: error)
-                case .success(let visitMOs):
-                    do {
-                        try self.context.save()
-                    } catch {
-                        self.eventMapper.fire(.saveFailed, error: error)
-                        self.context.reset()
-                        continuation.resume(throwing: HistoryDatabaseError.saveFailed)
-                        return
-                    }
+                    continuation.resume(throwing: HistoryDatabaseError.saveFailed)
+                    return
+                }
 
-                    let result = visitMOs.compactMap {
-                        if let date = $0.date {
-                            return (id: $0.objectID.uriRepresentation(), date: date)
-                        } else {
-                            return nil
-                        }
+                continuation.resume(returning: visitMOsByEntry.mapValues { visitMOs in
+                    visitMOs.compactMap { visitMO in
+                        visitMO.date.map { (id: visitMO.objectID.uriRepresentation(), date: $0) }
                     }
-                    continuation.resume(returning: result)
+                })
+            }
+        }
+    }
+
+    /// Fetches the stored entries up front: fetching them one by one while inserting would also scan every pending insert.
+    private func fetchEntries(identifiedBy identifiers: [UUID]) throws -> [UUID: BrowsingHistoryEntryManagedObject] {
+        var storedEntries = [UUID: BrowsingHistoryEntryManagedObject]()
+        for chunk in identifiers.chunked(into: 500) {
+            let fetchRequest = BrowsingHistoryEntryManagedObject.fetchRequest()
+            fetchRequest.returnsObjectsAsFaults = false
+            fetchRequest.predicate = NSPredicate(format: "identifier IN %@", chunk)
+            for storedEntry in try context.fetch(fetchRequest) {
+                if let identifier = storedEntry.identifier {
+                    storedEntries[identifier] = storedEntry
                 }
             }
         }
+        return storedEntries
+    }
+
+    /// Stages the entry and its unsaved visits in the context without saving it.
+    private func insertOrUpdate(_ entry: HistoryEntry, storedEntry: BrowsingHistoryEntryManagedObject?) throws -> [PageVisitManagedObject] {
+        let historyEntryManagedObject: BrowsingHistoryEntryManagedObject
+        if let storedEntry {
+            storedEntry.update(with: entry)
+            historyEntryManagedObject = storedEntry
+        } else {
+            let insertedObject = NSEntityDescription.insertNewObject(forEntityName: BrowsingHistoryEntryManagedObject.entityName, into: context)
+            guard let historyEntryMO = insertedObject as? BrowsingHistoryEntryManagedObject else {
+                throw HistoryDatabaseError.saveFailed
+            }
+            historyEntryMO.update(with: entry, afterInsertion: true)
+            historyEntryManagedObject = historyEntryMO
+        }
+
+        return try insertNewVisits(of: entry, into: historyEntryManagedObject, context: context).get()
     }
 
     private func insertNewVisits(of historyEntry: HistoryEntry,

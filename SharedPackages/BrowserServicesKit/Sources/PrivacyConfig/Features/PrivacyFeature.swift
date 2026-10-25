@@ -480,6 +480,22 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
 
+    /// Enables "Add Screenshot" in the Duck.ai omnibar attach menu (address bar and prompt bar).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case omnibarScreenshot
+
+    /// Enables "Add Screenshot" in the New Tab Page omnibar (`screenshotModes` and `omnibar_captureScreenshot`).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case ntpScreenshot
+
+    /// Enables pasting images and copied image or PDF files into the Duck.ai omnibar prompt (address bar and prompt bar).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case pasteImages
+
+    /// Enables pasting images and copied files into the New Tab Page omnibar (`enablePastedAttachments`).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case ntpPasteImages
+
     /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
     case tabAttachmentLimit
 

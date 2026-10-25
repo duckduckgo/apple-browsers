@@ -313,21 +313,27 @@ final class GeolocationUserScriptTests: XCTestCase {
         let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
         let controller = WKUserContentController()
         let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
-        _ = await script.userContentController(controller, didReceive: registration)
+        let registered = await script.userContentController(controller, didReceive: registration)
+        XCTAssertEqual((registered.0 as? [String: Any])?["enabled"] as? Bool, true)
         let otherDocumentCallback = String(repeating: "c", count: 32) + ":1"
+        let ownCallback = String(repeating: "b", count: 32) + ":1"
 
-        for kind in ["startWatch", "queryPermission"] {
-            var body = registrationBody()
-            body["kind"] = kind
-            body["requestID"] = otherDocumentCallback
-            body["statusID"] = otherDocumentCallback
-            let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
-            _ = await script.userContentController(controller, didReceive: message)
+        for callback in [otherDocumentCallback, ownCallback] {
+            for kind in ["startWatch", "queryPermission"] {
+                var body = registrationBody()
+                body["kind"] = kind
+                body["requestID"] = callback
+                body["statusID"] = callback
+                let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+                _ = await script.userContentController(controller, didReceive: message)
+            }
         }
 
-        XCTAssertEqual(delegate.watchCount, 0)
-        XCTAssertEqual(delegate.permissionQueryCount, 0)
+        // Only the requesting document's own IDs reach the delegate.
+        XCTAssertEqual(delegate.watchCount, 1)
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
         XCTAssertFalse(script.send(.granted, toPermissionStatusWithID: otherDocumentCallback))
+        XCTAssertTrue(script.send(.granted, toPermissionStatusWithID: ownCallback))
     }
 
     func testEnabledRegistrationAuthenticatesLaterMessagesAcrossFrameInfoWrappers() async throws {

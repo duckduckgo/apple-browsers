@@ -68,7 +68,7 @@
     // applies on the next navigation. The rest waits for the first check, since most frames
     // never request media.
     const embeddingFrame = (() => {
-        if (!isSameOriginAsTopLevel || globalThis.top === globalThis) {
+        if (hasPolicyIntrospection || !isSameOriginAsTopLevel || globalThis.top === globalThis) {
             return null;
         }
         try {

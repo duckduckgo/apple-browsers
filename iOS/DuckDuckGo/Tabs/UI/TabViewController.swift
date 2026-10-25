@@ -5690,8 +5690,13 @@ extension TabViewController: SecureVaultManagerDelegate {
             completionHandler(useGeneratedPassword)
         }
 
-        let passwordGenerationPromptViewController = PasswordGenerationPromptViewController(generatedPassword: password) { useGeneratedPassword in
-            sendResponse(useGeneratedPassword)
+        let passwordGenerationPromptViewController = PasswordGenerationPromptViewController(generatedPassword: password) { [weak self] selection in
+            self?.autofillPromptKeyboardHandler.stopObserving()
+            if selection == .ownPassword {
+                // The DOM field can still be focused after the prompt suppressed its native keyboard.
+                self?.webView.becomeFirstResponder()
+            }
+            sendResponse(selection == .generatedPassword)
         }
 
         if let presentationController = passwordGenerationPromptViewController.presentationController as? UISheetPresentationController {

@@ -26,6 +26,7 @@ final class PasswordManagementUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        app.dismissAddressBarEditing()
         app.resetPasswords()
     }
 
@@ -68,7 +69,7 @@ final class PasswordManagementUITests: UITestCase {
             app.descendants(matching: .any)["Field_Password"]
                 .replaceText(with: "secure?password", pressReturn: true)
             app.descendants(matching: .any)["Field_Address"]
-                .replaceText(with: "netflix.com/login", pressReturn: true)
+                .replaceText(with: "netflix-streaming.com", pressReturn: true)
 
             let notesField = app.descendants(matching: .any)["Field_Notes"]
             detailsList.swipeUpToReveal(notesField)
@@ -116,7 +117,7 @@ final class PasswordManagementUITests: UITestCase {
             assertVisibleDetails(
                 name: "Netflix Streaming",
                 username: "test3@example.com",
-                address: "netflix.com",
+                address: "netflix-streaming.com",
                 notes: "A subscription site.")
             assertPasswordCanBeRevealed("secure?password")
 

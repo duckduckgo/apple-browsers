@@ -140,7 +140,7 @@ struct PasswordGenerationPromptView: View {
                 .accessibilityIdentifier("Autofill.PasswordGeneration.UseGeneratedPassword")
 
             AutofillViews.TertiaryButton(title: UserText.autofillPasswordGenerationPromptUseOwnPasswordCTA,
-                                         action: viewModel.cancelButtonPressed)
+                                         action: viewModel.useOwnPasswordPressed)
                 .accessibilityIdentifier("Autofill.PasswordGeneration.UseOwnPassword")
         }
     }

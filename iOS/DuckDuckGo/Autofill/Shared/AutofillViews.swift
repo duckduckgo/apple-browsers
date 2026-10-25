@@ -54,6 +54,7 @@ struct AutofillViews {
                             .frame(width: Const.Size.closeButtonSize, height: Const.Size.closeButtonSize)
                     }
                     .buttonStyle(CloseButtonStyle())
+                    .accessibilityIdentifier("Autofill.Prompt.Close")
                     .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
                 }
                 Spacer()

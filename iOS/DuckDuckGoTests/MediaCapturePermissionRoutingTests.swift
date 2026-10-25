@@ -1674,6 +1674,71 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         ])
     }
 
+    func testCancellingTabSwipeRecordsPendingPermissionDialogImpression() async {
+        var events = [SitePermissionsEvent]()
+        let presented = expectation(description: "Dialog presented while off screen")
+        let sut = makeSUT(eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.view.transform = CGAffineTransform(translationX: -390, y: 0)
+        sut.sitePermissionsDialogVisibilityOverride = { [weak sut] in
+            if sut?.view.transform.isIdentity == true { return true }
+            presented.fulfill()
+            return false
+        }
+
+        let parent = UIViewController()
+        let coordinator = MainViewCoordinator(parentController: parent)
+        let collection = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.navigationBarCollectionView = collection
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let tabsModel = TabsModel(tabs: [sut.tabModel], desktop: false)
+        let previewsSource = MockTabPreviewsSource()
+        let appSettings = AppSettingsMock()
+        let swipeCoordinator = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: appSettings,
+            omnibarDependencies: MockOmnibarDependency(),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { $0 === sut.tabModel ? sut : nil },
+            inputStateProvider: { _ in TabInputState() },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+        swipeCoordinator.tabsModel = tabsModel
+        swipeCoordinator.isEnabled = true
+        collection.layoutIfNeeded()
+        swipeCoordinator.currentView = sut.view
+        swipeCoordinator.state = .swiping(.zero, .minus)
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        XCTAssertTrue(events.isEmpty)
+
+        swipeCoordinator.scrollViewDidEndDecelerating(collection)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+
+        XCTAssertTrue(sut.view.transform.isIdentity)
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+        sut.closeSitePermissions()
+        _ = await request.value
+    }
+
     func testPermissionDialogFiresImpressionAndClickEventsAndRoutesSelectedAction() async throws {
         var events = [SitePermissionsEvent]()
         var decisions = [WKPermissionDecision]()

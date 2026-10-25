@@ -37,13 +37,14 @@ import XCTest
 final class SitePermissionsFrameBenchmarkTests: XCTestCase {
 
     private enum Configuration: String, CaseIterable {
-        case noScripts = "No site-permission scripts"
-        case geolocation = "Geolocation only"
-        case mediaCapture = "Media capture only"
-        case allScripts = "All scripts"
-        /// Tab web views already run other scripts in both content worlds of every frame. This control
-        /// measures what those worlds cost, so the difference from it is the site-permission scripts' own cost.
-        case emptyScripts = "Control: empty page and isolated scripts"
+        case noScripts = "No scripts"
+        /// Tab web views already run other scripts in both content worlds of every frame. Every configuration
+        /// below adds these empty scripts too, so its difference from the control is the site-permission
+        /// scripts' own cost.
+        case control = "Control: empty page and isolated scripts"
+        case geolocation = "Control + geolocation"
+        case mediaCapture = "Control + media capture"
+        case allScripts = "Control + all scripts"
     }
 
     private struct Sample {
@@ -61,24 +62,32 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         let runs = environment["SITE_PERMISSIONS_BENCHMARK_RUNS"].flatMap(Int.init) ?? 3
 
         var samples = [Configuration: [Sample]]()
-        // Interleave configurations so that drift during the run affects each one equally.
-        for run in 1...runs {
-            for configuration in Configuration.allCases {
+        let configurations = Configuration.allCases
+        // Interleave configurations and rotate their order each run, so that drift during the run and
+        // whatever the previous web view leaves in the web content process affect each one equally.
+        for run in 0..<runs {
+            for offset in configurations.indices {
+                let configuration = configurations[(run + offset) % configurations.count]
                 let sample = try await measure(configuration, frameCount: frameCount)
                 samples[configuration, default: []].append(sample)
-                print("Run \(run), \(configuration.rawValue): \(sample)")
+                print("Run \(run + 1), \(configuration.rawValue): \(sample)")
             }
         }
 
+        let controlGrowth = median((samples[.control] ?? []).compactMap(\.footprintGrowthBytes))
         var lines = [
             "\(frameCount) blank iframes, median of \(runs) runs",
             "",
-            "| Configuration | Create frames (ms) | Footprint growth (MB) | Per frame (KB) | Native messages | Window messages |",
-            "|---|---:|---:|---:|---|---:|"
+            "| Configuration | Create frames (ms) | Footprint growth (MB) | Over control (MB) | Per frame over control (KB) "
+                + "| Native messages | Window messages |",
+            "|---|---:|---:|---:|---:|---|---:|"
         ]
-        for configuration in Configuration.allCases {
+        for configuration in configurations {
             let configurationSamples = samples[configuration] ?? []
             let growth = median(configurationSamples.compactMap(\.footprintGrowthBytes))
+            let overControl = configuration == .noScripts ? nil : growth.flatMap { growth in
+                controlGrowth.map { growth - $0 }
+            }
             let messages = configurationSamples.first?.nativeMessages ?? [:]
             let messageSummary = messages.isEmpty ? "0" : messages.sorted { $0.key < $1.key }
                 .map { "\($0.key) \($0.value)" }
@@ -87,7 +96,8 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                 configuration.rawValue,
                 format(median(configurationSamples.map(\.creationMilliseconds))),
                 format(growth.map { $0 / 1_048_576 }),
-                format(growth.map { $0 / 1_024 / Double(frameCount) }),
+                format(overControl.map { $0 / 1_048_576 }),
+                format(overControl.map { $0 / 1_024 / Double(frameCount) }),
                 messageSummary,
                 String(configurationSamples.first?.windowMessages ?? 0)
             ]
@@ -113,7 +123,7 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         geolocation.activationHandler = { !$0.securityOrigin.host.isEmpty }
         let scripts: [UserScript]
         switch configuration {
-        case .noScripts:
+        case .noScripts, .control:
             scripts = []
         case .geolocation:
             scripts = [geolocation.policyScript, geolocation]
@@ -122,16 +132,17 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         case .allScripts:
             // The order that tab web views use.
             scripts = [MediaCaptureUserScript(), geolocation.policyScript, geolocation]
-        case .emptyScripts:
-            scripts = []
+        }
+        for script in scripts {
+            counter.install(script, in: webViewConfiguration.userContentController)
+        }
+        if configuration != .noScripts {
+            // After the site-permission scripts, where tab web views install the content-scope scripts.
             for world in [WKContentWorld.page, .defaultClient] {
                 webViewConfiguration.userContentController.addUserScript(
                     WKUserScript(source: "void 0;", injectionTime: .atDocumentStart, forMainFrameOnly: false, in: world)
                 )
             }
-        }
-        for script in scripts {
-            counter.install(script, in: webViewConfiguration.userContentController)
         }
 
         let page = BenchmarkPage(configuration: webViewConfiguration)

@@ -60,7 +60,6 @@ final class SitePermissionsState {
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
     fileprivate var dialogHostingController: UIViewController?
-    /// The dialog's impression waits until the tab is on screen, so dialogs on hidden tabs don't count as shown.
     fileprivate var pendingDialogImpression: SitePermissionsEvent.PermissionType?
     fileprivate var pendingDialogImpressionCancellable: AnyCancellable?
     fileprivate var dialogVisibilityOverride: (() -> Bool)?
@@ -1090,7 +1089,6 @@ extension TabViewController {
         sitePermissionsState.dismissDialog()
         let dialog = SitePermissionDialogView(viewModel: viewModel) { [weak self] action in
             guard let self else { return }
-            // A tapped dialog was seen, so never record a click without its impression.
             if sitePermissionsState.pendingDialogImpression != nil {
                 sitePermissionsState.pendingDialogImpression = nil
                 fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))

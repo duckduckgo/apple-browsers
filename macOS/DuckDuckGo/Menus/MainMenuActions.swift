@@ -1358,6 +1358,29 @@ extension MainViewController {
         }
     }
 
+    @objc func translateSelection(_ sender: Any) {
+        Task { @MainActor in
+            guard let webView = getActiveTabAndIndex()?.tab.webView else { return }
+            do {
+                let selectedText: String? = try await webView.evaluateJavaScript("window.getSelection().toString()")
+                guard let selectedText, !selectedText.isEmpty else {
+                    return
+                }
+                let websiteTLD = tld.eTLD(forStringURL: webView.url?.absoluteString ?? "").map { "." + $0 }
+                let request = AIChatTextTranslationRequest(
+                    text: selectedText,
+                    websiteURL: webView.url,
+                    websiteTitle: webView.title,
+                    websiteTLD: websiteTLD,
+                    sourceLanguage: await webView.currentSelectionLanguage
+                )
+                aiChatTranslator.translate(request)
+            } catch {
+                Logger.aiChat.error("Failed to get selected text from the webView")
+            }
+        }
+    }
+
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
         if isInPopUpWindow {
@@ -2071,6 +2094,9 @@ extension MainViewController: NSMenuItemValidation {
 
         case #selector(MainViewController.summarize(_:)):
             return aiChatMenuConfig.shouldDisplaySummarizationMenuItem
+
+        case #selector(MainViewController.translateSelection(_:)):
+            return aiChatMenuConfig.shouldDisplayTranslationMenuItem
 
         case #selector(MainViewController.toggleDuckAISidebar(_:)):
             let isOpen = aiChatCoordinator.isSidebarOpenForCurrentTab()

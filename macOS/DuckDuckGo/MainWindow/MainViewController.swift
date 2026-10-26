@@ -45,6 +45,7 @@ final class MainViewController: NSViewController {
     let aiChatSummarizer: AIChatSummarizer
     let aiChatTranslator: AIChatTranslator
     let aiChatSelectionContextAttacher: AIChatSelectionContextAttaching
+    let tld: TLD
 
     private(set) lazy var findInPageViewController: FindInPageViewController = {
         let vc = FindInPageViewController.create()
@@ -160,6 +161,7 @@ final class MainViewController: NSViewController {
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.tld = contentBlocking.tld
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator

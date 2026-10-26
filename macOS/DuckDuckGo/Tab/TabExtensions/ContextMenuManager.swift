@@ -436,7 +436,7 @@ private extension ContextMenuManager {
     }
 
     func translateMenuItem() -> NSMenuItem {
-        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self).withImage(DesignSystemImages.Glyphs.Size12.translateAi, visibleOnMacOS27: true)
+        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self, keyEquivalent: [.command, .option, "t"]).withImage(DesignSystemImages.Glyphs.Size12.translateAi, visibleOnMacOS27: true)
     }
 
     func attachToDuckAIMenuItem() -> NSMenuItem {

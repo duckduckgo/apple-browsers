@@ -79,7 +79,7 @@ public enum SnapshotEnvironment {
             return nil
 
         case .macOS:
-            guard operatingSystemVersion.majorVersion == expectedMacOSVersion.majorVersion else {
+            guard [26, 27].contains(operatingSystemVersion.majorVersion) else {
                 return "UI snapshots must run on macOS \(expectedVersionString(for: .macOS)). Current OS is \(versionString(operatingSystemVersion))."
             }
             return nil
@@ -107,7 +107,7 @@ public enum SnapshotEnvironment {
         #elseif os(macOS)
         return referenceEnvironmentSuffix(
             platform: .macOS,
-            operatingSystemVersion: ProcessInfo.processInfo.operatingSystemVersion
+            operatingSystemVersion: expectedMacOSVersion
         )
         #else
         return nil

@@ -360,7 +360,7 @@
          <EnvironmentVariable
             key = "SKIP_SNAPSHOT_TESTS"
             value = "1"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </EnvironmentVariable>
       </EnvironmentVariables>
    </LaunchAction>

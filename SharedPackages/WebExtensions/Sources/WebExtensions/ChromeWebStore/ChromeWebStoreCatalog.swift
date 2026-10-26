@@ -143,6 +143,20 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         }
     }
 
+    public func iconURL(of subfeature: ExtensionsCatalogSubfeature) -> URL? {
+        url(forSetting: "iconUri", of: subfeature)
+    }
+
+    /// The entry's Chrome Web Store page, from its `cwsUri` setting.
+    public func storeURL(of subfeature: ExtensionsCatalogSubfeature) -> URL? {
+        url(forSetting: "cwsUri", of: subfeature)
+    }
+
+    private func url(forSetting key: String, of subfeature: ExtensionsCatalogSubfeature) -> URL? {
+        guard let value = Self.settings(of: subfeature, in: configurationManager.privacyConfig)?[key] as? String else { return nil }
+        return URL(string: value)
+    }
+
     private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {
         guard let settingsJSON = config.settings(for: subfeature),
               let data = settingsJSON.data(using: .utf8) else { return nil }

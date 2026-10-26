@@ -64,6 +64,18 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertNil(catalog.catalogEntry(of: thirdIdentifier))
     }
 
+    func testCatalogReadsAnEntrysIcon() throws {
+        let iconURL = "https://staticcdn.duckduckgo.com/extensions/bitwarden-80.png"
+        let catalog = try makeCatalog(extensions: [
+            "bitwarden": entry(identifier, iconUri: iconURL),
+            "onePassword": entry(otherIdentifier)
+        ])
+
+        XCTAssertEqual(catalog.iconURL(of: .bitwarden), URL(string: iconURL))
+        XCTAssertNil(catalog.iconURL(of: .onePassword))
+        XCTAssertNil(catalog.iconURL(of: .darkReader))
+    }
+
     func testUnknownSubfeaturesAndMalformedEntriesAreIgnored() throws {
         let catalog = try makeCatalog(extensions: [
             "bitwarden": entry(identifier),
@@ -143,9 +155,10 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func entry(_ id: String, state: String = "enabled", order: Int? = nil) -> [String: Any] {
+    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil) -> [String: Any] {
         var settings: [String: Any] = ["id": id, "name": "Extension"]
         settings["order"] = order
+        settings["iconUri"] = iconUri
         return ["state": state, "settings": settings]
     }
 

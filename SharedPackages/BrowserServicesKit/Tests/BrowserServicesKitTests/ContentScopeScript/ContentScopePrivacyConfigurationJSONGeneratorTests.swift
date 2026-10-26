@@ -116,4 +116,81 @@ final class ContentScopePrivacyConfigurationJSONGeneratorTests: XCTestCase {
         let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
         XCTAssertNil(generator.privacyConfiguration)
     }
+
+    // MARK: - Caching
+
+    func testWhenConfigIsUnchangedThenGeneratedJSONIsReusedFromCache() {
+        let manager = makeManager(features: ["cachingTestUnchanged": ["state": "enabled", "exceptions": []]])
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+
+        let first = generator.privacyConfiguration
+        XCTAssertNotNil(first)
+        XCTAssertEqual(ContentScopePrivacyConfigurationJSONGenerator.cache.value(for: manager.currentConfig,
+                                                                                 excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures),
+                       first)
+
+        let otherGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        XCTAssertEqual(otherGenerator.privacyConfiguration, first)
+    }
+
+    func testWhenCacheHasEntryForConfigThenGeneratorReturnsItWithoutRegenerating() {
+        let manager = makeManager(features: ["cachingTestSentinel": ["state": "enabled", "exceptions": []]])
+        let sentinel = Data("cached".utf8)
+        ContentScopePrivacyConfigurationJSONGenerator.cache.store(sentinel,
+                                                                  for: manager.currentConfig,
+                                                                  excludedFeatures: ContentScopePrivacyConfigurationJSONGenerator.defaultExcludedFeatures)
+
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        XCTAssertEqual(generator.privacyConfiguration, sentinel)
+    }
+
+    func testWhenConfigChangesThenNewConfigIsGenerated() {
+        let manager = makeManager(features: ["cachingTestBefore": ["state": "enabled", "exceptions": []]])
+        XCTAssertNotNil(generatedFeatures(from: manager)?["cachingTestBefore"])
+
+        manager.currentConfigString = jsonString(from: [
+            "version": 2,
+            "features": ["cachingTestAfter": ["state": "enabled", "exceptions": []]],
+            "unprotectedTemporary": []
+        ])
+
+        let outputFeatures = generatedFeatures(from: manager)
+        XCTAssertNil(outputFeatures?["cachingTestBefore"])
+        XCTAssertNotNil(outputFeatures?["cachingTestAfter"])
+    }
+
+    func testWhenExcludedFeaturesDifferThenEachGeneratorGetsItsOwnOutput() {
+        let features: [String: Any] = [
+            "autoconsent": ["state": "enabled", "exceptions": []],
+            "cachingTestExclusions": ["state": "enabled", "exceptions": []]
+        ]
+        let manager = makeManager(features: features)
+
+        let defaultGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        let customGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(),
+                                                                            privacyConfigurationManager: manager,
+                                                                            excludedFeatures: [PrivacyFeature.eventHub.rawValue])
+
+        let defaultFeatures = defaultGenerator.privacyConfiguration.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["features"] as? [String: Any]
+        let customFeatures = customGenerator.privacyConfiguration.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["features"] as? [String: Any]
+
+        XCTAssertNil(defaultFeatures?["autoconsent"])
+        XCTAssertNotNil(customFeatures?["autoconsent"])
+        XCTAssertNotNil(defaultFeatures?["cachingTestExclusions"])
+        XCTAssertNotNil(customFeatures?["cachingTestExclusions"])
+    }
+
+    func testWhenConfigBecomesValidThenItIsGenerated() {
+        let manager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration())
+        manager.currentConfigString = "not valid json either"
+        let generator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: manager)
+        XCTAssertNil(generator.privacyConfiguration)
+
+        manager.currentConfigString = jsonString(from: [
+            "version": 1,
+            "features": ["cachingTestRecovered": ["state": "enabled", "exceptions": []]],
+            "unprotectedTemporary": []
+        ])
+        XCTAssertNotNil(generatedFeatures(from: manager)?["cachingTestRecovered"])
+    }
 }

@@ -47,11 +47,51 @@ public struct ContentScopePrivacyConfigurationJSONGenerator: CustomisedPrivacyCo
         self.excludedFeatures = excludedFeatures
     }
 
+    /// Every tab builds two content scope scripts, and each used to parse and re-encode the full
+    /// privacy config on the main thread. The output only depends on the raw config and the
+    /// excluded features, so it's computed once per config version and exclusion set.
     public var privacyConfiguration: Data? {
-        guard let config = try? PrivacyConfigurationData(data: privacyConfigurationManager.currentConfig) else { return nil }
+        let currentConfig = privacyConfigurationManager.currentConfig
+        if let cached = Self.cache.value(for: currentConfig, excludedFeatures: excludedFeatures) {
+            return cached
+        }
+
+        guard let config = try? PrivacyConfigurationData(data: currentConfig) else { return nil }
 
         let newConfig = PrivacyConfigurationData(features: config.features, unprotectedTemporary: config.unprotectedTemporary, trackerAllowlist: config.trackerAllowlist, version: config.version)
-        return try? newConfig.toJSONData(excludeFeatures: excludedFeatures)
+        guard let json = try? newConfig.toJSONData(excludeFeatures: excludedFeatures) else { return nil }
+
+        Self.cache.store(json, for: currentConfig, excludedFeatures: excludedFeatures)
+        return json
+    }
+
+    static let cache = GeneratedConfigCache()
+
+}
+
+/// Keeps the latest generated JSON for each exclusion set. A new config replaces the entry, so the
+/// cache holds one entry per distinct exclusion set (a handful per app).
+final class GeneratedConfigCache: @unchecked Sendable {
+
+    private struct Entry {
+        let sourceConfig: Data
+        let json: Data
+    }
+
+    private let lock = NSLock()
+    private var entries: [[String]: Entry] = [:]
+
+    func value(for sourceConfig: Data, excludedFeatures: [String]) -> Data? {
+        lock.lock()
+        defer { lock.unlock() }
+        guard let entry = entries[excludedFeatures], entry.sourceConfig == sourceConfig else { return nil }
+        return entry.json
+    }
+
+    func store(_ json: Data, for sourceConfig: Data, excludedFeatures: [String]) {
+        lock.lock()
+        defer { lock.unlock() }
+        entries[excludedFeatures] = Entry(sourceConfig: sourceConfig, json: json)
     }
 
 }

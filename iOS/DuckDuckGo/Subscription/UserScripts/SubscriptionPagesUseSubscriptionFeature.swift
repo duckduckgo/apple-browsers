@@ -770,12 +770,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 
     func showFeatureInfo(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.log("Show feature info")
         let request: FeatureInfoRequest? = CodableHelper.decode(from: params)
         onShowFeatureInfo?(request?.feature ?? .unknown)
         return nil
     }
 
     func requestCancellation(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.log("Request cancellation")
         onRequestCancellation?()
         return nil
     }

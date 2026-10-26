@@ -89,4 +89,33 @@ struct BrowserUiLockSubfeatureTests {
 
         #expect(spy.lockStates.isEmpty)
     }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("navigation reset unlocks without a message from the new page", .timeLimit(.minutes(1)))
+    func navigationResetUnlocksWithoutNewPageMessage() async throws {
+        let subfeature = BrowserUiLockSubfeature()
+        let spy = DelegateSpy()
+        subfeature.delegate = spy
+        let handler = try #require(subfeature.handler(forMethodNamed: "uiLockChanged"))
+
+        _ = try await handler(["locked": true], WKScriptMessage.mock())
+        subfeature.reset()
+
+        #expect(spy.lockStates == [true, false])
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("the new page can lock again after navigation reset", .timeLimit(.minutes(1)))
+    func newPageCanLockAfterNavigationReset() async throws {
+        let subfeature = BrowserUiLockSubfeature()
+        let spy = DelegateSpy()
+        subfeature.delegate = spy
+        let handler = try #require(subfeature.handler(forMethodNamed: "uiLockChanged"))
+
+        _ = try await handler(["locked": true], WKScriptMessage.mock())
+        subfeature.reset()
+        _ = try await handler(["locked": true], WKScriptMessage.mock())
+
+        #expect(spy.lockStates == [true, false, true])
+    }
 }

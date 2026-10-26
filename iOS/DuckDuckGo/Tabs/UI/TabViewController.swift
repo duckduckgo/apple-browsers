@@ -2670,6 +2670,8 @@ extension TabViewController: WKNavigationDelegate {
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
         userScripts?.selectionFrameScript.reset()
+        // The new page may not run browserUiLock when protections are disabled or it is excepted.
+        userScripts?.browserUiLockSubfeature.reset()
         tabModel.clearPendingSessionRestoration()
 
         if let url = webView.url {

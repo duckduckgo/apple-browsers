@@ -48,6 +48,11 @@ final class BrowserUiLockSubfeature: NSObject, Subfeature {
     }
 
     @MainActor
+    func reset() {
+        delegate?.browserUiLockSubfeature(self, didChangeLocked: false)
+    }
+
+    @MainActor
     private func uiLockChanged(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard original.frameInfo.isMainFrame,
               let payload = params as? [String: Any],

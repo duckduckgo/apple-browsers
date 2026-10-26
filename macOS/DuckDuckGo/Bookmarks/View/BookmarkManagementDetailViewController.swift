@@ -101,15 +101,16 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let syncPromoManager: SyncPromoManaging
     private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting
     private let pixelFiring: (any PixelKitFiring)?
+    private var shouldFireSyncPromoDisplayedPixel = false
+
+    private lazy var syncPromoViewModel = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
+    }, dismissButtonAction: { [weak self] in
+        self?.syncPromoManager.promoDismissed()
+    }, pixelFiring: pixelFiring)
 
     private lazy var syncPromoViewHostingView: NSView = {
-        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
-            self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
-        }, dismissButtonAction: { [weak self] in
-            self?.syncPromoManager.promoDismissed()
-        })
-
-        let headerView = SyncPromoView(viewModel: model,
+        let headerView = SyncPromoView(viewModel: syncPromoViewModel,
                                        layout: .auto(verticalLayoutTopPadding: 0),
                                        autoLayoutWidthThreshold: 525)
 
@@ -312,6 +313,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         subscribeToSelectedSortMode()
         subscribeToFirstResponder()
         subscribeToFaviconCacheUpdates()
+        shouldFireSyncPromoDisplayedPixel = true
         subscribeToSyncPromoState()
         postSyncPromoTriggerWhenTopLevelLoads()
         // reloadData() will be called from BookmarkManagementSidebarViewController → dataSource.$selectedFolders observer → update(selectionState:)
@@ -319,6 +321,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     override func viewWillDisappear() {
+        shouldFireSyncPromoDisplayedPixel = false
         cancellables.removeAll()
     }
 
@@ -978,6 +981,15 @@ extension BookmarkManagementDetailViewController {
 
     private func updatesyncPromoViewHostingVisibility() {
         syncPromoViewHostingView.isHidden = !shouldShowSyncPromo
+        if shouldShowSyncPromo {
+            fireSyncPromoDisplayedPixelIfNeeded()
+        }
+    }
+
+    private func fireSyncPromoDisplayedPixelIfNeeded() {
+        guard shouldFireSyncPromoDisplayedPixel else { return }
+        shouldFireSyncPromoDisplayedPixel = false
+        syncPromoViewModel.promoDisplayed()
     }
 
 }

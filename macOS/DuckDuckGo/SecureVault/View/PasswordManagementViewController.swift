@@ -1443,6 +1443,7 @@ final class PasswordManagementViewController: NSViewController {
         let syncPromoView = SyncPromoView(viewModel: syncPromoViewModel, layout: .vertical)
         let view = NSHostingView(rootView: syncPromoView)
         replaceItemContainerChildView(with: view)
+        syncPromoViewModel.promoDisplayed()
     }
 
     private func createNewSecureVaultItemMenu() -> NSMenu {

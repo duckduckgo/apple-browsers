@@ -55,7 +55,7 @@ private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) 
         NotLocalizedString("import.zip.instructions.safari.bookmarks", value: """
         %d Open %@ **Safari → File → Export Browsing Data to File...**
         %d Choose **Bookmarks** and **Credit Cards**, → **Export** and save the file
-        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        %d Upload the exported ZIP or HTML file to DuckDuckGo
         """, comment: """
         Instructions to import bookmarks and credit cards exported as ZIP from Safari.
         %N$d - step number

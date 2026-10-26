@@ -411,6 +411,76 @@ final class SitePermissionsXCUITests: XCTestCase {
         XCTAssertTrue(element("SitePermissions.Sheet.GoToSystemSettings").exists)
     }
 
+    func testWhenSavedLocationAllowWaitsForSystemAccessThenPermissionStatusFollowsTheSystemAnswer() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        queryLocationPermission()
+        assertResult("permission prompt")
+
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        assertResult("permission granted")
+
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.Geolocation"))
+        tap(app.buttons["Never Allow"])
+        tap(element("SitePermissions.Sheet.Close"))
+        assertResult("permission denied")
+    }
+
+    func testWhenSystemLocationPromptIsDeniedThenPermissionStatusBecomesDenied() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        queryLocationPermission()
+        assertResult("permission prompt")
+
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: false)
+        assertResult("location error 1 1")
+        assertResult("permission denied")
+    }
+
+    func testWhenTabIsSwitchedOrAppIsBackgroundedThenActiveWatchResumesWithoutPrompt() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp()
+        openPermissionPage()
+        tap(app.webViews.buttons["Watch location"])
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("watch success 37.3317,-122.0301")
+
+        // Both returns resume the watch; neither may wait on Core Location or ask again.
+        openNewPermissionTab(fireMode: false)
+        tap(element("Browser.Toolbar.Button.TabSwitcher"))
+        // Both tabs show the fixture, and the switcher lists the original tab first.
+        tap(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Open \"Permissions fixture\" at 127.0.0.1"))
+            .element(boundBy: 0))
+        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
+        assertResult("watch success 51.5007,-0.1246")
+        assertNoPermissionPrompt()
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(springboard.wait(for: .runningForeground, timeout: timeout))
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: timeout))
+        // The watch drops readings from before it resumes. A query reply means the page runs again, so the
+        // resume, queued when the app became active, has happened.
+        queryLocationPermission()
+        assertResult("permission granted")
+        try simulateLocation(latitude: 48.8566, longitude: 2.3522)
+        assertResult("watch success 48.8566,2.3522")
+        assertNoPermissionPrompt()
+    }
+
     func testWhenLocationIsAllowedOnceThenCompletedRequestsAndWatchShareGrantUntilNewDocument() throws {
         try assertLocationAllowOnceLastsUntilNewDocument(fireMode: false)
     }
@@ -1019,6 +1089,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
+            // The app-open keyboard can cover the toolbar, including the Tab Switcher.
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
@@ -1067,7 +1139,7 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func openNewPermissionTab(fireMode: Bool) {
         let tabSwitcher = element("Browser.Toolbar.Button.TabSwitcher")
-        XCTAssertTrue(tabSwitcher.waitForHittable(timeout: timeout))
+        XCTAssertTrue(tabSwitcher.waitForHittable(timeout: timeout), app.debugDescription)
         tabSwitcher.press(forDuration: 0.8)
         tap(app.buttons[fireMode ? "New Fire Tab" : "New Tab"])
         openPermissionPage()
@@ -1149,6 +1221,10 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func request(_ permission: String) {
         tap(app.webViews.buttons["Request \(permission)"])
+    }
+
+    private func queryLocationPermission() {
+        tap(app.webViews.buttons["Query location permission"])
     }
 
     private func assertLocationAllowOnceLastsUntilNewDocument(fireMode: Bool) throws {
@@ -1426,12 +1502,14 @@ final class SitePermissionsXCUITests: XCTestCase {
       <button onclick="requestMedia({video: true, audio: true})">Request camera and microphone</button>
       <button onclick="requestLocation()">Request location</button>
       <button onclick="watchLocation()">Watch location</button>
+      <button onclick="queryLocationPermission()">Query location permission</button>
       <button onclick="document.getElementById('result').textContent = 'reloading'; location.reload()">Reload fixture</button>
       <p id="result" role="status">ready</p>
       <p id="tracks" role="status">tracks video=0 audio=0</p>
       <p id="liveTracks" role="status">live video=0 audio=0</p>
       <p id="locationResult" role="status">location ready</p>
       <p id="watchResult" role="status">watch ready</p>
+      <p id="permissionResult" role="status">permission ready</p>
       <script>
         let requestCount = 0;
         let locationRequestCount = 0;
@@ -1478,6 +1556,12 @@ final class SitePermissionsXCUITests: XCTestCase {
             position => result.textContent = 'watch success ' + coordinates(position),
             error => result.textContent = 'watch error ' + error.code,
             {maximumAge: 0, enableHighAccuracy: true});
+        }
+        async function queryLocationPermission() {
+          const result = document.getElementById('permissionResult');
+          const status = await navigator.permissions.query({name: 'geolocation'});
+          result.textContent = 'permission ' + status.state;
+          status.onchange = () => result.textContent = 'permission ' + status.state;
         }
       </script>
     </body>

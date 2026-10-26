@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import SwiftUI
 import StoreKit
 import Subscription
@@ -46,6 +47,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
+    private let locale: Locale
     private let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
@@ -169,7 +171,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     var isEligibleForCancellationFlow: Bool {
         Self.isEligibleForCancellationFlow(subscription: state.subscriptionInfo,
-                                           isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionCancellationFlow))
+                                           isFeatureEnabled: locale.isEnglishUnitedStates && featureFlagger.isFeatureOn(.subscriptionCancellationFlow))
     }
 
     static func isEligibleForCancellationFlow(subscription: DuckDuckGoSubscription?,
@@ -236,12 +238,14 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         locale: Locale = .current,
          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
+        self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,

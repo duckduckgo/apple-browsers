@@ -39,7 +39,7 @@ struct AIChatScreenRecordingPermissionDialog: ModalView {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(DesignSystemRebrand.isAppRebranded() ? .duckDuckGoResponseQuestion96 : .daxResponse)
+            Image(.duckDuckGoResponseQuestion96)
                 .resizable()
                 .frame(width: 76, height: 76)
 

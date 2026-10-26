@@ -465,7 +465,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         let supportsNativePrompt = supportsNativeChatInput || defaults.supportsNativePrompt || iPadDuckAIControlsFeature.isAvailable
         let fireMode = isFireModeProvider?() ?? false
 
-        let supportsSuggestions = supportsContextualMode && featureFlagger.isFeatureOn(.contextualSuggestedPrompts)
         let supportsNativeUsageWarnings = featureFlagger.isFeatureOn(.utiDuckAIWarnings)
             && devicePlatform.isIphone
             && supportsNativeChatInput
@@ -490,7 +489,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativeStorage: featureFlagger.isFeatureOn(.aiChatNativeStorage) && isNativeStorageBridgeAvailable,
             supportsNativePromptEditing: featureFlagger.isFeatureOn(.nativeAIPromptEditing) && supportsNativeChatInput,
             supportsPromoCards: supportsNativeChatInput,
-            supportsSuggestions: supportsSuggestions,
+            supportsSuggestions: supportsContextualMode,
             supportsNativeUsageWarnings: supportsNativeUsageWarnings,
             supportsBlobSafeDataClearing: true,
             installType: installTypeProvider(),

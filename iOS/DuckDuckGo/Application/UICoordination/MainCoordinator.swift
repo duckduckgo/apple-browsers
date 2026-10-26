@@ -382,13 +382,6 @@ final class MainCoordinator {
 
         guard #available(iOS 18.4, *) else { return }
 
-        let webExtensionsPublisher = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensions)
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-
         let embeddedExtensionPublisher = featureFlagger.updatesPublisher
             .compactMap { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.embeddedExtension)
@@ -420,16 +413,11 @@ final class MainCoordinator {
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
-            featureFlagPublisher: webExtensionsPublisher,
+            featureFlagPublisher: nil,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
-            onFeatureFlagEnabled: { [weak self] in
-                self?.initializeWebExtensions()
-            },
-            onFeatureFlagDisabled: { [weak self] in
-                self?.clearWebExtensionReferences()
-            },
+            onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             },
@@ -441,21 +429,11 @@ final class MainCoordinator {
             }
         )
 
-        if featureFlagger.isFeatureOn(.webExtensions) {
-            initializeWebExtensions()
-        } else {
-            clearWebExtensionReferences()
-        }
+        initializeWebExtensions()
     }
 
     @available(iOS 18.4, *)
     private func initializeWebExtensions() {
-        guard webExtensionManager == nil else {
-            // Already initialized, just reload extensions and re-register tabs
-            scheduleExtensionLoad()
-            return
-        }
-
         guard let privacyConfigurationManager else { return }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
@@ -616,26 +594,6 @@ final class MainCoordinator {
             enabledTypes.insert(.searchToken)
         }
         return enabledTypes
-    }
-
-    private func clearWebExtensionReferences() {
-        isWebExtensionLoadPending = false
-        webExtensionLoadTask?.cancel()
-        webExtensionLoadTask = nil
-        protectedDataCancellable = nil
-        pendingProtectedDataWork.removeAll()
-        if #available(iOS 18.4, *) {
-            webExtensionLifecycleCoordinator?.cancelAll()
-            webExtensionLifecycleCoordinator = nil
-            controller.setWebExtensionLifecycleCoordinator(nil)
-        }
-        webExtensionManager = nil
-        webExtensionEventsCoordinator = nil
-        darkReaderCancellables.removeAll()
-        tabManager.setWebExtensionManager(nil)
-        tabManager.setWebExtensionInitialLoadWaiterProvider { nil }
-        controller.setWebExtensionEventsCoordinator(nil)
-        controller.setWebExtensionManager(nil)
     }
 
     private static func makeHistoryManager(tabsModel: TabsModelReading) throws -> HistoryManaging {

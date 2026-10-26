@@ -112,6 +112,30 @@ final class TLDTests: XCTestCase {
         XCTAssertEqual(nil, tld.extractSecondLevelDomain(fromStringURL: "https://abcderfg"))
     }
 
+    // MARK: - String URL Tests
+
+    func testWhenStringURLHasPathQueryOrFragmentThenETLDp1Correct() {
+        XCTAssertEqual("bbc.co.uk", tld.eTLDplus1(forStringURL: "https://www.bbc.co.uk/news?q=a b&c=<d>"))
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "https://example.com?q=1"))
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "https://example.com#frag"))
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "http://user:pw@sub.example.com:8080/x"))
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "//cdn.example.com/x.js"))
+    }
+
+    func testWhenStringURLHasNoAuthorityThenETLDp1IsNil() {
+        XCTAssertNil(tld.eTLDplus1(forStringURL: "example.com"))
+        XCTAssertNil(tld.eTLDplus1(forStringURL: "data:text/html,<a href=\"//example.com\">"))
+        XCTAssertNil(tld.eTLDplus1(forStringURL: "blob:https://example.com/uuid"))
+        XCTAssertNil(tld.eTLDplus1(forStringURL: "about:blank"))
+        XCTAssertNil(tld.eTLDplus1(forStringURL: ""))
+    }
+
+    func testWhenStringURLIsHugeThenETLDp1AndETLDCorrect() {
+        let url = "https://tracker.example.co.uk/p?d=" + String(repeating: "é\"<>", count: 5_000_000)
+        XCTAssertEqual("example.co.uk", tld.eTLDplus1(forStringURL: url))
+        XCTAssertEqual("co.uk", tld.eTLD(forStringURL: url))
+    }
+
     // MARK: - eTLD Tests
 
     func testWhenHostMultiPartTopLevelWithSubdomainThenETLDCorrect() {

@@ -99,9 +99,19 @@ public class TLD {
         return lastKnownTLD.isEmpty ? nil : lastKnownTLD
     }
 
+    /// Return the host of given string URL, parsing only its scheme and authority.
+    ///
+    /// Percent-encoding the whole string just to read the host costs memory proportional to its length,
+    /// which page-supplied URLs (e.g. huge query strings) can exhaust.
+    private func host(forStringURL stringURL: String) -> String? {
+        guard let authorityStart = stringURL.range(of: "//") else { return nil }
+        let authorityEnd = stringURL[authorityStart.upperBound...].firstIndex { "/?#".contains($0) } ?? stringURL.endIndex
+        guard let escapedPrefix = stringURL[..<authorityEnd].addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        return URL(string: escapedPrefix)?.host
+    }
+
     public func eTLD(forStringURL stringURL: String) -> String? {
-        guard let escapedStringURL = stringURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-        guard let host = URL(string: escapedStringURL)?.host else { return nil }
+        guard let host = host(forStringURL: stringURL) else { return nil }
         return eTLD(host)
     }
 
@@ -116,8 +126,7 @@ public class TLD {
     }
 
     public func eTLDplus1(forStringURL stringURL: String) -> String? {
-        guard let escapedStringURL = stringURL.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
-        guard let host = URL(string: escapedStringURL)?.host else { return nil }
+        guard let host = host(forStringURL: stringURL) else { return nil }
         return eTLDplus1(host)
     }
 

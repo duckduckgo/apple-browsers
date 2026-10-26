@@ -58,6 +58,7 @@ final class SubscriptionURLTests: XCTestCase {
                                               .addEmail,
                                               .addEmailSuccess,
                                               .partnershipsHub,
+                                              .cancellationFlow,
                                               .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
@@ -84,6 +85,7 @@ final class SubscriptionURLTests: XCTestCase {
                                               .addEmail,
                                               .addEmailSuccess,
                                               .partnershipsHub,
+                                              .cancellationFlow,
                                               .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
@@ -137,6 +139,28 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let url = SubscriptionURL.plans.subscriptionURL(environment: .staging)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCancellationFlowURLForProduction() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/cancel")!
+
+        // When
+        let url = SubscriptionURL.cancellationFlow.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCancellationFlowURLForStaging() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/cancel?environment=staging")!
+
+        // When
+        let url = SubscriptionURL.cancellationFlow.subscriptionURL(environment: .staging)
 
         // Then
         XCTAssertEqual(url, expectedURL)

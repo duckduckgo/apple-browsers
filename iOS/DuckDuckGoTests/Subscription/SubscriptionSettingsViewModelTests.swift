@@ -774,16 +774,72 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Cancellation Flow
+
+    func testIsEligibleForCancellationFlow_WhenFlagOnAndAutoRenewingAppleInEnUS_ReturnsTrue() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT(locale: Locale(identifier: "en_US"))
+
+        await waitForSubscriptionUpdate()
+
+        XCTAssertTrue(sut.isEligibleForCancellationFlow)
+    }
+
+    func testIsEligibleForCancellationFlow_WhenFlagChangesWhileRunning_FollowsTheFlag() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT(locale: Locale(identifier: "en_US"))
+
+        await waitForSubscriptionUpdate()
+        XCTAssertFalse(sut.isEligibleForCancellationFlow)
+
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
+        XCTAssertTrue(sut.isEligibleForCancellationFlow)
+
+        mockFeatureFlagger.enabledFeatureFlags = []
+        XCTAssertFalse(sut.isEligibleForCancellationFlow)
+    }
+
+    func testSubscriptionManageButtonText_FollowsCancellationFlowEligibility() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT(locale: Locale(identifier: "en_US"))
+
+        await waitForSubscriptionUpdate()
+        XCTAssertEqual(sut.subscriptionManageButtonText, UserText.subscriptionManagePayment)
+
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase, .subscriptionCancellationFlow]
+        XCTAssertEqual(sut.subscriptionManageButtonText, UserText.subscriptionManageSubscription)
+    }
+
+    func testCancelSubscriptionTapped_FiresCancelClick() {
+        let instrumentation = SubscriptionCancellationInstrumentationSpy()
+        sut = makeSUT(cancellationInstrumentation: instrumentation)
+
+        sut.cancelSubscriptionTapped()
+
+        XCTAssertEqual(instrumentation.cancelClickedCount, 1)
+        XCTAssertTrue(instrumentation.cancelledPlatforms.isEmpty)
+    }
+
     // MARK: - Helpers
 
-    private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil) -> SubscriptionSettingsViewModel {
+    private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
+                         locale: Locale = Locale(identifier: "en_US"),
+                         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentationSpy()) -> SubscriptionSettingsViewModel {
         SubscriptionSettingsViewModel(
             subscriptionManager: mockSubscriptionManager,
             featureFlagger: mockFeatureFlagger,
             keyValueStorage: MockKeyValueStorage(),
             onboardingKeyValueStore: onboardingKeyValueStore,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            subscriptionFlowsExecuter: subscriptionFlowsExecuter
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            locale: locale,
+            cancellationInstrumentation: cancellationInstrumentation
         )
     }
 

@@ -32,11 +32,13 @@ import Persistence
 enum SubscriptionFlowType {
     case firstPurchase
     case planUpdate
+    case cancellation
 
     var navigationTitle: String {
         switch self {
         case .firstPurchase: return UserText.subscriptionTitle
         case .planUpdate: return UserText.subscriptionPlansTitle
+        case .cancellation: return UserText.subscriptionCancelSubscription
         }
     }
 
@@ -44,10 +46,14 @@ enum SubscriptionFlowType {
         self == .firstPurchase
     }
 
+    var dismissesFromRoot: Bool {
+        self == .cancellation
+    }
+
     var impressionPixel: Pixel.Event? {
         switch self {
         case .firstPurchase: return .subscriptionOfferScreenImpression
-        case .planUpdate: return nil
+        case .planUpdate, .cancellation: return nil
         }
     }
 }
@@ -193,6 +199,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
             return .purchase
         case .planUpdate:
             return .plans
+        case .cancellation:
+            return .cancellationFlow
         }
     }
 

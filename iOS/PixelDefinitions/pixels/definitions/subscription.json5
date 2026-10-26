@@ -1059,6 +1059,44 @@
             }
         ]
     },
+    // Subscription Cancellation Flow
+    "subscription_cancellation_cancel_click": {
+        "description": "Fired when the user taps 'Cancel Subscription' in Subscription Settings, which opens the subscription cancellation flow.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "subscription_cancellation_subscription_cancelled": {
+        "description": "Fired when the subscription is found no longer set to auto-renew after the user returns from the App Store subscription management screen opened by the cancellation flow.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The payment platform of the cancelled subscription",
+                "enum": ["apple", "google", "stripe", "unknown"]
+            }
+        ]
+    },
+    "subscription_cancellation_flow_load_failure": {
+        "description": "Fired when the cancellation flow page fails to load. The flow is closed and the App Store subscription management screen opens instead.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_cancellation_feature-info_failure": {
+        "description": "Fired when the cancellation flow page asks to show a feature info sheet for a feature the app does not recognize, so no sheet is shown.",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["exception"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_privacy-pro_app-settings_partner-benefits_click": {
         "description": "Fires when the user taps 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared verbatim with Android and Windows, and predates the label being renamed to 'Subscriber Offers'.",
         "owners": ["bwaresiak", "jozsef-vesza"],

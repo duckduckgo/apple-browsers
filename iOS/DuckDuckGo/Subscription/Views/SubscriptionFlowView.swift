@@ -99,12 +99,21 @@ struct SubscriptionFlowView: View {
             Button(action: {
                 Task { await viewModel.navigateBack() }
             }, label: {
-                HStack(spacing: 0) {
-                    Image(systemName: Constants.backButtonImage)
-                    Text(UserText.backButtonTitle)
-                }
-                
+                backButtonLabel
             })
+        } else if viewModel.flowType.dismissesFromRoot {
+            Button(action: {
+                dismiss()
+            }, label: {
+                backButtonLabel
+            })
+        }
+    }
+
+    private var backButtonLabel: some View {
+        HStack(spacing: 0) {
+            Image(systemName: Constants.backButtonImage)
+            Text(UserText.backButtonTitle)
         }
     }
     

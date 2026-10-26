@@ -46,6 +46,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
+    private let locale: Locale
+    private let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -158,9 +160,30 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     var subscriptionManageButtonText: String {
-        featureFlagger.isFeatureOn(.allowProTierPurchase)
+        if isEligibleForCancellationFlow {
+            return UserText.subscriptionManageSubscription
+        }
+        return featureFlagger.isFeatureOn(.allowProTierPurchase)
             ? UserText.subscriptionManagePayment
             : UserText.subscriptionChangePlan
+    }
+
+    var isEligibleForCancellationFlow: Bool {
+        SubscriptionCancellationFlowEligibility.isEligible(subscription: state.subscriptionInfo,
+                                                           isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionCancellationFlow),
+                                                           locale: locale)
+    }
+
+    func cancelSubscriptionTapped() {
+        cancellationInstrumentation.cancelClicked()
+    }
+
+    @MainActor
+    func openStoreCancellation() async {
+        await manageAppleSubscription()
+        _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+        guard let subscription = state.subscriptionInfo, subscription.status == .notAutoRenewable else { return }
+        cancellationInstrumentation.subscriptionCancelled(platform: subscription.platform)
     }
 
     /// Handles navigation to plans page based on subscription platform
@@ -205,12 +228,16 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          onboardingKeyValueStore: ThrowingKeyValueStoring,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
-         aiChatSettings: AIChatSettingsProvider = AIChatSettings()) {
+         aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         locale: Locale = .current,
+         cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
+        self.locale = locale
+        self.cancellationInstrumentation = cancellationInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
             wideEvent: AppDependencyProvider.shared.wideEvent)

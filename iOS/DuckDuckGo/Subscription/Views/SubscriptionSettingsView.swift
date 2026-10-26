@@ -71,6 +71,11 @@ struct SubscriptionSettingsViewV2: View {
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
 
+    // MARK: - Cancellation flow state
+
+    @State private var cancellationFlow: SubscriptionCancellationFlowPresentation?
+    @State private var shouldOpenStoreCancellation = false
+
     var body: some View {
         optionsView
             .onFirstAppear {
@@ -237,6 +242,10 @@ struct SubscriptionSettingsViewV2: View {
                     )
                 }
 
+                if viewModel.isEligibleForCancellationFlow {
+                    cancelSubscriptionView
+                }
+
                 removeFromDeviceView
 
             case .activating:
@@ -258,6 +267,16 @@ struct SubscriptionSettingsViewV2: View {
                                disclosureIndicator: true,
                                isButton: true)
         }
+    }
+
+    var cancelSubscriptionView: some View {
+        SettingsCustomCell(content: {
+            Text(UserText.subscriptionCancelSubscription)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .accentPrimary))
+        },
+                           action: { startCancellationFlow() },
+                           isButton: true)
     }
 
     @ViewBuilder
@@ -488,6 +507,16 @@ struct SubscriptionSettingsViewV2: View {
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
         }
+        .sheet(item: $cancellationFlow, onDismiss: {
+            guard shouldOpenStoreCancellation else { return }
+            shouldOpenStoreCancellation = false
+            Task { await viewModel.openStoreCancellation() }
+        }) { flow in
+            SubscriptionCancellationFlowView(model: flow.model,
+                                             containerViewModel: flow.containerViewModel,
+                                             featureFlagger: settingsViewModel.featureFlagger)
+            .environmentObject(subscriptionNavigationCoordinator)
+        }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
                 dismiss()
@@ -707,6 +736,24 @@ extension SubscriptionSettingsViewV2 {
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = flow
         }
+    }
+
+    func startCancellationFlow() {
+        guard cancellationFlow == nil else { return }
+        viewModel.cancelSubscriptionTapped()
+        let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+            userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            featureFlagger: settingsViewModel.featureFlagger)
+        let shouldOpenStoreCancellation = $shouldOpenStoreCancellation
+        let cancellationFlow = $cancellationFlow
+        cancellationFlow.wrappedValue = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
+                                                                                 onRequestStoreCancellation: { shouldOpenStoreCancellation.wrappedValue = true },
+                                                                                 onClose: { cancellationFlow.wrappedValue = nil })
     }
 
     /// An expired or still-activating subscription has nothing left to set up.

@@ -36,7 +36,17 @@ enum SubscriptionOnboardingLaunchFailureReason: String {
 
 enum SubscriptionPixel: PixelKit.Event {
     /// This pixel signature is non-standard and not aligned to the current PixelKit defaults. This policy freezes the signature by not sending the platform marker suffix.
-    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy { .legacyOmitted }
+    var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
+        switch self {
+        case .subscriptionCancellationCancelClick,
+                .subscriptionCancellationSubscriptionCancelled,
+                .subscriptionCancellationFlowLoadFailure,
+                .subscriptionCancellationFeatureInfoFailure:
+            return .standard
+        default:
+            return .legacyOmitted
+        }
+    }
 
     // Subscription
     case subscriptionActive
@@ -69,6 +79,11 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionOnboardingAIModelsFailure(Error)
     case subscriptionOnboardingSubscriptionFailure(Error)
     case subscriptionOnboardingLaunchFailure(SubscriptionOnboardingLaunchFailureReason)
+    // Subscription Cancellation Flow
+    case subscriptionCancellationCancelClick
+    case subscriptionCancellationSubscriptionCancelled(platform: DuckDuckGoSubscription.Platform)
+    case subscriptionCancellationFlowLoadFailure(Error)
+    case subscriptionCancellationFeatureInfoFailure
 
     var name: String {
         switch self {
@@ -101,6 +116,11 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionOnboardingAIModelsFailure: return "subscription_onboarding_ai-models_failure"
         case .subscriptionOnboardingSubscriptionFailure: return "subscription_onboarding_subscription_failure"
         case .subscriptionOnboardingLaunchFailure: return "subscription_onboarding_post_purchase_launch_failure"
+            // Subscription Cancellation Flow
+        case .subscriptionCancellationCancelClick: return "subscription_cancellation_cancel_click"
+        case .subscriptionCancellationSubscriptionCancelled: return "subscription_cancellation_subscription_cancelled"
+        case .subscriptionCancellationFlowLoadFailure: return "subscription_cancellation_flow_load_failure"
+        case .subscriptionCancellationFeatureInfoFailure: return "subscription_cancellation_feature-info_failure"
         }
     }
 
@@ -144,6 +164,8 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
         case .subscriptionOnboardingLaunchFailure(let reason):
             return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
+        case .subscriptionCancellationSubscriptionCancelled(let platform):
+            return [SubscriptionPixelsDefaults.platformKey: platform.rawValue]
         default:
             return nil
         }
@@ -175,7 +197,11 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionOnboardingConnectionInfoFailure,
                 .subscriptionOnboardingAIModelsFailure,
                 .subscriptionOnboardingSubscriptionFailure,
-                .subscriptionOnboardingLaunchFailure:
+                .subscriptionOnboardingLaunchFailure,
+                .subscriptionCancellationCancelClick,
+                .subscriptionCancellationSubscriptionCancelled,
+                .subscriptionCancellationFlowLoadFailure,
+                .subscriptionCancellationFeatureInfoFailure:
             return [.pixelSource]
         }
     }

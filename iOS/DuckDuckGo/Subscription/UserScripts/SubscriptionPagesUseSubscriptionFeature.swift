@@ -62,6 +62,9 @@ private struct Handlers {
     static let subscriptionChangeSelected = "subscriptionChangeSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
+    // Cancellation flow
+    static let showFeatureInfo = "showFeatureInfo"
+    static let requestCancellation = "requestCancellation"
     // Notification permission & scheduling (expiration reminder experiment)
     static let getUserSettings = "getUserSettings"
     static let requestNotificationsPermission = "requestNotificationsPermission"
@@ -119,6 +122,8 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
     var onPurchaseCompleted: (() -> Void)? { get set }
+    var onShowFeatureInfo: (@MainActor (SubscriptionEntitlement) -> Void)? { get set }
+    var onRequestCancellation: (@MainActor () -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -134,6 +139,8 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func activateSubscription(params: Any, original: WKScriptMessage) async -> Encodable?
     func featureSelected(params: Any, original: WKScriptMessage) async -> Encodable?
     func backToSettings(params: Any, original: WKScriptMessage) async -> Encodable?
+    func showFeatureInfo(params: Any, original: WKScriptMessage) async -> Encodable?
+    func requestCancellation(params: Any, original: WKScriptMessage) async -> Encodable?
     func getAccessToken(params: Any, original: WKScriptMessage) async throws -> Encodable?
 
     func subscriptionsMonthlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable?
@@ -230,9 +237,15 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
     var onPurchaseCompleted: (() -> Void)?
+    var onShowFeatureInfo: (@MainActor (SubscriptionEntitlement) -> Void)?
+    var onRequestCancellation: (@MainActor () -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
+    }
+
+    struct FeatureInfoRequest: Decodable {
+        let feature: SubscriptionEntitlement
     }
 
     struct SubscriptionSelection: Decodable {
@@ -279,6 +292,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
         case Handlers.backToSettings: return backToSettings
+        case Handlers.showFeatureInfo: return showFeatureInfo
+        case Handlers.requestCancellation: return requestCancellation
         case Handlers.completeStripePayment: return completeStripePayment
             // Pixel related events
         case Handlers.subscriptionsMonthlyPriceClicked: return subscriptionsMonthlyPriceClicked
@@ -754,6 +769,17 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         return nil
     }
 
+    func showFeatureInfo(params: Any, original: WKScriptMessage) async -> Encodable? {
+        let request: FeatureInfoRequest? = CodableHelper.decode(from: params)
+        await onShowFeatureInfo?(request?.feature ?? .unknown)
+        return nil
+    }
+
+    func requestCancellation(params: Any, original: WKScriptMessage) async -> Encodable? {
+        await onRequestCancellation?()
+        return nil
+    }
+
     func completeStripePayment(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         struct StripePaymentCompletion: Decodable {
             let change: String?
@@ -894,6 +920,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         onActivateSubscription = nil
         onBackToSettings = nil
         onPurchaseCompleted = nil
+        onShowFeatureInfo = nil
+        onRequestCancellation = nil
     }
 
     private func fireFreemiumUpsellPixel() {

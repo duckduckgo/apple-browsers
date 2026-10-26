@@ -29,14 +29,12 @@ import SubscriptionTestingUtilities
 @Suite("Subscription cancellation flow eligibility")
 struct SubscriptionCancellationFlowEligibilityTests {
 
-    private let enUS = Locale(identifier: "en_US")
-
     @available(iOS 16, macOS 13, *)
-    @Test("An auto-renewing Apple subscription in en_US with the flag on is eligible", .timeLimit(.minutes(1)))
+    @Test("An auto-renewing Apple subscription with the flag on is eligible", .timeLimit(.minutes(1)))
     func autoRenewingAppleSubscriptionIsEligible() {
         let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple)
 
-        #expect(SubscriptionCancellationFlowEligibility.isEligible(subscription: subscription, isFeatureEnabled: true, locale: enUS))
+        #expect(SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -47,7 +45,7 @@ struct SubscriptionCancellationFlowEligibilityTests {
                                                                 activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)])
 
         #expect(subscription.hasActiveTrialOffer)
-        #expect(SubscriptionCancellationFlowEligibility.isEligible(subscription: subscription, isFeatureEnabled: true, locale: enUS))
+        #expect(SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -55,7 +53,7 @@ struct SubscriptionCancellationFlowEligibilityTests {
     func flagOffIsIneligible() {
         let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple)
 
-        #expect(!SubscriptionCancellationFlowEligibility.isEligible(subscription: subscription, isFeatureEnabled: false, locale: enUS))
+        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: false))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -67,7 +65,7 @@ struct SubscriptionCancellationFlowEligibilityTests {
     func nonApplePlatformsAreIneligible(platform: DuckDuckGoSubscription.Platform) {
         let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: platform)
 
-        #expect(!SubscriptionCancellationFlowEligibility.isEligible(subscription: subscription, isFeatureEnabled: true, locale: enUS))
+        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
     }
 
     @available(iOS 16, macOS 13, *)
@@ -81,28 +79,13 @@ struct SubscriptionCancellationFlowEligibilityTests {
     func nonAutoRenewingSubscriptionsAreIneligible(status: DuckDuckGoSubscription.Status) {
         let subscription = SubscriptionMockFactory.subscription(status: status, platform: .apple)
 
-        #expect(!SubscriptionCancellationFlowEligibility.isEligible(subscription: subscription, isFeatureEnabled: true, locale: enUS))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Locales other than en_US are ineligible", .timeLimit(.minutes(1)), arguments: [
-        "en_GB",
-        "es_US",
-        "de_DE",
-        "en"
-    ])
-    func nonEnglishUSLocalesAreIneligible(identifier: String) {
-        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple)
-
-        #expect(!SubscriptionCancellationFlowEligibility.isEligible(subscription: subscription,
-                                                                    isFeatureEnabled: true,
-                                                                    locale: Locale(identifier: identifier)))
+        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("No subscription is ineligible", .timeLimit(.minutes(1)))
     func missingSubscriptionIsIneligible() {
-        #expect(!SubscriptionCancellationFlowEligibility.isEligible(subscription: nil, isFeatureEnabled: true, locale: enUS))
+        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: nil, isFeatureEnabled: true))
     }
 }
 
@@ -110,7 +93,7 @@ struct SubscriptionCancellationFlowEligibilityTests {
 struct SubscriptionCancellationFeatureInfoMappingTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("Each known entitlement maps to its checklist item", .timeLimit(.minutes(1)), arguments: [
+    @Test("Each known entitlement maps to its info sheet's checklist item", .timeLimit(.minutes(1)), arguments: [
         (SubscriptionEntitlement.networkProtection, SubscriptionOnboardingChecklistItem.vpn),
         (.identityTheftRestoration, .idtr),
         (.identityTheftRestorationGlobal, .idtr),
@@ -137,34 +120,36 @@ struct SubscriptionCancellationFlowModelTests {
     private let navigationErrors = PassthroughSubject<Error?, Never>()
     private let instrumentation = SubscriptionCancellationInstrumentationSpy()
 
-    private func makeModel(onRequestStoreCancellation: @escaping () -> Void = {},
-                           onClose: @escaping () -> Void = {}) -> SubscriptionCancellationFlowModel {
+    private func makeModel(onOpenStoreCancellation: @escaping (Bool) -> Void = { _ in }) -> SubscriptionCancellationFlowModel {
         SubscriptionCancellationFlowModel(navigationErrors: navigationErrors.eraseToAnyPublisher(),
                                           instrumentation: instrumentation,
-                                          onRequestStoreCancellation: onRequestStoreCancellation,
-                                          onClose: onClose)
+                                          onOpenStoreCancellation: onOpenStoreCancellation)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("showFeatureInfo with a known entitlement presents its info sheet", .timeLimit(.minutes(1)))
-    func showFeatureInfoPresentsSheet() {
-        let model = makeModel()
+    func showFeatureInfoWithKnownEntitlementPresentsSheet() {
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
-        model.showFeatureInfo(for: .networkProtection)
+        model.showFeatureInfo(for: .identityTheftRestorationGlobal)
 
-        #expect(model.featureInfoItem == .vpn)
-        #expect(instrumentation.featureInfoFailedCount == 0)
+        #expect(model.featureInfoItem == .idtr)
+        #expect(instrumentation.featureInfoFailures.isEmpty)
+        #expect(storeCancellationCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("showFeatureInfo with an unknown entitlement fires the error pixel and presents nothing", .timeLimit(.minutes(1)))
     func showFeatureInfoWithUnknownEntitlementFails() {
-        let model = makeModel()
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
         model.showFeatureInfo(for: .unknown)
 
         #expect(model.featureInfoItem == nil)
-        #expect(instrumentation.featureInfoFailedCount == 1)
+        #expect(instrumentation.featureInfoFailures == [.unknown])
+        #expect(storeCancellationCalls.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -191,31 +176,27 @@ struct SubscriptionCancellationFlowModelTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("requestStoreCancellation asks to open the store cancellation and closes the flow, once", .timeLimit(.minutes(1)))
-    func requestStoreCancellationRequestsOnce() {
-        var requestCount = 0
-        var closeCount = 0
-        let model = makeModel(onRequestStoreCancellation: { requestCount += 1 }, onClose: { closeCount += 1 })
+    @Test("requestStoreCancellation opens the store cancellation and closes the flow, once", .timeLimit(.minutes(1)))
+    func requestStoreCancellationOpensStoreOnce() {
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
         model.requestStoreCancellation()
         model.requestStoreCancellation()
 
-        #expect(requestCount == 1)
-        #expect(closeCount == 1)
+        #expect(storeCancellationCalls == [true])
         #expect(instrumentation.flowLoadFailures.isEmpty)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A page load failure fires the error pixel and queues the store cancellation without closing the flow", .timeLimit(.minutes(1)))
-    func loadFailureFallsBackToStore() {
-        var requestCount = 0
-        var closeCount = 0
-        let model = makeModel(onRequestStoreCancellation: { requestCount += 1 }, onClose: { closeCount += 1 })
+    @Test("A page load failure fires the error pixel and opens the store cancellation without closing the flow", .timeLimit(.minutes(1)))
+    func loadFailureOpensStoreWithoutClosing() {
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
         navigationErrors.send(TestError())
 
-        #expect(requestCount == 1)
-        #expect(closeCount == 0)
+        #expect(storeCancellationCalls == [false])
         #expect(instrumentation.flowLoadFailures.count == 1)
         withExtendedLifetime(model) {}
     }
@@ -223,26 +204,26 @@ struct SubscriptionCancellationFlowModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("A cleared navigation error does nothing", .timeLimit(.minutes(1)))
     func clearedNavigationErrorIsIgnored() {
-        var requestCount = 0
-        let model = makeModel { requestCount += 1 }
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
         navigationErrors.send(nil)
 
-        #expect(requestCount == 0)
+        #expect(storeCancellationCalls.isEmpty)
         #expect(instrumentation.flowLoadFailures.isEmpty)
         withExtendedLifetime(model) {}
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Repeated load failures fall back only once", .timeLimit(.minutes(1)))
-    func repeatedLoadFailuresFallBackOnce() {
-        var requestCount = 0
-        let model = makeModel { requestCount += 1 }
+    @Test("Repeated load failures open the store cancellation only once", .timeLimit(.minutes(1)))
+    func repeatedLoadFailuresOpenStoreOnce() {
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
         navigationErrors.send(TestError())
         navigationErrors.send(TestError())
 
-        #expect(requestCount == 1)
+        #expect(storeCancellationCalls == [false])
         #expect(instrumentation.flowLoadFailures.count == 1)
         withExtendedLifetime(model) {}
     }
@@ -250,13 +231,13 @@ struct SubscriptionCancellationFlowModelTests {
     @available(iOS 16, macOS 13, *)
     @Test("A load failure after cancellation was requested is not reported", .timeLimit(.minutes(1)))
     func loadFailureAfterRequestIsIgnored() {
-        var requestCount = 0
-        let model = makeModel { requestCount += 1 }
+        var storeCancellationCalls: [Bool] = []
+        let model = makeModel { storeCancellationCalls.append($0) }
 
         model.requestStoreCancellation()
         navigationErrors.send(TestError())
 
-        #expect(requestCount == 1)
+        #expect(storeCancellationCalls == [true])
         #expect(instrumentation.flowLoadFailures.isEmpty)
     }
 }
@@ -277,19 +258,14 @@ struct SubscriptionCancellationInstrumentationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A detected cancellation fires the cancelled pixel with the platform", .timeLimit(.minutes(1)), arguments: [
-        (DuckDuckGoSubscription.Platform.apple, "apple"),
-        (.google, "google"),
-        (.stripe, "stripe"),
-        (.unknown, "unknown")
-    ])
-    func subscriptionCancelledFiresPixel(platform: DuckDuckGoSubscription.Platform, expectedValue: String) {
+    @Test("A cancellation detected after the App Store screen fires the cancelled pixel", .timeLimit(.minutes(1)))
+    func appStoreSubscriptionCancelledFiresPixel() {
         let pixelKit = PixelKitMock()
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).subscriptionCancelled(platform: platform)
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).appStoreSubscriptionCancelled()
 
-        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationSubscriptionCancelled(platform: platform), frequency: .standard)])
-        #expect(SubscriptionPixel.subscriptionCancellationSubscriptionCancelled(platform: platform).parameters == ["platform": expectedValue])
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationAppStoreCancelled, frequency: .standard)])
+        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled.parameters == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -304,31 +280,36 @@ struct SubscriptionCancellationInstrumentationTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A feature info failure fires the feature info failure pixel daily and count", .timeLimit(.minutes(1)))
-    func featureInfoFailedFiresPixel() {
+    @Test("A feature info failure fires the feature info failure pixel daily and count with the entitlement", .timeLimit(.minutes(1)), arguments: [
+        (SubscriptionEntitlement.unknown, "unknown"),
+        (.networkProtection, "Network Protection"),
+        (.identityTheftRestorationGlobal, "Global Identity Theft Restoration")
+    ])
+    func featureInfoFailedFiresPixel(entitlement: SubscriptionEntitlement, expectedValue: String) {
         let pixelKit = PixelKitMock()
 
-        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).featureInfoFailed()
+        SubscriptionCancellationInstrumentation(pixelFiring: pixelKit).featureInfoFailed(entitlement: entitlement)
 
-        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationFeatureInfoFailure, frequency: .dailyAndCount)])
+        #expect(pixelKit.actualFireCalls == [ExpectedFireCall(pixel: SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: entitlement), frequency: .dailyAndCount)])
+        #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: entitlement).parameters == ["entitlement": expectedValue])
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Pixel names match their definitions", .timeLimit(.minutes(1)))
     func pixelNames() {
         #expect(SubscriptionPixel.subscriptionCancellationCancelClick.name == "subscription_cancellation_cancel_click")
-        #expect(SubscriptionPixel.subscriptionCancellationSubscriptionCancelled(platform: .apple).name == "subscription_cancellation_subscription_cancelled")
+        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled.name == "subscription_cancellation_app_store_cancelled")
         #expect(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(TestError()).name == "subscription_cancellation_flow_load_failure")
-        #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure.name == "subscription_cancellation_feature-info_failure")
+        #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: .unknown).name == "subscription_cancellation_feature-info_failure")
     }
 
     @available(iOS 16, macOS 13, *)
     @Test("Cancellation pixels use the standard platform suffix their definitions declare", .timeLimit(.minutes(1)))
     func cancellationPixelsUseStandardPlatformSuffix() {
         #expect(SubscriptionPixel.subscriptionCancellationCancelClick.platformSuffixPolicy == .standard)
-        #expect(SubscriptionPixel.subscriptionCancellationSubscriptionCancelled(platform: .apple).platformSuffixPolicy == .standard)
+        #expect(SubscriptionPixel.subscriptionCancellationAppStoreCancelled.platformSuffixPolicy == .standard)
         #expect(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(TestError()).platformSuffixPolicy == .standard)
-        #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure.platformSuffixPolicy == .standard)
+        #expect(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: .unknown).platformSuffixPolicy == .standard)
         #expect(SubscriptionPixel.subscriptionActive.platformSuffixPolicy == .legacyOmitted)
     }
 }

@@ -18,14 +18,14 @@
 //
 
 import Foundation
+import Networking
 import PixelKit
-import Subscription
 
 protocol SubscriptionCancellationInstrumenting {
     func cancelClicked()
-    func subscriptionCancelled(platform: DuckDuckGoSubscription.Platform)
+    func appStoreSubscriptionCancelled()
     func flowLoadFailed(_ error: Error)
-    func featureInfoFailed()
+    func featureInfoFailed(entitlement: SubscriptionEntitlement)
 }
 
 struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrumenting {
@@ -40,15 +40,15 @@ struct SubscriptionCancellationInstrumentation: SubscriptionCancellationInstrume
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationCancelClick)
     }
 
-    func subscriptionCancelled(platform: DuckDuckGoSubscription.Platform) {
-        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationSubscriptionCancelled(platform: platform))
+    func appStoreSubscriptionCancelled() {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationAppStoreCancelled)
     }
 
     func flowLoadFailed(_ error: Error) {
         pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFlowLoadFailure(error), frequency: .dailyAndCount)
     }
 
-    func featureInfoFailed() {
-        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure, frequency: .dailyAndCount)
+    func featureInfoFailed(entitlement: SubscriptionEntitlement) {
+        pixelFiring?.fire(SubscriptionPixel.subscriptionCancellationFeatureInfoFailure(entitlement: entitlement), frequency: .dailyAndCount)
     }
 }

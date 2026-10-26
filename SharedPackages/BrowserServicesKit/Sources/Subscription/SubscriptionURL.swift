@@ -101,7 +101,6 @@ public enum SubscriptionURL: Equatable {
                 // rather than extending it - the same shape as `.identityTheftRestoration`.
                 baseURL.replacing(path: "partner-benefits")
             case .cancellationFlow:
-                // (TODO|htang): pending confirmation
                 baseURL.appendingPathComponent("cancel")
             }
         }()

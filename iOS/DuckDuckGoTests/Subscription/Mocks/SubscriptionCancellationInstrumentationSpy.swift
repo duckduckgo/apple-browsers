@@ -18,17 +18,17 @@
 //
 
 import Foundation
-import Subscription
+import Networking
 @testable import DuckDuckGo
 
 final class SubscriptionCancellationInstrumentationSpy: SubscriptionCancellationInstrumenting {
     private(set) var cancelClickedCount = 0
-    private(set) var cancelledPlatforms: [DuckDuckGoSubscription.Platform] = []
+    private(set) var appStoreSubscriptionCancelledCount = 0
     private(set) var flowLoadFailures: [Error] = []
-    private(set) var featureInfoFailedCount = 0
+    private(set) var featureInfoFailures: [SubscriptionEntitlement] = []
 
     func cancelClicked() { cancelClickedCount += 1 }
-    func subscriptionCancelled(platform: DuckDuckGoSubscription.Platform) { cancelledPlatforms.append(platform) }
+    func appStoreSubscriptionCancelled() { appStoreSubscriptionCancelledCount += 1 }
     func flowLoadFailed(_ error: Error) { flowLoadFailures.append(error) }
-    func featureInfoFailed() { featureInfoFailedCount += 1 }
+    func featureInfoFailed(entitlement: SubscriptionEntitlement) { featureInfoFailures.append(entitlement) }
 }

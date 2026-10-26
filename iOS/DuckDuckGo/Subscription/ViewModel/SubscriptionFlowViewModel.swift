@@ -68,6 +68,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let initialURL: URL
     let flowType: SubscriptionFlowType
+    var navigationErrorPublisher: Published<Error?>.Publisher { webViewModel.$navigationError }
 
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger

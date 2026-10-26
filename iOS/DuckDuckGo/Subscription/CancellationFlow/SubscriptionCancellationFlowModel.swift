@@ -19,20 +19,8 @@
 
 import Combine
 import Foundation
-import FoundationExtensions
 import Networking
 import Subscription
-
-enum SubscriptionCancellationFlowEligibility {
-
-    static func isEligible(subscription: DuckDuckGoSubscription?, isFeatureEnabled: @autoclosure () -> Bool, locale: Locale) -> Bool {
-        guard let subscription,
-              subscription.platform == .apple,
-              subscription.status == .autoRenewable,
-              locale.isEnglishUnitedStates else { return false }
-        return isFeatureEnabled()
-    }
-}
 
 extension SubscriptionOnboardingChecklistItem {
 
@@ -49,18 +37,15 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
     @Published var featureInfoItem: SubscriptionOnboardingChecklistItem?
 
     private let instrumentation: SubscriptionCancellationInstrumenting
-    private let onRequestStoreCancellation: () -> Void
-    private let onClose: () -> Void
-    private var didRequestStoreCancellation = false
+    private let onOpenStoreCancellation: (_ closingFlow: Bool) -> Void
+    private var didOpenStoreCancellation = false
     private var navigationErrorCancellable: AnyCancellable?
 
     init(navigationErrors: AnyPublisher<Error?, Never>,
          instrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation(),
-         onRequestStoreCancellation: @escaping () -> Void,
-         onClose: @escaping () -> Void) {
+         onOpenStoreCancellation: @escaping (_ closingFlow: Bool) -> Void) {
         self.instrumentation = instrumentation
-        self.onRequestStoreCancellation = onRequestStoreCancellation
-        self.onClose = onClose
+        self.onOpenStoreCancellation = onOpenStoreCancellation
         navigationErrorCancellable = navigationErrors
             .compactMap { $0 }
             .sink { [weak self] error in
@@ -72,7 +57,7 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
 
     func showFeatureInfo(for entitlement: SubscriptionEntitlement) {
         guard let item = SubscriptionOnboardingChecklistItem(entitlement: entitlement) else {
-            instrumentation.featureInfoFailed()
+            instrumentation.featureInfoFailed(entitlement: entitlement)
             return
         }
         guard featureInfoItem == nil else { return }
@@ -80,18 +65,21 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
     }
 
     func requestStoreCancellation() {
-        guard !didRequestStoreCancellation else { return }
-        didRequestStoreCancellation = true
-        onRequestStoreCancellation()
-        onClose()
+        openStoreCancellation(closingFlow: true)
     }
 
-    /// A load failure on any step of the flow, not only the first page, falls back to the store cancellation.
+    /// A load failure on any step of the flow, falls back to the store cancellation.
     private func handleLoadFailure(_ error: Error) {
-        guard !didRequestStoreCancellation else { return }
-        didRequestStoreCancellation = true
+        guard !didOpenStoreCancellation else { return }
         instrumentation.flowLoadFailed(error)
-        onRequestStoreCancellation()
+        // The flow shows the generic error alert, which closes the modal when dismissed.
+        openStoreCancellation(closingFlow: false)
+    }
+
+    private func openStoreCancellation(closingFlow: Bool) {
+        guard !didOpenStoreCancellation else { return }
+        didOpenStoreCancellation = true
+        onOpenStoreCancellation(closingFlow)
     }
 }
 
@@ -103,11 +91,9 @@ struct SubscriptionCancellationFlowPresentation: Identifiable {
 
     @MainActor
     init(containerViewModel: SubscriptionContainerViewModel,
-         onRequestStoreCancellation: @escaping () -> Void,
-         onClose: @escaping () -> Void) {
-        let model = SubscriptionCancellationFlowModel(navigationErrors: containerViewModel.flow.webViewModel.$navigationError.eraseToAnyPublisher(),
-                                                      onRequestStoreCancellation: onRequestStoreCancellation,
-                                                      onClose: onClose)
+         onOpenStoreCancellation: @escaping (_ closingFlow: Bool) -> Void) {
+        let model = SubscriptionCancellationFlowModel(navigationErrors: containerViewModel.flow.navigationErrorPublisher.eraseToAnyPublisher(),
+                                                      onOpenStoreCancellation: onOpenStoreCancellation)
         containerViewModel.subFeature.onShowFeatureInfo = { [weak model] entitlement in
             model?.showFeatureInfo(for: entitlement)
         }

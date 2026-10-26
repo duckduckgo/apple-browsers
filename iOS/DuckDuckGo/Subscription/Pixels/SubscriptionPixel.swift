@@ -39,7 +39,7 @@ enum SubscriptionPixel: PixelKit.Event {
     var platformSuffixPolicy: PixelKitPlatformSuffixPolicy {
         switch self {
         case .subscriptionCancellationCancelClick,
-                .subscriptionCancellationSubscriptionCancelled,
+                .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
                 .subscriptionCancellationFeatureInfoFailure:
             return .standard
@@ -81,9 +81,9 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionOnboardingLaunchFailure(SubscriptionOnboardingLaunchFailureReason)
     // Subscription Cancellation Flow
     case subscriptionCancellationCancelClick
-    case subscriptionCancellationSubscriptionCancelled(platform: DuckDuckGoSubscription.Platform)
+    case subscriptionCancellationAppStoreCancelled
     case subscriptionCancellationFlowLoadFailure(Error)
-    case subscriptionCancellationFeatureInfoFailure
+    case subscriptionCancellationFeatureInfoFailure(entitlement: SubscriptionEntitlement)
 
     var name: String {
         switch self {
@@ -118,7 +118,7 @@ enum SubscriptionPixel: PixelKit.Event {
         case .subscriptionOnboardingLaunchFailure: return "subscription_onboarding_post_purchase_launch_failure"
             // Subscription Cancellation Flow
         case .subscriptionCancellationCancelClick: return "subscription_cancellation_cancel_click"
-        case .subscriptionCancellationSubscriptionCancelled: return "subscription_cancellation_subscription_cancelled"
+        case .subscriptionCancellationAppStoreCancelled: return "subscription_cancellation_app_store_cancelled"
         case .subscriptionCancellationFlowLoadFailure: return "subscription_cancellation_flow_load_failure"
         case .subscriptionCancellationFeatureInfoFailure: return "subscription_cancellation_feature-info_failure"
         }
@@ -131,6 +131,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let vpnSubscriptionActiveKey = "vpnSubscriptionActive"
         static let entryPointKey = "entry_point"
         static let reasonKey = "reason"
+        static let entitlementKey = "entitlement"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -164,8 +165,8 @@ enum SubscriptionPixel: PixelKit.Event {
             return [SubscriptionPixelsDefaults.entryPointKey: entryPoint]
         case .subscriptionOnboardingLaunchFailure(let reason):
             return [SubscriptionPixelsDefaults.reasonKey: reason.rawValue]
-        case .subscriptionCancellationSubscriptionCancelled(let platform):
-            return [SubscriptionPixelsDefaults.platformKey: platform.rawValue]
+        case .subscriptionCancellationFeatureInfoFailure(let entitlement):
+            return [SubscriptionPixelsDefaults.entitlementKey: entitlement.rawValue]
         default:
             return nil
         }
@@ -199,7 +200,7 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionOnboardingSubscriptionFailure,
                 .subscriptionOnboardingLaunchFailure,
                 .subscriptionCancellationCancelClick,
-                .subscriptionCancellationSubscriptionCancelled,
+                .subscriptionCancellationAppStoreCancelled,
                 .subscriptionCancellationFlowLoadFailure,
                 .subscriptionCancellationFeatureInfoFailure:
             return [.pixelSource]

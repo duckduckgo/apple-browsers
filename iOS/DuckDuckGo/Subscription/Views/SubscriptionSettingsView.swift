@@ -749,11 +749,12 @@ extension SubscriptionSettingsViewV2 {
             dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: settingsViewModel.featureFlagger)
-        let shouldOpenStoreCancellation = $shouldOpenStoreCancellation
-        let cancellationFlow = $cancellationFlow
-        cancellationFlow.wrappedValue = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
-                                                                                 onRequestStoreCancellation: { shouldOpenStoreCancellation.wrappedValue = true },
-                                                                                 onClose: { cancellationFlow.wrappedValue = nil })
+        cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel) { closingFlow in
+            shouldOpenStoreCancellation = true
+            if closingFlow {
+                cancellationFlow = nil
+            }
+        }
     }
 
     /// An expired or still-activating subscription has nothing left to set up.

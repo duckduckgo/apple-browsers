@@ -46,7 +46,6 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
-    private let locale: Locale
     private let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
@@ -169,9 +168,16 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     var isEligibleForCancellationFlow: Bool {
-        SubscriptionCancellationFlowEligibility.isEligible(subscription: state.subscriptionInfo,
-                                                           isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionCancellationFlow),
-                                                           locale: locale)
+        Self.isEligibleForCancellationFlow(subscription: state.subscriptionInfo,
+                                           isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionCancellationFlow))
+    }
+
+    static func isEligibleForCancellationFlow(subscription: DuckDuckGoSubscription?,
+                                              isFeatureEnabled: @autoclosure () -> Bool) -> Bool {
+        guard let subscription,
+              subscription.platform == .apple,
+              subscription.status == .autoRenewable else { return false }
+        return isFeatureEnabled()
     }
 
     func cancelSubscriptionTapped() {
@@ -182,8 +188,8 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     func openStoreCancellation() async {
         await manageAppleSubscription()
         _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
-        guard let subscription = state.subscriptionInfo, subscription.status == .notAutoRenewable else { return }
-        cancellationInstrumentation.subscriptionCancelled(platform: subscription.platform)
+        guard state.subscriptionInfo?.status == .notAutoRenewable else { return }
+        cancellationInstrumentation.appStoreSubscriptionCancelled()
     }
 
     /// Handles navigation to plans page based on subscription platform
@@ -229,14 +235,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-         locale: Locale = .current,
          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
-        self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,

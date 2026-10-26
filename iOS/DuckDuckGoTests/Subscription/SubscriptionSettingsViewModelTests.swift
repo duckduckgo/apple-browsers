@@ -780,7 +780,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        sut = makeSUT(locale: Locale(identifier: "en_US"))
+        sut = makeSUT()
 
         await waitForSubscriptionUpdate()
 
@@ -791,7 +791,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        sut = makeSUT(locale: Locale(identifier: "en_US"))
+        sut = makeSUT()
 
         await waitForSubscriptionUpdate()
         XCTAssertFalse(sut.isEligibleForCancellationFlow)
@@ -807,7 +807,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        sut = makeSUT(locale: Locale(identifier: "en_US"))
+        sut = makeSUT()
 
         await waitForSubscriptionUpdate()
         XCTAssertEqual(sut.subscriptionManageButtonText, UserText.subscriptionManagePayment)
@@ -823,13 +823,12 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         sut.cancelSubscriptionTapped()
 
         XCTAssertEqual(instrumentation.cancelClickedCount, 1)
-        XCTAssertTrue(instrumentation.cancelledPlatforms.isEmpty)
+        XCTAssertEqual(instrumentation.appStoreSubscriptionCancelledCount, 0)
     }
 
     // MARK: - Helpers
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
-                         locale: Locale = Locale(identifier: "en_US"),
                          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentationSpy()) -> SubscriptionSettingsViewModel {
         SubscriptionSettingsViewModel(
             subscriptionManager: mockSubscriptionManager,
@@ -838,7 +837,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
             onboardingKeyValueStore: onboardingKeyValueStore,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            locale: locale,
             cancellationInstrumentation: cancellationInstrumentation
         )
     }

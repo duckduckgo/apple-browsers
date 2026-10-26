@@ -197,18 +197,20 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
             )
 
     async def testWhenNoStringsNeedTranslationThenJobIsDeleted(self):
-        client = FakeSmartlingClient(report={
-            'totalStrings': 0,
-            'priceInformation': None,
-        })
+        for limit in ('500.00', '0'):
+            with self.subTest(limit=limit):
+                client = FakeSmartlingClient(report={
+                    'totalStrings': 0,
+                    'priceInformation': None,
+                })
 
-        result = await self.run_submit(client)
+                result = await self.run_submit(client, auto_authorize_max_usd=limit)
 
-        self.assertEqual(result.outcome, 'no_new_strings')
-        self.assertEqual(result.job_id, 'job-123')
-        self.assertEqual(client.deleted_jobs, ['job-123'])
-        self.assertEqual(client.authorized_jobs, [])
-        self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
+                self.assertEqual(result.outcome, 'no_new_strings')
+                self.assertEqual(result.job_id, 'job-123')
+                self.assertEqual(client.deleted_jobs, ['job-123'])
+                self.assertEqual(client.authorized_jobs, [])
+                self.assertEqual(client.operations, ['cancel:job-123', 'delete:job-123'])
 
     async def testWhenEmptyJobCancellationFailsThenJobIsNotDeleted(self):
         client = FakeSmartlingClient(
@@ -255,6 +257,20 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.max_usd, '500.01')
         self.assertEqual((result.total_strings, result.locales), (10, 1))
         self.assertFalse(result.as_dict()['failed'])
+        self.assertEqual(client.authorized_jobs, [])
+
+    async def testWhenMaximumEstimateExceedsLimitByLessThanACentThenReviewIsRequired(self):
+        client = FakeSmartlingClient(report={
+            'totalStrings': 10,
+            'priceInformation': [
+                {'currencyCode': 'USD', 'priceMin': 400, 'priceMax': '500.004'},
+            ],
+        })
+
+        result = await self.run_submit(client)
+
+        self.assertEqual(result.outcome, 'review_required')
+        self.assertEqual(result.max_usd, '500.004')
         self.assertEqual(client.authorized_jobs, [])
 
     async def testWhenEstimateHasWarningsThenReviewIsRequired(self):

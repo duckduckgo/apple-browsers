@@ -28,6 +28,8 @@ final class SitePermissionsXCUITests: XCTestCase {
     private let app = XCUIApplication()
     private let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
     private let server = HttpServer()
+    /// Serves cross-origin frames: a different port is a different origin.
+    private let frameServer = HttpServer()
     private let timeout: TimeInterval = 20
     private var port = 0
 
@@ -42,6 +44,17 @@ final class SitePermissionsXCUITests: XCTestCase {
         server["/atb.js"] = { _ in .ok(.json(["version": "v1-1", "majorVersion": 1, "minorVersion": 1])) }
         server["/exti/"] = { _ in .accepted }
         server["/t/:pixelName"] = { _ in .accepted }
+        server["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
+        frameServer["/geolocation-frame"] = { _ in .ok(.html(Self.geolocationFrameHTML)) }
+        try frameServer.start(0, forceIPv4: true, priority: .userInitiated)
+        let framePort = try frameServer.port()
+        server["/iframe-same-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "/geolocation-frame", sandbox: "allow-scripts allow-same-origin allow-forms allow-popups")))
+        }
+        server["/iframe-opaque-sandbox"] = { _ in .ok(.html(Self.iframeHTML(src: "/geolocation-frame", sandbox: "allow-scripts"))) }
+        server["/iframe-cross-origin"] = { _ in
+            .ok(.html(Self.iframeHTML(src: "http://127.0.0.1:\(framePort)/geolocation-frame")))
+        }
         try server.start(0, forceIPv4: true, priority: .userInitiated)
         port = try server.port()
     }
@@ -49,6 +62,7 @@ final class SitePermissionsXCUITests: XCTestCase {
     override func tearDownWithError() throws {
         app.terminate()
         server.stop()
+        frameServer.stop()
         try super.tearDownWithError()
     }
 
@@ -91,6 +105,26 @@ final class SitePermissionsXCUITests: XCTestCase {
         reloadPermissionPage()
         request("camera")
         assertResult("success 1")
+        assertNoPermissionPrompt()
+    }
+
+    func testWhenSavedCameraAllowHasUndecidedSystemAccessThenSiteDialogPrecedesSystemPromptAndAllowPersists() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; }; }")
+        openPermissionPage()
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=0")
+        openPermissionsSheet()
+        assertSheetDecision("Camera", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+
+        reloadPermissionPage()
+        request("camera")
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=0")
         assertNoPermissionPrompt()
     }
 
@@ -231,6 +265,52 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
+    func testWhenSavedCombinedAllowHasUndecidedMicrophoneThenSiteDialogPrecedesOnlyMicrophoneSystemPrompt() {
+        launchApp()
+        openPermissionPage()
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "camera", allow: true)
+        assertResult("success 1")
+
+        app.terminate()
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { camera = allow; microphone = allow; }; }")
+        openPermissionPage()
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "microphone", allow: true)
+        assertResult("success 1")
+        assertResult("tracks video=1 audio=1")
+        assertNoSystemAlert()
+    }
+
+    func testWhenSavedCombinedAllowHasSystemCameraDenialThenReminderAppearsWithoutSiteOrSystemPrompt() {
+        launchApp()
+        openPermissionPage()
+        request("camera")
+        assertSiteDialog(permission: "camera")
+        tap(element("SitePermissions.Dialog.AllowOnce"))
+        answerSystemAlert(for: "camera", allow: false)
+        assertResult("NotAllowedError 1")
+
+        reloadPermissionPage()
+        request("camera and microphone")
+        assertSiteDialog(permission: "camera and microphone")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        dismissReminder(for: "camera")
+        assertResult("NotAllowedError 1")
+
+        reloadPermissionPage()
+        request("camera and microphone")
+        XCTAssertTrue(element("SitePermissions.Reminder").waitForExistence(timeout: timeout))
+        XCTAssertFalse(element("SitePermissions.Dialog").exists)
+        assertNoSystemAlert()
+        dismissReminder(for: "camera")
+        assertResult("NotAllowedError 1")
+    }
+
     func testWhenCombinedMediaHasSystemCameraDenialThenNeitherTrackIsGrantedAndMicrophoneWorksIndependently() {
         assertCombinedMediaFailsAfterSystemDenial(of: "camera")
     }
@@ -285,10 +365,120 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertNoPermissionPrompt()
     }
 
+    func testWhenSavedLocationAllowHasUndecidedSystemAccessThenSiteDialogPrecedesSystemPromptAndAllowPersists() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        openPermissionsSheet()
+        assertSheetDecision("Geolocation", contains: "Always Allow")
+        tap(element("SitePermissions.Sheet.Close"))
+
+        reloadPermissionPage()
+        request("location")
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        assertNoPermissionPrompt()
+    }
+
+    func testWhenSavedLocationAllowSiteDialogIsDismissedThenRequestsAreDeniedUntilReload() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        request("location")
+        assertSiteDialog(permission: "location")
+        dismissSiteDialog()
+        assertResult("location error 1 1")
+        assertNoSystemAlert()
+
+        request("location")
+        assertResult("location error 2 1")
+        assertNoPermissionPrompt()
+
+        reloadPermissionPage()
+        request("location")
+        assertSiteDialog(permission: "location")
+    }
+
     func testWhenSystemLocationIsDeniedThenReminderKeepsSavedSiteAllow() {
         openPermissionsSheetAfterSystemDenial(of: "location", expectedError: "location error 1 1")
         assertSheetDecision("Geolocation", contains: "Always Allow")
         XCTAssertTrue(element("SitePermissions.Sheet.GoToSystemSettings").exists)
+    }
+
+    func testWhenSavedLocationAllowWaitsForSystemAccessThenPermissionStatusFollowsTheSystemAnswer() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        queryLocationPermission()
+        assertResult("permission prompt")
+
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("location success 1 37.3317,-122.0301")
+        assertResult("permission granted")
+
+        openPermissionsSheet()
+        tap(element("SitePermissions.Sheet.Geolocation"))
+        tap(app.buttons["Never Allow"])
+        tap(element("SitePermissions.Sheet.Close"))
+        assertResult("permission denied")
+    }
+
+    func testWhenSystemLocationPromptIsDeniedThenPermissionStatusBecomesDenied() {
+        launchApp(seedPermissions: "{ \"127.0.0.1\" = { geolocation = allow; }; }")
+        openPermissionPage()
+        queryLocationPermission()
+        assertResult("permission prompt")
+
+        request("location")
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: false)
+        assertResult("location error 1 1")
+        assertResult("permission denied")
+    }
+
+    func testWhenTabIsSwitchedOrAppIsBackgroundedThenActiveWatchResumesWithoutPrompt() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp()
+        openPermissionPage()
+        tap(app.webViews.buttons["Watch location"])
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("watch success 37.3317,-122.0301")
+
+        // Both returns resume the watch; neither may wait on Core Location or ask again.
+        openNewPermissionTab(fireMode: false)
+        tap(element("Browser.Toolbar.Button.TabSwitcher"))
+        // Both tabs show the fixture, and the switcher lists the original tab first.
+        tap(app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label == %@", "Open \"Permissions fixture\" at 127.0.0.1"))
+            .element(boundBy: 0))
+        try simulateLocation(latitude: 51.5007, longitude: -0.1246)
+        assertResult("watch success 51.5007,-0.1246")
+        assertNoPermissionPrompt()
+
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(springboard.wait(for: .runningForeground, timeout: timeout))
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: timeout))
+        // The watch drops readings from before it resumes. A query reply means the page runs again, so the
+        // resume, queued when the app became active, has happened.
+        queryLocationPermission()
+        assertResult("permission granted")
+        try simulateLocation(latitude: 48.8566, longitude: 2.3522)
+        assertResult("watch success 48.8566,2.3522")
+        assertNoPermissionPrompt()
     }
 
     func testWhenLocationIsAllowedOnceThenCompletedRequestsAndWatchShareGrantUntilNewDocument() throws {
@@ -517,6 +707,28 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(element("Settings.SitePermissions.Site.127.0.0.1"))
         XCTAssertEqual(element("Settings.SitePermissions.Site.geolocation").value as? String, "Ask Each Time")
         tap(app.navigationBars.buttons["Site Permissions"])
+    }
+
+    func testWhenSameOriginIframeRequestsLocationThenSiteDialogPrecedesSystemPromptAndFrameGetsCoordinates() throws {
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        launchApp()
+        openPermissionPage(path: "/iframe-same-origin")
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame location"])
+        assertSiteDialog(permission: "location")
+        tap(element("SitePermissions.Dialog.AllowWhileUsingSite"))
+        answerSystemAlert(for: "location", allow: true)
+        // maximumAge: 0 needs a fix timestamped after authorization and acquisition begin.
+        try simulateLocation(latitude: 37.3317, longitude: -122.0301)
+        assertResult("Frame result: success 37.3317,-122.0301")
+    }
+
+    func testWhenCrossOriginIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-cross-origin")
+    }
+
+    func testWhenOpaqueSandboxedIframeRequestsLocationThenItIsDeniedWithoutSiteOrSystemPrompt() {
+        assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: "/iframe-opaque-sandbox")
     }
 
     func testWhenActiveLocationWatchIsDeniedThenItStopsAndReallowDoesNotRestartIt() throws {
@@ -877,6 +1089,8 @@ final class SitePermissionsXCUITests: XCTestCase {
             "-ff.sitePermissions", String(flagEnabled),
             "-ff.floatingUIiOS26", "true",
             "-ff.floatingUIiOS27", "true",
+            // The app-open keyboard can cover the toolbar, including the Tab Switcher.
+            "-ff.alwaysShowKeyboardOnNewTabPage", "false",
             "-AppleLanguages", "(en)", "-AppleLocale", "en_GB"
         ]
         if ProcessInfo.processInfo.environment["INTERNAL_USER_MODE"] == "true" {
@@ -925,7 +1139,7 @@ final class SitePermissionsXCUITests: XCTestCase {
 
     private func openNewPermissionTab(fireMode: Bool) {
         let tabSwitcher = element("Browser.Toolbar.Button.TabSwitcher")
-        XCTAssertTrue(tabSwitcher.waitForHittable(timeout: timeout))
+        XCTAssertTrue(tabSwitcher.waitForHittable(timeout: timeout), app.debugDescription)
         tabSwitcher.press(forDuration: 0.8)
         tap(app.buttons[fireMode ? "New Fire Tab" : "New Tab"])
         openPermissionPage()
@@ -1009,6 +1223,10 @@ final class SitePermissionsXCUITests: XCTestCase {
         tap(app.webViews.buttons["Request \(permission)"])
     }
 
+    private func queryLocationPermission() {
+        tap(app.webViews.buttons["Query location permission"])
+    }
+
     private func assertLocationAllowOnceLastsUntilNewDocument(fireMode: Bool) throws {
         try simulateLocation(latitude: 37.3317, longitude: -122.0301)
         launchApp(additionalArguments: ["-ff.fireMode", String(fireMode)])
@@ -1056,6 +1274,18 @@ final class SitePermissionsXCUITests: XCTestCase {
         assertResult("location error 1 1")
     }
 
+    private func assertIframeIsDeniedWithoutSiteOrSystemPrompt(path: String) {
+        launchApp()
+        openPermissionPage(path: path)
+        assertResult("Frame result: ready")
+        tap(app.webViews.buttons["Frame location"])
+        assertResult("Frame result: error 1")
+        // Location authorization is reset in setUp, so a native request would still show the iOS alert.
+        XCTAssertFalse(element("SitePermissions.Dialog").waitForExistence(timeout: 2))
+        XCTAssertFalse(springboard.alerts.firstMatch.waitForExistence(timeout: 2))
+        assertNoPermissionPrompt()
+    }
+
     private func simulateLocation(latitude: Double, longitude: Double) throws {
         guard #available(iOS 16.4, *) else {
             throw XCTSkip("Deterministic device location requires iOS 16.4 or later")
@@ -1085,6 +1315,13 @@ final class SitePermissionsXCUITests: XCTestCase {
             XCTAssertEqual(button.label, label, file: file, line: line)
         }
         assertNoSystemAlert(file: file, line: line)
+    }
+
+    private func dismissSiteDialog() {
+        // The side scrim avoids the floating browser controls above the tab.
+        let backdrop = element("SitePermissions.Dialog").coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5))
+        backdrop.tap()
+        XCTAssertTrue(element("SitePermissions.Dialog").waitForNonExistence(timeout: timeout))
     }
 
     private func answerSystemAlert(for permission: String, allow: Bool, waitForDismissal: Bool = true) {
@@ -1265,12 +1502,14 @@ final class SitePermissionsXCUITests: XCTestCase {
       <button onclick="requestMedia({video: true, audio: true})">Request camera and microphone</button>
       <button onclick="requestLocation()">Request location</button>
       <button onclick="watchLocation()">Watch location</button>
+      <button onclick="queryLocationPermission()">Query location permission</button>
       <button onclick="document.getElementById('result').textContent = 'reloading'; location.reload()">Reload fixture</button>
       <p id="result" role="status">ready</p>
       <p id="tracks" role="status">tracks video=0 audio=0</p>
       <p id="liveTracks" role="status">live video=0 audio=0</p>
       <p id="locationResult" role="status">location ready</p>
       <p id="watchResult" role="status">watch ready</p>
+      <p id="permissionResult" role="status">permission ready</p>
       <script>
         let requestCount = 0;
         let locationRequestCount = 0;
@@ -1317,6 +1556,48 @@ final class SitePermissionsXCUITests: XCTestCase {
             position => result.textContent = 'watch success ' + coordinates(position),
             error => result.textContent = 'watch error ' + error.code,
             {maximumAge: 0, enableHighAccuracy: true});
+        }
+        async function queryLocationPermission() {
+          const result = document.getElementById('permissionResult');
+          const status = await navigator.permissions.query({name: 'geolocation'});
+          result.textContent = 'permission ' + status.state;
+          status.onchange = () => result.textContent = 'permission ' + status.state;
+        }
+      </script>
+    </body>
+    </html>
+    """
+
+    private static func iframeHTML(src: String, sandbox: String? = nil) -> String {
+        let sandboxAttribute = sandbox.map { " sandbox=\"\($0)\"" } ?? ""
+        return """
+        <!doctype html>
+        <html lang="en">
+        <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Permissions fixture</title></head>
+        <body>
+          <h1>Permissions fixture</h1>
+          <p role="status">ready</p>
+          <iframe src="\(src)" allow="geolocation"\(sandboxAttribute)></iframe>
+        </body>
+        </html>
+        """
+    }
+
+    private static let geolocationFrameHTML = """
+    <!doctype html>
+    <html lang="en">
+    <body>
+      <button onclick="requestFrameLocation()">Frame location</button>
+      <p id="frameResult" role="status">Frame result: ready</p>
+      <script>
+        function requestFrameLocation() {
+          const result = document.getElementById('frameResult');
+          result.textContent = 'Frame result: pending';
+          navigator.geolocation.getCurrentPosition(
+            position => result.textContent = 'Frame result: success '
+              + position.coords.latitude.toFixed(4) + ',' + position.coords.longitude.toFixed(4),
+            error => result.textContent = 'Frame result: error ' + error.code,
+            {maximumAge: 0});
         }
       </script>
     </body>

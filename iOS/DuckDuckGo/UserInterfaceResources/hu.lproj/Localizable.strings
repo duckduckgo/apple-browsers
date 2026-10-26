@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "A jelszavak titkosítottak, az eszközön tárolódnak, és %@ használatával zároltak.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID vagy jelkód";
 
@@ -1661,7 +1658,7 @@
 "crash.report.dialog.title" = "Hibajelentések automatikus küldése?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Jelenlegi elutasítási szám: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Jelenlegi előfizetések";
@@ -2645,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Belépő tabletta";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Bejelentkezés";
@@ -4121,7 +4118,7 @@
 "Primary / First Action" = "Elsődleges/első művelet";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Előkészítő ablak";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Adatvédelem";
@@ -4184,10 +4181,10 @@
 "Reset" = "Visszaállítás";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Tabletta elutasítási számának visszaállítása";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Előkészítő ablak állapotának visszaállítása";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Tárolt állomásnév: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Hozzáadás az eszközhöz";

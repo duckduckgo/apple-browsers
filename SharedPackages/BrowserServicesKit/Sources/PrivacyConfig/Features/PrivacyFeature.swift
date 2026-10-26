@@ -342,9 +342,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
-    /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
-    case contextualSuggestedPrompts
-
     /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
     case contextualPagePlaceholder
 
@@ -480,6 +477,22 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
 
+    /// Enables "Add Screenshot" in the Duck.ai omnibar attach menu (address bar and prompt bar).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case omnibarScreenshot
+
+    /// Enables "Add Screenshot" in the New Tab Page omnibar (`screenshotModes` and `omnibar_captureScreenshot`).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case ntpScreenshot
+
+    /// Enables pasting images and copied image or PDF files into the Duck.ai omnibar prompt (address bar and prompt bar).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case pasteImages
+
+    /// Enables pasting images and copied files into the New Tab Page omnibar (`enablePastedAttachments`).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case ntpPasteImages
+
     /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
     case tabAttachmentLimit
 
@@ -541,6 +554,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Single Duck.ai menu button in the iPad tabs bar.
     case iPadChromeMenuButton
+
+    /// Contextual Duck.ai chat shown as a sidebar beside the page on iPad, instead of a sheet.
+    case iPadContextualSidebar
 
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
@@ -909,6 +925,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
     case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.

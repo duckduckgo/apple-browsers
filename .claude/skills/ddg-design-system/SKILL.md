@@ -1,6 +1,6 @@
 ---
 name: ddg-design-system
-description: Use when creating, changing or reviewing UI on iOS or macOS, including colors, typography, icons, corner radii, shadows, spacing, button styles and other shared components from DesignResourcesKit (DRK), DesignResourcesKitIcons, UIComponents or DuckUI.
+description: Use when creating, changing or reviewing UI on iOS or macOS, including colors, macOS theme support, typography, icons, corner radii, shadows, spacing, button styles and other shared components from DesignResourcesKit (DRK), DesignResourcesKitIcons, UIComponents or DuckUI.
 ---
 
 # Design system (DRK)
@@ -26,6 +26,8 @@ to the user and recommend confirming with a designer that no semantic color appl
 
 - Use semantic colors (`Color(designSystemColor:)`, `UIColor(designSystemColor:)`,
   `NSColor(designSystemColor:)`) and keep the screen's palette wiring and light/dark behavior.
+- macOS: colors must follow live theme changes. Read
+  [`references/macos-theming.md`](references/macos-theming.md) before touching colors.
 - iOS: use DRK typography (`UIFont.daxBodyRegular()`, `.daxTitle1()` and similar) and keep
   Dynamic Type working; fix layouts for larger text rather than disabling it. macOS: DRK
   typography is iOS only, so follow the feature's existing conventions.

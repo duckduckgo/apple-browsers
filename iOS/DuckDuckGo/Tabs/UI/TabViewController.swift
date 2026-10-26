@@ -207,6 +207,7 @@ class TabViewController: UIViewController {
     let tabInteractionStateSource: TabInteractionStateSource?
 
     var isLinkPreview = false
+    var linkPreviewNavigationCancellable: AnyCancellable?
 
     // A workaround for an issue when in some cases webview reports `isLoading == true` when it was stoppped.
     var isLoading: Bool {
@@ -315,6 +316,7 @@ class TabViewController: UIViewController {
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var featureFlagger: FeatureFlagger
+    let findInPageImplementation: FindInPageImplementation
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -648,6 +650,7 @@ class TabViewController: UIViewController {
                                    webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                                    sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+                                   findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -690,6 +693,7 @@ class TabViewController: UIViewController {
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
                                  sitePermissionsEnabled: sitePermissionsEnabled,
+                                 findInPageImplementation: findInPageImplementation,
                                  webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
@@ -931,6 +935,7 @@ class TabViewController: UIViewController {
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+         findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
          webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
@@ -942,13 +947,18 @@ class TabViewController: UIViewController {
         self.historyManager = historyManager
         self.syncService = syncService
         self.userScriptsDependencies = userScriptsDependencies
-        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher.map { content in
+            var content = content
+            content.findInPageImplementation = findInPageImplementation
+            return content
+        }.eraseToAnyPublisher()
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.findInPageImplementation = findInPageImplementation
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.contentScopeExperimentsManager = contentScopeExperimentManager
@@ -4910,12 +4920,12 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
 
     func requestFindInPage() {
-        if #available(iOS 16.0, *) {
+        pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
+
+        if #available(iOS 16.0, *), findInPageImplementation == .system {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction
-            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
             guard findInteraction?.isFindNavigatorVisible == false else { return }
-            // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
             findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
             findInteraction?.presentFindNavigator(showingReplace: false)
             (webView as? WebView)?.beginTrackingFindInPageQuery()

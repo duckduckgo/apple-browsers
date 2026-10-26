@@ -98,7 +98,7 @@ struct SyncSuccessView: View {
     private var headerSection: some View {
         Section {
             VStack(spacing: 24) {
-                Image(rebrandable: "Sync-Start-128", bundle: .module)
+                Image("Sync-Start-128", bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)

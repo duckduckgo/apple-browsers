@@ -140,6 +140,16 @@ final class PasteboardAttachmentReaderTests: XCTestCase {
         XCTAssertTrue(result.files.isEmpty)
     }
 
+    func testLoadAttachmentsDownscalesLargeImageWhileLoading() async {
+        let provider = NSItemProvider(object: makeTestImage(size: CGSize(width: 2000, height: 1000)))
+
+        let result = await PasteboardAttachmentReader.loadAttachments(
+            from: [provider], allowsImages: true, allowedFileTypes: []
+        )
+
+        XCTAssertEqual(result.images.first?.image.size, CGSize(width: 512, height: 256))
+    }
+
     func testLoadAttachmentsSkipsImageWhenImagesNotAllowed() async {
         let provider = NSItemProvider(object: makeTestImage())
 

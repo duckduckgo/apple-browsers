@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Lozinke su šifrirane, pohranjene na uređaju i zaključane pomoću %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "prepoznavanja lica (Face ID) ili šifre";
 
@@ -1661,7 +1658,7 @@
 "crash.report.dialog.title" = "Automatski slati izvješća o padu?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Trenutni broj odbacivanja: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Postojeće pretplate";
@@ -2645,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Ulazni gumb";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Prijava";
@@ -4121,7 +4118,7 @@
 "Primary / First Action" = "Primarna/prva radnja";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Uvodni modalni prozor";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Zaštita privatnosti";
@@ -4184,10 +4181,10 @@
 "Reset" = "Resetiraj";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Ponovno postavi broj odbacivanja gumba";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Ponovno postavi stanje uvodnog modalnog prozora";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Pohranjeno ime glavnog računala: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj na uređaj";

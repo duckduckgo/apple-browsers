@@ -24,13 +24,12 @@ import PrivacyConfig
 
 protocol AddressBarStyleProviding {
     // MARK: - Public API(s)
-    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
-    func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
-    func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
+    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarHorizontalPadding(focused: Bool) -> CGFloat?
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
     func addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: Bool) -> CGFloat
 
@@ -39,7 +38,6 @@ protocol AddressBarStyleProviding {
     var shouldAddPaddingToAddressBarButtons: Bool { get }
     var shouldAddAddressBarShadowWhenInactive: Bool { get }
     var shouldLeaveBottomPaddingInSuggestions: Bool { get }
-    var shouldUseLegacyAddressBarSpacingMechanism: Bool { get }
 
     // MARK: - Font Sizes
     var defaultAddressBarFontSize: CGFloat { get }
@@ -49,8 +47,6 @@ protocol AddressBarStyleProviding {
     var addressBarActiveBackgroundViewRadius: CGFloat { get }
     var addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat { get }
     var addressBarActiveBackgroundViewVerticalPadding: CGFloat { get }
-    var addressBarActiveOuterBorderViewRadius: CGFloat { get }
-    var addressBarActiveOuterBorderSize: CGFloat { get }
     var addressBarButtonSize: CGFloat { get }
     var addressBarButtonsCornerRadius: CGFloat { get }
     var addressBarPrivacyAnimationSize: CGSize? { get }
@@ -104,19 +100,15 @@ final class AddressBarStyleProvider: AddressBarStyleProviding {
     let shouldAddPaddingToAddressBarButtons: Bool = true
     let shouldAddAddressBarShadowWhenInactive: Bool = false
     let shouldLeaveBottomPaddingInSuggestions: Bool = true
-    let shouldUseLegacyAddressBarSpacingMechanism: Bool = false
 
     // MARK: - Font Sizes
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 13
 
     // MARK: - Metrics
-
     let addressBarActiveBackgroundViewRadius: CGFloat = 19
     let addressBarActiveBackgroundViewRadiusWithSuggestions: CGFloat = 24
     let addressBarActiveBackgroundViewVerticalPadding: CGFloat = 5
-    let addressBarActiveOuterBorderViewRadius: CGFloat = 0      // Deprecated
-    let addressBarActiveOuterBorderSize: CGFloat = 0            // Deprecated
     let addressBarButtonSize: CGFloat = 28
     let addressBarButtonsCornerRadius: CGFloat = 14
     let addressBarPrivacyAnimationSize: CGSize? = CGSize(width: 34, height: 34)
@@ -153,7 +145,7 @@ final class AddressBarStyleProvider: AddressBarStyleProviding {
 
     // MARK: - Public API(s)
 
-    func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
+    func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default:
             return navigationBarHeightForDefault
@@ -164,8 +156,7 @@ final class AddressBarStyleProvider: AddressBarStyleProviding {
         }
     }
 
-    /// Deprecated: Remove once `.appRebranding` Ships
-    func addressBarTopPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
+    func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default, .homePage:
             return addressBarTopPaddingForDefault
@@ -174,8 +165,7 @@ final class AddressBarStyleProvider: AddressBarStyleProviding {
         }
     }
 
-    /// Deprecated: Remove once `.appRebranding` Ships
-    func addressBarBottomPadding(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
+    func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default, .homePage:
             return addressBarBottomPaddingForDefault
@@ -194,10 +184,6 @@ final class AddressBarStyleProvider: AddressBarStyleProviding {
 
     func addressBarTrailingStackViewPadding(focused: Bool, showsToggle: Bool) -> CGFloat {
         return showsToggle ? addressBarTrailingStackViewOmnibarPadding : addressBarTrailingStackViewDefaultPadding
-    }
-
-    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
-        return false
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {

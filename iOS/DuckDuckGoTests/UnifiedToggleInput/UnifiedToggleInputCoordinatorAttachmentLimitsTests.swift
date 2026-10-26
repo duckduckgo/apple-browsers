@@ -842,7 +842,6 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         sut.addImageAttachment(image: UIImage(systemName: "photo")!, fileName: "a.jpg")
         XCTAssertTrue(sut.viewController.isPromptOverLimit, "The model's 4,500 applies with an image")
-        XCTAssertEqual(sut.promptLengthGate.promptLength?.limit, 4_500)
     }
 
     func testLongPasteBecomesAChipAndAnOverLimitPasteTurnsTheChipsRed() throws {
@@ -1023,6 +1022,31 @@ final class UnifiedToggleInputCoordinatorAttachmentLimitsTests: XCTestCase {
 
         XCTAssertEqual(delegate.submittedPrompt, "typed", "Only the typed text reaches the URL builder")
         XCTAssertFalse(delegate.submittedPrompt?.contains(longText(4_000)) ?? true)
+    }
+
+    func testPromptWideEventCountsUploadsButNotPastedTextAsAttachments() throws {
+        let prefs = StubAIChatPreferences()
+        prefs.selectedModelId = "image-model"
+        let instrumentation = MockDuckAIWideEventInstrumentation()
+        let sut = UnifiedToggleInputCoordinator(host: .omnibar, isToggleEnabled: true, preferences: prefs,
+                                                duckAIWideEventInstrumentation: instrumentation,
+                                                featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.unifiedToggleInputPastedText]))
+        sut.modelStore.attachmentLimits = makeLimits()
+        sut.modelStore.models = [makeModel(id: "image-model", supportsImageUpload: true)]
+        sut.delegate = SpyUnifiedToggleInputDelegate()
+        sut.activateForTab("tab-A")
+        sut.updateInputMode(.aiChat, animated: false)
+        let pasteHandler = try XCTUnwrap(sut.viewController.attachmentPasteHandler)
+
+        XCTAssertTrue(pasteHandler.attachInsertedTextIfLong(longText(4_000)))
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        sut.addImageAttachment(image: UIImage(systemName: "photo")!, fileName: "a.jpg")
+        sut.unifiedToggleInputVCDidRequestSubmitCurrentInput(sut.viewController)
+        flushMainQueue()
+
+        XCTAssertEqual(instrumentation.submissionStartedAttachmentFlags, [false, true])
     }
 
     func testEditWithPastesMakesViewOnlyChipsAndRepliesWithWhatRemains() async throws {

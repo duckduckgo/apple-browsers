@@ -42,45 +42,35 @@ final class UTIPromptLengthGate {
         let isEnabled: () -> Bool
     }
 
-    /// Each sink ignores a repeated value, so `refresh()` reports every time.
-    struct Outputs {
-        let onOverLimitChanged: (AIChatPromptLength?) -> Void
-        let onPromptOverLimitChanged: (Bool) -> Void
-    }
-
     private let limits: AIChatPromptLimits
     private let inputs: Inputs
-    private let outputs: Outputs
+    /// The draft's length while it is over the limit, else nil. Sent on every `refresh()`; the sink ignores a repeat.
+    private let onOverLimitChanged: (AIChatPromptLength?) -> Void
 
-    private(set) var promptLength: AIChatPromptLength?
-
-    init(limits: AIChatPromptLimits = .current, inputs: Inputs, outputs: Outputs) {
+    init(limits: AIChatPromptLimits = .current, inputs: Inputs, onOverLimitChanged: @escaping (AIChatPromptLength?) -> Void) {
         self.limits = limits
         self.inputs = inputs
-        self.outputs = outputs
+        self.onOverLimitChanged = onOverLimitChanged
     }
-
-    var isSubmitBlocked: Bool { promptLength?.isOverLimit == true }
 
     /// `refresh()` measures the typed draft. A submit may send other text (Paste & Go clears the draft, a quick action
     /// replaces it), so the prompt that is actually sent is measured here with the attachments it carries.
     func blocksSubmission(of text: String) -> Bool {
         guard inputs.isEnabled() else { return false }
-        return limits.evaluate(prompt: text, attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits()).isOverLimit
+        return measure(text).isOverLimit
     }
 
-    func sheetLimit(for paste: AIChatPastedText) -> Int {
-        let length = promptLength ?? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(),
-                                                     attachmentLimits: inputs.attachmentLimits())
-        return max(0, length.limit(forEditing: paste))
+    func sheetMode(for paste: AIChatPastedText) -> PastedTextSheetMode {
+        let length = measure(inputs.promptText())
+        return .editable(limit: length.limit, otherCount: length.count - paste.length)
     }
 
     func refresh() {
-        promptLength = inputs.isEnabled()
-            ? limits.evaluate(prompt: inputs.promptText(), attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits())
-            : nil
-        let overLimit = promptLength.flatMap { $0.isOverLimit ? $0 : nil }
-        outputs.onOverLimitChanged(overLimit)
-        outputs.onPromptOverLimitChanged(overLimit != nil)
+        let length = inputs.isEnabled() ? measure(inputs.promptText()) : nil
+        onOverLimitChanged(length.flatMap { $0.isOverLimit ? $0 : nil })
+    }
+
+    private func measure(_ prompt: String) -> AIChatPromptLength {
+        limits.evaluate(prompt: prompt, attachments: inputs.attachments(), attachmentLimits: inputs.attachmentLimits())
     }
 }

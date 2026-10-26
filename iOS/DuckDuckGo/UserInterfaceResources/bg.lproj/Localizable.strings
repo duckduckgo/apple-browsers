@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Паролите се криптират, съхраняват се на устройството и се заключват с %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Паролите се криптират, съхраняват се на устройството и се заключват с Face ID или парола.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Лицево разпознаване или код за достъп";
 
@@ -1661,7 +1658,7 @@
 "crash.report.dialog.title" = "Автоматично изпращане на доклади за сривове?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Текущ брой отхвърлени съобщения: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Текущи абонаменти";
@@ -2645,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Въвеждащо съобщение";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Влизане";
@@ -4121,7 +4118,7 @@
 "Primary / First Action" = "Основно/първо действие";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Начален модален прозорец";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Защита на поверителността";
@@ -4184,10 +4181,10 @@
 "Reset" = "Нулиране";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Нулиране на брояча за отхвърлени съобщения";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Нулиране на състоянието на началния модален прозорец";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Запазено име на хост: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавяне към устройството";

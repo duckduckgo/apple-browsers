@@ -20,7 +20,6 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 public struct FaviconsFetcherOnboardingView: View {
 
@@ -34,7 +33,7 @@ public struct FaviconsFetcherOnboardingView: View {
         VStack(spacing: 0) {
 
             VStack(spacing: 24) {
-                Image(rebrandable: "Webpage-Download-128")
+                Image("Webpage-Download-128")
 
                 Text(UserText.fetchFaviconsOnboardingTitle)
                     .daxTitle1()

@@ -20,6 +20,21 @@
 import Foundation
 import WebKit
 import Core
+import FeatureFlags_iOS
+import PrivacyConfig
+
+enum FindInPageImplementation {
+    case system
+    case legacy
+
+    init(featureFlagger: FeatureFlagger) {
+        if #available(iOS 16.0, *), !featureFlagger.isFeatureOn(.legacyFindInPage) {
+            self = .system
+        } else {
+            self = .legacy
+        }
+    }
+}
 
 protocol FindInPageDelegate: NSObjectProtocol {
     

@@ -32,9 +32,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470686549
     case contextualOnboarding
 
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
-    case appRebranding
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216394295428096?focus=true
     case newTabPageRebranding
 
@@ -117,6 +114,18 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
     case webExtensionBitwarden
 
+    /// Turns 1Password on or off. While off, an installed 1Password is disabled but kept with its data.
+    /// Turning the flag back on doesn't re-enable 1Password; the user does.
+    /// Follows 1Password's extensions catalog entry, which also controls installing 1Password.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219743179155238
+    case webExtensionOnePassword
+
+    /// Turns iCloud Passwords on or off. While off, an installed iCloud Passwords is disabled but kept with its data.
+    /// Turning the flag back on doesn't re-enable iCloud Passwords; the user does.
+    /// Follows iCloud Passwords' extensions catalog entry, which also controls installing iCloud Passwords.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219792476428276?focus=true
+    case webExtensionICloudPasswords
+
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
@@ -140,6 +149,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
     case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
 
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
@@ -448,6 +460,22 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
 
+    /// Duck.ai "Add Screenshot" in the address bar and prompt bar attach menus.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatOmnibarScreenshot
+
+    /// Duck.ai "Add Screenshot" in the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatNtpScreenshot
+
+    /// Duck.ai: pasting images and copied files into the address bar and prompt bar prompt.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatPasteImages
+
+    /// Duck.ai: pasting images and copied files into the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatNtpPasteImages
+
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
     case aiChatNtpSuggestionsDeletion
@@ -740,8 +768,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.freemium), supportsLocalOverriding: false)
         case .contextualOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
-        case .appRebranding:
-            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .newTabPageRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
@@ -797,6 +823,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.sharedPinnedTabWindowClose), category: .webExtensions)
         case .cpmNetworkProcessRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
+        case .cpmStableBaseURL:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
@@ -805,6 +833,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
         case .webExtensionBitwarden:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
+        case .webExtensionOnePassword:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.onePassword), category: .webExtensions)
+        case .webExtensionICloudPasswords:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.iCloudPasswords), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -987,6 +1019,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatOmnibarScreenshot:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
+        case .aiChatNtpScreenshot:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
+        case .aiChatPasteImages:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
+        case .aiChatNtpPasteImages:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatNtpSuggestedPrompts:

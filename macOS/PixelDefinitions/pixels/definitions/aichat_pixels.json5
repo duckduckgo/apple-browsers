@@ -81,7 +81,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_history_autoclear_enabled": {
         "description": "Fired when user enables the setting to auto-clear Duck.ai chat history in Data Clearing preferences",
@@ -577,5 +577,29 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+    },
+    "aichat_screenshot_permission_needed_macos_u": {
+        "description": "Fired once per install, the first time an Add Screenshot attempt (either mode, any surface) finds Screen Recording off. Start of the Screen Recording funnel",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_alert_accepted_macos_u": {
+        "description": "Fired once per install, the first time the user clicks Continue (which shows the macOS Screen Recording prompt) or, once macOS has asked, Open System Settings in the Duck.ai Screen Recording alert",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_granted_macos_u": {
+        "description": "Fired once per install, on the first app activation that finds Screen Recording on after aichat_screenshot_permission_needed_macos_u fired on that install. Separates installs that never turned the permission on from those that did but didn't come back to capture",
+        "owners": ["jotaemepereira"],
+        "triggers": ["startup"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_screenshot_permission_converted_macos_u": {
+        "description": "Fired once per install, on the first successful Add Screenshot capture after aichat_screenshot_permission_needed_macos_u fired on that install. End of the Screen Recording funnel",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

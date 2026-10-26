@@ -183,7 +183,7 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
-        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
@@ -201,7 +201,7 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        self.privacyStats = Self.makePrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
@@ -682,10 +682,22 @@ final class MainCoordinator {
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,
+                                               featureFlagger: FeatureFlagger,
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager)
+                        dataStoreIDManager: dataStoreIDManager,
+                        featureFlagger: featureFlagger,
+                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
+                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
+    }
+
+    private static func makePrivacyStats() -> PrivacyStatsProviding {
+        let location = PrivacyStatsDatabase.defaultLocation
+        if let database = PrivacyStatsDatabase(location: location) {
+            return PrivacyStats(databaseProvider: database)
+        }
+        return UnavailablePrivacyStats(storeLocation: location)
     }
 
     // MARK: - Public API

@@ -71,7 +71,7 @@ final class UTIAttachmentController {
         var isPastedTextEnabled: () -> Bool = { false }
         var isEditing: () -> Bool = { false }
         var isVoiceSessionActive: () -> Bool = { false }
-        var pastedTextSheetLimit: (AIChatPastedText) -> Int = { _ in 0 }
+        var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -710,6 +710,7 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
     func addPastedText(_ text: String) {
         callbacks.onExpandIfNeeded()
         view.addAttachment(.pastedText(AIChatPastedText(content: text)))
+        pixelReporter.reportPastedText(.attached)
         callbacks.onDraftChanged()
         clearValidationErrorIfPossible()
         updateAttachButtonPresentation()
@@ -722,7 +723,8 @@ extension UTIAttachmentController {
     func presentPastedTextSheet(id: UUID) {
         guard let pastedText = view.currentAttachments().first(where: { $0.id == id })?.pastedText,
               let host = environment.presenterViewController() else { return }
-        let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : .editable(limit: environment.pastedTextSheetLimit(pastedText))
+        let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : environment.pastedTextSheetMode(pastedText)
+        pixelReporter.reportPastedText(.sheetOpened)
         PastedTextSheetPresenter.present(pastedText, mode: mode, from: host) { [weak self] outcome in
             guard let self else { return }
             if case .saved(let edited) = outcome {
@@ -735,6 +737,7 @@ extension UTIAttachmentController {
     private func replacePastedText(id: UUID, with pastedText: AIChatPastedText) {
         guard view.currentAttachments().contains(where: { $0.id == id }) else { return }
         view.replaceAttachment(id, .pastedText(pastedText))
+        pixelReporter.reportPastedText(.edited)
         callbacks.onDraftChanged()
     }
 }

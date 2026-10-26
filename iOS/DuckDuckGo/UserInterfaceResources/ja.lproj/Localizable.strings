@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "パスワードは暗号化され、デバイスに保存され、%@でロックされています。";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "パスワードは暗号化され、デバイスに保存され、Face IDまたはパスコードでロックされます。";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face IDまたはパスコード";
 
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "格納されたホスト名：%@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "デバイスに追加";

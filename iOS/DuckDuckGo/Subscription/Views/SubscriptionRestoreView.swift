@@ -42,7 +42,7 @@ struct SubscriptionRestoreView: View {
     let featureFlagger: FeatureFlagger
 
     private enum Constants {
-        static let heroImage = "Privacy-Pro-Add-Device-128"
+        static let heroImage: ImageResource = .privacyProAddDevice128
 
         static let viewPadding = EdgeInsets(top: 10, leading: 30, bottom: 0, trailing: 30)
         static let sectionSpacing: CGFloat = 16
@@ -180,7 +180,7 @@ struct SubscriptionRestoreView: View {
     
     private var headerView: some View {
         VStack(spacing: Constants.headerItemSpacing) {
-            Image(rebrandable: Constants.heroImage)
+            Image(Constants.heroImage)
             Text(UserText.subscriptionActivateHeaderTitle)
                 .daxTitle2()
                 .multilineTextAlignment(.center)

@@ -420,23 +420,20 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertEqual(removed, [paste.id])
     }
 
-    func testPastedTextChipTakesTheErrorColoursOnlyWhileTheStripShowsThePromptLengthError() throws {
-        let strip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: true)
-        strip.addAttachment(.pastedText(AIChatPastedText(content: "pasted")))
-        strip.addAttachment(makeFileAttachment())
-        let chips = try XCTUnwrap(firstDescendant(of: UIStackView.self, in: strip)).arrangedSubviews.compactMap { $0 as? UnifiedToggleInputAttachmentThumbnailView }
-        let pastedChip = try XCTUnwrap(chips.first)
-        let fileChip = try XCTUnwrap(chips.last)
-        let normalBorder = pastedChip.subviews[0].layer.borderColor
+    func testChipsStayGreyWhileThePromptIsTooLongAndOnlyInvalidFilesTurnRed() throws {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.addAttachment(.pastedText(AIChatPastedText(content: "pasted")))
+        sut.addAttachment(makeFileAttachment())
+        sut.addAttachment(makeInvalidFileAttachment())
+        let chips = allDescendants(of: UnifiedToggleInputAttachmentThumbnailView.self, in: sut)
+        XCTAssertEqual(chips.count, 3)
+        let normalBorder = chips[0].subviews[0].layer.borderColor
 
-        strip.showsPromptLengthError = true
+        sut.isPromptOverLimit = true
 
-        XCTAssertNotEqual(pastedChip.subviews[0].layer.borderColor, normalBorder)
-        XCTAssertEqual(fileChip.subviews[0].layer.borderColor, normalBorder, "Only pasted-text chips show the length error")
-        XCTAssertFalse(strip.attachments[0].isInvalid, "The error state is not the invalid-file state")
-
-        strip.showsPromptLengthError = false
-        XCTAssertEqual(pastedChip.subviews[0].layer.borderColor, normalBorder)
+        XCTAssertEqual(chips[0].subviews[0].layer.borderColor, normalBorder, "The pasted-text chip stays grey")
+        XCTAssertEqual(chips[1].subviews[0].layer.borderColor, normalBorder, "The file chip stays grey")
+        XCTAssertNotEqual(chips[2].subviews[0].layer.borderColor, normalBorder, "Invalid files keep their own red style")
     }
 
     func testWhenCompactLayoutIsDisabledThenImageRemainsThumbnailBesideRemoveButton() throws {

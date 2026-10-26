@@ -174,6 +174,7 @@ let package = Package(
         .target(
             name: "History",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),

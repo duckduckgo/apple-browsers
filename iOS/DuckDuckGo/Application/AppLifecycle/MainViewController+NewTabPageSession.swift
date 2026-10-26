@@ -262,6 +262,13 @@ final class NewTabPagePresentationCoordinator {
                 }
             })
         }
+        // Dismissing a sheet over the page, such as Settings, posts none of the above. Until the app resigns,
+        // its window is still active and uncovered, so this is the last reliable check that the page was seen.
+        observers.append(notificationCenter.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.notePresentedIfVisible()
+            }
+        })
     }
 
     deinit {
@@ -295,6 +302,13 @@ final class NewTabPagePresentationCoordinator {
         visit?()
         shown?()
         focus?()
+    }
+
+    /// Marks the page as seen without running pending callbacks: a visit or keyboard request must not start as the app leaves.
+    /// A pending `shown` stays queued, as it does across `backgrounded()`, and reports on the next visible presentation.
+    func notePresentedIfVisible() {
+        guard page != nil, isVisible() else { return }
+        hasPresentedPage = true
     }
 
     func backgrounded() {

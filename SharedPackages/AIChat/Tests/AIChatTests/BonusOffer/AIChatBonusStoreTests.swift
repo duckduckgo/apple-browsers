@@ -195,6 +195,38 @@ struct AIChatBonusStoreTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("Check the help page is stored next to the record", .timeLimit(.minutes(1)))
+    func helpPageIsStoredNextToTheRecord() throws {
+        // GIVEN
+        let sut = AIChatBonusStore(directoryURL: directoryURL, fileSystem: fileSystem, helpPage: URL(string: "https://example.com/help")!)
+
+        // WHEN
+        try sut.write(claimedRecord)
+
+        // THEN
+        let data = try #require(fileSystem.files[fileURL])
+        let json = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+        #expect(json["helpPage"] as? String == "https://example.com/help")
+        let text = try #require(String(bytes: data, encoding: .utf8))
+        // The link reads as a normal URL, not with escaped slashes.
+        #expect(text.contains("https://example.com/help"))
+        #expect(try sut.read() == claimedRecord)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check a file written without a help page still reads", .timeLimit(.minutes(1)))
+    func fileWrittenWithoutAHelpPageStillReads() throws {
+        // GIVEN
+        fileSystem.files[fileURL] = Data(#"{"schemaVersion":1,"record":{"campaignName":"launch","dismissed":false}}"#.utf8)
+
+        // WHEN
+        let result = try sut.read()
+
+        // THEN
+        #expect(result == AIChatBonusRecord(campaignName: "launch"))
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("Check a failed write makes the write throw", .timeLimit(.minutes(1)))
     func failedWriteMakesWriteThrow() throws {
         // GIVEN

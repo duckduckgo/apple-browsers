@@ -60,8 +60,13 @@ public protocol AIChatBonusStoring {
 ///
 /// The `AIChatBonus` directory is excluded from backup. Each write replaces the file atomically.
 public struct AIChatBonusStore: AIChatBonusStoring {
+    // The help page explaining the Bonus ID, saved next to the record so anyone who opens the file can find it.
+    // To be updated: ASANA https://app.asana.com/1/137249556945/project/72649045549333/task/1219865286901981?focus=true
+    static let helpPage = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/placeholder/")!
+
     private let directoryURL: URL
     private let fileSystem: AIChatBonusFileStoring
+    private let helpPage: URL
 
     private var fileURL: URL {
         directoryURL.appendingPathComponent("record.json")
@@ -74,9 +79,10 @@ public struct AIChatBonusStore: AIChatBonusStoring {
         )
     }
 
-    init(directoryURL: URL, fileSystem: AIChatBonusFileStoring) {
+    init(directoryURL: URL, fileSystem: AIChatBonusFileStoring, helpPage: URL = Self.helpPage) {
         self.directoryURL = directoryURL
         self.fileSystem = fileSystem
+        self.helpPage = helpPage
     }
 
     public func read() throws -> AIChatBonusRecord? {
@@ -199,10 +205,13 @@ private extension AIChatBonusStore {
         let schemaVersion: Int
         /// The AI Chat Bonus record
         let record: AIChatBonusRecord
+        /// The help page explaining the Bonus ID. Optional so files written before it was added still decode.
+        let helpPage: URL?
 
-        init(record: AIChatBonusRecord) {
+        init(record: AIChatBonusRecord, helpPage: URL) {
             self.schemaVersion = Self.currentSchemaVersion
             self.record = record
+            self.helpPage = helpPage
         }
     }
 
@@ -212,7 +221,9 @@ private extension AIChatBonusStore {
 
     func encode(_ record: AIChatBonusRecord) throws -> Data {
         do {
-            return try JSONEncoder().encode(StoredRecord(record: record))
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes] // Put `helpPage` first, with readable slashes.
+            return try encoder.encode(StoredRecord(record: record, helpPage: helpPage))
         } catch {
             throw AIChatBonusStoreError.encodingFailed
         }

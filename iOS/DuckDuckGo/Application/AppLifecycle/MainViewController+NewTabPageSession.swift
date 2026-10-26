@@ -265,6 +265,11 @@ final class NewTabPagePresentationCoordinator {
         // Dismissing a sheet over the page, such as Settings, posts none of the above. Until the app resigns,
         // its window is still active and uncovered, so this is the last reliable check that the page was seen.
         observers.append(notificationCenter.addObserver(forName: UIApplication.willResignActiveNotification, object: nil, queue: nil) { [weak self] _ in
+            // Delivered synchronously so the check runs while the app is still active; skip rather than trap off-main.
+            guard Thread.isMainThread else {
+                assertionFailure("Expected lifecycle notification on the main thread")
+                return
+            }
             MainActor.assumeIsolated {
                 self?.notePresentedIfVisible()
             }

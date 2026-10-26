@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Vai automātiski nosūtīt avārijas ziņojumus?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Pašreizējais noraidīšanas reižu skaits: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Pašreizējie abonementi";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Ieejas elements";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Pierakstīties";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Primārā/pirmā darbība";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Sagatavošanas modālais logs";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Privātuma aizsardzība";
@@ -4181,10 +4181,10 @@
 "Reset" = "Atiestatīt";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Atiestatīt elementa aizvēršanas skaitītāju";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Atiestatīt sagatavošanas modālā loga stāvokli";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pievienot ierīcei";

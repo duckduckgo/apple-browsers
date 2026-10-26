@@ -158,9 +158,9 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 public static let duckplayer = NSLocalizedString("onboarding.highlights.browsers.features.duckplayer.title", bundle: Bundle.module, value: "Play YouTube videos without ads", comment: "Message to highlight browser capability of watching YouTube videos without ads")
 
                 // Download Reason Experiment
-                public static let noAIAnswers = NotLocalizedString("onboarding.browsers.features.noAIAnswers", value: "No AI-assisted answers in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that search shows no AI-assisted answers.")
-                public static let hideAIImages = NotLocalizedString("onboarding.browsers.features.hideAIImages", value: "Hide AI-generated images in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that AI-generated images can be hidden in search results.")
-                public static let privateWebSearch = NotLocalizedString("onboarding.browsers.features.privateWebSearch", value: "Search the web privately with trackers blocked", comment: "One of the rows in the onboarding AI comparison chart. Highlights private web search with trackers blocked.")
+                public static let noAIAnswers = NSLocalizedString("onboarding.browsers.features.noAIAnswers", bundle: Bundle.module, value: "No AI-assisted answers in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that search shows no AI-assisted answers.")
+                public static let hideAIImages = NSLocalizedString("onboarding.browsers.features.hideAIImages", bundle: Bundle.module, value: "Hide AI-generated images in search", comment: "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that AI-generated images can be hidden in search results.")
+                public static let privateWebSearch = NSLocalizedString("onboarding.browsers.features.privateWebSearch", bundle: Bundle.module, value: "Search the web privately with trackers blocked", comment: "One of the rows in the onboarding AI comparison chart. Highlights private web search with trackers blocked.")
             }
         }
     }

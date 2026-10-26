@@ -2303,6 +2303,11 @@ private final class MockLocationManager: CLLocationManager {
 
     override var authorizationStatus: CLAuthorizationStatus { authorizationStatusValue }
 
+    // Core Location reports the current authorization once a delegate is set.
+    override var delegate: (any CLLocationManagerDelegate)? {
+        didSet { delegate?.locationManagerDidChangeAuthorization?(self) }
+    }
+
     override func startUpdatingLocation() {
         startUpdatingCallCount += 1
     }

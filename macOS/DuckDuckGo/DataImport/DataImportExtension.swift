@@ -438,6 +438,16 @@ extension DataImport.Source {
         }
     }
 
+    /// The supported data types the source's profiles have data for. Without a readable profile
+    /// (manual imports, browsers awaiting read permission), every supported type counts as available.
+    func availableImportTypes(in profiles: DataImport.BrowserProfileList?) -> Set<DataImport.DataType> {
+        let validProfiles = profiles?.validImportableProfiles ?? []
+        guard !validProfiles.isEmpty else { return supportedDataTypes }
+        return supportedDataTypes.filter { dataType in
+            validProfiles.contains { $0.hasValidProfileData(for: dataType) }
+        }
+    }
+
     func archiveImportSupportedFiles(for dataTypes: Set<DataImport.DataType>) -> Set<UTType> {
         let selectedFileTypes = Set(dataTypes.flatMap { $0.allowedFileTypes })
         return archiveImportSupportedFiles.intersection(selectedFileTypes.union([.zip]))

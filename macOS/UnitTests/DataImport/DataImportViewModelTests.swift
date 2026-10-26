@@ -510,7 +510,7 @@ final class DataImportViewModelTests: XCTestCase {
         model.selectDataTypes([.bookmarks])
 
         XCTAssertEqual(model.importSource, .chrome)
-        XCTAssertEqual(model.dataTypeFilter, [.bookmarks])
+        XCTAssertEqual(model.dataTypeFilter.enabledTypes, [.bookmarks])
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
 
@@ -536,7 +536,7 @@ final class DataImportViewModelTests: XCTestCase {
     func testWhenInitialFilterExcludesPreferredBrowserDataThenSelectsVisibleSource() {
         model = DataImportViewModel(
             availableImportSources: [.chrome, .fileImport],
-            dataTypeFilter: [.passwords],
+            dataTypeFilter: .init(enabledTypes: [.passwords]),
             isSourceFilterEnabled: true,
             loadProfiles: { browser in
                 let profile = BrowserProfile.test(fileStore: self.fileStore)(browser)
@@ -619,7 +619,7 @@ final class DataImportViewModelTests: XCTestCase {
 
         model.update(with: .bitwarden)
 
-        XCTAssertEqual(model.dataTypeFilter, [.bookmarks, .passwords])
+        XCTAssertEqual(model.dataTypeFilter.enabledTypes, [.bookmarks, .passwords])
         XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
     }
@@ -675,8 +675,10 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
 
-    func testDataTypesToImport_keepsTypesTheFilterDoesNotCover() {
-        let dataTypes = DataImportViewModel.dataTypesToImport(availableTypes: [.bookmarks, .passwords, .creditCards], filter: [.bookmarks])
+    func testDataTypeFilter_dataTypesToImport_keepsTypesTheFilterDoesNotCover() {
+        let filter = DataImportViewModel.DataTypeFilter(enabledTypes: [.bookmarks])
+
+        let dataTypes = filter.dataTypesToImport(from: [.bookmarks, .passwords, .creditCards])
 
         XCTAssertEqual(dataTypes, [.bookmarks, .creditCards])
     }

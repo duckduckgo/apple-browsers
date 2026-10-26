@@ -33,7 +33,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.4.0")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.5.0")
     }
 
     // MARK: - jsonParameters
@@ -71,6 +71,60 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.after_idle"] as? Bool == false)
         #expect(params["feature.data.ext.time_away_ms_bucketed"] as? String == "300000")
         #expect(params["feature.data.ext.focused"] as? Bool == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle fields emit the setting and the side on screen", .timeLimit(.minutes(1)))
+    func toggleFieldsEmit() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true, toggleEnabled: true, togglePosition: .duckAI)
+        let params = data.jsonParameters()
+        #expect(params["feature.data.ext.toggle_enabled"] as? Bool == true)
+        #expect(params["feature.data.ext.toggle_position"] as? String == "duck_ai")
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle fields are absent when unknown or the toggle stayed hidden", .timeLimit(.minutes(1)))
+    func toggleFieldsAbsentWhenNil() {
+        let params = ReturnSessionWideEventData(landedOn: .web, afterIdle: false).jsonParameters()
+        #expect(params["feature.data.ext.toggle_enabled"] == nil)
+        #expect(params["feature.data.ext.toggle_position"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle position follows the input mode only while the toggle is on screen",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            // (isToggleEnabled, isPad, hasNewTabPageToggle, isFocused, isDuckAITab, expected for .aiChat)
+            (false, true, false, true, false, nil),
+            (false, false, true, true, false, nil),
+            (true, true, false, false, false, .duckAI),
+            (true, true, false, false, true, .duckAI),
+            (true, false, true, false, false, .duckAI),
+            (true, false, false, false, false, nil),
+            (true, false, false, true, false, .duckAI),
+            (true, false, false, true, true, nil),
+          ] as [(Bool, Bool, Bool, Bool, Bool, ReturnSessionWideEventData.TogglePosition?)])
+    func togglePositionOnScreen(isToggleEnabled: Bool, isPad: Bool, hasNewTabPageToggle: Bool, isFocused: Bool, isDuckAITab: Bool,
+                                expected: ReturnSessionWideEventData.TogglePosition?) {
+        let position = ReturnSessionWideEventData.TogglePosition.onScreen(mode: .aiChat,
+                                                                          isToggleEnabled: isToggleEnabled,
+                                                                          isPad: isPad,
+                                                                          hasNewTabPageToggle: hasNewTabPageToggle,
+                                                                          isFocused: isFocused,
+                                                                          isDuckAITab: isDuckAITab)
+        #expect(position == expected)
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle position maps search mode to search", .timeLimit(.minutes(1)))
+    func togglePositionMapsSearchMode() {
+        let position = ReturnSessionWideEventData.TogglePosition.onScreen(mode: .search,
+                                                                          isToggleEnabled: true,
+                                                                          isPad: false,
+                                                                          hasNewTabPageToggle: false,
+                                                                          isFocused: true,
+                                                                          isDuckAITab: false)
+        #expect(position == .search)
     }
 
     @available(iOS 16, *)

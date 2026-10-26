@@ -52,10 +52,13 @@ protocol PostIdleSessionInstrumentation: AnyObject {
     /// A return session began on `landedOn`. `afterIdleSurface` is nil for an ordinary return.
     func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
-                        focused: Bool)
+                        focused: Bool,
+                        toggleEnabled: Bool,
+                        togglePosition: ReturnSessionWideEventData.TogglePosition?)
 
     /// Records automatic address-bar focus on arrival without counting it as an interaction.
-    func keyboardRaisedOnArrival()
+    /// `togglePosition` is the side the focused input shows, if the toggle was hidden until now.
+    func keyboardRaisedOnArrival(togglePosition: ReturnSessionWideEventData.TogglePosition?)
 
     /// User scrolled or activated an in-page link. Idempotent within a session.
     func pageEngaged()
@@ -120,7 +123,9 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
 
     func sessionStarted(landedOn: ReturnSessionWideEventData.LandedOn,
                         afterIdleSurface: PostIdleSessionWideEventData.Surface?,
-                        focused: Bool) {
+                        focused: Bool,
+                        toggleEnabled: Bool,
+                        togglePosition: ReturnSessionWideEventData.TogglePosition?) {
         // If a session is already active, cancel it before starting a new one.
         // Quick background-foreground cycles over the idle threshold can trigger
         // this; the previous session is reported as CANCELLED so we don't lose it.
@@ -139,7 +144,9 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
                                                     afterIdle: afterIdleSurface != nil,
                                                     startedAt: startedAt,
                                                     timeAwayMs: pendingTimeAwayMs,
-                                                    focused: focused)
+                                                    focused: focused,
+                                                    toggleEnabled: toggleEnabled,
+                                                    togglePosition: togglePosition)
         returnData.record(usageContextProvider.currentContext)
         pendingTimeAwayMs = nil
         returnSessionID = returnData.globalData.id
@@ -153,13 +160,14 @@ final class DefaultPostIdleSessionInstrumentation: PostIdleSessionInstrumentatio
         wideEvent.startFlow(postIdleData)
     }
 
-    func keyboardRaisedOnArrival() {
+    func keyboardRaisedOnArrival(togglePosition: ReturnSessionWideEventData.TogglePosition?) {
         guard let globalID = returnSessionID,
               let data = wideEvent.getFlowData(ReturnSessionWideEventData.self, globalID: globalID),
               data.firstInteractionInterval.end == nil,
               !data.focused else { return }
         wideEvent.updateFlow(globalID: globalID) { (data: inout ReturnSessionWideEventData) in
             data.focused = true
+            data.togglePosition = data.togglePosition ?? togglePosition
         }
     }
 

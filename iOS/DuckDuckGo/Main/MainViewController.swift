@@ -2678,8 +2678,8 @@ class MainViewController: UIViewController {
             guard let self, appOpenKeyboardRequestID == requestID, KeyboardSettings().onNewTab,
                   !isNewTabPageKeyboardBlockedByDialog else { return }
             let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
-                if openedAfterIdle && didFocus {
-                    self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+                if openedAfterIdle && didFocus, let self {
+                    postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
                 }
             }
             if wasKeyboardFeatureEnabled {
@@ -2709,7 +2709,9 @@ class MainViewController: UIViewController {
         }
         if openedAfterIdle {
             postIdleSessionInstrumentation.noteReturn(timeAwayMs: newTabPageReturnTimeAwayMs)
-            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused,
+                                                          toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                                                          togglePosition: returnSessionTogglePosition(focused: focused))
         }
     }
 
@@ -3045,8 +3047,8 @@ class MainViewController: UIViewController {
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         showKeyboardIfAllowed { [weak self] didShowKeyboard in
-            if didShowKeyboard {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didShowKeyboard, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
             completion(didShowKeyboard)
         }
@@ -3104,8 +3106,8 @@ class MainViewController: UIViewController {
     /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
     func enterSearchOnAppOpen() {
         enterSearchAutomatically { [weak self] didFocus in
-            if didFocus {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didFocus, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
         }
     }
@@ -3428,6 +3430,17 @@ class MainViewController: UIViewController {
             resolved = (tab.isAITab && !isPad) ? .aiChat : .search
         }
         return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
+    /// The toggle side the return session records, or nil while the toggle is off screen.
+    func returnSessionTogglePosition(focused: Bool) -> ReturnSessionWideEventData.TogglePosition? {
+        guard let tab = tabManager.currentTabsModel.currentTab else { return nil }
+        return .onScreen(mode: initialOmnibarToggleMode(for: tab),
+                         isToggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                         isPad: isPad,
+                         hasNewTabPageToggle: tab.isHomeTab && newTabPageViewController?.hasInlineSearchInput == true,
+                         isFocused: focused,
+                         isDuckAITab: tab.isAITab)
     }
 
     func refreshOmniBar() {

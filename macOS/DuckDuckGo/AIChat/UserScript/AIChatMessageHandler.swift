@@ -56,6 +56,7 @@ final class AIChatMessageHandler: AIChatMessageHandling {
     private let installDateProvider: () -> Date?
     private let installTypeProvider: () -> AIChatInstallType
     private let homepageAiChatsProvider: HomepageAiChatsProvider?
+    private let isSparkleBuild: Bool
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
@@ -72,8 +73,10 @@ final class AIChatMessageHandler: AIChatMessageHandling {
                 keyValueStore: Application.appDelegate.keyValueStore).isReinstallingUser
              return isReturning ? .returning : .new
          },
-         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+         isSparkleBuild: Bool = StandardApplicationBuildType().isSparkleBuild) {
         self.featureFlagger = featureFlagger
+        self.isSparkleBuild = isSparkleBuild
         self.promptHandler = promptHandler
         self.payloadHandler = payloadHandler
         self.chatRestorationDataHandler = chatRestorationDataHandler
@@ -160,6 +163,8 @@ extension AIChatMessageHandler {
             supportsBrowserTools: featureFlagger.isFeatureOn(.aiChatBrowserTools),
             supportsAttachmentPrivacyDisplay: featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure),
             supportsHomePageChatSuggestions: homepageAiChatsProvider?.isSupported == true,
+            // Only Sparkle builds can tell a new install from a reinstall, which the offer's eligibility needs.
+            supportsBonusOffer: isSparkleBuild && featureFlagger.isFeatureOn(.aiChatLimitExtensionPromo),
             supportsCanonicalChatFormat: true
         )
     }

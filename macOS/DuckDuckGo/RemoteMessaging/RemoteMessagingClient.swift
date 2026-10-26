@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKit
 import Combine
 import Common
@@ -117,7 +118,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configurationURLProvider: ConfigurationURLProviding,
         themeManager: ThemeManaging,
         dbpDataManagerProvider: (() -> DataBrokerProtectionDataManaging?)? = nil,
-        isReturningUser: @escaping () -> Bool?
+        isReturningUser: @escaping () -> Bool?,
+        aiChatBonusStateProvider: AIChatBonusStateProviding? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             database: database,
@@ -130,7 +132,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             featureFlagger: featureFlagger,
             themeManager: themeManager,
             dbpDataManagerProvider: dbpDataManagerProvider,
-            isReturningUser: isReturningUser
+            isReturningUser: isReturningUser,
+            aiChatBonusStateProvider: aiChatBonusStateProvider
         )
         self.init(
             remoteMessagingDatabase: remoteMessagingDatabase,

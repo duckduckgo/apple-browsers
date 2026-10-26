@@ -2499,3 +2499,205 @@ struct DuckAIFirstPromptNewInstallCohortTests {
         #expect(featureDiscovery.setWasUsedBeforeCallCount == 0)
     }
 }
+
+@Suite("AIChatUserScriptHandler - Bonus Offer Tests")
+struct AIChatUserScriptHandlerBonusOfferTests {
+    private let storage = MockAIChatPreferencesStorage()
+    private let messageHandler = MockAIChatMessageHandler()
+    private let windowControllersManager: WindowControllersManagerMock
+    private let notificationCenter = NotificationCenter()
+    private let pixelFiring = PixelKitMock()
+    private let syncErrorHandler = SyncErrorHandler(alertPresenter: CapturingAlertPresenter())
+    private let statisticsLoader = MockDuckAIPromptAtbRefresher()
+    private let mockFreeTrialConversionService = MockFreeTrialConversionInstrumentationService()
+    private let featureDiscovery = MockFeatureDiscovery()
+
+    @MainActor
+    init() {
+        windowControllersManager = WindowControllersManagerMock()
+    }
+
+    @MainActor
+    private func makeBonusHandler(isBonusOfferEnabled: Bool, isSparkleBuild: Bool = true, bonusHandler: BonusHandlingSpy) -> AIChatUserScriptHandler {
+        AIChatUserScriptHandler(
+            storage: storage,
+            messageHandling: messageHandler,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: pixelFiring,
+            statisticsLoader: statisticsLoader,
+            syncServiceProvider: { nil },
+            syncErrorHandler: syncErrorHandler,
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLimitExtensionPromo.rawValue: isBonusOfferEnabled]),
+            freeTrialConversionService: mockFreeTrialConversionService,
+            notificationCenter: notificationCenter,
+            featureDiscovery: featureDiscovery,
+            bonusHandler: bonusHandler,
+            bonusMessageLog: AIChatBonusMessageLog(),
+            isSparkleBuild: isSparkleBuild
+        )
+    }
+
+    @Test("Check an App Store build drops the bonus messages even with the offer enabled")
+    @MainActor
+    func appStoreBuildDropsTheBonusMessages() {
+        // GIVEN
+        let bonusHandler = BonusHandlingSpy()
+        let sut = makeBonusHandler(isBonusOfferEnabled: true, isSparkleBuild: false, bonusHandler: bonusHandler)
+        var received: [AIChatBonusRecordPayload] = []
+        let cancellable = sut.bonusRecordPayloadPublisher.sink { received.append($0) }
+
+        // WHEN
+        let record = sut.getAIChatBonusRecord(params: [], message: WKScriptMessage.mock())
+        _ = sut.aiChatBonusDismiss(params: ["campaignName": "launch"], message: WKScriptMessage.mock())
+        bonusHandler.payloadSubject.send(BonusHandlingSpy.payload)
+
+        // THEN
+        #expect(record == nil)
+        #expect(bonusHandler.calls.isEmpty)
+        #expect(received.isEmpty)
+        cancellable.cancel()
+    }
+
+    @Test(
+        "Check supportsBonusOffer needs both a Sparkle build and the flag",
+        arguments: [(true, true, true), (true, false, false), (false, true, false), (false, false, false)]
+    )
+    func supportsBonusOfferNeedsSparkleAndTheFlag(isSparkleBuild: Bool, isFlagOn: Bool, expected: Bool) {
+        // GIVEN
+        let sut = AIChatMessageHandler(
+            featureFlagger: MockFeatureFlagger(featuresStub: [FeatureFlag.aiChatLimitExtensionPromo.rawValue: isFlagOn]),
+            installDateProvider: { nil },
+            installTypeProvider: { .new },
+            isSparkleBuild: isSparkleBuild
+        )
+
+        // WHEN
+        let values = sut.getNativeConfigValues(isFireWindow: false)
+
+        // THEN
+        #expect(values.supportsBonusOffer == expected)
+    }
+
+    @Test("Check the bonus requests reply with the record when the offer is enabled")
+    @MainActor
+    func bonusRequestsReplyWhenEnabled() throws {
+        // GIVEN
+        let bonusHandler = BonusHandlingSpy()
+        let sut = makeBonusHandler(isBonusOfferEnabled: true, bonusHandler: bonusHandler)
+
+        // WHEN
+        let record = sut.getAIChatBonusRecord(params: [], message: WKScriptMessage.mock())
+        let claim = sut.getAIChatNewBonusRecord(params: ["campaignName": "launch"], message: WKScriptMessage.mock())
+
+        // THEN
+        #expect(record as? AIChatBonusRecordPayload == BonusHandlingSpy.payload)
+        #expect(claim as? AIChatBonusRecordPayload == BonusHandlingSpy.payload)
+        #expect(bonusHandler.claimParams.first as? [String: String] == ["campaignName": "launch"])
+    }
+
+    @Test("Check the bonus requests reply with nothing when the offer is disabled")
+    @MainActor
+    func bonusRequestsReplyWithNothingWhenDisabled() {
+        // GIVEN
+        let bonusHandler = BonusHandlingSpy()
+        let sut = makeBonusHandler(isBonusOfferEnabled: false, bonusHandler: bonusHandler)
+
+        // WHEN
+        let record = sut.getAIChatBonusRecord(params: [], message: WKScriptMessage.mock())
+        let claim = sut.getAIChatNewBonusRecord(params: ["campaignName": "launch"], message: WKScriptMessage.mock())
+
+        // THEN
+        #expect(record == nil)
+        #expect(claim == nil)
+        #expect(bonusHandler.calls.isEmpty)
+    }
+
+    @Test("Check the bonus notifications reach the bonus handler when the offer is enabled")
+    @MainActor
+    func bonusNotificationsReachTheHandlerWhenEnabled() {
+        // GIVEN
+        let bonusHandler = BonusHandlingSpy()
+        let sut = makeBonusHandler(isBonusOfferEnabled: true, bonusHandler: bonusHandler)
+
+        // WHEN
+        _ = sut.aiChatBonusRedeemOutcome(params: ["bonusId": "id"], message: WKScriptMessage.mock())
+        _ = sut.aiChatBonusDismiss(params: ["campaignName": "launch"], message: WKScriptMessage.mock())
+        _ = sut.aiChatBonusEnd(params: [], message: WKScriptMessage.mock())
+
+        // THEN
+        #expect(bonusHandler.calls == ["redeemOutcome", "dismiss", "end"])
+        #expect(bonusHandler.dismissParams.first as? [String: String] == ["campaignName": "launch"])
+    }
+
+    @Test("Check the bonus notifications are dropped when the offer is disabled")
+    @MainActor
+    func bonusNotificationsAreDroppedWhenDisabled() {
+        // GIVEN
+        let bonusHandler = BonusHandlingSpy()
+        let sut = makeBonusHandler(isBonusOfferEnabled: false, bonusHandler: bonusHandler)
+
+        // WHEN
+        _ = sut.aiChatBonusRedeemOutcome(params: ["bonusId": "id"], message: WKScriptMessage.mock())
+        _ = sut.aiChatBonusDismiss(params: ["campaignName": "launch"], message: WKScriptMessage.mock())
+        _ = sut.aiChatBonusEnd(params: [], message: WKScriptMessage.mock())
+
+        // THEN
+        #expect(bonusHandler.calls.isEmpty)
+    }
+
+    @Test("Check a record change is forwarded only while the offer is enabled", arguments: [true, false])
+    @MainActor
+    func recordChangeIsForwardedOnlyWhileEnabled(isBonusOfferEnabled: Bool) {
+        // GIVEN
+        let bonusHandler = BonusHandlingSpy()
+        let sut = makeBonusHandler(isBonusOfferEnabled: isBonusOfferEnabled, bonusHandler: bonusHandler)
+        var received: [AIChatBonusRecordPayload] = []
+        let cancellable = sut.bonusRecordPayloadPublisher.sink { received.append($0) }
+
+        // WHEN
+        bonusHandler.payloadSubject.send(BonusHandlingSpy.payload)
+
+        // THEN
+        #expect(received == (isBonusOfferEnabled ? [BonusHandlingSpy.payload] : []))
+        cancellable.cancel()
+    }
+
+}
+
+/// Records what the bridge forwards to the bonus handler and replies with a fixed payload.
+private final class BonusHandlingSpy: AIChatBonusHandling {
+    static let payload = AIChatBonusRecordPayload(record: AIChatBonusRecord(campaignName: "launch"), isNewInstall: true, aiChatEnabled: true)
+
+    let payloadSubject = PassthroughSubject<AIChatBonusRecordPayload, Never>()
+    private(set) var calls: [String] = []
+    private(set) var claimParams: [Any] = []
+    private(set) var dismissParams: [Any] = []
+
+    var recordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> {
+        payloadSubject.eraseToAnyPublisher()
+    }
+
+    func getAIChatBonusRecord() -> AIChatBonusRecordPayload? {
+        calls.append("record")
+        return Self.payload
+    }
+
+    func getAIChatNewBonusRecord(params: Any) -> AIChatBonusRecordPayload? {
+        calls.append("claim")
+        claimParams.append(params)
+        return Self.payload
+    }
+
+    func aiChatBonusRedeemOutcome(params: Any) {
+        calls.append("redeemOutcome")
+    }
+
+    func aiChatBonusDismiss(params: Any) {
+        calls.append("dismiss")
+        dismissParams.append(params)
+    }
+
+    func aiChatBonusEnd() {
+        calls.append("end")
+    }
+}

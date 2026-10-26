@@ -288,6 +288,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
     var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     var syncStatusSubject = PassthroughSubject<AIChatSyncHandler.SyncStatus, Never>()
+    var bonusRecordPayloadSubject = PassthroughSubject<AIChatBonusRecordPayload, Never>()
+    private(set) var receivedBonusMessages: [String] = []
 
     var didReportMetric = false
 
@@ -572,6 +574,35 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    var bonusRecordPayloadPublisher: AnyPublisher<AIChatBonusRecordPayload, Never> {
+        bonusRecordPayloadSubject.eraseToAnyPublisher()
+    }
+
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
+        receivedBonusMessages.append("getAIChatBonusRecord")
+        return nil
+    }
+
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
+        receivedBonusMessages.append("getAIChatNewBonusRecord")
+        return nil
+    }
+
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? {
+        receivedBonusMessages.append("aiChatBonusRedeemOutcome")
+        return nil
+    }
+
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? {
+        receivedBonusMessages.append("aiChatBonusDismiss")
+        return nil
+    }
+
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? {
+        receivedBonusMessages.append("aiChatBonusEnd")
         return nil
     }
 }

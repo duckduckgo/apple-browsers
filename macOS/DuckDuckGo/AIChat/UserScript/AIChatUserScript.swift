@@ -59,12 +59,15 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     private let browserTools: AIChatBrowserToolsService?
+    private let bonusMessageLog: AIChatBonusMessageLog
 
     init(handler: AIChatUserScriptHandling,
          urlSettings: any KeyedStoring<AIChatDebugURLSettings>,
-         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService) {
+         browserTools: AIChatBrowserToolsService? = Application.appDelegate.aiChatBrowserToolsService,
+         bonusMessageLog: AIChatBonusMessageLog = .shared) {
         self.handler = handler
         self.browserTools = browserTools
+        self.bonusMessageLog = bonusMessageLog
         var originRules = [HostnameMatchingRule]()
         var destinationRules = [HostnameMatchingRule]()
 
@@ -115,6 +118,13 @@ final class AIChatUserScript: NSObject, Subfeature {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 self?.submitSyncStatusChanged(status)
+            }
+            .store(in: &cancellables)
+
+        handler.bonusRecordPayloadPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] payload in
+                self?.submitBonusRecord(payload)
             }
             .store(in: &cancellables)
     }
@@ -258,6 +268,16 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.sendToSyncSettings
         case .setAIChatHistoryEnabled:
             return handler.setAIChatHistoryEnabled
+        case .getAIChatBonusRecord:
+            return handler.getAIChatBonusRecord
+        case .getAIChatNewBonusRecord:
+            return handler.getAIChatNewBonusRecord
+        case .aiChatBonusRedeemOutcome:
+            return handler.aiChatBonusRedeemOutcome
+        case .aiChatBonusDismiss:
+            return handler.aiChatBonusDismiss
+        case .aiChatBonusEnd:
+            return handler.aiChatBonusEnd
         case .voiceSessionStarted:
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
@@ -298,6 +318,16 @@ extension AIChatUserScript: AIChatBrowserToolsPushing {
     @MainActor
     func pushTabChanged(_ data: AIChatTabChangedData) {
         pushToDuckAI(.aiChatTabChanged, params: data)
+    }
+
+    /// Pushes the bonus record to this tab after it changes, so Duck.ai re-derives the offer state.
+    private func submitBonusRecord(_ payload: AIChatBonusRecordPayload) {
+        // Every tab has this script, so only a Duck.ai page gets it.
+        guard let webView, let broker,
+              let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return }
+        broker.push(method: AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue, params: payload, for: self, into: webView)
+        bonusMessageLog.record(.push, method: "\(AIChatUserScriptMessages.submitAIChatBonusRecord.rawValue) → \(host)", body: payload)
     }
 
     /// Only a Duck.ai page can receive these; every tab has this script, so the host is checked.

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Common
 import FoundationExtensions
@@ -95,6 +96,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        autoconsentManagement: AutoconsentManagement(),
                                        contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()),
                                        syncErrorHandler: SyncErrorHandler(),
+                                       aiChatBonusService: AIChatBonusService(),
                                        webExtensionAvailability: nil,
                                        dockCustomization: DockCustomizerMock(),
                                        reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: MockKeyValueStore()),

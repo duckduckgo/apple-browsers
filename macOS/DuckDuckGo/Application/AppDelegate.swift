@@ -335,6 +335,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Open surfaces stamp it via `NSApp.delegateTyped.aiChatConversationSourceHandler`; the user-script
     /// handler is injected the same instance.
     let aiChatConversationSourceHandler = AIChatConversationSourceHandler()
+    /// The app's single owner of the Duck.ai bonus record, shared by every consumer.
+    let aiChatBonusService = AIChatBonusService()
     let aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable
     let aiChatSessionStore: AIChatSessionStoring
 
@@ -1188,6 +1190,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 autoconsentManagement: autoconsentManagement,
                 contentScopePreferences: contentScopePreferences,
                 syncErrorHandler: syncErrorHandler,
+                aiChatBonusService: aiChatBonusService,
                 webExtensionAvailability: webExtensionAvailability,
                 dockCustomization: dockCustomization,
                 reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
@@ -1223,6 +1226,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
+            aiChatBonusService: aiChatBonusService,
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore),
@@ -1291,7 +1295,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 themeManager: themeManager,
                 dbpDataManagerProvider: { DataBrokerProtectionManager.shared.dataManager },
                 // App Store builds can't detect reinstalls, so rules using it fail there rather than treating everyone as new.
-                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil }
+                isReturningUser: { isSparkleBuild ? reinstallUserDetection.isReinstallingUser : nil },
+                aiChatBonusStateProvider: aiChatBonusService
             )
             let subscriptionManagerForPIR = subscriptionManager
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
@@ -1827,6 +1832,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promoService?.applicationDidBecomeActive()
 
         hangMetricsService.resume()
+
+        // Reads and writes end an expired boost too, but neither may happen soon after the app becomes active.
+        try? aiChatBonusService.endBoostIfExpired()
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)

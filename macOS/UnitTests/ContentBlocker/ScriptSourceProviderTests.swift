@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Common
 import FoundationExtensions
@@ -102,6 +103,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             autoconsentManagement: AutoconsentManagement(),
             syncServiceProvider: { nil },
             syncErrorHandler: SyncErrorHandler(),
+            aiChatBonusService: AIChatBonusService(),
             webExtensionAvailability: nil,
             dockCustomization: DockCustomizerMock(),
             reinstallUserDetection: MockReinstallingUserDetecting(),

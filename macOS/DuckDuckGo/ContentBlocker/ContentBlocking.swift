@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import AppKitExtensions
 
 import Foundation
@@ -93,6 +94,7 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
+        aiChatBonusService: AIChatBonusService,
         webExtensionAvailability: WebExtensionAvailabilityProviding?,
         dockCustomization: DockCustomization,
         reinstallUserDetection: ReinstallingUserDetecting,
@@ -137,6 +139,7 @@ final class AppContentBlocking {
             autoconsentManagement: autoconsentManagement,
             contentScopePreferences: contentScopePreferences,
             syncErrorHandler: syncErrorHandler,
+            aiChatBonusService: aiChatBonusService,
             webExtensionAvailability: webExtensionAvailability,
             dockCustomization: dockCustomization,
             reinstallUserDetection: reinstallUserDetection,
@@ -168,6 +171,7 @@ final class AppContentBlocking {
         autoconsentManagement: AutoconsentManagement,
         contentScopePreferences: ContentScopePreferences,
         syncErrorHandler: SyncErrorHandling,
+        aiChatBonusService: AIChatBonusService,
         webExtensionAvailability: WebExtensionAvailabilityProviding?,
         dockCustomization: DockCustomization,
         reinstallUserDetection: ReinstallingUserDetecting,
@@ -219,6 +223,7 @@ final class AppContentBlocking {
                                                   autoconsentManagement: autoconsentManagement,
                                                   contentScopePreferences: contentScopePreferences,
                                                   syncErrorHandler: syncErrorHandler,
+                                                  aiChatBonusService: aiChatBonusService,
                                                   webExtensionAvailability: webExtensionAvailability,
                                                   dockCustomization: dockCustomization,
                                                   reinstallUserDetection: reinstallUserDetection,

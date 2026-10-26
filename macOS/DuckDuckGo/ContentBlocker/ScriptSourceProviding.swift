@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Combine
 import Common
@@ -50,6 +51,7 @@ protocol ScriptSourceProviding {
     var duckPlayer: DuckPlayer { get }
     var syncServiceProvider: () -> DDGSyncing? { get }
     var syncErrorHandler: SyncErrorHandling { get }
+    var aiChatBonusService: AIChatBonusService { get }
     var webExtensionAvailability: WebExtensionAvailabilityProviding? { get }
     var trackerProtectionDataSource: TrackerProtectionDataSource? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
@@ -85,6 +87,7 @@ protocol ScriptSourceProviding {
             return appDelegate?.syncService
         },
         syncErrorHandler: Application.appDelegate.syncErrorHandler,
+        aiChatBonusService: Application.appDelegate.aiChatBonusService,
         webExtensionAvailability: Application.appDelegate.webExtensionAvailability,
         dockCustomization: Application.appDelegate.dockCustomization,
         reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore),
@@ -117,6 +120,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let autoconsentManagement: AutoconsentManagement
     let syncServiceProvider: () -> DDGSyncing?
     let syncErrorHandler: SyncErrorHandling
+    let aiChatBonusService: AIChatBonusService
     let webExtensionAvailability: WebExtensionAvailabilityProviding?
     let trackerProtectionDataSource: TrackerProtectionDataSource?
     let appearancePreferences: AppearancePreferences
@@ -145,6 +149,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          autoconsentManagement: AutoconsentManagement,
          syncServiceProvider: @escaping () -> DDGSyncing?,
          syncErrorHandler: SyncErrorHandling,
+         aiChatBonusService: AIChatBonusService,
          webExtensionAvailability: WebExtensionAvailabilityProviding?,
          dockCustomization: DockCustomization,
          reinstallUserDetection: ReinstallingUserDetecting,
@@ -168,6 +173,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autoconsentManagement = autoconsentManagement
         self.syncServiceProvider = syncServiceProvider
         self.syncErrorHandler = syncErrorHandler
+        self.aiChatBonusService = aiChatBonusService
         self.webExtensionAvailability = webExtensionAvailability
         self.trackerProtectionDataSource = DefaultTrackerProtectionDataSource(
             contentBlockingManager: contentBlockingManager

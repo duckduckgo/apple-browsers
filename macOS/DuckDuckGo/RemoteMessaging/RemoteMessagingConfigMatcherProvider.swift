@@ -50,7 +50,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         isReturningUser: @escaping () -> Bool?,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
         triedAIChatDuringOnboarding: Bool = false,
-        isAIChatBoostActive: Bool? = nil
+        aiChatBonusStateProvider: AIChatBonusStateProviding? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -69,7 +69,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             isReturningUser: isReturningUser,
             aiChatPreferencesStorage: aiChatPreferencesStorage,
             triedAIChatDuringOnboarding: triedAIChatDuringOnboarding,
-            isAIChatBoostActive: isAIChatBoostActive
+            aiChatBonusStateProvider: aiChatBonusStateProvider
         )
     }
 
@@ -90,7 +90,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         isReturningUser: @escaping () -> Bool?,
         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
         triedAIChatDuringOnboarding: Bool = false, // macOS onboarding has no Duck.ai step yet
-        isAIChatBoostActive: Bool? = nil  // `nil` by default until macOS provides it, so rules using it fail.
+        aiChatBonusStateProvider: AIChatBonusStateProviding? = nil  // Without one, rules using `isDuckAiBoostActive` fail.
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -108,7 +108,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.isReturningUser = isReturningUser
         self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.triedAIChatDuringOnboarding = triedAIChatDuringOnboarding
-        self.isAIChatBoostActive = isAIChatBoostActive
+        self.aiChatBonusStateProvider = aiChatBonusStateProvider
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -127,7 +127,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let isReturningUser: () -> Bool?
     let aiChatPreferencesStorage: AIChatPreferencesStorage
     let triedAIChatDuringOnboarding: Bool
-    let isAIChatBoostActive: Bool?
+    let aiChatBonusStateProvider: AIChatBonusStateProviding?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -239,6 +239,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let canUpgradeOS = OSUpgradeCapabilityOverridePersistor().canUpgradeOS(default: hardwareCanUpgradeOS)
 
         let isAIChatEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
+        // `nil` when the bonus record can't be read, so a rule using it fails rather than assuming no boost.
+        let isAIChatBoostActive = try? aiChatBonusStateProvider?.isBoostActive()
 
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,

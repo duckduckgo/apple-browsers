@@ -126,6 +126,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219792476428276?focus=true
     case webExtensionICloudPasswords
 
+    /// Web extension management.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219904390304016
+    case webExtensionManagement
+
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
@@ -834,6 +838,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.onePassword), category: .webExtensions)
         case .webExtensionICloudPasswords:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.iCloudPasswords), category: .webExtensions)
+        case .webExtensionManagement:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.extensionManagement), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:

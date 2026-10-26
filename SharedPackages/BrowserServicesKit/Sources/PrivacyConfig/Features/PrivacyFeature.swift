@@ -932,6 +932,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.
     case nativeMessaging
+    /// Controls web extension management on macOS.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219904390304016
+    case extensionManagement
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {

@@ -29,6 +29,7 @@ import NetworkProtectionIPC
 import PixelKit
 import Subscription
 #if DEBUG
+import DDGError
 import os.log
 #endif
 
@@ -187,13 +188,37 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
 #if DEBUG
 @MainActor
 extension DataBrokerProtectionManager {
-    enum DebugLaunchError: Error {
+    enum DebugLaunchError: DDGError {
         case unavailableDataManager
         case missingProfile
         case agentDidNotStop
         case agentNotReady
         case commandFailed
         case commandTimedOut
+
+        static var errorDomain: String { "com.duckduckgo.pir.debug-launch" }
+
+        var errorCode: Int {
+            switch self {
+            case .unavailableDataManager: return 0
+            case .missingProfile: return 1
+            case .agentDidNotStop: return 2
+            case .agentNotReady: return 3
+            case .commandFailed: return 4
+            case .commandTimedOut: return 5
+            }
+        }
+
+        var description: String {
+            switch self {
+            case .unavailableDataManager: return "PIR data manager is unavailable."
+            case .missingProfile: return "PIR debug launch requires a saved profile or valid fixture."
+            case .agentDidNotStop: return "PIR background agent did not stop."
+            case .agentNotReady: return "PIR background agent did not become ready."
+            case .commandFailed: return "PIR debug command failed."
+            case .commandTimedOut: return "PIR debug command timed out."
+            }
+        }
     }
 
     func handleDebugLaunch() -> Bool {
@@ -210,7 +235,7 @@ extension DataBrokerProtectionManager {
                 }
             }
         } catch {
-            Logger.dataBrokerProtection.error("PIR debug launch options rejected: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("PIR debug launch options rejected: \(String(describing: error), privacy: .public)")
             return false
         }
         return true

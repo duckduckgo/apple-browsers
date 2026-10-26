@@ -18,6 +18,7 @@
 
 #if DEBUG
 import DataBrokerProtectionCore
+import DDGError
 import Foundation
 
 struct PIRDebugLaunchOptions {
@@ -29,11 +30,20 @@ struct PIRDebugLaunchOptions {
     let profileSetup: ProfileSetup?
     let startServer: Bool
 
-    enum ParseError: LocalizedError {
+    enum ParseError: DDGError {
         case invalidProfile
         case resetRequiresProfile
 
-        var errorDescription: String? {
+        static var errorDomain: String { "com.duckduckgo.pir.debug-launch-options" }
+
+        var errorCode: Int {
+            switch self {
+            case .invalidProfile: return 0
+            case .resetRequiresProfile: return 1
+            }
+        }
+
+        var description: String {
             switch self {
             case .invalidProfile: return "Invalid PIR profile JSON or required profile fields."
             case .resetRequiresProfile: return "PIR reset requires valid profile JSON."

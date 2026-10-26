@@ -25,6 +25,7 @@ import SwiftUI
 import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
+import RemoteMessaging
 import PixelKit
 import WideEvent
 import Subscription
@@ -82,6 +83,7 @@ enum Preferences {
         let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
         let pinningManager: PinningManager
         let extensionsCatalog: ChromeWebStoreCatalog
+        let extensionsImageLoader: RemoteMessagingImageLoading
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -108,6 +110,8 @@ enum Preferences {
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
             extensionsCatalog: ChromeWebStoreCatalog,
+            extensionsImageLoader: RemoteMessagingImageLoading = RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
+                                                                                             cache: RemoteMessagingImageLoader.defaultCache),
             websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
@@ -135,6 +139,7 @@ enum Preferences {
             self.pixelHandler = pixelHandler
             self.pinningManager = pinningManager
             self.extensionsCatalog = extensionsCatalog
+            self.extensionsImageLoader = extensionsImageLoader
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -254,7 +259,7 @@ enum Preferences {
                     PreferencesWebsitePermissionsView(model: websitePermissionsModel)
                 case .extensions:
                     if #available(macOS 15.4, *) {
-                        ExtensionsManagementView(catalog: extensionsCatalog, openNewTab: { showTab(.url($0, source: .ui)) })
+                        ExtensionsManagementView(catalog: extensionsCatalog, imageLoader: extensionsImageLoader, openNewTab: { showTab(.url($0, source: .ui)) })
                     }
                 case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab

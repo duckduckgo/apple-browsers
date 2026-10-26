@@ -19,6 +19,7 @@
 import DesignResourcesKit
 import PreferencesUI_macOS
 import PrivacyConfig
+import RemoteMessaging
 import SwiftUI
 import SwiftUIExtensions
 import WebExtensions
@@ -33,6 +34,7 @@ extension Preferences {
         }
 
         let catalog: ChromeWebStoreCatalog
+        let imageLoader: RemoteMessagingImageLoading
         let openNewTab: @MainActor (URL) -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -64,7 +66,7 @@ extension Preferences {
 
                 PreferencePaneSection(UserText.extensionsSettingsPasswordManagersHeader, spacing: 12) {
                     ForEach(ExtensionsManagementItem.passwordManagers) { item in
-                        ExtensionsManagementRow(item: item) {
+                        ExtensionsManagementRow(item: item, iconURL: catalog.iconURL(of: item.catalogEntry), imageLoader: imageLoader) {
                             guard let url = catalog.storeURL(of: item.catalogEntry) else { return }
                             openNewTab(url)
                         }
@@ -101,16 +103,15 @@ extension Preferences {
         let catalogEntry: ExtensionsCatalogSubfeature
         let name: String
         let developer: String
-        let icon: NSImage
 
         var id: String {
             catalogEntry.rawValue
         }
 
         static let passwordManagers: [ExtensionsManagementItem] = [
-            .init(catalogEntry: .bitwarden, name: "Bitwarden Password Manager", developer: "Bitwarden Inc.", icon: NSImage(resource: .logoBitwarden)),
-            .init(catalogEntry: .onePassword, name: "1Password – Password Manager", developer: "AgileBits Inc.", icon: NSImage(resource: .logo1Password)),
-            .init(catalogEntry: .lastPass, name: "LastPass: Free Password Manager", developer: "Lastpass US", icon: NSImage(resource: .logoLastPass))
+            .init(catalogEntry: .bitwarden, name: "Bitwarden Password Manager", developer: "Bitwarden Inc."),
+            .init(catalogEntry: .onePassword, name: "1Password – Password Manager", developer: "AgileBits Inc."),
+            .init(catalogEntry: .lastPass, name: "LastPass: Free Password Manager", developer: "Lastpass US")
         ]
     }
 
@@ -133,19 +134,35 @@ extension Preferences {
         }
 
         let item: ExtensionsManagementItem
+        let iconURL: URL?
+        let imageLoader: RemoteMessagingImageLoading
         let onGet: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
+        @State private var remoteIcon: NSImage?
+
+        /// Downloaded, else cached; `nil` leaves the gray tile empty.
+        private var icon: NSImage? {
+            remoteIcon ?? iconURL.flatMap(imageLoader.cachedImage(for:))
+        }
 
         var body: some View {
             HStack(spacing: 16) {
-                Image(nsImage: item.icon)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: Const.iconSize, height: Const.iconSize)
-                    .frame(width: Const.iconTileSize, height: Const.iconTileSize)
+                ZStack {
+                    if let icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: Const.iconSize, height: Const.iconSize)
+                    }
+                }
+                .frame(width: Const.iconTileSize, height: Const.iconTileSize)
                     .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
                     .clipShape(RoundedRectangle(cornerRadius: Const.iconTileCornerRadius, style: .continuous))
+                    .task(id: iconURL) {
+                        guard let iconURL else { return }
+                        remoteIcon = try? await imageLoader.loadImage(from: iconURL)
+                    }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name)

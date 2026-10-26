@@ -32,4 +32,9 @@ public extension WKBackForwardListItem {
         self.perform(#selector(getter: WKBackForwardListItem.url))?.takeUnretainedValue() as? URL
     }
 
+    /// Safe Optional `initialURL: URL` getter, for the same reason as `safeURL`.
+    var safeInitialURL: URL? {
+        self.perform(#selector(getter: WKBackForwardListItem.initialURL))?.takeUnretainedValue() as? URL
+    }
+
 }

@@ -4817,7 +4817,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4837,7 +4837,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4858,7 +4858,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.request.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: prompt,

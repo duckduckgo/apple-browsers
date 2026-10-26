@@ -27,7 +27,6 @@ class FakeSmartlingClient:
 
     def __init__(self,
                  report=None,
-                 pending_jobs=None,
                  named_jobs=None,
                  batch_status='COMPLETED',
                  estimate_status='COMPLETED',
@@ -46,7 +45,6 @@ class FakeSmartlingClient:
                  authorize_error=None):
         self.creds = LOCALIZATION_TOOL.Credentials('user', 'secret', 'project-123')
         self.report = report or {}
-        self.pending_jobs = pending_jobs or []
         self.named_jobs = named_jobs or []
         self.batch_status = batch_status
         self.estimate_status = estimate_status
@@ -72,11 +70,9 @@ class FakeSmartlingClient:
         self.uploaded_file_uris = []
         self.operations = []
 
-    async def list_jobs(self, job_name, statuses):
+    async def list_jobs(self, _job_name, _statuses):
         if self.list_jobs_error:
             raise self.list_jobs_error
-        if statuses:
-            return [job for job in self.pending_jobs if job_name in job['jobName']]
         return self.named_jobs
 
     async def get_project_locales(self):
@@ -371,22 +367,24 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('timed out', result.reason)
 
     async def testWhenPendingJobWithAnyPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
-        client = FakeSmartlingClient(pending_jobs=[{
-            'jobName': 'Merge iOS - 2026-08-03 14:05 abc1234',
-            'translationJobUid': 'pending-job',
-        }])
+        for pending_job_name in ('Nightly iOS - 2026-08-03', 'Merge iOS - 2026-08-03 14:05 abc1234'):
+            with self.subTest(pending_job_name):
+                client = FakeSmartlingClient(awaiting_jobs=[
+                    {'jobName': 'pau/some-feature-2026-08-03', 'translationJobUid': 'label-job'},
+                    {'jobName': pending_job_name, 'translationJobUid': 'pending-job'},
+                ])
 
-        result = await self.run_submit(client)
+                result = await self.run_submit(client)
 
-        self.assertEqual(result.outcome, 'pending_review')
-        self.assertEqual(result.job_id, 'pending-job')
-        self.assertEqual(result.job_name, 'Merge iOS - 2026-08-03 14:05 abc1234')
-        self.assertIsNone(result.total_strings)
-        self.assertIn('Merge iOS - 2026-08-03 14:05 abc1234', result.reason)
-        self.assertEqual(client.created_jobs, [])
+                self.assertEqual(result.outcome, 'pending_review')
+                self.assertEqual(result.job_id, 'pending-job')
+                self.assertEqual(result.job_name, pending_job_name)
+                self.assertIsNone(result.total_strings)
+                self.assertIn(pending_job_name, result.reason)
+                self.assertEqual(client.created_jobs, [])
 
     async def testWhenThereIsNoPendingPrefixThenSimilarlyNamedPendingJobsDontBlock(self):
-        client = FakeSmartlingClient(pending_jobs=[{
+        client = FakeSmartlingClient(awaiting_jobs=[{
             'jobName': 'Release iOS 7.200.0 (test)',
             'translationJobUid': 'test-job',
         }])
@@ -767,6 +765,19 @@ class DownloadCommandTests(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaisesRegex(RuntimeError, 'Downloaded 1 of 2 files'):
             await self.download(client, file_uris=[XLIFF_URI])
+
+
+class ParserTests(unittest.TestCase):
+
+    def testWhenPendingJobPrefixIsRepeatedThenEveryPrefixIsKept(self):
+        parser = LOCALIZATION_TOOL.build_parser()
+
+        args = parser.parse_args([
+            'submit', '--job-name', 'Merge iOS - 2026-08-03 14:05 abc1234', '--file-uri-prefix', 'main',
+            '--files', 'en.xliff', '--pending-job-prefix', 'Nightly iOS - ', '--pending-job-prefix', 'Merge iOS - ',
+        ])
+
+        self.assertEqual(args.pending_job_prefix, ['Nightly iOS - ', 'Merge iOS - '])
 
 
 if __name__ == '__main__':

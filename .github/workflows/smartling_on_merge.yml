@@ -11,6 +11,7 @@ on:
     branches:
       - main
     # The committed English sources. The exported XLIFFs aren't committed, and PR checks keep these in sync with the code.
+    # Keep in sync with scripts/smartling/smartling_changed_platforms.sh, which picks the platforms.
     paths:
       - 'iOS/**/en.lproj/**'
       - 'iOS/**/*.xcstrings'
@@ -52,12 +53,20 @@ jobs:
     outputs:
       platforms: ${{ steps.platforms.outputs.platforms }}
     steps:
-      # The paths above trigger the run for either platform, so pick the platforms whose strings changed. When the
-      # changed files can't be listed in full, both platforms run: a run with nothing new only deletes its empty job.
+      # Only the scripts are checked out. Both commits' string catalogs are fetched when they're compared.
+      - name: Check out the merge
+        if: github.event_name == 'push'
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: scripts/smartling
+
+      # The paths above trigger the run for either platform, so pick the platforms whose English strings changed.
+      # Translation imports and release merge-backs only change other languages, so they run no platform.
       - name: Find platforms
         id: platforms
         env:
-          GH_TOKEN: ${{ github.token }}
           EVENT_NAME: ${{ github.event_name }}
           PLATFORM: ${{ inputs.platform }}
           BEFORE: ${{ github.event.before }}
@@ -72,19 +81,8 @@ jobs:
             echo "No previous commit to compare with, so both platforms run."
             platforms='["iOS","macOS"]'
           else
-            # The compare API lists at most 300 files, like the paths filter.
-            files="$(gh api "repos/$GITHUB_REPOSITORY/compare/$BEFORE...$AFTER" --jq '.files[].filename')"
-            ios=false
-            macos=false
-            if [[ "$(wc -l <<< "$files")" -ge 300 ]]; then
-              echo "The merge changes at least 300 files, so both platforms run."
-              ios=true
-              macos=true
-            fi
-            ! grep -qE '^(iOS/.*(/en\.lproj/|\.xcstrings$|\.storyboard$|\.xib$)|SharedPackages/.*(/en\.lproj/|\.xcstrings$))' <<< "$files" || ios=true
-            ! grep -qE '^(macOS/.*(/en\.lproj/|\.xcstrings$|\.storyboard$|\.xib$)|SharedPackages/.*(/en\.lproj/|\.xcstrings$))' <<< "$files" || macos=true
-            platforms="$(jq -cn --argjson ios "$ios" --argjson macos "$macos" \
-              '[if $ios then "iOS" else empty end, if $macos then "macOS" else empty end]')"
+            git fetch --quiet --depth=1 --filter=blob:none origin "$BEFORE"
+            platforms="$(./scripts/smartling/smartling_changed_platforms.sh "$BEFORE" "$AFTER")"
           fi
           echo "Platforms: $platforms"
           echo "platforms=$platforms" >> "$GITHUB_OUTPUT"

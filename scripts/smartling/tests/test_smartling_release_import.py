@@ -18,6 +18,7 @@ STRINGS_PATH = 'iOS/App/de.lproj/Localizable.strings'
 ENGLISH_STRINGS_PATH = 'iOS/App/en.lproj/Localizable.strings'
 EXPORTED_XLIFF = './iOS/scripts/assets/loc/en.xcloc/Localized Contents/en.xliff'
 ENGLISH_STRINGSDICT = './iOS/DuckDuckGo/UserInterfaceResources/en.lproj/Localizable.stringsdict'
+TRANSLATIONS_TASK_URL = 'https://app.asana.com/0/0/1000/f'
 
 READY = {
     'outcome': 'ready', 'job_id': 'job-1', 'job_url': 'https://dashboard.smartling.com/app/projects/p/account-jobs/p:job-1',
@@ -44,6 +45,9 @@ case "${args[0]} ${args[1]}" in
 		else
 			echo "$state $url"
 		fi
+		;;
+	"pr view")
+		[ ! -e "$STUB_DIR/open_pr_body.md" ] || cat "$STUB_DIR/open_pr_body.md"
 		;;
 	"pr create")
 		[ ! -e "$STUB_DIR/pr_create_fails" ] || { echo "GraphQL: something went wrong" >&2; exit 1; }
@@ -150,7 +154,8 @@ class ReleaseImportScriptTests(unittest.TestCase):
         git(self.repo, 'push', '-q', 'origin', 'HEAD')
 
     def run_import(self, *args, release_branch=RELEASE_BRANCH, existing_pr='', imported='"a" = "A";\n"b" = "B";\n"c" = "C";\n',
-                   integrity_passes=True, release_status=None, refresh_passes=True, expected_exit_code=0):
+                   integrity_passes=True, release_status=None, refresh_passes=True, task_url=TRANSLATIONS_TASK_URL,
+                   expected_exit_code=0):
         (self.stub_dir / 'existing_pr').write_text(existing_pr, encoding='utf-8')
         (self.stub_dir / 'release_status.json').write_text(json.dumps(release_status or READY), encoding='utf-8')
         (self.stub_dir / 'refresh_exit_code').write_text('0' if refresh_passes else '1', encoding='utf-8')
@@ -167,6 +172,7 @@ class ReleaseImportScriptTests(unittest.TestCase):
             'GITHUB_OUTPUT': str(output_file),
             'RUNNER_TEMP': str(self.stub_dir),
             'SMARTLING_PROJECT_ID': 'project-123',
+            'TRANSLATIONS_TASK_URL': task_url,
         }
         env.pop('GITHUB_STEP_SUMMARY', None)
         env.pop('GITHUB_RUN_ID', None)
@@ -317,11 +323,29 @@ class ReleaseImportScriptTests(unittest.TestCase):
         self.assertIn('Failed at line', outputs['reason'])
         self.assertEqual(outputs['integrity'], 'passed')
 
-    def testWhenThePullRequestIsOpenedThenItsDescriptionLinksOnlyTheTechDesign(self):
+    def testWhenThePullRequestIsOpenedThenItsDescriptionLinksTheTranslationsTaskAndTheTechDesign(self):
         self.run_import()
 
-        self.assertNotIn('Task/Issue URL', self.body(0))
-        self.assertIn('Tech Design URL', self.body(0))
+        self.assertTrue(self.body(0).startswith(f'Task/Issue URL: {TRANSLATIONS_TASK_URL}\nTech Design URL: '))
+
+    def testWhenReimportUpdatesAnOpenPullRequestThenItKeepsItsTaskLink(self):
+        first = self.run_import()
+        shutil.copy(self.stub_dir / 'body-0.md', self.stub_dir / 'open_pr_body.md')
+
+        self.run_import(
+            '--reimport', existing_pr=f"OPEN {first['pr_url']}", imported='"a" = "A";\n', task_url='https://app.asana.com/0/0/2000/f'
+        )
+
+        self.assertIn(f'Task/Issue URL: {TRANSLATIONS_TASK_URL}\n', self.body(1))
+        self.assertNotIn('2000', self.body(1))
+
+    def testWhenReimportUpdatesAnOpenPullRequestWithoutATaskLinkThenItLinksTheTranslationsTask(self):
+        (self.stub_dir / 'open_pr_body.md').write_text('Task/Issue URL:\r\nTech Design URL: https://app.asana.com/0/0/1/f\r\n', encoding='utf-8')
+
+        outputs = self.run_import('--reimport', existing_pr='OPEN https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(outputs['outcome'], 'pr_updated')
+        self.assertIn(f'Task/Issue URL: {TRANSLATIONS_TASK_URL}\n', self.body(0))
 
     def testWhenReimportFindsNothingNewThenTheSupersededOpenPullRequestIsClosed(self):
         first = self.run_import(imported='"a" = "A";\n"b" = "B2";\n')

@@ -86,16 +86,19 @@ jobs:
               ;;
           esac
 
-      - name: Check out the Asana task script
+      - name: Check out the Asana task scripts
         uses: actions/checkout@v6
         with:
           path: workflow-scripts
-          sparse-checkout: scripts/smartling/asana_review_task.py
+          sparse-checkout: |
+            scripts/smartling/asana_review_task.py
+            scripts/smartling/release_translations_task.py
           sparse-checkout-cone-mode: false
 
-      - name: Keep the Asana task script
+      - name: Keep the Asana task scripts
         run: |
           cp workflow-scripts/scripts/smartling/asana_review_task.py "$RUNNER_TEMP/asana_review_task.py"
+          cp workflow-scripts/scripts/smartling/release_translations_task.py "$RUNNER_TEMP/release_translations_task.py"
           rm -rf workflow-scripts
 
       - name: Find the release branch
@@ -177,6 +180,16 @@ jobs:
         if: steps.script.outputs.available == 'true' && matrix.platform == 'macOS'
         run: brew install xmlstarlet
 
+      - name: Find the release task's Translations subtask
+        id: translations-task
+        if: steps.script.outputs.available == 'true' && inputs.dry_run != true
+        continue-on-error: true
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          PLATFORM: ${{ matrix.platform }}
+          RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
+        run: python3 "$RUNNER_TEMP/release_translations_task.py" --platform "$PLATFORM" --release-branch "$RELEASE_BRANCH"
+
       - name: Import ${{ matrix.platform }} release translations
         id: import
         if: steps.script.outputs.available == 'true'
@@ -184,6 +197,7 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
           VERSION: ${{ inputs.version }}
+          TRANSLATIONS_TASK_URL: ${{ steps.translations-task.outputs.task_url }}
           DRY_RUN: ${{ inputs.dry_run || false }}
           REIMPORT: ${{ inputs.reimport || false }}
           GH_TOKEN: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}

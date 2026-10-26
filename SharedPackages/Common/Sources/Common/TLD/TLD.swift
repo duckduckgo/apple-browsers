@@ -105,8 +105,10 @@ public class TLD {
     /// which page-supplied URLs (e.g. huge query strings) can exhaust.
     private func host(forStringURL stringURL: String) -> String? {
         guard let authorityStart = stringURL.range(of: "//") else { return nil }
-        let authorityEnd = stringURL[authorityStart.upperBound...].firstIndex { "/?#".contains($0) } ?? stringURL.endIndex
-        guard let escapedPrefix = stringURL[..<authorityEnd].addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
+        // Scan scalars, not Characters: a combining mark after a delimiter would otherwise hide it in one grapheme.
+        let scalars = stringURL.unicodeScalars
+        let authorityEnd = scalars[authorityStart.upperBound...].firstIndex { $0 == "/" || $0 == "?" || $0 == "#" } ?? scalars.endIndex
+        guard let escapedPrefix = String(scalars[..<authorityEnd]).addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else { return nil }
         return URL(string: escapedPrefix)?.host
     }
 

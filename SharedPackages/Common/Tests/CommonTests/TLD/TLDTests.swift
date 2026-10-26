@@ -136,6 +136,12 @@ final class TLDTests: XCTestCase {
         XCTAssertEqual("co.uk", tld.eTLD(forStringURL: url))
     }
 
+    func testWhenDelimiterIsFollowedByCombiningMarkThenETLDp1Correct() {
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "https://example.com#\u{0301}tail"))
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "https://example.com?\u{0301}q=1"))
+        XCTAssertEqual("example.com", tld.eTLDplus1(forStringURL: "https://example.com/\u{0301}" + String(repeating: "a", count: 5_000_000)))
+    }
+
     // MARK: - eTLD Tests
 
     func testWhenHostMultiPartTopLevelWithSubdomainThenETLDCorrect() {

@@ -47,7 +47,7 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
     private var navigationErrorCancellable: AnyCancellable?
 
     init(navigationErrors: AnyPublisher<Error?, Never>,
-         instrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation(),
+         instrumentation: SubscriptionCancellationInstrumenting,
          onOpenStoreCancellation: @escaping (_ closingFlow: Bool) -> Void) {
         self.instrumentation = instrumentation
         self.onOpenStoreCancellation = onOpenStoreCancellation
@@ -65,23 +65,29 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
             instrumentation.featureInfoFailed(entitlement: entitlement)
             return
         }
-        guard featureInfoItem == nil else { return }
-        featureInfoItem = item
+        if featureInfoItem == nil {
+            featureInfoItem = item
+        }
     }
 
     func requestStoreCancellation() {
         openStoreCancellation(closingFlow: true)
     }
+}
+
+// MARK: - Private
+
+private extension SubscriptionCancellationFlowModel {
 
     /// A load failure on any step of the flow, falls back to the store cancellation.
-    private func handleLoadFailure(_ error: Error) {
+    func handleLoadFailure(_ error: Error) {
         guard !didOpenStoreCancellation else { return }
         instrumentation.flowLoadFailed(error)
         // The flow shows the generic error alert, which pops the flow when dismissed.
         openStoreCancellation(closingFlow: false)
     }
 
-    private func openStoreCancellation(closingFlow: Bool) {
+    func openStoreCancellation(closingFlow: Bool) {
         guard !didOpenStoreCancellation else { return }
         didOpenStoreCancellation = true
         onOpenStoreCancellation(closingFlow)
@@ -95,8 +101,10 @@ struct SubscriptionCancellationFlowPresentation {
 
     @MainActor
     init(containerViewModel: SubscriptionContainerViewModel,
+         instrumentation: SubscriptionCancellationInstrumenting,
          onOpenStoreCancellation: @escaping (_ closingFlow: Bool) -> Void) {
         let model = SubscriptionCancellationFlowModel(navigationErrors: containerViewModel.flow.navigationErrorPublisher.eraseToAnyPublisher(),
+                                                      instrumentation: instrumentation,
                                                       onOpenStoreCancellation: onOpenStoreCancellation)
         containerViewModel.subFeature.onShowFeatureInfo = { [weak model] entitlement in
             guard let model else { return }

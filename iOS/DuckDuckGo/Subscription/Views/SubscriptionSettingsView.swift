@@ -757,7 +757,8 @@ extension SubscriptionSettingsViewV2 {
             dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: settingsViewModel.featureFlagger)
-        cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel) { closingFlow in
+        cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
+                                                                    instrumentation: viewModel.cancellationInstrumentation) { closingFlow in
             shouldOpenStoreCancellation = true
             if closingFlow {
                 isShowingCancellationFlow = false

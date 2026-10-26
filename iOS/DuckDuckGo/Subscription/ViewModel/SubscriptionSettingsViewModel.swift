@@ -48,7 +48,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
     private let locale: Locale
-    private let cancellationInstrumentation: SubscriptionCancellationInstrumenting
+    let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
 

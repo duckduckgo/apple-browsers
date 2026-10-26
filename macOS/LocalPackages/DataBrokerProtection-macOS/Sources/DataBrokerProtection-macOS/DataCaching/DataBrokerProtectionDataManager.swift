@@ -211,12 +211,10 @@ extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
         delegate?.dataBrokerProtectionDataManagerDidUpdateData()
     }
 
-#if DEBUG
     public func removeAllDataForDebugLaunch() throws {
         try database.deleteProfileData()
         communicator.invalidateCache()
     }
-#endif
 
     public func removeAllData() throws {
         try database.deleteProfileData()

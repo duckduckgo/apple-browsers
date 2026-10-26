@@ -208,7 +208,6 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
 extension DataBrokerProtectionIPCClient: XPCClientInterface {
 }
 
-#if DEBUG
 extension DataBrokerProtectionIPCClient {
     public enum DebugLaunchCommand {
         case readiness
@@ -226,4 +225,3 @@ extension DataBrokerProtectionIPCClient {
         }, xpcReplyErrorHandler: { _ in completion(false) })
     }
 }
-#endif

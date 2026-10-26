@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "branch" : "pr-releases/moon0326/o-j/suggested-prompts",
-        "revision" : "d9aaa2dd8d50ac65449184a91ce730206a92e4d9"
+        "revision" : "3670ee77f7bbd6068ecc4d64eaa54bf5782062f9",
+        "version" : "17.27.0"
       }
     },
     {

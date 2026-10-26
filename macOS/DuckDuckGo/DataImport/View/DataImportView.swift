@@ -123,7 +123,7 @@ struct DataImportView: ModalView {
             case .archiveImport(let dataTypes, let summary):
                 FileImportScreenView(
                     importSource: model.importSource,
-                    kind: .archive(dataTypes: dataTypes),
+                    kind: .archive(dataTypes: dataTypes, filtersFileTypes: model.isSourceFilterEnabled),
                     summary: summary,
                     isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
                     selectFile: { model.selectFile() },

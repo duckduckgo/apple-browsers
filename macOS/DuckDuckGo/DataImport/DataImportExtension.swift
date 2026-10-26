@@ -438,6 +438,11 @@ extension DataImport.Source {
         }
     }
 
+    func archiveImportSupportedFiles(for dataTypes: Set<DataImport.DataType>) -> Set<UTType> {
+        let selectedFileTypes = Set(dataTypes.flatMap { $0.allowedFileTypes })
+        return archiveImportSupportedFiles.intersection(selectedFileTypes.union([.zip]))
+    }
+
     func installedAppsMajorVersionDescription(selectedProfile: DataImport.BrowserProfile?) -> String? {
         let installedVersions: Set<String>
         if let appVersion = selectedProfile?.appVersion, !appVersion.isEmpty {

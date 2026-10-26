@@ -233,7 +233,10 @@ final class SafariArchiveImporter: DataImporter {
             return finalSummary
         }
 
-        guard !contents.isEmpty else {
+        let hasSelectedData = (types.contains(.passwords) && !contents.passwords.isEmpty)
+            || (types.contains(.bookmarks) && !contents.bookmarks.isEmpty)
+            || (types.contains(.creditCards) && !contents.creditCards.isEmpty)
+        guard hasSelectedData else {
             for type in types {
                 finalSummary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
             }

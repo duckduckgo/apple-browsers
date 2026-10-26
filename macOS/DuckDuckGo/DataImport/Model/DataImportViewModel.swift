@@ -39,6 +39,7 @@ struct DataImportViewModel {
     var successfulImportHappened: Bool?
 
     let availableImportSources: [DataImport.Source]
+    private let availableImportTypesBySource: [Source: Set<DataType>]
 
     private let featureFlagger: FeatureFlagger
 
@@ -256,23 +257,33 @@ struct DataImportViewModel {
             ?? DataDirectoryPermissionFixAvailability(debugSettings: UserDefaults.standard.keyedStoring())
         let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessAvailability.isAvailable) }
 
-        let filteredAvailableSources = availableImportSources.filter {
+        var availableImportTypesBySource: [Source: Set<DataType>] = [:]
+        let filteredAvailableSources = availableImportSources.filter { source in
             // Filter out CSV and HTML as we're using the new combined file import option
-             if $0 == .bookmarksHTML || $0 == .csv {
-                 return false
-             }
+            if source == .bookmarksHTML || source == .csv {
+                return false
+            }
 
-            let browser = ThirdPartyBrowser.browser(for: $0)
+            let browser = ThirdPartyBrowser.browser(for: source)
             guard browser?.isWebBrowser == true else {
                 // Don't filter out password managers or file imports
+                availableImportTypesBySource[source] = source.supportedDataTypes
                 return true
             }
             let profiles = browser.map(loadProfiles)
-            return profiles?.defaultProfile != nil
+            guard profiles?.defaultProfile != nil else { return false }
+            availableImportTypesBySource[source] = Self.availableImportTypes(for: source, profiles: profiles)
+            return true
         }
 
         self.availableImportSources = filteredAvailableSources
-        let importSource = importSource ?? preferredImportSources.first(where: { filteredAvailableSources.contains($0) }) ?? filteredAvailableSources.first ?? .csv
+        self.availableImportTypesBySource = availableImportTypesBySource
+        let isSourceFilterEnabled = isSourceFilterEnabled ?? featureFlagger.isFeatureOn(.dataImportSourceFilter)
+        self.isSourceFilterEnabled = isSourceFilterEnabled
+        let visibleSources = filteredAvailableSources.filter {
+            !isSourceFilterEnabled || !(availableImportTypesBySource[$0] ?? []).isDisjoint(with: dataTypeFilter)
+        }
+        let importSource = importSource ?? preferredImportSources.first(where: visibleSources.contains) ?? visibleSources.first ?? .csv
 
         self.importSource = importSource
         self.loadProfiles = loadProfiles
@@ -285,21 +296,9 @@ struct DataImportViewModel {
         let selectedProfile = browserProfiles?.defaultProfile
         self.selectedProfile = selectedProfile
 
-        let availableImportTypes = importSource.supportedDataTypes.filter { dataType in
-            guard let profiles = browserProfiles else { return true }
-
-            // If we have valid profiles, check if any profile has valid data for this type.
-            // If no valid profiles (Safari doesn't check profiles, password managers), return true (include all types).
-            let validProfiles = profiles.validImportableProfiles
-            guard !validProfiles.isEmpty else { return true }
-
-            return validProfiles.contains { profile in
-                profile.hasValidProfileData(for: dataType)
-            }
-        }
+        let availableImportTypes = availableImportTypesBySource[importSource]
+            ?? Self.availableImportTypes(for: importSource, profiles: browserProfiles)
         self.selectableImportTypes = availableImportTypes
-        let isSourceFilterEnabled = isSourceFilterEnabled ?? featureFlagger.isFeatureOn(.dataImportSourceFilter)
-        self.isSourceFilterEnabled = isSourceFilterEnabled
         if isSourceFilterEnabled {
             self.selectedDataTypes = Self.dataTypesToImport(availableTypes: availableImportTypes, filter: dataTypeFilter)
         } else {
@@ -539,8 +538,10 @@ struct DataImportViewModel {
         switch screen {
         case .fileImport(dataType: let dataType, summary: _):
             dataTypes = dataType.allowedFileTypes
-        case .archiveImport:
-            dataTypes = Array(importSource.archiveImportSupportedFiles)
+        case .archiveImport(let selectedTypes, _):
+            dataTypes = Array(isSourceFilterEnabled
+                ? importSource.archiveImportSupportedFiles(for: selectedTypes)
+                : importSource.archiveImportSupportedFiles)
         case .sourceAndDataTypesPicker:
             let fileDataTypes = isSourceFilterEnabled ? selectedDataTypes : importSource.supportedDataTypes
             dataTypes = fileDataTypes.flatMap { $0.allowedFileTypes }
@@ -738,6 +739,15 @@ extension DataImport.DataType {
 }
 
 extension DataImportViewModel {
+
+    private static func availableImportTypes(for source: Source, profiles: BrowserProfileList?) -> Set<DataType> {
+        let validProfiles = profiles?.validImportableProfiles ?? []
+        // Keep manual imports and browsers awaiting read permission available.
+        guard !validProfiles.isEmpty else { return source.supportedDataTypes }
+        return source.supportedDataTypes.filter { dataType in
+            validProfiles.contains { $0.hasValidProfileData(for: dataType) }
+        }
+    }
 
     static let defaultPreferredImportSources: [Source] = [.chrome, .firefox, .safari]
 
@@ -992,6 +1002,7 @@ extension DataImportViewModel {
         // Only carry the user's selection forward if they actually chose it.
         // Otherwise let the new source default to its full set of types.
         self = .init(importSource: importSource,
+                     availableImportSources: availableImportSources,
                      selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
                      hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
                      dataTypeFilter: dataTypeFilter,
@@ -1046,7 +1057,7 @@ extension DataImportViewModel {
         guard isSourceFilterEnabled else {
             return availableImportSources
         }
-        return availableImportSources.filter { !$0.supportedDataTypes.isDisjoint(with: dataTypeFilter) }
+        return availableImportSources.filter { !(availableImportTypesBySource[$0] ?? []).isDisjoint(with: dataTypeFilter) }
     }
 
     /// Data types listed in the picker's type sheet.

@@ -492,12 +492,12 @@ struct NewDataImportFilePickerScreenView: View {
 struct NewFileImportView: View {
     enum Kind {
         case individual(dataType: DataImport.DataType)
-        case archive(dataTypes: Set<DataImport.DataType>)
+        case archive(dataTypes: Set<DataImport.DataType>, filtersFileTypes: Bool = false)
 
         func supportedFileTypes(for source: DataImport.Source) -> [UTType] {
             switch self {
-            case .archive:
-                return Array(source.archiveImportSupportedFiles)
+            case .archive(let dataTypes, let filtersFileTypes):
+                return Array(filtersFileTypes ? source.archiveImportSupportedFiles(for: dataTypes) : source.archiveImportSupportedFiles)
             case .individual(dataType: let dataType):
                 return dataType.allowedFileTypes
             }
@@ -527,7 +527,7 @@ struct NewFileImportView: View {
         VStack(alignment: .leading, spacing: 20) {
             NewInstructionsView {
                 switch kind {
-                case .archive(let dataTypes):
+                case .archive(let dataTypes, _):
                     newFileImportMultipleTypeInstructionsBuilder(source: source, dataTypes: dataTypes)
                 case .individual(let dataType):
                     newFileImportSingleTypeInstructionsBuilder(source: source, dataType: dataType)

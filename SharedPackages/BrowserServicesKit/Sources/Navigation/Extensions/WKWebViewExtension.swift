@@ -159,13 +159,13 @@ extension WKWebView {
         navigation_load(data, mimeType: MIMEType, characterEncodingName: characterEncodingName, baseURL: baseURL)?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: baseURL))
     }
     @objc dynamic private func navigation_go(to item: WKBackForwardListItem) -> WKNavigation? {
-        navigation_go(to: item)?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: item.url, cachePolicy: .returnCacheDataElseLoad))
+        navigation_go(to: item)?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: item.safeURL ?? .empty, cachePolicy: .returnCacheDataElseLoad))
     }
     @objc dynamic private func navigation_goBack() -> WKNavigation? {
-        navigation_goBack()?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: backForwardList.backItem?.url ?? .empty, cachePolicy: .returnCacheDataElseLoad))
+        navigation_goBack()?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: backForwardList.backItem?.safeURL ?? .empty, cachePolicy: .returnCacheDataElseLoad))
     }
     @objc dynamic private func navigation_goForward() -> WKNavigation? {
-        navigation_goForward()?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: backForwardList.forwardItem?.url ?? .empty, cachePolicy: .returnCacheDataElseLoad))
+        navigation_goForward()?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: backForwardList.forwardItem?.safeURL ?? .empty, cachePolicy: .returnCacheDataElseLoad))
     }
     @objc dynamic private func navigation_reload() -> WKNavigation? {
         navigation_reload()?.appendingToExpectedNavigations(in: self, matching: URLRequest(url: url ?? .empty, cachePolicy: .reloadIgnoringLocalCacheData))

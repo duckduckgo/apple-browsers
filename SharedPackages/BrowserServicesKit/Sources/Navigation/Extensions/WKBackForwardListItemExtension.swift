@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import Foundation
 import WebKit
 
@@ -29,12 +30,55 @@ public extension WKBackForwardListItem {
     /// cast safely returns nil instead of crashing.
     /// See: https://app.asana.com/1/137249556945/project/1201037661562251/task/1214602405943382
     var safeURL: URL? {
-        self.perform(#selector(getter: WKBackForwardListItem.url))?.takeUnretainedValue() as? URL
+        _=WKBackForwardListItem.addSafetyCheckForSafeURLUsageOnce
+        return self.perform(#selector(getter: WKBackForwardListItem.url))?.takeUnretainedValue() as? URL
     }
 
     /// Safe Optional `initialURL: URL` getter, for the same reason as `safeURL`.
     var safeInitialURL: URL? {
-        self.perform(#selector(getter: WKBackForwardListItem.initialURL))?.takeUnretainedValue() as? URL
+        _=WKBackForwardListItem.addSafetyCheckForSafeURLUsageOnce
+        return self.perform(#selector(getter: WKBackForwardListItem.initialURL))?.takeUnretainedValue() as? URL
     }
+
+#if DEBUG
+    private static var ignoredURLUsageSymbols = Set<String>()
+
+    // ensure `.safeURL` and `.safeInitialURL` are used and not `.url` and `.initialURL`
+    static var addSafetyCheckForSafeURLUsageOnce: Void = {
+        for (original, swizzled) in [(#selector(getter: WKBackForwardListItem.url), #selector(WKBackForwardListItem.swizzledURL)),
+                                     (#selector(getter: WKBackForwardListItem.initialURL), #selector(WKBackForwardListItem.swizzledInitialURL))] {
+            let originalMethod = class_getInstanceMethod(WKBackForwardListItem.self, original)!
+            let swizzledMethod = class_getInstanceMethod(WKBackForwardListItem.self, swizzled)!
+            method_exchangeImplementations(originalMethod, swizzledMethod)
+        }
+
+        // ignore `-[WKBackForwardListItem description]`
+        ignoredURLUsageSymbols.insert("-[WKBackForwardListItem description]")
+    }()
+
+    @objc dynamic private func swizzledURL() -> URL? {
+        Self.checkSafeURLUsage(unsafe: "url", safe: "safeURL", calledFrom: "swizzledURL")
+        return self.swizzledURL() // call the original
+    }
+
+    @objc dynamic private func swizzledInitialURL() -> URL? {
+        Self.checkSafeURLUsage(unsafe: "initialURL", safe: "safeInitialURL", calledFrom: "swizzledInitialURL")
+        return self.swizzledInitialURL() // call the original
+    }
+
+    private static func checkSafeURLUsage(unsafe: String, safe: String, calledFrom swizzledSymbol: String) {
+        let symbol = callingSymbol(after: swizzledSymbol)
+        // `safeURL`/`safeInitialURL` read the getters through `perform(_:)`, which may not leave its own frame
+        let isSafeGetter = symbol.contains("performSelector") || symbol.contains("safeURL") || symbol.contains("safeInitialURL")
+        guard !isSafeGetter, !isWebExtensionSymbol(symbol), !isWebKitInternalSymbol(symbol),
+              ignoredURLUsageSymbols.insert(symbol).inserted else { return }
+
+        breakByRaisingSigInt("Don‘t use `WKBackForwardListItem.\(unsafe)` as it has incorrect nullability\n" +
+                             "Use `WKBackForwardListItem.\(safe)` instead")
+    }
+
+#else
+    static var addSafetyCheckForSafeURLUsageOnce: Void { () }
+#endif
 
 }

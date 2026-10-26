@@ -157,12 +157,12 @@ extension Preferences {
                     }
                 }
                 .frame(width: Const.iconTileSize, height: Const.iconTileSize)
-                    .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
-                    .clipShape(RoundedRectangle(cornerRadius: Const.iconTileCornerRadius, style: .continuous))
-                    .task(id: iconURL) {
-                        guard let iconURL else { return }
-                        remoteIcon = try? await imageLoader.loadImage(from: iconURL)
-                    }
+                .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
+                .clipShape(RoundedRectangle(cornerRadius: Const.iconTileCornerRadius, style: .continuous))
+                .task(id: iconURL) {
+                    guard let iconURL else { return }
+                    remoteIcon = try? await imageLoader.loadImage(from: iconURL)
+                }
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(item.name)

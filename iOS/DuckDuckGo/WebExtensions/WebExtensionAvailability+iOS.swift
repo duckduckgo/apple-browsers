@@ -90,4 +90,8 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
         }
         return false
     }
+
+    var isExtensionManagementAvailable: Bool {
+        false
+    }
 }

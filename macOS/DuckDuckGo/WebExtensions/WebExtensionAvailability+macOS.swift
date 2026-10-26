@@ -20,6 +20,7 @@ import Foundation
 import WebKit
 import PrivacyConfig
 import WebExtensions
+import AppKitExtensions
 
 /// Determines whether web extensions are available and should be used on macOS.
 final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
@@ -51,5 +52,9 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
             }
         }
         return false
+    }
+
+    var isExtensionManagementAvailable: Bool {
+        StandardApplicationBuildType().isSparkleBuild && isAvailable
     }
 }

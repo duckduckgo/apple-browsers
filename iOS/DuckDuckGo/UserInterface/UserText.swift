@@ -2576,7 +2576,7 @@ public struct UserText {
     public static let aiChatPlusModelsSectionHeader = NotLocalizedString("aichat.model-picker.plus-section-header", value: "Plus", comment: "Section header in the model picker menu for models available from the DuckDuckGo Plus tier")
     public static let aiChatProModelsSectionHeader = NotLocalizedString("aichat.model-picker.pro-section-header", value: "Pro", comment: "Section header in the model picker menu for models available from the DuckDuckGo Pro tier")
     public static let aiChatModelPickerTryFree = NSLocalizedString("aichat.model-picker.try-free", value: "Try for Free", comment: "Section header for subscription models shown to free users")
-    public static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Subscriber Exclusive", comment: "Section header for subscription models shown to users who are not eligible for a free trial")
+    public static let aiChatModelPickerSubscriberExclusive = NSLocalizedString("aichat.model-picker.subscriber-exclusive", value: "Unlock with subscription", comment: "Section header for subscription models shown to users who are not eligible for a free trial")
     public static let aiChatModelPickerProPlanExclusive = NSLocalizedString("aichat.model-picker.pro-plan-exclusive", value: "Pro Plan Exclusive", comment: "Section header for Pro-only models shown to DuckDuckGo Plus subscribers")
 
     public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")

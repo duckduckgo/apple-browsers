@@ -30,6 +30,7 @@ import WideEvent
 import Subscription
 import SubscriptionUI
 import AIChat
+import WebExtensions
 
 enum Preferences {
 
@@ -80,6 +81,7 @@ enum Preferences {
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
         let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
         let pinningManager: PinningManager
+        let extensionsCatalog: ChromeWebStoreCatalog
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -105,6 +107,7 @@ enum Preferences {
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
+            extensionsCatalog: ChromeWebStoreCatalog,
             websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
@@ -131,6 +134,7 @@ enum Preferences {
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
             self.pinningManager = pinningManager
+            self.extensionsCatalog = extensionsCatalog
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -248,6 +252,10 @@ enum Preferences {
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
                     PreferencesWebsitePermissionsView(model: websitePermissionsModel)
+                case .extensions:
+                    if #available(macOS 15.4, *) {
+                        ExtensionsManagementView(catalog: extensionsCatalog, openNewTab: { showTab(.url($0, source: .ui)) })
+                    }
                 case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab
                     Spacer()

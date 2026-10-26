@@ -67,7 +67,8 @@ final class PreferencesViewController: NSViewController {
         subscriptionManager: any SubscriptionManager,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         pinningManager: PinningManager,
-        adBlockingAvailability: AdBlockingAvailabilityProviding
+        adBlockingAvailability: AdBlockingAvailabilityProviding,
+        webExtensionAvailability: WebExtensionAvailabilityProviding
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -95,7 +96,8 @@ final class PreferencesViewController: NSViewController {
                                         duckPlayerPreferences: duckPlayerPreferences,
                                         youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                        adBlockingAvailability: adBlockingAvailability)
+                                        adBlockingAvailability: adBlockingAvailability,
+                                        webExtensionAvailability: webExtensionAvailability)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -116,7 +118,8 @@ final class PreferencesViewController: NSViewController {
                                                   aiChatURLSettings: aiChatRemoteSettings,
                                                   wideEvent: Application.appDelegate.wideEvent,
                                                   pinningManager: pinningManager,
-                                                  permissionManager: permissionManager)
+                                                  permissionManager: permissionManager,
+                                                  extensionsCatalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager))
         let host = NSHostingView(rootView: prefRootView)
         view.addAndLayout(host)
     }

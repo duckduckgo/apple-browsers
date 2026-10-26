@@ -5,7 +5,7 @@ name: Smartling - Submit
 #   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. A failure also gets a task for
 #            the platform's owner.
 #   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
-#            the platform's strings. The nightly is its safety net, so a failure only fails the run.
+#            the platform's strings. A failure also gets a task for the platform's owner, as for a nightly.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
 #            so a failure doesn't stop the release.
 # Any failure, including a task that couldn't be created, fails the run.
@@ -256,7 +256,7 @@ jobs:
           echo "Dry run: would submit '$JOB_NAME' with files under $FILE_URI_PREFIX/, authorized up to \$$AUTO_AUTHORIZE_MAX_USD." \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
-      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly failure gets a failure
+      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly or merge failure gets a
       # task, whether it failed in Smartling or before Smartling returned a result (runner, Xcode, export), as long as
       # the platform's Asana project is known by then. A release failure only fails the run.
       - name: Decide on an Asana task
@@ -267,13 +267,14 @@ jobs:
           FAILED: ${{ steps.submit.outputs.failed }}
         run: |
           if [[ -z "$OUTCOME" || "$FAILED" == true ]]; then
-            [[ "$KIND" != nightly || -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+            [[ "$KIND" == release || -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
           elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
             echo "kind=review" >> "$GITHUB_OUTPUT"
           fi
 
       # The platform's owner gets failure tasks. For now they get review tasks too while the automation beds in;
       # remove --assignee below for review tasks to assign the platform's triage DRI instead.
+      # TODO: assign a merge run's failure task to the author of the merged commit instead of the platform's owner.
       - name: Resolve ${{ inputs.platform }} task assignee
         id: task-assignee
         if: ${{ !cancelled() && steps.task.outputs.kind != '' }}

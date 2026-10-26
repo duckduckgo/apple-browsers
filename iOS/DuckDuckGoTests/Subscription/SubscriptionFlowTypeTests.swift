@@ -80,22 +80,6 @@ final class SubscriptionFlowTypeTests: XCTestCase {
         XCTAssertFalse(flowType.showsDaxLogo)
     }
 
-    // MARK: - Dismisses From Root Tests
-
-    func testDismissesFromRoot_WhenCancellation_ReturnsTrue() {
-        // Given
-        let flowType = SubscriptionFlowType.cancellation
-
-        // Then
-        XCTAssertTrue(flowType.dismissesFromRoot)
-    }
-
-    func testDismissesFromRoot_WhenFirstPurchaseOrPlanUpdate_ReturnsFalse() {
-        // Then
-        XCTAssertFalse(SubscriptionFlowType.firstPurchase.dismissesFromRoot)
-        XCTAssertFalse(SubscriptionFlowType.planUpdate.dismissesFromRoot)
-    }
-
     // MARK: - Impression Pixel Tests
 
     func testImpressionPixel_WhenFirstPurchase_ReturnsOfferScreenImpression() {

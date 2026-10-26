@@ -187,6 +187,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     @MainActor
     func openStoreCancellation() async {
         await manageAppleSubscription()
+        // Force a refetch so the status reflects any change made in the App Store, and update Settings with it.
         _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
         guard state.subscriptionInfo?.status == .notAutoRenewable else { return }
         cancellationInstrumentation.appStoreSubscriptionCancelled()

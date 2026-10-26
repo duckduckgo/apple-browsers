@@ -46,10 +46,6 @@ enum SubscriptionFlowType {
         self == .firstPurchase
     }
 
-    var dismissesFromRoot: Bool {
-        self == .cancellation
-    }
-
     var impressionPixel: Pixel.Event? {
         switch self {
         case .firstPurchase: return .subscriptionOfferScreenImpression

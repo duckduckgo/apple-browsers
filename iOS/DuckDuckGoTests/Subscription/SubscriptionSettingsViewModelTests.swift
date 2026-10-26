@@ -776,7 +776,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
     // MARK: - Cancellation Flow
 
-    func testIsEligibleForCancellationFlow_WhenFlagOnAndAutoRenewingAppleInEnUS_ReturnsTrue() async {
+    func testIsEligibleForCancellationFlow_WhenFlagOnAndAutoRenewingApple_ReturnsTrue() async {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()

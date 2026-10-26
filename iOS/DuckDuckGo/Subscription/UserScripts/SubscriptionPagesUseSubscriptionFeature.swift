@@ -122,8 +122,8 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)? { get set }
     var onActivateSubscription: (() -> Void)? { get set }
     var onPurchaseCompleted: (() -> Void)? { get set }
-    var onShowFeatureInfo: (@MainActor (SubscriptionEntitlement) -> Void)? { get set }
-    var onRequestCancellation: (@MainActor () -> Void)? { get set }
+    var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)? { get set }
+    var onRequestCancellation: (() -> Void)? { get set }
 
     func with(broker: UserScriptMessageBroker)
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler?
@@ -237,8 +237,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     var onFeatureSelected: ((SubscriptionEntitlement) -> Void)?
     var onActivateSubscription: (() -> Void)?
     var onPurchaseCompleted: (() -> Void)?
-    var onShowFeatureInfo: (@MainActor (SubscriptionEntitlement) -> Void)?
-    var onRequestCancellation: (@MainActor () -> Void)?
+    var onShowFeatureInfo: ((SubscriptionEntitlement) -> Void)?
+    var onRequestCancellation: (() -> Void)?
 
     struct FeatureSelection: Codable {
         let productFeature: SubscriptionEntitlement
@@ -771,12 +771,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
     func showFeatureInfo(params: Any, original: WKScriptMessage) async -> Encodable? {
         let request: FeatureInfoRequest? = CodableHelper.decode(from: params)
-        await onShowFeatureInfo?(request?.feature ?? .unknown)
+        onShowFeatureInfo?(request?.feature ?? .unknown)
         return nil
     }
 
     func requestCancellation(params: Any, original: WKScriptMessage) async -> Encodable? {
-        await onRequestCancellation?()
+        onRequestCancellation?()
         return nil
     }
 

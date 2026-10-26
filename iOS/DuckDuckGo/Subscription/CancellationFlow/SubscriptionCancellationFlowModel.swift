@@ -20,14 +20,19 @@
 import Combine
 import Foundation
 import Networking
-import Subscription
+import PrivacyConfig
+import SwiftUI
 
 extension SubscriptionOnboardingChecklistItem {
 
     init?(entitlement: SubscriptionEntitlement) {
-        guard let item = Self.checklist(isPIRAvailable: true,
-                                        entitlement: EntitlementStatus(enabledEntitlements: [entitlement])).first else { return nil }
-        self = item
+        switch entitlement {
+        case .networkProtection: self = .vpn
+        case .identityTheftRestoration, .identityTheftRestorationGlobal: self = .idtr
+        case .dataBrokerProtection: self = .pir
+        case .paidAIChat: self = .duckAI
+        case .unknown: return nil
+        }
     }
 }
 
@@ -72,7 +77,7 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
     private func handleLoadFailure(_ error: Error) {
         guard !didOpenStoreCancellation else { return }
         instrumentation.flowLoadFailed(error)
-        // The flow shows the generic error alert, which closes the modal when dismissed.
+        // The flow shows the generic error alert, which pops the flow when dismissed.
         openStoreCancellation(closingFlow: false)
     }
 
@@ -83,9 +88,8 @@ final class SubscriptionCancellationFlowModel: ObservableObject {
     }
 }
 
-struct SubscriptionCancellationFlowPresentation: Identifiable {
+struct SubscriptionCancellationFlowPresentation {
 
-    let id = UUID()
     let model: SubscriptionCancellationFlowModel
     let containerViewModel: SubscriptionContainerViewModel
 
@@ -95,12 +99,26 @@ struct SubscriptionCancellationFlowPresentation: Identifiable {
         let model = SubscriptionCancellationFlowModel(navigationErrors: containerViewModel.flow.navigationErrorPublisher.eraseToAnyPublisher(),
                                                       onOpenStoreCancellation: onOpenStoreCancellation)
         containerViewModel.subFeature.onShowFeatureInfo = { [weak model] entitlement in
-            model?.showFeatureInfo(for: entitlement)
+            guard let model else { return }
+            Task { @MainActor in model.showFeatureInfo(for: entitlement) }
         }
         containerViewModel.subFeature.onRequestCancellation = { [weak model] in
-            model?.requestStoreCancellation()
+            guard let model else { return }
+            Task { @MainActor in model.requestStoreCancellation() }
         }
         self.model = model
         self.containerViewModel = containerViewModel
+    }
+}
+
+struct SubscriptionCancellationFlowView: View {
+
+    @ObservedObject var model: SubscriptionCancellationFlowModel
+    let containerViewModel: SubscriptionContainerViewModel
+    let featureFlagger: FeatureFlagger
+
+    var body: some View {
+        SubscriptionContainerView(currentView: .subscribe, viewModel: containerViewModel, featureFlagger: featureFlagger)
+            .subscriptionOnboardingInfoSheet(item: $model.featureInfoItem)
     }
 }

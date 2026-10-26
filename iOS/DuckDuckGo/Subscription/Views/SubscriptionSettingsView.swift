@@ -74,6 +74,7 @@ struct SubscriptionSettingsViewV2: View {
     // MARK: - Cancellation flow state
 
     @State private var cancellationFlow: SubscriptionCancellationFlowPresentation?
+    @State private var isShowingCancellationFlow = false
     @State private var shouldOpenStoreCancellation = false
 
     var body: some View {
@@ -276,6 +277,7 @@ struct SubscriptionSettingsViewV2: View {
                 .foregroundColor(Color(designSystemColor: .accentPrimary))
         },
                            action: { startCancellationFlow() },
+                           disclosureIndicator: true,
                            isButton: true)
     }
 
@@ -478,6 +480,17 @@ struct SubscriptionSettingsViewV2: View {
         ) { EmptyView() }
             .hidden()
 
+        // Cancellation flow navigation - pushes the flow built once in startCancellationFlow()
+        NavigationLink(isActive: $isShowingCancellationFlow) {
+            if let cancellationFlow {
+                SubscriptionCancellationFlowView(model: cancellationFlow.model,
+                                                 containerViewModel: cancellationFlow.containerViewModel,
+                                                 featureFlagger: settingsViewModel.featureFlagger)
+                .environmentObject(subscriptionNavigationCoordinator)
+            }
+        } label: { EmptyView() }
+            .hidden()
+
         List {
             headerSection
                 .padding(.horizontal, -20)
@@ -507,15 +520,10 @@ struct SubscriptionSettingsViewV2: View {
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
         }
-        .sheet(item: $cancellationFlow, onDismiss: {
-            guard shouldOpenStoreCancellation else { return }
+        .onChange(of: isShowingCancellationFlow) { isShowing in
+            guard !isShowing, shouldOpenStoreCancellation else { return }
             shouldOpenStoreCancellation = false
             Task { await viewModel.openStoreCancellation() }
-        }) { flow in
-            SubscriptionCancellationFlowView(model: flow.model,
-                                             containerViewModel: flow.containerViewModel,
-                                             featureFlagger: settingsViewModel.featureFlagger)
-            .environmentObject(subscriptionNavigationCoordinator)
         }
         .onChange(of: viewModel.state.shouldDismissView) { value in
             if value {
@@ -739,7 +747,7 @@ extension SubscriptionSettingsViewV2 {
     }
 
     func startCancellationFlow() {
-        guard cancellationFlow == nil else { return }
+        guard !isShowingCancellationFlow else { return }
         viewModel.cancelSubscriptionTapped()
         let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(
             subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
@@ -752,9 +760,10 @@ extension SubscriptionSettingsViewV2 {
         cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel) { closingFlow in
             shouldOpenStoreCancellation = true
             if closingFlow {
-                cancellationFlow = nil
+                isShowingCancellationFlow = false
             }
         }
+        isShowingCancellationFlow = true
     }
 
     /// An expired or still-activating subscription has nothing left to set up.

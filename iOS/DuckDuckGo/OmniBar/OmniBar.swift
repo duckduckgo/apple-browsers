@@ -91,7 +91,6 @@ protocol OmniBar: AnyObject {
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode()
 
-    /// The selected text entry mode for the toggle (search or aiChat).
     var selectedTextEntryMode: TextEntryMode { get }
 
     /// Sets the selected text entry mode for the toggle (search or aiChat).

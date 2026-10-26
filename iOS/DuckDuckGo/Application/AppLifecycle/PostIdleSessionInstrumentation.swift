@@ -57,7 +57,7 @@ protocol PostIdleSessionInstrumentation: AnyObject {
                         togglePosition: ReturnSessionWideEventData.TogglePosition?)
 
     /// Records automatic address-bar focus on arrival without counting it as an interaction.
-    /// `togglePosition` is the side the focused input shows, if the toggle was hidden until now.
+    /// `togglePosition` is kept only if none was recorded at session start.
     func keyboardRaisedOnArrival(togglePosition: ReturnSessionWideEventData.TogglePosition?)
 
     /// User scrolled or activated an in-page link. Idempotent within a session.

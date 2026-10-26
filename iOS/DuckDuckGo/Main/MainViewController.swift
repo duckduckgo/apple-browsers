@@ -3432,15 +3432,14 @@ class MainViewController: UIViewController {
         return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
     }
 
-    /// The toggle setting as the input applies it: iPhone honours a pending onboarding choice, iPad reads the setting.
+    /// iPhone honours a pending onboarding choice; iPad reads the setting.
     var isReturnSessionToggleEnabled: Bool {
         isPad ? aiChatSettings.isAIChatSearchInputUserSettingsEnabled : isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
     }
 
-    /// The toggle side the return session records, or nil while the toggle is off screen.
     func returnSessionTogglePosition(focused: Bool) -> ReturnSessionWideEventData.TogglePosition? {
         guard let tab = tabManager.currentTabsModel.currentTab else { return nil }
-        // The resting redesigned NTP shows its own toggle by its own rule, so record exactly what it shows.
+        // The resting NTP draws its own toggle.
         if !focused, tab.isHomeTab, let page = newTabPageViewController, page.hasInlineSearchInput {
             return page.inlineToggleMode.map(ReturnSessionWideEventData.TogglePosition.init)
         }
@@ -3451,7 +3450,7 @@ class MainViewController: UIViewController {
                          isDuckAITab: tab.isAITab)
     }
 
-    /// The side an open input already shows, which a restored input keeps instead of the initial mode.
+    /// A restored input keeps its side rather than the initial mode.
     private var liveToggleMode: TextEntryMode? {
         if isPad { return viewCoordinator.omniBar.selectedTextEntryMode }
         guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return nil }

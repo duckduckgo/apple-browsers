@@ -52,8 +52,7 @@ final class ReturnSessionWideEventData: WideEventData {
             self = mode == .aiChat ? .duckAI : .search
         }
 
-        /// The side the input's toggle shows, or nil while it is off screen. iPad keeps the toggle in the address bar;
-        /// iPhone shows it only while focused, and not on a Duck.ai tab. The resting redesigned NTP draws its own.
+        /// nil while off screen: iPhone shows the toggle only while focused and not on a Duck.ai tab; iPad always does.
         static func onScreen(mode: TextEntryMode,
                              isToggleEnabled: Bool,
                              isPad: Bool,
@@ -94,9 +93,9 @@ final class ReturnSessionWideEventData: WideEventData {
     var afterIdle: Bool
     var timeAwayMs: Int?
     var focused: Bool
-    /// The Search/Duck.ai toggle setting. Optional so flows pending from an older version decode.
+    /// Optional so old pending flows decode.
     var toggleEnabled: Bool?
-    /// The toggle's side the first time it is on screen on arrival; nil while it stays hidden.
+    /// The side first shown on arrival; nil while the toggle stays hidden.
     var togglePosition: TogglePosition?
     var statusReason: StatusReason?
     /// What triggered the prompt submission (an `AIChatEntryPointSource` raw value). Set only

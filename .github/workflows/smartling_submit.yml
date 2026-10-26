@@ -30,8 +30,8 @@ on:
         description: "Release version, taken from a release/<platform>/<version> branch if empty (release only)"
         required: false
         type: string
-      release_task_url:
-        description: "Asana release task to comment on if the submission fails (release only)"
+      release_task_id:
+        description: "Asana release task ID to comment on if the submission fails (release only)"
         required: false
         type: string
       auto_authorize_max_usd:
@@ -70,8 +70,8 @@ on:
         description: "Release version, taken from a release/<platform>/<version> branch if empty (release only)"
         required: false
         type: string
-      release_task_url:
-        description: "Asana release task to comment on if the submission fails (release only)"
+      release_task_id:
+        description: "Asana release task ID to comment on if the submission fails (release only)"
         required: false
         type: string
       auto_authorize_max_usd:
@@ -319,12 +319,12 @@ jobs:
         env:
           OUTCOME: ${{ steps.submit.outputs.outcome }}
           FAILED: ${{ steps.submit.outputs.failed }}
-          RELEASE_TASK_URL: ${{ inputs.release_task_url }}
+          RELEASE_TASK_ID: ${{ inputs.release_task_id }}
         run: |
           if [[ -z "$OUTCOME" || "$FAILED" == true ]]; then
             if [[ "$KIND" != release ]]; then
               [[ -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
-            elif [[ -n "$RELEASE_TASK_URL" ]]; then
+            elif [[ -n "$RELEASE_TASK_ID" ]]; then
               echo "comment_on_release_task=true" >> "$GITHUB_OUTPUT"
             fi
           elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
@@ -375,20 +375,13 @@ jobs:
             --notes "$TASK_NOTES" \
             ${task_args[@]+"${task_args[@]}"}
 
-      - name: Get the release task ID
-        id: release-task
-        if: ${{ !cancelled() && steps.task.outputs.comment_on_release_task == 'true' }}
-        uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
-        with:
-          text: ${{ inputs.release_task_url }}
-
       - name: Comment on the release task
-        if: ${{ !cancelled() && steps.release-task.outputs.task-id != '' }}
+        if: ${{ !cancelled() && steps.task.outputs.comment_on_release_task == 'true' }}
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: post-comment-asana-task
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          asana-task-id: ${{ steps.release-task.outputs.task-id }}
+          asana-task-id: ${{ inputs.release_task_id }}
           asana-task-comment-pinned: false
           asana-task-comment-is-html: false
           asana-task-comment: |

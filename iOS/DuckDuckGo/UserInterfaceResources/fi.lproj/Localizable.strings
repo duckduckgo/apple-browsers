@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Lähetetäänkö virheraportit automaattisesti?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Nykyinen hylkäysmäärä: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Nykyiset tilaukset";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Syöttöpainike";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Kirjaudu sisään";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Ensisijainen/ensimmäinen toiminto";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Pohjustusmodaali";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Yksityisyyden suoja";
@@ -4181,10 +4181,10 @@
 "Reset" = "Nollaa";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Nollaa painikkeiden hylkäyskertojen määrä";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Nollaa alustusmodaalinen tila";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisää laitteeseen";

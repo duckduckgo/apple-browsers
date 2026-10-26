@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Αυτόματη αποστολή αναφορών σφαλμάτων;";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Τρέχων αριθμός απορρίψεων: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Τρέχουσες συνδρομές";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Κάψουλα εισόδου";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Είσοδος";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Πρωταρχική / Πρώτη ενέργεια";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Προετοιμασία αποκλειστικού παραθύρου";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Προστασία προσωπικών δεδομένων";
@@ -4181,10 +4181,10 @@
 "Reset" = "Επαναφορά";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Επαναφορά μετρητή απόρριψης καψουλών";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Επαναφορά κατάστασης προετοιμασίας αποκλειστικού παραθύρου";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";

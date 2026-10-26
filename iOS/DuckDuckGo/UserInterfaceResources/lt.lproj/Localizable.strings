@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Automatiškai siųsti pranešimus apie strigtis?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Dabartinis uždarymų skaičius: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Dabartinės prenumeratos";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Prieigos mygtukas";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Prisijungti";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Pirminis / pirmasis veiksmas";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Įvadinis langas";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Privatumo apsaugos priemonės";
@@ -4181,10 +4181,10 @@
 "Reset" = "Nustatyti iš naujo";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Nustatyti iš naujo prieigos mygtuko uždarymų skaičių";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Nustatyti iš naujo įvadinio lango būseną";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridėti prie įrenginio";

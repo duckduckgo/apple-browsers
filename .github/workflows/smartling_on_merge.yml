@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - main
+      - andremartingo/smartling-submit-on-merge
     # The committed English sources. The exported XLIFFs aren't committed, and PR checks keep these in sync with the code.
     paths:
       - 'iOS/**/en.lproj/**'
@@ -101,5 +102,5 @@ jobs:
       kind: merge
       platform: ${{ matrix.platform }}
       auto_authorize_max_usd: ${{ inputs.auto_authorize_max_usd || '500.00' }}
-      dry_run: ${{ inputs.dry_run || false }}
+      dry_run: ${{ inputs.dry_run || github.ref_name != 'main' }}
     secrets: inherit

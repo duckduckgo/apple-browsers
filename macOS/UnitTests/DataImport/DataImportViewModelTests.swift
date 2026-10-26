@@ -510,7 +510,7 @@ final class DataImportViewModelTests: XCTestCase {
         model.selectDataTypes([.bookmarks])
 
         XCTAssertEqual(model.importSource, .chrome)
-        XCTAssertEqual(model.dataTypeFilter.enabledTypes, [.bookmarks])
+        XCTAssertEqual(model.dataTypeFilter?.enabledTypes, [.bookmarks])
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
 
@@ -598,7 +598,7 @@ final class DataImportViewModelTests: XCTestCase {
         guard case .archiveImport(let dataTypes, _) = model.screen else { return XCTFail("Expected archive import") }
 
         model.selectFile()
-        let kind = NewFileImportView.Kind.archive(dataTypes: dataTypes, filtersFileTypes: true)
+        let kind = NewFileImportView.Kind.archive(dataTypes: dataTypes)
         let expectedFileTypes = Set([UTType.zip] + dataTypes.flatMap { $0.allowedFileTypes })
 
         XCTAssertEqual(Set(offeredFileTypes), expectedFileTypes)
@@ -607,8 +607,8 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenArchiveFileFilteringIsOffThenAllSafariFileTypesRemainAvailable() {
-        let kind = NewFileImportView.Kind.archive(dataTypes: [.passwords])
+    func testWhenArchiveAsksForEverySafariDataTypeThenAllSafariFileTypesRemainAvailable() {
+        let kind = NewFileImportView.Kind.archive(dataTypes: [.bookmarks, .passwords, .creditCards])
 
         XCTAssertEqual(Set(kind.supportedFileTypes(for: .safari)), Source.safari.archiveImportSupportedFiles)
     }
@@ -619,7 +619,7 @@ final class DataImportViewModelTests: XCTestCase {
 
         model.update(with: .bitwarden)
 
-        XCTAssertEqual(model.dataTypeFilter.enabledTypes, [.bookmarks, .passwords])
+        XCTAssertEqual(model.dataTypeFilter?.enabledTypes, [.bookmarks, .passwords])
         XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords])
         XCTAssertEqual(model.selectedDataTypes, [.passwords])
     }
@@ -1600,7 +1600,7 @@ final class DataImportViewModelTests: XCTestCase {
                 capturedFileTypes = fileTypes
                 return .testZIP
             }
-            setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords]), dataImporterFactory: { _, _, _, _ in
+            setupModel(with: .safari, screen: .archiveImport(dataTypes: [.bookmarks, .passwords, .creditCards]), dataImporterFactory: { _, _, _, _ in
                 ImporterMock(importTask: { _, _ in [:] })
             })
 

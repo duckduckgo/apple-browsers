@@ -438,6 +438,20 @@ extension DataImport.Source {
         }
     }
 
+    /// The data types the source can import, or `nil` when it isn't offered: CSV and HTML (replaced by the combined
+    /// file option) and browsers without a profile. Password managers and the file option offer all they support.
+    func availableImportTypes(loadingProfilesWith loadProfiles: (ThirdPartyBrowser) -> DataImport.BrowserProfileList) -> Set<DataImport.DataType>? {
+        if self == .bookmarksHTML || self == .csv {
+            return nil
+        }
+        guard let browser = ThirdPartyBrowser.browser(for: self), browser.isWebBrowser else {
+            return supportedDataTypes
+        }
+        let profiles = loadProfiles(browser)
+        guard profiles.defaultProfile != nil else { return nil }
+        return availableImportTypes(in: profiles)
+    }
+
     /// The supported data types the source's profiles have data for. Without a readable profile
     /// (manual imports, browsers awaiting read permission), every supported type counts as available.
     func availableImportTypes(in profiles: DataImport.BrowserProfileList?) -> Set<DataImport.DataType> {
@@ -495,5 +509,12 @@ extension DataImport.DataType: @retroactive Comparable {
 
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.order < rhs.order
+    }
+}
+
+extension Array where Element == DataImport.Source {
+    /// The first of `preferredSources` in the array, otherwise its first source.
+    func preferredSource(from preferredSources: [DataImport.Source]) -> DataImport.Source? {
+        preferredSources.first { contains($0) } ?? first
     }
 }

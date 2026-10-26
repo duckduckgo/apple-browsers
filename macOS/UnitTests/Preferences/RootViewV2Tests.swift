@@ -23,6 +23,7 @@ import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 import AIChat
+import WebExtensions
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -78,7 +79,8 @@ final class RootViewV2Tests: XCTestCase {
             duckPlayerPreferences: sharedDuckPlayerPreferences,
             youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences(duckPlayerPreferences: sharedDuckPlayerPreferences),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
-            adBlockingAvailability: AdBlockingAvailability(featureFlagger: featureFlagger, isEnabledByUserProvider: { false })
+            adBlockingAvailability: AdBlockingAvailability(featureFlagger: featureFlagger, isEnabledByUserProvider: { false }),
+            webExtensionAvailability: WebExtensionAvailability(featureFlagger: featureFlagger, webExtensionManagerProvider: { nil })
         )
         subscriptionManager = SubscriptionManagerMock()
         subscriptionUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
@@ -107,6 +109,7 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
+            extensionsCatalog: ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManaging()),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in }
             )
@@ -132,6 +135,7 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
+            extensionsCatalog: ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManaging()),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in self.showTabCalled = true },
             aiChatTabOpener: aiChatTabOpener,
@@ -164,7 +168,8 @@ final class RootViewV2Tests: XCTestCase {
             aiChatURLSettings: MockRemoteAISettings(),
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
-            permissionManager: PermissionManagerMock()
+            permissionManager: PermissionManagerMock(),
+            extensionsCatalog: ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManaging())
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -204,6 +209,7 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
+            extensionsCatalog: ChromeWebStoreCatalog(configurationManager: MockPrivacyConfigurationManaging()),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

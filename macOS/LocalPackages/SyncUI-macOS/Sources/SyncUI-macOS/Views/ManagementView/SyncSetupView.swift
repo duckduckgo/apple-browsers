@@ -163,7 +163,6 @@ struct SyncSetupView_Previews: PreviewProvider {
                 .frame(width: 544, height: 800, alignment: .top)
                 .padding()
                 .background(Color(nsColor: .windowBackgroundColor))
-                .applyRebranding()
         }
     )
 }

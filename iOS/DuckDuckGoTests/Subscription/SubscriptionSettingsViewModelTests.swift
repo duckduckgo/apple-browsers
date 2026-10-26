@@ -816,7 +816,7 @@ private final class MockSubscriptionFlowsExecuter: SubscriptionFlowsExecuting {
     @MainActor
     func performTierChange(to productId: String,
                            changeType: String?,
-                           contextName: String?,
+                           wideEventFunnelName: String?,
                            setTransactionStatus: ((SubscriptionTransactionStatus) -> Void)?,
                            setTransactionError: ((AppStorePurchaseFlowError?) -> Void)?,
                            pushPurchaseUpdate: ((PurchaseUpdate) async -> Void)?) async {

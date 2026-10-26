@@ -72,10 +72,12 @@ class FakeSmartlingClient:
         self.uploaded_file_uris = []
         self.operations = []
 
-    async def list_jobs(self, _job_name, statuses):
+    async def list_jobs(self, job_name, statuses):
         if self.list_jobs_error:
             raise self.list_jobs_error
-        return self.pending_jobs if statuses else self.named_jobs
+        if statuses:
+            return [job for job in self.pending_jobs if job_name in job['jobName']]
+        return self.named_jobs
 
     async def get_project_locales(self):
         return self.locales
@@ -183,13 +185,13 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
                          auto_authorize_max_usd='500.00',
                          delete_job_on_failure=False,
                          job_name='Nightly iOS - 2026-08-04',
-                         pending_job_prefix='Nightly iOS - '):
+                         pending_job_prefixes=('Nightly iOS - ', 'Merge iOS - ')):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             return await LOCALIZATION_TOOL.run_submit(
                 client=client,
                 files=[self.export_file],
                 job_name=job_name,
-                pending_job_prefix=pending_job_prefix,
+                pending_job_prefixes=list(pending_job_prefixes),
                 file_uri_prefix='main',
                 auto_authorize_max_usd=Decimal(auto_authorize_max_usd),
                 delete_job_on_failure=delete_job_on_failure,
@@ -368,9 +370,9 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.outcome, 'review_required')
         self.assertIn('timed out', result.reason)
 
-    async def testWhenPendingJobWithPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
+    async def testWhenPendingJobWithAnyPrefixExistsThenItIsReportedWithoutCreatingAJob(self):
         client = FakeSmartlingClient(pending_jobs=[{
-            'jobName': 'Nightly iOS - 2026-08-03',
+            'jobName': 'Merge iOS - 2026-08-03 14:05 abc1234',
             'translationJobUid': 'pending-job',
         }])
 
@@ -378,9 +380,9 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result.outcome, 'pending_review')
         self.assertEqual(result.job_id, 'pending-job')
-        self.assertEqual(result.job_name, 'Nightly iOS - 2026-08-03')
+        self.assertEqual(result.job_name, 'Merge iOS - 2026-08-03 14:05 abc1234')
         self.assertIsNone(result.total_strings)
-        self.assertIn('Nightly iOS - 2026-08-03', result.reason)
+        self.assertIn('Merge iOS - 2026-08-03 14:05 abc1234', result.reason)
         self.assertEqual(client.created_jobs, [])
 
     async def testWhenThereIsNoPendingPrefixThenSimilarlyNamedPendingJobsDontBlock(self):
@@ -389,7 +391,7 @@ class SubmitSmartlingTests(unittest.IsolatedAsyncioTestCase):
             'translationJobUid': 'test-job',
         }])
 
-        await self.run_submit(client, job_name='Release iOS 7.200.0', pending_job_prefix='')
+        await self.run_submit(client, job_name='Release iOS 7.200.0', pending_job_prefixes=())
 
         self.assertEqual(client.created_jobs, ['Release iOS 7.200.0'])
 

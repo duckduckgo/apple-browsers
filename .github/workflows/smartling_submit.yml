@@ -4,6 +4,8 @@ name: Smartling - Submit
 # gets a review task.
 #   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. A failure also gets a task for
 #            the platform's owner.
+#   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
+#            the platform's strings. The nightly is its safety net, so a failure only fails the run.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
 #            so a failure doesn't stop the release.
 # Any failure, including a task that couldn't be created, fails the run.
@@ -13,7 +15,7 @@ on:
   workflow_call:
     inputs:
       kind:
-        description: "nightly or release"
+        description: "nightly, merge or release"
         required: true
         type: string
       platform:
@@ -48,6 +50,7 @@ on:
         options:
           - release
           - nightly
+          - merge
       platform:
         description: "Platform"
         required: true
@@ -80,9 +83,10 @@ jobs:
     name: ${{ inputs.platform }} ${{ inputs.kind }} translation job
     runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 45
-    # Runs for the same job wait for each other, so they can't both create it.
+    # Runs for the same job wait for each other, so they can't both create it. Nightly and merge runs share a group,
+    # so only one of them submits main at a time, and they can't both miss each other's pending job.
     concurrency:
-      group: smartling-submit-${{ inputs.kind }}-${{ inputs.platform }}-${{ inputs.branch }}
+      group: smartling-submit-${{ inputs.kind == 'release' && 'release' || 'main' }}-${{ inputs.platform }}-${{ inputs.branch }}
       cancel-in-progress: false
 
     env:
@@ -98,20 +102,28 @@ jobs:
         env:
           BRANCH: ${{ inputs.branch }}
           VERSION: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           platform_lowercase="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
           case "$KIND" in
-            nightly)
-              if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
-                echo "Nightly Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
+            nightly|merge)
+              # A dry run writes nothing, so it can test the job name from another branch.
+              if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" && "$DRY_RUN" != true ]]; then
+                echo "$KIND Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
                 exit 1
               fi
-              # Nothing is submitted while an earlier nightly job awaits authorization: its review task is still open.
+              if [[ "$KIND" == nightly ]]; then
+                job_name="Nightly $PLATFORM - $(date -u +%Y-%m-%d)"
+              else
+                job_name="Merge $PLATFORM - $(date -u '+%Y-%m-%d %H:%M') ${GITHUB_SHA:0:7}"
+              fi
+              # Nothing is submitted while an earlier nightly or merge job awaits authorization: its review task is
+              # still open.
               {
                 echo "ref=${DEFAULT_BRANCH}"
-                echo "job_name=Nightly $PLATFORM - $(date -u +%Y-%m-%d)"
-                echo "pending_job_prefix=Nightly $PLATFORM - "
+                echo "job_name=$job_name"
+                echo "pending_job_prefixes=Nightly $PLATFORM - |Merge $PLATFORM - "
                 echo "file_uri_prefix=${DEFAULT_BRANCH}"
               } >> "$GITHUB_OUTPUT"
               ;;
@@ -139,7 +151,7 @@ jobs:
               {
                 echo "ref=$BRANCH"
                 echo "job_name=Release $PLATFORM $VERSION"
-                echo "pending_job_prefix="
+                echo "pending_job_prefixes="
                 echo "file_uri_prefix=$BRANCH"
               } >> "$GITHUB_OUTPUT"
               ;;
@@ -214,17 +226,20 @@ jobs:
           "./$PLATFORM/scripts/loc_export.sh" | xcbeautify
 
       # A release job left half-submitted by a failure is deleted, so that a rerun starts over instead of finding it.
-      # A nightly one is kept for the review task, and the next night creates a new job anyway.
+      # A nightly or merge one is kept for the review task, and the next run creates a new job anyway.
       - name: Submit ${{ inputs.platform }} strings to Smartling
         id: submit
         if: ${{ !inputs.dry_run }}
         env:
           JOB_NAME: ${{ steps.job.outputs.job_name }}
-          PENDING_JOB_PREFIX: ${{ steps.job.outputs.pending_job_prefix }}
+          PENDING_JOB_PREFIXES: ${{ steps.job.outputs.pending_job_prefixes }}
           FILE_URI_PREFIX: ${{ steps.job.outputs.file_uri_prefix }}
         run: |
           kind_args=()
-          [ -z "$PENDING_JOB_PREFIX" ] || kind_args+=(--pending-job-prefix "$PENDING_JOB_PREFIX")
+          IFS='|' read -r -a pending_job_prefixes <<< "$PENDING_JOB_PREFIXES"
+          for prefix in ${pending_job_prefixes[@]+"${pending_job_prefixes[@]}"}; do
+            kind_args+=(--pending-job-prefix "$prefix")
+          done
           [ "$KIND" != release ] || kind_args+=(--delete-job-on-failure)
           ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
             --job-name "$JOB_NAME" \

@@ -476,32 +476,33 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
 async def run_submit(client: SmartlingClient,
                      files: List[Path],
                      job_name: str,
-                     pending_job_prefix: str,
+                     pending_job_prefixes: List[str],
                      file_uri_prefix: str,
                      auto_authorize_max_usd: Decimal,
                      delete_job_on_failure: bool = False,
                      sleep=asyncio.sleep) -> SubmitResult:
     """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd.
 
-    With a pending_job_prefix, nothing is submitted while a job whose name starts with it awaits authorization.
-    Without one, only a job named exactly job_name stops a new submission.
+    With pending_job_prefixes, nothing is submitted while a job whose name starts with any of them awaits
+    authorization. Without any, only a job named exactly job_name stops a new submission.
     With delete_job_on_failure, a job this run created is deleted if the submission fails before authorizing it,
     so a rerun with the same job name starts over instead of finding a half-submitted job.
     """
     job_id = ""
     unauthorized_job_id = ""
     try:
-        pending_jobs = await client.list_jobs(
-            pending_job_prefix,
-            ['AWAITING_AUTHORIZATION']
-        ) if pending_job_prefix else []
-        pending_job = next(
-            (
-                job for job in pending_jobs
-                if job.get('jobName', '').startswith(pending_job_prefix)
-            ),
-            None
-        )
+        pending_job = None
+        for pending_job_prefix in pending_job_prefixes:
+            pending_jobs = await client.list_jobs(pending_job_prefix, ['AWAITING_AUTHORIZATION'])
+            pending_job = next(
+                (
+                    job for job in pending_jobs
+                    if job.get('jobName', '').startswith(pending_job_prefix)
+                ),
+                None
+            )
+            if pending_job:
+                break
         if pending_job:
             job_id = job_uid(pending_job)
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
@@ -523,8 +524,9 @@ async def run_submit(client: SmartlingClient,
                 reason=f"A job named '{job_name}' already exists"
             )
 
-        if pending_job_prefix:
-            log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        if pending_job_prefixes:
+            pending_names = ', '.join(f"'{prefix}'" for prefix in pending_job_prefixes)
+            log(f"🔍 No pending {pending_names} job, no job named '{job_name}'")
         else:
             log(f"🔍 No job named '{job_name}'")
 
@@ -1080,8 +1082,9 @@ def main():
     # Submit
     submit_parser = subparsers.add_parser('submit')
     submit_parser.add_argument('--job-name', required=True)
-    submit_parser.add_argument('--pending-job-prefix', default='',
-                               help='Skip submission while a job with this name prefix awaits authorization')
+    submit_parser.add_argument('--pending-job-prefix', action='append', default=[],
+                               help='Skip submission while a job with this name prefix awaits authorization '
+                                    '(repeatable)')
     submit_parser.add_argument('--file-uri-prefix', required=True,
                                help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
     submit_parser.add_argument('--files', nargs='+', required=True)

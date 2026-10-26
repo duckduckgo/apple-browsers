@@ -211,6 +211,7 @@ extension DataBrokerProtectionManager {
             }
         } catch {
             Logger.dataBrokerProtection.error("PIR debug launch options rejected: \(error.localizedDescription, privacy: .public)")
+            return false
         }
         return true
     }

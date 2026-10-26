@@ -48,16 +48,19 @@ final class ReturnSessionWideEventData: WideEventData {
         case search
         case duckAI = "duck_ai"
 
-        /// The side the toggle shows, or nil while it is off screen. iPad keeps the toggle in the address bar and the
-        /// redesigned NTP draws its own; elsewhere iPhone shows it only while focused, and not on a Duck.ai tab.
+        init(_ mode: TextEntryMode) {
+            self = mode == .aiChat ? .duckAI : .search
+        }
+
+        /// The side the input's toggle shows, or nil while it is off screen. iPad keeps the toggle in the address bar;
+        /// iPhone shows it only while focused, and not on a Duck.ai tab. The resting redesigned NTP draws its own.
         static func onScreen(mode: TextEntryMode,
                              isToggleEnabled: Bool,
                              isPad: Bool,
-                             hasNewTabPageToggle: Bool,
                              isFocused: Bool,
                              isDuckAITab: Bool) -> TogglePosition? {
-            guard isToggleEnabled, isPad || hasNewTabPageToggle || (isFocused && !isDuckAITab) else { return nil }
-            return mode == .aiChat ? .duckAI : .search
+            guard isToggleEnabled, isPad || (isFocused && !isDuckAITab) else { return nil }
+            return TogglePosition(mode)
         }
     }
 

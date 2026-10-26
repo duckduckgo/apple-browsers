@@ -462,7 +462,7 @@ extension MainViewController {
     }
 }
 
-private extension MainViewController {
+extension MainViewController {
 
     /// While Dax Dialogs are still in progress, the onboarding Search vs Search & Duck.ai choice
     /// is not applied to AIChatSettings yet. Use that pending choice for UTI presentation so
@@ -470,6 +470,9 @@ private extension MainViewController {
     func isAIChatSearchInputToggleEnabledForCurrentOnboardingState() -> Bool {
         onboardingSearchExperienceSettingsResolver.deferredValue ?? aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
+}
+
+private extension MainViewController {
 
     func installUnifiedToggleInputViewController(_ inputVC: UnifiedToggleInputViewController) {
         addChild(inputVC)

@@ -94,37 +94,30 @@ struct ReturnSessionWideEventDataTests {
     @Test("Toggle position follows the input mode only while the toggle is on screen",
           .timeLimit(.minutes(1)),
           arguments: [
-            // (isToggleEnabled, isPad, hasNewTabPageToggle, isFocused, isDuckAITab, expected for .aiChat)
-            (false, true, false, true, false, nil),
-            (false, false, true, true, false, nil),
-            (true, true, false, false, false, .duckAI),
-            (true, true, false, false, true, .duckAI),
-            (true, false, true, false, false, .duckAI),
-            (true, false, false, false, false, nil),
-            (true, false, false, true, false, .duckAI),
-            (true, false, false, true, true, nil),
-          ] as [(Bool, Bool, Bool, Bool, Bool, ReturnSessionWideEventData.TogglePosition?)])
-    func togglePositionOnScreen(isToggleEnabled: Bool, isPad: Bool, hasNewTabPageToggle: Bool, isFocused: Bool, isDuckAITab: Bool,
+            // (isToggleEnabled, isPad, isFocused, isDuckAITab, expected for .aiChat)
+            (false, true, true, false, nil),
+            (false, false, true, false, nil),
+            (true, true, false, false, .duckAI),
+            (true, true, false, true, .duckAI),
+            (true, false, false, false, nil),
+            (true, false, true, false, .duckAI),
+            (true, false, true, true, nil),
+          ] as [(Bool, Bool, Bool, Bool, ReturnSessionWideEventData.TogglePosition?)])
+    func togglePositionOnScreen(isToggleEnabled: Bool, isPad: Bool, isFocused: Bool, isDuckAITab: Bool,
                                 expected: ReturnSessionWideEventData.TogglePosition?) {
         let position = ReturnSessionWideEventData.TogglePosition.onScreen(mode: .aiChat,
                                                                           isToggleEnabled: isToggleEnabled,
                                                                           isPad: isPad,
-                                                                          hasNewTabPageToggle: hasNewTabPageToggle,
                                                                           isFocused: isFocused,
                                                                           isDuckAITab: isDuckAITab)
         #expect(position == expected)
     }
 
     @available(iOS 16, *)
-    @Test("Toggle position maps search mode to search", .timeLimit(.minutes(1)))
-    func togglePositionMapsSearchMode() {
-        let position = ReturnSessionWideEventData.TogglePosition.onScreen(mode: .search,
-                                                                          isToggleEnabled: true,
-                                                                          isPad: false,
-                                                                          hasNewTabPageToggle: false,
-                                                                          isFocused: true,
-                                                                          isDuckAITab: false)
-        #expect(position == .search)
+    @Test("Toggle position maps each input mode to its side", .timeLimit(.minutes(1)))
+    func togglePositionMapsInputMode() {
+        #expect(ReturnSessionWideEventData.TogglePosition(.search) == .search)
+        #expect(ReturnSessionWideEventData.TogglePosition(.aiChat) == .duckAI)
     }
 
     @available(iOS 16, *)

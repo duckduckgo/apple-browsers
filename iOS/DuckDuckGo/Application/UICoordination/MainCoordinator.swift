@@ -1033,7 +1033,7 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
         let focused = controller.isInputFocused
         controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: afterIdleSurface,
                                                                  focused: focused,
-                                                                 toggleEnabled: controller.aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
+                                                                 toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
     }
 

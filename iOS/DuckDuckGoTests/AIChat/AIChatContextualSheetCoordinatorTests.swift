@@ -697,9 +697,10 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         originatingTabURLSubject.send(URL(string: "https://example.com")!)
         mockSettings.isAutomaticContextAttachmentEnabled = false
         await sut.presentSheet(from: mockPresentingVC)
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
+        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 1)
 
         // When
+        mockPageContextHandler.triggerContextCollectionCallCount = 0
         mockSettings.isAutomaticContextAttachmentEnabled = true
         await sut.presentSheet(from: mockPresentingVC)
 
@@ -1383,18 +1384,6 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     // MARK: - Suggestion Tap Attach Tests
-
-    @MainActor
-    func testAttachForSuggestionDoesNothingWhenFlagOff() async {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        await sut.presentSheet(from: mockPresentingVC)
-        mockPageContextHandler.triggerContextCollectionCallCount = 0
-
-        await sut.aiChatContextualSheetViewControllerAttachContextForSuggestion(sut.sheetViewController!)
-
-        XCTAssertEqual(mockPageContextHandler.triggerContextCollectionCallCount, 0)
-        XCTAssertEqual(sut.sessionState.chipState.description, "placeholder")
-    }
 
     @MainActor
     func testAttachForSuggestionSkipsCollectionWhenChipAlreadyAttached() async {

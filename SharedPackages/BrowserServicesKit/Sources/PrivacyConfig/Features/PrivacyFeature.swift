@@ -303,6 +303,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
+    case challengeSolver
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

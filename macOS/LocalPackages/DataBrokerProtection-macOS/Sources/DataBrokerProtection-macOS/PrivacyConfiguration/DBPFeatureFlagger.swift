@@ -51,6 +51,10 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpExtractedProfileRefresh)
     }
 
+    public var isChallengeSolverOn: Bool {
+        featureFlagger.isFeatureOn(.dbpChallengeSolver)
+    }
+
     public var isSchedulerDeferralHandlingEnabled: Bool {
         featureFlagger.isFeatureOn(.dbpSchedulerDeferralHandling)
     }

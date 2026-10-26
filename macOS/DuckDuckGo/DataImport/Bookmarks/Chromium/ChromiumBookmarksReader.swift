@@ -23,6 +23,10 @@ final class ChromiumBookmarksReader {
 
     enum Constants {
         static let defaultBookmarksFileName = "Bookmarks"
+        /// Chrome keeps the bookmarks of a profile signed in to a Google Account in this file,
+        /// next to `Bookmarks` or instead of it.
+        static let accountBookmarksFileName = "AccountBookmarks"
+        static let bookmarksFileNames = [defaultBookmarksFileName, accountBookmarksFileName]
     }
 
     struct ImportError: DataImportError {
@@ -43,22 +47,59 @@ final class ChromiumBookmarksReader {
         }
     }
 
-    private let chromiumBookmarksFileURL: URL
+    private let chromiumBookmarksFileURLs: [URL]
 
-    init(chromiumDataDirectoryURL: URL, bookmarksFileName: String = Constants.defaultBookmarksFileName) {
-        self.chromiumBookmarksFileURL = chromiumDataDirectoryURL.appendingPathComponent(bookmarksFileName)
+    init(chromiumDataDirectoryURL: URL, bookmarksFileNames: [String] = Constants.bookmarksFileNames) {
+        self.chromiumBookmarksFileURLs = bookmarksFileNames.map { chromiumDataDirectoryURL.appendingPathComponent($0) }
     }
 
+    /// Reads every bookmarks file and combines their roots, failing only when none of them can be read.
     func readBookmarks() -> DataImportResult<ImportedBookmarks> {
+        let results = chromiumBookmarksFileURLs.map(readBookmarks(at:))
+        let decodedBookmarks = results.compactMap { try? $0.get() }
+
+        guard let firstBookmarks = decodedBookmarks.first else {
+            let errors = results.compactMap { result -> ImportError? in
+                guard case .failure(let error) = result else { return nil }
+                return error
+            }
+            // A file that exists but can't be decoded says more than a missing one.
+            return .failure(errors.first { $0.type == .decodeJson } ?? errors[0])
+        }
+
+        return .success(decodedBookmarks.dropFirst().reduce(firstBookmarks) { $0.merging($1) })
+    }
+
+    private func readBookmarks(at fileURL: URL) -> Result<ImportedBookmarks, ImportError> {
         var currentOperationType: ImportError.OperationType = .fileRead
         do {
-            let bookmarksFileData = try Data(contentsOf: chromiumBookmarksFileURL)
+            let bookmarksFileData = try Data(contentsOf: fileURL)
             currentOperationType = .decodeJson
-            let decodedBookmarks = try JSONDecoder().decode(ImportedBookmarks.self, from: bookmarksFileData)
-            return .success(decodedBookmarks)
+            return .success(try JSONDecoder().decode(ImportedBookmarks.self, from: bookmarksFileData))
         } catch {
             return .failure(ImportError(type: currentOperationType, underlyingError: error))
         }
+    }
+
+}
+
+private extension ImportedBookmarks {
+
+    func merging(_ other: ImportedBookmarks) -> ImportedBookmarks {
+        ImportedBookmarks(topLevelFolders: TopLevelFolders(
+            bookmarkBar: topLevelFolders.bookmarkBar.merging(other.topLevelFolders.bookmarkBar),
+            otherBookmarks: topLevelFolders.otherBookmarks.merging(other.topLevelFolders.otherBookmarks),
+            syncedBookmarks: topLevelFolders.syncedBookmarks.merging(other.topLevelFolders.syncedBookmarks)
+        ))
+    }
+
+}
+
+private extension Optional where Wrapped == ImportedBookmarks.BookmarkOrFolder {
+
+    func merging(_ other: ImportedBookmarks.BookmarkOrFolder?) -> ImportedBookmarks.BookmarkOrFolder? {
+        guard let self, let other else { return self ?? other }
+        return .folder(name: self.name, children: (self.children ?? []) + (other.children ?? []))
     }
 
 }

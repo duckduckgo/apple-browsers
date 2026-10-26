@@ -249,7 +249,7 @@ extension DataImport {
         private func validateBookmarksData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
-                let hasChromiumBookmarks = profileDirectoryContents.contains(ChromiumBookmarksReader.Constants.defaultBookmarksFileName)
+                let hasChromiumBookmarks = !profileDirectoryContents.isDisjoint(with: ChromiumBookmarksReader.Constants.bookmarksFileNames)
 
                 return hasChromiumBookmarks ? .available
                 : .unavailable(path: profileURL.appendingPathComponent(ChromiumBookmarksReader.Constants.defaultBookmarksFileName).path)

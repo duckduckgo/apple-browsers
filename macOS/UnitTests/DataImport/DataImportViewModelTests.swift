@@ -550,6 +550,32 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(offeredFileTypes, [.html])
     }
 
+    @MainActor
+    func testSelectFile_filterOnWithFilteredOutFileType_showsFileScreenForFilteredType() {
+        model = sourceFilterModel(importSource: .fileImport, isFilterOn: true, openPanelCallback: { _ in .testCSV })
+        model.selectDataTypes([.bookmarks])
+
+        model.selectFile()
+
+        XCTAssertEqual(model.screen, .fileImport(dataType: .bookmarks))
+        XCTAssertEqual(model.importSource, .fileImport)
+    }
+
+    @MainActor
+    func testUpdateWithSource_flagTurnedOffWhileWindowIsOpen_keepsFiltering() {
+        let featureFlagger = MockFeatureFlagger()
+        model = sourceFilterModel(importSource: .chrome, isFilterOn: true, featureFlagger: featureFlagger)
+        model.selectDataTypes([.bookmarks])
+        featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = false
+
+        model.update(with: .firefox)
+
+        XCTAssertTrue(model.isSourceFilterEnabled)
+        XCTAssertTrue(model.availableImportSources.contains(.bitwarden))
+        XCTAssertEqual(model.visibleImportSources, model.availableImportSources.filter { $0.supportedDataTypes.contains(.bookmarks) })
+        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
+    }
+
     func testDataTypesToImport_keepsTypesTheFilterDoesNotCover() {
         let dataTypes = DataImportViewModel.dataTypesToImport(availableTypes: [.bookmarks, .passwords, .creditCards], filter: [.bookmarks])
 
@@ -2834,9 +2860,9 @@ final class DataImportViewModelTests: XCTestCase {
         importSource: Source,
         isFilterOn: Bool,
         dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() },
-        openPanelCallback: @escaping ([UTType]) -> URL? = { _ in nil }
+        openPanelCallback: @escaping ([UTType]) -> URL? = { _ in nil },
+        featureFlagger: MockFeatureFlagger = MockFeatureFlagger()
     ) -> DataImportViewModel {
-        let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
         return DataImportViewModel(
             importSource: importSource,

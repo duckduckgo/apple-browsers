@@ -32,6 +32,13 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         static let defaultSessionTimeoutInMinutes: Int = 60
     }
 
+    // Settings for NtpSuggestedPrompts subfeature
+    struct SuggestedPromptsSettings: Codable {
+        /// Prompts allowed before the NTP suggested-prompt chips hide for good. Matches the web default.
+        let promptLimit: Int
+        static let defaultPromptLimit: Int = 5
+    }
+
     enum SettingsValue: String {
         case cookieName = "onboardingCookieName"
         case cookieDomain = "onboardingCookieDomain"
@@ -93,6 +100,13 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
     }
 
+    var suggestedPromptsPromptLimit: Int {
+        guard let promptLimit = suggestedPromptsSettings?.promptLimit, promptLimit > 0 else {
+            return SuggestedPromptsSettings.defaultPromptLimit
+        }
+        return promptLimit
+    }
+
     // MARK: - Private
 
     private func getSettingsData(_ value: SettingsValue) -> String {
@@ -117,5 +131,13 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
             }
         }
         return nil
+    }
+
+    private var suggestedPromptsSettings: SuggestedPromptsSettings? {
+        guard let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.ntpSuggestedPrompts),
+              let jsonData = settingsJSON.data(using: .utf8) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(SuggestedPromptsSettings.self, from: jsonData)
     }
 }

@@ -1024,7 +1024,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         privacyConfig.subfeatureSettings = #"{ "promptLimit": 3 }"#
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig), searchPreferences: makeSearchPreferences())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: featureFlagger, remoteSettings: AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig)), searchPreferences: makeSearchPreferences())
 
         XCTAssertEqual(provider.suggestedPromptsPromptLimit, 3)
 
@@ -1035,7 +1035,7 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     @MainActor
     func testSuggestedPromptsPromptLimit_fallsBackToFiveWithoutValidSettings() throws {
         let privacyConfig = MockPrivacyConfiguration()
-        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig), searchPreferences: makeSearchPreferences())
+        let provider = NewTabPageOmnibarConfigProvider(keyValueStore: try makeStore(), aiChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(), featureFlagger: MockFeatureFlagger(), remoteSettings: AIChatRemoteSettings(privacyConfigurationManager: MockPrivacyConfigurationManager(privacyConfig: privacyConfig)), searchPreferences: makeSearchPreferences())
 
         XCTAssertEqual(provider.suggestedPromptsPromptLimit, 5)
 

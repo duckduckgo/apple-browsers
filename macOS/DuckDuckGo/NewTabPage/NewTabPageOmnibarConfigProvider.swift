@@ -82,14 +82,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         case newTabPageSuggestedPromptsPromptCount
     }
 
-    /// Prompts allowed before the suggested-prompt chips hide for good, when remote config sets none. Matches the web.
-    static let defaultSuggestedPromptsPromptLimit = 5
-
-    /// `settings` of the `ntpSuggestedPrompts` AIChat subfeature, e.g. `{ "promptLimit": 5 }`.
-    private struct SuggestedPromptsSettings: Decodable {
-        let promptLimit: Int
-    }
-
     private enum LegacyKey: String {
         /// Previously-used per-NTP key. Migrated into `AIChatPreferencesPersisting.selectedModelId`
         /// (shared with the native omnibar) on first init after the unification, then removed.
@@ -103,7 +95,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let keyValueStore: ThrowingKeyValueStoring
     private let aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
     private let featureFlagger: FeatureFlagger
-    private let privacyConfigurationManager: PrivacyConfigurationManaging?
+    private let remoteSettings: AIChatRemoteSettings
     private let firePixel: (PixelKit.Event) -> Void
     private var aiChatPreferencesPersistor: AIChatPreferencesPersisting
     private let searchPreferences: SearchPreferences
@@ -130,7 +122,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
          featureFlagger: FeatureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging? = nil,
+         remoteSettings: AIChatRemoteSettings = AIChatRemoteSettings(),
          aiChatPreferencesPersistor: AIChatPreferencesPersisting = AIChatPreferencesPersistor(),
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
@@ -146,7 +138,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.keyValueStore = keyValueStore
         self.aiChatShortcutSettingProvider = aiChatShortcutSettingProvider
         self.featureFlagger = featureFlagger
-        self.privacyConfigurationManager = privacyConfigurationManager
+        self.remoteSettings = remoteSettings
         self.aiChatPreferencesPersistor = aiChatPreferencesPersistor
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
@@ -672,13 +664,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     }
 
     var suggestedPromptsPromptLimit: Int {
-        guard let settingsJSON = privacyConfigurationManager?.privacyConfig.settings(for: AIChatSubfeature.ntpSuggestedPrompts),
-              let jsonData = settingsJSON.data(using: .utf8),
-              let settings = try? JSONDecoder().decode(SuggestedPromptsSettings.self, from: jsonData),
-              settings.promptLimit > 0 else {
-            return Self.defaultSuggestedPromptsPromptLimit
-        }
-        return settings.promptLimit
+        remoteSettings.suggestedPromptsPromptLimit
     }
 
     var suggestedPromptsPromptCount: Int {

@@ -7,7 +7,7 @@ name: Smartling - Submit
 #   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
 #            the platform's strings. A failure also gets a task for the platform's owner, as for a nightly.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
-#            so a failure doesn't stop the release.
+#            so a failure doesn't stop the release. A failure comments on the release task, when one is given.
 # Any failure, including a task that couldn't be created, fails the run.
 # To test without authorizing anything or opening a review task, run it manually with auto_authorize_max_usd set to 0.
 # For a release, use a test branch with a fake 0.x.y version.
@@ -28,6 +28,10 @@ on:
         type: string
       version:
         description: "Release version, taken from a release/<platform>/<version> branch if empty (release only)"
+        required: false
+        type: string
+      release_task_url:
+        description: "Asana release task to comment on if the submission fails (release only)"
         required: false
         type: string
       auto_authorize_max_usd:
@@ -64,6 +68,10 @@ on:
         type: string
       version:
         description: "Release version, taken from a release/<platform>/<version> branch if empty (release only)"
+        required: false
+        type: string
+      release_task_url:
+        description: "Asana release task to comment on if the submission fails (release only)"
         required: false
         type: string
       auto_authorize_max_usd:
@@ -303,16 +311,22 @@ jobs:
 
       # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly or merge failure gets a
       # task, whether it failed in Smartling or before Smartling returned a result (runner, Xcode, export), as long as
-      # the platform's Asana project is known by then. A release failure only fails the run.
+      # the platform's Asana project is known by then. A release failure comments on the release task instead, or only
+      # fails the run when there's no release task.
       - name: Decide on an Asana task
         id: task
         if: ${{ !cancelled() && !inputs.dry_run && (steps.submit.outputs.outcome != '' || failure()) }}
         env:
           OUTCOME: ${{ steps.submit.outputs.outcome }}
           FAILED: ${{ steps.submit.outputs.failed }}
+          RELEASE_TASK_URL: ${{ inputs.release_task_url }}
         run: |
           if [[ -z "$OUTCOME" || "$FAILED" == true ]]; then
-            [[ "$KIND" == release || -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+            if [[ "$KIND" != release ]]; then
+              [[ -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+            elif [[ -n "$RELEASE_TASK_URL" ]]; then
+              echo "comment_on_release_task=true" >> "$GITHUB_OUTPUT"
+            fi
           elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
             echo "kind=review" >> "$GITHUB_OUTPUT"
           fi
@@ -360,6 +374,30 @@ jobs:
             --name "$TASK_NAME" \
             --notes "$TASK_NOTES" \
             ${task_args[@]+"${task_args[@]}"}
+
+      - name: Get the release task ID
+        id: release-task
+        if: ${{ !cancelled() && steps.task.outputs.comment_on_release_task == 'true' }}
+        uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+        with:
+          text: ${{ inputs.release_task_url }}
+
+      - name: Comment on the release task
+        if: ${{ !cancelled() && steps.release-task.outputs.task-id != '' }}
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: post-comment-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-task-id: ${{ steps.release-task.outputs.task-id }}
+          asana-task-comment-pinned: false
+          asana-task-comment-is-html: false
+          asana-task-comment: |
+            ⚠️ The ${{ inputs.platform }} strings for this release weren't submitted to Smartling, so no translations are on the way yet. The release carries on: nothing waits for this submission.
+
+            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
+            🌿 Branch: ${{ inputs.branch }}
+            ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🔁 To submit them, fix the cause and run Smartling - Submit with kind release for ${{ inputs.branch }}.
 
       # The submit script exits successfully even when Smartling fails, so the run fails here, after any failure task.
       - name: Fail the run if the submission failed

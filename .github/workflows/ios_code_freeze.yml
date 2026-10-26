@@ -134,6 +134,7 @@ jobs:
       kind: release
       platform: iOS
       branch: ${{ needs.create_release_branch.outputs.release_branch_name }}
+      release_task_url: ${{ needs.create_release_branch.outputs.asana_task_url }}
     secrets: inherit
 
   prepare_release:

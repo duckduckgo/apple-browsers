@@ -39,53 +39,150 @@ class FakeAsanaClient:
         return self.release_subtasks if task_id == '2' else []
 
 
-def translations_task_url(client, branch='release/ios/7.244.0', platform='iOS'):
+def translations_task_id(client, branch='release/ios/7.244.0', platform='iOS'):
     with contextlib.redirect_stdout(io.StringIO()):
-        return RELEASE_TRANSLATIONS_TASK.translations_task_url(client, platform, branch, TODAY)
+        return RELEASE_TRANSLATIONS_TASK.translations_task_id(client, platform, branch, TODAY)
 
 
-class TranslationsTaskURLTests(unittest.TestCase):
+class FakeTaskClient:
+
+    def __init__(self, completed=False, assignee=None, release_assignee='100'):
+        self.translations_task = {
+            'completed': completed,
+            'assignee': {'gid': assignee} if assignee else None,
+            'parent': {'gid': '2', 'assignee': {'gid': release_assignee} if release_assignee else None},
+        }
+        self.updates = []
+        self.comments = []
+
+    def task(self, task_id):
+        return self.translations_task
+
+    def update_task(self, task_id, body):
+        self.updates.append((task_id, body))
+
+    def add_comment(self, task_id, html_text):
+        self.comments.append((task_id, html_text))
+
+
+def update_translations_task(client, outcome, notes=''):
+    with contextlib.redirect_stdout(io.StringIO()):
+        return RELEASE_TRANSLATIONS_TASK.update_translations_task(client, '21', outcome, notes)
+
+
+class TranslationsTaskIDTests(unittest.TestCase):
 
     def testWhenTheReleaseTaskHasATranslationsSubtaskThenItIsLinked(self):
         client = FakeAsanaClient(subtasks=[{'gid': '20', 'name': 'Automation'}, {'gid': '21', 'name': 'Translations '}])
 
-        url = translations_task_url(client)
+        task_id = translations_task_id(client)
 
-        self.assertEqual(url, 'https://app.asana.com/0/0/21/f')
+        self.assertEqual(task_id, '21')
         self.assertEqual(client.section_requests, [('1209802997613372', date(2026, 9, 26))])
 
     def testWhenTheReleaseTaskHasNoTranslationsSubtaskThenItIsAnError(self):
         client = FakeAsanaClient(subtasks=[{'gid': '20', 'name': 'Automation'}])
 
         with self.assertRaisesRegex(RuntimeError, 'no Translations subtask'):
-            translations_task_url(client)
+            translations_task_id(client)
 
     def testWhenTheBranchIsNotAReleaseBranchThenTheTestTaskIsLinkedWithoutLookingUpAsana(self):
         client = FakeAsanaClient()
 
-        url = translations_task_url(client, branch='test/smartling-release-0.1.0')
+        task_id = translations_task_id(client, branch='test/smartling-release-0.1.0')
 
-        self.assertEqual(url, 'https://app.asana.com/0/0/1219536424657556/f')
+        self.assertEqual(task_id, '1219893285200023')
         self.assertEqual(client.section_requests, [])
 
     def testWhenTheBranchIsAReleaseBranchForTheOtherPlatformThenTheTestTaskIsLinked(self):
-        url = translations_task_url(FakeAsanaClient(), branch='release/macos/1.214.0')
+        task_id = translations_task_id(FakeAsanaClient(), branch='release/macos/1.214.0')
 
-        self.assertEqual(url, 'https://app.asana.com/0/0/1219536424657556/f')
+        self.assertEqual(task_id, '1219893285200023')
 
     def testWhenAMacOSReleaseBranchIsGivenThenTheMacOSReleaseTaskIsLookedUp(self):
         client = FakeAsanaClient(release_tasks=[{'gid': '2', 'name': 'macOS App Release 1.214.0'}], subtasks=[{'gid': '21', 'name': 'Translations'}])
 
-        url = translations_task_url(client, branch='release/macos/1.214.0', platform='macOS')
+        task_id = translations_task_id(client, branch='release/macos/1.214.0', platform='macOS')
 
-        self.assertEqual(url, 'https://app.asana.com/0/0/21/f')
+        self.assertEqual(task_id, '21')
         self.assertEqual(client.section_requests[0][0], '1209802997613373')
 
     def testWhenThereIsNoReleaseTaskThenItIsAnError(self):
         client = FakeAsanaClient(release_tasks=[{'gid': '1', 'name': 'iOS App Release 7.243.0'}])
 
         with self.assertRaisesRegex(RuntimeError, 'iOS App Release 7.244.0'):
-            translations_task_url(client)
+            translations_task_id(client)
+
+
+class UpdateTranslationsTaskTests(unittest.TestCase):
+
+    def testWhenAPullRequestIsOpenedThenTheUnassignedTaskIsAssignedToTheReleaseDRI(self):
+        client = FakeTaskClient()
+
+        commented = update_translations_task(client, 'pr_opened')
+
+        self.assertEqual(client.updates, [('21', {'assignee': '100'})])
+        self.assertEqual(client.comments, [])
+        self.assertFalse(commented)
+
+    def testWhenTheTaskIsAlreadyAssignedThenItKeepsItsAssignee(self):
+        client = FakeTaskClient(assignee='200')
+
+        update_translations_task(client, 'pr_opened')
+
+        self.assertEqual(client.updates, [])
+
+    def testWhenTheReleaseTaskIsUnassignedThenTheTaskStaysUnassigned(self):
+        client = FakeTaskClient(release_assignee=None)
+
+        update_translations_task(client, 'pr_opened')
+
+        self.assertEqual(client.updates, [])
+
+    def testWhenAReimportUpdatesThePullRequestThenTheCompletedTaskIsReopened(self):
+        client = FakeTaskClient(completed=True, assignee='100')
+
+        update_translations_task(client, 'pr_updated')
+
+        self.assertEqual(client.updates, [('21', {'completed': False})])
+
+    def testWhenNoPullRequestIsNeededThenTheTaskIsCompletedWithAComment(self):
+        for outcome in ('no_changes', 'pr_closed'):
+            with self.subTest(outcome=outcome):
+                client = FakeTaskClient()
+
+                commented = update_translations_task(client, outcome)
+
+                self.assertEqual(client.updates, [('21', {'assignee': '100', 'completed': True})])
+                self.assertEqual(len(client.comments), 1)
+                self.assertIn('already has every translation', client.comments[0][1])
+                self.assertTrue(commented)
+
+    def testWhenNoPullRequestIsNeededAndTheTaskIsCompletedThenItIsLeftAlone(self):
+        client = FakeTaskClient(completed=True)
+
+        commented = update_translations_task(client, 'no_changes')
+
+        self.assertEqual(client.updates, [])
+        self.assertEqual(client.comments, [])
+        self.assertFalse(commented)
+
+    def testWhenTheTranslationsAreNotReadyThenTheDetailsAreCommentedAndTheTaskStaysOpen(self):
+        client = FakeTaskClient()
+
+        commented = update_translations_task(client, 'not_ready', 'Job: https://example.com/job')
+
+        self.assertEqual(client.updates, [('21', {'assignee': '100'})])
+        self.assertEqual(client.comments, [('21', '<body><strong>Job:</strong> <a href="https://example.com/job">https://example.com/job</a></body>')])
+        self.assertTrue(commented)
+
+    def testWhenThereAreNoNotesForAnotherOutcomeThenNothingIsCommented(self):
+        client = FakeTaskClient(assignee='100')
+
+        commented = update_translations_task(client, 'skipped_existing_pr')
+
+        self.assertEqual(client.comments, [])
+        self.assertFalse(commented)
 
 
 if __name__ == '__main__':

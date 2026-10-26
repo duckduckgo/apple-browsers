@@ -1,0 +1,27 @@
+name: Smartling - Complete Translations Subtask on Merge
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  complete-translations-subtask:
+    name: Complete the Translations subtask
+    if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'smartling/release-')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get Task ID
+        id: get-task-id
+        uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+        with:
+          text: ${{ github.event.pull_request.body }}
+
+      - name: Mark the Translations subtask as complete
+        if: steps.get-task-id.outputs.task-id != ''
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: 'mark-asana-task-complete'
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+          is-complete: 'true'

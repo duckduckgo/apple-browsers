@@ -197,11 +197,13 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
             if shouldFollowUp {
                 sharedPixelHandler.fire(.fireButton(.shown))
             }
+        case .tryFireButton:
+            // Skipping the Fire dialog transitions to High Five in place, without a new presentation.
+            sharedPixelHandler.fire(.end(.shown))
         case .highFive:
             sharedPixelHandler.fire(.end(.clicked(.engage)))
         case .tryASearch,
                 .tryASite,
-                .tryFireButton,
                 .subscriptionUpsell:
             break
         }

@@ -94,23 +94,30 @@ struct ReturnSessionWideEventDataTests {
     @Test("Toggle position follows the input mode only while the toggle is on screen",
           .timeLimit(.minutes(1)),
           arguments: [
-            // (isToggleEnabled, isPad, isFocused, isDuckAITab, expected for .aiChat)
-            (false, true, true, false, nil),
-            (false, false, true, false, nil),
-            (true, true, false, false, .duckAI),
-            (true, true, false, true, .duckAI),
-            (true, false, false, false, nil),
-            (true, false, true, false, .duckAI),
-            (true, false, true, true, nil),
-          ] as [(Bool, Bool, Bool, Bool, ReturnSessionWideEventData.TogglePosition?)])
-    func togglePositionOnScreen(isToggleEnabled: Bool, isPad: Bool, isFocused: Bool, isDuckAITab: Bool,
-                                expected: ReturnSessionWideEventData.TogglePosition?) {
+            ToggleCase(isToggleEnabled: false, isPad: true, isFocused: true, isDuckAITab: false, expected: nil),
+            ToggleCase(isToggleEnabled: false, isPad: false, isFocused: true, isDuckAITab: false, expected: nil),
+            ToggleCase(isToggleEnabled: true, isPad: true, isFocused: false, isDuckAITab: false, expected: .duckAI),
+            ToggleCase(isToggleEnabled: true, isPad: true, isFocused: false, isDuckAITab: true, expected: .duckAI),
+            ToggleCase(isToggleEnabled: true, isPad: false, isFocused: false, isDuckAITab: false, expected: nil),
+            ToggleCase(isToggleEnabled: true, isPad: false, isFocused: true, isDuckAITab: false, expected: .duckAI),
+            ToggleCase(isToggleEnabled: true, isPad: false, isFocused: true, isDuckAITab: true, expected: nil),
+          ])
+    func togglePositionOnScreen(_ toggleCase: ToggleCase) {
         let position = ReturnSessionWideEventData.TogglePosition.onScreen(mode: .aiChat,
-                                                                          isToggleEnabled: isToggleEnabled,
-                                                                          isPad: isPad,
-                                                                          isFocused: isFocused,
-                                                                          isDuckAITab: isDuckAITab)
-        #expect(position == expected)
+                                                                          isToggleEnabled: toggleCase.isToggleEnabled,
+                                                                          isPad: toggleCase.isPad,
+                                                                          isFocused: toggleCase.isFocused,
+                                                                          isDuckAITab: toggleCase.isDuckAITab)
+        #expect(position == toggleCase.expected)
+    }
+
+    /// One `onScreen` input set, expected for `.aiChat`.
+    struct ToggleCase {
+        let isToggleEnabled: Bool
+        let isPad: Bool
+        let isFocused: Bool
+        let isDuckAITab: Bool
+        let expected: ReturnSessionWideEventData.TogglePosition?
     }
 
     @available(iOS 16, *)

@@ -2,7 +2,7 @@
   "sourceLanguage" : "en",
   "strings" : {
     "`continue`" : {
-      "comment" : "Continue button",
+      "comment" : "TEST Continue button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

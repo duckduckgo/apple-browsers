@@ -1397,7 +1397,6 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
 
         checkWebViewVisibilityConsistency()
-        fireSitePermissionDialogImpressionIfVisible()
     }
 
     override func buildActivities() -> [UIActivity] {

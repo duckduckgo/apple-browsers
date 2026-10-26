@@ -43,6 +43,57 @@ private final class SitePermissionsManagementPresentationDelegate: NSObject, UIA
     }
 }
 
+private final class SitePermissionDialogHostingController: UIHostingController<SitePermissionDialogView> {
+
+    private let isVisible: () -> Bool
+    private var pendingImpression: (() -> Void)?
+    private var applicationActiveCancellable: AnyCancellable?
+
+    init(rootView: SitePermissionDialogView,
+         isVisible: @escaping () -> Bool,
+         onImpression: @escaping () -> Void) {
+        self.isVisible = isVisible
+        self.pendingImpression = onImpression
+        super.init(rootView: rootView)
+
+        applicationActiveCancellable = NotificationCenter.default
+            .publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.fireImpressionIfVisible()
+            }
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        fireImpressionIfVisible()
+    }
+
+    override func willMove(toParent parent: UIViewController?) {
+        if parent == nil {
+            pendingImpression = nil
+            applicationActiveCancellable = nil
+        }
+        super.willMove(toParent: parent)
+    }
+
+    func fireImpressionIfVisible() {
+        guard pendingImpression != nil, isVisible() else { return }
+        fireImpression()
+    }
+
+    func fireImpression() {
+        let impression = pendingImpression
+        pendingImpression = nil
+        applicationActiveCancellable = nil
+        impression?()
+    }
+}
+
 // Keeps teardown independent of the controller's lifetime while confining permission state to this file.
 @MainActor
 final class SitePermissionsState {
@@ -59,9 +110,7 @@ final class SitePermissionsState {
     fileprivate var applicationActiveCancellable: AnyCancellable?
     fileprivate var isCommittedGeolocationPolicyBlocked = false
     fileprivate var isProvisionalGeolocationPolicyBlocked = false
-    fileprivate var dialogHostingController: UIViewController?
-    fileprivate var pendingDialogImpression: SitePermissionsEvent.PermissionType?
-    fileprivate var pendingDialogImpressionCancellable: AnyCancellable?
+    fileprivate var dialogHostingController: SitePermissionDialogHostingController?
     fileprivate var dialogVisibilityOverride: (() -> Bool)?
     fileprivate var recoveryHostingController: UIViewController?
     fileprivate var managementHostingController: UIHostingController<SitePermissionsSheetView>?
@@ -126,8 +175,6 @@ final class SitePermissionsState {
     }
 
     fileprivate func dismissDialog() {
-        pendingDialogImpression = nil
-        pendingDialogImpressionCancellable = nil
         guard let hostingController = dialogHostingController else { return }
         hostingController.willMove(toParent: nil)
         hostingController.view.removeFromSuperview()
@@ -317,15 +364,8 @@ extension TabViewController {
         set { sitePermissionsState.dialogVisibilityOverride = newValue }
     }
 
-    /// Fires the pending dialog impression once the dialog can actually be seen: the tab is on screen and the app is active.
     func fireSitePermissionDialogImpressionIfVisible() {
-        guard let permissionType = sitePermissionsState.pendingDialogImpression else { return }
-        let isVisible = sitePermissionsState.dialogVisibilityOverride?() ?? isOnScreenForSitePermissionDialog
-        guard isVisible else { return }
-
-        sitePermissionsState.pendingDialogImpression = nil
-        sitePermissionsState.pendingDialogImpressionCancellable = nil
-        fireSitePermissionsEvent(.permissionDialogImpression(type: permissionType))
+        sitePermissionsState.dialogHostingController?.fireImpressionIfVisible()
     }
 
     static func shouldWaitForContentBlockingAssets(assetsInstalled: Bool,
@@ -1089,20 +1129,27 @@ extension TabViewController {
         sitePermissionsState.dismissDialog()
         let dialog = SitePermissionDialogView(viewModel: viewModel) { [weak self] action in
             guard let self else { return }
-            if sitePermissionsState.pendingDialogImpression != nil {
-                sitePermissionsState.pendingDialogImpression = nil
-                fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
-            }
+            sitePermissionsState.dialogHostingController?.fireImpression()
             fireSitePermissionsEvent(.permissionDialogClick(type: pixelPermissionType,
                                                              selection: action.pixelDialogSelection))
             sitePermissionsState.dismissDialog()
             completion(action.promptDecision)
         }
-        let hostingController = UIHostingController(rootView: dialog)
+        let hostingController = SitePermissionDialogHostingController(
+            rootView: dialog,
+            isVisible: { [weak self] in
+                guard let self else { return false }
+                return sitePermissionsState.dialogVisibilityOverride?() ?? isOnScreenForSitePermissionDialog
+            },
+            onImpression: { [weak self] in
+                self?.fireSitePermissionsEvent(.permissionDialogImpression(type: pixelPermissionType))
+            }
+        )
         hostingController.view.backgroundColor = .clear
         hostingController.view.accessibilityViewIsModal = true
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
+        sitePermissionsState.dialogHostingController = hostingController
         addChild(hostingController)
         view.addSubview(hostingController.view)
         NSLayoutConstraint.activate([
@@ -1112,15 +1159,7 @@ extension TabViewController {
             hostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         hostingController.didMove(toParent: self)
-        sitePermissionsState.dialogHostingController = hostingController
-        sitePermissionsState.pendingDialogImpression = pixelPermissionType
-        sitePermissionsState.pendingDialogImpressionCancellable = NotificationCenter.default
-            .publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.fireSitePermissionDialogImpressionIfVisible()
-            }
-        fireSitePermissionDialogImpressionIfVisible()
+        hostingController.fireImpressionIfVisible()
     }
 
     private func presentSitePermissionRecovery(_ recovery: SitePermissionRecovery,

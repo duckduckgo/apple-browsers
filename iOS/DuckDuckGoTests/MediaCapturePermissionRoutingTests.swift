@@ -1639,6 +1639,9 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         // Hidden tab: the page asks, then reloads before anyone could see the dialog.
         let firstRequest = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
         await fulfillment(of: [presented], timeout: 1)
+        let removedHostingController = try XCTUnwrap(sut.children.compactMap {
+            $0 as? UIHostingController<SitePermissionDialogView>
+        }.first)
         sut.webView(sut.webView, didStartProvisionalNavigation: nil)
         let firstDecision = await firstRequest.value
         XCTAssertEqual(firstDecision, .deny)
@@ -1646,7 +1649,12 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
         // The removed dialog stays uncounted even once the tab becomes visible.
         isVisible = true
+        removedHostingController.viewDidAppear(false)
         sut.fireSitePermissionDialogImpressionIfVisible()
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
         XCTAssertTrue(events.isEmpty)
         isVisible = false
 
@@ -1671,6 +1679,68 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         XCTAssertEqual(events, [
             .permissionDialogImpression(type: .camera),
             .permissionDialogClick(type: .camera, selection: .dismissed)
+        ])
+    }
+
+    func testPermissionDialogAppearanceRecordsImpressionOnlyOnceAcrossRetries() async throws {
+        var events = [SitePermissionsEvent]()
+        var isVisible = false
+        let presented = expectation(description: "Dialog presented while hidden")
+        let sut = makeSUT(eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.sitePermissionsDialogVisibilityOverride = {
+            presented.fulfill()
+            return isVisible
+        }
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        let hostingController = try XCTUnwrap(sut.children.compactMap {
+            $0 as? UIHostingController<SitePermissionDialogView>
+        }.first)
+        sut.sitePermissionsDialogVisibilityOverride = { isVisible }
+        XCTAssertTrue(events.isEmpty)
+
+        isVisible = true
+        hostingController.viewDidAppear(false)
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+
+        hostingController.viewDidAppear(false)
+        sut.fireSitePermissionDialogImpressionIfVisible()
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+
+        sut.closeSitePermissions()
+        _ = await request.value
+    }
+
+    func testPermissionDialogActionRecordsPendingImpressionBeforeClick() async throws {
+        var events = [SitePermissionsEvent]()
+        let presented = expectation(description: "Dialog presented while hidden")
+        let sut = makeSUT(eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.sitePermissionsDialogVisibilityOverride = {
+            presented.fulfill()
+            return false
+        }
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        let dialog = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+        }.first)
+        XCTAssertTrue(events.isEmpty)
+
+        dialog.onAction(.allowOnce)
+
+        let decision = await request.value
+        XCTAssertEqual(decision, .allow)
+        XCTAssertEqual(events, [
+            .permissionDialogImpression(type: .camera),
+            .permissionDialogClick(type: .camera, selection: .allowOnce)
         ])
     }
 

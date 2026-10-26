@@ -163,6 +163,30 @@
         }
       }
     },
+    "onboarding.browsers.features.hideAIImages" : {
+      "comment" : "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that AI-generated images can be hidden in search results.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide AI-generated images in search"
+          }
+        }
+      }
+    },
+    "onboarding.browsers.features.noAIAnswers" : {
+      "comment" : "One of the rows in the onboarding comparison chart for users who don't want AI. Highlights that search shows no AI-assisted answers.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No AI-assisted answers in search"
+          }
+        }
+      }
+    },
     "onboarding.browsers.features.privateSearch.title" : {
       "comment" : "Message to highlight browser capability of private searches",
       "extractionState" : "extracted_with_value",
@@ -327,6 +351,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Varsayılan olarak gizli arama yapın"
+          }
+        }
+      }
+    },
+    "onboarding.browsers.features.privateWebSearch" : {
+      "comment" : "One of the rows in the onboarding AI comparison chart. Highlights private web search with trackers blocked.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the web privately with trackers blocked"
           }
         }
       }

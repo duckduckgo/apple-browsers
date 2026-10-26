@@ -1,0 +1,92 @@
+name: Smartling - Release Translations Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - 'release/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: smartling-release-translations-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check the release translations
+    if: startsWith(github.head_ref, 'smartling/release-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Check the translations
+        id: check
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          python3 scripts/smartling/check_release_translations.py \
+            --base "origin/$BASE_REF" \
+            --comment-file "$RUNNER_TEMP/comment.md" \
+            --run-url "$RUN_URL"
+
+      - name: Comment on the pull request
+        id: comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          VERDICT: ${{ steps.check.outputs.verdict }}
+        run: |
+          previous="$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq '.[] | select(.body | startswith("<!-- smartling-release-translations-check")) | "\(.id) \(.body | split("\n")[0])"' \
+            | tail -n 1)"
+          comment_id="${previous%% *}"
+          if [ -n "$comment_id" ]; then
+            url="$(gh api -X PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F body=@"$RUNNER_TEMP/comment.md" --jq .html_url)"
+          else
+            url="$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F body=@"$RUNNER_TEMP/comment.md" --jq .html_url)"
+          fi
+          echo "Comment: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          if [[ "$previous" != *"verdict=$VERDICT -->"* ]]; then
+            echo "verdict_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get the Translations task ID
+        id: task
+        if: steps.comment.outputs.verdict_changed == 'true'
+        uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
+        with:
+          text: ${{ github.event.pull_request.body }}
+
+      - name: Point the release DRI to the comment
+        if: steps.task.outputs.task-id != ''
+        continue-on-error: true
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: post-comment-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-task-id: ${{ steps.task.outputs.task-id }}
+          asana-task-comment-pinned: false
+          asana-task-comment-is-html: false
+          asana-task-comment: |
+            ${{ (steps.check.outputs.verdict == 'ready' && '✅ The release translations are ready to merge.') || (steps.check.outputs.verdict == 'warning' && '⚠️ The release translations are ready to merge after checking the warnings.') || '❌ Some release translations need a fix before merging.' }}
+
+            🔀 Pull request: ${{ github.event.pull_request.html_url }}
+            📋 What to do: ${{ steps.comment.outputs.url }}
+
+      - name: Fail the run if a translation needs a fix
+        if: steps.check.outputs.verdict == 'fix'
+        run: |
+          echo "::error::Some translations need a fix before merging. See the pull request comment."
+          exit 1

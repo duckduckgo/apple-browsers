@@ -243,14 +243,15 @@ jobs:
           done
           result_file="${RUNNER_TEMP}/smartling-pending-job-${PLATFORM}.json"
           ./scripts/smartling/loc_tool.sh pending-job "${prefix_args[@]}" --result-file "$result_file"
-          job_name="$(jq -r '.job_name' "$result_file")"
+          # A missing key fails the step instead of reading as a waiting job and skipping every export.
+          job_name="$(jq -er '.job_name | strings' "$result_file")"
           echo "job_name=$job_name" >> "$GITHUB_OUTPUT"
           if [ -n "$job_name" ]; then
             {
               echo "## $PLATFORM Smartling job: nothing submitted"
               echo
               echo "- Outcome: \`pending_review\`"
-              echo "- Waiting job: [$job_name]($(jq -r '.job_url' "$result_file"))"
+              echo "- Waiting job: [$job_name]($(jq -er '.job_url | strings' "$result_file"))"
               echo "- Reason: it's still awaiting authorization and its review task is open, so nothing was exported"
             } >> "$GITHUB_STEP_SUMMARY"
           fi

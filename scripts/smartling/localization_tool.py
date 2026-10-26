@@ -299,13 +299,23 @@ class SmartlingClient:
         return data.get('response', {})
 
     async def list_jobs_awaiting_authorization(self) -> List[Dict]:
-        """List the project's jobs that are awaiting authorization."""
-        data = await self._request(
-            'GET',
-            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
-            params=[('translationJobStatus', 'AWAITING_AUTHORIZATION'), ('limit', '100')]
-        )
-        return data['response']['data'].get('items', [])
+        """List the project's jobs that are awaiting authorization, page by page, since PR label jobs wait there too."""
+        jobs = []
+        while True:
+            data = await self._request(
+                'GET',
+                f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
+                params=[
+                    ('translationJobStatus', 'AWAITING_AUTHORIZATION'),
+                    ('limit', '100'),
+                    ('offset', str(len(jobs))),
+                ]
+            )
+            page = data['response']['data']
+            items = page.get('items', [])
+            jobs.extend(items)
+            if not items or len(jobs) >= page.get('totalCount', 0):
+                return jobs
 
     async def get_file_status(self, file_uri: str) -> Dict:
         """Get a file's string counts, in total and per locale."""

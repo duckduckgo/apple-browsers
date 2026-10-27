@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import EventHub
 import Foundation
 import UIKit
 import PixelKit
@@ -49,7 +50,10 @@ final class AutoconsentManagement: AutoconsentManaging {
     private var pendingSummaryTask: DispatchWorkItem?
     private var pendingAdditionalParams: [String: String] = [:]
 
-    init() {
+    private let eventHub: EventHubManaging
+
+    init(eventHub: EventHubManaging) {
+        self.eventHub = eventHub
         setupNotificationObservers()
     }
 
@@ -128,6 +132,7 @@ final class AutoconsentManagement: AutoconsentManaging {
                 var parameters = pendingAdditionalParams
                 parameters["siteRank"] = siteRank?.rawValue
                 PixelKit.fire(AutoconsentPixel.summary(events: events), frequency: .standard, withAdditionalParameters: parameters, includeAppVersionParameter: true)
+                CPMCoverageReporter.report(summary: events, siteRank: siteRank) { eventHub.handleNativeEvent($0) }
             }
             pixelCounter = [:]
             pendingAdditionalParams = [:]

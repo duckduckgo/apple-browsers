@@ -33,7 +33,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
     /// - Parameters:
     ///   - oAuthClient: The client that holds the backup and stores the restored token container.
-    ///   - retryInterval: After a restore for a missing token fails for a transient reason, how long further missing-token restores are skipped.
+    ///   - retryInterval: After a restore for a missing token fails for a reason that isn't `BackupRestoreFailure.permanent`, how long further missing-token restores are skipped.
     ///   - now: The current date, used to measure `retryInterval`.
     ///   - onRestored: Called with the recovery trigger after each successful restore, or nil.
     public init(oAuthClient: any OAuthClient,
@@ -48,7 +48,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
     /// Restores from the backup. The backup must belong to the dead current token's account, when there is one.
     /// `OAuthClient` also rejects a backup issued before the last sign-out.
-    /// For `.missingToken`, a restore within `retryInterval` of a transient failure is skipped with `TokenBackupError.unavailable`;
+    /// For `.missingToken`, a restore within `retryInterval` of a failure that isn't `BackupRestoreFailure.permanent` is skipped with `TokenBackupError.unavailable`;
     /// `.accountCreation` restores are never skipped.
     public func recover(_ context: TokenRecoveryContext) async throws {
         let isMissingToken = context.trigger == .missingToken
@@ -60,7 +60,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
         do {
             _ = try await oAuthClient.restoreFromBackup(expectedExternalID: context.deadPrimary?.decodedAccessToken.externalID)
         } catch {
-            if isMissingToken, Self.isTransient(error) {
+            if isMissingToken, BackupRestoreFailure(error) != .permanent {
                 let retryAfter = now().addingTimeInterval(retryInterval)
                 Logger.subscriptionTokensManagement.log("Backup restore failed for a transient reason, skipping missing-token restores until \(retryAfter, privacy: .public)")
                 setRetryAfter(retryAfter)
@@ -70,34 +70,6 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
         setRetryAfter(nil)
         onRestored?(context.trigger)
-    }
-
-    /// Whether a restore failure may succeed when retried: a backup that couldn't be read, or anything but a rejected or missing backup
-    /// or a refresh the server rejected.
-    /// - Parameter error: The error `restoreFromBackup` threw.
-    private static func isTransient(_ error: Error) -> Bool {
-        switch error {
-        case TokenBackupError.readFailed:
-            return true
-        case is TokenBackupError, OAuthClientError.invalidTokenRequest, OAuthClientError.unknownAccount:
-            return false
-        default:
-            return true
-        }
-    }
-
-    /// Whether a restore failure is known to be temporary: no connection or a timeout, a server error, a timed-out or rate-limited request,
-    /// or a backup that couldn't be read. Any other failure, including an unknown one, is not.
-    /// - Parameter error: The error `restoreFromBackup` threw.
-    static func isTemporary(_ error: Error) -> Bool {
-        switch error {
-        case TokenBackupError.readFailed, is URLError, APIRequestV2Error.urlSession:
-            return true
-        case OAuthServiceError.invalidResponseCode(let status):
-            return status.isServerError || status == .requestTimeout || status == .tooManyRequests
-        default:
-            return false
-        }
     }
 
     private func currentRetryAfter() -> Date? {

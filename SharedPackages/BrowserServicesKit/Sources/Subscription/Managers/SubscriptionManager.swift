@@ -784,7 +784,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             Logger.subscriptionTokensManagement.log("Restored the missing token before creating an account")
         } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
             return
-        } catch let error where BackupTokenRecovery.isTemporary(error) {
+        } catch let error where BackupRestoreFailure(error) == .temporary {
             Logger.subscriptionTokensManagement.error("Backup restore failed before creating an account, not creating one: \(String(describing: error), privacy: .public)")
             throw SubscriptionManagerError.errorRetrievingTokenContainer(error: error)
         } catch {

@@ -7,7 +7,8 @@ name: Smartling - Submit
 #   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
 #            the platform's strings. A failure also gets a task for the platform's owner, as for a nightly.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
-#            so a failure doesn't stop the release. A failure comments on the release task, when one is given.
+#            so a failure doesn't stop the release. A failure, or a review task that couldn't be opened, comments on
+#            the release task, when one is given.
 # Any failure, including a task that couldn't be created, fails the run.
 # To test without authorizing anything or opening a review task, run it manually with auto_authorize_max_usd set to 0.
 # For a release, use a test branch with a fake 0.x.y version.
@@ -348,6 +349,7 @@ jobs:
       # platform's triage DRI from the Asana triage rotation (on weekends, the next week's DRI), unless an assignee was
       # resolved above. A failure task never goes to the triage DRI.
       - name: Open ${{ inputs.platform }} Smartling ${{ steps.task.outputs.kind }} task
+        id: open-task
         if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
@@ -360,7 +362,7 @@ jobs:
             🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
             💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}
             📝 String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}
-            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
+            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (job resolution, checkout, runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
             🌿 Branch: ${{ steps.job.outputs.ref }}
             🔖 Commit: ${{ steps.checkout.outputs.commit || 'unavailable' }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
@@ -376,7 +378,7 @@ jobs:
             ${task_args[@]+"${task_args[@]}"}
 
       - name: Comment on the release task
-        if: ${{ !cancelled() && steps.task.outputs.comment_on_release_task == 'true' }}
+        if: ${{ !cancelled() && (steps.task.outputs.comment_on_release_task == 'true' || (inputs.kind == 'release' && inputs.release_task_id != '' && steps.open-task.outcome == 'failure')) }}
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
           action: post-comment-asana-task
@@ -385,12 +387,13 @@ jobs:
           asana-task-comment-pinned: false
           asana-task-comment-is-html: false
           asana-task-comment: |
-            ⚠️ The ${{ inputs.platform }} strings for this release weren't submitted to Smartling, so no translations are on the way yet. The release carries on: nothing waits for this submission.
+            ⚠️ ${{ steps.open-task.outcome == 'failure' && format('The {0} Smartling job for this release is over the limit for automatic authorization, but its review task couldn''t be created, so nobody has been asked to authorize it.', inputs.platform) || format('The {0} strings for this release weren''t submitted to Smartling, so no translations are on the way yet.', inputs.platform) }} The release carries on: nothing waits for this submission.
 
-            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
+            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (job resolution, checkout, runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
+            🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
             🌿 Branch: ${{ inputs.branch }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            🔁 To submit them, fix the cause and run Smartling - Submit with kind release for ${{ inputs.branch }}.
+            🔁 ${{ steps.open-task.outcome == 'failure' && 'To get the translations, review and authorize the job in Smartling.' || format('To submit them, fix the cause and run Smartling - Submit with kind release for {0}.', inputs.branch) }}
 
       # The submit script exits successfully even when Smartling fails, so the run fails here, after any failure task.
       - name: Fail the run if the submission failed

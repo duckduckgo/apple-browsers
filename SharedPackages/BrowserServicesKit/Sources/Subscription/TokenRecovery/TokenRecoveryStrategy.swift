@@ -45,11 +45,22 @@ public struct TokenRecoveryContext {
     }
 }
 
+/// The outcome of a token recovery.
+public enum TokenRecoveryResult {
+    /// A valid current token container is stored.
+    case recovered
+    /// The recovery doesn't apply, so nothing was tried.
+    case notApplicable
+    /// The user signed out, signed in or switched account while the recovery ran. Nothing was stored.
+    case sessionChanged
+    /// The recovery was tried and failed with the associated error.
+    case failed(Error)
+}
+
 /// One way of getting a valid current token container back.
 public protocol TokenRecoveryStrategy {
     /// Attempts the recovery. On success a valid current token container is stored.
     /// - Parameter context: The state the recovery starts from.
-    /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` or `TokenBackupError.unavailable` when this strategy
-    ///   doesn't apply, otherwise the reason it failed.
-    func recover(_ context: TokenRecoveryContext) async throws
+    /// - Returns: The outcome of the recovery.
+    func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult
 }

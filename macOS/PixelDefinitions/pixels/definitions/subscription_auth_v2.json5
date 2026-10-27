@@ -73,5 +73,81 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel", "subscriptionTokenRecoveryMethod"]
+    },
+    // Backup token
+    "subscription_auth-backup_restored_macos": {
+        "description": "Fired when the main app restores the subscription session from the backup token, so the user stays signed in",
+        "owners": ["federicocappelli"],
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "What started the token recovery: invalid_token when the auth server rejected the current refresh token, missing_token when no current token is stored, account_creation when no current token is stored and an account is about to be created",
+                "enum": ["invalid_token", "missing_token", "account_creation"]
+            }
+        ]
+    },
+    "subscription_auth-backup_restore_failed_macos": {
+        "description": "Fired when the main app tries to restore the subscription session from the backup token and the restore fails or is discarded. Not fired when no backup is stored or a restore is skipped after a recent failure",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "trigger",
+                "type": "string",
+                "description": "What started the token recovery: invalid_token when the auth server rejected the current refresh token, missing_token when no current token is stored, account_creation when no current token is stored and an account is about to be created",
+                "enum": ["invalid_token", "missing_token", "account_creation"]
+            },
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "Why the restore didn't restore the session: the backup belongs to another account, was issued before the last sign-out, or has expired; the auth server rejected it; a temporary failure such as no connection, a server error or a backup that can't be read; the user signed out, signed in or switched account during the restore; or any other failure",
+                "enum": ["account_mismatch", "predates_sign_out", "expired", "server_rejected", "temporary", "session_changed", "unknown"]
+            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
+    },
+    "subscription_auth-backup_renewed_macos": {
+        "description": "Fired when the main app stores a new backup token after a token refresh, which happens when there is no usable backup or it is older than 14 days",
+        "owners": ["federicocappelli"],
+        "triggers": ["feature_lifecycle"],
+        "parameters": ["appVersion", "channel"]
+    },
+    "subscription_auth-backup_renewal_failed_macos": {
+        "description": "Fired when the main app fails to mint or store a new backup token after a token refresh",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "channel", "errorDomain", "errorCode", "underlyingErrorDomain", "underlyingErrorCode"]
+    },
+    "subscription_auth-backup_keychain_error_macos": {
+        "description": "Fired when the main app can't read or write the backup token keychain item, or an expected backup token is missing",
+        "owners": ["federicocappelli"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "channel",
+            {
+                "key": "access_type",
+                "type": "string",
+                "description": "Whether reading or writing the backup token keychain item failed",
+                "enum": ["getAuthToken", "storeAuthToken"]
+            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
+        ]
     }
 }

@@ -51,6 +51,7 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         let creationMilliseconds: Double
         let footprintGrowthBytes: Double?
         let nativeMessages: [String: Int]
+        let registrations: Int
         let windowMessages: Int
     }
 
@@ -79,8 +80,8 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
             "\(frameCount) blank iframes, median of \(runs) runs",
             "",
             "| Configuration | Create frames (ms) | Footprint growth (MB) | Over control (MB) | Per frame over control (KB) "
-                + "| Native messages | Window messages |",
-            "|---|---:|---:|---:|---:|---|---:|"
+                + "| Native messages | Registrations | Window messages |",
+            "|---|---:|---:|---:|---:|---|---:|---:|"
         ]
         for configuration in configurations {
             let configurationSamples = samples[configuration] ?? []
@@ -99,6 +100,7 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                 format(overControl.map { $0 / 1_048_576 }),
                 format(overControl.map { $0 / 1_024 / Double(frameCount) }),
                 messageSummary,
+                String(configurationSamples.first?.registrations ?? 0),
                 String(configurationSamples.first?.windowMessages ?? 0)
             ]
             lines.append("| \(cells.joined(separator: " | ")) |")
@@ -113,6 +115,42 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         attachment.name = "Site permissions frame benchmark"
         attachment.lifetime = .keepAlways
         add(attachment)
+    }
+
+    func testMessageSettlingWaitsForDelayedRegistrationReply() async throws {
+        let counter = NativeMessageCounter()
+        let configuration = WKWebViewConfiguration()
+        let controller = configuration.userContentController
+        controller.addUserScript(WKUserScript(
+            source: """
+            globalThis.__ddgSitePermissionsGeolocationPolicy = {
+                getConstraints: async () => {
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return {
+                        documentID: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        isSecureContext: true,
+                        isSandboxed: false,
+                        isPolicyAllowed: true
+                    };
+                }
+            };
+            """,
+            injectionTime: .atDocumentStart,
+            forMainFrameOnly: false,
+            in: .defaultClient
+        ))
+        let geolocation = GeolocationUserScript()
+        geolocation.activationHandler = { _ in true }
+        counter.install(geolocation, in: controller)
+        defer { controller.removeAllScriptMessageHandlers() }
+        let page = BenchmarkPage(configuration: configuration)
+        try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
+
+        _ = try await waitForMessagesToSettle(in: page.webView, counter: counter)
+
+        XCTAssertEqual(counter.counts["registerFrame"], 1)
+        XCTAssertEqual(counter.replies, 1)
+        XCTAssertEqual(counter.registrations, 1)
     }
 
     private func measure(_ configuration: Configuration, frameCount: Int) async throws -> Sample {
@@ -162,6 +200,7 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                           footprintAfter.map { Double($0) - Double(before) }
                       },
                       nativeMessages: counter.counts,
+                      registrations: counter.registrations,
                       windowMessages: windowMessages)
     }
 
@@ -242,6 +281,8 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
 private final class NativeMessageCounter: NSObject, WKScriptMessageHandlerWithReply {
 
     private(set) var counts = [String: Int]()
+    private(set) var replies = 0
+    private(set) var registrations = 0
     private var handlers = [String: WKScriptMessageHandlerWithReply]()
 
     func install(_ script: UserScript, in controller: WKUserContentController) {
@@ -258,10 +299,17 @@ private final class NativeMessageCounter: NSObject, WKScriptMessageHandlerWithRe
         let key = (message.body as? [String: Any])?["kind"] as? String ?? message.name
         counts[key, default: 0] += 1
         guard let handler = handlers[message.name] else {
+            replies += 1
             replyHandler(nil, "Unknown message handler")
             return
         }
-        handler.userContentController(userContentController, didReceive: message, replyHandler: replyHandler)
+        handler.userContentController(userContentController, didReceive: message) { [weak self] reply, error in
+            self?.replies += 1
+            if (reply as? [String: Any])?["enabled"] as? Bool == true {
+                self?.registrations += 1
+            }
+            replyHandler(reply, error)
+        }
     }
 }
 

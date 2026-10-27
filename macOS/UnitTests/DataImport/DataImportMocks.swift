@@ -66,3 +66,11 @@ final class MockHistoryImporter: HistoryImporterProtocol {
         return summary
     }
 }
+
+struct MockSafariHistoryReader: SafariHistoryReaderProtocol {
+    var result: DataImportResult<HistoryImport.ParseResult> = .success(.init(visits: [], skipped: 0))
+
+    func readVisits(fromHistoryJSON historyJSON: Data, since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        result
+    }
+}

@@ -628,6 +628,7 @@
 		3706FAF2293F65D500E42796 /* ContentBlocking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9826B09F2747DF3D0092F683 /* ContentBlocking.swift */; };
 		3706FAF3293F65D500E42796 /* LocalAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B379C2127BDBA29008A968E /* LocalAuthenticationService.swift */; };
 		3706FAF4293F65D500E42796 /* SafariBookmarksReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */; };
+		EEACDECA46B814D062622206 /* SafariHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */; };
 		3706FAF6293F65D500E42796 /* LoginFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BE65484271FCD7B008D1D63 /* LoginFaviconView.swift */; };
 		3706FAF7293F65D500E42796 /* FireproofDomainsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0511B4262CAA5A00F6079C /* FireproofDomainsViewController.swift */; };
 		3706FAF8293F65D500E42796 /* URLEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA4D700625545EF800C3411E /* URLEventHandler.swift */; };
@@ -1878,6 +1879,7 @@
 		4BB99D0126FE191E001E4761 /* ChromiumBookmarksReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CF926FE191E001E4761 /* ChromiumBookmarksReader.swift */; };
 		4BB99D0226FE191E001E4761 /* ImportedBookmarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFA26FE191E001E4761 /* ImportedBookmarks.swift */; };
 		4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */; };
+		1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */; };
 		4BB99D0426FE191E001E4761 /* SafariDataImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */; };
 		4BB99D0F26FE1A84001E4761 /* ChromiumBookmarksReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99D0C26FE1A83001E4761 /* ChromiumBookmarksReaderTests.swift */; };
 		4BB99D1026FE1A84001E4761 /* FirefoxBookmarksReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99D0D26FE1A83001E4761 /* FirefoxBookmarksReaderTests.swift */; };
@@ -4417,8 +4419,10 @@
 		C957725981F91509282279A3 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */; };
 		CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
 		B04D9ECDC9D29516FBE0E5D6 /* ChromiumHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */; };
+		56C08CD1A217B33A40785AF4 /* SafariHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */; };
 		CCC87D742E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
 		4936CA2C31A4E49D5AAFC5C1 /* ChromiumHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */; };
+		06E7F97DFCA6F1B3670DFD0F /* SafariHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */; };
 		CCD235FA3052BE170046906B /* MockPromoHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD235F93052BE170046906B /* MockPromoHistoryProvider.swift */; };
 		CCD235FB3052BE170046906B /* MockPromoHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD235F93052BE170046906B /* MockPromoHistoryProvider.swift */; };
 		CCD899FB2ECDCF7D008E738B /* MockDefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD899FA2ECDCF72008E738B /* MockDefaultBrowserAndDockPromptNotificationPresenter.swift */; };
@@ -6004,6 +6008,7 @@
 		4BB99CF926FE191E001E4761 /* ChromiumBookmarksReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChromiumBookmarksReader.swift; sourceTree = "<group>"; };
 		4BB99CFA26FE191E001E4761 /* ImportedBookmarks.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImportedBookmarks.swift; sourceTree = "<group>"; };
 		4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariBookmarksReader.swift; sourceTree = "<group>"; };
+		1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariHistoryReader.swift; sourceTree = "<group>"; };
 		4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariDataImporter.swift; sourceTree = "<group>"; };
 		4BB99D0C26FE1A83001E4761 /* ChromiumBookmarksReaderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChromiumBookmarksReaderTests.swift; sourceTree = "<group>"; };
 		4BB99D0D26FE1A83001E4761 /* FirefoxBookmarksReaderTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FirefoxBookmarksReaderTests.swift; sourceTree = "<group>"; };
@@ -7436,6 +7441,7 @@
 		00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumHistoryReader.swift; sourceTree = "<group>"; };
 		CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReaderTests.swift; sourceTree = "<group>"; };
 		734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumHistoryReaderTests.swift; sourceTree = "<group>"; };
+		B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariHistoryReaderTests.swift; sourceTree = "<group>"; };
 		CCD235F93052BE170046906B /* MockPromoHistoryProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPromoHistoryProvider.swift; sourceTree = "<group>"; };
 		CCD899FA2ECDCF72008E738B /* MockDefaultBrowserAndDockPromptNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptNotificationPresenter.swift; sourceTree = "<group>"; };
 		CCD899FD2ECDD222008E738B /* DefaultBrowserAndDockPromptServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptServiceTests.swift; sourceTree = "<group>"; };
@@ -9889,6 +9895,7 @@
 				4B59024B26B38BB800489384 /* ChromiumLoginReaderTests.swift */,
 				CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */,
 				734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */,
+				B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */,
 				4B723DFF26B0003E00E14D75 /* DataImportMocks.swift */,
 				B6619F022B17123200CD9186 /* DataImportViewModelTests.swift */,
 				B6619EF52B10DFF700CD9186 /* InstructionsFormatParserTests.swift */,
@@ -10088,6 +10095,7 @@
 			isa = PBXGroup;
 			children = (
 				4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */,
+				1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */,
 				4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */,
 				4B0AACAD28BC6FD0001038AC /* SafariFaviconsReader.swift */,
 			);
@@ -16261,6 +16269,7 @@
 				B65C7DFC2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
 				AA5E1EC72A0000000000E003 /* WKWebView+MainResourceData.swift in Sources */,
 				3706FAF4293F65D500E42796 /* SafariBookmarksReader.swift in Sources */,
+				EEACDECA46B814D062622206 /* SafariHistoryReader.swift in Sources */,
 				36E8D3722F857F9000861037 /* SubscriptionPromoTabExtension.swift in Sources */,
 				376E8C1B2D41186B00D5D2EC /* DefaultRecentActivityActionsHandler.swift in Sources */,
 				37F09AD72DDE483500643A1B /* AppearancePreferencesMock.swift in Sources */,
@@ -17680,6 +17689,7 @@
 				7B1522AE2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				CCC87D742E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */,
 				4936CA2C31A4E49D5AAFC5C1 /* ChromiumHistoryReaderTests.swift in Sources */,
+				06E7F97DFCA6F1B3670DFD0F /* SafariHistoryReaderTests.swift in Sources */,
 				567DA94029E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				9FBB0C0A2CBD3B800006B6A6 /* ViewHighlighterTests.swift in Sources */,
 				7B0C7F1C2EDF1D1800A338FD /* WebNotificationClickHandlerTests.swift in Sources */,
@@ -18731,6 +18741,7 @@
 				317307272CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
 				CDCC672B44CC6EA9370CAAA1 /* AutofillToolbarPinningPromoDelegate.swift in Sources */,
 				4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */,
+				1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */,
 				BBD7A1D12F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */,
 				316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */,
 				1DA6D0FD2A1FF9A100540406 /* HTTPCookie.swift in Sources */,
@@ -20012,6 +20023,7 @@
 				4B59024C26B38BB800489384 /* ChromiumLoginReaderTests.swift in Sources */,
 				CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */,
 				B04D9ECDC9D29516FBE0E5D6 /* ChromiumHistoryReaderTests.swift in Sources */,
+				56C08CD1A217B33A40785AF4 /* SafariHistoryReaderTests.swift in Sources */,
 				31FBF2312CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */,
 				6A06A7E014E04F60B399531F /* AIChatTabOpenerTests.swift in Sources */,
 				F1AFDBD42C231B9700710F2C /* SubscriptionErrorReporterTests.swift in Sources */,

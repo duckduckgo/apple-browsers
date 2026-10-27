@@ -61,6 +61,11 @@ final class HistoryDebugMenu: NSMenu {
                 action: #selector(importFromChrome),
                 target: self
             ).withAccessibilityIdentifier("HistoryDebugMenu.importFromChrome")
+            NSMenuItem(
+                title: "Import from Safari…",
+                action: #selector(importFromSafari),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromSafari")
         }
     }
 
@@ -91,14 +96,36 @@ final class HistoryDebugMenu: NSMenu {
                                             faviconManager: NSApp.delegateTyped.faviconManager,
                                             historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
+        importHistory(with: importer, browserName: "Chrome")
+    }
+
+    /// Imports the last month of history from a Safari "Export Browsing Data" archive through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromSafari(_ sender: NSMenuItem) {
+        let panel = NSOpenPanel(allowedFileTypes: [.zip])
+        guard case .OK = panel.runModal(), let archiveURL = panel.url else { return }
+
+        let importer = SafariArchiveImporter(archiveURL: archiveURL,
+                                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
+                                             faviconManager: NSApp.delegateTyped.faviconManager,
+                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator),
+                                             featureFlagger: featureFlagger,
+                                             secureVaultReporter: SecureVaultReporter.shared,
+                                             tld: Application.appDelegate.tld)
+        importHistory(with: importer, browserName: "Safari")
+    }
+
+    @MainActor
+    private func importHistory(with importer: DataImporter, browserName: String) {
         Task { @MainActor in
             switch await importer.importData(types: [.history]).task.value[.history] {
             case .success(let summary):
-                showAlert(title: "Chrome History Imported", message: "Imported: \(summary.successful)\nAlready in history: \(summary.duplicate)")
+                showAlert(title: "\(browserName) History Imported", message: "Imported: \(summary.successful)\nAlready in history: \(summary.duplicate)")
             case .failure(let error):
-                showAlert(title: "Chrome History Import Failed", message: "\(error)")
+                showAlert(title: "\(browserName) History Import Failed", message: "\(error)")
             case nil:
-                showAlert(title: "Chrome History Import Failed", message: "History wasn't imported")
+                showAlert(title: "\(browserName) History Import Failed", message: "History wasn't imported")
             }
         }
     }

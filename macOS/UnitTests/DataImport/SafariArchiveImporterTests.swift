@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Combine
 import Common
 import FoundationExtensions
+import History
 import PrivacyConfig
 import SecureStorage
 import XCTest
@@ -179,15 +180,37 @@ final class SafariArchiveImporterTests: XCTestCase {
         XCTAssertEqual(creditCardImporter.importedCardsCount, 0)
     }
 
+    func testWhenArchiveContainsHistoryThenHistoryIsImported() async throws {
+        let zipURL = try createZipArchive(files: ["History.json": historyJSON])
+        let parseResult = HistoryImport.ParseResult(visits: [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com")!, title: nil, date: Date())], skipped: 1)
+        let historyImporter = MockHistoryImporter()
+        historyImporter.summary = .init(imported: 2, alreadyInHistory: 1)
+        let importer = makeImporter(fileURL: zipURL, historyReader: MockSafariHistoryReader(result: .success(parseResult)), historyImporter: historyImporter)
+
+        let summary = await importer.importData(types: [.history]).task.value
+
+        XCTAssertEqual(importer.importableTypes, [.history])
+        let history = try XCTUnwrap(summary[.history]).get()
+        XCTAssertEqual(history.successful, 2)
+        XCTAssertEqual(history.duplicate, 1)
+        XCTAssertEqual(historyImporter.importedParseResults, [parseResult])
+    }
+
     // MARK: - Helpers
 
-    private func makeImporter(fileURL: URL) -> SafariArchiveImporter {
+    private func makeImporter(
+        fileURL: URL,
+        historyReader: SafariHistoryReaderProtocol = MockSafariHistoryReader(),
+        historyImporter: HistoryImporterProtocol = MockHistoryImporter()
+    ) -> SafariArchiveImporter {
         SafariArchiveImporter(archiveURL: fileURL,
                               bookmarkImporter: bookmarkImporter,
                               loginImporter: loginImporter,
                               creditCardImporter: creditCardImporter,
                               vault: vault,
                               faviconManager: faviconManager,
+                              historyReader: historyReader,
+                              historyImporter: historyImporter,
                               featureFlagger: featureFlagger,
                               secureVaultReporter: secureVaultReporter,
                               tld: TLD())
@@ -220,6 +243,15 @@ final class SafariArchiveImporterTests: XCTestCase {
                 "card_expiration_month": 12,
                 "card_expiration_year": 2025
             }]
+        }
+        """
+    }
+
+    private var historyJSON: String {
+        """
+        {
+            "metadata": { "browser_name": "Safari", "data_type": "history", "schema_version": 1 },
+            "history": [{ "url": "https://duckduckgo.com", "time_usec": 1793118145000000 }]
         }
         """
     }

@@ -52,23 +52,31 @@ public struct ImportArchiveReader: ImportArchiveReading {
         public let passwords: [String]  // CSV contents
         public let bookmarks: [String]  // HTML contents
         public let creditCards: [String] // JSON contents
+        public let history: [String] // Safari History.json contents
         public var type: ContentType { ContentType(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards) }
 
         public var isEmpty: Bool {
-            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty
+            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty && history.isEmpty
         }
 
         public func hasData(for types: Set<DataImport.DataType>) -> Bool {
             (types.contains(.passwords) && !passwords.isEmpty)
                 || (types.contains(.bookmarks) && !bookmarks.isEmpty)
                 || (types.contains(.creditCards) && !creditCards.isEmpty)
+                || (types.contains(.history) && !history.isEmpty)
         }
 
-        public init(passwords: [String], bookmarks: [String], creditCards: [String]) {
+        public init(passwords: [String], bookmarks: [String], creditCards: [String], history: [String] = []) {
             self.passwords = passwords
             self.bookmarks = bookmarks
             self.creditCards = creditCards
+            self.history = history
         }
+    }
+
+    private enum JSONExportType {
+        case paymentCards
+        case history
     }
 
     private enum Constants {
@@ -85,6 +93,7 @@ public struct ImportArchiveReader: ImportArchiveReading {
         var passwords = [String]()
         var bookmarks = [String]()
         var creditCards = [String]()
+        var history = [String]()
 
         for entry in archive {
             let lowercasedPath = entry.path.lowercased()
@@ -100,13 +109,18 @@ public struct ImportArchiveReader: ImportArchiveReading {
                 bookmarks.append(content)
             } else if lowercasedPath.hasSuffix(Constants.jsonExtension),
                       let content = extractFileContent(from: entry, in: archive) {
-                if isPaymentCardsJSON(content) {
+                switch jsonExportType(of: content) {
+                case .paymentCards:
                     creditCards.append(content)
+                case .history:
+                    history.append(content)
+                case nil:
+                    break
                 }
             }
         }
 
-        return Contents(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards)
+        return Contents(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards, history: history)
     }
 
     // MARK: - Private
@@ -126,19 +140,23 @@ public struct ImportArchiveReader: ImportArchiveReading {
         return content
     }
 
-    private func isPaymentCardsJSON(_ content: String) -> Bool {
-        // Quick validation to ensure this is a payment cards JSON
+    private func jsonExportType(of content: String) -> JSONExportType? {
         guard let data = content.data(using: .utf8) else {
             Logger.autofill.debug("Failed to convert json content to data")
-            return false
+            return nil
         }
         do {
-            if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                return jsonObject["payment_cards"] != nil
+            guard let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else { return nil }
+            if jsonObject["payment_cards"] != nil {
+                return .paymentCards
+            }
+            // Safari's History.json identifies itself with `"metadata": { "data_type": "history" }`.
+            if let metadata = jsonObject["metadata"] as? [String: Any], metadata["data_type"] as? String == "history" {
+                return .history
             }
         } catch {
             Logger.autofill.debug("Failed to parse JSON: \(error.localizedDescription)")
         }
-        return false
+        return nil
     }
 }

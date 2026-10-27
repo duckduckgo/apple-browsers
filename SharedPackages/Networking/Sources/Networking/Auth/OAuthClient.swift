@@ -297,8 +297,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 
     public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
-        sessionGeneration.increment()
-        try tokenStorage.saveTokenContainer(tokenContainer)
+        try replaceSession(with: tokenContainer)
     }
 
     public func getTokens(policy: AuthTokensCachePolicy, trigger: TokenRefreshTrigger) async throws -> TokenContainer {
@@ -393,9 +392,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("No valid current token, creating a new account: \(String(describing: error), privacy: .public)")
                 do {
                     let tokenContainer = try await createAccount()
-                    sessionGeneration.increment()
-                    try tokenStorage.saveTokenContainer(tokenContainer)
-                    backupStore?.removeIfForAnotherAccount(than: tokenContainer)
+                    try replaceSession(with: tokenContainer)
                     return tokenContainer
                 } catch {
                     Logger.OAuthClient.error("Failed to create account: \(String(describing: error), privacy: .public)")
@@ -407,12 +404,22 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     public func adopt(tokenContainer: TokenContainer) throws {
         Logger.OAuthClient.log("Adopting token container")
-        sessionGeneration.increment()
-        try tokenStorage.saveTokenContainer(tokenContainer)
-        backupStore?.removeIfForAnotherAccount(than: tokenContainer)
+        try replaceSession(with: tokenContainer)
     }
 
     // MARK: Backup
+
+    /// Stores `tokenContainer` as the current token container in a new session: the session generation moves on, so a backup restore or
+    /// renewal in progress is discarded, and a backup of another account than `tokenContainer` is deleted.
+    /// - Parameter tokenContainer: The new current token container, or nil to remove it.
+    /// - Throws: The storage error when saving fails. The session generation moves on even then.
+    private func replaceSession(with tokenContainer: TokenContainer?) throws {
+        sessionGeneration.increment()
+        try tokenStorage.saveTokenContainer(tokenContainer)
+        if let tokenContainer {
+            backupStore?.removeIfForAnotherAccount(than: tokenContainer)
+        }
+    }
 
     /// Stores the refreshed token container as the current one.
     /// - Parameter refreshedTokens: The new current token container.
@@ -587,9 +594,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)
         let authCode = try await authService.login(withSignature: signature, authSessionID: authSessionID)
         let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
-        sessionGeneration.increment()
-        try tokenStorage.saveTokenContainer(tokenContainer)
-        backupStore?.removeIfForAnotherAccount(than: tokenContainer)
+        try replaceSession(with: tokenContainer)
         Logger.OAuthClient.log("Activation completed")
         return tokenContainer
     }

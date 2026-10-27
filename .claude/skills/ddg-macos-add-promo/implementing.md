@@ -5,7 +5,7 @@ Read this only after the user has approved the plan (SKILL.md Step 4). Sections 
 ## Rules for every task
 
 - **Build what the plan says.** A decision the plan doesn't cover goes back to the user (or, as a subagent, back to the main session) — don't choose.
-- **Comments explain WHY, not WHAT** (`.cursor/rules/code-style.mdc`), `//` and `///` only. Promo code attracts three violations:
+- **Comments explain WHY, not WHAT**, `//` and `///` only. Promo code attracts three violations:
   1. Restating the declaration (`/// Builds the Bookmark Toolbar Promo.` above `bookmarkToolbar(dependencies:)`). Existing factory files are full of this — don't copy it, don't churn it. Name what the reader can't see instead: the user-facing string, the legacy UI it replaces.
   2. Describing behavior the fields declare ("shown at most once ever") — it duplicates the `PromoResult`s and goes stale. Let the resolution paths say it; put the intent in a test name.
   3. Justifying a field by the rule it evades — that's the smell test in SKILL.md, a wrong field rather than a comment problem.

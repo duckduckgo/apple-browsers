@@ -29,7 +29,7 @@ An **external** migration keeps the owning system presenting; what you add is th
 
 The kill switch off means "the promo doesn't show", not "the old path shows instead". Don't gate the legacy call site on the flag, and don't leave both paths alive "until the rollout finishes" — that's two frequency caps, two sets of pixels, and states where both present. If you think a fallback is needed, that's a question for the user.
 
-Remove the observer or `showXIfNeeded()` that presented it and the gating around its call site, and post the event it listened for as a `PromoTrigger`. The Bookmark Toolbar migration deleted `MainViewController.registerForBookmarkBarPromptNotifications()` and `showBookmarkPromptIfNeeded()` outright. Remove the old auto-dismiss timer too.
+Remove the observer or `showXIfNeeded()` that presented it and the gating around its call site, and post the event it listened for as a `PromoTrigger`. Remove the old auto-dismiss timer too.
 
 ## 4. Retire the promo for users who already saw the legacy UI
 

@@ -1,6 +1,6 @@
 ---
 name: ddg-macos-add-promo
-description: Invoke ONLY when the user explicitly runs /ddg-macos-add-promo or names this skill by name (e.g. "use ddg-macos-add-promo for this tip"). Do NOT auto-invoke from symptom or intent matching — the skill's workflow stops to make the user answer product/design questions, so it must be user-initiated. If the user raises a macOS promo, CTA, tip, banner, modal, in-app message, or PromoService/Promo Queue topic without naming this skill — including a promo that never shows, is blocked, times out wrongly, or shows once and never again — ask whether they want to use ddg-macos-add-promo, and if they decline or don't answer, answer them directly without it. Does not apply to iOS (ModalPromptCoordination / PromoCoordinationService).
+description: Invoke ONLY when the user explicitly runs /ddg-macos-add-promo or names this skill (e.g. "use ddg-macos-add-promo for this tip"). Do NOT auto-invoke — the workflow stops for product/design answers only the user can give. If the user asks about adding, migrating, debugging or reviewing a macOS promo (CTA, tip, banner, modal, in-app message, PromoService/Promo Queue) without naming this skill, ask whether they want it, and otherwise answer directly. Charting or mapping the whole queue belongs to ddg-macos-promo-queue-map. Does not apply to iOS (ModalPromptCoordination / PromoCoordinationService).
 ---
 
 # Adding a macOS Promo to the Promo Queue
@@ -114,17 +114,7 @@ If `AskUserQuestion` isn't available (you're a subagent, or on another runtime),
 
 In design phase, the sheet *is* the design: add rationale to every row. Ask each ❓ the same way, and include a "Leave open for product" option. Anything left open goes in the design's open questions for engineering and product.
 
-**This holds when you're confident, too.** A well-justified default is still a guess standing in for the user's decision; if it's wrong, the fix is a rewrite of code, tests, or a shared enum case instead of one question.
-
-| Rationalization | Reality |
-|---|---|
-| "I have a clear, well-justified default" | Confidence doesn't make it not a guess. |
-| "I'll flag it in my summary" | By then the code is built around your answer. |
-| "The spec leans toward X" | Leaning means ambiguous. |
-| "It's a minor detail" | Cooldowns, `initiated`, and severity are exactly the details that silently change shipped behavior. |
-| "There's no one to ask" | Say so and stop; hand back the open questions. |
-
-**Red flags — stop and ask instead:** writing "Flagging for product: …" above code that implements your own answer · picking whichever of two readings lets you keep coding · adding a shared enum case without having asked · appending to `makeAllPromos` without having asked · justifying a field by the rule it avoids · making your first edit before the user has seen the Step 4 plan and picked how to implement it.
+This holds when you're confident too: a well-justified default is still a guess standing in for the user's decision, and once code is built around it the fix is a rewrite instead of one question. If there's no one to ask, say so and stop, handing back the open questions.
 
 ## Step 4 — The plan, and how to implement it (adding or migrating)
 

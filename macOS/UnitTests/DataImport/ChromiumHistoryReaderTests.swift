@@ -34,6 +34,7 @@ final class ChromiumHistoryReaderTests {
     private let link: Int64 = 0
     private let typed: Int64 = 1
     private let autoSubframe: Int64 = 3
+    private let keywordGenerated: Int64 = 10
     private let chainStart: Int64 = 0x10000000
     private let chainEnd: Int64 = 0x20000000
 
@@ -52,6 +53,7 @@ final class ChromiumHistoryReaderTests {
             VisitRow(url: "https://duckduckgo.com/", title: "DuckDuckGo", date: visitDate, transition: link | chainStart | chainEnd),
             VisitRow(url: "https://ads.example.com/frame", title: "", date: visitDate, transition: autoSubframe | chainStart | chainEnd),
             VisitRow(url: "http://example.com/", title: "", date: visitDate, transition: typed | chainStart),
+            VisitRow(url: "http://wikipedia.org/", title: "", date: visitDate, transition: keywordGenerated | chainStart | chainEnd),
             VisitRow(url: "chrome://settings/", title: "Settings", date: visitDate, transition: typed | chainStart | chainEnd),
             VisitRow(url: "https://old.example.com/", title: "Old", date: wholeSecondsDate(daysAgo: 40), transition: link | chainStart | chainEnd),
         ])
@@ -59,7 +61,7 @@ final class ChromiumHistoryReaderTests {
         let result = try ChromiumHistoryReader(chromiumDataDirectoryURL: profileURL).readVisits(since: cutoff).get()
 
         #expect(result.visits == [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com/")!, title: "DuckDuckGo", date: visitDate)])
-        #expect(result.skipped == 3)
+        #expect(result.skipped == 4)
     }
 
     private func wholeSecondsDate(daysAgo days: Int) -> Date {

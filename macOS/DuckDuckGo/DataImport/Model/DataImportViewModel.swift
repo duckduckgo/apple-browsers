@@ -38,6 +38,9 @@ struct DataImportViewModel {
     /// The Bookmarks / Passwords (and History, when a source offers it) toggles that filter the sources
     /// and what gets imported when the source filter is on.
     struct DataTypeFilter: Equatable {
+        /// Types imported only when toggled on, even when a filter made before they were offered doesn't list them.
+        private let toggledTypes: Set<DataType> = [.bookmarks, .passwords, .history]
+
         let filterableTypes: Set<DataType>
         var enabledTypes: Set<DataType>
 
@@ -53,7 +56,7 @@ struct DataImportViewModel {
 
         /// The types to import: the enabled ones, plus any type the filter doesn't cover (Safari's credit cards).
         func dataTypesToImport(from availableTypes: Set<DataType>) -> Set<DataType> {
-            availableTypes.filter { !filterableTypes.contains($0) || enabledTypes.contains($0) }
+            availableTypes.filter { !toggledTypes.contains($0) || enabledTypes.contains($0) }
         }
     }
 

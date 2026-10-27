@@ -57,6 +57,7 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
         static let coreMask: Int64 = 0xFF
         static let autoSubframe: Int64 = 3
         static let manualSubframe: Int64 = 4
+        static let keywordGenerated: Int64 = 10
         static let chainEnd: Int64 = 0x20000000
     }
 
@@ -118,10 +119,11 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
         }
 
         let coreTransition = transition & Transition.coreMask
-        // Subframe navigations aren't pages the user visited, and visits without
-        // CHAIN_END are intermediate hops of a redirect chain.
+        // Subframe navigations and keyword-generated visits aren't pages the user visited,
+        // and visits without CHAIN_END are intermediate hops of a redirect chain.
         guard coreTransition != Transition.autoSubframe,
               coreTransition != Transition.manualSubframe,
+              coreTransition != Transition.keywordGenerated,
               transition & Transition.chainEnd != 0,
               let url = URL(string: urlString),
               url.isHttp || url.isHttps else {

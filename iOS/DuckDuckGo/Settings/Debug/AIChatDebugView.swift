@@ -24,6 +24,7 @@ import AIChat
 import AIChatDebugServer
 import os.log
 import DebugServer
+import Subscription
 
 struct AIChatDebugView: View {
     @StateObject private var viewModel = AIChatDebugViewModel()
@@ -65,6 +66,8 @@ struct AIChatDebugView: View {
                 }
                 .foregroundColor(.red)
             }
+
+            AIChatSubscriptionBridgeSection()
 
             Section(header: Text("Contextual Session Timer"),
                     footer: Text(viewModel.sessionTimerDescription)) {
@@ -626,6 +629,43 @@ private final class StorageServerState: ObservableObject {
 
 #Preview {
     AIChatDebugView()
+}
+
+private struct AIChatSubscriptionBridgeSection: View {
+    typealias Settings = SubscriptionUserScriptDebugSettings
+
+    @State private var handshakeDelay = Settings.handshakeDelay
+    @State private var tokenDelay = Settings.authAccessTokenDelay
+    @State private var tokenResponse = Settings.authAccessTokenResponse
+
+    var body: some View {
+        Section {
+            Picker(selection: $handshakeDelay) {
+                ForEach(Settings.delayPresets, id: \.self) { Text(verbatim: Settings.delayTitle($0)).tag($0) }
+            } label: {
+                Text(verbatim: "Handshake Delay")
+            }
+            .onChange(of: handshakeDelay) { _, delay in Settings.handshakeDelay = delay }
+
+            Picker(selection: $tokenDelay) {
+                ForEach(Settings.delayPresets, id: \.self) { Text(verbatim: Settings.delayTitle($0)).tag($0) }
+            } label: {
+                Text(verbatim: "Auth Access Token Delay")
+            }
+            .onChange(of: tokenDelay) { _, delay in Settings.authAccessTokenDelay = delay }
+
+            Picker(selection: $tokenResponse) {
+                ForEach(Settings.AuthAccessTokenResponse.allCases, id: \.self) { Text(verbatim: $0.title).tag($0) }
+            } label: {
+                Text(verbatim: "Auth Access Token Response")
+            }
+            .onChange(of: tokenResponse) { _, response in Settings.authAccessTokenResponse = response }
+        } header: {
+            Text(verbatim: "Subscription Bridge")
+        } footer: {
+            Text(verbatim: "Delays or fails the subscriptions bridge's handshake and getAuthAccessToken. Duck.ai times out the handshake after 1s and the token after 2s (3s on retry).")
+        }
+    }
 }
 
 #if DEBUG || ALPHA

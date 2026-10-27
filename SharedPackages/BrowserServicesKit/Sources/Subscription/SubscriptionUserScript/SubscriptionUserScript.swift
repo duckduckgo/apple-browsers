@@ -89,6 +89,15 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
         static let duckai = "duckai"
     }
 
+    private enum DebugFailure: Error {
+        case authAccessToken
+    }
+
+    private static func debugDelay(_ seconds: TimeInterval) async throws {
+        guard seconds > 0 else { return }
+        try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+    }
+
     let platform: DataModel.Platform
     let subscriptionManager: any SubscriptionManager
     private let featureFlagProvider: SubscriptionUserScriptFeatureFlagProviding
@@ -123,6 +132,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
+        try await Self.debugDelay(SubscriptionUserScriptDebugSettings.handshakeDelay)
         let response = DataModel.HandshakeResponse(
             availableMessages: [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .openSubscriptionUpgrade, .authUpdate],
             platform: platform
@@ -139,6 +149,15 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func getAuthAccessToken(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetAuthAccessTokenResponse {
+        try await Self.debugDelay(SubscriptionUserScriptDebugSettings.authAccessTokenDelay)
+        switch SubscriptionUserScriptDebugSettings.authAccessTokenResponse {
+        case .empty:
+            return .init(accessToken: "")
+        case .error:
+            throw DebugFailure.authAccessToken
+        case .normal:
+            break
+        }
         guard let accessToken = try? await subscriptionManager.getAccessToken() else {
             return .init(accessToken: "")
         }

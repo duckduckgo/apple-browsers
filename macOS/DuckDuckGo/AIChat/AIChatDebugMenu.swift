@@ -23,6 +23,7 @@ import AppKit
 import ConcurrencyExtensions
 import os.log
 import Persistence
+import Subscription
 
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()
@@ -69,6 +70,18 @@ final class AIChatDebugMenu: NSMenu {
                 NSMenuItem(title: "Reset Custom URL", action: #selector(resetCustomURL))
                     .targetting(self)
                 customURLLabelMenuItem
+            }
+
+            NSMenuItem(title: "Subscription Bridge") {
+                NSMenuItem(title: "Handshake Delay") {
+                    handshakeDelayMenuItems
+                }
+                NSMenuItem(title: "Auth Access Token Delay") {
+                    authAccessTokenDelayMenuItems
+                }
+                NSMenuItem(title: "Auth Access Token Response") {
+                    authAccessTokenResponseMenuItems
+                }
             }
 
             NSMenuItem.separator()
@@ -299,6 +312,7 @@ final class AIChatDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        updateSubscriptionBridgeMenuItemsState()
         // Main thread only, and the title must be right before the menu draws, so not a Task.
         MainActor.assumeMainThread {
             updateAttachmentPrivacyMenuItemTitle()
@@ -318,6 +332,50 @@ final class AIChatDebugMenu: NSMenu {
     @objc func resetCustomURL() {
         debugStorage.resetCustomURL()
         updateWebUIMenuItemsState()
+    }
+
+    // MARK: - Subscription Bridge
+
+    private lazy var handshakeDelayMenuItems = delayMenuItems(action: #selector(setHandshakeDelay(_:)))
+    private lazy var authAccessTokenDelayMenuItems = delayMenuItems(action: #selector(setAuthAccessTokenDelay(_:)))
+
+    private lazy var authAccessTokenResponseMenuItems: [NSMenuItem] = SubscriptionUserScriptDebugSettings.AuthAccessTokenResponse.allCases.map { response in
+        NSMenuItem(title: response.title, action: #selector(setAuthAccessTokenResponse(_:)), target: self, representedObject: response.rawValue)
+    }
+
+    private func delayMenuItems(action: Selector) -> [NSMenuItem] {
+        SubscriptionUserScriptDebugSettings.delayPresets.map { delay in
+            NSMenuItem(title: SubscriptionUserScriptDebugSettings.delayTitle(delay), action: action, target: self, representedObject: delay)
+        }
+    }
+
+    @objc private func setHandshakeDelay(_ sender: NSMenuItem) {
+        guard let delay = sender.representedObject as? TimeInterval else { return }
+        SubscriptionUserScriptDebugSettings.handshakeDelay = delay
+    }
+
+    @objc private func setAuthAccessTokenDelay(_ sender: NSMenuItem) {
+        guard let delay = sender.representedObject as? TimeInterval else { return }
+        SubscriptionUserScriptDebugSettings.authAccessTokenDelay = delay
+    }
+
+    @objc private func setAuthAccessTokenResponse(_ sender: NSMenuItem) {
+        guard let rawValue = sender.representedObject as? String,
+              let response = SubscriptionUserScriptDebugSettings.AuthAccessTokenResponse(rawValue: rawValue) else { return }
+        SubscriptionUserScriptDebugSettings.authAccessTokenResponse = response
+    }
+
+    private func updateSubscriptionBridgeMenuItemsState() {
+        for item in handshakeDelayMenuItems {
+            item.state = item.representedObject as? TimeInterval == SubscriptionUserScriptDebugSettings.handshakeDelay ? .on : .off
+        }
+        for item in authAccessTokenDelayMenuItems {
+            item.state = item.representedObject as? TimeInterval == SubscriptionUserScriptDebugSettings.authAccessTokenDelay ? .on : .off
+        }
+        let response = SubscriptionUserScriptDebugSettings.authAccessTokenResponse.rawValue
+        for item in authAccessTokenResponseMenuItems {
+            item.state = item.representedObject as? String == response ? .on : .off
+        }
     }
 
     @objc func resetToggleAnimation() {

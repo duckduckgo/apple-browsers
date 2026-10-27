@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import EventHub
 import Foundation
 import PixelKit
 import WebExtensions
@@ -23,6 +24,12 @@ import os.log
 
 @available(macOS 15.4, *)
 final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDelegate {
+
+    private let eventHub: EventHubManaging
+
+    init(eventHub: EventHubManaging) {
+        self.eventHub = eventHub
+    }
 
     func showCookiePopupAnimation(topUrl: URL, isCosmetic: Bool) {
         NotificationCenter.default.post(
@@ -78,6 +85,11 @@ final class MacOSAutoconsentMessageHandlerDelegate: AutoconsentMessageHandlerDel
         Logger.webExtensions.debug("macOS: Firing pixel \(pixelInfo.name) with frequency \(pixelInfo.type)")
 
         PixelKit.fire(pixel, frequency: frequency, withAdditionalParameters: additionalParams)
+
+        if case .summary(let events) = pixel {
+            let siteRank = (pixelInfo.params["siteRank"] as? String).flatMap(CPMSiteRank.init(rawValue:))
+            CPMCoverageReporter.report(summary: events, siteRank: siteRank) { eventHub.handleNativeEvent($0) }
+        }
     }
 
     private func processAdditionalParams(_ params: [String: Any], isSummary: Bool) -> [String: String] {

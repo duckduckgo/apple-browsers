@@ -80,6 +80,7 @@ final class MainCoordinator {
     private let privacyStats: PrivacyStatsProviding
     private let daxGreetingActivity: DaxGreetingActivityStore
     private let wideEvent: WideEventManaging
+    private let eventHub: EventHubManaging
     private let voiceSessionStateManager: VoiceSessionStateProviding
 
     private(set) var webExtensionManager: WebExtensionManaging?
@@ -158,6 +159,7 @@ final class MainCoordinator {
         self.promoCoordinationService = promoCoordinationService
         self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
+        self.eventHub = eventHub
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
         FireModeCapability.resolve(using: featureFlagger)
@@ -182,7 +184,7 @@ final class MainCoordinator {
         )
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
-        let autoconsentManagementProvider = AutoconsentManagementProvider()
+        let autoconsentManagementProvider = AutoconsentManagementProvider(eventHub: eventHub)
         let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
@@ -466,7 +468,8 @@ final class MainCoordinator {
             autoconsentPreferences: AppUserDefaults(),
             darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
             searchTokenProvider: controller,
-            scriptletConfiguration: makeScriptletConfiguration()
+            scriptletConfiguration: makeScriptletConfiguration(),
+            eventHub: eventHub
         )
         self.webExtensionManager = webExtensionManager
 

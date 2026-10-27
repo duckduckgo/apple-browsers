@@ -71,19 +71,19 @@ enum GradientBackground: String, Equatable, Identifiable, CaseIterable, ColorSch
         }
     }
 
-    /// Flat colour the New Tab Page shows until the gradient image loads; matches its `fallback` values.
+    /// Flat colour the New Tab Page shows until the gradient image loads. Mirrors `fallback` in content-scope-scripts
+    /// `special-pages/pages/new-tab/app/customizer/values.js`; keep the two in sync.
     var fallbackColor: NSColor {
-        let hex = switch self {
-        case .gradient01: "f2e5d4"
-        case .gradient02: "d5bcd1"
-        case .gradient0201: "f4ca78"
-        case .gradient03: "e6a356"
-        case .gradient04: "4448ae"
-        case .gradient05: "a55778"
-        case .gradient06: "222566"
-        case .gradient07: "0e0e3d"
+        switch self {
+        case .gradient01: NSColor(hex: "f2e5d4")!
+        case .gradient02: NSColor(hex: "d5bcd1")!
+        case .gradient0201: NSColor(hex: "f4ca78")!
+        case .gradient03: NSColor(hex: "e6a356")!
+        case .gradient04: NSColor(hex: "4448ae")!
+        case .gradient05: NSColor(hex: "a55778")!
+        case .gradient06: NSColor(hex: "222566")!
+        case .gradient07: NSColor(hex: "0e0e3d")!
         }
-        return NSColor(hex: hex) ?? .clear
     }
 
     var customBackground: CustomBackground {

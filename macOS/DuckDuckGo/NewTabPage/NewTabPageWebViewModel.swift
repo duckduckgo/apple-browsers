@@ -20,7 +20,6 @@ import Combine
 import NewTabPage
 import PixelKit
 import PrivacyConfig
-import SwiftUI
 import UniformTypeIdentifiers
 import WebKit
 
@@ -71,6 +70,21 @@ final class NewTabPageWebViewModel: NSObject {
                 }
             }
             .store(in: &cancellables)
+
+        // The web view is transparent, so whatever it's attached to shows until the page paints.
+        // Each attach gets a new container, so other tab content never inherits this colour.
+        let app = NSApp.delegateTyped
+        NewTabPageBackgroundColor.publisher(
+            customBackground: app.newTabPageCustomizationModel.$customBackground,
+            canvas: app.themeManager.$theme.map(\.palette.surfaceCanvas),
+            isDark: NSApp.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
+        )
+        .combineLatest(webView.publisher(for: \.window).map { [weak webView] _ in webView?.superview })
+        .sink { color, container in
+            container?.wantsLayer = true
+            container?.layer?.backgroundColor = color.cgColor
+        }
+        .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .newTabPageSectionsAvailabilityDidChange)
             .receive(on: DispatchQueue.main)
@@ -133,41 +147,4 @@ extension WKWebViewConfiguration {
         preferences[.developerExtrasEnabled] = true
         self.userContentController = NewTabPageUserContentController(newTabPageUserScript: newTabPageUserScript)
      }
-}
-
-/// The colour the New Tab Page settles on, shown behind its web view until the page paints.
-enum NewTabPageBackgroundColor {
-
-    @MainActor
-    static func current() -> NSColor {
-        color(
-            customBackground: NSApp.delegateTyped.newTabPageCustomizationModel.customBackground,
-            themeName: NSApp.delegateTyped.appearancePreferences.themeName,
-            appearance: NSApp.effectiveAppearance
-        )
-    }
-
-    static func color(customBackground: CustomBackground?, themeName: ThemeName, appearance: NSAppearance) -> NSColor {
-        let canvas = ThemeColors(themeName: themeName).surfaceCanvas
-        switch customBackground {
-        case .solidColor(let solidColor):
-            return solidColor.color
-        case .gradient(let gradient):
-            return gradient.fallbackColor
-        case .userImage(let image):
-            return canvas.resolved(isDark: image.colorScheme == .dark)
-        case .none:
-            return canvas.resolved(isDark: appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
-        }
-    }
-}
-
-private extension NSColor {
-    func resolved(isDark: Bool) -> NSColor {
-        var resolved = self
-        NSAppearance(named: isDark ? .darkAqua : .aqua)?.performAsCurrentDrawingAppearance {
-            resolved = usingColorSpace(.sRGB) ?? self
-        }
-        return resolved
-    }
 }

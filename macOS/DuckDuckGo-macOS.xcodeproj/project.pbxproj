@@ -1111,6 +1111,8 @@
 		371BBC5B2D00C919008FA0C7 /* NewTabPageActionsManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BBC5A2D00C911008FA0C7 /* NewTabPageActionsManagerExtension.swift */; };
 		371BBC5C2D00C919008FA0C7 /* NewTabPageActionsManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BBC5A2D00C911008FA0C7 /* NewTabPageActionsManagerExtension.swift */; };
 		371BBC5E2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BBC5D2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift */; };
+		FFE4E67FAB868B09212E480C /* NewTabPageBackgroundColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF3E4AF2A501855D1909DB8 /* NewTabPageBackgroundColor.swift */; };
+		4FA8C6E31F57417487A05EA1 /* NewTabPageBackgroundColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF3E4AF2A501855D1909DB8 /* NewTabPageBackgroundColor.swift */; };
 		371BBC5F2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BBC5D2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift */; };
 		371BFF5F2D3936140075DB87 /* HistoryViewActionsManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BFF5E2D39360E0075DB87 /* HistoryViewActionsManagerExtension.swift */; };
 		371BFF602D3936140075DB87 /* HistoryViewActionsManagerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371BFF5E2D39360E0075DB87 /* HistoryViewActionsManagerExtension.swift */; };
@@ -5544,6 +5546,7 @@
 		3719B13C2E72386100757539 /* URLPredictor */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = URLPredictor; path = ../SharedPackages/URLPredictor; sourceTree = SOURCE_ROOT; };
 		371BBC5A2D00C911008FA0C7 /* NewTabPageActionsManagerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageActionsManagerExtension.swift; sourceTree = "<group>"; };
 		371BBC5D2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageWebViewModel.swift; sourceTree = "<group>"; };
+		8DF3E4AF2A501855D1909DB8 /* NewTabPageBackgroundColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageBackgroundColor.swift; sourceTree = "<group>"; };
 		371BFF5E2D39360E0075DB87 /* HistoryViewActionsManagerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryViewActionsManagerExtension.swift; sourceTree = "<group>"; };
 		371C0A2827E33EDC0070591F /* FeedbackPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackPresenter.swift; sourceTree = "<group>"; };
 		371C3DE32FE40ADF003D31C1 /* FaviconsDebugInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconsDebugInspector.swift; sourceTree = "<group>"; };
@@ -8897,6 +8900,7 @@
 				379E4D5F2D4383CE00A901B1 /* NewTabPageCoordinator.swift */,
 				371BBC5A2D00C911008FA0C7 /* NewTabPageActionsManagerExtension.swift */,
 				371BBC5D2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift */,
+				8DF3E4AF2A501855D1909DB8 /* NewTabPageBackgroundColor.swift */,
 				1DD0DBBA2E3DEE8500B0E5F1 /* NewTabPageLoadMetrics.swift */,
 				E231C3CC2E1BB72300B53914 /* NewTabPageSectionsAvailabilityProvider.swift */,
 				1D3DCCEF2F6A9EEE00388752 /* NewTabPageOmnibarModelsProvider.swift */,
@@ -16537,6 +16541,7 @@
 				3706FB74293F65D500E42796 /* FaviconHostReference.swift in Sources */,
 				B69A14F32B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift in Sources */,
 				371BBC5F2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift in Sources */,
+				4FA8C6E31F57417487A05EA1 /* NewTabPageBackgroundColor.swift in Sources */,
 				4B67854B2AA8DE76008A5004 /* VPNFeatureGatekeeper.swift in Sources */,
 				84E7205E2EAA1268002618BD /* AppearancePreferencesPersistorMock.swift in Sources */,
 				C168B9AD2B31DC7F001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */,
@@ -19305,6 +19310,7 @@
 				AAA892EA250A4CEF005B37B2 /* WindowControllersManager.swift in Sources */,
 				85C5991B27D10CF000E605B2 /* FireAnimationView.swift in Sources */,
 				371BBC5E2D00CA3E008FA0C7 /* NewTabPageWebViewModel.swift in Sources */,
+				FFE4E67FAB868B09212E480C /* NewTabPageBackgroundColor.swift in Sources */,
 				B6B4D1CA2B0C8C9200C26286 /* FirefoxCompatibilityPreferences.swift in Sources */,
 				AA6197C4276B314D008396F0 /* FaviconUrlReference.swift in Sources */,
 				BBC2778E2FB22DAD00756A85 /* DuckAiVoiceChatFailureHandler.swift in Sources */,

@@ -45,6 +45,14 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
     func openStorePage(for passwordManager: ChromeWebStoreListing) {
         openNewTab(with: passwordManager.storeURL)
     }
+
+    func openLearnMore() {
+        guard #available(macOS 15.4, *), let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
+            return
+        }
+
+        openNewTab(with: url)
+    }
 }
 
 private extension ExtensionsManagementPreferences {

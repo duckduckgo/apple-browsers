@@ -105,6 +105,9 @@ public protocol ChromeWebStoreCatalogProviding {
 
     /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
+
+    /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
+    var learnMoreURL: URL? { get }
 }
 
 public extension ChromeWebStoreCatalogProviding {
@@ -173,6 +176,10 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
                                      publisher: settings["publisher"] as? String ?? "",
                                      iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
                                      storeURL: storeURL)
+    }
+
+    public var learnMoreURL: URL? {
+        (configurationManager.privacyConfig.settings(for: .extensionManagement)["learnMoreUrl"] as? String).flatMap(URL.init(string:))
     }
 
     private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {

@@ -33,6 +33,8 @@ public protocol ChromeWebStoreManaging: AnyObject {
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
     /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
     func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
+    /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
+    var learnMoreURL: URL? { get }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -85,6 +87,10 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
         catalog.listing(of: subfeature)
+    }
+
+    public var learnMoreURL: URL? {
+        catalog.learnMoreURL
     }
 
     public func status(for identifier: String) -> ChromeWebStoreStatus {

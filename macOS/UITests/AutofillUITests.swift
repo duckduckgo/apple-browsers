@@ -20,8 +20,6 @@ import XCTest
 
 class AutofillUITests: UITestCase {
 
-    private static let savePopoverTitles = ["New password saved", "Save password in DuckDuckGo?"]
-
     private var email: String!
 
     override func setUpWithError() throws {
@@ -32,24 +30,25 @@ class AutofillUITests: UITestCase {
         email = "\(UITests.randomPageTitle(length: 8).lowercased())@duck.com"
     }
 
-    func testSignUpWithGeneratedPasswordShowsSavedPasswordPopover() {
+    func testSignUpWithGeneratedPasswordSavesIt() {
         app.openAutofillTestPage(.signUp)
         app.windows.firstMatch.webViews.firstMatch.tap()
         app.autofillEmailTextField.click()
         app.autofillEmailTextField.typeText(email)
 
         app.autofillPasswordTextField.click()
-        app.autofillDropdownButton(labelBeginningWith: "Generated password").click()
+        app.clickAutofillDropdownButton(titleBeginningWith: "Generated password")
         XCTAssertTrue(app.autofillPasswordTextField.wait(for: NSPredicate(format: "value != ''"), timeout: UITests.Timeouts.elementExistence),
                       "The generated password wasn't filled in.")
 
         app.submitSignUpForm()
 
-        // Depending on whether the generated password was already stored, the popover confirms the save or asks for it
-        let savePopoverTitle = app.popovers.staticTexts
-            .matching(NSPredicate(format: "label IN %@ OR value IN %@", Self.savePopoverTitles, Self.savePopoverTitles)).firstMatch
-        XCTAssertTrue(savePopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The save password popover didn't appear after signing up.")
+        // A generated password is saved as soon as the form is submitted, so instead of asking, a message confirms the save
+        let passwordSavedMessage = app.staticTexts.matching(NSPredicate { element, _ in
+            ["label", "value"].contains { ((element as? NSObject)?.value(forKey: $0) as? String)?.hasPrefix("Password saved for") == true }
+        }).firstMatch
+        XCTAssertTrue(passwordSavedMessage.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "The \"Password saved\" message didn't appear after signing up.")
     }
 
     func testAutofillFillsLoginAndOffersPasswordUpdate() {
@@ -62,6 +61,8 @@ class AutofillUITests: UITestCase {
         XCTAssertNotEqual(app.autofillPasswordTextField.value as? String ?? "", "", "Autofill didn't fill the password field.")
 
         app.autofillPasswordTextField.click()
+        // Focusing the field reopens the autofill dropdown, which would take the typed password
+        app.typeKey(.escape, modifierFlags: [])
         app.typeKey("a", modifierFlags: .command)
         app.typeText("new-pa$$word")
         app.submitLoginForm()

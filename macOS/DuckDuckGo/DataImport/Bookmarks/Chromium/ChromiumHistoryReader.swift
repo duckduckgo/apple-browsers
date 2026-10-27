@@ -112,9 +112,10 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
     }
 
     private func visit(from row: Row) -> HistoryImport.Visit? {
-        guard let urlString: String = row["url"],
-              let visitTime: Int64 = row["visit_time"],
-              let transition: Int64 = row["transition"] else {
+        // Typed row subscripts crash on a value of the wrong type, so a damaged row is converted leniently and skipped.
+        guard let urlString = String.fromDatabaseValue(row["url"]),
+              let visitTime = Int64.fromDatabaseValue(row["visit_time"]),
+              let transition = Int64.fromDatabaseValue(row["transition"]) else {
             return nil
         }
 
@@ -130,7 +131,7 @@ final class ChromiumHistoryReader: ChromiumHistoryReaderProtocol {
             return nil
         }
 
-        return HistoryImport.Visit(url: url, title: row["title"], date: date(fromChromiumTime: visitTime))
+        return HistoryImport.Visit(url: url, title: String.fromDatabaseValue(row["title"]), date: date(fromChromiumTime: visitTime))
     }
 
     private func chromiumTime(for date: Date) -> Int64 {

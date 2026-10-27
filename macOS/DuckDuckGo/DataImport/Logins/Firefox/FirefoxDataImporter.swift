@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
+import History
 import SecureStorage
 import PixelKit
 import BrowserServicesKit
@@ -26,6 +28,8 @@ internal class FirefoxDataImporter: DataImporter {
     private let loginImporter: LoginImporter
     private let bookmarkImporter: BookmarkImporter
     private let faviconManager: FaviconManagement
+    private let historyReader: FirefoxHistoryVisitsReaderProtocol
+    private let historyImporter: HistoryImporterProtocol
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
@@ -33,16 +37,36 @@ internal class FirefoxDataImporter: DataImporter {
 
     private let primaryPassword: String?
 
-    init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
+    init(
+        profile: DataImport.BrowserProfile,
+        primaryPassword: String?,
+        loginImporter: LoginImporter,
+        bookmarkImporter: BookmarkImporter,
+        faviconManager: FaviconManagement,
+        historyReader: FirefoxHistoryVisitsReaderProtocol,
+        historyImporter: HistoryImporterProtocol
+    ) {
         self.profile = profile
         self.primaryPassword = primaryPassword
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.historyReader = historyReader
+        self.historyImporter = historyImporter
+    }
+
+    convenience init(profile: DataImport.BrowserProfile, primaryPassword: String?, loginImporter: LoginImporter, bookmarkImporter: BookmarkImporter) {
+        self.init(profile: profile,
+                  primaryPassword: primaryPassword,
+                  loginImporter: loginImporter,
+                  bookmarkImporter: bookmarkImporter,
+                  faviconManager: NSApp.delegateTyped.faviconManager,
+                  historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
+                  historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator))
     }
 
     var importableTypes: [DataImport.DataType] {
-        return [.passwords, .bookmarks]
+        return [.passwords, .bookmarks, .history]
     }
 
     func importData(types: Set<DataImport.DataType>) -> DataImportTask {
@@ -89,10 +113,11 @@ internal class FirefoxDataImporter: DataImporter {
             try updateProgress(.importingPasswords(numberOfPasswords: try? loginResult.get().count, fraction: dataTypeFraction * 1.0))
         }
 
-        let passwordsFraction: Double = types.contains(.passwords) ? 0.5 : 0.0
-        if types.contains(.bookmarks)
-            // don‘t proceed with bookmarks import on invalid Primary Password
-            && (summary[.passwords]?.error as? FirefoxLoginReader.ImportError)?.type != .requiresPrimaryPassword {
+        // don‘t proceed with bookmarks and history import on invalid Primary Password
+        let requiresPrimaryPassword = (summary[.passwords]?.error as? FirefoxLoginReader.ImportError)?.type == .requiresPrimaryPassword
+
+        let passwordsFraction: Double = types.contains(.passwords) ? dataTypeFraction : 0.0
+        bookmarksImport: if types.contains(.bookmarks), !requiresPrimaryPassword {
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 
@@ -101,7 +126,7 @@ internal class FirefoxDataImporter: DataImporter {
 
             guard case .success(var importedBookmarks) = bookmarkResult else {
                 summary[.bookmarks] = .failure(bookmarkResult.error!)
-                return summary
+                break bookmarksImport
             }
 
             let newTabFavorites = fetchNewTabFavorites()
@@ -119,9 +144,39 @@ internal class FirefoxDataImporter: DataImporter {
             try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
+
+        if types.contains(.history), !requiresPrimaryPassword {
+            let historyFraction = dataTypeFraction * Double(types.intersection([.passwords, .bookmarks]).count)
+            try updateProgress(.importingHistory(numberOfVisits: nil, fraction: historyFraction))
+
+            let historySummary = try await importHistory()
+            summary[.history] = historySummary
+
+            try updateProgress(.importingHistory(numberOfVisits: try? historySummary.get().successful,
+                                                 fraction: historyFraction + dataTypeFraction))
+        }
         try updateProgress(.done)
 
         return summary
+    }
+
+    private func importHistory() async throws -> DataImportResult<DataImport.DataTypeSummary> {
+        let parseResult: HistoryImport.ParseResult
+        switch historyReader.readVisits(since: .monthAgo) {
+        case .success(let result):
+            parseResult = result
+        case .failure(let error):
+            return .failure(error)
+        }
+        // reading a large database can take a while: don't add visits to history after the import was cancelled
+        try Task.checkCancellation()
+
+        do {
+            let importSummary = try await historyImporter.importVisits(parseResult)
+            return .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: 0))
+        } catch {
+            return .failure(FirefoxHistoryVisitsReader.ImportError(type: .importVisits, underlyingError: error))
+        }
     }
 
     private func importFavicons() async {

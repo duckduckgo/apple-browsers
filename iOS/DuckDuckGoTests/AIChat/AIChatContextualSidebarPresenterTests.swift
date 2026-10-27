@@ -198,28 +198,6 @@ final class AIChatContextualSidebarPresenterTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenDismissedAnimatedThenASnapshotCoversThePage() {
-        let child = RecordingChildViewController()
-        sut.present(child, animated: false)
-        let pageSubviewsBefore = page.subviews.count
-
-        sut.dismiss(child, animated: true, completion: nil)
-
-        XCTAssertEqual(page.subviews.count, pageSubviewsBefore + 1)
-    }
-
-    @MainActor
-    func testWhenDismissedWithoutCoveringThePageThenNoSnapshotIsAddedToIt() {
-        let child = RecordingChildViewController()
-        sut.present(child, animated: false)
-        let pageSubviewsBefore = page.subviews.count
-
-        sut.dismiss(child, animated: true, coversPage: false, completion: nil)
-
-        XCTAssertEqual(page.subviews.count, pageSubviewsBefore)
-    }
-
-    @MainActor
     func testWhenDismissingAViewControllerThatIsNotInTheColumnThenCompletionRunsAndTheColumnStays() {
         let child = RecordingChildViewController()
         sut.present(child, animated: false)

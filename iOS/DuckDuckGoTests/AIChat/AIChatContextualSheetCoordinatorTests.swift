@@ -1519,6 +1519,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     @MainActor
     func testWhenWindowGrowsRoomForTheSidebarThenTheSheetMovesIntoIt() async throws {
+        // A real window loads the chat's web view, and any page outside Duck.ai would close the sheet as a link.
+        mockSettings.aiChatURL = URL(string: "https://duck.ai")!
         let host = makeSidebarHost()
         host.presentsModally = true
         host.canPresentContextualSidebar = false

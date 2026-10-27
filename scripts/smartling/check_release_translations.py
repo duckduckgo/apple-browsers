@@ -190,16 +190,22 @@ def parse_strings(content: Optional[str]) -> Dict[Path_, str]:
 
 
 def parse_stringsdict(content: Optional[str]) -> Dict[Path_, str]:
-    if not content:
+    """Parse a .stringsdict file that exists, raising ValueError when it isn't a dictionary property list."""
+    if content is None:
         return {}
-    return leaves(plistlib.loads(content.encode('utf-8')))
+    data = plistlib.loads(content.encode('utf-8'))
+    if not isinstance(data, dict):
+        raise ValueError('Not a dictionary property list')
+    return leaves(data)
 
 
 def xcstrings_translations(content: Optional[str]) -> Tuple[Set[str], Dict[Tuple[str, str], Dict[Path_, str]]]:
-    """Return the keys and {(key, locale): {path: value}} for every translated value, English included. Raises
-    ValueError when the content isn't a string catalog."""
-    data = json.loads(content or '{}')
-    strings = data.get('strings', {}) if isinstance(data, dict) else None
+    """Return the keys and {(key, locale): {path: value}} for every translated value, English included, or nothing for
+    a file that doesn't exist. Raises ValueError when the content isn't a string catalog."""
+    if content is None:
+        return set(), {}
+    data = json.loads(content)
+    strings = data.get('strings') if isinstance(data, dict) else None
     if not isinstance(strings, dict):
         raise ValueError('Not a string catalog')
     translations = {}

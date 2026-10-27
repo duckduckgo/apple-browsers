@@ -189,9 +189,32 @@ class CheckTests(unittest.TestCase):
         self.assertEqual([(f.needs_fix, f.problem, f.locale) for f in findings], [(False, 'Translation removed', 'es')])
 
     def testWhenAnXcstringsFileIsNotAStringCatalogThenItNeedsAFix(self):
-        for content in ['[]', '{"strings": []}', '{"strings": {"open.in": "Open in %@"}}']:
+        for content in ['', '{}', '[]', '{"strings": []}', '{"strings": {"open.in": "Open in %@"}}']:
             with self.subTest(content=content):
                 self.assertEqual([f.problem for f in check({XCSTRINGS: content})], ["File doesn't parse"])
+
+    def testWhenAnExistingXcstringsFileIsEmptiedThenItNeedsAFix(self):
+        findings = check({XCSTRINGS: ''}, {XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@'})})
+
+        self.assertEqual([(f.needs_fix, f.problem) for f in findings], [(True, "File doesn't parse")])
+
+    def testWhenAStringsdictIsEmptyOrNotADictionaryThenItNeedsAFix(self):
+        english = stringsdict('%#@count@', {'one': '%d site', 'other': '%d sites'})
+        for content in ['', '<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><array/></plist>']:
+            with self.subTest(content=content):
+                findings = check({ENGLISH_STRINGSDICT: english, CZECH_STRINGSDICT: content},
+                                 {CZECH_STRINGSDICT: stringsdict('%#@count@', {'one': '%d web', 'other': '%d webů'})})
+
+                self.assertEqual([(f.needs_fix, f.problem) for f in findings], [(True, "File doesn't parse")])
+
+    def testWhenAStructuredFileIsNewThenTheMissingBaseIsNotAProblem(self):
+        findings = check({
+            XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@'}),
+            ENGLISH_STRINGSDICT: stringsdict('%#@count@', {'one': '%d site', 'other': '%d sites'}),
+            CZECH_STRINGSDICT: stringsdict('%#@count@', {'one': '%d web', 'other': '%d webů'}),
+        })
+
+        self.assertEqual(findings, [])
 
     def testWhenAnXcstringsTranslationHasTheWrongSpecifierThenItNeedsAFix(self):
         findings = check({XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@', 'es': 'Abrir en %d'})},

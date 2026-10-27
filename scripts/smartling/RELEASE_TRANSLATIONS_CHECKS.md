@@ -24,7 +24,7 @@ Only non-English values the pull request adds or changes are checked. `en.lproj`
 | Check | Files | Result | Example that fails |
 | --- | --- | --- | --- |
 | Only localization files change | Any | ❌ Needs a fix | `AppDelegate.swift` in the pull request |
-| The file parses | `.strings`, `.stringsdict`, `.xcstrings` | ❌ Needs a fix | `"open.in" = "Öffnen "in" %@";`, a missing `;`, invalid JSON, a catalog without a `strings` dictionary |
+| The file parses | `.strings`, `.stringsdict`, `.xcstrings` | ❌ Needs a fix | `"open.in" = "Öffnen "in" %@";`, a missing `;`, invalid JSON, an empty `.stringsdict` or `.xcstrings`, a property list that isn't a dictionary, a catalog without a `strings` dictionary |
 | The file wasn't deleted | `.strings`, `.stringsdict`, `.xcstrings` | ❌ Needs a fix | `de.lproj/Localizable.strings` removed |
 | No format specifier is missing | All | ❌ Needs a fix | `Open in %@` → `Öffnen in`, or `Von % @` |
 | No format specifier is extra | All | ❌ Needs a fix | `and %@` → `%@ und %@` |

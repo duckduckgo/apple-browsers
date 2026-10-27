@@ -851,7 +851,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
         case .dbpCustomWebViewUserAgent:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), category: .dbp)
+            Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
         case .dbpPerformanceMetrics:

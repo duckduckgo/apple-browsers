@@ -752,7 +752,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dbpFreemiumPIR:
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
         case .dbpCustomWebViewUserAgent:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent))
+            Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
         case .dbpExtractedProfileRefresh:

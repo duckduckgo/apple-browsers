@@ -29,18 +29,14 @@ struct UnifiedSuggestionsView: View {
     let favoritesPresentation: FocusedFavoritesPresentation
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
+    var syncPromo: AnyView?
 
     var body: some View {
-        // Keep the logo behind the legacy scroll view so the hatch can bounce over it.
         ZStack(alignment: .bottom) {
-            if !usesRedesignedNewTabPageLayout {
-                logoLayer
-            }
+            logoLayer
             contentArea
-            if usesRedesignedNewTabPageLayout {
-                logoLayer
-            }
             fireLayer
         }
         // UIKit already bounds this host with its keyboard layout guide. Keep container
@@ -80,17 +76,21 @@ struct UnifiedSuggestionsView: View {
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
                                                    messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   escapeHatch: escapeHatch)
+                                                   showsSearchModules: showsRedesignedSearchModules,
+                                                   recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                                                   escapeHatch: escapeHatch,
+                                                   syncPromo: syncPromo,
+                                                   isAddressBarAtBottom: isAddressBarAtBottom)
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
-                    .opacity(showsRedesignedSearchModules ? 1 : 0)
-                    .animation(nil, value: showsRedesignedSearchModules)
-                    .allowsHitTesting(showsRedesignedSearchModules)
-                    .accessibilityHidden(!showsRedesignedSearchModules)
+                    .opacity(showsEmbeddedContent ? 1 : 0)
+                    .animation(nil, value: showsEmbeddedContent)
+                    .allowsHitTesting(showsEmbeddedContent)
+                    .accessibilityHidden(!showsEmbeddedContent)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             } else {
-                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedLegacyContent)
+                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedContent)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             }
@@ -98,7 +98,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingList: Bool {
-        guard !showsRedesignedSearchModules, !showsEmbeddedLegacyContent else { return false }
+        guard !showsEmbeddedContent else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -118,9 +118,8 @@ struct UnifiedSuggestionsView: View {
                                animatesAppearance: usesRedesignedNewTabPageLayout)
     }
 
-    private var showsEmbeddedLegacyContent: Bool {
-        UnifiedSuggestionsContentResolver.showsEmbeddedLegacyContent(
-            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+    private var showsEmbeddedContent: Bool {
+        UnifiedSuggestionsContentResolver.showsEmbeddedContent(
             isFireTab: viewModel.isFireTab,
             content: viewModel.content)
     }

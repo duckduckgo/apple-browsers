@@ -47,6 +47,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     var flowProvider: MockOnboardingFlowProvider!
     var tutorialSettings: MockTutorialSettings!
     var hvc: NewTabPageViewController!
+    private var testWindow: UIWindow?
 
     override func setUpWithError() throws {
         variantManager = CapturingVariantManager()
@@ -76,6 +77,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
+        testWindow = window
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
         window.rootViewController?.present(hvc, animated: false, completion: nil)
@@ -91,6 +93,9 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        testWindow?.rootViewController?.dismiss(animated: false)
+        testWindow?.isHidden = true
+        testWindow = nil
         variantManager = nil
         dialogFactory = nil
         specProvider = nil
@@ -150,6 +155,100 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             XCTAssertEqual(page.view.safeAreaInsets, hvc.view.safeAreaInsets)
             XCTAssertFalse(page.view.hasAmbiguousLayout)
         }
+    }
+
+    func testWhenFocusedTopInsetShrinksWithoutOffsetAdjustmentThenHatchPositionIsPreserved() throws {
+        let scrollView = try focusedScrollView()
+        scrollView.contentInset.top = 200
+        scrollView.contentOffset = CGPoint(x: 0, y: -200)
+
+        hvc.preservingFocusedScrollPosition {
+            scrollView.contentInset.top = 100
+            scrollView.contentOffset.y = -200
+        }
+
+        XCTAssertEqual(scrollView.contentOffset.y + scrollView.adjustedContentInset.top, 0, accuracy: 0.5)
+    }
+
+    func testWhenFocusedTopInsetChangesWhileScrolledThenContentPositionIsPreserved() throws {
+        let scrollView = try focusedScrollView()
+        scrollView.contentInset.top = 100
+        scrollView.contentOffset = CGPoint(x: 0, y: 250)
+        let position = scrollView.contentOffset.y + scrollView.adjustedContentInset.top
+
+        hvc.preservingFocusedScrollPosition {
+            scrollView.contentInset.top = 200
+        }
+
+        XCTAssertEqual(scrollView.contentOffset.y + scrollView.adjustedContentInset.top, position, accuracy: 0.5)
+    }
+
+    func testWhenUIKitAlreadyAdjustsFocusedOffsetThenItIsNotAdjustedTwice() throws {
+        let scrollView = try focusedScrollView()
+        scrollView.contentInset.top = 200
+        scrollView.contentOffset = CGPoint(x: 0, y: 50)
+
+        hvc.preservingFocusedScrollPosition {
+            scrollView.contentInset.top = 100
+            scrollView.contentOffset = CGPoint(x: 0, y: 150)
+        }
+
+        XCTAssertEqual(scrollView.contentOffset.y, 150, accuracy: 0.5)
+    }
+
+    func testWhenFocusedContentBecomesShorterThenOffsetClampsToItsBottom() throws {
+        let scrollView = try focusedScrollView()
+        scrollView.contentInset.top = 100
+        scrollView.contentOffset = CGPoint(x: 0, y: 900)
+
+        hvc.preservingFocusedScrollPosition {
+            scrollView.contentInset.top = 200
+            scrollView.contentSize.height = 100
+        }
+
+        XCTAssertEqual(scrollView.contentOffset.y, -scrollView.adjustedContentInset.top, accuracy: 0.5)
+    }
+
+    func testWhenFocusedInsetDoesNotChangeThenScrollingIsNotOverridden() throws {
+        let scrollView = try focusedScrollView()
+        scrollView.contentInset.top = 100
+
+        hvc.preservingFocusedScrollPosition {
+            scrollView.contentOffset = CGPoint(x: 0, y: 200)
+        }
+
+        XCTAssertEqual(scrollView.contentOffset.y, 200, accuracy: 0.5)
+    }
+
+    func testWhenFocusedContentIsBouncingAboveTopThenInsetChangePreservesBounce() throws {
+        let scrollView = try focusedScrollView()
+        scrollView.contentInset.top = 200
+        scrollView.contentOffset = CGPoint(x: 0, y: -230)
+        let position = scrollView.contentOffset.y + scrollView.adjustedContentInset.top
+
+        hvc.preservingFocusedScrollPosition {
+            scrollView.contentInset.top = 100
+        }
+
+        XCTAssertEqual(scrollView.contentOffset.y + scrollView.adjustedContentInset.top, position, accuracy: 0.5)
+    }
+
+    private func focusedScrollView() throws -> UIScrollView {
+        func findScrollView(in view: UIView) -> UIScrollView? {
+            if let scrollView = view as? UIScrollView { return scrollView }
+            return view.subviews.lazy.compactMap { findScrollView(in: $0) }.first
+        }
+        hvc.setFocusedContent(LegacyFocusedNewTabPageContent(isAddressBarAtBottom: false))
+        let contentUpdated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            self.hvc.view.setNeedsLayout()
+            self.hvc.view.layoutIfNeeded()
+            return findScrollView(in: self.hvc.view) != nil
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [contentUpdated], timeout: 5), .completed)
+        let scrollView = try XCTUnwrap(findScrollView(in: hvc.view))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: scrollView.bounds.width, height: 2_000)
+        return scrollView
     }
 
     func testWhenDialogIsReplacedThenItRemainsAboveHostedPageInContainer() throws {

@@ -189,6 +189,24 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         newTabPageViewModel.scrollToTopRequests.send(duration)
     }
 
+    func preservingFocusedScrollPosition(while update: () -> Void) {
+        guard newTabPageViewModel.focusedContent != nil, isViewLoaded,
+              let scrollView = focusedScrollView(in: view) else {
+            update()
+            return
+        }
+        let topInset = scrollView.adjustedContentInset.top
+        let position = scrollView.contentOffset.y + topInset
+        update()
+        let updatedTopInset = scrollView.adjustedContentInset.top
+        guard updatedTopInset != topInset else { return }
+
+        let bottomLimit = max(-updatedTopInset, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
+        let targetOffset = min(position - updatedTopInset, bottomLimit)
+        guard abs(scrollView.contentOffset.y - targetOffset) > 1 / UIScreen.main.scale else { return }
+        scrollView.contentOffset = CGPoint(x: scrollView.contentOffset.x, y: targetOffset)
+    }
+
     func setOpenedAfterIdle(_ openedAfterIdle: Bool) {
         newTabPageViewModel.openedAfterIdle = openedAfterIdle
         messagesModel.refresh()

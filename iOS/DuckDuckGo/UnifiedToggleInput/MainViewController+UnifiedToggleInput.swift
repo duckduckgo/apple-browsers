@@ -1155,6 +1155,11 @@ extension MainViewController {
         (newTabPageViewController as? NewTabPageViewController)?.scrollToTop(duration: 0)
     }
 
+    func updateLegacyContentInsetForDismiss(coordinator: UnifiedToggleInputCoordinator?) {
+        guard let coordinator, !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
+        coordinator.contentViewController.setContentInsetForDismiss(height: viewCoordinator.standardNavigationBarContainerHeight)
+    }
+
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
@@ -1194,7 +1199,9 @@ extension MainViewController {
                 guard let self, let coordinator else { return }
                 coordinator.viewController.applyOmnibarEditingDismissPose()
                 self.viewCoordinator.superview.layoutIfNeeded()
-                if !keepsFocusedContentStationary {
+                if !coordinator.contentViewController.usesRedesignedNewTabPageLayout {
+                    self.updateLegacyContentInsetForDismiss(coordinator: coordinator)
+                } else if !keepsFocusedContentStationary {
                     coordinator.pushContentInsets()
                 }
                 if let omnibarPlaceholderWindowX {
@@ -1243,6 +1250,7 @@ extension MainViewController {
     }
 
     private func restoreChromeAfterInterruptedOmnibarDismiss() {
+        unifiedToggleInputCoordinator?.contentViewController.cancelContentInsetDismissal()
         viewCoordinator.unifiedInputContentContainer.alpha = 1
         newTabPageViewController?.setLogoHidden(false)
         newTabPageViewController?.setFavoritesHidden(false)

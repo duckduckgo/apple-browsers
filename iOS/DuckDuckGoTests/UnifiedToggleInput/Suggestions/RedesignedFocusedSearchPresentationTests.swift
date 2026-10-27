@@ -18,6 +18,7 @@
 //
 
 import Combine
+import SwiftUI
 import XCTest
 @testable import DuckDuckGo
 
@@ -80,6 +81,25 @@ final class RedesignedFocusedSearchPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.showsSearchModules)
         dismissal.send(.none)
         XCTAssertFalse(presentation.showsSearchModules)
+    }
+
+    func testWhenContentRefreshesDuringPresentationChangeThenHostUsesEmittedModuleVisibility() throws {
+        let host = makeHost(inputsPublisher: inputs.eraseToAnyPublisher())
+        let parent = UIViewController()
+        host.setUsesRedesignedNewTabPageLayout(true)
+        host.start(in: parent.view, parentViewController: parent, textPublisher: Just(""))
+        defer { host.tearDown() }
+        host.onContentChanged = {
+            host.setFocusedContent(mode: .search, escapeHatch: nil, syncPromo: nil)
+        }
+        let hostingController = try XCTUnwrap(parent.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
+        XCTAssertTrue(hostingController.rootView.showsRedesignedSearchModules)
+
+        inputs.send(.init(mode: .search, isTyping: true, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertFalse(hostingController.rootView.showsRedesignedSearchModules)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: true, hasMessages: false, hasRecents: false, resultsPending: false))
+        XCTAssertTrue(hostingController.rootView.showsRedesignedSearchModules)
     }
 
     func testWhenPresentationIsReleasedThenInputSubscriptionIsCancelled() {

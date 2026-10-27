@@ -385,6 +385,7 @@ private extension MainViewController {
             self?.refreshFloatingToolbarBackdrop()
         }
         let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
+            coordinator?.contentViewController.cancelContentInsetDismissal()
             guard defersContentCleanup else { return }
             self?.newTabPageViewController?.setLogoHidden(false)
             self?.newTabPageViewController?.setFavoritesHidden(false)
@@ -401,8 +402,9 @@ private extension MainViewController {
             } else if !isFavoritesToFavorites {
                 coordinator?.contentViewController.beginDismissFade()
             }
-            let additionalAnimations: () -> Void = {
+            let additionalAnimations: () -> Void = { [weak self] in
                 coordinator?.viewController.applyOmnibarEditingDismissPose()
+                self?.updateLegacyContentInsetForDismiss(coordinator: coordinator)
                 if let coordinator, let omnibarPlaceholderWindowX {
                     coordinator.viewController.alignVisibleTextLeadingEdge(toWindowX: omnibarPlaceholderWindowX)
                 }
@@ -429,6 +431,7 @@ private extension MainViewController {
         } else {
             // Match the animated path: restore resting layout before cleanup, else the returning tab's content is stranded.
             viewCoordinator.animateUnifiedToggleInputOmnibarDismissLayout(reattachingOmnibar: reattachingOmnibar)
+            updateLegacyContentInsetForDismiss(coordinator: coordinator)
             coordinator?.viewController.deactivateInput()
             viewCoordinator.finishUnifiedToggleInputOmnibarDismiss(reattachingOmnibar: reattachingOmnibar)
             onDismissed()

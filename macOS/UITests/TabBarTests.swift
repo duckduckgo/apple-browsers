@@ -180,24 +180,26 @@ class TabBarTests: UITestCase {
         app.openNewTab()
         app.openSite(pageTitle: "Page #3")
 
-        // Window order changes when a window is activated, so find each window by a tab that stays in it
-        let firstWindow = window(containingTabTitled: "Page #1")
-        let secondWindow = window(containingTabTitled: "Page #2")
+        // Window order changes when a window is activated, and tabs aren't labelled with their page title,
+        // so windows are told apart by their frames
+        let firstWindowFrame = window(showingPageTitled: "Page #1").frame
+        let secondWindow = window(showingPageTitled: "Page #3")
 
         // The second window is cascaded over the first one; move it down so the first window's tab bar can take the drop
         let secondWindowTitleBar = secondWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0)).withOffset(CGVector(dx: 0, dy: 10))
         secondWindowTitleBar.click(forDuration: 0.5, thenDragTo: secondWindowTitleBar.withOffset(CGVector(dx: 0, dy: 300)))
-        XCTAssertGreaterThan(secondWindow.frame.minY, firstWindow.frame.minY + 100, "The second window should have moved out of the way")
+        let secondWindowFrame = secondWindow.frame
+        XCTAssertGreaterThan(secondWindowFrame.minY, firstWindowFrame.minY + 100, "The second window should have moved out of the way")
 
-        let draggedTab = tab(titled: "Page #3", in: secondWindow)
-        let dropPoint = tab(titled: "Page #1", in: firstWindow).coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5))
+        let firstWindow = window(withFrame: firstWindowFrame)
+        let draggedTab = secondWindow.tabs.element(matching: \.isSelected, equalTo: true)
+        let dropPoint = firstWindow.tabs.element(boundBy: 0).coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5))
         draggedTab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             .click(forDuration: 0.5, thenDragTo: dropPoint, withVelocity: .slow, thenHoldForDuration: 0.5)
 
-        XCTAssertTrue(tab(titled: "Page #3", in: firstWindow).waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The dragged tab should be in the first window")
-        XCTAssertEqual(firstWindow.tabs.count, 2, "The first window should have its own tab and the dragged one")
-        XCTAssertEqual(secondWindow.tabs.count, 1, "The second window should have only its remaining tab")
+        XCTAssertTrue(window(withFrame: firstWindowFrame).wait(for: .keyPath(\.tabs.count, equalTo: 2), timeout: UITests.Timeouts.elementExistence),
+                      "The first window should have its own tab and the dragged one")
+        XCTAssertEqual(window(withFrame: secondWindowFrame).tabs.count, 1, "The second window should have only its remaining tab")
     }
 
     func testTabBarScrollButtons_bringFirstAndLastTabsIntoView() {
@@ -215,6 +217,10 @@ class TabBarTests: UITestCase {
         while isTab(firstTab, fullyVisibleIn: tabsScrollView) && openedTabs < 80 {
             app.openNewTab()
             openedTabs += 1
+        }
+        // A few more tabs so the bar overflows by more than one tab, and the last tab can't fit next to the first one
+        for _ in 0..<5 {
+            app.openNewTab()
         }
         XCTAssertFalse(isTab(firstTab, fullyVisibleIn: tabsScrollView), "The first tab should be scrolled out of view")
         XCTAssertTrue(leftScrollButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "The tab bar should show scroll buttons")
@@ -237,16 +243,14 @@ class TabBarTests: UITestCase {
         return element ?? query.firstMatch
     }
 
-    private func window(containingTabTitled title: String) -> XCUIElement {
-        app.windows.containing(tabTitledPredicate(title)).firstMatch
+    private func window(showingPageTitled title: String) -> XCUIElement {
+        app.windows.containing(NSPredicate(format: "elementType == %lu AND label == %@", XCUIElement.ElementType.webView.rawValue, title)).firstMatch
     }
 
-    private func tab(titled title: String, in window: XCUIElement) -> XCUIElement {
-        window.tabs.matching(tabTitledPredicate(title)).firstMatch
-    }
-
-    private func tabTitledPredicate(_ title: String) -> NSPredicate {
-        NSPredicate(format: "elementType == %lu AND (title == %@ OR label == %@)", XCUIElement.ElementType.tab.rawValue, title, title)
+    private func window(withFrame frame: CGRect) -> XCUIElement {
+        app.windows.matching(NSPredicate { element, _ in
+            ((element as? NSObject)?.value(forKey: #keyPath(XCUIElement.frame)) as? NSValue)?.rectValue == frame
+        }).firstMatch
     }
 
     private func isTab(_ tab: XCUIElement, fullyVisibleIn scrollView: XCUIElement) -> Bool {

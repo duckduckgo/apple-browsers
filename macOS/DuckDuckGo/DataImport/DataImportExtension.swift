@@ -412,13 +412,7 @@ extension DataImport.Source {
 
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
-            if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportHistory) {
-                return [.bookmarks, .passwords, .history]
-            } else {
-                return [.bookmarks, .passwords]
-            }
-        case .firefox:
+        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
             return [.bookmarks, .passwords]
         case .safari, .safariTechnologyPreview:
             if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {

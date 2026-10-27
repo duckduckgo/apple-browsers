@@ -675,17 +675,6 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
     }
 
-    @MainActor
-    func testSelectDataTypes_filterOnAndHistoryOffered_importsHistoryOnlyWhenSelected() throws {
-        try enableHistoryImport()
-        model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
-
-        model.selectDataTypes([.bookmarks])
-
-        XCTAssertEqual(model.pickerSelectableDataTypes, [.bookmarks, .passwords, .history])
-        XCTAssertEqual(model.selectedDataTypes, [.bookmarks])
-    }
-
     func testDataTypeFilter_dataTypesToImport_keepsTypesTheFilterDoesNotCover() {
         let filter = DataImportViewModel.DataTypeFilter(enabledTypes: [.bookmarks])
 
@@ -3002,14 +2991,6 @@ final class DataImportViewModelTests: XCTestCase {
         addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
     }
 
-    private func enableHistoryImport() throws {
-        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
-        let key = FeatureFlag.dataImportHistory.rawValue
-        let originalValue = featureFlagger.featuresStub[key]
-        featureFlagger.featuresStub[key] = true
-        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
-    }
-
     private var sourceFilterSources: [Source] {
         [.chrome, .safari, .tor, .fileImport, .onePassword8, .bitwarden]
     }
@@ -3118,7 +3099,7 @@ private extension DataImport.BrowserProfile {
         switch profile.browser {
         case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
             // Chromium-based browsers need "Login Data" for logins and "Bookmarks" for bookmarks
-            fileStore.directoryStorage[path] = ["Login Data", "Bookmarks", "History"]
+            fileStore.directoryStorage[path] = ["Login Data", "Bookmarks"]
         case .firefox, .tor:
             // Firefox needs "logins.json" and "key4.db" for logins, and "places.sqlite" for bookmarks
             fileStore.directoryStorage[path] = ["logins.json", "key4.db", "places.sqlite"]

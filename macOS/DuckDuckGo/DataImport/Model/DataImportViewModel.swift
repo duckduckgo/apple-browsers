@@ -1247,6 +1247,7 @@ extension DataImportViewModel {
     @MainActor
     mutating func importButtonPressed() {
         setupAndStartWideEventIfNeeded()
+        fireBookmarksSourceFileMissingPixelIfNeeded()
         guard let importer = selectedProfile.map({
             dataImporterFactory(/* importSource: */ importSource,
                                 /* dataType: */ nil,
@@ -1281,6 +1282,19 @@ extension DataImportViewModel {
             screen = .moreInfo
         }
         initiateImport()
+    }
+
+    /// The profile folder could be read, but it has none of the bookmarks files the importer knows.
+    private func fireBookmarksSourceFileMissingPixelIfNeeded() {
+        guard importSource.supportedDataTypes.contains(.bookmarks),
+              let selectedProfile,
+              case .unavailable = selectedProfile.validateProfileData()?.bookmarks else { return }
+
+        let pixel = DataImportBookmarksPixel.sourceFileMissing(
+            source: importSource.pixelSourceParameterName,
+            sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
+        )
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private mutating func dismiss(using dismiss: @escaping () -> Void) {

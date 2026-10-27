@@ -155,7 +155,24 @@ extension HeadlessWebViewCoordinator: WKNavigationDelegate {
             }
         }
     }
-    
+
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+        if let error = Self.httpError(for: navigationResponse.response,
+                                      isForMainFrame: navigationResponse.isForMainFrame,
+                                      reportsHTTPErrors: settings.reportsHTTPErrors) {
+            onNavigationError?(error)
+        }
+        decisionHandler(.allow)
+    }
+
+    static func httpError(for response: URLResponse, isForMainFrame: Bool, reportsHTTPErrors: Bool) -> HeadlessWebViewHTTPError? {
+        guard reportsHTTPErrors,
+              isForMainFrame,
+              let statusCode = (response as? HTTPURLResponse)?.statusCode,
+              statusCode >= 400 else { return nil }
+        return HeadlessWebViewHTTPError(statusCode: statusCode)
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = navigationAction.request.url, let scheme = url.scheme else {
             Logger.subscription.debug("HeadlessWebViewCoordinator - webView(_:decidePolicyFor:decisionHandler:) Missing URL or scheme")
@@ -234,4 +251,10 @@ extension HeadlessWebViewCoordinator: WKNavigationDelegate {
             presenter.present(alertController, animated: true, completion: nil)
         }
     
+}
+
+struct HeadlessWebViewHTTPError: CustomNSError {
+    static let errorDomain = "HeadlessWebViewHTTPError"
+    let statusCode: Int
+    var errorCode: Int { statusCode }
 }

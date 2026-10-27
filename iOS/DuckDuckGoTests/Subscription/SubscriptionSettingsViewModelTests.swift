@@ -787,20 +787,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(sut.isEligibleForCancellationFlow)
     }
 
-    func testIsEligibleForCancellationFlow_WhenFlagOnAndNotEnglishUS_ReturnsFalse() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
-        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
-        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-
-        for identifier in ["en_GB", "es_US", "de_DE", "en"] {
-            sut = makeSUT(locale: Locale(identifier: identifier))
-            await waitForSubscriptionUpdate()
-
-            XCTAssertFalse(sut.isEligibleForCancellationFlow, "Expected ineligible for \(identifier)")
-            XCTAssertNotEqual(sut.subscriptionManageButtonText, UserText.subscriptionManageSubscription)
-        }
-    }
-
     func testIsEligibleForCancellationFlow_WhenFlagChangesWhileRunning_FollowsTheFlag() async {
         mockFeatureFlagger.enabledFeatureFlags = []
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
@@ -840,10 +826,39 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(instrumentation.appStoreSubscriptionCancelledCount, 0)
     }
 
+    func testManageSubscription_WhenAppleAndFlagOn_RefetchesSubscription() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .expired, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await loadSubscriptionWithoutRefresh()
+
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        let refetched = expectation(forSubscriptionStatus: .autoRenewable)
+        sut.manageSubscription()
+
+        await fulfillment(of: [refetched], timeout: 5.0)
+    }
+
+    func testManageSubscription_WhenAppleAndFlagOff_DoesNotRefetchSubscription() async {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .expired, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await loadSubscriptionWithoutRefresh()
+
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        let refetched = expectation(forSubscriptionStatus: .autoRenewable)
+        refetched.isInverted = true
+        sut.manageSubscription()
+
+        await fulfillment(of: [refetched], timeout: 1.0)
+        XCTAssertEqual(sut.state.subscriptionInfo?.status, .expired)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
-                         locale: Locale = Locale(identifier: "en_US"),
                          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentationSpy()) -> SubscriptionSettingsViewModel {
         SubscriptionSettingsViewModel(
             subscriptionManager: mockSubscriptionManager,
@@ -852,7 +867,6 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
             onboardingKeyValueStore: onboardingKeyValueStore,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
-            locale: locale,
             cancellationInstrumentation: cancellationInstrumentation
         )
     }
@@ -872,6 +886,23 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         sut.onFirstAppear()
 
         await fulfillment(of: [expectation], timeout: 15.0)
+    }
+
+    private func loadSubscriptionWithoutRefresh() async {
+        let loaded = expectation(forSubscriptionStatus: nil)
+        NotificationCenter.default.post(name: .subscriptionDidChange, object: nil)
+        await fulfillment(of: [loaded], timeout: 5.0)
+    }
+
+    private func expectation(forSubscriptionStatus status: DuckDuckGoSubscription.Status?) -> XCTestExpectation {
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$state
+            .compactMap { $0.subscriptionInfo?.status }
+            .filter { status == nil || $0 == status }
+            .first()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+        return expectation
     }
 }
 

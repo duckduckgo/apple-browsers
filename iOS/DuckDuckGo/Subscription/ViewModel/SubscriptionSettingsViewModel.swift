@@ -18,7 +18,6 @@
 //
 
 import Foundation
-import FoundationExtensions
 import SwiftUI
 import StoreKit
 import Subscription
@@ -30,6 +29,7 @@ import Persistence
 import FeatureFlags_iOS
 import PixelKit
 import AIChat
+import WideEvent
 
 /// Status for the cancel-downgrade overlay
 enum CancelDowngradeOverlayStatus {
@@ -44,10 +44,11 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private var signOutObserver: Any?
     private var subscriptionChangeObserver: Any?
     private let featureFlagger: FeatureFlagger
+    let internalUserDecider: InternalUserDecider
+    let wideEvent: WideEventManaging
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
-    private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
@@ -171,7 +172,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     var isEligibleForCancellationFlow: Bool {
         Self.isEligibleForCancellationFlow(subscription: state.subscriptionInfo,
-                                           isFeatureEnabled: locale.isEnglishUnitedStates && featureFlagger.isFeatureOn(.subscriptionCancellationFlow))
+                                           isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionCancellationFlow))
     }
 
     static func isEligibleForCancellationFlow(subscription: DuckDuckGoSubscription?,
@@ -233,23 +234,25 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
     init(subscriptionManager: SubscriptionManager = AppDependencyProvider.shared.subscriptionManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
          onboardingKeyValueStore: ThrowingKeyValueStoring,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
-         locale: Locale = .current,
          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
+        self.internalUserDecider = internalUserDecider
+        self.wideEvent = wideEvent
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
-        self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
-            wideEvent: AppDependencyProvider.shared.wideEvent)
+            wideEvent: wideEvent)
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies, featureFlagger: featureFlagger)
@@ -368,7 +371,13 @@ final class SubscriptionSettingsViewModel: ObservableObject {
 
         switch platform {
         case .apple:
-            Task { await manageAppleSubscription() }
+            Task {
+                await manageAppleSubscription()
+                // Refetch after the App Store sheet
+                if featureFlagger.isFeatureOn(.subscriptionCancellationFlow) {
+                    _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
+                }
+            }
         case .google:
             displayGoogleView(true)
         case .stripe:

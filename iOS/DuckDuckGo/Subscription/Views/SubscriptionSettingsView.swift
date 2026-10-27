@@ -750,12 +750,12 @@ extension SubscriptionSettingsViewV2 {
         guard !isShowingCancellationFlow else { return }
         viewModel.cancelSubscriptionTapped()
         let containerViewModel = SubscriptionContainerViewFactory.makeCancellationFlowViewModel(
-            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            subscriptionManager: settingsViewModel.subscriptionManager,
             subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
             userScriptsDependencies: settingsViewModel.userScriptsDependencies,
-            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            internalUserDecider: viewModel.internalUserDecider,
             dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
-            wideEvent: AppDependencyProvider.shared.wideEvent,
+            wideEvent: viewModel.wideEvent,
             featureFlagger: settingsViewModel.featureFlagger)
         cancellationFlow = SubscriptionCancellationFlowPresentation(containerViewModel: containerViewModel,
                                                                     instrumentation: viewModel.cancellationInstrumentation) { closingFlow in

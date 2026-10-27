@@ -1075,7 +1075,7 @@
         "parameters": ["appVersion", "pixelSource"]
     },
     "subscription_cancellation_flow_load_failure": {
-        "description": "Fired when the cancellation flow page fails to load. The flow is closed and the App Store subscription management screen opens instead.",
+        "description": "Fired when a cancellation flow page fails to load, either from a network error or an HTTP 4xx/5xx response.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["exception"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],

@@ -80,6 +80,32 @@ final class SubscriptionFlowTypeTests: XCTestCase {
         XCTAssertFalse(flowType.showsDaxLogo)
     }
 
+    // MARK: - Reports HTTP Errors Tests
+
+    func testReportsHTTPErrors_WhenFirstPurchase_ReturnsFalse() {
+        // Given
+        let flowType = SubscriptionFlowType.firstPurchase
+
+        // Then
+        XCTAssertFalse(flowType.reportsHTTPErrors)
+    }
+
+    func testReportsHTTPErrors_WhenPlanUpdate_ReturnsFalse() {
+        // Given
+        let flowType = SubscriptionFlowType.planUpdate
+
+        // Then
+        XCTAssertFalse(flowType.reportsHTTPErrors)
+    }
+
+    func testReportsHTTPErrors_WhenCancellation_ReturnsTrue() {
+        // Given
+        let flowType = SubscriptionFlowType.cancellation
+
+        // Then
+        XCTAssertTrue(flowType.reportsHTTPErrors)
+    }
+
     // MARK: - Impression Pixel Tests
 
     func testImpressionPixel_WhenFirstPurchase_ReturnsOfferScreenImpression() {

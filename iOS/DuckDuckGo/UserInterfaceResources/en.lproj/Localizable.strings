@@ -4837,6 +4837,9 @@ Take back control of your personal information with the browser designed for dat
 /* Pending downgrade info for monthly plan. Parameters are tier name and effective date. This reads as 'Your plan will downgrade to Plus on (date).' */
 "subscription.cancel.pending.downgrade.banner.caption" = "Your plan will downgrade to %1$@ on %2$@.";
 
+/* Action title that starts the subscription cancellation flow */
+"subscription.cancel.subscription" = "Cancel Subscription";
+
 /* Change plan or cancel title */
 "subscription.change.plan" = "Update Plan or Cancel";
 
@@ -4899,6 +4902,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Manage Plan header */
 "subscription.manage.plan" = "Manage Plan";
+
+/* Action title that opens the payment platform's subscription management screen */
+"subscription.manage.subscription" = "Manage Subscription";
 
 /* Header for the subscription section */
 "subscription.manage.title" = "Subscription";

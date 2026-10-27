@@ -46,6 +46,10 @@ enum SubscriptionFlowType {
         self == .firstPurchase
     }
 
+    var reportsHTTPErrors: Bool {
+        self == .cancellation
+    }
+
     var impressionPixel: Pixel.Event? {
         switch self {
         case .firstPurchase: return .subscriptionOfferScreenImpression
@@ -236,6 +240,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                             allowedDomains: allowedDomains,
+                                                            reportsHTTPErrors: flowType.reportsHTTPErrors,
                                                             userScriptsDependencies: nil,
                                                             featureFlagger: featureFlagger)
 

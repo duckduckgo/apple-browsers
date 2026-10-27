@@ -4024,6 +4024,9 @@ https://duckduckgo.com/mac";
 /* Warning message explaining that deleting site data may sign users out of accounts */
 "scoped.fire.confirmation.sign.out.warning" = "Deleting site data can sign you out of accounts.";
 
+/* Slider to delete all tabs and site data in the fire confirmation dialog */
+"scoped.fire.confirmation.slide.to.delete.all" = "Slide To Delete All";
+
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Search or enter address";
 

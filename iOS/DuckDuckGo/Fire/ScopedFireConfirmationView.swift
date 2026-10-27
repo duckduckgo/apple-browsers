@@ -97,11 +97,16 @@ struct ScopedFireConfirmationView: View {
         VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
-                Button(action: button.action) {
-                    Text(button.title)
+                if button.style == .slide {
+                    SlideToDeleteControl(title: button.title, action: button.action)
+                        .accessibilityIdentifier(button.accessibilityIdentifier)
+                } else {
+                    Button(action: button.action) {
+                        Text(button.title)
+                    }
+                    .modifier(DestructiveButtonModifier(style: button.style))
+                    .accessibilityIdentifier(button.accessibilityIdentifier)
                 }
-                .modifier(DestructiveButtonModifier(style: button.style))
-                .accessibilityIdentifier(button.accessibilityIdentifier)
             }
         }
     }
@@ -132,6 +137,8 @@ private struct DestructiveButtonModifier: ViewModifier {
             content.buttonStyle(SecondaryDestructiveButtonStyle())
         case .secondaryNeutral:
             content.buttonStyle(SecondaryFillButtonStyle())
+        case .slide:
+            content
         }
     }
 }

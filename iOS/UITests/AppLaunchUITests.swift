@@ -52,6 +52,65 @@ final class AppLaunchUITests: XCTestCase {
         )
     }
 
+    func testSwipeToDeleteRequiresCompletedDrag() {
+        app.terminate()
+        app.launchArguments += ["-ff.swipeToDelete", "true"]
+        app.launch()
+
+        let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
+        XCTAssertTrue(menuButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        menuButton.tap()
+        let newTab = app.buttons["New Tab"]
+        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
+        newTab.tap()
+        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
+        XCTAssertTrue(dismissInput.waitForExistence(timeout: UITestTimeouts.navigation))
+        dismissInput.tap()
+
+        let fireButton = app.buttons["Browser.Toolbar.Button.Fire"]
+        XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        fireButton.tap()
+
+        let slider = app.buttons["alert.forget-data.confirm"]
+        XCTAssertTrue(slider.waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertEqual(slider.label, "Slide To Delete All")
+        slider.tap()
+        XCTAssertTrue(slider.exists)
+
+        let start = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.5))
+        let middle = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        start.press(forDuration: 0.1, thenDragTo: middle)
+        XCTAssertTrue(slider.exists)
+
+        let end = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5))
+        start.press(forDuration: 0.1, thenDragTo: end)
+        XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        if dismissInput.exists {
+            dismissInput.tap()
+        }
+        app.buttons["Browser.Toolbar.Button.TabSwitcher"].tap()
+        let newTabButton = app.buttons["Open new tab"]
+        XCTAssertTrue(newTabButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertEqual(app.collectionViews.cells.containing(.button, identifier: "Open new tab").count, 1)
+    }
+
+    func testSwipeToDeleteDisabledKeepsDeleteAllButton() {
+        app.terminate()
+        app.launchArguments += ["-ff.swipeToDelete", "false"]
+        app.launch()
+
+        let fireButton = app.buttons["Browser.Toolbar.Button.Fire"]
+        XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        fireButton.tap()
+
+        let deleteAll = app.buttons["alert.forget-data.confirm"]
+        XCTAssertTrue(deleteAll.waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertEqual(deleteAll.label, "Delete All")
+        deleteAll.tap()
+        XCTAssertTrue(deleteAll.waitForNonExistence(timeout: UITestTimeouts.navigation))
+    }
+
     func testAutoClearOnRelaunchShowsNewTabInTabSwitcher() {
         app.terminate()
         app.launchArguments += [

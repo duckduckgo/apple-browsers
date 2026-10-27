@@ -556,6 +556,27 @@ final class OAuthClientBackupTests: XCTestCase {
         XCTAssertEqual(try backupStorage.getTokenContainer(), backup)
     }
 
+    func testSetCurrentTokenContainer_anotherAccount_deletesTheBackup() async throws {
+        try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "oldBackupR", externalID: "old-account"))
+        let stored = OAuthTokensFactory.makeTokenContainer(refreshToken: "storedR", externalID: "new-account")
+
+        try await makeClient(backupStorage: backupStorage).setCurrentTokenContainer(stored)
+
+        XCTAssertNil(try backupStorage.getTokenContainer())
+        XCTAssertEqual(try primaryStorage.getTokenContainer(), stored)
+    }
+
+    func testSetCurrentTokenContainer_nil_keepsTheBackup() async throws {
+        let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "account")
+        try backupStorage.saveTokenContainer(backup)
+        try primaryStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "primaryR", externalID: "account"))
+
+        try await makeClient(backupStorage: backupStorage).setCurrentTokenContainer(nil)
+
+        XCTAssertEqual(try backupStorage.getTokenContainer(), backup)
+        XCTAssertNil(try primaryStorage.getTokenContainer())
+    }
+
     func testActivate_anotherAccount_deletesTheBackup() async throws {
         try backupStorage.saveTokenContainer(OAuthTokensFactory.makeTokenContainer(refreshToken: "oldBackupR", externalID: "old-account"))
         mockOAuthService.authorizeResponse = .success("auth_session_id")

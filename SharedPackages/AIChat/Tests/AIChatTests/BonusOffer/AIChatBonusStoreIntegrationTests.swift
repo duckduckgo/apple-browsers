@@ -136,8 +136,8 @@ final class AIChatBonusStoreIntegrationTests {
         let error = #expect(throws: AIChatBonusStoreError.self) {
             try sut.write(AIChatBonusRecordMock.active)
         }
-        guard case .excludeFromBackupFailed = error else {
-            Issue.record("Expected excludeFromBackupFailed, got \(String(describing: error))")
+        guard case .prepareDirectoryFailed = error else {
+            Issue.record("Expected prepareDirectoryFailed, got \(String(describing: error))")
             return
         }
         #expect(try Data(contentsOf: directoryURL) == Data("not a directory".utf8))

@@ -28,7 +28,7 @@ public enum AIChatBonusStoreError: Error, Equatable {
     /// The file couldn't be deleted. A missing file is not a failure.
     case deleteFailed(domain: String, code: Int)
     /// The record's directory couldn't be created or excluded from backup, so nothing was written.
-    case excludeFromBackupFailed(domain: String, code: Int)
+    case prepareDirectoryFailed(domain: String, code: Int)
     /// The stored bytes aren't valid JSON, or don't match the layout of their schema version.
     case decodingFailed
     /// The record couldn't be turned into JSON.
@@ -112,7 +112,7 @@ public struct AIChatBonusStore: AIChatBonusStoring {
         do {
             try fileSystem.prepareDirectory(directoryURL)
         } catch let error as NSError  {
-            throw AIChatBonusStoreError.excludeFromBackupFailed(domain: error.domain, code: error.code)
+            throw AIChatBonusStoreError.prepareDirectoryFailed(domain: error.domain, code: error.code)
         }
 
         do {

@@ -174,7 +174,7 @@ struct AIChatBonusStoreTests {
         fileSystem.prepareDirectoryError = error
 
         // WHEN / THEN
-        #expect(throws: AIChatBonusStoreError.excludeFromBackupFailed(domain: error.domain, code: error.code)) {
+        #expect(throws: AIChatBonusStoreError.prepareDirectoryFailed(domain: error.domain, code: error.code)) {
             try sut.write(claimedRecord)
         }
         #expect(fileSystem.operations == [.prepareDirectory(directoryURL)])

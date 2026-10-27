@@ -20,6 +20,8 @@
 import AIChat
 import Bookmarks
 import Combine
+import FeatureFlags_iOS
+import PrivacyConfig
 import Suggestions
 import UIKit
 import XCTest
@@ -27,6 +29,39 @@ import XCTest
 
 @MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
+
+    func testScrollableEscapeHatchFlagUsesDefaultOnRemoteSubfeatureAndLocalOverride() {
+        let flag = FeatureFlag.scrollableEscapeHatch
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .scrollableEscapeHatch)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "scrollableEscapeHatch")
+        guard case .enabled = flag.defaultValue else {
+            XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testScrollableEscapeHatchKeepsItsImplementationUntilTheContainerIsRecreated() {
+        for initiallyEnabled in [false, true] {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.scrollableEscapeHatch] : [])
+            let controller = UnifiedInputContentContainerViewController(
+                switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
+            XCTAssertEqual(controller.usesScrollableEscapeHatch, initiallyEnabled)
+
+            featureFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.scrollableEscapeHatch]
+            featureFlagger.triggerUpdate()
+            XCTAssertEqual(controller.usesScrollableEscapeHatch, initiallyEnabled)
+
+            let nextController = UnifiedInputContentContainerViewController(
+                switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
+            XCTAssertEqual(nextController.usesScrollableEscapeHatch, !initiallyEnabled)
+        }
+    }
 
     func testDuckAISuggestionsDidRequestSyncSetup_RequestsSyncSetupOnDelegate() {
         let delegate = MockUnifiedInputContentContainerDelegate()

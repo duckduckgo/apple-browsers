@@ -33,6 +33,7 @@ import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
 import PixelKit
+import os.log
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -87,6 +88,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     let appSettings: AppSettings
     private let featureFlagger: FeatureFlagger
+    let usesScrollableEscapeHatch: Bool
     private let isFloatingUIEnabled: Bool
     private let floatingUIManager: FloatingUIManaging
     private let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -150,6 +152,10 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         dismissalContentInset ?? requestedContentInset
     }
     private var escapeHatchModel: EscapeHatchModel?
+    private var chromeHostingController: UIHostingController<FocusedChromeView>?
+    private var chromeTopConstraint: NSLayoutConstraint?
+    private var chromeHeightConstraint: NSLayoutConstraint?
+    private var chromeMeasuredHeight: CGFloat = 0
     private var isSyncPromoCardVisible = false
 
     private var notificationCancellable: AnyCancellable?
@@ -175,6 +181,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
+        self.usesScrollableEscapeHatch = featureFlagger.isFeatureOn(.scrollableEscapeHatch)
         self.floatingUIManager = floatingUIManager
         self.isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -341,7 +348,13 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     }
 
     func scrollLegacyContentToTop(duration: TimeInterval) {
+        guard usesScrollableEscapeHatch else { return }
         unifiedSuggestionsHost?.scrollLegacyContentToTop(duration: duration)
+    }
+
+    func logEscapeHatchDiagnostics(_ event: String) {
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) container active=\(self.isContentActive, privacy: .public) scrollable=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.usesRedesignedNewTabPageLayout, privacy: .public) topBar=\(self.isUsingTopBarPosition, privacy: .public) hatchPresent=\(self.escapeHatchModel != nil, privacy: .public) requestedTop=\(self.requestedContentInset.top, privacy: .public) effectiveTop=\(self.effectiveContentInset.top, privacy: .public) dismissing=\(self.dismissalContentInset != nil, privacy: .public)")
+        unifiedSuggestionsHost?.logScrollDiagnostics(event)
     }
 
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands
@@ -384,10 +397,84 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             mode: switchBarHandler.currentToggleState,
             escapeHatch: placement.escapeHatch == .embedded ? escapeHatchModel : nil,
             syncPromo: placement.syncPromo == .embedded ? syncPromoView : nil)
+        updatePinnedChrome()
+    }
+
+    private func updatePinnedChrome() {
+        let hatchModel = chromePlacement.escapeHatch == .pinned ? escapeHatchModel : nil
+        let promo: AnyView? = chromePlacement.syncPromo == .pinned ? syncPromoView : nil
+        guard hatchModel != nil || promo != nil || chromeHostingController != nil else { return }
+
+        let rootView = FocusedChromeView(
+            hatchModel: hatchModel,
+            syncPromo: promo,
+            usesRaisedEscapeHatch: usesRedesignedNewTabPageLayout,
+            topInset: chromeTopInsetForPosition,
+            onHeightChange: { [weak self] height in
+                guard let self, self.chromeMeasuredHeight != height else { return }
+                self.chromeMeasuredHeight = height
+                guard self.chromePlacement.syncPromo == .pinned else { return }
+                self.chromeHeightConstraint?.constant = self.currentChromeReservedHeight
+                self.applyHostContentInsets()
+            })
+
+        if let hostingController = chromeHostingController {
+            hostingController.rootView = rootView
+        } else {
+            installPinnedChrome(rootView: rootView)
+        }
+    }
+
+    private func installPinnedChrome(rootView: FocusedChromeView) {
+        let hostingController = UIHostingController(rootView: rootView)
+        hostingController.view.backgroundColor = .clear
+        hostingController.view.translatesAutoresizingMaskIntoConstraints = false
+        addChild(hostingController)
+        contentContainerView.addSubview(hostingController.view)
+        let chromeTopAnchor = isFloatingUIEnabled ? contentContainerView.safeAreaLayoutGuide.topAnchor : contentContainerView.topAnchor
+        let top = hostingController.view.topAnchor.constraint(equalTo: chromeTopAnchor, constant: pinnedChromeTopConstant)
+        chromeTopConstraint = top
+        let height = hostingController.view.heightAnchor.constraint(equalToConstant: currentChromeReservedHeight)
+        chromeHeightConstraint = height
+        NSLayoutConstraint.activate([
+            top,
+            height,
+            hostingController.view.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            hostingController.view.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor)
+        ])
+        hostingController.didMove(toParent: self)
+        contentContainerView.bringSubviewToFront(hostingController.view)
+        chromeHostingController = hostingController
+    }
+
+    private var chromeTopInsetForPosition: CGFloat {
+        isUsingTopBarPosition ? Metrics.hatchTopInsetTopBar : Metrics.hatchTopInsetBottomBar
+    }
+
+    private var pinnedChromeTopConstant: CGFloat {
+        topBarContentGap + effectiveContentInset.top
+    }
+
+    private var shouldShowPinnedHatch: Bool {
+        chromePlacement.escapeHatch == .pinned
+    }
+
+    private var currentChromeReservedHeight: CGFloat {
+        if chromePlacement.syncPromo == .pinned {
+            return chromeMeasuredHeight
+        } else if shouldShowPinnedHatch {
+            let cardPadding = usesRedesignedNewTabPageLayout ? EscapeHatchView.materialPadding * 2 : 0
+            return chromeTopInsetForPosition + TabSwitcherPill.compactSize + cardPadding + FocusedChromeView.Metrics.bottomInset
+        } else {
+            return 0
+        }
     }
 
     private var chromePlacement: (escapeHatch: FocusedContentPlacement, syncPromo: FocusedContentPlacement) {
         UnifiedSuggestionsContentResolver.resolveChromePlacement(
+            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
+            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+            showsRedesignedSearchModules: unifiedSuggestionsHost?.isShowingRedesignedSearchModules ?? false,
             mode: switchBarHandler.currentToggleState,
             isTyping: UnifiedSuggestionsInputsMerger.isTyping(text: switchBarHandler.currentText,
                                                               hasUserInteractedWithText: switchBarHandler.hasUserInteractedWithText),
@@ -398,7 +485,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
 
     private func applyHostContentInsets() {
         let floatingTopClearance = isFloatingUIEnabled ? topBarContentGap : 0
-        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: effectiveContentInset.top + floatingTopClearance,
+        unifiedSuggestionsHost?.setContentInsets(UIEdgeInsets(top: effectiveContentInset.top + currentChromeReservedHeight + floatingTopClearance,
                                                               left: 0,
                                                               bottom: effectiveContentInset.bottom,
                                                               right: 0))
@@ -605,7 +692,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             }
         )
 
-        let host = UnifiedSuggestionsHost(config: config)
+        let host = UnifiedSuggestionsHost(config: config, usesScrollableEscapeHatch: usesScrollableEscapeHatch)
         host.setEscapeHatch(escapeHatchModel)
         host.setUsesRedesignedNewTabPageLayout(usesRedesignedNewTabPageLayout)
         host.onContentChanged = { [weak self] in
@@ -861,7 +948,9 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     private func applyRequestedContentInset() {
         updateSingleHostTopOffset()
 
+        chromeTopConstraint?.constant = pinnedChromeTopConstant
         updateFocusedContent()
+        chromeHeightConstraint?.constant = currentChromeReservedHeight
         applyHostContentInsets()
         contentContainerView.layoutIfNeeded()
     }
@@ -911,6 +1000,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         /// Brings the card's 8pt bottom margin up to the design's 12pt UTI bottom margin on the top bar
         /// (content then adds its own 6pt top → 18pt UTI→content, per Figma).
         static let topBarContentClearance: CGFloat = 4
+        static let hatchTopInsetTopBar: CGFloat = 6
+        static let hatchTopInsetBottomBar: CGFloat = 10
     }
 }
 

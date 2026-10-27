@@ -63,6 +63,8 @@ struct RedesignedFocusedSearchModulesView: View {
                             .accessibilityHidden(!showsSearchModules)
                     }
                 }
+                .animation(nil, value: showsSearchModules)
+                .animation(nil, value: recentChats != nil)
                 .padding(.leading, geometry.safeAreaInsets.leading)
                 .padding(.trailing, geometry.safeAreaInsets.trailing)
             }

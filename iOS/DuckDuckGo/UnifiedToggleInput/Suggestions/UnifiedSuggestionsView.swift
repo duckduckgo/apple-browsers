@@ -27,6 +27,7 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let favoritesPresentation: FocusedFavoritesPresentation
+    var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
     var mode: TextEntryMode = .search
@@ -35,8 +36,13 @@ struct UnifiedSuggestionsView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            logoLayer
+            if usesScrollableEscapeHatch {
+                logoLayer
+            }
             contentArea
+            if !usesScrollableEscapeHatch {
+                logoLayer
+            }
             fireLayer
         }
         // UIKit already bounds this host with its keyboard layout guide. Keep container
@@ -76,11 +82,12 @@ struct UnifiedSuggestionsView: View {
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
                                                    messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   showsSearchModules: showsRedesignedSearchModules,
-                                                   recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                                                   showsSearchModules: !usesScrollableEscapeHatch || showsRedesignedSearchModules,
+                                                   recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                                                    escapeHatch: escapeHatch,
-                                                   syncPromo: syncPromo,
+                                                   syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom)
+                    .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
                     .opacity(showsEmbeddedContent ? 1 : 0)
@@ -92,7 +99,7 @@ struct UnifiedSuggestionsView: View {
             } else {
                 SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedContent)
                     .transition(.identity)
-                    .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
+                    .modifier(FocusedContentDismissFade(isFadingOut: usesScrollableEscapeHatch && viewModel.isFadingOut))
             }
         }
     }
@@ -115,11 +122,14 @@ struct UnifiedSuggestionsView: View {
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
                                isFadingOut: viewModel.isFadingOut,
-                               animatesAppearance: usesRedesignedNewTabPageLayout)
+                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
     }
 
     private var showsEmbeddedContent: Bool {
         UnifiedSuggestionsContentResolver.showsEmbeddedContent(
+            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
+            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+            showsRedesignedSearchModules: showsRedesignedSearchModules,
             isFireTab: viewModel.isFireTab,
             content: viewModel.content)
     }

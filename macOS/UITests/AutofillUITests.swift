@@ -37,10 +37,7 @@ class AutofillUITests: UITestCase {
         app.autofillEmailTextField.typeText(email)
 
         app.autofillPasswordTextField.click()
-        let generatedPassword = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Generated password")).firstMatch
-        XCTAssertTrue(generatedPassword.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The autofill dropdown didn't offer a generated password.")
-        generatedPassword.click()
+        app.autofillDropdownButton(labelBeginningWith: "Generated password").click()
         XCTAssertTrue(app.autofillPasswordTextField.wait(for: NSPredicate(format: "value != ''"), timeout: UITests.Timeouts.elementExistence),
                       "The generated password wasn't filled in.")
 

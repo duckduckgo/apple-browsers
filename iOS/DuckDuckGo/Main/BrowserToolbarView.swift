@@ -350,7 +350,9 @@ final class BrowserToolbarView: UIView {
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
     private var toolbarButtonViews: [UIView] = []
-    
+    private var horizontalOuterInsetOverride: CGFloat?
+    private(set) var usesCompactStandaloneHeight = false
+
     private var hasEmbeddedOmnibar: Bool {
         omnibarHeightConstraint.constant > 0
     }
@@ -387,8 +389,14 @@ final class BrowserToolbarView: UIView {
                 bottom: 0,
                 right: Self.floatingEmbeddedConcentricInset)
         }
-        let guideInsets = Self.horizontalGuideInsets(in: host)
-        let physicalInset = Self.floatingPhysicalInset(guideInsets: guideInsets)
+        return Self.floatingStandaloneOuterInsets(in: host)
+    }
+
+    /// Resting outer insets of a buttons-only floating toolbar laid out in `host`.
+    @available(iOS 26.0, *)
+    static func floatingStandaloneOuterInsets(in host: UIView) -> UIEdgeInsets {
+        let guideInsets = horizontalGuideInsets(in: host)
+        let physicalInset = floatingPhysicalInset(guideInsets: guideInsets)
         return UIEdgeInsets(
             top: 0,
             left: max(guideInsets.left, physicalInset),
@@ -449,7 +457,7 @@ final class BrowserToolbarView: UIView {
     /// Buttons-only bar height for the current style. Floating standalone (top address bar) keeps the
     /// original 62pt row; the non-floating style matches the original `UIToolbar` height.
     private var buttonsOnlyHeight: CGFloat {
-        isFloatingStyleEnabled ? Self.floatingButtonsHeight : Self.legacyButtonsHeight
+        Self.buttonsOnlyHeight(isFloating: isFloatingStyleEnabled, isCompact: usesCompactStandaloneHeight)
     }
 
     private var usesEmbeddedBottomChromeMetrics: Bool {
@@ -457,20 +465,30 @@ final class BrowserToolbarView: UIView {
     }
 
     private var currentTopContentPadding: CGFloat {
-        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedTopContentPadding : Self.defaultVerticalContentPadding
+        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedTopContentPadding : standaloneVerticalContentPadding
     }
 
     private var currentBottomContentPadding: CGFloat {
-        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomContentPadding : Self.defaultVerticalContentPadding
+        usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedBottomContentPadding : standaloneVerticalContentPadding
+    }
+
+    private var standaloneVerticalContentPadding: CGFloat {
+        usesCompactStandaloneHeight && isFloatingStyleEnabled ? 0 : Self.defaultVerticalContentPadding
+    }
+
+    private static func buttonsOnlyHeight(isFloating: Bool, isCompact: Bool) -> CGFloat {
+        guard isFloating else { return legacyButtonsHeight }
+        return isCompact ? floatingEmbeddedButtonsHeight : floatingButtonsHeight
     }
 
     private var currentOmnibarToButtonsSpacing: CGFloat {
         usesEmbeddedBottomChromeMetrics ? Self.floatingEmbeddedOmnibarToButtonsSpacing : Self.defaultOmnibarToButtonsSpacing
     }
 
-    static func totalHeight(withOmnibarHeight omnibarHeight: CGFloat, isFloating: Bool) -> CGFloat {
+    /// - Parameter isCompact: Whether a buttons-only floating bar uses the one-button-tall row.
+    static func totalHeight(withOmnibarHeight omnibarHeight: CGFloat, isFloating: Bool, isCompact: Bool = false) -> CGFloat {
         guard omnibarHeight > 0 else {
-            return isFloating ? floatingButtonsHeight : legacyButtonsHeight
+            return buttonsOnlyHeight(isFloating: isFloating, isCompact: isCompact)
         }
         if isFloating {
             return floatingEmbeddedTopContentPadding
@@ -602,7 +620,11 @@ final class BrowserToolbarView: UIView {
     }
 
     private func applyHorizontalChromeMetrics() {
-        let insets = currentBarOuterInsets
+        var insets = currentBarOuterInsets
+        if let horizontalOuterInsetOverride {
+            insets.left = horizontalOuterInsetOverride
+            insets.right = horizontalOuterInsetOverride
+        }
         // `insets` are physical (left/right); these constraints are directional, so mirror in RTL.
         let isRightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
         materialBackgroundLeadingConstraint.constant = isRightToLeft ? insets.right : insets.left
@@ -974,6 +996,9 @@ final class BrowserToolbarView: UIView {
     }
 
     var floatingBottomMargin: CGFloat {
+        if usesCompactStandaloneHeight, isFloatingStyleEnabled, let host = superview {
+            return host.safeAreaInsets.bottom + DefaultOmniBarView.bottomPositionFieldBottomPadding
+        }
         if usesRedesignedNewTabPageLayout, let host = superview, host.bounds.width > host.bounds.height {
             // The cutout widens the horizontal guide in landscape; it should not lift the toolbar.
             return Self.floatingEmbeddedBottomMargin
@@ -1028,7 +1053,9 @@ final class BrowserToolbarView: UIView {
 
     @discardableResult
     func setButtonRowCollapseProgress(_ collapseProgress: CGFloat, reduceMotion: Bool) -> CGFloat {
-        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
+        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant,
+                                          isFloating: isFloatingStyleEnabled,
+                                          isCompact: usesCompactStandaloneHeight)
 
         guard isFloatingStyleEnabled, hasEmbeddedOmnibar, !hasExpandedContent, !reduceMotion else {
             guard buttonRowCollapseProgress != 0 || buttonsHeightConstraint.constant != fullHeight
@@ -1057,6 +1084,18 @@ final class BrowserToolbarView: UIView {
         buttonsHeightConstraint.constant = height
         updateCornerStyle()
         return height
+    }
+
+    /// Shrinks the buttons-only floating bar to a single button row, the height of the minimal chrome bar.
+    /// Has no effect on the bar while it hosts an omnibar.
+    func setCompactStandaloneHeight(_ enabled: Bool) {
+        guard usesCompactStandaloneHeight != enabled else { return }
+        usesCompactStandaloneHeight = enabled
+        setNeedsLayout()
+        guard isFloatingStyleEnabled, !hasEmbeddedOmnibar else { return }
+        buttonsHeightConstraint.constant = buttonsOnlyHeight
+        applyContentStackMetrics()
+        updateCornerStyle()
     }
 
     func setStandaloneCollapseProgress(_ progress: CGFloat, reduceMotion: Bool) {
@@ -1232,5 +1271,44 @@ final class BrowserToolbarView: UIView {
             }
         }
         return super.hitTest(point, with: event)
+    }
+}
+
+// MARK: - Swipe copies
+
+/// Adjustments for frame-positioned toolbar copies drawn while swiping between tabs.
+extension BrowserToolbarView {
+
+    /// Distance between the glass and the toolbar's side edges in its own resting layout.
+    var restingHorizontalOuterInset: CGFloat {
+        currentBarOuterInsets.left
+    }
+
+    /// Overrides the glass side inset. Pass nil to return to the resting layout.
+    func setHorizontalOuterInsetOverride(_ inset: CGFloat?) {
+        horizontalOuterInsetOverride = inset
+        applyHorizontalChromeMetrics()
+        layoutIfNeeded()
+    }
+
+    /// Shortens a frame-positioned copy of the toolbar from the top, so the embedded omnibar row slides
+    /// down behind the button row. 1 shows the omnibar fully, 0 hides it. No-op without an embedded omnibar.
+    func setEmbeddedOmnibarExpansion(_ expansion: CGFloat) {
+        guard hasEmbeddedOmnibar else { return }
+        let expansion = expansion.clamped(to: 0...1)
+        let fullHeight = Self.totalHeight(withOmnibarHeight: omnibarHeightConstraint.constant, isFloating: isFloatingStyleEnabled)
+        let height = buttonsOnlyHeight + (fullHeight - buttonsOnlyHeight) * expansion
+        let collapsedDistance = fullHeight - height
+        let centeredBottomPadding = (buttonsOnlyHeight - Self.floatingEmbeddedButtonsHeight) / 2
+        let bottomPadding = centeredBottomPadding + (Self.floatingEmbeddedBottomContentPadding - centeredBottomPadding) * expansion
+
+        let isOmnibarFullyShown = expansion >= 1
+        contentStackTopConstraint.isActive = isOmnibarFullyShown
+        contentStackBottomConstraint.constant = -bottomPadding
+        buttonsHeightConstraint.constant = height
+        frame = CGRect(x: frame.minX, y: frame.maxY - height, width: frame.width, height: height)
+        omnibarContainer.transform = CGAffineTransform(translationX: 0, y: collapsedDistance)
+        omnibarContainer.alpha = expansion
+        layoutIfNeeded()
     }
 }

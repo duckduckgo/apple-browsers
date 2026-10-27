@@ -127,9 +127,7 @@ jobs:
     # Nothing depends on this job, so a failed submission never blocks the release, though it fails the run and
     # comments on the release task.
     # The version comes from the release branch name, which covers both a given and a calculated version.
-    # Set the IOS_SMARTLING_RELEASE_SUBMISSION repository variable to 0 to stop submitting at code freeze.
     needs: create_release_branch
-    if: vars.IOS_SMARTLING_RELEASE_SUBMISSION != '0'
     uses: ./.github/workflows/smartling_submit.yml
     with:
       kind: release

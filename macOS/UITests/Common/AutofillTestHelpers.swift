@@ -150,24 +150,29 @@ extension XCUIApplication {
 
     /// The dropdown is a child window with its own web view, so it can't be found inside the page's web view.
     func autofillDropdownButton(labelBeginningWith prefix: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
-        let button = buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+        let button = buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR title BEGINSWITH %@", prefix, prefix)).firstMatch
         if !button.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
-            XCTFail("The autofill dropdown didn't offer \"\(prefix)…\". Buttons: \(buttonLabelsInOneSnapshot())", file: file, line: line)
+            XCTFail("The autofill dropdown didn't offer \"\(prefix)…\". Windows: \(windowsDescriptionInOneSnapshot())", file: file, line: line)
         }
         return button
     }
 
-    /// Reading labels element by element fails when the UI changes in between, so take them from one snapshot.
-    private func buttonLabelsInOneSnapshot() -> [String] {
-        guard let snapshot = try? snapshot() else { return [] }
-        var labels: [String] = []
-        var pending = [snapshot]
-        while let element = pending.popLast() {
-            if element.elementType == .button, !element.label.isEmpty {
-                labels.append(element.label)
+    /// Describes each window from one snapshot, with every element of the small ones such as the autofill dropdown.
+    /// Reading elements one by one fails when the UI changes in between.
+    private func windowsDescriptionInOneSnapshot() -> String {
+        guard let snapshot = try? snapshot() else { return "<no snapshot>" }
+        return snapshot.children.filter { $0.elementType == .window }.map { window in
+            guard window.frame.width < 600 else { return "window \(window.frame)" }
+            var elements: [String] = []
+            var pending = [window]
+            while let element = pending.popLast() {
+                let texts = [element.label, element.title, element.value as? String ?? ""].filter { !$0.isEmpty }
+                if !texts.isEmpty {
+                    elements.append("\(element.elementType.rawValue): \(texts)")
+                }
+                pending.append(contentsOf: element.children)
             }
-            pending.append(contentsOf: element.children)
-        }
-        return labels
+            return "small window \(window.frame): \(elements)"
+        }.joined(separator: "; ")
     }
 }

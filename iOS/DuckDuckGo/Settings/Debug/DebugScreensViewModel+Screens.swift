@@ -52,6 +52,9 @@ extension DebugScreensViewModel {
                     }
                 }
             }),
+            .view(title: "Sheet Presentations", { _ in
+                SheetPresentationsDebugView()
+            }),
             .view(title: "CPM", { d in
                 CPMDebugScreensView(
                     keyValueStore: d.keyValueStore,
@@ -403,5 +406,83 @@ private struct CPMDebugScreensView: View {
         } else {
             present()
         }
+    }
+}
+
+struct SheetPresentationsDebugView: View {
+
+    enum SwiftUISheet: String, Identifiable {
+        case plain, page, form, fitted, custom
+        var id: String { rawValue }
+    }
+
+    @State private var swiftUISheet: SwiftUISheet?
+
+    var body: some View {
+        List {
+            Section("UIKit") {
+                Button("formSheet") { presentUIKit(.formSheet) }
+                Button("pageSheet") { presentUIKit(.pageSheet) }
+            }
+            Section("SwiftUI") {
+                Button(".sheet (default)") { swiftUISheet = .plain }
+                Button(".presentationSizing(.page)") { swiftUISheet = .page }
+                Button(".presentationSizing(.form)") { swiftUISheet = .form }
+                Button(".presentationSizing(.fitted)") { swiftUISheet = .fitted }
+                Button(".presentationSizing(custom)") { swiftUISheet = .custom }
+            }
+        }
+        .navigationTitle("Sheet Presentations")
+        .sheet(item: $swiftUISheet) { kind in
+            sheetContent(for: kind)
+        }
+    }
+
+    @ViewBuilder
+    private func sheetContent(for kind: SwiftUISheet) -> some View {
+        if #available(iOS 18, *) {
+            switch kind {
+            case .plain: SheetPresentationsDemoContent(title: ".sheet (default)")
+            case .page: SheetPresentationsDemoContent(title: ".page").presentationSizing(.page)
+            case .form: SheetPresentationsDemoContent(title: ".form").presentationSizing(.form)
+            case .fitted: SheetPresentationsDemoContent(title: ".fitted", fillsSheet: false).presentationSizing(.fitted)
+            case .custom: SheetPresentationsDemoContent(title: "custom 400x300").presentationSizing(DemoPresentationSizing())
+            }
+        } else {
+            SheetPresentationsDemoContent(title: "presentationSizing needs iOS 18")
+        }
+    }
+
+    private func presentUIKit(_ style: UIModalPresentationStyle) {
+        let title = style == .formSheet ? "UIKit formSheet" : "UIKit pageSheet"
+        let controller = UIHostingController(rootView: SheetPresentationsDemoContent(title: title))
+        controller.modalPresentationStyle = style
+        var top = UIApplication.shared.firstKeyWindow?.rootViewController
+        while let presented = top?.presentedViewController { top = presented }
+        top?.present(controller, animated: true)
+    }
+}
+
+@available(iOS 18, *)
+private struct DemoPresentationSizing: PresentationSizing {
+    func proposedSize(for root: PresentationSizingRoot, context: PresentationSizingContext) -> ProposedViewSize {
+        ProposedViewSize(width: 400, height: 300)
+    }
+}
+
+private struct SheetPresentationsDemoContent: View {
+    let title: String
+    var fillsSheet = true
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Text(title).font(.title2)
+            Text("Some content to see how the sheet sizes itself.")
+            Button("Dismiss") { dismiss() }
+        }
+        .padding()
+        .frame(maxWidth: fillsSheet ? .infinity : nil, maxHeight: fillsSheet ? .infinity : nil)
+        .background(Color.yellow.opacity(0.2))
     }
 }

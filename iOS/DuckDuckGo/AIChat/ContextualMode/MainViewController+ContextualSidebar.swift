@@ -70,7 +70,8 @@ extension MainViewController: AIChatContextualSidebarHosting {
         guard let presenter = contextualSidebarPresenter,
               let hostedViewController = presenter.hostedViewController,
               hostedViewController !== currentTab?.aiChatContextualSheetCoordinator.sheetViewController else { return }
-        presenter.dismiss(hostedViewController, animated: true, completion: nil)
+        // The new tab is already on screen, so a snapshot of the page would show the closed one.
+        presenter.dismiss(hostedViewController, animated: true, coversPage: false, completion: nil)
     }
 
     /// Runs on every step of a window resize, and on rotation, before the new size lands. A sidebar that stops fitting

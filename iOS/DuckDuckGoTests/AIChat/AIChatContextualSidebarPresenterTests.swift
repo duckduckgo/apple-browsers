@@ -159,6 +159,67 @@ final class AIChatContextualSidebarPresenterTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenSlidingOutThenTheChildNoLongerTakesTouches() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+
+        sut.dismiss(child, animated: true, completion: nil)
+
+        XCTAssertFalse(child.view.isUserInteractionEnabled)
+    }
+
+    @MainActor
+    func testWhenPresentedAgainWhileSlidingOutThenTheColumnTurnsBackWithoutFinishingTheDismissal() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+        var didComplete = false
+        sut.dismiss(child, animated: true) { didComplete = true }
+
+        sut.present(child, animated: false)
+
+        XCTAssertTrue(sut.isPresenting)
+        XCTAssertTrue(sut.hostedViewController === child)
+        XCTAssertTrue(child.parent === parentViewController)
+        XCTAssertTrue(child.view.isUserInteractionEnabled)
+        XCTAssertFalse(container.isHidden)
+        XCTAssertEqual(page.frame.width, parentViewController.view.bounds.width - sidebarWidth)
+        XCTAssertFalse(didComplete)
+    }
+
+    @MainActor
+    func testWhenChildLeavesTheColumnThenItsViewCanBePresentedByFrameAgain() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+
+        sut.dismiss(child, animated: false, completion: nil)
+
+        XCTAssertTrue(child.view.translatesAutoresizingMaskIntoConstraints)
+        XCTAssertTrue(child.view.isUserInteractionEnabled)
+    }
+
+    @MainActor
+    func testWhenDismissedAnimatedThenASnapshotCoversThePage() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+        let pageSubviewsBefore = page.subviews.count
+
+        sut.dismiss(child, animated: true, completion: nil)
+
+        XCTAssertEqual(page.subviews.count, pageSubviewsBefore + 1)
+    }
+
+    @MainActor
+    func testWhenDismissedWithoutCoveringThePageThenNoSnapshotIsAddedToIt() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+        let pageSubviewsBefore = page.subviews.count
+
+        sut.dismiss(child, animated: true, coversPage: false, completion: nil)
+
+        XCTAssertEqual(page.subviews.count, pageSubviewsBefore)
+    }
+
+    @MainActor
     func testWhenDismissingAViewControllerThatIsNotInTheColumnThenCompletionRunsAndTheColumnStays() {
         let child = RecordingChildViewController()
         sut.present(child, animated: false)

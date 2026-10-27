@@ -890,6 +890,10 @@ final class AIChatContextualSheetCoordinator {
     func notifyPageChanged() async {
         guard hasActiveSheet else { return }
         sessionState.notifyPageChanged()
+        // A sheet covers the page until it closes, but the page beside a sidebar can move on from what's attached.
+        if isSheetInSidebar {
+            clearStaleManualContextIfNeeded()
+        }
 
         if sessionState.shouldTriggerAutoCollect() {
             sessionState.beginLoadingSuggestions()
@@ -977,7 +981,12 @@ private extension AIChatContextualSheetCoordinator {
             adaptSurface(toPresenter: presentingVC)
             return
         }
-        guard sheetVC.presentingViewController == nil, sheetVC.parent == nil else { return }
+        if sheetVC.parent != nil {
+            // Still in the sidebar, maybe sliding out, in which case the column turns back.
+            sidebarHost?.presentContextualSidebar(sheetVC)
+            return
+        }
+        guard sheetVC.presentingViewController == nil else { return }
         let sidebarHost = sidebarHost(for: presentingVC)
         // UIKit silently drops present() if the presenter already has a presentedViewController;
         // bail so isSheetPresented doesn't get stuck true.

@@ -100,6 +100,10 @@ final class AIChatContextualSidebarPresenter {
 
     func present(_ viewController: UIViewController, animated: Bool = true) {
         guard let parent, !(isPresenting && hostedViewController === viewController) else { return }
+        if hostedViewController === viewController {
+            reverseDismissal(of: viewController, animated: animated)
+            return
+        }
         // A different surface already filling the column is swapped in place rather than slid out and back.
         let isReplacingShownSurface = isPresenting
         removeStandIn()
@@ -111,7 +115,12 @@ final class AIChatContextualSidebarPresenter {
         }
     }
 
-    func dismiss(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
+    /// - Parameter coversPage: False when the page has already changed under the column, as when its tab closed,
+    ///   so a snapshot would show the old page.
+    func dismiss(_ viewController: UIViewController,
+                 animated: Bool,
+                 coversPage: Bool = true,
+                 completion: (() -> Void)?) {
         guard hostedViewController === viewController else {
             completion?()
             return
@@ -127,9 +136,10 @@ final class AIChatContextualSidebarPresenter {
             return
         }
         isPresenting = false
-        // The keyboard leaves with the column rather than after it.
+        // The keyboard leaves with the column rather than after it, and nothing in it takes a tap on the way out.
         viewController.view.endEditing(true)
-        move(toShown: false, animated: animated) { [weak self] in
+        viewController.view.isUserInteractionEnabled = false
+        move(toShown: false, animated: animated, coversPage: coversPage) { [weak self] in
             self?.finishDismissal()
             UIAccessibility.post(notification: .layoutChanged, argument: nil)
         }
@@ -151,6 +161,16 @@ final class AIChatContextualSidebarPresenter {
         isPresenting = false
         move(toShown: false, animated: true) { [weak self] in
             self?.finishDismissal()
+        }
+    }
+
+    /// A view controller asked back while it slides out turns around, and what was waiting on its exit is dropped.
+    private func reverseDismissal(of viewController: UIViewController, animated: Bool) {
+        dismissalCompletions.removeAll()
+        isPresenting = true
+        viewController.view.isUserInteractionEnabled = true
+        move(toShown: true, animated: animated) { [weak viewController] in
+            UIAccessibility.post(notification: .screenChanged, argument: viewController?.view)
         }
     }
 
@@ -190,14 +210,14 @@ final class AIChatContextualSidebarPresenter {
         viewController.didMove(toParent: parent)
     }
 
-    private func move(toShown shown: Bool, animated: Bool, completion: @escaping () -> Void) {
+    private func move(toShown shown: Bool, animated: Bool, coversPage: Bool = true, completion: @escaping () -> Void) {
         guard let parentView = parent?.view else { return }
         // Stopping leaves the column wherever it is, so a reversal carries on from there.
         animator?.stopAnimation(true)
         animator = nil
 
         let isAnimated = animated && parentView.window != nil
-        if isAnimated {
+        if isAnimated && coversPage {
             coverPageWithSnapshot()
         } else {
             removePageSnapshot()
@@ -289,6 +309,9 @@ final class AIChatContextualSidebarPresenter {
             viewController.willMove(toParent: nil)
             viewController.view.removeFromSuperview()
             viewController.removeFromParent()
+            // The same view controller can be presented as a sheet next, which positions its view by frame.
+            viewController.view.translatesAutoresizingMaskIntoConstraints = true
+            viewController.view.isUserInteractionEnabled = true
         }
         let completions = dismissalCompletions
         dismissalCompletions.removeAll()

@@ -173,6 +173,8 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var canPresentContextualSidebar = true
         /// Off, modal presentations are only counted. On, they really happen, which needs the host in a window.
         var presentsModally = false
+        /// On, a dismissal leaves the child in place, as the column does while it slides out.
+        var holdsDismissals = false
         var sidebarPresentations: [UIViewController] = []
         var sidebarDismissals: [UIViewController] = []
         var sidebarDetachments: [UIViewController] = []
@@ -180,12 +182,14 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
         func presentContextualSidebar(_ viewController: UIViewController) {
             sidebarPresentations.append(viewController)
+            guard viewController.parent !== self else { return }
             addChild(viewController)
             viewController.didMove(toParent: self)
         }
 
         func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?) {
             sidebarDismissals.append(viewController)
+            guard !holdsDismissals else { return }
             viewController.willMove(toParent: nil)
             viewController.removeFromParent()
             completion?()
@@ -908,6 +912,44 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenPageNavigatesBesideTheSidebarThenAManuallyAttachedPageThatNoLongerMatchesIsCleared() async {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+
+        await sut.notifyPageChanged()
+
+        XCTAssertTrue(sut.isSheetInSidebar)
+        XCTAssertEqual(sut.sessionState.chipState, .placeholder)
+    }
+
+    @MainActor
+    func testWhenPageNavigatesUnderTheSheetThenTheManuallyAttachedPageStaysUntilItReopens() async {
+        let pageAURL = URL(string: "https://example.com/page-a")!
+        let pageBURL = URL(string: "https://example.com/page-b")!
+        mockSettings.isAutomaticContextAttachmentEnabled = false
+        await sut.presentSheet(from: mockPresentingVC)
+        originatingTabURLSubject.send(pageAURL)
+        sut.sessionState.beginManualAttach()
+        mockPageContextHandler.sendContext(makeTestContext(title: "Page A", url: pageAURL.absoluteString))
+        await waitForAttachedChip()
+        originatingTabURLSubject.send(pageBURL)
+
+        await sut.notifyPageChanged()
+
+        guard case .attached = sut.sessionState.chipState else {
+            return XCTFail("Expected the attached page to stay, got \(sut.sessionState.chipState)")
+        }
+    }
+
+    @MainActor
     func testRemovePinnedContextImmediatelyRefreshesSuggestionsForCurrentPage() async {
         // Given
         let pageAURL = URL(string: "https://example.com/page-a")!
@@ -1368,6 +1410,23 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
     }
 
     // MARK: - Window Resize Tests
+
+    @MainActor
+    func testWhenDuckAIIsTappedWhileTheSidebarSlidesOutThenTheSameChatStaysInIt() async {
+        let host = makeSidebarHost()
+        await sut.presentSheet(from: host)
+        let sheet = sut.sheetViewController
+        host.holdsDismissals = true
+        sut.dismissSheet()
+
+        await sut.presentSheet(from: host)
+
+        XCTAssertEqual(host.sidebarPresentations.count, 2)
+        XCTAssertTrue(host.sidebarPresentations.last === sheet)
+        XCTAssertTrue(sut.sheetViewController === sheet)
+        XCTAssertTrue(sut.isSheetPresented)
+        XCTAssertEqual(host.modalPresentationCount, 0)
+    }
 
     @MainActor
     func testWhenWindowShrinksPastTheSidebarThenTheChatLeavesItWithoutClosing() async {

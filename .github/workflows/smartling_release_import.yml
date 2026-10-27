@@ -253,7 +253,8 @@ jobs:
           TASK_ID: ${{ steps.translations-task.outputs.task_id }}
           OUTCOME: ${{ steps.import.outputs.outcome }}
           NOTES: ${{ steps.task.outputs.kind == 'not_ready' && steps.task.outputs.notes || '' }}
-        run: python3 "$RUNNER_TEMP/release_translations_task.py" update --task-id "$TASK_ID" --outcome "$OUTCOME" --notes "$NOTES"
+          PR_URL: ${{ steps.import.outputs.pr_url }}
+        run: python3 "$RUNNER_TEMP/release_translations_task.py" update --task-id "$TASK_ID" --outcome "$OUTCOME" --notes "$NOTES" --pr-url "$PR_URL"
 
       - name: Resolve ${{ matrix.platform }} task assignee
         id: task-assignee

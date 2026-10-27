@@ -54,20 +54,23 @@ class FakeTaskClient:
         }
         self.updates = []
         self.comments = []
+        self.calls = []
 
     def task(self, task_id):
         return self.translations_task
 
     def update_task(self, task_id, body):
         self.updates.append((task_id, body))
+        self.calls.append('update_task')
 
     def add_comment(self, task_id, html_text):
         self.comments.append((task_id, html_text))
+        self.calls.append('add_comment')
 
 
-def update_translations_task(client, outcome, notes=''):
+def update_translations_task(client, outcome, notes='', pr_url=''):
     with contextlib.redirect_stdout(io.StringIO()):
-        return RELEASE_TRANSLATIONS_TASK.update_translations_task(client, '21', outcome, notes)
+        return RELEASE_TRANSLATIONS_TASK.update_translations_task(client, '21', outcome, notes, pr_url)
 
 
 class TranslationsTaskIDTests(unittest.TestCase):
@@ -125,6 +128,25 @@ class UpdateTranslationsTaskTests(unittest.TestCase):
         self.assertEqual(client.comments, [])
         self.assertFalse(commented)
 
+    def testWhenAPullRequestIsOpenedThenItIsCommentedAfterTheTaskIsAssigned(self):
+        client = FakeTaskClient()
+
+        commented = update_translations_task(client, 'pr_opened', pr_url='https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(client.calls, ['update_task', 'add_comment'])
+        self.assertEqual(len(client.comments), 1)
+        self.assertIn('https://github.com/duckduckgo/apple-browsers/pull/1', client.comments[0][1])
+        self.assertTrue(commented)
+
+    def testWhenAReimportUpdatesThePullRequestOfAnOpenTaskThenNothingIsCommented(self):
+        client = FakeTaskClient(assignee='100')
+
+        commented = update_translations_task(client, 'pr_updated', pr_url='https://github.com/duckduckgo/apple-browsers/pull/1')
+
+        self.assertEqual(client.updates, [])
+        self.assertEqual(client.comments, [])
+        self.assertFalse(commented)
+
     def testWhenTheTaskIsAlreadyAssignedThenItKeepsItsAssignee(self):
         client = FakeTaskClient(assignee='200')
 
@@ -139,12 +161,14 @@ class UpdateTranslationsTaskTests(unittest.TestCase):
 
         self.assertEqual(client.updates, [])
 
-    def testWhenAReimportUpdatesThePullRequestThenTheCompletedTaskIsReopened(self):
+    def testWhenAReimportUpdatesThePullRequestThenTheCompletedTaskIsReopenedWithThePullRequest(self):
         client = FakeTaskClient(completed=True, assignee='100')
 
-        update_translations_task(client, 'pr_updated')
+        update_translations_task(client, 'pr_updated', pr_url='https://github.com/duckduckgo/apple-browsers/pull/1')
 
         self.assertEqual(client.updates, [('21', {'completed': False})])
+        self.assertEqual(len(client.comments), 1)
+        self.assertIn('https://github.com/duckduckgo/apple-browsers/pull/1', client.comments[0][1])
 
     def testWhenNoPullRequestIsNeededThenTheTaskIsCompletedWithAComment(self):
         for outcome in ('no_changes', 'pr_closed'):
@@ -154,6 +178,7 @@ class UpdateTranslationsTaskTests(unittest.TestCase):
                 commented = update_translations_task(client, outcome)
 
                 self.assertEqual(client.updates, [('21', {'assignee': '100', 'completed': True})])
+                self.assertEqual(client.calls, ['update_task', 'add_comment'])
                 self.assertEqual(len(client.comments), 1)
                 self.assertIn('already has every translation', client.comments[0][1])
                 self.assertTrue(commented)
@@ -172,6 +197,7 @@ class UpdateTranslationsTaskTests(unittest.TestCase):
 
         commented = update_translations_task(client, 'not_ready', 'Job: https://example.com/job')
 
+        self.assertEqual(client.calls, ['update_task', 'add_comment'])
         self.assertEqual(client.updates, [('21', {'assignee': '100'})])
         self.assertEqual(client.comments, [('21', '<body><strong>Job:</strong> <a href="https://example.com/job">https://example.com/job</a></body>')])
         self.assertTrue(commented)

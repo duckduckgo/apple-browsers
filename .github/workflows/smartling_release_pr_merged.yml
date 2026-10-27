@@ -1,13 +1,18 @@
 name: Smartling - Complete Translations Subtask on Merge
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
+
+permissions: {}
 
 jobs:
   complete-translations-subtask:
     name: Complete the Translations subtask
-    if: github.event.pull_request.merged == true && startsWith(github.head_ref, 'smartling/release-')
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.head_ref, 'smartling/release-')
     runs-on: ubuntu-latest
 
     steps:
@@ -25,3 +30,13 @@ jobs:
           asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
           is-complete: 'true'
+
+      - name: Comment the merged pull request on the Translations subtask
+        if: steps.get-task-id.outputs.task-id != ''
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: 'post-comment-asana-task'
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-task-id: ${{ steps.get-task-id.outputs.task-id }}
+          asana-task-comment-pinned: false
+          asana-task-comment: '✅ Translations pull request merged: ${{ github.event.pull_request.html_url }}'

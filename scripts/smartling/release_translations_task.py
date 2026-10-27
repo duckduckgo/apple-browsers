@@ -2,7 +2,8 @@
 """
 Finds the Translations subtask of a release's Asana task for the release translations pull request, and keeps it in
 line with the release import: assigned to the release DRI, open while the translations are on their way, completed
-when the release branch needs no pull request, and commented on when the translations aren't ready.
+when the release branch needs no pull request, and commented on with the pull request when it is opened or the task is
+reopened, and with the details when the translations aren't ready.
 
 Copyright © 2026 DuckDuckGo. All rights reserved.
 Licensed under the Apache License, Version 2.0
@@ -28,6 +29,7 @@ NO_PR_COMMENTS = {
     'no_changes': '✅ The release branch already has every translation, so no translations pull request is needed.',
     'pr_closed': '✅ The release branch already has every translation, so the open translations pull request was closed.',
 }
+PR_COMMENT = '🔗 Translations pull request: {}'
 
 
 def task_url(task_id: str) -> str:
@@ -64,7 +66,7 @@ def translations_task_id(client: AsanaClient, platform: str, branch: str, today:
     return subtask_id
 
 
-def update_translations_task(client: AsanaClient, task_id: str, outcome: str, notes: str) -> bool:
+def update_translations_task(client: AsanaClient, task_id: str, outcome: str, notes: str, pr_url: str = '') -> bool:
     """Bring the Translations subtask in line with the import outcome and return whether it was commented on.
     A completed subtask is left alone when no pull request is needed, so the nightly import doesn't comment again."""
     task = client.task(task_id)
@@ -77,6 +79,8 @@ def update_translations_task(client: AsanaClient, task_id: str, outcome: str, no
     if outcome in PR_OUTCOMES:
         if task.get('completed'):
             changes['completed'] = False
+        if pr_url and (outcome == 'pr_opened' or task.get('completed')):
+            comment = PR_COMMENT.format(pr_url)
     elif outcome in NO_PR_COMMENTS:
         if task.get('completed'):
             log(f"✅ The {SUBTASK_NAME} task is already completed")
@@ -86,12 +90,12 @@ def update_translations_task(client: AsanaClient, task_id: str, outcome: str, no
     elif notes:
         comment = notes
 
-    if comment:
-        client.add_comment(task_id, notes_html(comment))
-        log(f"💬 Commented on the {SUBTASK_NAME} task")
     if changes:
         client.update_task(task_id, changes)
         log(f"✏️ Updated the {SUBTASK_NAME} task: {', '.join(sorted(changes))}")
+    if comment:
+        client.add_comment(task_id, notes_html(comment))
+        log(f"💬 Commented on the {SUBTASK_NAME} task")
     return bool(comment)
 
 
@@ -111,6 +115,7 @@ def main():
     update.add_argument('--task-id', required=True)
     update.add_argument('--outcome', required=True, help='Outcome of smartling_release_import.sh')
     update.add_argument('--notes', default='', help='Plain text to comment for any other outcome, e.g. the not-ready details')
+    update.add_argument('--pr-url', default='', help='URL of the translations pull request the import opened or updated')
     args = parser.parse_args()
 
     token = os.environ.get('ASANA_ACCESS_TOKEN')
@@ -125,7 +130,7 @@ def main():
             log(f"✅ {SUBTASK_NAME} task: {task_url(task_id)}")
             write_outputs(task_url=task_url(task_id), task_id=task_id)
         else:
-            commented = update_translations_task(client, args.task_id, args.outcome, args.notes)
+            commented = update_translations_task(client, args.task_id, args.outcome, args.notes, args.pr_url)
             write_outputs(commented=str(commented).lower())
     except RuntimeError as error:
         log(f"❌ {error}")

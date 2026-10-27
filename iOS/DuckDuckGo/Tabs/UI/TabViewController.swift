@@ -1258,8 +1258,18 @@ class TabViewController: UIViewController {
     /// Tells WebKit how much of the full-bleed web view the chrome covers at each end of its
     /// collapse, so `svh`/`lvh`/`vh` match the visible area instead of the whole frame.
     /// `minimum` is the bars-hidden inset (largest viewport), `maximum` the bars-shown one.
-    private func setWebViewViewportInsets(minimum: UIEdgeInsets, maximum: UIEdgeInsets) {
+    /// Behind `floatingUIViewportUnits` because the `vh` part relies on WebKit SPI; when it is off,
+    /// insets are reset to zero so a previously applied override is cleared.
+    func setWebViewViewportInsets(minimum: UIEdgeInsets, maximum: UIEdgeInsets) {
         guard #available(iOS 15.5, *), let webView else { return }
+        guard featureFlagger.isFeatureOn(.floatingUIViewportUnits) else {
+            if webView.minimumViewportInset != .zero || webView.maximumViewportInset != .zero {
+                webView.setMinimumViewportInset(.zero, maximumViewportInset: .zero)
+            }
+            webViewViewportInsets = (.zero, .zero)
+            overrideWebViewLayoutParameters(minimumInset: .zero, maximumInset: .zero)
+            return
+        }
         // WebKit throws if any minimum edge exceeds its maximum edge.
         let minimum = UIEdgeInsets(top: min(minimum.top, maximum.top),
                                    left: min(minimum.left, maximum.left),

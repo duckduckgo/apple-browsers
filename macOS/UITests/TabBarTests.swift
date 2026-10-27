@@ -247,10 +247,14 @@ class TabBarTests: UITestCase {
         app.windows.containing(NSPredicate(format: "elementType == %lu AND label == %@", XCUIElement.ElementType.webView.rawValue, title)).firstMatch
     }
 
+    /// Browser windows can share their frame with helper windows that have no tabs, so only windows with tabs count.
     private func window(withFrame frame: CGRect) -> XCUIElement {
-        app.windows.matching(NSPredicate { element, _ in
-            ((element as? NSObject)?.value(forKey: #keyPath(XCUIElement.frame)) as? NSValue)?.rectValue == frame
-        }).firstMatch
+        app.windows
+            .matching(NSPredicate { element, _ in
+                ((element as? NSObject)?.value(forKey: #keyPath(XCUIElement.frame)) as? NSValue)?.rectValue == frame
+            })
+            .containing(.tab, identifier: nil)
+            .firstMatch
     }
 
     private func isTab(_ tab: XCUIElement, fullyVisibleIn scrollView: XCUIElement) -> Bool {

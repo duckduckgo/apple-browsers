@@ -154,4 +154,8 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         delegate?.tab(self, didSubmitDuckAIPromptWithOrigin: origin)
     }
+
+    func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator) {
+        delegate?.tabDidCloseContextualDuckAI(self)
+    }
 }

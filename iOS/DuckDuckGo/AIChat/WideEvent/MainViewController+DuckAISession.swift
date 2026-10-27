@@ -20,12 +20,15 @@
 import AIChat
 import Foundation
 
-/// Call sites for the Duck.ai session wide event, which measures one visit to a full Duck.ai tab.
+/// Call sites for the Duck.ai session wide event, which measures one visit to a full Duck.ai tab,
+/// and for the tab side of the Duck.ai entry wide event, which shares the same signals.
 extension MainViewController {
 
     /// Reports the tab that is (about to be) on screen. Unchanged snapshots are ignored downstream.
     func reportDuckAISessionVisibleTab(_ tab: Tab?) {
-        duckAISessionInstrumentation.visibleTabDidChange(tab.map(duckAISessionSnapshot))
+        let snapshot = tab.map(duckAISessionSnapshot)
+        duckAISessionInstrumentation.visibleTabDidChange(snapshot)
+        duckAIEntryInstrumentation.visibleTabDidChange(snapshot)
     }
 
     func reportDuckAISessionCurrentTab() {
@@ -34,6 +37,8 @@ extension MainViewController {
 
     /// Records the action about to leave Duck.ai, if the visible tab is a Duck.ai tab.
     func recordDuckAISessionPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger) {
+        // The entry event also takes actions on a web page, which close a contextual sheet over it.
+        duckAIEntryInstrumentation.recordPendingExit(trigger, tabUID: tabManager.currentTabsModel.currentTab?.uid)
         guard let tab = tabManager.currentTabsModel.currentTab, tab.isAITab else { return }
         duckAISessionInstrumentation.recordPendingExit(tabUID: tab.uid, trigger: trigger)
     }
@@ -48,11 +53,13 @@ extension MainViewController {
     func recordDuckAISessionPromptSubmitted(for handler: AIChatContentHandling) {
         guard let tab = currentTab, tab.aiChatContentHandler === handler else { return }
         duckAISessionInstrumentation.promptSubmitted(tabUID: tab.tabModel.uid)
+        duckAIEntryInstrumentation.promptSubmitted(tabUID: tab.tabModel.uid)
     }
 
     func recordDuckAISessionPromptSubmittedOnCurrentTab() {
         guard let tab = tabManager.currentTabsModel.currentTab, tab.isAITab else { return }
         duckAISessionInstrumentation.promptSubmitted(tabUID: tab.uid)
+        duckAIEntryInstrumentation.promptSubmitted(tabUID: tab.uid)
     }
 
     func recordDuckAISessionNewChatCreated(for handler: AIChatContentHandling) {

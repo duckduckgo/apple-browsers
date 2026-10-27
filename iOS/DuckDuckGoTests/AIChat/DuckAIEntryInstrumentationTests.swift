@@ -123,7 +123,7 @@ final class DuckAIEntryInstrumentationTests {
         let sut = makeSUT()
         startTabEntry(sut, source: .addressBarPrompt)
         sut.visibleTabDidChange(duckAI(Self.chatTab))
-        sut.recordPendingExit(.newTabOpened)
+        sut.recordPendingExit(.newTabOpened, tabUID: Self.chatTab)
         advance(seconds: 2)
         startTabEntry(sut, source: .duckAINewChat)
 
@@ -167,8 +167,8 @@ final class DuckAIEntryInstrumentationTests {
         let sut = makeSUT()
         startTabEntry(sut)
         sut.visibleTabDidChange(duckAI(Self.chatTab))
-        sut.recordPendingExit(.tabSwitched)
-        sut.recordPendingExit(.newTabOpened)
+        sut.recordPendingExit(.tabSwitched, tabUID: Self.chatTab)
+        sut.recordPendingExit(.newTabOpened, tabUID: Self.chatTab)
         sut.visibleTabDidChange(duckAI(Self.otherTab))
 
         #expect(completions.count == 1)
@@ -197,7 +197,7 @@ final class DuckAIEntryInstrumentationTests {
         let sut = makeSUT()
         startTabEntry(sut)
         sut.visibleTabDidChange(duckAI(Self.chatTab))
-        sut.recordPendingExit(.searchStarted)
+        sut.recordPendingExit(.searchStarted, tabUID: Self.chatTab)
         sut.visibleTabDidChange(duckAI(Self.chatTab))
         #expect(completions.isEmpty)
 
@@ -259,7 +259,30 @@ final class DuckAIEntryInstrumentationTests {
         #expect(completions.count == 1)
         #expect(completions.first?.0.surface == .contextualSheet)
         #expect(completions.first?.0.statusReason == .leftDuckai)
+        #expect(completions.first?.0.exitTrigger == .backOrClose)
         #expect(completions.first?.0.jsonParameters()["feature.data.ext.time_to_first_prompt_ms_bucketed"] as? String == "1000")
+    }
+
+    @available(iOS 16, *)
+    @Test("A sheet closed by another action reports that action", .timeLimit(.minutes(1)))
+    func sheetClosedByActionReportsIt() {
+        let sut = makeSUT()
+        startSheetEntry(sut)
+        sut.recordPendingExit(.tabSwitched, tabUID: Self.otherTab)
+        sut.sheetDismissed()
+        #expect(completions.first?.0.exitTrigger == .tabSwitched)
+    }
+
+    @available(iOS 16, *)
+    @Test("A tab entry ignores actions on other tabs or before its tab is shown", .timeLimit(.minutes(1)))
+    func tabEntryIgnoresForeignActions() {
+        let sut = makeSUT()
+        startTabEntry(sut)
+        sut.recordPendingExit(.searchStarted, tabUID: Self.otherTab)
+        sut.visibleTabDidChange(duckAI(Self.chatTab))
+        sut.recordPendingExit(.newTabOpened, tabUID: Self.otherTab)
+        sut.visibleTabDidChange(web(Self.chatTab))
+        #expect(completions.first?.0.exitTrigger == .otherNavigation)
     }
 
     @available(iOS 16, *)

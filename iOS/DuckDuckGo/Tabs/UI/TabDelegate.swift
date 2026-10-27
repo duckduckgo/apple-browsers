@@ -236,6 +236,9 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
 
+    /// The tab's contextual sheet or floating input left the screen.
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController)
+
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool)
 }
 
@@ -266,6 +269,8 @@ extension TabDelegate {
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {}
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {}
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController) {}
 
     func tab(_ tab: TabViewController, didCommitDuckAINavigationChangingChat didChangeChat: Bool) {}
 

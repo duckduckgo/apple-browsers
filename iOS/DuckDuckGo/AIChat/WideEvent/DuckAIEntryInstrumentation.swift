@@ -35,8 +35,9 @@ protocol DuckAIEntryInstrumentation: AnyObject {
     /// A tab entry belongs to the first Duck.ai tab shown after it starts, and ends once that tab is no longer Duck.ai on screen.
     func visibleTabDidChange(_ tab: DuckAISessionTabSnapshot?)
 
-    /// A user action that will leave Duck.ai is about to run. First trigger wins until the entry ends.
-    func recordPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger)
+    /// A user action that will leave Duck.ai is about to run on the tab on screen. First trigger wins until the entry ends.
+    /// A tab entry takes it only from its own tab; a sheet entry from any.
+    func recordPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger, tabUID: TabUID?)
 
     /// The Duck.ai page in this tab sent a prompt.
     func promptSubmitted(tabUID: TabUID)
@@ -44,7 +45,8 @@ protocol DuckAIEntryInstrumentation: AnyObject {
     /// The contextual sheet sent a prompt.
     func sheetPromptSubmitted()
 
-    /// The contextual sheet closed. Ends a sheet entry as `left_duckai`.
+    /// The contextual sheet or floating input closed. Ends a sheet entry as `left_duckai`,
+    /// with `back_or_close` unless another action was recorded first.
     func sheetDismissed()
 
     /// App was backgrounded with an entry in flight. Completes as CANCELLED.
@@ -120,8 +122,9 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
         end(entry, reason: .leftDuckai)
     }
 
-    func recordPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger) {
-        guard activeEntry != nil, pendingExit == nil else { return }
+    func recordPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger, tabUID: TabUID?) {
+        guard let entry = activeEntry, pendingExit == nil else { return }
+        guard entry.data.surface == .contextualSheet || (entry.tabUID != nil && entry.tabUID == tabUID) else { return }
         pendingExit = trigger
     }
 
@@ -137,7 +140,7 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
 
     func sheetDismissed() {
         guard let entry = activeEntry, entry.data.surface == .contextualSheet else { return }
-        end(entry, reason: .leftDuckai)
+        end(entry, reason: .leftDuckai, defaultExitTrigger: .backOrClose)
     }
 
     func entryCancelledByBackground() {
@@ -154,7 +157,9 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
         wideEvent.updateFlow(entry.data)
     }
 
-    private func end(_ entry: ActiveEntry, reason: DuckAIEntryWideEventData.StatusReason) {
+    private func end(_ entry: ActiveEntry,
+                     reason: DuckAIEntryWideEventData.StatusReason,
+                     defaultExitTrigger: DuckAISessionWideEventData.ExitTrigger = .otherNavigation) {
         let trigger = pendingExit
         pendingExit = nil
         activeEntry = nil
@@ -165,7 +170,7 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
 
         switch reason {
         case .leftDuckai:
-            data.exitTrigger = trigger ?? .otherNavigation
+            data.exitTrigger = trigger ?? defaultExitTrigger
             wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })
         case .newEntry:
             wideEvent.completeFlow(data, status: .success(reason: reason.rawValue), onComplete: { _, _ in })

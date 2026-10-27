@@ -1890,6 +1890,7 @@ class MainViewController: UIViewController {
         newTabPageReturnTimeAwayMs = nil
         postIdleSessionInstrumentation.sessionCancelledByBackground()
         duckAISessionInstrumentation.sessionCancelledByBackground()
+        duckAIEntryInstrumentation.entryCancelledByBackground()
         recordNewTabPageSessionVPNChangeIfNeeded()
         newTabPageSessionInstrumentation.visitBackgrounded()
 
@@ -7729,6 +7730,11 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+        duckAIEntryInstrumentation.sheetPromptSubmitted()
+    }
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController) {
+        duckAIEntryInstrumentation.sheetDismissed()
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {

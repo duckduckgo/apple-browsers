@@ -76,6 +76,9 @@ protocol AIChatContextualSheetCoordinatorDelegate: AnyObject {
 
     func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator,
                                           didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?)
+
+    /// The sheet or floating input left the screen, for any reason. Promoting the floating input to the sheet is not a close.
+    func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator)
 }
 
 /// Coordinates the presentation and lifecycle of the contextual AI chat sheet.
@@ -534,6 +537,7 @@ final class AIChatContextualSheetCoordinator {
         case .systemTeardown:
             controller.removeWithoutAnimation()
         }
+        delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self)
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
         sessionState.handleSheetDismissed()
@@ -751,6 +755,7 @@ final class AIChatContextualSheetCoordinator {
     private func handleSheetDismissed() {
         guard isSheetPresented else { return }
         isSheetPresented = false
+        delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self)
         persistentUTIHost?.endPresentation()
         selectionJourneyInstrumentation.surfaceDismissed()
         stopObservingContextUpdates()
@@ -766,6 +771,9 @@ final class AIChatContextualSheetCoordinator {
         persistentUTIHost?.discardTabAttachments()
         selectionJourneyInstrumentation.selectionsCleared(reason: reason)
         sheetViewController?.notifySheetDismissed()
+        if isSheetPresented {
+            delegate?.aiChatContextualSheetCoordinatorDidCloseSurface(self)
+        }
         isSheetPresented = false
         sheetViewController = nil
         persistentUTIHost = nil

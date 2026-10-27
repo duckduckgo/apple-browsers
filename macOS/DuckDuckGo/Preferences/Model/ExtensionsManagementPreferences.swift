@@ -72,7 +72,7 @@ private extension ExtensionsManagementPreferences {
         uninstalledPasswordManagers = store.catalogExtensionIDs
             .filter { store.status(for: $0) != .installed }
             .compactMap(store.catalogEntry(of:))
-            .filter(\.isPasswordManager)
             .compactMap(store.listing(of:))
+            .filter(\.isPasswordManager)
     }
 }

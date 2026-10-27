@@ -25,17 +25,6 @@ public enum ChromeWebStoreID: String {
     case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
 }
 
-public extension ExtensionsCatalogSubfeature {
-
-    var isPasswordManager: Bool {
-        switch self {
-        case .bitwarden, .onePassword, .lastPass, .iCloudPasswords: true
-        case .darkReader: false
-        }
-    }
-}
-
-/// A catalog entry's store listing, from its Privacy Config settings.
 public struct ChromeWebStoreListing: Equatable, Identifiable {
     public let entry: ExtensionsCatalogSubfeature
     public let name: String
@@ -44,6 +33,13 @@ public struct ChromeWebStoreListing: Equatable, Identifiable {
     public let storeURL: URL
 
     public var id: String { entry.rawValue }
+
+    public var isPasswordManager: Bool {
+        switch entry {
+        case .bitwarden, .onePassword, .lastPass, .iCloudPasswords: true
+        case .darkReader: false
+        }
+    }
 }
 
 public enum ChromeWebStoreStatus: String, Codable {

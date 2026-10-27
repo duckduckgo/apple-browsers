@@ -213,6 +213,7 @@ final class ChromeWebStoreUserScriptTests: XCTestCase {
 @MainActor
 private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
     var catalogExtensionIDs: [String] = []
+    var learnMoreURL: URL?
     var currentStatus = ChromeWebStoreStatus.installable
     var success = true
     var statusRequests = 0

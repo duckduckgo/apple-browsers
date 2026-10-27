@@ -152,8 +152,8 @@ extension Preferences {
             )
             .tint(Color.rebrandableLink(palette: palette))
             .environment(\.openURL, OpenURLAction { _ in
-                // Placeholder until the Learn more page exists.
-                .handled
+                model.openLearnMore()
+                return .handled
             })
         }
 

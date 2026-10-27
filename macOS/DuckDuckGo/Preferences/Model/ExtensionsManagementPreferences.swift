@@ -63,6 +63,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
             _ = await store.remove(identifier: storeID)
         }
     }
+
+    func openLearnMore() {
+        guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
+            return
+        }
+
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
+    }
 }
 
 @available(macOS 15.4, *)

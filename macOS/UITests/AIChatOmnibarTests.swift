@@ -266,7 +266,10 @@ class AIChatOmnibarTests: UITestCase {
         let toggle = app.windows.firstMatch.descendants(matching: .any)[Identifiers.searchModeToggleControl]
         XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                       "Search/Duck.ai toggle should be visible")
-        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        // The toggle picks the segment by which half was clicked, and the Duck.ai segment is the right one
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5)).click()
+        XCTAssertTrue(duckAIPanelContainer.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Duck.ai panel container should appear after clicking the Duck.ai side of the toggle")
         app.typeKey(.return, modifierFlags: [])
 
         let selectedTab = app.windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)

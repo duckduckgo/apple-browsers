@@ -95,6 +95,76 @@ final class AppLaunchUITests: XCTestCase {
         XCTAssertEqual(app.collectionViews.cells.containing(.button, identifier: "Open new tab").count, 1)
     }
 
+    func testSwipeToDeleteDebugVariantsAndLongText() {
+        let menu = app.buttons["Browser.Toolbar.Button.Menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: UITestTimeouts.navigation))
+        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
+        if dismissInput.exists {
+            dismissInput.tap()
+        }
+        menu.tap()
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: UITestTimeouts.navigation))
+        settings.tap()
+        let debugOptions = app.buttons["All debug options"]
+        for _ in 0..<8 where !debugOptions.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(debugOptions.isHittable)
+        debugOptions.tap()
+        let filter = app.searchFields["Filter"]
+        XCTAssertTrue(filter.waitForExistence(timeout: UITestTimeouts.navigation))
+        filter.tap()
+        filter.typeText("Swipe to Delete")
+        let screen = app.buttons["Swipe to Delete"].firstMatch
+        XCTAssertTrue(screen.waitForExistence(timeout: UITestTimeouts.navigation))
+        screen.tap()
+
+        let slider = app.buttons["SlideToDelete.Debug.Preview"]
+        XCTAssertTrue(slider.waitForExistence(timeout: UITestTimeouts.navigation))
+        app.switches["SlideToDelete.Debug.DoubleLength"]
+            .coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
+        XCTAssertTrue(slider.wait(for: \.label, equals: "Slide To Delete All Slide To Delete All"))
+        for variant in ["Basic", "Flame Burst", "Fire Sweep", "Shimmer"] {
+            XCTContext.runActivity(named: variant) { _ in
+                app.buttons[variant].tap()
+                let start = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
+                let middle = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+                start.press(forDuration: 0.2, thenDragTo: middle, withVelocity: .slow, thenHoldForDuration: 0.5)
+                XCTAssertFalse(app.staticTexts["Slide completed. No data deleted."].exists)
+                let end = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5))
+                start.press(forDuration: 0.2, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.8)
+                XCTAssertTrue(app.staticTexts["Slide completed. No data deleted."].waitForExistence(timeout: UITestTimeouts.navigation))
+                let screenshot = XCTAttachment(screenshot: app.screenshot())
+                screenshot.name = "\(variant) with double-length text"
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+                app.buttons["Reset Preview"].tap()
+                XCTAssertTrue(slider.isEnabled)
+            }
+        }
+
+        app.terminate()
+        app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
+        app.launchArguments += ["-ff.swipeToDelete", "true"]
+        app.launch()
+        let fireButton = app.buttons["Browser.Toolbar.Button.Fire"]
+        XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        if dismissInput.exists {
+            dismissInput.tap()
+        }
+        fireButton.tap()
+        let deleteAll = app.buttons["alert.forget-data.confirm"]
+        XCTAssertTrue(deleteAll.waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertEqual(deleteAll.label, "Slide To Delete All")
+        deleteAll.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
+            .press(forDuration: 0.2,
+                   thenDragTo: deleteAll.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)),
+                   withVelocity: .slow,
+                   thenHoldForDuration: 0.8)
+        XCTAssertTrue(deleteAll.waitForNonExistence(timeout: UITestTimeouts.navigation))
+    }
+
     func testSwipeToDeleteDisabledKeepsDeleteAllButton() {
         app.terminate()
         app.launchArguments += ["-ff.swipeToDelete", "false"]

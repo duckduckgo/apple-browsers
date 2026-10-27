@@ -25,7 +25,7 @@ struct SlideToDeleteState {
     static let completionThreshold: CGFloat = 0.95
 
     private(set) var isComplete = false
-    private var hasProvidedFeedback = false
+    private var wasAtCompletionThreshold = false
 
     func progress(translation: CGFloat, travel: CGFloat) -> CGFloat {
         guard travel > 0 else { return 0 }
@@ -33,14 +33,14 @@ struct SlideToDeleteState {
     }
 
     mutating func updateDrag(translation: CGFloat, travel: CGFloat) -> Bool {
-        guard !isComplete, !hasProvidedFeedback,
-              progress(translation: translation, travel: travel) >= Self.completionThreshold else { return false }
-        hasProvidedFeedback = true
-        return true
+        guard !isComplete else { return false }
+        let isAtCompletionThreshold = progress(translation: translation, travel: travel) >= Self.completionThreshold
+        defer { wasAtCompletionThreshold = isAtCompletionThreshold }
+        return isAtCompletionThreshold && !wasAtCompletionThreshold
     }
 
     mutating func resetDrag() {
-        hasProvidedFeedback = false
+        wasAtCompletionThreshold = false
     }
 
     mutating func complete(translation: CGFloat, travel: CGFloat) -> Bool {
@@ -50,10 +50,32 @@ struct SlideToDeleteState {
     }
 }
 
+enum SlideToDeleteVariant: String, CaseIterable, Identifiable {
+    static let preferenceKey = "slideToDeleteVariant"
+
+    case basic
+    case flameBurst
+    case fireSweep
+    case shimmer
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .basic: return "Basic"
+        case .flameBurst: return "Flame Burst"
+        case .fireSweep: return "Fire Sweep"
+        case .shimmer: return "Shimmer"
+        }
+    }
+}
+
 struct SlideToDeleteControl: View {
     let title: String
+    var variant: SlideToDeleteVariant = .basic
     let action: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.layoutDirection) private var layoutDirection
     @GestureState(resetTransaction: Transaction(animation: .spring(response: 0.3, dampingFraction: 0.8))) private var translation: CGFloat = 0
@@ -68,7 +90,9 @@ struct SlideToDeleteControl: View {
     var body: some View {
         Text(title)
             .font(.body.weight(.medium))
-            .multilineTextAlignment(.center)
+            .lineLimit(1)
+            .minimumScaleFactor(0.4)
+            .allowsTightening(true)
             .foregroundColor(Color(designSystemColor: .destructivePrimary))
             .padding(.horizontal, handleSize + 8)
             .padding(.vertical, 18)
@@ -100,7 +124,8 @@ struct SlideToDeleteControl: View {
                         Image(uiImage: layoutDirection == .rightToLeft
                               ? DesignSystemImages.Glyphs.Size24.chevronLeftSmall
                               : DesignSystemImages.Glyphs.Size24.chevronRightSmall)
-                            .foregroundColor(Color(designSystemColor: colorScheme == .dark ? .destructiveContentPrimary : .destructivePrimary))
+                            .foregroundColor(Color(designSystemColor: colorScheme == .dark || progress > 0
+                                                   ? .destructiveContentPrimary : .destructivePrimary))
                             .opacity(progress >= SlideToDeleteState.completionThreshold ? 0 : 1)
                             .frame(width: handleSize, height: geometry.size.height)
                             .contentShape(Capsule())
@@ -119,14 +144,15 @@ struct SlideToDeleteControl: View {
                                         }
                                     }
                                     .onEnded { value in
-                                        let didComplete = withAnimation(nil) {
-                                            state.complete(translation: direction * value.translation.width, travel: travel)
-                                        }
-                                        if didComplete {
-                                            action()
+                                        withAnimation(nil) {
+                                            _ = state.complete(translation: direction * value.translation.width, travel: travel)
                                         }
                                     }
                             )
+                    }
+                    .overlay {
+                        SlideToDeleteCompletionEffect(variant: variant,
+                                                      isActive: progress >= SlideToDeleteState.completionThreshold)
                     }
                 }
                 .padding(handleInset)
@@ -136,10 +162,21 @@ struct SlideToDeleteControl: View {
             .accessibilityLabel(title)
             .accessibilityAddTraits(.isButton)
             .accessibilityAction {
-                guard state.complete(translation: 1, travel: 1) else { return }
-                action()
+                _ = state.complete(translation: 1, travel: 1)
             }
             .disabled(state.isComplete)
+            .task(id: state.isComplete) {
+                guard state.isComplete else { return }
+                if variant != .basic && !reduceMotion {
+                    do {
+                        try await Task.sleep(nanoseconds: variant == .shimmer ? 1_100_000_000 : 650_000_000)
+                    } catch {
+                        return
+                    }
+                }
+                guard !Task.isCancelled else { return }
+                action()
+            }
             .onChange(of: isDragging) { isDragging in
                 if isDragging {
                     feedback.prepare()
@@ -150,6 +187,6 @@ struct SlideToDeleteControl: View {
     }
 
     private func fillColor(progress: CGFloat) -> Color {
-        Color(designSystemColor: colorScheme == .dark || progress >= SlideToDeleteState.completionThreshold ? .destructivePrimary : .controlsRaisedFillPrimary)
+        Color(designSystemColor: colorScheme == .dark || progress > 0 ? .destructivePrimary : .controlsRaisedFillPrimary)
     }
 }

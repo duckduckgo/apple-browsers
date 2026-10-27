@@ -677,7 +677,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(state.complete(translation: 200, travel: 200))
     }
 
-    func testSlideHapticFiresOnceWhenReachingCompletionThreshold() {
+    func testSlideHapticRearmsWhenMovingBelowCompletionThreshold() {
         var state = SlideToDeleteState()
         XCTAssertFalse(state.updateDrag(translation: -200, travel: 200))
         XCTAssertFalse(state.updateDrag(translation: 200, travel: 0))
@@ -686,7 +686,10 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(state.isComplete)
         XCTAssertFalse(state.updateDrag(translation: 200, travel: 200))
         XCTAssertFalse(state.updateDrag(translation: 189, travel: 200))
-        XCTAssertFalse(state.updateDrag(translation: 191, travel: 200))
+        XCTAssertTrue(state.updateDrag(translation: 191, travel: 200))
+        XCTAssertFalse(state.updateDrag(translation: 200, travel: 200))
+        XCTAssertFalse(state.complete(translation: 100, travel: 200))
+        XCTAssertFalse(state.isComplete)
     }
 
     func testSlideHapticResetsAfterCancelledDrag() {

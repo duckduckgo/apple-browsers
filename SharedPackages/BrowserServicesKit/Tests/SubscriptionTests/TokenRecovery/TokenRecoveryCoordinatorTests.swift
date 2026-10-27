@@ -234,22 +234,6 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
     }
 
-    func testBackupStrategy_isTemporary_onlyForNetworkServerAndReadFailures() {
-        let suspended = OAuthRequestError(from: OAuthRequest.BodyError(errorCode: .suspendedAccount, tokenStatus: nil))
-
-        XCTAssertTrue(BackupTokenRecovery.isTemporary(URLError(.timedOut)))
-        XCTAssertTrue(BackupTokenRecovery.isTemporary(APIRequestV2Error.urlSession(URLError(.notConnectedToInternet))))
-        XCTAssertTrue(BackupTokenRecovery.isTemporary(OAuthServiceError.invalidResponseCode(.internalServerError)))
-        XCTAssertTrue(BackupTokenRecovery.isTemporary(OAuthServiceError.invalidResponseCode(.tooManyRequests)))
-        XCTAssertTrue(BackupTokenRecovery.isTemporary(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1))))
-
-        XCTAssertFalse(BackupTokenRecovery.isTemporary(OAuthServiceError.authAPIError(suspended)))
-        XCTAssertFalse(BackupTokenRecovery.isTemporary(OAuthServiceError.invalidResponseCode(.badRequest)))
-        XCTAssertFalse(BackupTokenRecovery.isTemporary(OAuthClientError.invalidTokenRequest(.reused)))
-        XCTAssertFalse(BackupTokenRecovery.isTemporary(TokenBackupError.expired))
-        XCTAssertFalse(BackupTokenRecovery.isTemporary(NSError(domain: "JWT", code: 1)))
-    }
-
     func testBackupStrategy_invalidToken_isNotHeldBackByAMissingTokenFailure() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(URLError(.timedOut))

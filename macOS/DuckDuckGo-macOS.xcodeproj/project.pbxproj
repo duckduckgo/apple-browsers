@@ -3871,6 +3871,7 @@
 		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */; };
+		79ABDDA2E9B919D153136E5A /* JSAlertUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA628B3443EB55FF939C3AF7 /* JSAlertUITests.swift */; };
 		BB7696C52D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB7696C62D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB77F8CE2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB77F8CD2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift */; };
@@ -7173,6 +7174,7 @@
 		BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporterTests.swift; sourceTree = "<group>"; };
 		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
 		BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowTests.swift; sourceTree = "<group>"; };
+		FA628B3443EB55FF939C3AF7 /* JSAlertUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertUITests.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
 		BB77F8CD2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB7B5F972C4ED73800BA4AF8 /* BookmarksSearchAndSortMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksSearchAndSortMetrics.swift; sourceTree = "<group>"; };
@@ -10463,6 +10465,7 @@
 				EE0429DF2BA31D2F009EB20F /* FindInPageTests.swift */,
 				843A52F52EA8F9170094C215 /* Fire */,
 				BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */,
+				FA628B3443EB55FF939C3AF7 /* JSAlertUITests.swift */,
 				8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */,
 				844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */,
 				8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */,
@@ -18317,6 +18320,7 @@
 				84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */,
 				EE54F7B32BBFEA49006218DB /* BookmarksAndFavoritesTests.swift in Sources */,
 				BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */,
+				79ABDDA2E9B919D153136E5A /* JSAlertUITests.swift in Sources */,
 				8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */,
 				31EC9F58AE7A18707C8A0D08 /* YouTubeAdBlockingUITests.swift in Sources */,
 				844905412E54A3540054F4FD /* AddressBarUITests.swift in Sources */,

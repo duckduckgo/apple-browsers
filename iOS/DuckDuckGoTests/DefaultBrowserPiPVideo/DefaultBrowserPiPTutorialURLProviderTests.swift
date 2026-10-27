@@ -25,7 +25,7 @@ import SystemSettingsPiPTutorial
 @Suite("System Settings PiP Tutorial - Default Browser", .serialized)
 final class DefaultBrowserPiPTutorialURLProviderTests {
 
-    private static let videoName = "default-browser-tutorial-rebranded"
+    private static let videoName = "default-browser-tutorial"
 
     @Test("Check Video Can Be Loaded From the Bundle")
     func whenVideoIsFoundInBundleThenReturnVideoURL() throws {

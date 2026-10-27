@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Eksklusivt for Pro-abonnement";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Eksklusivt for abonnenter";
+"aichat.model-picker.subscriber-exclusive" = "Lås op med et abonnement";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Prøv gratis";
@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Adgangskoder krypteres, gemmes på enheden og låses med %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID eller adgangskode";
 
@@ -1661,7 +1658,7 @@
 "crash.report.dialog.title" = "Send automatisk fejlrapporter?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Aktuelt antal afvisninger: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Nuværende abonnementer";
@@ -2645,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Indgangspille";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Log ind";
@@ -4184,10 +4181,10 @@
 "Reset" = "Nulstil";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Nulstil antal afvisninger i pille";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Nulstil Priming Modal-tilstand";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Gemt værtsnavn: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Tilføj til enhed";

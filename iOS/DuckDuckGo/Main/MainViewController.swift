@@ -362,6 +362,8 @@ class MainViewController: UIViewController {
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
     var duckAIMenuAnchor: UIView?
+    /// iPad only: shows the contextual Duck.ai surface beside the page.
+    lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
     private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
@@ -1484,6 +1486,7 @@ class MainViewController: UIViewController {
 
     /// Driven by `refreshOmniBar` to cover every tab change, cold launch included. Idempotent.
     func bindAIChatChromeChipToCurrentTab() {
+        reconcileContextualSidebarWithCurrentTab()
         let coordinator = currentTab?.aiChatContextualSheetCoordinator
         guard coordinator !== boundAIChatChromeChipCoordinator || !hasBoundAIChatChromeChip else { return }
         hasBoundAIChatChromeChip = true
@@ -1618,6 +1621,7 @@ class MainViewController: UIViewController {
     private func dismissContextualSheetIfKeyboardIsForBackgroundContent() {
         guard let currentTab,
               currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
+              !isContextualSurfaceInSidebar,
               let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
             return
         }
@@ -1968,6 +1972,7 @@ class MainViewController: UIViewController {
                                                expandedFrame: floatingBarExpandedFrame(),
                                                reduceMotion: UIAccessibility.isReduceMotionEnabled,
                                                in: view)
+        bringFindInPageToFrontIfNeeded()
     }
 
     /// True when the floating domain capsule morph is driving the chrome transition (floating UI on,
@@ -2548,6 +2553,14 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Normal mode should always have a current tab, but `bulkRemoveTabs` leaves the model empty until
+        // the tab switcher inserts a replacement in its delete animation's completion. Backgrounding or a
+        // late `webViewDidClose` from a removed tab can land in that window, so add a tab instead of crashing.
+        if tabManager.currentTabsModel.currentTab == nil {
+            pixelFiring?.fire(HomeScreenAttachPixel.missingCurrentTabRecovered, frequency: .dailyAndCount)
+            tabManager.addHomeTab()
+        }
+
         pageBackgroundColorObservation = nil
         siteThemeColorObservation = nil
         pageContentBackgroundColorObservation = nil
@@ -2573,7 +2586,8 @@ class MainViewController: UIViewController {
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
-            fatalError("No tab model")
+            assertionFailure("No current tab after recovery")
+            return
         }
         // Focus remembered for a swipe back is stale once the page is attached by any other arrival.
         tabModel.wasInputFocusedBeforeTabSwitch = false
@@ -2673,8 +2687,8 @@ class MainViewController: UIViewController {
             guard let self, appOpenKeyboardRequestID == requestID, KeyboardSettings().onNewTab,
                   !isNewTabPageKeyboardBlockedByDialog else { return }
             let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
-                if openedAfterIdle && didFocus {
-                    self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+                if openedAfterIdle && didFocus, let self {
+                    postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
                 }
             }
             if wasKeyboardFeatureEnabled {
@@ -2704,7 +2718,9 @@ class MainViewController: UIViewController {
         }
         if openedAfterIdle {
             postIdleSessionInstrumentation.noteReturn(timeAwayMs: newTabPageReturnTimeAwayMs)
-            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused,
+                                                          toggleEnabled: isReturnSessionToggleEnabled,
+                                                          togglePosition: returnSessionTogglePosition(focused: focused))
         }
     }
 
@@ -3040,8 +3056,8 @@ class MainViewController: UIViewController {
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         showKeyboardIfAllowed { [weak self] didShowKeyboard in
-            if didShowKeyboard {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didShowKeyboard, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
             completion(didShowKeyboard)
         }
@@ -3099,8 +3115,8 @@ class MainViewController: UIViewController {
     /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
     func enterSearchOnAppOpen() {
         enterSearchAutomatically { [weak self] didFocus in
-            if didFocus {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didFocus, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
         }
     }
@@ -3423,6 +3439,31 @@ class MainViewController: UIViewController {
             resolved = (tab.isAITab && !isPad) ? .aiChat : .search
         }
         return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
+    /// iPhone honours a pending onboarding choice; iPad reads the setting.
+    var isReturnSessionToggleEnabled: Bool {
+        isPad ? aiChatSettings.isAIChatSearchInputUserSettingsEnabled : isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
+    }
+
+    func returnSessionTogglePosition(focused: Bool) -> ReturnSessionWideEventData.TogglePosition? {
+        guard let tab = tabManager.currentTabsModel.currentTab else { return nil }
+        // The resting NTP draws its own toggle.
+        if !focused, tab.isHomeTab, let page = newTabPageViewController, page.hasInlineSearchInput {
+            return page.inlineToggleMode.map(ReturnSessionWideEventData.TogglePosition.init)
+        }
+        return .onScreen(mode: liveToggleMode ?? initialOmnibarToggleMode(for: tab),
+                         isToggleEnabled: isReturnSessionToggleEnabled,
+                         isPad: isPad,
+                         isFocused: focused,
+                         isDuckAITab: tab.isAITab)
+    }
+
+    /// A restored input keeps its side rather than the initial mode.
+    private var liveToggleMode: TextEntryMode? {
+        if isPad { return viewCoordinator.omniBar.selectedTextEntryMode }
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return nil }
+        return coordinator.switchBarHandler.currentToggleState
     }
 
     func refreshOmniBar() {
@@ -3756,6 +3797,7 @@ class MainViewController: UIViewController {
         } else {
             applySmallWidth()
         }
+        closeContextualSidebarIfItNoLongerFits()
 
         updateNewTabPageLayoutForCurrentChromeMode()
 
@@ -4018,6 +4060,7 @@ class MainViewController: UIViewController {
         browserTabMentionSuggestionsController?.updateLayout()
         updateWindowedAddressBarCorners()
         newTabPageViewController?.refreshContextualOnboardingDialogLayout()
+        bringFindInPageToFrontIfNeeded()
     }
 
     // True while the address-bar move animation runs; it owns the container background. See `onMoveAddressBar`.
@@ -4271,10 +4314,17 @@ class MainViewController: UIViewController {
         currentTab?.findInPage?.delegate = self
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
+        bringFindInPageToFrontIfNeeded()
+    }
+
+    private func bringFindInPageToFrontIfNeeded() {
+        guard let findInPageView, !findInPageView.isHidden,
+              view.subviews.last !== findInPageView else { return }
+        view.bringSubviewToFront(findInPageView)
     }
 
     func dismissSystemFindNavigator(for tab: TabViewController?) {
-        guard #available(iOS 16.0, *) else { return }
+        guard #available(iOS 16.0, *), tab?.findInPageImplementation == .system else { return }
         rememberFindInPageQuery(for: tab)
         tab?.webView.findInteraction?.dismissFindNavigator()
         restoreChromeIfHiddenByFindInPage()
@@ -5489,7 +5539,7 @@ extension MainViewController: BrowserChromeDelegate {
         let buttonCollapseProgress = isFloatingCapsuleActive && !reduceMotion
             ? FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
                 barsVisibilityPercent: percent,
-                collapseStart: FloatingDomainCapsuleController.handoffStart
+                collapseStart: FloatingDomainCapsuleController.handoffEnd
               )
             : 0
         let panelHeight = toolbar.setButtonRowCollapseProgress(
@@ -6744,7 +6794,7 @@ extension MainViewController: OmniBarDelegate {
         guard !areSuggestionsVisible else { return }
 
         // Dismiss contextual AI chat sheet when omni bar becomes active
-        if let currentTab, tapped {
+        if let currentTab, tapped, !isContextualSurfaceInSidebar {
             currentTab.aiChatContextualSheetCoordinator.dismissSheet()
         }
 
@@ -6793,20 +6843,19 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc private func dismissContextualSheetOnBackgroundTap() {
+        guard !isContextualSurfaceInSidebar else { return }
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
     }
 
+    /// Clears a modal sheet out of the way of what is shown next. The sidebar is beside the page, so it stays.
     func dismissContextualSheetIfNeeded(completion: @escaping () -> Void) {
-        guard let currentTab,
-              currentTab.aiChatContextualSheetCoordinator.isSheetPresented,
-              let sheetVC = currentTab.aiChatContextualSheetCoordinator.sheetViewController else {
+        guard let coordinator = currentTab?.aiChatContextualSheetCoordinator,
+              coordinator.isSheetPresented,
+              !coordinator.isSheetInSidebar else {
             completion()
             return
         }
-
-        sheetVC.dismiss(animated: true) {
-            completion()
-        }
+        coordinator.dismissSheet(completion: completion)
     }
 
     func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool {
@@ -8160,7 +8209,7 @@ extension MainViewController: TabDelegate {
     }
 
     func closeFindInPage(tab: TabViewController) {
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, *), tab.findInPageImplementation == .system {
             dismissSystemFindNavigator(for: tab)
             return
         }
@@ -8745,8 +8794,11 @@ extension MainViewController {
 
         fireExecutor.prepare(for: request)
         
-        fireButtonAnimator.animate {
+        let instrumentation = DefaultFireAnimationInstrumentation(request: request)
+        fireButtonAnimator.animate(instrumentation: instrumentation) {
+            instrumentation.burnDidStart(accepted: !self.fireExecutor.burnInProgress)
             await self.fireExecutor.burn(request: request, applicationState: .unknown)
+            instrumentation.burnDidFinish()
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: { [weak self] in

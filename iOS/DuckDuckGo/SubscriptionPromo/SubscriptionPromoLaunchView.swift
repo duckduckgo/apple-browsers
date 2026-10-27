@@ -88,7 +88,7 @@ private extension SubscriptionPromoLaunchView {
             VStack(spacing: SheetMetrics.contentSpacing) {
                 let imageSize = Metrics.Content.imageSize.build(v: verticalSizeClass, h: horizontalSizeClass)
 
-                Image(rebrandable: "Subscription-Clock-128")
+                Image(.subscriptionClock128)
                     .resizable()
                     .scaledToFit()
                     .frame(width: imageSize.width, height: imageSize.height)

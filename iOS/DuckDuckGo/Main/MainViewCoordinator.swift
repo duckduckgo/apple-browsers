@@ -26,6 +26,12 @@ class MainViewCoordinator {
         static let tabBarContainerHeight: CGFloat = 40
         // Aligns top chrome with window controls.
         static let windowControlsRowTopSpacing: CGFloat = 4
+        static let contextualSidebarWidthFraction: CGFloat = 0.32
+        /// The narrowest iPhone, which is what the contextual surface's content is laid out for.
+        static let contextualSidebarMinWidth: CGFloat = 375
+        static let contextualSidebarMaxWidth: CGFloat = 400
+        /// Below this the page beside the sidebar would be narrower than a phone, so the surface is a sheet instead.
+        static let contextualSidebarMinPageWidth: CGFloat = 400
     }
 
     enum StatusBackgroundPresentation: Equatable {
@@ -48,6 +54,8 @@ class MainViewCoordinator {
     let superview: UIView
 
     var contentContainer: UIView!
+    /// iPad only: the column beside the page that hosts the contextual Duck.ai surface.
+    var contextualSidebarContainer: UIView?
     var logo: UIImageView!
     var logoContainer: UIView!
     var topSlideContainer: UIView!
@@ -238,6 +246,8 @@ class MainViewCoordinator {
         var contentContainerTopToSafeArea: NSLayoutConstraint!
         var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
+        var contextualSidebarShown: NSLayoutConstraint?
+        var contextualSidebarHidden: NSLayoutConstraint?
 
     }
 

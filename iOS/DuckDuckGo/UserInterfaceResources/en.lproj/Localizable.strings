@@ -425,7 +425,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Pro Plan Exclusive";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Subscriber Exclusive";
+"aichat.model-picker.subscriber-exclusive" = "Unlock with subscription";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Try for Free";
@@ -1170,9 +1170,6 @@
 
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Passwords are encrypted, stored on device, and locked with %@.";
-
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID or passcode";

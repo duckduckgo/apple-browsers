@@ -153,6 +153,32 @@ final class SafariArchiveImporterTests: XCTestCase {
         XCTAssertEqual(creditCardImporter.importedCardsCount, 1)
     }
 
+    func testWhenHTMLContainsOnlyExcludedDataThenImportReturnsNoDataErrors() async throws {
+        let url = try copyFixture(named: "bookmarks_safari.html", as: "bookmarks.html")
+        let importer = makeImporter(fileURL: url)
+
+        let summary = await importer.importData(types: [.passwords, .creditCards]).task.value
+
+        XCTAssertEqual(Set(summary.keys), [.passwords, .creditCards])
+        XCTAssertEqual(summary[.passwords]?.error?.errorType, .noData)
+        XCTAssertEqual(summary[.creditCards]?.error?.errorType, .noData)
+        XCTAssertEqual(creditCardImporter.importedCardsCount, 0)
+    }
+
+    func testWhenArchiveContainsOnlyExcludedDataThenImportReturnsNoDataErrors() async throws {
+        let zipURL = try createZipArchive(files: [
+            "passwords.csv": "title,url,username,password\nExample,duck.com,user,pass"
+        ])
+        let importer = makeImporter(fileURL: zipURL)
+
+        let summary = await importer.importData(types: [.bookmarks, .creditCards]).task.value
+
+        XCTAssertEqual(Set(summary.keys), [.bookmarks, .creditCards])
+        XCTAssertEqual(summary[.bookmarks]?.error?.errorType, .noData)
+        XCTAssertEqual(summary[.creditCards]?.error?.errorType, .noData)
+        XCTAssertEqual(creditCardImporter.importedCardsCount, 0)
+    }
+
     // MARK: - Helpers
 
     private func makeImporter(fileURL: URL) -> SafariArchiveImporter {

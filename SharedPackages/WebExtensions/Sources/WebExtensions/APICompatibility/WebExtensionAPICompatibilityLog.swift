@@ -18,6 +18,7 @@
 
 import Foundation
 import os.log
+import WebKit
 
 /// How a web extension ran into a `chrome.*` API WebKit does not fully support.
 public enum WebExtensionAPICompatibilityKind: String, CaseIterable, Sendable {
@@ -44,6 +45,15 @@ public enum WebExtensionAPICompatibilityLog {
     public static let category = "APICompatibility"
 
     static let logger = Logger(subsystem: subsystem, category: category)
+    /// Unsupported host APIs are extension errors, never assertions in the browser process.
+    @available(macOS 15.4, iOS 18.4, *)
+    @MainActor
+    public static func unsupportedAPI(_ api: String, in context: WKWebExtensionContext) -> NSError {
+        let manager = context.webExtensionController?.delegate as? WebExtensionManager
+        manager?.reportUnsupportedAPI(api, for: context)
+        return NSError(domain: "WebExtensionUnsupportedAPI", code: 1,
+                       userInfo: [NSLocalizedDescriptionKey: "Unsupported extension API: \(api)"])
+    }
 
     /// Makes an extension's name or version safe to put on a single log line.
     public static func sanitizedField(_ value: String?) -> String {

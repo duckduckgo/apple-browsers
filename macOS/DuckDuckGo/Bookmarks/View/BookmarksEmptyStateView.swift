@@ -99,9 +99,9 @@ public struct BookmarksEmptyStateView: View {
                     }
                     .buttonStyle(DynamicWidthButtonStyle(
                         maxWidth: maxButtonWidth > 0 ? maxButtonWidth : nil,
-                        defaultBackgroundColor: .buttonsSecondaryFillDefault,
-                        pressedBackgroundColor: .buttonsSecondaryFillPressed,
-                        textColor: .buttonsSecondaryFillText
+                        defaultBackgroundColor: .controlsFillSecondary,
+                        pressedBackgroundColor: .controlsFillTertiary,
+                        textColor: .textPrimary
                     ))
                 }
                 if showsPromoContent, !content.shouldHideImportButton {

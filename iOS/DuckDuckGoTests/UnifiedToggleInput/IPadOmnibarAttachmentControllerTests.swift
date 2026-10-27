@@ -19,6 +19,7 @@
 
 import AIChat
 import Combine
+import DesignResourcesKit
 import FeatureFlags_iOS
 @_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
@@ -879,11 +880,12 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
 
         XCTAssertFalse(paste(text(length: 16_100), into: controller, view))
         let chipID = try XCTUnwrap(view.attachmentsStripView.attachments.first?.id)
+        let chip = try XCTUnwrap(pastedTextChip(in: view))
 
         XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.promptTooLong])
-        XCTAssertEqual(view.visibleFooterMessages.first?.message.subtitle, "16100/16000")
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Please try a shorter message. 16100/16000")
         XCTAssertFalse(view.aiChatSendButton.isEnabled)
-        XCTAssertTrue(view.attachmentsStripView.showsPromptLengthError)
+        XCTAssertEqual(chip.subviews[0].layer.borderColor, UIColor(designSystemColor: .lines).cgColor, "The pasted-text chip stays grey while the prompt is too long")
         XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle, "Ask stays while the error hides the disclaimer")
         XCTAssertEqual(view.aiChatTextView.keyboardType, .default, "Return keeps adding a new line while the error hides the disclaimer")
         XCTAssertTrue(pressReturn(controller, view))
@@ -893,8 +895,27 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         view.attachmentsStripView.removeAttachment(id: chipID, isUserInitiated: true)
 
         XCTAssertEqual(view.visibleFooterMessages.map(\.id), [.termsConsent])
-        XCTAssertFalse(view.attachmentsStripView.showsPromptLengthError)
         XCTAssertEqual(view.aiChatSendButton.title(for: .normal), UserText.duckAIAskButtonTitle)
+    }
+
+    func testTooLongErrorReadsTheSameWhetherTheExcessIsPastedOrTyped() throws {
+        let (pastedController, pastedView) = try makeController()
+        expand(pastedController, pastedView)
+        XCTAssertFalse(paste(text(length: 16_100), into: pastedController, pastedView))
+        XCTAssertEqual(pastedView.attachmentsStripView.attachments.count, 1)
+
+        let (typedController, typedView) = try makeController()
+        expand(typedController, typedView)
+        enter(text(length: 16_100), in: typedController, typedView)
+        XCTAssertTrue(typedView.attachmentsStripView.attachments.isEmpty)
+
+        let pasted = try XCTUnwrap(pastedView.visibleFooterMessages.first)
+        let typed = try XCTUnwrap(typedView.visibleFooterMessages.first)
+        XCTAssertEqual(pasted.id, .promptTooLong)
+        XCTAssertEqual(pasted.message, typed.message)
+        XCTAssertEqual(typed.message.title, "Please try a shorter message. 16100/16000")
+        XCTAssertNil(typed.message.subtitle)
+        XCTAssertNil(typed.message.primaryAction, "No Edit action, pasted or not")
     }
 
     func testOverLimitWithTermsAcceptedBlocksReturnAndSend() throws {
@@ -920,7 +941,7 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         XCTAssertTrue(view.visibleFooterMessages.isEmpty)
 
         enter(String(repeating: "a", count: 101), in: controller, view)
-        XCTAssertEqual(view.visibleFooterMessages.first?.message.subtitle, "16001/16000")
+        XCTAssertEqual(view.visibleFooterMessages.first?.message.title, "Please try a shorter message. 16001/16000")
         XCTAssertFalse(view.aiChatSendButton.isEnabled)
 
         enter(String(repeating: "a", count: 100), in: controller, view)
@@ -1075,6 +1096,14 @@ final class IPadOmnibarPastedTextTests: XCTestCase {
         pixels.actualFireCalls.filter { $0.pixel.name == DuckAiInputOutcomeEvent.pixelName }.compactMap(\.pixel.parameters)
     }
 
+    private func pastedTextChip(in view: UIView) -> UnifiedToggleInputAttachmentThumbnailView? {
+        for subview in view.subviews {
+            if let chip = subview as? UnifiedToggleInputAttachmentThumbnailView { return chip }
+            if let chip = pastedTextChip(in: subview) { return chip }
+        }
+        return nil
+    }
+
     private func makeController(flags: [FeatureFlag] = [.unifiedToggleInputPastedText]) throws -> (DefaultOmniBarViewController, DefaultOmniBarView) {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = flags
@@ -1195,7 +1224,7 @@ final class IPadOmnibarAttachmentControllerPastedTextTests: XCTestCase {
         sut.addPastedText("pasted")
         let id = try XCTUnwrap(strip.attachments.first?.id)
         var limitRequests: [String] = []
-        sut.pastedTextSheetLimit = { limitRequests.append($0.content); return 12 }
+        sut.pastedTextSheetMode = { limitRequests.append($0.content); return .editable(limit: 12) }
         var dismissals = 0
         sut.onPastedTextSheetDismissed = { dismissals += 1 }
 

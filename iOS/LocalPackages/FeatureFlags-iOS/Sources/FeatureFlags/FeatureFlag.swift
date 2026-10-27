@@ -320,9 +320,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216562593153043
     case aiChatNativeSidebar
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216111312217462?focus=true
-    case contextualSuggestedPrompts
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218266695612921?focus=true
     case contextualPagePlaceholder
 
@@ -438,6 +435,9 @@ public enum FeatureFlag: String {
     /// Restarts the embedded background after a confirmed Network process replacement.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
     case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
 
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860832428343
@@ -534,6 +534,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
     case aiChatChromeMenuButtonIPad
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219711238433101?focus=true
+    case ipadAIChatContextSidebar
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511214?focus=true
     case utiDuckAIWarnings
 
@@ -545,6 +548,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073007936638?focus=true
     case floatingUIiOS27
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219784549064543?focus=true
+    case legacyFindInPage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215556988889960?focus=true
     case aiChatTabSwitcherRichCard
@@ -611,10 +617,16 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219411804489480?focus=true
     case fastTrackingParameterFilter
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219783104084617?focus=true
+    case singleTabBurnOptimization
+
     /// Duck.ai limit extension promo (Boost bonus)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219240727858123?focus=true
     case aiChatLimitExtensionPromo
 
+    /// Single-tab burn removes the memory cache in the background instead of waiting on every web view.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219780456623039?focus=true
+    case deferredMemoryCacheDelete
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -877,8 +889,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.historyMultiselect))
         case .aiChatNativeSidebar:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.nativeSidebar))
-        case .contextualSuggestedPrompts:
-            Config(source: .remoteReleasable(AIChatSubfeature.contextualSuggestedPrompts))
         case .contextualPagePlaceholder:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualPagePlaceholder))
         case .showWhatsNewPromptOnDemand:
@@ -949,6 +959,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery))
         case .cpmNetworkProcessRecovery:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery))
+        case .cpmStableBaseURL:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL))
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment))
         case .webExtensionProtectedDataLoadGate:
@@ -1009,10 +1021,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
         case .aiChatChromeMenuButtonIPad:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
+        case .ipadAIChatContextSidebar:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadContextualSidebar))
         case .floatingUIiOS26:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS26))
         case .floatingUIiOS27:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.floatingUIiOS27))
+        case .legacyFindInPage:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.legacyFindInPage))
         case .aiChatTabSwitcherRichCard:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.tabSwitcherRichCard))
         case .syncScopedAccessCredentials:
@@ -1041,10 +1057,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.pageSignals))
         case .alwaysShowKeyboardOnNewTabPage:
             Config(source: .remoteReleasable(iOSBrowserConfigSubfeature.alwaysShowKeyboardOnNewTabPage))
+        case .singleTabBurnOptimization:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.singleTabBurnOptimization))
         case .fastTrackingParameterFilter:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.fastTrackingParameterFilter))
         case .aiChatLimitExtensionPromo:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.chatLimitExtensionPromo))
+        case .deferredMemoryCacheDelete:
+            Config(defaultValue: .disabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.deferredMemoryCacheDelete))
         }
     }
 

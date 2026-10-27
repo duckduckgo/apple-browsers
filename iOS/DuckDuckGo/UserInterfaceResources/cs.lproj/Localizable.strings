@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Exkluzivně pro tarif Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Exkluzivně pro předplatitele";
+"aichat.model-picker.subscriber-exclusive" = "Odemkni s předplatným";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Vyzkoušet zdarma";
@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Hesla jsou šifrována, uložena na zařízení a uzamčena pomocí funkce %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID nebo přístupový kód";
 
@@ -1661,7 +1658,7 @@
 "crash.report.dialog.title" = "Automaticky odesílat hlášení o selháních?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Aktuální počet zavření: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Aktuální předplatná";
@@ -2645,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Vstupní štítek";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Přihlásit";
@@ -4121,7 +4118,7 @@
 "Primary / First Action" = "Primární / první akce";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Prvotní vyskakovací okno";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Ochrana osobních údajů";
@@ -4184,10 +4181,10 @@
 "Reset" = "Obnovit";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Vynulovat počet zavření štítku";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Obnovit nastavení prvotního vyskakovacího okna";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Uložený název hostitele: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Přidat do zařízení";

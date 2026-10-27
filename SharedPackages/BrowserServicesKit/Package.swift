@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.29.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.34.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -174,6 +174,7 @@ let package = Package(
         .target(
             name: "History",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),

@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Ekskluzīvi Pro plānam";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Tikai abonentiem";
+"aichat.model-picker.subscriber-exclusive" = "Atbloķē ar abonementu";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Izmēģini bez maksas";
@@ -1204,9 +1204,6 @@
 /* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
 "autofill.onboarding.key-features.secure-storage.biometric.description" = "Paroles tiek šifrētas, saglabātas ierīcē un bloķētas ar %@.";
 
-/* Description of autofill onboarding prompt's secure storage feature */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
-
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID vai piekļuves kods";
 
@@ -1661,7 +1658,7 @@
 "crash.report.dialog.title" = "Vai automātiski nosūtīt avārijas ziņojumus?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Pašreizējais noraidīšanas reižu skaits: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Pašreizējie abonementi";
@@ -2645,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Ieejas elements";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Pierakstīties";
@@ -4121,7 +4118,7 @@
 "Primary / First Action" = "Primārā/pirmā darbība";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Sagatavošanas modālais logs";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Privātuma aizsardzība";
@@ -4184,10 +4181,10 @@
 "Reset" = "Atiestatīt";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Atiestatīt elementa aizvēršanas skaitītāju";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Atiestatīt sagatavošanas modālā loga stāvokli";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5013,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pievienot ierīcei";

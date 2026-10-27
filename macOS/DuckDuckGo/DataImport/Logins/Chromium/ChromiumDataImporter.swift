@@ -141,7 +141,7 @@ internal class ChromiumDataImporter: DataImporter {
             let historyFraction = dataTypeFraction * Double(types.intersection([.passwords, .bookmarks]).count)
             try updateProgress(.importingHistory(numberOfVisits: nil, fraction: historyFraction))
 
-            let historySummary = await importHistory()
+            let historySummary = try await importHistory()
             summary[.history] = historySummary
 
             try updateProgress(.importingHistory(numberOfVisits: try? historySummary.get().successful,
@@ -151,7 +151,7 @@ internal class ChromiumDataImporter: DataImporter {
         return summary
     }
 
-    private func importHistory() async -> DataImportResult<DataImport.DataTypeSummary> {
+    private func importHistory() async throws -> DataImportResult<DataImport.DataTypeSummary> {
         let parseResult: HistoryImport.ParseResult
         switch historyReader.readVisits(since: .monthAgo) {
         case .success(let result):
@@ -159,6 +159,8 @@ internal class ChromiumDataImporter: DataImporter {
         case .failure(let error):
             return .failure(error)
         }
+        // reading a large database can take a while: don't add visits to history after the import was cancelled
+        try Task.checkCancellation()
 
         do {
             let importSummary = try await historyImporter.importVisits(parseResult)

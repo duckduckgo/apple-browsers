@@ -35,13 +35,15 @@ struct DataImportViewModel {
     typealias DataType = DataImport.DataType
     typealias DataTypeSummary = DataImport.DataTypeSummary
 
-    /// The Bookmarks / Passwords toggles that filter the sources and what gets imported when the source filter is on.
+    /// The Bookmarks / Passwords (and History, when a source offers it) toggles that filter the sources
+    /// and what gets imported when the source filter is on.
     struct DataTypeFilter: Equatable {
-        let filterableTypes: Set<DataType> = [.bookmarks, .passwords]
+        let filterableTypes: Set<DataType>
         var enabledTypes: Set<DataType>
 
-        init(enabledTypes: Set<DataType> = [.bookmarks, .passwords]) {
-            self.enabledTypes = enabledTypes
+        init(filterableTypes: Set<DataType> = [.bookmarks, .passwords], enabledTypes: Set<DataType>? = nil) {
+            self.filterableTypes = filterableTypes
+            self.enabledTypes = enabledTypes ?? filterableTypes
         }
 
         /// The sources that offer at least one enabled type.
@@ -280,7 +282,9 @@ struct DataImportViewModel {
         }
         let filteredAvailableSources = availableImportSources.filter { availableImportTypesBySource[$0] != nil }
         let isSourceFilterEnabled = isSourceFilterEnabled ?? featureFlagger.isFeatureOn(.dataImportSourceFilter)
-        let dataTypeFilter = isSourceFilterEnabled ? dataTypeFilter ?? DataTypeFilter() : nil
+        let isHistoryOffered = availableImportTypesBySource.values.contains { $0.contains(.history) }
+        let defaultDataTypeFilter = DataTypeFilter(filterableTypes: isHistoryOffered ? [.bookmarks, .passwords, .history] : [.bookmarks, .passwords])
+        let dataTypeFilter = isSourceFilterEnabled ? dataTypeFilter ?? defaultDataTypeFilter : nil
         let visibleSources = dataTypeFilter?.visibleSources(among: filteredAvailableSources, availableTypes: availableImportTypesBySource)
             ?? filteredAvailableSources
 
@@ -1023,11 +1027,11 @@ extension DataImportViewModel {
     /// Applies the data types confirmed in the picker's type sheet.
     /// With the source filter on, they become the filter, and the selected source changes if the filter hides it.
     mutating func selectDataTypes(_ dataTypes: Set<DataType>) {
-        guard isSourceFilterEnabled else {
+        guard let dataTypeFilter else {
             setSelectedDataTypes(dataTypes)
             return
         }
-        applyDataTypeFilter(DataTypeFilter(enabledTypes: dataTypes))
+        applyDataTypeFilter(DataTypeFilter(filterableTypes: dataTypeFilter.filterableTypes, enabledTypes: dataTypes))
     }
 
     /// Selects exactly these types among the current source's types, as the type sheet did before the source filter.

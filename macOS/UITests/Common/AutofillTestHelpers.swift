@@ -152,9 +152,22 @@ extension XCUIApplication {
     func autofillDropdownButton(labelBeginningWith prefix: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
         let button = buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
         if !button.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
-            let labels = buttons.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty }
-            XCTFail("The autofill dropdown didn't offer \"\(prefix)…\". Windows: \(windows.count), buttons: \(labels)", file: file, line: line)
+            XCTFail("The autofill dropdown didn't offer \"\(prefix)…\". Buttons: \(buttonLabelsInOneSnapshot())", file: file, line: line)
         }
         return button
+    }
+
+    /// Reading labels element by element fails when the UI changes in between, so take them from one snapshot.
+    private func buttonLabelsInOneSnapshot() -> [String] {
+        guard let snapshot = try? snapshot() else { return [] }
+        var labels: [String] = []
+        var pending = [snapshot]
+        while let element = pending.popLast() {
+            if element.elementType == .button, !element.label.isEmpty {
+                labels.append(element.label)
+            }
+            pending.append(contentsOf: element.children)
+        }
+        return labels
     }
 }

@@ -201,7 +201,10 @@ extension DataImport {
                 if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
-            case .creditCards, .history:
+            case .history:
+                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                return profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
+            case .creditCards:
                 return false
             }
         }
@@ -409,7 +412,13 @@ extension DataImport.Source {
 
     var supportedDataTypes: Set<DataImport.DataType> {
         switch self {
-        case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .vivaldi, .yandex:
+        case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
+            if Application.appDelegate.featureFlagger.isFeatureOn(.dataImportHistory) {
+                return [.bookmarks, .passwords, .history]
+            } else {
+                return [.bookmarks, .passwords]
+            }
+        case .firefox:
             return [.bookmarks, .passwords]
         case .safari, .safariTechnologyPreview:
             if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker) {

@@ -419,7 +419,7 @@ struct DataImportViewModel {
             let sourceVersion = importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
             switch result {
             case .success(let dataTypeSummary):
-                if dataTypeSummary.isEmpty, nextScreen == nil {
+                if dataTypeSummary.isEmpty, nextScreen == nil, dataType.supportsFileImport {
                     switch screen {
                     case .archiveImport(let dataTypes, _):
                         nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
@@ -440,7 +440,7 @@ struct DataImportViewModel {
                 }
 
                 // show file import screen when import fails or no bookmarks|passwords found
-                if !((screen.isFileImport && screen.fileImportDataType == dataType) || screen.isArchiveImport), nextScreen == nil {
+                if !((screen.isFileImport && screen.fileImportDataType == dataType) || screen.isArchiveImport), nextScreen == nil, dataType.supportsFileImport {
                     // switch to file import of the failed data type displaying successful import results
                     nextScreen = .fileImport(dataType: dataType, summary: summary)
                 }
@@ -737,6 +737,11 @@ extension DataImport.DataType {
         case .history: []
         }
     }
+
+    /// History can only be read from a browser profile, so it never falls back to a manual file import.
+    var supportsFileImport: Bool {
+        self != .history
+    }
 }
 
 extension DataImportViewModel {
@@ -776,7 +781,7 @@ extension DataImportViewModel {
 
     private func screenForNextDataTypeRemainingToImport(after currentDataType: DataType? = nil) -> Screen? {
         // keep the original sort order among all data types or only after current data type
-        for dataType in (currentDataType.map { DataType.dataTypes(after: $0) } ?? DataType.allCases[0...]) where selectedDataTypes.contains(dataType) {
+        for dataType in (currentDataType.map { DataType.dataTypes(after: $0) } ?? DataType.allCases[0...]) where selectedDataTypes.contains(dataType) && dataType.supportsFileImport {
             // if some of selected data types failed to import or not imported yet
             switch summary.last(where: { $0.dataType == dataType })?.result {
             case .success(let summary) where summary.isEmpty:
@@ -1266,7 +1271,7 @@ extension DataImportViewModel {
 
             // no profiles found
             // or selected data type not supported by selected browser data importer
-            guard let type = DataType.allCases.filter(selectedDataTypes.contains).first else {
+            guard let type = DataType.allCases.first(where: { selectedDataTypes.contains($0) && $0.supportsFileImport }) else {
                 // disabled Import button
                 return initiateImport()
             }

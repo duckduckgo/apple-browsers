@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import History
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -30,7 +31,7 @@ class ChromiumDataImporterTests {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
         let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore().resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
+        let importer = makeImporter(profileURL: ChromiumBookmarkStore().resourceURL, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
 
         let result = await importer.importData(types: [.bookmarks])
 
@@ -54,7 +55,7 @@ class ChromiumDataImporterTests {
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
+        let importer = makeImporter(profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
 
         _ = await importer.importData(types: [.bookmarks])
 
@@ -75,12 +76,55 @@ class ChromiumDataImporterTests {
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.topSitesShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
+        let importer = makeImporter(profileURL: ChromiumBookmarkStore.topSitesShortcuts.resourceURL, loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
 
         _ = await importer.importData(types: [.bookmarks])
 
         #expect(bookmarksToImport?.numberOfBookmarks == 6)
         #expect(bookmarksBarMarkedAsFavorites == false)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if history is imported after the bookmarks import fails", .timeLimit(.minutes(1)))
+    func whenImportingBookmarksAndHistory_AndBookmarkImportFails_ThenHistoryIsImported() async throws {
+        let parseResult = HistoryImport.ParseResult(visits: [visit(url: "https://duckduckgo.com")], skipped: 1)
+        let historyImporter = MockHistoryImporter()
+        historyImporter.summary = .init(imported: 2, alreadyInHistory: 1)
+        let importer = makeImporter(profileURL: missingProfileURL,
+                                    historyReader: MockChromiumHistoryReader(result: .success(parseResult)),
+                                    historyImporter: historyImporter)
+
+        let result = await importer.importData(types: [.bookmarks, .history])
+
+        #expect(result[.bookmarks]?.isSuccess == false)
+        let history = try #require(result[.history]).get()
+        #expect(history.successful == 2)
+        #expect(history.duplicate == 1)
+        #expect(historyImporter.importedParseResults == [parseResult])
+    }
+
+    private var missingProfileURL: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    }
+
+    private func makeImporter(
+        profileURL: URL,
+        loginImporter: LoginImporter? = MockLoginImporter(),
+        bookmarkImporter: BookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 0, duplicates: 0, failed: 0) }),
+        faviconManager: FaviconManagement = FaviconManagerMock(),
+        historyReader: ChromiumHistoryReaderProtocol = MockChromiumHistoryReader(),
+        historyImporter: HistoryImporterProtocol = MockHistoryImporter()
+    ) -> ChromiumDataImporter {
+        ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: profileURL),
+                             loginImporter: loginImporter,
+                             bookmarkImporter: bookmarkImporter,
+                             faviconManager: faviconManager,
+                             historyReader: historyReader,
+                             historyImporter: historyImporter)
+    }
+
+    private func visit(url: String) -> HistoryImport.Visit {
+        HistoryImport.Visit(url: URL(string: url)!, title: nil, date: Date())
     }
 
 }

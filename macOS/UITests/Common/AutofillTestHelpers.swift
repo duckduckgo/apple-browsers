@@ -139,8 +139,7 @@ extension XCUIApplication {
         windows.firstMatch.webViews.firstMatch.tap()
         autofillEmailTextField.click()
 
-        let savedLogin = autofillDropdownButton(labelBeginningWith: email)
-        savedLogin.click()
+        clickAutofillDropdownButton(titleBeginningWith: email)
 
         XCTAssertTrue(
             autofillEmailTextField.wait(for: \.value, equals: email, timeout: UITests.Timeouts.elementExistence),
@@ -149,12 +148,14 @@ extension XCUIApplication {
     }
 
     /// The dropdown is a child window with its own web view, so it can't be found inside the page's web view.
-    func autofillDropdownButton(labelBeginningWith prefix: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+    /// XCUITest often reports its buttons as not hittable, so they're clicked by coordinate.
+    func clickAutofillDropdownButton(titleBeginningWith prefix: String, file: StaticString = #filePath, line: UInt = #line) {
         let button = buttons.matching(NSPredicate(format: "label BEGINSWITH %@ OR title BEGINSWITH %@", prefix, prefix)).firstMatch
-        if !button.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+        guard button.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
             XCTFail("The autofill dropdown didn't offer \"\(prefix)…\". Windows: \(windowsDescriptionInOneSnapshot())", file: file, line: line)
+            return
         }
-        return button
+        button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
     }
 
     /// Describes each window from one snapshot, with every element of the small ones such as the autofill dropdown.

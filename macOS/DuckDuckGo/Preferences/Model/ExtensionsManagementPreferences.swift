@@ -27,34 +27,39 @@ import WebExtensions
 final class ExtensionsManagementPreferences: ObservableObject, PreferencesTabOpening {
 
     struct PasswordManager: Identifiable {
-        let catalogEntry: ExtensionsCatalogSubfeature
+        let id: String
         let name: String
         let publisher: String
         let iconURL: URL?
         let storeURL: URL?
-
-        var id: String {
-            catalogEntry.rawValue
-        }
     }
 
-    /// Enabled password managers, in catalog order. Entries without a name are skipped.
     @Published private(set) var passwordManagers: [PasswordManager] = []
 
-    let windowControllersManager: WindowControllersManagerProtocol
-    let imageLoader: RemoteMessagingImageLoading
     private let catalog: ChromeWebStoreCatalog
     private var cancellables = Set<AnyCancellable>()
 
-    init(configurationManager: PrivacyConfigurationManaging,
-         windowControllersManager: WindowControllersManagerProtocol,
-         imageLoader: RemoteMessagingImageLoading = RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
-                                                                               cache: RemoteMessagingImageLoader.defaultCache)) {
-        self.windowControllersManager = windowControllersManager
-        self.imageLoader = imageLoader
-        catalog = ChromeWebStoreCatalog(configurationManager: configurationManager)
-        reloadPasswordManagers()
+    let windowControllersManager: WindowControllersManagerProtocol
+    let imageLoader: RemoteMessagingImageLoading
 
+    init(configurationManager: PrivacyConfigurationManaging, windowControllersManager: WindowControllersManagerProtocol, imageLoader: RemoteMessagingImageLoading? = nil) {
+        self.windowControllersManager = windowControllersManager
+        self.imageLoader = imageLoader ?? RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider, cache: RemoteMessagingImageLoader.defaultCache)
+        self.catalog = ChromeWebStoreCatalog(configurationManager: configurationManager)
+
+        reloadPasswordManagers()
+        startObservingConfigurationChanges(configurationManager: configurationManager)
+    }
+
+    func openStorePage(for passwordManager: PasswordManager) {
+        guard let storeURL = passwordManager.storeURL else { return }
+        openNewTab(with: storeURL)
+    }
+}
+
+private extension ExtensionsManagementPreferences {
+
+    func startObservingConfigurationChanges(configurationManager: PrivacyConfigurationManaging) {
         configurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
@@ -63,16 +68,10 @@ final class ExtensionsManagementPreferences: ObservableObject, PreferencesTabOpe
             .store(in: &cancellables)
     }
 
-    /// Opens the password manager's Chrome Web Store page in a new tab.
-    func openStorePage(for passwordManager: PasswordManager) {
-        guard let storeURL = passwordManager.storeURL else { return }
-        openNewTab(with: storeURL)
-    }
-
-    private func reloadPasswordManagers() {
+    func reloadPasswordManagers() {
         passwordManagers = catalog.enabledEntries.filter(\.isPasswordManager).compactMap { entry in
             guard let name = catalog.name(of: entry) else { return nil }
-            return PasswordManager(catalogEntry: entry,
+            return PasswordManager(id: entry.rawValue,
                                    name: name,
                                    publisher: catalog.publisher(of: entry) ?? "",
                                    iconURL: catalog.iconURL(of: entry),

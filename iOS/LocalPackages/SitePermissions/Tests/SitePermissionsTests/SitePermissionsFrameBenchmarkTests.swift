@@ -142,7 +142,10 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         let geolocation = GeolocationUserScript()
         geolocation.activationHandler = { _ in true }
         counter.install(geolocation, in: controller)
-        defer { controller.removeAllScriptMessageHandlers() }
+        defer {
+            geolocation.cancelAllWatches()
+            controller.removeAllScriptMessageHandlers()
+        }
         let page = BenchmarkPage(configuration: configuration)
         try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
 
@@ -151,6 +154,30 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         XCTAssertEqual(counter.counts["registerFrame"], 1)
         XCTAssertEqual(counter.replies, 1)
         XCTAssertEqual(counter.registrations, 1)
+    }
+
+    func testMessageSettlingThrowsWhenRegistrationNeverReplies() async throws {
+        let counter = NativeMessageCounter()
+        let configuration = WKWebViewConfiguration()
+        let controller = configuration.userContentController
+        let geolocation = GeolocationUserScript()
+        counter.install(geolocation, in: controller, handler: UnansweredMessageHandler())
+        defer {
+            geolocation.cancelAllWatches()
+            controller.removeAllScriptMessageHandlers()
+        }
+        let page = BenchmarkPage(configuration: configuration)
+        try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
+
+        do {
+            _ = try await waitForMessagesToSettle(in: page.webView, counter: counter)
+            XCTFail("An unanswered registration must not produce a benchmark sample")
+        } catch {
+            XCTAssertEqual((error as NSError).domain, "SitePermissionsFrameBenchmark")
+        }
+        XCTAssertEqual(counter.counts["registerFrame"], 1)
+        XCTAssertEqual(counter.replies, 0)
+        XCTAssertEqual(counter.registrations, 0)
     }
 
     private func measure(_ configuration: Configuration, frameCount: Int) async throws -> Sample {
@@ -184,8 +211,12 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
         }
 
         let page = BenchmarkPage(configuration: webViewConfiguration)
-        defer { webViewConfiguration.userContentController.removeAllScriptMessageHandlers() }
+        defer {
+            geolocation.cancelAllWatches()
+            webViewConfiguration.userContentController.removeAllScriptMessageHandlers()
+        }
         try await page.load(Self.html, baseURL: XCTUnwrap(URL(string: "http://localhost/")))
+        _ = try await waitForMessagesToSettle(in: page.webView, counter: counter)
         let footprintBefore = physicalFootprint(of: page.webView)
 
         let elapsed = try await page.webView.callAsyncJavaScript("return await createFrames(count, 20);",
@@ -204,9 +235,8 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                       windowMessages: windowMessages)
     }
 
-    /// Waits until neither native nor window message counts change for 300 ms, up to 10 seconds.
     private func waitForMessagesToSettle(in webView: WKWebView, counter: NativeMessageCounter) async throws -> Int {
-        var last = (native: -1, window: -1)
+        var last = (native: -1, replies: -1, window: -1)
         var stablePolls = 0
         for _ in 0..<100 {
             try await Task.sleep(nanoseconds: 100_000_000)
@@ -214,14 +244,17 @@ final class SitePermissionsFrameBenchmarkTests: XCTestCase {
                                                                 arguments: [:],
                                                                 in: nil,
                                                                 contentWorld: .page) as? Int ?? 0
-            let current = (native: counter.counts.values.reduce(0, +), window: window)
-            stablePolls = current == last ? stablePolls + 1 : 0
+            let current = (native: counter.counts.values.reduce(0, +), replies: counter.replies, window: window)
+            stablePolls = current == last && current.replies == current.native ? stablePolls + 1 : 0
             last = current
             if stablePolls == 3 {
-                break
+                return current.window
             }
         }
-        return last.window
+        throw NSError(domain: "SitePermissionsFrameBenchmark", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "Messages did not settle within 10 seconds: "
+                + "\(last.native) received, \(last.replies) replies, \(last.window) window messages"
+        ])
     }
 
     /// Returns the web content process's physical footprint, or nil when the platform hides it.
@@ -285,10 +318,12 @@ private final class NativeMessageCounter: NSObject, WKScriptMessageHandlerWithRe
     private(set) var registrations = 0
     private var handlers = [String: WKScriptMessageHandlerWithReply]()
 
-    func install(_ script: UserScript, in controller: WKUserContentController) {
+    func install(_ script: UserScript,
+                 in controller: WKUserContentController,
+                 handler: WKScriptMessageHandlerWithReply? = nil) {
         controller.addUserScript(script.makeWKUserScriptSync())
         for name in script.messageNames {
-            handlers[name] = script as? WKScriptMessageHandlerWithReply
+            handlers[name] = handler ?? script as? WKScriptMessageHandlerWithReply
             controller.addScriptMessageHandler(self, contentWorld: script.getContentWorld(), name: name)
         }
     }
@@ -310,6 +345,18 @@ private final class NativeMessageCounter: NSObject, WKScriptMessageHandlerWithRe
             }
             replyHandler(reply, error)
         }
+    }
+}
+
+@MainActor
+private final class UnansweredMessageHandler: NSObject, WKScriptMessageHandlerWithReply {
+
+    private var replies = [@MainActor @Sendable (Any?, String?) -> Void]()
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping @MainActor @Sendable (Any?, String?) -> Void) {
+        replies.append(replyHandler)
     }
 }
 

@@ -65,6 +65,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 HStack {
                     Button(model.purchaseButtonTitle) { model.purchaseAction() }
                         .buttonStyle(DefaultActionButtonStyle(enabled: true, stateColors: .themedActionButton))
+                        .accessibilityIdentifier("PreferencesPurchaseSubscriptionView.purchaseButton")
                     Button(UserText.haveSubscriptionButton) {
                         if model.shouldDirectlyLaunchActivationFlow {
                             model.sheetModel.handleEmailAction()

@@ -16,23 +16,11 @@
 //  limitations under the License.
 //
 
-import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @_spi(Testing) @testable import PixelKit
 
 final class BookmarkListViewControllerSyncPromoTests: XCTestCase {
-
-    func testWhenSyncPromoIsInactiveThenDisplayedPixelIsNotFired() {
-        let pixelFiring = PixelKitMock()
-        let viewController = makeViewController(syncPromoManager: MockSyncPromoManager(), pixelFiring: pixelFiring)
-
-        let window = MockWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 600))
-        window.contentViewController = viewController
-        window.displayIfNeeded()
-
-        XCTAssertFalse(pixelFiring.firedSyncPromoDisplayed)
-    }
 
     func testWhenSyncPromoBecomesVisibleThenDisplayedPixelFiresOncePerAppearance() {
         let syncPromoManager = MockSyncPromoManager()

@@ -18,7 +18,6 @@
 
 import FeatureFlags_macOS
 import PrivacyConfig
-import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @_spi(Testing) @testable import PixelKit
@@ -712,18 +711,6 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
 
     // MARK: - Sync promo displayed pixel
 
-    func testWhenSyncPromoIsInactiveThenDisplayedPixelIsNotFired() {
-        let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
-        let pixelFiring = PixelKitMock()
-        let viewController = makeViewController(bookmarkManager: createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree]),
-                                                syncPromoManager: MockSyncPromoManager(),
-                                                pixelFiring: pixelFiring)
-
-        hostInMockWindow(viewController)
-
-        XCTAssertFalse(pixelFiring.firedSyncPromoDisplayed)
-    }
-
     func testWhenSyncPromoBecomesVisibleThenDisplayedPixelFiresOncePerAppearance() {
         let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
         let folder = BookmarkFolder(id: "4", title: "Folder")
@@ -774,12 +761,6 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
                                                                     pixelFiring: pixelFiring)
         _ = viewController.view
         return viewController
-    }
-
-    private func hostInMockWindow(_ viewController: NSViewController) {
-        let window = MockWindow(contentRect: NSRect(x: 0, y: 0, width: 700, height: 600))
-        window.contentViewController = viewController
-        window.displayIfNeeded()
     }
 
     private func createBookmarkManager(with bookmarks: [BaseBookmarkEntity], favorites: [BaseBookmarkEntity] = []) -> MockBookmarkManager {

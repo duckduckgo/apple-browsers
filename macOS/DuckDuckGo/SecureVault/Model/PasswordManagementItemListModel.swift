@@ -418,7 +418,6 @@ final class PasswordManagementItemListModel: ObservableObject {
             }
     }
 
-    /// Shows or removes the sync promo row in place, keeping the user's selection unless it was the promo.
     private func syncPromoActivityDidChange() {
         objectWillChange.send()
         let selectedPromoRowWasRemoved = syncPromoSelected && !shouldDisplaySyncPromoRow

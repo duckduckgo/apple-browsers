@@ -1437,7 +1437,8 @@ final class PasswordManagementViewController: NSViewController {
             },
             dismissButtonAction: { [weak self] in
                 self?.syncPromoManager.promoDismissed()
-            }
+            },
+            pixelFiring: pixelFiring
         )
 
         let syncPromoView = SyncPromoView(viewModel: syncPromoViewModel, layout: .vertical)

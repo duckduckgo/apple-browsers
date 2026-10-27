@@ -162,7 +162,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     var subscriptionManageButtonText: String {
-        if isEligibleForCancellationFlow {
+        if isAppleSubscriptionWithCancellationFlowEnabled {
             return UserText.subscriptionManageSubscription
         }
         return featureFlagger.isFeatureOn(.allowProTierPurchase)
@@ -171,16 +171,11 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     }
 
     var isEligibleForCancellationFlow: Bool {
-        Self.isEligibleForCancellationFlow(subscription: state.subscriptionInfo,
-                                           isFeatureEnabled: featureFlagger.isFeatureOn(.subscriptionCancellationFlow))
+        state.subscriptionInfo?.status == .autoRenewable && isAppleSubscriptionWithCancellationFlowEnabled
     }
 
-    static func isEligibleForCancellationFlow(subscription: DuckDuckGoSubscription?,
-                                              isFeatureEnabled: @autoclosure () -> Bool) -> Bool {
-        guard let subscription,
-              subscription.platform == .apple,
-              subscription.status == .autoRenewable else { return false }
-        return isFeatureEnabled()
+    private var isAppleSubscriptionWithCancellationFlowEnabled: Bool {
+        state.subscriptionInfo?.platform == .apple && featureFlagger.isFeatureOn(.subscriptionCancellationFlow)
     }
 
     func cancelSubscriptionTapped() {

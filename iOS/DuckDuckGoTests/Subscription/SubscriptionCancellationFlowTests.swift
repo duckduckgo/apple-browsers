@@ -22,72 +22,7 @@ import Foundation
 import Testing
 @_spi(Testing) import PixelKit
 import Networking
-@testable import Subscription
-import SubscriptionTestingUtilities
 @testable import DuckDuckGo
-
-@Suite("Subscription cancellation flow eligibility")
-struct SubscriptionCancellationFlowEligibilityTests {
-
-    @available(iOS 16, macOS 13, *)
-    @Test("An auto-renewing Apple subscription with the flag on is eligible", .timeLimit(.minutes(1)))
-    func autoRenewingAppleSubscriptionIsEligible() {
-        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple)
-
-        #expect(SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("A trial Apple subscription is eligible", .timeLimit(.minutes(1)))
-    func trialAppleSubscriptionIsEligible() {
-        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable,
-                                                                platform: .apple,
-                                                                activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)])
-
-        #expect(subscription.hasActiveTrialOffer)
-        #expect(SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("The flag being off makes an otherwise eligible subscription ineligible", .timeLimit(.minutes(1)))
-    func flagOffIsIneligible() {
-        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple)
-
-        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: false))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Non-Apple platforms are ineligible", .timeLimit(.minutes(1)), arguments: [
-        DuckDuckGoSubscription.Platform.stripe,
-        .google,
-        .unknown
-    ])
-    func nonApplePlatformsAreIneligible(platform: DuckDuckGoSubscription.Platform) {
-        let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: platform)
-
-        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("Subscriptions that are not auto-renewing are ineligible", .timeLimit(.minutes(1)), arguments: [
-        DuckDuckGoSubscription.Status.notAutoRenewable,
-        .gracePeriod,
-        .inactive,
-        .expired,
-        .unknown
-    ])
-    func nonAutoRenewingSubscriptionsAreIneligible(status: DuckDuckGoSubscription.Status) {
-        let subscription = SubscriptionMockFactory.subscription(status: status, platform: .apple)
-
-        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: subscription, isFeatureEnabled: true))
-    }
-
-    @available(iOS 16, macOS 13, *)
-    @Test("No subscription is ineligible", .timeLimit(.minutes(1)))
-    func missingSubscriptionIsIneligible() {
-        #expect(!SubscriptionSettingsViewModel.isEligibleForCancellationFlow(subscription: nil, isFeatureEnabled: true))
-    }
-}
 
 @Suite("Subscription cancellation flow feature info mapping")
 struct SubscriptionCancellationFeatureInfoMappingTests {

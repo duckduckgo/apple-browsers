@@ -798,6 +798,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     ///   - deadPrimary: The token container whose refresh was rejected, or nil when none is stored.
     /// - Returns: The recovered token container.
     /// - Throws: `SubscriptionManagerError.tokenRecoveryNotAttempted` when no coordinator is set or no recovery applies,
+    ///   `TokenBackupError.sessionChanged` when the session changed during the recovery,
     ///   `SubscriptionManagerError.noTokenAvailable` when the recovery left no usable token, otherwise the recovery failure.
     private func recoverToken(trigger: TokenRecoveryTrigger, deadPrimary: TokenContainer?) async throws -> TokenContainer {
         Logger.subscriptionTokensManagement.log("Attempting token recovery, trigger: \(trigger.rawValue, privacy: .public)")
@@ -806,7 +807,16 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             Logger.subscriptionTokensManagement.log("Token recovery not possible, no coordinator configured, trigger: \(trigger.rawValue, privacy: .public)")
             throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
-        try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger, deadPrimary: deadPrimary))
+        switch await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger, deadPrimary: deadPrimary)) {
+        case .recovered:
+            break
+        case .notApplicable:
+            throw SubscriptionManagerError.tokenRecoveryNotAttempted
+        case .sessionChanged:
+            throw TokenBackupError.sessionChanged
+        case .failed(let error):
+            throw error
+        }
 
         guard let currentTokenContainer = try oAuthClient.currentTokenContainer(),
               !currentTokenContainer.decodedRefreshToken.isExpired() else {

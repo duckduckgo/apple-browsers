@@ -78,7 +78,7 @@ class SubscriptionManagerTests: XCTestCase {
                 }
             }
             self.recoverySideEffect?()
-            try await AppStoreTokenRecovery(purchasePlatform: self.subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: self.mockAppStoreRestoreFlowV2)
+            return await AppStoreTokenRecovery(purchasePlatform: self.subscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: self.mockAppStoreRestoreFlowV2)
                 .recover(context)
         }
         subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [testRecovery], missingTokenStrategies: [])
@@ -1450,9 +1450,9 @@ private struct SubscriptionPixelEvent: PixelKit.Event {
 
 /// A token recovery strategy that runs a closure.
 private struct ClosureTokenRecovery: TokenRecoveryStrategy {
-    let body: (TokenRecoveryContext) async throws -> Void
+    let body: (TokenRecoveryContext) async -> TokenRecoveryResult
 
-    func recover(_ context: TokenRecoveryContext) async throws {
-        try await body(context)
+    func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
+        await body(context)
     }
 }

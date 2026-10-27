@@ -172,6 +172,50 @@ final class AIChatContextualSidebarPresenterTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenDetachedThenChildIsFreeAtOnceWhileTheColumnSlidesOut() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+        let columnClosed = XCTNSPredicateExpectation(predicate: NSPredicate { [container] _, _ in
+            container?.isHidden == true
+        }, object: nil)
+
+        sut.detach(child, animated: true)
+
+        XCTAssertNil(child.parent)
+        XCTAssertNil(child.view.superview)
+        XCTAssertNil(sut.hostedViewController)
+        XCTAssertFalse(sut.isPresenting)
+        wait(for: [columnClosed], timeout: 2)
+        XCTAssertEqual(page.frame.width, parentViewController.view.bounds.width)
+    }
+
+    @MainActor
+    func testWhenDetachedWithoutAnimationThenTheColumnClosesAtOnce() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+
+        sut.detach(child, animated: false)
+
+        XCTAssertNil(child.parent)
+        XCTAssertTrue(container.isHidden)
+        XCTAssertEqual(page.frame.width, parentViewController.view.bounds.width)
+    }
+
+    @MainActor
+    func testWhenDetachedChildIsPresentedAgainThenItReturnsToTheColumn() {
+        let child = RecordingChildViewController()
+        sut.present(child, animated: false)
+        sut.detach(child, animated: true)
+
+        sut.present(child, animated: false)
+
+        XCTAssertTrue(child.parent === parentViewController)
+        XCTAssertTrue(sut.isPresenting)
+        XCTAssertFalse(container.isHidden)
+        XCTAssertEqual(page.frame.width, parentViewController.view.bounds.width - sidebarWidth)
+    }
+
+    @MainActor
     func testWhenAnotherViewControllerIsPresentedWhileShownThenItReplacesTheFirstInPlace() {
         let first = RecordingChildViewController()
         let second = RecordingChildViewController()

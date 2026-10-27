@@ -43,6 +43,10 @@ extension MainViewController: AIChatContextualSidebarHosting {
         contextualSidebarPresenter.dismiss(viewController, animated: animated, completion: completion)
     }
 
+    func detachContextualSidebar(_ viewController: UIViewController, animated: Bool) {
+        contextualSidebarPresenter?.detach(viewController, animated: animated)
+    }
+
     func makeContextualSidebarPresenter() -> AIChatContextualSidebarPresenter? {
         guard let container = viewCoordinator.contextualSidebarContainer,
               let shown = viewCoordinator.constraints.contextualSidebarShown,
@@ -69,11 +73,43 @@ extension MainViewController: AIChatContextualSidebarHosting {
         presenter.dismiss(hostedViewController, animated: true, completion: nil)
     }
 
-    /// A window narrowed out of the iPad layout has no room for the sidebar, so the page takes the width back.
-    func closeContextualSidebarIfItNoLongerFits() {
-        guard !canPresentContextualSidebar,
-              let coordinator = currentTab?.aiChatContextualSheetCoordinator,
-              coordinator.isSheetInSidebar else { return }
-        coordinator.dismissSheet(animated: false)
+    /// Runs on every step of a window resize, and on rotation, before the new size lands. A sidebar that stops fitting
+    /// hands the chat to a sheet straight away, so it never leaves the screen. Going back into the sidebar waits for
+    /// the resize to end, since the sheet works at any width and the drag may still reverse.
+    func contextualSurfaceWillTransition(with transitionCoordinator: UIViewControllerTransitionCoordinator) {
+        guard let coordinator = currentTab?.aiChatContextualSheetCoordinator else { return }
+        // A rotation animates its own change, which covers the column leaving at once.
+        if transitionCoordinator.isAnimated, coordinator.isSheetInSidebar, !canPresentContextualSidebar {
+            coordinator.parkSurfaceForResize(animated: false)
+        }
+        transitionCoordinator.animate(alongsideTransition: nil) { [weak self, weak coordinator] _ in
+            guard let self, let coordinator else { return }
+            // A live resize step runs with animations off, so the column's exit starts here, once the step is done.
+            if coordinator.isSheetInSidebar, !self.canPresentContextualSidebar {
+                coordinator.parkSurfaceForResize(animated: true)
+            }
+            if coordinator.hasParkedSurface {
+                coordinator.adaptSurface(toPresenter: self)
+            } else {
+                self.adaptContextualSurfaceOnceResizeEnds()
+            }
+        }
     }
+
+    /// A live resize reports every step of the drag, so the chat moves once, when the user lets go of the window,
+    /// rather than flipping between a sheet and the sidebar on the way.
+    private func adaptContextualSurfaceOnceResizeEnds() {
+        if #available(iOS 26, *), view.window?.windowScene?.effectiveGeometry.isInteractivelyResizing == true {
+            guard !isContextualSurfaceResizeCheckPending else { return }
+            isContextualSurfaceResizeCheckPending = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.resizeEndCheckInterval) { [weak self] in
+                self?.isContextualSurfaceResizeCheckPending = false
+                self?.adaptContextualSurfaceOnceResizeEnds()
+            }
+            return
+        }
+        currentTab?.aiChatContextualSheetCoordinator.adaptSurface(toPresenter: self)
+    }
+
+    private static let resizeEndCheckInterval: TimeInterval = 0.1
 }

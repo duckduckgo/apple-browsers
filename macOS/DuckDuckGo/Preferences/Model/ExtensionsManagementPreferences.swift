@@ -25,10 +25,8 @@ import WebExtensions
 @MainActor
 final class ExtensionsManagementPreferences: ObservableObject {
 
-    @Published private(set) var installedExtensions: [ChromeWebStoreListing] = []
+    @Published private(set) var installedExtensions: [InstalledExtensionEntry] = []
     @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
-    @Published private var locallyDisabledIDs: Set<String> = []
-    @Published private var remotelyDisabledIDs: Set<String> = []
 
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -46,29 +44,17 @@ final class ExtensionsManagementPreferences: ObservableObject {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
     }
 
-    func isEnabled(_ item: ChromeWebStoreListing) -> Bool {
-        !locallyDisabledIDs.contains(item.id) && !remotelyDisabledIDs.contains(item.id)
-    }
-
-    func isRemotelyDisabled(_ item: ChromeWebStoreListing) -> Bool {
-        remotelyDisabledIDs.contains(item.id)
-    }
-
-    func setEnabled(_ isEnabled: Bool, for item: ChromeWebStoreListing) {
-        guard let identifier = installedExtension(for: item)?.uniqueIdentifier else {
-            return
-        }
-
-        applyOptimisticEnabledState(isEnabled, for: item)
+    func setEnabled(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
+        applyOptimisticEnabledState(isEnabled, for: entry)
         Task { [weak self] in
-            await self?.applyEnabledState(isEnabled, identifier: identifier)
+            await self?.applyEnabledState(isEnabled, identifier: entry.id)
         }
     }
 
-    func remove(_ item: ChromeWebStoreListing) {
+    func remove(_ entry: InstalledExtensionEntry) {
         guard
             let store = webExtensionManager?.chromeWebStore,
-            let storeID = installedExtension(for: item)?.storeIdentity?.id
+            let storeID = entry.record.storeIdentity?.id
         else {
             return
         }
@@ -76,6 +62,19 @@ final class ExtensionsManagementPreferences: ObservableObject {
         Task {
             _ = await store.remove(identifier: storeID)
         }
+    }
+}
+
+@available(macOS 15.4, *)
+extension ExtensionsManagementPreferences {
+
+    struct InstalledExtensionEntry: Identifiable {
+        var record: InstalledWebExtension
+        let listing: ChromeWebStoreListing
+        let isRemotelyDisabled: Bool
+
+        var id: String { record.uniqueIdentifier }
+        var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
     }
 }
 
@@ -103,42 +102,36 @@ private extension ExtensionsManagementPreferences {
             return
         }
 
-        (installedExtensions, locallyDisabledIDs, remotelyDisabledIDs) = classifyExtensions(manager: manager, store: store)
+        installedExtensions = installedEntries(manager: manager, store: store)
         uninstalledPasswordManagers = availablePasswordManagers(in: store)
     }
 
     func resetExtensions() {
         installedExtensions = []
         uninstalledPasswordManagers = []
-        locallyDisabledIDs = []
-        remotelyDisabledIDs = []
     }
 
-    func classifyExtensions(manager: WebExtensionManaging, store: ChromeWebStoreManaging) -> (installed: [ChromeWebStoreListing], locallyDisabledIDs: Set<String>, remotelyDisabledIDs: Set<String>) {
-        var installed: [ChromeWebStoreListing] = []
-        var locallyDisabledIDs = Set<String>()
-        var remotelyDisabledIDs = Set<String>()
+    /// Built from the installation records, so extensions the catalog no longer offers stay listed.
+    func installedEntries(manager: WebExtensionManaging, store: ChromeWebStoreManaging) -> [InstalledExtensionEntry] {
+        var entries: [InstalledExtensionEntry] = []
+        var seenListingIDs = Set<String>()
 
         for identifier in manager.webExtensionIdentifiers {
             guard
                 let record = manager.installedExtension(identifier: identifier),
                 let listing = listing(for: record, in: store),
-                !installed.contains(where: { $0.id == listing.id })
+                seenListingIDs.contains(listing.id) == false
             else {
                 // Old and new versions coexist during an update.
                 continue
             }
 
-            installed.append(listing)
-            if record.isDisabled {
-                locallyDisabledIDs.insert(listing.id)
-            }
-            if manager.isRemotelyDisabled(identifier: identifier) {
-                remotelyDisabledIDs.insert(listing.id)
-            }
+            let entry = InstalledExtensionEntry(record: record, listing: listing, isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier))
+            entries.append(entry)
+            seenListingIDs.insert(listing.id)
         }
 
-        return (installed, locallyDisabledIDs, remotelyDisabledIDs)
+        return entries
     }
 
     func availablePasswordManagers(in store: ChromeWebStoreManaging) -> [ChromeWebStoreListing] {
@@ -147,16 +140,6 @@ private extension ExtensionsManagementPreferences {
             .compactMap(store.catalogEntry(of:))
             .compactMap(store.listing(of:))
             .filter(\.isPasswordManager)
-    }
-
-    func installedExtension(for item: ChromeWebStoreListing) -> InstalledWebExtension? {
-        guard let manager = webExtensionManager, let store = manager.chromeWebStore else {
-            return nil
-        }
-
-        return manager.webExtensionIdentifiers.lazy
-            .compactMap(manager.installedExtension(identifier:))
-            .first { listing(for: $0, in: store)?.id == item.id }
     }
 
     func listing(for record: InstalledWebExtension, in store: ChromeWebStoreManaging) -> ChromeWebStoreListing? {
@@ -168,13 +151,12 @@ private extension ExtensionsManagementPreferences {
     }
 
     /// Updated ahead of the async load, so the switch doesn't snap back.
-    func applyOptimisticEnabledState(_ isEnabled: Bool, for item: ChromeWebStoreListing) {
-        guard isEnabled else {
-            locallyDisabledIDs.insert(item.id)
+    func applyOptimisticEnabledState(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
+        guard let index = installedExtensions.firstIndex(where: { $0.id == entry.id }) else {
             return
         }
 
-        locallyDisabledIDs.remove(item.id)
+        installedExtensions[index].record.isDisabled = !isEnabled
     }
 
     func applyEnabledState(_ isEnabled: Bool, identifier: String) async {

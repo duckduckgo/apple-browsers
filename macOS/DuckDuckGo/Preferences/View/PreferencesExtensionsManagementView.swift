@@ -101,21 +101,21 @@ extension Preferences {
         private var installedExtensionsView: some View {
             VStack(alignment: .leading, spacing: 12) {
                 sectionTitle(UserText.extensionsSettingsAddedHeader)
-                ForEach(model.installedExtensions) { item in
-                    installedRow(for: item)
+                ForEach(model.installedExtensions) { entry in
+                    installedRow(for: entry)
                 }
             }
         }
 
-        private func installedRow(for item: ChromeWebStoreListing) -> some View {
-            InstalledExtensionRow(item: item,
+        private func installedRow(for entry: ExtensionsManagementPreferences.InstalledExtensionEntry) -> some View {
+            InstalledExtensionRow(item: entry.listing,
                                   imageLoader: imageLoader,
-                                  isEnabled: Binding(get: { model.isEnabled(item) },
-                                                     set: { model.setEnabled($0, for: item) }),
-                                  isLocked: model.isRemotelyDisabled(item),
+                                  isEnabled: Binding(get: { entry.isEnabled },
+                                                     set: { model.setEnabled($0, for: entry) }),
+                                  isLocked: entry.isRemotelyDisabled,
                                   // Placeholder until details are wired up.
                                   onDetails: {},
-                                  onRemove: { model.remove(item) })
+                                  onRemove: { model.remove(entry) })
         }
 
         private var moreExtensionsHeader: some View {

@@ -25,12 +25,12 @@ def strings(values):
     return ''.join(f'"{key}" = "{value}";\n' for key, value in values.items())
 
 
-def stringsdict(format_key, variants):
+def stringsdict(format_key, variants, value_type='d'):
     plurals = ''.join(f'<key>{category}</key><string>{value}</string>' for category, value in variants.items())
     return ('<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>sites</key><dict>'
             f'<key>NSStringLocalizedFormatKey</key><string>{format_key}</string><key>count</key><dict>'
             '<key>NSStringFormatSpecTypeKey</key><string>NSStringPluralRuleType</string>'
-            f'<key>NSStringFormatValueTypeKey</key><string>d</string>{plurals}</dict></dict></dict></plist>')
+            f'<key>NSStringFormatValueTypeKey</key><string>{value_type}</string>{plurals}</dict></dict></dict></plist>')
 
 
 def xcstrings(english, translations):
@@ -40,7 +40,8 @@ def xcstrings(english, translations):
 
 
 def check(head, base=None):
-    return CHECK.check(list(head), head.get, (base or {}).get)
+    english = {path: content for path, content in head.items() if CHECK.locale_of(path) in ('en', 'Base')}
+    return CHECK.check(list(head), head.get, {**english, **(base or {})}.get)
 
 
 class PlaceholderTests(unittest.TestCase):
@@ -52,6 +53,7 @@ class PlaceholderTests(unittest.TestCase):
             ('Usuń %#@items@.', 'Delete %#@items@.'),
             ('25 %', '25%'),
             ('Nur %d %% genutzt', 'Only %d%% used'),
+            ('%2$@: %1$#@files@', '%#@files@ in %@'),
         ]:
             with self.subTest(translation=translation):
                 self.assertIsNone(CHECK.placeholder_problem(translation, [english], plural=False))
@@ -64,6 +66,7 @@ class PlaceholderTests(unittest.TestCase):
             ('%@ und %@', 'and %@', 'Extra object argument 2'),
             ('Usuń 1$#@items@.', 'Delete %#@items@.', 'Missing plural variable items'),
             ('%#@sites@', '%#@items@', 'Unknown plural variable sites'),
+            ('%@ – %#@files@', '%#@files@ in %@', 'Extra object argument 1'),
         ]:
             with self.subTest(translation=translation):
                 self.assertEqual(CHECK.placeholder_problem(translation, [english], plural=False), problem)
@@ -145,6 +148,38 @@ class CheckTests(unittest.TestCase):
         })
 
         self.assertEqual(findings, [])
+
+    def testWhenThePluralValueTypeIsAnotherIntegerTypeThenItIsNotFlagged(self):
+        findings = check({
+            ENGLISH_STRINGSDICT: stringsdict('%#@count@', {'one': '%d site', 'other': '%d sites'}),
+            CZECH_STRINGSDICT: stringsdict('%#@count@', {'one': '%ld web', 'other': '%ld webů'}, value_type='ld'),
+        })
+
+        self.assertEqual(findings, [])
+
+    def testWhenThePluralValueTypeIsAnotherKindThenItNeedsAFix(self):
+        findings = check({
+            ENGLISH_STRINGSDICT: stringsdict('%#@count@', {'one': '%d site', 'other': '%d sites'}),
+            CZECH_STRINGSDICT: stringsdict('%#@count@', {'one': '%d web', 'other': '%d webů'}, value_type='@'),
+        })
+
+        self.assertEqual([(f.needs_fix, f.problem) for f in findings], [(True, 'Plural value type differs from English')])
+
+    def testWhenThePullRequestChangesEnglishThenItIsAWarningAndTranslationsUseTheReleaseEnglish(self):
+        findings = check(
+            {ENGLISH_STRINGS: strings({'open.in': 'Open in'}), GERMAN_STRINGS: strings({'open.in': 'Öffnen in'})},
+            {ENGLISH_STRINGS: strings({'open.in': 'Open in %@'}), GERMAN_STRINGS: strings({'open.in': 'Öffnen in %@'})},
+        )
+
+        self.assertEqual(sorted((f.needs_fix, f.problem, f.locale) for f in findings),
+                         [(False, 'English changed', 'en'), (True, 'Missing argument 1', 'de')])
+
+    def testWhenAnXcstringsEnglishValueChangesThenItIsAWarning(self):
+        findings = check({XCSTRINGS: xcstrings('Open in', {'de': 'Öffnen in %@'})},
+                         {XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@'})})
+
+        self.assertEqual([(f.needs_fix, f.problem, f.translation, f.english) for f in findings],
+                         [(False, 'English changed', 'Open in', 'Open in %@')])
 
     def testWhenAStringsFileIsMalformedThenItNeedsAFix(self):
         for content in ['"open.in" = "Öffnen "in" %@";\n', '"open.in" = "Öffnen in %@"\n']:

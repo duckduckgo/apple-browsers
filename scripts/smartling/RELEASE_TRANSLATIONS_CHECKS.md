@@ -19,7 +19,7 @@ Two scripts check the translations that the **Smartling - Release Import** workf
 
 ### What it asserts
 
-Only non-English values the pull request adds or changes are checked. `en.lproj`, `Base.lproj` and the `en` localization in `.xcstrings` files are skipped.
+Only values the pull request adds or changes are checked. The import shouldn't change English (`en.lproj`, `Base.lproj` and the `en` localization in `.xcstrings` files), so any English change is a warning and skips the other checks.
 
 | Check | Files | Result | Example that fails |
 | --- | --- | --- | --- |
@@ -30,18 +30,19 @@ Only non-English values the pull request adds or changes are checked. `en.lproj`
 | No format specifier is extra | All | ❌ Needs a fix | `and %@` → `%@ und %@` |
 | Each argument keeps its type | All | ❌ Needs a fix | `%@ item` → `%d Element` (types: integer, decimal, object, C string, pointer) |
 | Plural variables match English | `.stringsdict`, `.xcstrings` | ❌ Needs a fix | `%#@items@` → `1$#@items@` (missing) or `%#@sites@` (unknown) |
-| The plural value type matches English | `.stringsdict` | ❌ Needs a fix | `NSStringFormatValueTypeKey` `d` → `@` |
+| The plural value type matches English | `.stringsdict` | ❌ Needs a fix | `NSStringFormatValueTypeKey` `d` → `@` (`d` → `ld` passes: both are integers) |
 | Bold `**` markers match English | All | ⚠️ Warning | `Get **more** today` → `Hol dir heute mehr` |
 | The translation isn't empty | All | ⚠️ Warning | `Close` → `` |
 | The translation wasn't removed | All | ⚠️ Warning | `open.in` deleted from `de.lproj` while English still has it |
 | The translation wasn't replaced by English | All | ⚠️ Warning | `Optionale Cookies ablehnen` → `Reject optional cookies` |
 | The translation didn't shrink by more than half | All | ⚠️ Warning | `Cookie-Pop-ups automatisch verwalten` → `Cookies` |
-| The English file parses | `.strings`, `.stringsdict` | ⚠️ Warning, and the file isn't checked | A malformed `en.lproj/Localizable.strings` |
+| English didn't change | `.strings`, `.stringsdict`, `.xcstrings` that exist on the release branch | ⚠️ Warning | `Open in %@` → `Open in` in `en.lproj` or the `en` localization |
+| The release branch's English parses | `.strings`, `.stringsdict` | ⚠️ Warning, and the file isn't checked | A malformed `en.lproj/Localizable.strings` |
 
 ### How the comparisons work
 
-- **English:** `.strings` and `.stringsdict` files use `en.lproj`, or `Base.lproj` when there's no `en.lproj`. `.xcstrings` files use the `en` localization, or the key when there isn't one.
-- **Specifier positions:** positional specifiers (`%2$@`) keep their position. Unnumbered ones are numbered in order. `%%` is text.
+- **English:** the release branch's, at the pull request's merge base, so a change the pull request makes to English doesn't hide a broken translation. A file new in the pull request uses its own English. `.strings` and `.stringsdict` files use `en.lproj`, or `Base.lproj` when there's no `en.lproj`. `.xcstrings` files use the `en` localization, or the key when there isn't one.
+- **Specifier positions:** positional specifiers (`%2$@`) keep their position. Unnumbered ones are numbered in order, and an unnumbered plural variable (`%#@files@`) takes a number too, since it reads an argument: `%#@files@ in %@` → `%2$@: %1$#@files@` passes. `%%` is text.
 - **Plural variants:** each variant is compared with every English variant of the same plural. A translated variant may leave out a specifier, such as `Eine Website` for `%d sites`, since languages word their plural categories differently.
 - **English without specifiers:** this English is never formatted, so a `%` in the translation is just text: `25%` → `25 %` passes.
 - **Replaced by English:** flagged only when the previous translation differed from English and the text has at least three words. Short strings such as `Tab` often stay the same.
@@ -49,7 +50,7 @@ Only non-English values the pull request adds or changes are checked. `en.lproj`
 
 ### Release DRI notifications
 
-The pull request comment starts with `<!-- smartling-release-translations-check verdict=… notified=… -->`. Each push updates the same comment. The workflow comments on the Translations subtask linked in the pull request's `Task/Issue URL` whenever the verdict differs from the last one posted there, and records the new verdict only once Asana accepts the comment. A failed Asana post is therefore retried on the next run.
+The pull request comment starts with `<!-- smartling-release-translations-check verdict=… notified=… -->`. When the script fails, the comment says the check couldn't run and not to merge, with `verdict=error`, so an earlier verdict never stands for an unchecked commit. Each push updates the same comment. The workflow comments on the Translations subtask linked in the pull request's `Task/Issue URL` whenever the verdict differs from the last one posted there, and records the new verdict only once Asana accepts the comment. A failed Asana post is therefore retried on the next run.
 
 ## `check_translation_integrity.py`
 

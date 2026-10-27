@@ -41,12 +41,22 @@ jobs:
 
       - name: Comment on the pull request
         id: comment
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          VERDICT: ${{ steps.check.outputs.verdict }}
+          VERDICT: ${{ steps.check.outputs.verdict || 'error' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
+          if [ ! -f "$RUNNER_TEMP/comment.md" ]; then
+            printf '%s\n' \
+              '<!-- smartling-release-translations-check verdict=error -->' \
+              "## ❌ The translations check couldn't run" \
+              '' \
+              "Don't merge yet: this pull request's translations weren't checked. The [workflow run]($RUN_URL) shows what failed. Re-run it once that's fixed." \
+              > "$RUNNER_TEMP/comment.md"
+          fi
           previous="$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
             --jq '.[] | select(.body | startswith("<!-- smartling-release-translations-check")) | "\(.id) \(.body | split("\n")[0])"' \
             | tail -n 1)"
@@ -68,14 +78,14 @@ jobs:
 
       - name: Get the Translations task ID
         id: task
-        if: steps.comment.outputs.notify == 'true'
+        if: ${{ !cancelled() && steps.comment.outputs.notify == 'true' }}
         uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
         with:
           text: ${{ github.event.pull_request.body }}
 
       - name: Point the release DRI to the comment
         id: asana
-        if: steps.task.outputs.task-id != ''
+        if: ${{ !cancelled() && steps.task.outputs.task-id != '' }}
         continue-on-error: true
         uses: duckduckgo/native-github-asana-sync@v2.5.1
         with:
@@ -85,18 +95,18 @@ jobs:
           asana-task-comment-pinned: false
           asana-task-comment-is-html: false
           asana-task-comment: |
-            ${{ (steps.check.outputs.verdict == 'ready' && '✅ The release translations are ready to merge.') || (steps.check.outputs.verdict == 'warning' && '⚠️ The release translations are ready to merge after checking the warnings.') || '❌ Some release translations need a fix before merging.' }}
+            ${{ (steps.check.outputs.verdict == 'ready' && '✅ The release translations are ready to merge.') || (steps.check.outputs.verdict == 'warning' && '⚠️ The release translations are ready to merge after checking the warnings.') || (steps.check.outputs.verdict == 'fix' && '❌ Some release translations need a fix before merging.') || '❌ The release translations check couldn''t run, so don''t merge yet.' }}
 
             🔀 Pull request: ${{ github.event.pull_request.html_url }}
             📋 What to do: ${{ steps.comment.outputs.url }}
 
       - name: Remember the release DRI was told
-        if: steps.asana.outcome == 'success'
+        if: ${{ !cancelled() && steps.asana.outcome == 'success' }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           COMMENT_ID: ${{ steps.comment.outputs.id }}
-          VERDICT: ${{ steps.check.outputs.verdict }}
+          VERDICT: ${{ steps.check.outputs.verdict || 'error' }}
         run: |
           sed -i "1s/ notified=[a-z]* -->\$/ notified=$VERDICT -->/" "$RUNNER_TEMP/comment.md"
           gh api -X PATCH "repos/$REPOSITORY/issues/comments/$COMMENT_ID" -F body=@"$RUNNER_TEMP/comment.md" --silent

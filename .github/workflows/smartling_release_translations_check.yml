@@ -51,25 +51,30 @@ jobs:
             --jq '.[] | select(.body | startswith("<!-- smartling-release-translations-check")) | "\(.id) \(.body | split("\n")[0])"' \
             | tail -n 1)"
           comment_id="${previous%% *}"
+          notified="$(sed -n 's/.* notified=\([a-z]*\) -->$/\1/p' <<< "$previous")"
+          sed -i "1s/ -->\$/ notified=${notified:-none} -->/" "$RUNNER_TEMP/comment.md"
           if [ -n "$comment_id" ]; then
-            url="$(gh api -X PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F body=@"$RUNNER_TEMP/comment.md" --jq .html_url)"
+            response="$(gh api -X PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F body=@"$RUNNER_TEMP/comment.md" --jq '"\(.id) \(.html_url)"')"
           else
-            url="$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F body=@"$RUNNER_TEMP/comment.md" --jq .html_url)"
+            response="$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F body=@"$RUNNER_TEMP/comment.md" --jq '"\(.id) \(.html_url)"')"
           fi
+          url="${response#* }"
           echo "Comment: $url"
+          echo "id=${response%% *}" >> "$GITHUB_OUTPUT"
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          if [[ "$previous" != *"verdict=$VERDICT -->"* ]]; then
-            echo "verdict_changed=true" >> "$GITHUB_OUTPUT"
+          if [ "$notified" != "$VERDICT" ]; then
+            echo "notify=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Get the Translations task ID
         id: task
-        if: steps.comment.outputs.verdict_changed == 'true'
+        if: steps.comment.outputs.notify == 'true'
         uses: duckduckgo/apple-toolbox/actions/asana-extract-task-id@main
         with:
           text: ${{ github.event.pull_request.body }}
 
       - name: Point the release DRI to the comment
+        id: asana
         if: steps.task.outputs.task-id != ''
         continue-on-error: true
         uses: duckduckgo/native-github-asana-sync@v2.5.1
@@ -84,6 +89,17 @@ jobs:
 
             🔀 Pull request: ${{ github.event.pull_request.html_url }}
             📋 What to do: ${{ steps.comment.outputs.url }}
+
+      - name: Remember the release DRI was told
+        if: steps.asana.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          COMMENT_ID: ${{ steps.comment.outputs.id }}
+          VERDICT: ${{ steps.check.outputs.verdict }}
+        run: |
+          sed -i "1s/ notified=[a-z]* -->\$/ notified=$VERDICT -->/" "$RUNNER_TEMP/comment.md"
+          gh api -X PATCH "repos/$REPOSITORY/issues/comments/$COMMENT_ID" -F body=@"$RUNNER_TEMP/comment.md" --silent
 
       - name: Fail the run if a translation needs a fix
         if: steps.check.outputs.verdict == 'fix'

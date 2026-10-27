@@ -54,7 +54,7 @@ class PlaceholderTests(unittest.TestCase):
             ('Nur %d %% genutzt', 'Only %d%% used'),
         ]:
             with self.subTest(translation=translation):
-                self.assertIsNone(CHECK.placeholder_problem(translation, english, plural=False))
+                self.assertIsNone(CHECK.placeholder_problem(translation, [english], plural=False))
 
     def testWhenTheSpecifiersDifferFromEnglishThenTheProblemIsDescribed(self):
         for translation, english, problem in [
@@ -66,10 +66,15 @@ class PlaceholderTests(unittest.TestCase):
             ('%#@sites@', '%#@items@', 'Unknown plural variable sites'),
         ]:
             with self.subTest(translation=translation):
-                self.assertEqual(CHECK.placeholder_problem(translation, english, plural=False), problem)
+                self.assertEqual(CHECK.placeholder_problem(translation, [english], plural=False), problem)
 
     def testWhenAPluralVariantLeavesOutTheCountThenThereIsNoProblem(self):
-        self.assertIsNone(CHECK.placeholder_problem('Eine Website', 'One site %d sites', plural=True))
+        self.assertIsNone(CHECK.placeholder_problem('Eine Website', ['One site', '%d sites'], plural=True))
+
+    def testWhenEnglishPluralVariantsNumberTheirSpecifiersDifferentlyThenEitherMatches(self):
+        for translation in ['Jeden web v %@', '%d webů v %@']:
+            with self.subTest(translation=translation):
+                self.assertIsNone(CHECK.placeholder_problem(translation, ['One site in %@', '%d sites in %@'], plural=True))
 
 
 class CheckTests(unittest.TestCase):
@@ -132,6 +137,61 @@ class CheckTests(unittest.TestCase):
         })
 
         self.assertEqual([(f.needs_fix, f.key) for f in findings], [(True, 'sites')])
+
+    def testWhenOnlyTheEnglishOtherVariantHasTheCountThenACorrectPluralIsNotFlagged(self):
+        findings = check({
+            ENGLISH_STRINGSDICT: stringsdict('%#@count@', {'one': 'One site in %@', 'other': '%d sites in %@'}),
+            CZECH_STRINGSDICT: stringsdict('%#@count@', {'one': 'Jeden web v %@', 'few': '%d weby v %@', 'other': '%d webů v %@'}),
+        })
+
+        self.assertEqual(findings, [])
+
+    def testWhenAStringsFileIsMalformedThenItNeedsAFix(self):
+        for content in ['"open.in" = "Öffnen "in" %@";\n', '"open.in" = "Öffnen in %@"\n']:
+            with self.subTest(content=content):
+                findings = check({ENGLISH_STRINGS: strings({'open.in': 'Open in %@'}), GERMAN_STRINGS: content})
+
+                self.assertEqual([(f.needs_fix, f.problem) for f in findings], [(True, "File doesn't parse")])
+
+    def testWhenAStringsFileHasCommentsAndEscapesThenItParses(self):
+        content = '\ufeff/* Link */\n"open.in" = "Öffnen in %@ – \\"https://duckduckgo.com\\"";\n// End\n'
+
+        findings = check({ENGLISH_STRINGS: strings({'open.in': 'Open in %@'}), GERMAN_STRINGS: content})
+
+        self.assertEqual(findings, [])
+
+    def testWhenThePreviousFileDoesNotParseThenTheChangesAreStillChecked(self):
+        findings = check(
+            {ENGLISH_STRINGS: strings({'open.in': 'Open in %@'}), GERMAN_STRINGS: strings({'open.in': 'Öffnen in'})},
+            {GERMAN_STRINGS: '"open.in" = "broken'},
+        )
+
+        self.assertEqual([f.problem for f in findings], ['Missing argument 1'])
+
+    def testWhenALocalizationFileIsDeletedThenItNeedsAFix(self):
+        findings = check({ENGLISH_STRINGS: strings({'open.in': 'Open in %@'}), GERMAN_STRINGS: None},
+                         {GERMAN_STRINGS: strings({'open.in': 'Öffnen in %@'})})
+
+        self.assertEqual([(f.needs_fix, f.problem, f.locale) for f in findings], [(True, 'File deleted', 'de')])
+
+    def testWhenATranslationIsRemovedWhileItsEnglishRemainsThenItIsAWarning(self):
+        findings = check(
+            {ENGLISH_STRINGS: strings({'open.in': 'Open in %@', 'close': 'Close'}), GERMAN_STRINGS: strings({'close': 'Schließen'})},
+            {GERMAN_STRINGS: strings({'open.in': 'Öffnen in %@', 'close': 'Schließen', 'gone': 'Weg'})},
+        )
+
+        self.assertEqual([(f.needs_fix, f.problem, f.key) for f in findings], [(False, 'Translation removed', 'open.in')])
+
+    def testWhenAnXcstringsLocaleIsRemovedThenItIsAWarning(self):
+        findings = check({XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@'})},
+                         {XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@', 'es': 'Abrir en %@'})})
+
+        self.assertEqual([(f.needs_fix, f.problem, f.locale) for f in findings], [(False, 'Translation removed', 'es')])
+
+    def testWhenAnXcstringsFileIsNotAStringCatalogThenItNeedsAFix(self):
+        for content in ['[]', '{"strings": []}', '{"strings": {"open.in": "Open in %@"}}']:
+            with self.subTest(content=content):
+                self.assertEqual([f.problem for f in check({XCSTRINGS: content})], ["File doesn't parse"])
 
     def testWhenAnXcstringsTranslationHasTheWrongSpecifierThenItNeedsAFix(self):
         findings = check({XCSTRINGS: xcstrings('Open in %@', {'de': 'Öffnen in %@', 'es': 'Abrir en %d'})},

@@ -16,15 +16,20 @@ import plistlib
 import argparse
 import subprocess
 from pathlib import Path
+from functools import lru_cache
 from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Set, Tuple
 from xml.parsers.expat import ExpatError
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'translation-pr-checks'))
 from check_marker_consistency import marker_issues
-from localization_utils import parse_strings_file
+from localization_utils import get_merge_base
 
 LOCALIZATION_EXTENSIONS = ('.strings', '.stringsdict', '.xcstrings')
+STRINGS_TOKEN = re.compile(
+    r'\s+|/\*.*?\*/|//[^\n]*|"(?P<key>(?:[^"\\]|\\.)*)"\s*=\s*"(?P<value>(?:[^"\\]|\\.)*)"\s*;',
+    re.DOTALL,
+)
 SPECIFIER = re.compile(
     r"%arg|%(?:\d+\$)?#@(?P<variable>\w+)@|%%"
     r"|%(?:(?P<position>\d+)\$)?[-+#0']*\d*(?:\.\d+)?(?:hh|h|ll|l|q|z|t|j|L)?(?P<type>[@dDiuUxXoOfFeEgGcCsSaAp])"
@@ -76,11 +81,18 @@ def specifiers(value: str) -> Tuple[Dict[int, str], Set[str]]:
     return positions, variables
 
 
-def placeholder_problem(translation: str, english: str, plural: bool) -> Optional[str]:
+def placeholder_problem(translation: str, english: List[str], plural: bool) -> Optional[str]:
     """Describe how the translation's format specifiers differ from English, or return None when they match. A plural
-    variant may leave out a specifier, since languages word their plural categories differently. English without
-    specifiers is never formatted, so a percent sign in its translation is just text."""
-    english_positions, english_variables = specifiers(english)
+    variant is compared with each English variant of its plural, and may leave out a specifier, since languages word
+    their plural categories differently. English without specifiers is never formatted, so a percent sign in its
+    translation is just text."""
+    english_positions: Dict[int, Set[str]] = {}
+    english_variables: Set[str] = set()
+    for value in english:
+        value_positions, value_variables = specifiers(value)
+        for position, kind in value_positions.items():
+            english_positions.setdefault(position, set()).add(kind)
+        english_variables |= value_variables
     if not english_positions and not english_variables:
         return None
     positions, variables = specifiers(translation)
@@ -90,8 +102,8 @@ def placeholder_problem(translation: str, english: str, plural: bool) -> Optiona
     for position, kind in sorted(positions.items()):
         if position not in english_positions:
             return f'Extra {kind} argument {position}'
-        if english_positions[position] != kind:
-            return f'Argument {position} is {kind}, English has {english_positions[position]}'
+        if kind not in english_positions[position]:
+            return f"Argument {position} is {kind}, English has {' or '.join(sorted(english_positions[position]))}"
     missing = sorted(set(english_positions) - set(positions))
     if missing and not plural:
         return f"Missing argument {', '.join(str(position) for position in missing)}"
@@ -116,18 +128,28 @@ def is_plural(path: Path_) -> bool:
     return any(part in PLURAL_CATEGORIES for part in path)
 
 
-def english_counterparts(path: Path_, english: Dict[Path_, str]) -> Tuple[str, str]:
+def plural_group(path: Path_) -> Optional[Path_]:
+    """Return the path without its plural category, which every variant of the same plural shares."""
+    for index, part in enumerate(path):
+        if part in PLURAL_CATEGORIES:
+            return path[:index] + path[index + 1:]
+    return None
+
+
+def english_counterparts(path: Path_, english: Dict[Path_, str]) -> Tuple[List[str], str]:
     """Return the English to compare a translation's specifiers with and its markers with. A plural variant is
-    compared with every English plural variant together, and its markers with the same or the 'other' variant."""
-    plural_english = {other: value for other, value in english.items() if is_plural(other)}
-    if is_plural(path) and plural_english:
-        same = english.get(path) or next((value for other, value in plural_english.items() if 'other' in other), '')
-        return ' '.join(plural_english.values()), same
+    compared with each English variant of the same plural, and its markers with the same or the 'other' variant."""
+    group = plural_group(path)
+    variants = {other: value for other, value in english.items() if group and plural_group(other) == group}
+    if variants:
+        same = english.get(path) or next((value for other, value in variants.items() if 'other' in other), '')
+        return list(variants.values()), same
     same = english.get(path) or english.get(('stringUnit', 'value')) or next(iter(english.values()), '')
-    return same, same
+    return [same], same
 
 
 def git_reader(revision: str) -> Reader:
+    @lru_cache(maxsize=None)
     def read(path: str) -> Optional[str]:
         result = subprocess.run(['git', 'show', f'{revision}:{path}'], capture_output=True, text=True, check=False)
         return result.stdout if result.returncode == 0 else None
@@ -154,7 +176,17 @@ def english_path(path: str, read: Reader) -> Optional[str]:
 
 
 def parse_strings(content: Optional[str]) -> Dict[Path_, str]:
-    return {(key,): value for key, value in parse_strings_file(content or '').items()}
+    """Parse a .strings file, raising ValueError on anything other than comments and "key" = "value"; entries."""
+    content = (content or '').lstrip('﻿')
+    values, position = {}, 0
+    while position < len(content):
+        match = STRINGS_TOKEN.match(content, position)
+        if not match:
+            raise ValueError(f"Unexpected text on line {content.count(chr(10), 0, position) + 1}")
+        if match['key'] is not None:
+            values[(match['key'],)] = match['value']
+        position = match.end()
+    return values
 
 
 def parse_stringsdict(content: Optional[str]) -> Dict[Path_, str]:
@@ -163,15 +195,23 @@ def parse_stringsdict(content: Optional[str]) -> Dict[Path_, str]:
     return leaves(plistlib.loads(content.encode('utf-8')))
 
 
-def xcstrings_translations(data: Dict) -> Dict[Tuple[str, str], Dict[Path_, str]]:
-    """Return {(key, locale): {path: value}} for every translated value, English included."""
+def xcstrings_translations(content: Optional[str]) -> Tuple[Set[str], Dict[Tuple[str, str], Dict[Path_, str]]]:
+    """Return the keys and {(key, locale): {path: value}} for every translated value, English included. Raises
+    ValueError when the content isn't a string catalog."""
+    data = json.loads(content or '{}')
+    strings = data.get('strings', {}) if isinstance(data, dict) else None
+    if not isinstance(strings, dict):
+        raise ValueError('Not a string catalog')
     translations = {}
-    for key, entry in (data.get('strings') or {}).items():
-        for locale, localization in (entry.get('localizations') or {}).items():
+    for key, entry in strings.items():
+        localizations = entry.get('localizations', {}) if isinstance(entry, dict) else None
+        if not isinstance(localizations, dict):
+            raise ValueError(f'{key} has no localizations dictionary')
+        for locale, localization in localizations.items():
             values = {path: value for path, value in leaves(localization).items() if path[-1] == 'value'}
             if values:
                 translations[(key, locale)] = values
-    return translations
+    return set(strings), translations
 
 
 def check_value(file: str, key: str, locale: str, path: Path_, translation: str, previous: Optional[str],
@@ -212,28 +252,40 @@ def check_lproj_file(path: str, read_head: Reader, read_base: Reader) -> List[Fi
     except (ValueError, ExpatError):
         return [Finding(True, "File doesn't parse", path, '', locale)]
     try:
-        previous, english = parse(read_base(path)), parse(read_head(english_file))
+        english = parse(read_head(english_file))
     except (ValueError, ExpatError):
-        previous, english = {}, {}
+        return [Finding(False, "English doesn't parse, so this file wasn't checked", path, '', locale)]
+    try:
+        previous = parse(read_base(path))
+    except (ValueError, ExpatError):
+        previous = {}
+
+    english_by_key: Dict[str, Dict[Path_, str]] = {}
+    for other, value in english.items():
+        english_by_key.setdefault(other[0], {})[other[1:] or ('value',)] = value
 
     findings = []
     for value_path, translation in current.items():
         if previous.get(value_path) == translation:
             continue
         key, sub_path = value_path[0], value_path[1:] or ('value',)
-        english_values = {(other[1:] or ('value',)): value for other, value in english.items() if other[0] == key}
         findings.extend(check_value(path, key, locale, sub_path, translation, previous.get(value_path),
-                                    english_values or {('value',): ''}))
+                                    english_by_key.get(key) or {('value',): ''}))
+    current_keys = {value_path[0] for value_path in current}
+    for key in sorted({value_path[0] for value_path in previous} - current_keys):
+        if key in english_by_key:
+            findings.append(Finding(False, 'Translation removed', path, key, locale, '',
+                                    next(iter(english_by_key[key].values()), '')))
     return findings
 
 
 def check_xcstrings_file(path: str, read_head: Reader, read_base: Reader) -> List[Finding]:
     try:
-        current = xcstrings_translations(json.loads(read_head(path) or '{}'))
+        keys, current = xcstrings_translations(read_head(path))
     except ValueError:
         return [Finding(True, "File doesn't parse", path, '', '')]
     try:
-        previous = xcstrings_translations(json.loads(read_base(path) or '{}'))
+        _, previous = xcstrings_translations(read_base(path))
     except ValueError:
         previous = {}
 
@@ -246,6 +298,10 @@ def check_xcstrings_file(path: str, read_head: Reader, read_base: Reader) -> Lis
             before = previous.get((key, locale), {}).get(value_path)
             if before != translation:
                 findings.extend(check_value(path, key, locale, value_path, translation, before, english))
+    for key, locale in previous:
+        if locale != 'en' and key in keys and (key, locale) not in current:
+            english = current.get((key, 'en'), {}).get(('stringUnit', 'value')) or key
+            findings.append(Finding(False, 'Translation removed', path, key, locale, '', english))
     return findings
 
 
@@ -254,6 +310,8 @@ def check(files: List[str], read_head: Reader, read_base: Reader) -> List[Findin
                 if not path.endswith(LOCALIZATION_EXTENSIONS)]
     for path in files:
         if read_head(path) is None:
+            if path.endswith(LOCALIZATION_EXTENSIONS):
+                findings.append(Finding(True, 'File deleted', path, '', locale_of(path) or ''))
             continue
         if path.endswith('.xcstrings'):
             findings.extend(check_xcstrings_file(path, read_head, read_base))
@@ -312,10 +370,10 @@ def comment(findings: List[Finding], run_url: str) -> str:
     lines += ['', '<details><summary>What this checks</summary>', '',
               'Each translation this pull request changes is compared with the release branch\'s English:',
               '- **Needs a fix:** format specifiers (`%@`, `%d`, `%1$@`, plural variables) that are missing, extra or '
-              'of another type, files that don\'t parse, and files other than `.strings`, `.stringsdict` and '
-              '`.xcstrings`.',
-              '- **Warnings:** bold `**` markers that differ from English, empty translations, translations replaced '
-              'by the English text, and translations less than half their previous length.',
+              'of another type, files that don\'t parse or were deleted, and files other than `.strings`, '
+              '`.stringsdict` and `.xcstrings`.',
+              '- **Warnings:** bold `**` markers that differ from English, empty or removed translations, '
+              'translations replaced by the English text, and translations less than half their previous length.',
               '',
               "Translation quality isn't checked: Smartling's translators own it.",
               '</details>']
@@ -331,7 +389,7 @@ def main():
     parser.add_argument('--run-url', default='')
     args = parser.parse_args()
 
-    merge_base = subprocess.run(['git', 'merge-base', args.base, 'HEAD'], capture_output=True, text=True, check=True).stdout.strip()
+    merge_base = get_merge_base(args.base) or args.base
     findings = check(changed_files(merge_base), git_reader('HEAD'), git_reader(merge_base))
     for finding in findings:
         print(f"{'❌' if finding.needs_fix else '⚠️'} {finding.problem}: {finding.file} {finding.key} "

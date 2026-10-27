@@ -24,6 +24,8 @@ import FoundationExtensions
 /// Recovers the current token container from the backup token container.
 public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
+    public let method: TokenRecoveryMethod = .backup
+
     private let oAuthClient: any OAuthClient
     private let retryInterval: TimeInterval
     private let now: () -> Date

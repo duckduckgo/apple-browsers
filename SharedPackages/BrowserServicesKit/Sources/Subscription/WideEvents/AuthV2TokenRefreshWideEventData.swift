@@ -34,7 +34,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         featureName: "authv2-token-refresh",
         mobileMetaType: "ios-authv2-token-refresh",
         desktopMetaType: "macos-authv2-token-refresh",
-        version: "1.3.0"
+        version: "1.4.0"
     )
 
     public var globalData: WideEventGlobalData
@@ -45,6 +45,10 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
     public var fetchJWKSDuration: WideEvent.MeasuredInterval?
     public var recoveryDuration: WideEvent.MeasuredInterval?
     public var recoveryOutcome: TokenRecoveryOutcome?
+    /// How the token was recovered, when a recovery strategy recovered it.
+    public var recoveryMethod: TokenRecoveryMethod?
+    /// The outcome of the backup restore, when the recovery path was reached.
+    public var backupOutcome: BackupRecoveryOutcome?
 
     public var failingStep: FailingStep?
     public var errorData: WideEventErrorData?
@@ -68,7 +72,7 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
 
     private enum CodingKeys: String, CodingKey {
         case globalData, contextData, appData
-        case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, recoveryOutcome
+        case refreshTokenDuration, fetchJWKSDuration, recoveryDuration, recoveryOutcome, recoveryMethod, backupOutcome
         case failingStep, errorData, refreshTrigger, startedAt
         case signedOut, subscriptionStatus, netpIsRunning
     }
@@ -97,6 +101,8 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         fetchJWKSDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .fetchJWKSDuration)
         recoveryDuration = try container.decodeIfPresent(WideEvent.MeasuredInterval.self, forKey: .recoveryDuration)
         recoveryOutcome = try container.decodeIfPresent(TokenRecoveryOutcome.self, forKey: .recoveryOutcome)
+        recoveryMethod = try container.decodeIfPresent(TokenRecoveryMethod.self, forKey: .recoveryMethod)
+        backupOutcome = try container.decodeIfPresent(BackupRecoveryOutcome.self, forKey: .backupOutcome)
         failingStep = try container.decodeIfPresent(FailingStep.self, forKey: .failingStep)
         errorData = try container.decodeIfPresent(WideEventErrorData.self, forKey: .errorData)
         refreshTrigger = try container.decodeIfPresent(TokenRefreshTrigger.self, forKey: .refreshTrigger)
@@ -117,6 +123,8 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
         try container.encodeIfPresent(fetchJWKSDuration, forKey: .fetchJWKSDuration)
         try container.encodeIfPresent(recoveryDuration, forKey: .recoveryDuration)
         try container.encodeIfPresent(recoveryOutcome, forKey: .recoveryOutcome)
+        try container.encodeIfPresent(recoveryMethod, forKey: .recoveryMethod)
+        try container.encodeIfPresent(backupOutcome, forKey: .backupOutcome)
         try container.encodeIfPresent(failingStep, forKey: .failingStep)
         try container.encodeIfPresent(errorData, forKey: .errorData)
         try container.encodeIfPresent(refreshTrigger, forKey: .refreshTrigger)
@@ -129,13 +137,14 @@ public class AuthV2TokenRefreshWideEventData: WideEventData {
 
 /// The outcome of an invalid-token recovery within a token refresh journey.
 ///
-/// `notAttempted` is distinct from `failed`: recovery is only ever *attempted* for App Store
-/// subscriptions with a recovery handler configured. On other platforms (or with no handler) the
-/// recovery path bails before any restore runs, which must not be conflated with a restore that ran
-/// and failed.
+/// The values keep the meaning they had before the backup token existed, so the reported series stays comparable;
+/// the backup restore's own outcome is reported separately as `BackupRecoveryOutcome`.
 public enum TokenRecoveryOutcome: String, Codable, CaseIterable {
+    /// The App Store restore didn't run, and no other recovery yielded a valid token.
     case notAttempted = "not_attempted"
+    /// A recovery yielded a valid token.
     case succeeded
+    /// The App Store restore ran and didn't yield a valid token.
     case failed
 }
 
@@ -171,6 +180,12 @@ extension AuthV2TokenRefreshWideEventData {
         // Emit only when the recovery path was reached (this event's params are sparse - absent means no recovery).
         if let recoveryOutcome {
             parameters[WideEventParameter.AuthV2RefreshFeature.recoveryOutcome] = recoveryOutcome.rawValue
+        }
+        if let recoveryMethod {
+            parameters[WideEventParameter.AuthV2RefreshFeature.recoveryMethod] = recoveryMethod.rawValue
+        }
+        if let backupOutcome {
+            parameters[WideEventParameter.AuthV2RefreshFeature.backupOutcome] = backupOutcome.rawValue
         }
         // Always emitted: every refresh has a sign-out outcome and a subscription status at start.
         parameters[WideEventParameter.AuthV2RefreshFeature.signedOut] = signedOut
@@ -219,6 +234,8 @@ extension WideEventParameter {
         static let fetchJWKSLatency = "feature.data.ext.fetch_jwks_latency_ms_bucketed"
         static let recoveryLatency = "feature.data.ext.recovery_latency_ms_bucketed"
         static let recoveryOutcome = "feature.data.ext.recovery_outcome"
+        static let recoveryMethod = "feature.data.ext.recovery_method"
+        static let backupOutcome = "feature.data.ext.backup_outcome"
         static let signedOut = "feature.data.ext.signed_out"
         static let subscriptionStatus = "feature.data.ext.subscription_status"
         static let netpIsRunning = "feature.data.ext.netp_is_running"

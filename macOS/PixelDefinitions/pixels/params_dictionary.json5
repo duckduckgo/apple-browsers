@@ -64,8 +64,20 @@
     "subscriptionAutoSignOutRecoveryOutcome": {
         "key": "recovery_outcome",
         "type": "string",
-        "description": "Whether account recovery was unavailable or failed; not_applicable when recovery is not part of the sign-out path",
+        "description": "Whether the App Store restore was not attempted or failed; not_applicable when recovery is not part of the sign-out path. The backup token restore is reported in backup_outcome",
         "enum": ["not_attempted", "failed", "not_applicable"]
+    },
+    "subscriptionAutoSignOutBackupOutcome": {
+        "key": "backup_outcome",
+        "type": "string",
+        "description": "Outcome of the backup token restore during the recovery: not_attempted when no backup restore ran; rejected when the backup can never restore the session; failed for a temporary or unknown failure; succeeded when the restore ran but left no usable token; not_applicable when recovery is not part of the sign-out path",
+        "enum": ["not_attempted", "rejected", "failed", "succeeded", "not_applicable"]
+    },
+    "subscriptionTokenRecoveryMethod": {
+        "key": "recovery_method",
+        "type": "string",
+        "description": "How the session was recovered: from the backup token or by the App Store restore",
+        "enum": ["backup", "app_store"]
     },
     "subscriptionAutoSignOutHadSubscriptionEntitlementsBefore": {
         "key": "had_subscription_entitlements_before",

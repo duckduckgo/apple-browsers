@@ -220,13 +220,15 @@ struct TokenBackupStore {
         (try? storage.getTokenContainer())?.refreshToken == backup.refreshToken
     }
 
-    /// Stores `backup`, replacing any previous one. A failure is logged and otherwise ignored.
+    /// Stores `backup`, replacing any previous one. A failure is logged.
     /// - Parameter backup: The new backup token container.
-    func save(_ backup: TokenContainer) {
+    /// - Throws: The storage error when saving fails.
+    func save(_ backup: TokenContainer) throws {
         do {
             try storage.saveTokenContainer(backup)
         } catch {
             Logger.OAuthClient.error("Failed to save the backup token: \(String(describing: error), privacy: .public)")
+            throw error
         }
     }
 

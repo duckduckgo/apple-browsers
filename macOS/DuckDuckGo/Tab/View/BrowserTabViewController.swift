@@ -1672,9 +1672,12 @@ final class BrowserTabViewController: NSViewController {
 
     private func showAlert(with query: JSAlertQuery) -> AnyCancellable {
         let jsAlertController = JSAlertController.create(query)
+        let webViewContainer = webViewContainer as? WebViewContainerView
+        webViewContainer?.isPageHiddenFromAccessibility = true
         present(jsAlertController, animator: jsAlertController)
 
-        return AnyCancellable { [weak self] in
+        return AnyCancellable { [weak self, weak webViewContainer] in
+            webViewContainer?.isPageHiddenFromAccessibility = false
             self?.dismiss(jsAlertController)
         }
     }

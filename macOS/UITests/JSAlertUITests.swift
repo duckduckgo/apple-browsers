@@ -81,8 +81,11 @@ class JSAlertUITests: UITestCase {
     // MARK: - Utilities
 
     /// The dialog is drawn inside the tab and has no identifiers; its title reads "A message from <host>".
+    /// AppKit labels expose their text as the value; a block predicate skips values that aren't strings.
     private var dialogTitle: XCUIElement {
-        app.windows.firstMatch.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "A message from")).firstMatch
+        app.windows.firstMatch.staticTexts.matching(NSPredicate { element, _ in
+            ["label", "value"].contains { ((element as? NSObject)?.value(forKey: $0) as? String)?.hasPrefix("A message from") == true }
+        }).firstMatch
     }
 
     private func assertDialogIsDismissedWhenTabIsClosed(_ dialog: Dialog) {

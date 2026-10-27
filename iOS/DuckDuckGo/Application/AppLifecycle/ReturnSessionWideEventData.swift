@@ -32,7 +32,7 @@ final class ReturnSessionWideEventData: WideEventData {
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",
-        version: "1.4.0"
+        version: "1.5.0"
     )
 
     /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
@@ -42,6 +42,25 @@ final class ReturnSessionWideEventData: WideEventData {
         case web
         case serp
         case duckAI = "duck_ai"
+    }
+
+    enum TogglePosition: String, Codable, CaseIterable {
+        case search
+        case duckAI = "duck_ai"
+
+        init(_ mode: TextEntryMode) {
+            self = mode == .aiChat ? .duckAI : .search
+        }
+
+        /// nil while off screen: iPhone shows the toggle only while focused and not on a Duck.ai tab; iPad always does.
+        static func onScreen(mode: TextEntryMode,
+                             isToggleEnabled: Bool,
+                             isPad: Bool,
+                             isFocused: Bool,
+                             isDuckAITab: Bool) -> TogglePosition? {
+            guard isToggleEnabled, isPad || (isFocused && !isDuckAITab) else { return nil }
+            return TogglePosition(mode)
+        }
     }
 
     enum StatusReason: String, Codable, CaseIterable {
@@ -74,6 +93,10 @@ final class ReturnSessionWideEventData: WideEventData {
     var afterIdle: Bool
     var timeAwayMs: Int?
     var focused: Bool
+    /// Optional so old pending flows decode.
+    var toggleEnabled: Bool?
+    /// The side first shown on arrival; nil while the toggle stays hidden.
+    var togglePosition: TogglePosition?
     var statusReason: StatusReason?
     /// What triggered the prompt submission (an `AIChatEntryPointSource` raw value). Set only
     /// when `statusReason` is `.aiPromptSubmitted`. Optional so old pending flows decode.
@@ -95,6 +118,8 @@ final class ReturnSessionWideEventData: WideEventData {
          startedAt: Date = Date(),
          timeAwayMs: Int? = nil,
          focused: Bool = false,
+         toggleEnabled: Bool? = nil,
+         togglePosition: TogglePosition? = nil,
          statusReason: StatusReason? = nil,
          pageEngaged: Bool = false,
          toggleUsed: Bool = false,
@@ -109,6 +134,8 @@ final class ReturnSessionWideEventData: WideEventData {
         self.afterIdle = afterIdle
         self.timeAwayMs = timeAwayMs
         self.focused = focused
+        self.toggleEnabled = toggleEnabled
+        self.togglePosition = togglePosition
         self.statusReason = statusReason
         self.sessionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.firstInteractionInterval = WideEvent.MeasuredInterval(start: startedAt)
@@ -157,6 +184,8 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.afterIdle, afterIdle),
             (WideEventParameter.ReturnSessionFeature.timeAwayMsBucketed, timeAwayMs.map { String(Self.timeAwayBucketMs($0)) }),
             (WideEventParameter.ReturnSessionFeature.focused, focused),
+            (WideEventParameter.ReturnSessionFeature.toggleEnabled, toggleEnabled),
+            (WideEventParameter.ReturnSessionFeature.togglePosition, togglePosition?.rawValue),
             (WideEventParameter.Feature.statusReason, statusReason?.rawValue),
             (WideEventParameter.ReturnSessionFeature.source, source),
             (WideEventParameter.ReturnSessionFeature.sessionDurationMsBucketed, sessionInterval.stringValue(bucket)),
@@ -200,6 +229,8 @@ extension WideEventParameter {
         static let afterIdle = "feature.data.ext.after_idle"
         static let timeAwayMsBucketed = "feature.data.ext.time_away_ms_bucketed"
         static let focused = "feature.data.ext.focused"
+        static let toggleEnabled = "feature.data.ext.toggle_enabled"
+        static let togglePosition = "feature.data.ext.toggle_position"
         static let source = "feature.data.ext.source"
         static let sessionDurationMsBucketed = "feature.data.ext.session_duration_ms_bucketed"
         static let timeToFirstInteractionMsBucketed = "feature.data.ext.time_to_first_interaction_ms_bucketed"

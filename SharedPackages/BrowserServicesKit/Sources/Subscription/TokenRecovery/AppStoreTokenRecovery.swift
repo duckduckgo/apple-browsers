@@ -34,23 +34,28 @@ public actor AppStoreTokenRecovery: TokenRecoveryStrategy {
     }
 
     /// Restores from the last App Store purchase. A call made while a restore is running waits for that restore and gets its result.
-    /// Throws `SubscriptionManagerError.tokenRecoveryNotAttempted` for other purchase platforms.
-    public func recover(_ context: TokenRecoveryContext) async throws {
+    /// - Returns: `.notApplicable` for other purchase platforms, `.failed` with the restore flow's error when the restore fails.
+    public func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
         guard purchasePlatform == .appStore else {
-            throw SubscriptionManagerError.tokenRecoveryNotAttempted
+            return .notApplicable
         }
 
-        if let restoreTask {
-            try await restoreTask.value
-            return
-        }
+        do {
+            if let restoreTask {
+                try await restoreTask.value
+                return .recovered
+            }
 
-        let restoreFlow = restoreFlow
-        let task = Task {
-            try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
+            let restoreFlow = restoreFlow
+            let task = Task {
+                try await restoreFlow.restoreSubscriptionAfterExpiredRefreshToken()
+            }
+            restoreTask = task
+            defer { restoreTask = nil }
+            try await task.value
+            return .recovered
+        } catch {
+            return .failed(error)
         }
-        restoreTask = task
-        defer { restoreTask = nil }
-        try await task.value
     }
 }

@@ -24,6 +24,38 @@ import SubscriptionTestingUtilities
 
 final class TokenRecoveryCoordinatorTests: XCTestCase {
 
+    private var pixelHandler: RecordingPixelHandler!
+    private let missingTokenContext = TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil)
+
+    override func setUp() {
+        super.setUp()
+        pixelHandler = RecordingPixelHandler()
+    }
+
+    override func tearDown() {
+        pixelHandler = nil
+        super.tearDown()
+    }
+
+    /// Records the subscription pixels it handles.
+    private final class RecordingPixelHandler: SubscriptionPixelHandling {
+        private(set) var handledPixels: [SubscriptionPixelType] = []
+
+        /// The errors of the handled `.backupRestoreFailed` pixels.
+        var restoreFailureErrors: [Error] {
+            handledPixels.compactMap {
+                if case .backupRestoreFailed(_, _, let error) = $0 { return error }
+                return nil
+            }
+        }
+
+        func handle(pixel: SubscriptionPixelType) {
+            handledPixels.append(pixel)
+        }
+
+        func handle(pixel: KeychainManager.Pixel) {}
+    }
+
     private final class StubStrategy: TokenRecoveryStrategy {
         let method: TokenRecoveryMethod
         private let result: TokenRecoveryResult
@@ -181,8 +213,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
     func testBackupStrategy_passesTheAccount_andReportsTheTrigger() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        var restoredTriggers: [TokenRecoveryTrigger] = []
-        let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { restoredTriggers.append($0) })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
 
         let result = await strategy.recover(TokenRecoveryContext(trigger: .invalidToken,
                                                                  deadPrimary: OAuthTokensFactory.makeTokenContainer(externalID: "acct")))
@@ -190,13 +221,13 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertEqual(result.outcome, .recovered)
         XCTAssertEqual(client.restoreFromBackupCalls.count, 1)
         XCTAssertEqual(client.restoreFromBackupCalls.first?.expectedExternalID, "acct")
-        XCTAssertEqual(restoredTriggers, [.invalidToken])
+        XCTAssertEqual(pixelHandler.handledPixels, [.backupRestored(.invalidToken)])
     }
 
     func testBackupStrategy_noDeadPrimary_acceptsAnyAccount() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
 
         _ = await strategy.recover(TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil))
 
@@ -204,51 +235,95 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         XCTAssertNil(client.restoreFromBackupCalls.first?.expectedExternalID)
     }
 
-    func testBackupStrategy_failure_isReturnedWithoutReportingARestore() async {
+    func testBackupStrategy_failure_isReturnedAndReportedAsAFailedRestore() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(URLError(.timedOut))
-        var restoredTriggers: [TokenRecoveryTrigger] = []
-        let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { restoredTriggers.append($0) })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
 
         let result = await strategy.recover(invalidTokenContext)
 
         XCTAssertEqual((result.failure as? URLError)?.code, .timedOut)
-        XCTAssertTrue(restoredTriggers.isEmpty)
+        XCTAssertEqual(pixelHandler.handledPixels, [.backupRestoreFailed(.invalidToken, .temporary, URLError(.timedOut))])
+        XCTAssertEqual((pixelHandler.restoreFailureErrors.first as? URLError)?.code, .timedOut)
     }
 
     func testBackupStrategy_noBackup_isNotApplicable() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(TokenBackupError.unavailable)
-        let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
 
         let result = await strategy.recover(invalidTokenContext)
 
         XCTAssertEqual(result.outcome, .notApplicable)
+        XCTAssertTrue(pixelHandler.handledPixels.isEmpty)
     }
 
     func testBackupStrategy_sessionChanged_isReported() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(TokenBackupError.sessionChanged)
-        let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
 
         let result = await strategy.recover(invalidTokenContext)
 
         XCTAssertEqual(result.outcome, .sessionChanged)
+        XCTAssertEqual(pixelHandler.handledPixels, [.backupRestoreFailed(.invalidToken, .sessionChanged, TokenBackupError.sessionChanged)])
     }
 
     func testBackupStrategy_rejectedBackup_isAFailure() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(TokenBackupError.accountMismatch)
-        let strategy = BackupTokenRecovery(oAuthClient: client, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
 
         let result = await strategy.recover(invalidTokenContext)
 
         XCTAssertEqual(result.failure as? TokenBackupError, .accountMismatch)
+        XCTAssertEqual(pixelHandler.handledPixels, [.backupRestoreFailed(.invalidToken, .accountMismatch, TokenBackupError.accountMismatch)])
+    }
+
+    func testBackupStrategy_skippedDuringTheRetryPause_reportsNothing() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .failure(URLError(.timedOut))
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { Date() })
+
+        _ = await strategy.recover(missingTokenContext)
+        _ = await strategy.recover(missingTokenContext)
+
+        XCTAssertEqual(pixelHandler.handledPixels, [.backupRestoreFailed(.missingToken, .temporary, URLError(.timedOut))])
+    }
+
+    func testBackupStrategy_accountCreationTrigger_isReported() async {
+        let client = MockOAuthClient()
+        client.restoreFromBackupResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler)
+
+        _ = await strategy.recover(TokenRecoveryContext(trigger: .accountCreation, deadPrimary: nil))
+
+        XCTAssertEqual(pixelHandler.handledPixels, [.backupRestored(.accountCreation)])
+    }
+
+    // MARK: - Backup restore failure reason
+
+    func testBackupRestoreFailureReason_classifiesTheRestoreErrors() {
+        let cases: [(Error, BackupRestoreFailureReason)] = [
+            (TokenBackupError.accountMismatch, .accountMismatch),
+            (TokenBackupError.predatesSignOut, .predatesSignOut),
+            (TokenBackupError.expired, .expired),
+            (TokenBackupError.sessionChanged, .sessionChanged),
+            (TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1)), .temporary),
+            (OAuthClientError.invalidTokenRequest(.reused), .serverRejected),
+            (OAuthClientError.unknownAccount, .serverRejected),
+            (URLError(.notConnectedToInternet), .temporary),
+            (OAuthServiceError.invalidResponseCode(.internalServerError), .temporary),
+            (OAuthServiceError.invalidResponseCode(.badRequest), .unknown),
+            (NSError(domain: "other", code: 1), .unknown)
+        ]
+
+        for (error, expected) in cases {
+            XCTAssertEqual(BackupRestoreFailureReason(error), expected, "\(error)")
+        }
     }
 
     // MARK: - Backup strategy backoff
-
-    private let missingTokenContext = TokenRecoveryContext(trigger: .missingToken, deadPrimary: nil)
 
     private final class Clock {
         var now = Date()
@@ -258,7 +333,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(URLError(.timedOut))
         let clock = Clock()
-        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { clock.now }, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { clock.now })
 
         _ = await strategy.recover(missingTokenContext)
         let skipped = await strategy.recover(missingTokenContext)
@@ -273,7 +348,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
     func testBackupStrategy_missingToken_afterABackupReadFailure_skipsUntilTheRetryInterval() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1)))
-        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { Date() }, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { Date() })
 
         _ = await strategy.recover(missingTokenContext)
         _ = await strategy.recover(missingTokenContext)
@@ -284,7 +359,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
     func testBackupStrategy_invalidToken_isNotHeldBackByAMissingTokenFailure() async {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(URLError(.timedOut))
-        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { Date() }, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { Date() })
 
         _ = await strategy.recover(missingTokenContext)
         _ = await strategy.recover(invalidTokenContext)
@@ -294,7 +369,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
 
     func testBackupStrategy_rejectedOrTerminalFailures_doNotBackOff() async {
         let client = MockOAuthClient()
-        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { Date() }, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { Date() })
 
         client.restoreFromBackupResponse = .failure(TokenBackupError.accountMismatch)
         _ = await strategy.recover(missingTokenContext)
@@ -313,7 +388,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let client = MockOAuthClient()
         client.restoreFromBackupResponse = .failure(URLError(.timedOut))
         let clock = Clock()
-        let strategy = BackupTokenRecovery(oAuthClient: client, retryInterval: .minutes(5), now: { clock.now }, onRestored: { _ in })
+        let strategy = BackupTokenRecovery(oAuthClient: client, pixelHandler: pixelHandler, retryInterval: .minutes(5), now: { clock.now })
         _ = await strategy.recover(missingTokenContext)
 
         clock.now = clock.now.addingTimeInterval(.minutes(6))

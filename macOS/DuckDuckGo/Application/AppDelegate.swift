@@ -953,6 +953,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                   userDefaults: .subs,
                                                                   field: .backupTokenContainer) { accessType, error in
             Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            pixelHandler.handle(pixel: .backupKeychainError(accessType, error))
         }
 
         let isAuthV2WideEventEnabled = {
@@ -969,7 +970,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
                                             backupStorage: backupTokenStorage,
                                             isBackupEnabled: { featureFlagger.isFeatureOn(.authBackupToken) },
-                                            backupUserDefaults: subscriptionUserDefaults)
+                                            backupUserDefaults: subscriptionUserDefaults,
+                                            backupEventMapping: pixelHandler.backupEventMapping())
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
@@ -1027,7 +1029,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient, pixelHandler: pixelHandler)
         let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
                                                      restoreFlow: restoreFlow)
         defaultSubscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],

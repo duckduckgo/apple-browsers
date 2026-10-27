@@ -21,6 +21,43 @@ import os.log
 import Networking
 import FoundationExtensions
 
+/// Why a backup restore that was tried didn't restore the session, as reported on pixels.
+public enum BackupRestoreFailureReason: String, CaseIterable {
+    /// The backup belongs to another account than the dead current token.
+    case accountMismatch = "account_mismatch"
+    /// The backup was issued at or before the last sign-out.
+    case predatesSignOut = "predates_sign_out"
+    /// The backup's refresh token has expired.
+    case expired
+    /// The auth server rejected the backup's refresh token or account.
+    case serverRejected = "server_rejected"
+    /// A failure `BackupRestoreFailure` classifies as `.temporary`.
+    case temporary
+    /// The user signed out, signed in or switched account while the restore ran.
+    case sessionChanged = "session_changed"
+    /// Any other failure.
+    case unknown
+
+    /// Classifies `error`.
+    /// - Parameter error: The error `OAuthClient.restoreFromBackup` threw.
+    public init(_ error: Error) {
+        switch error {
+        case TokenBackupError.accountMismatch:
+            self = .accountMismatch
+        case TokenBackupError.predatesSignOut:
+            self = .predatesSignOut
+        case TokenBackupError.expired:
+            self = .expired
+        case TokenBackupError.sessionChanged:
+            self = .sessionChanged
+        case OAuthClientError.invalidTokenRequest, OAuthClientError.unknownAccount:
+            self = .serverRejected
+        default:
+            self = BackupRestoreFailure(error) == .temporary ? .temporary : .unknown
+        }
+    }
+}
+
 /// Recovers the current token container from the backup token container.
 public final class BackupTokenRecovery: TokenRecoveryStrategy {
 
@@ -29,23 +66,24 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
     private let oAuthClient: any OAuthClient
     private let retryInterval: TimeInterval
     private let now: () -> Date
-    private let onRestored: ((TokenRecoveryTrigger) -> Void)?
+    private let pixelHandler: any SubscriptionPixelHandling
     private let lock = NSLock()
     private var missingTokenRetryAfter: Date?
 
     /// - Parameters:
     ///   - oAuthClient: The client that holds the backup and stores the restored token container.
+    ///   - pixelHandler: Receives `.backupRestored` for each successful restore and `.backupRestoreFailed` for each restore that was
+    ///     tried and failed or was discarded.
     ///   - retryInterval: After a restore for a missing token fails for a reason that isn't `BackupRestoreFailure.permanent`, how long further missing-token restores are skipped.
     ///   - now: The current date, used to measure `retryInterval`.
-    ///   - onRestored: Called with the recovery trigger after each successful restore, or nil.
     public init(oAuthClient: any OAuthClient,
+                pixelHandler: any SubscriptionPixelHandling,
                 retryInterval: TimeInterval = .minutes(5),
-                now: @escaping () -> Date = { Date() },
-                onRestored: ((TokenRecoveryTrigger) -> Void)? = nil) {
+                now: @escaping () -> Date = { Date() }) {
         self.oAuthClient = oAuthClient
+        self.pixelHandler = pixelHandler
         self.retryInterval = retryInterval
         self.now = now
-        self.onRestored = onRestored
     }
 
     /// Restores from the backup. The backup must belong to the dead current token's account, when there is one.
@@ -66,8 +104,10 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
         } catch TokenBackupError.unavailable {
             return .notApplicable
         } catch TokenBackupError.sessionChanged {
+            pixelHandler.handle(pixel: .backupRestoreFailed(context.trigger, .sessionChanged, TokenBackupError.sessionChanged))
             return .sessionChanged
         } catch {
+            pixelHandler.handle(pixel: .backupRestoreFailed(context.trigger, BackupRestoreFailureReason(error), error))
             if isMissingToken, BackupRestoreFailure(error) != .permanent {
                 let retryAfter = now().addingTimeInterval(retryInterval)
                 Logger.subscriptionTokensManagement.log("Backup restore failed for a transient reason, skipping missing-token restores until \(retryAfter, privacy: .public)")
@@ -77,7 +117,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
         }
 
         setRetryAfter(nil)
-        onRestored?(context.trigger)
+        pixelHandler.handle(pixel: .backupRestored(context.trigger))
         return .recovered
     }
 

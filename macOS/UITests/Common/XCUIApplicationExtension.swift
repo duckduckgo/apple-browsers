@@ -82,6 +82,7 @@ extension XCUIApplication {
         static let preferencesSidebarScrollView = "PreferencesSidebar.scrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
         static let preferencesDataClearingButton = "PreferencesSidebar.dataClearingButton"
+        static let preferencesAppearanceButton = "PreferencesSidebar.appearanceButton"
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
         static let alwaysAskWhereToSaveFilesCheckbox = "PreferencesGeneralView.alwaysAskWhereToSaveFiles"
         static let openPopupOnDownloadCompletionCheckbox = "PreferencesGeneralView.openPopupOnDownloadCompletion"
@@ -675,6 +676,11 @@ extension XCUIApplication {
     /// Selects the Data Clearing pane in Preferences
     func preferencesGoToDataClearingPane() {
         preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesDataClearingButton)
+    }
+
+    /// Selects the Appearance pane in Preferences
+    func preferencesGoToAppearancePane() {
+        preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesAppearanceButton)
     }
 
     /// Clicks a Settings sidebar item, scrolling the sidebar first if the window is too short to show it

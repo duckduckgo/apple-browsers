@@ -121,6 +121,12 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                         .onTapGesture {
                             selectedValue = appearance
                         }
+                        // Without these, assistive tech and UI tests see a static label and can't tell which option is picked.
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(selectedValue == appearance ? [.isButton, .isSelected] : .isButton)
+                        .accessibilityAction {
+                            selectedValue = appearance
+                        }
                         .readFrame(coordinateSpace: .named(pickerCoordinateSpaceName)) { frame in
                             buttonFrames[index] = frame
                         }

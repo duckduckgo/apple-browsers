@@ -108,8 +108,9 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
-            extensionsManagementPreferences: ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManaging(),
-                                                                             windowControllersManager: WindowControllersManagerMock()),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webExtensionManager: nil,
+            windowControllersManager: WindowControllersManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in }
             )
@@ -135,8 +136,9 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
-            extensionsManagementPreferences: ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManaging(),
-                                                                             windowControllersManager: WindowControllersManagerMock()),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webExtensionManager: nil,
+            windowControllersManager: WindowControllersManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in self.showTabCalled = true },
             aiChatTabOpener: aiChatTabOpener,
@@ -170,8 +172,9 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
-            extensionsManagementPreferences: ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManaging(),
-                                                                             windowControllersManager: WindowControllersManagerMock())
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webExtensionManager: nil,
+            windowControllersManager: WindowControllersManagerMock()
         ) { content in
             self.showTabCalled = true
             self.showTabContent = content
@@ -211,8 +214,9 @@ final class RootViewV2Tests: XCTestCase {
             wideEvent: WideEventMock(),
             pinningManager: MockPinningManager(),
             permissionManager: PermissionManagerMock(),
-            extensionsManagementPreferences: ExtensionsManagementPreferences(configurationManager: MockPrivacyConfigurationManaging(),
-                                                                             windowControllersManager: WindowControllersManagerMock()),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webExtensionManager: nil,
+            windowControllersManager: WindowControllersManagerMock(),
             winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
             showTab: { _ in },
             pixelHandler: { pixel, _ in

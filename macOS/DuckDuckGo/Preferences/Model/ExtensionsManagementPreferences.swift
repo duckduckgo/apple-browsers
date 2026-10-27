@@ -22,15 +22,16 @@ import PrivacyConfig
 import RemoteMessaging
 import WebExtensions
 
+@available(macOS 15.4, *)
 @MainActor
-final class ExtensionsManagementPreferences: ObservableObject, @MainActor PreferencesTabOpening {
+final class ExtensionsManagementPreferences: ObservableObject {
 
     @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
 
     private let webExtensionManager: WebExtensionManaging?
+    private let windowControllersManager: WindowControllersManagerProtocol
     private var cancellables = Set<AnyCancellable>()
 
-    let windowControllersManager: WindowControllersManagerProtocol
     let imageLoader: RemoteMessagingImageLoading
 
     init(configurationManager: PrivacyConfigurationManaging, imageLoader: RemoteMessagingImageLoading? = nil, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
@@ -43,18 +44,19 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
     }
 
     func openStorePage(for passwordManager: ChromeWebStoreListing) {
-        openNewTab(with: passwordManager.storeURL)
+        windowControllersManager.show(url: passwordManager.storeURL, source: .ui, newTab: true, selected: true)
     }
 
     func openLearnMore() {
-        guard #available(macOS 15.4, *), let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
+        guard let url = webExtensionManager?.chromeWebStore?.learnMoreURL else {
             return
         }
 
-        openNewTab(with: url)
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }
 }
 
+@available(macOS 15.4, *)
 private extension ExtensionsManagementPreferences {
 
     func startObservingChanges(configurationManager: PrivacyConfigurationManaging) {
@@ -72,7 +74,7 @@ private extension ExtensionsManagementPreferences {
     }
 
     func reloadPasswordManagers() {
-        guard #available(macOS 15.4, *), let store = webExtensionManager?.chromeWebStore else {
+        guard let store = webExtensionManager?.chromeWebStore else {
             uninstalledPasswordManagers = []
             return
         }

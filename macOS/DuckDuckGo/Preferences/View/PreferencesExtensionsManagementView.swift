@@ -18,6 +18,7 @@
 
 import DesignResourcesKit
 import PreferencesUI_macOS
+import PrivacyConfig
 import RemoteMessaging
 import SwiftUI
 import SwiftUIExtensions
@@ -32,9 +33,17 @@ extension Preferences {
             static let footerSpacing: CGFloat = 4
         }
 
-        @ObservedObject var model: ExtensionsManagementPreferences
+        @StateObject private var model: ExtensionsManagementPreferences
 
         @Environment(\.designSystemPalette) private var palette
+
+        init(configurationManager: PrivacyConfigurationManaging,
+             webExtensionManager: WebExtensionManaging?,
+             windowControllersManager: WindowControllersManagerProtocol) {
+            _model = StateObject(wrappedValue: ExtensionsManagementPreferences(configurationManager: configurationManager,
+                                                                               webExtensionManager: webExtensionManager,
+                                                                               windowControllersManager: windowControllersManager))
+        }
 
         var body: some View {
             ViewThatFits(in: .vertical) {

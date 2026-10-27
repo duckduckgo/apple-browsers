@@ -25,6 +25,7 @@ import SwiftUI
 import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
+import WebExtensions
 import PixelKit
 import WideEvent
 import Subscription
@@ -80,7 +81,9 @@ enum Preferences {
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
         let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
         let pinningManager: PinningManager
-        let extensionsManagementPreferences: ExtensionsManagementPreferences
+        let privacyConfigurationManager: PrivacyConfigurationManaging
+        let webExtensionManager: WebExtensionManaging?
+        let windowControllersManager: WindowControllersManagerProtocol
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -106,7 +109,9 @@ enum Preferences {
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
-            extensionsManagementPreferences: ExtensionsManagementPreferences,
+            privacyConfigurationManager: PrivacyConfigurationManaging,
+            webExtensionManager: WebExtensionManaging?,
+            windowControllersManager: WindowControllersManagerProtocol,
             websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
@@ -133,7 +138,9 @@ enum Preferences {
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
             self.pinningManager = pinningManager
-            self.extensionsManagementPreferences = extensionsManagementPreferences
+            self.privacyConfigurationManager = privacyConfigurationManager
+            self.webExtensionManager = webExtensionManager
+            self.windowControllersManager = windowControllersManager
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -253,7 +260,9 @@ enum Preferences {
                     PreferencesWebsitePermissionsView(model: websitePermissionsModel)
                 case .extensions:
                     if #available(macOS 15.4, *) {
-                        ExtensionsManagementView(model: extensionsManagementPreferences)
+                        ExtensionsManagementView(configurationManager: privacyConfigurationManager,
+                                                 webExtensionManager: webExtensionManager,
+                                                 windowControllersManager: windowControllersManager)
                     }
                 case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab

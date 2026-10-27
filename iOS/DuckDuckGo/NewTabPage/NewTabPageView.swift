@@ -139,7 +139,8 @@ private extension NewTabPageView {
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                     }
-                    .padding(.top, contentTopInset(in: geometry))
+                    .animation(nil, value: content.recentChats != nil)
+                    .padding(.top, contentTopInset(in: geometry) + viewModel.focusedContentTopInset)
                     .padding(.bottom, sectionsViewPadding(in: geometry))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
                 }

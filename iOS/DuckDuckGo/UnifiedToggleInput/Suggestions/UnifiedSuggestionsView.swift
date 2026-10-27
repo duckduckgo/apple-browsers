@@ -59,7 +59,7 @@ struct UnifiedSuggestionsView: View {
     private var fireLayer: some View {
         if viewModel.isFireTab {
             let showsFire = !isTypingList
-            FireModeEmptyStateView(type: .tab)
+            FireModeEmptyStateView(type: .tab, contentTopInset: viewModel.contentTopInset)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(designSystemColor: .background))
                 .opacity(showsFire ? 1 : 0)
@@ -86,7 +86,8 @@ struct UnifiedSuggestionsView: View {
                                                    recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
                                                    escapeHatch: escapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
-                                                   isAddressBarAtBottom: isAddressBarAtBottom)
+                                                   isAddressBarAtBottom: isAddressBarAtBottom,
+                                                   contentTopInset: viewModel.contentTopInset)
                     .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
@@ -123,6 +124,9 @@ struct UnifiedSuggestionsView: View {
                                isVisible: isShowingList,
                                isFadingOut: viewModel.isFadingOut,
                                animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: viewModel.contentTopInset)
+            }
     }
 
     private var showsEmbeddedContent: Bool {

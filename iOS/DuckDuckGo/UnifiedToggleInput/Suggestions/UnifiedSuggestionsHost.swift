@@ -249,21 +249,25 @@ final class UnifiedSuggestionsHost {
         let top = escapeHatchTopInset + contentInsets.top
         viewModel.chromeInsetTop = top + embeddedHatchInset
         logScrollDiagnostics("insets.before")
-        let update = {
-            self.hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
-                top: top,
-                left: self.contentInsets.left,
-                bottom: self.contentInsets.bottom,
-                right: self.contentInsets.right
-            )
-            // Flush the same controller's safe-area change inside the input's height animation.
-            self.hostingController?.view.layoutIfNeeded()
+        let contentTopInset = usesScrollableEscapeHatch ? top : 0
+        let duration = UIView.inheritedAnimationDuration
+        let animation: Animation? = duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil
+        withAnimation(animation) {
+            if viewModel.contentTopInset != contentTopInset {
+                viewModel.contentTopInset = contentTopInset
+            }
+            if redesignedSearchPresentation == nil {
+                favoritesPresentation.viewController?.setFocusedContentTopInset(contentTopInset)
+            }
         }
-        if usesScrollableEscapeHatch, redesignedSearchPresentation == nil, let controller = favoritesPresentation.viewController {
-            controller.preservingFocusedScrollPosition(while: update)
-        } else {
-            update()
-        }
+        // Nested SwiftUI hosts can apply a changing UIKit top inset twice. Keep the input clearance in their content.
+        hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
+            top: usesScrollableEscapeHatch ? 0 : top,
+            left: contentInsets.left,
+            bottom: contentInsets.bottom,
+            right: contentInsets.right
+        )
+        hostingController?.view.layoutIfNeeded()
         logScrollDiagnostics("insets.after")
         DispatchQueue.main.async { [weak self] in
             self?.logScrollDiagnostics("insets.nextRunLoop")
@@ -275,7 +279,7 @@ final class UnifiedSuggestionsHost {
         let modelIdentity = escapeHatch.map { String(describing: ObjectIdentifier($0)) } ?? "nil"
         let content = String(describing: viewModel.content)
         let requested = String(describing: contentInsets)
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) mode=\(String(describing: self.focusedMode), privacy: .public) scrolling=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.redesignedSearchPresentation != nil, privacy: .public) modules=\(self.showsRedesignedSearchModules, privacy: .public) content=\(content, privacy: .public) hatch=\(modelIdentity, privacy: .public) returnCard=\(self.escapeHatch?.isReturnToTabCardVisible ?? false, privacy: .public) requested=\(requested, privacy: .public) extraTop=\(self.escapeHatchTopInset, privacy: .public) embeddedHatch=\(self.embeddedHatchInset, privacy: .public)")
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) mode=\(String(describing: self.focusedMode), privacy: .public) scrolling=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.redesignedSearchPresentation != nil, privacy: .public) modules=\(self.showsRedesignedSearchModules, privacy: .public) content=\(content, privacy: .public) hatch=\(modelIdentity, privacy: .public) returnCard=\(self.escapeHatch?.isReturnToTabCardVisible ?? false, privacy: .public) requested=\(requested, privacy: .public) extraTop=\(self.escapeHatchTopInset, privacy: .public) embeddedHatch=\(self.embeddedHatchInset, privacy: .public) contentPaddingTop=\(self.viewModel.contentTopInset, privacy: .public)")
         guard let view = hostingController?.viewIfLoaded else { return }
         let frame = String(describing: view.convert(view.bounds, to: nil))
         let safeArea = String(describing: view.safeAreaInsets)

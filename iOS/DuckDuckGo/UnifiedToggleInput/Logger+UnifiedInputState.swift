@@ -36,8 +36,10 @@ extension Logger {
                 let offset = String(describing: scrollView.contentOffset)
                 let size = String(describing: scrollView.contentSize)
                 let insets = String(describing: scrollView.adjustedContentInset)
+                let rawInsets = String(describing: scrollView.contentInset)
+                let safeArea = String(describing: scrollView.safeAreaInsets)
                 let translation = String(describing: scrollView.panGestureRecognizer.translation(in: scrollView))
-                unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) scroll=\(identity, privacy: .public) class=\(String(describing: type(of: scrollView)), privacy: .public) frame=\(frame, privacy: .public) offset=\(offset, privacy: .public) size=\(size, privacy: .public) adjusted=\(insets, privacy: .public) alpha=\(alpha, privacy: .public) hidden=\(hidden, privacy: .public) dragging=\(scrollView.isDragging, privacy: .public) tracking=\(scrollView.isTracking, privacy: .public) decelerating=\(scrollView.isDecelerating, privacy: .public) pan=\(scrollView.panGestureRecognizer.state.rawValue, privacy: .public) translation=\(translation, privacy: .public)")
+                unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) scroll=\(identity, privacy: .public) class=\(String(describing: type(of: scrollView)), privacy: .public) frame=\(frame, privacy: .public) offset=\(offset, privacy: .public) size=\(size, privacy: .public) adjusted=\(insets, privacy: .public) raw=\(rawInsets, privacy: .public) scrollSafeArea=\(safeArea, privacy: .public) alpha=\(alpha, privacy: .public) hidden=\(hidden, privacy: .public) dragging=\(scrollView.isDragging, privacy: .public) tracking=\(scrollView.isTracking, privacy: .public) decelerating=\(scrollView.isDecelerating, privacy: .public) pan=\(scrollView.panGestureRecognizer.state.rawValue, privacy: .public) translation=\(translation, privacy: .public)")
             }
             view.subviews.forEach { visit($0, ancestorAlpha: alpha, ancestorHidden: hidden) }
         }

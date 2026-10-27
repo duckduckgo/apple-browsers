@@ -36,6 +36,7 @@ final class NewTabPageViewModel: ObservableObject {
     @Published private(set) var isOnboarding: Bool
     @Published var escapeHatch: EscapeHatchModel?
     @Published var focusedContent: LegacyFocusedNewTabPageContent?
+    @Published var focusedContentTopInset: CGFloat = 0
     let scrollToTopRequests = PassthroughSubject<TimeInterval, Never>()
     var openedAfterIdle: Bool = false
     @Published var sectionTitle: String?

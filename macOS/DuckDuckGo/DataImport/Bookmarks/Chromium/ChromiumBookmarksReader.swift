@@ -67,7 +67,8 @@ final class ChromiumBookmarksReader {
             return .failure(errors.first { $0.type == .decodeJson } ?? errors[0])
         }
 
-        return .success(decodedBookmarks.dropFirst().reduce(firstBookmarks) { $0.merging($1) })
+        let mergedBookmarks = decodedBookmarks.dropFirst().reduce(firstBookmarks, mergeBookmarks)
+        return .success(mergedBookmarks)
     }
 
     private func readBookmarks(at fileURL: URL) -> Result<ImportedBookmarks, ImportError> {
@@ -81,25 +82,20 @@ final class ChromiumBookmarksReader {
         }
     }
 
-}
-
-private extension ImportedBookmarks {
-
-    func merging(_ other: ImportedBookmarks) -> ImportedBookmarks {
-        ImportedBookmarks(topLevelFolders: TopLevelFolders(
-            bookmarkBar: topLevelFolders.bookmarkBar.merging(other.topLevelFolders.bookmarkBar),
-            otherBookmarks: topLevelFolders.otherBookmarks.merging(other.topLevelFolders.otherBookmarks),
-            syncedBookmarks: topLevelFolders.syncedBookmarks.merging(other.topLevelFolders.syncedBookmarks)
-        ))
+    private func mergeBookmarks(_ first: ImportedBookmarks, _ second: ImportedBookmarks) -> ImportedBookmarks {
+        ImportedBookmarks(topLevelFolders: .init(
+            bookmarkBar: mergeFolders(first.topLevelFolders.bookmarkBar, second.topLevelFolders.bookmarkBar),
+            otherBookmarks: mergeFolders(first.topLevelFolders.otherBookmarks, second.topLevelFolders.otherBookmarks),
+            syncedBookmarks: mergeFolders(first.topLevelFolders.syncedBookmarks, second.topLevelFolders.syncedBookmarks)))
     }
 
-}
+    private func mergeFolders(_ first: ImportedBookmarks.BookmarkOrFolder?,
+                              _ second: ImportedBookmarks.BookmarkOrFolder?) -> ImportedBookmarks.BookmarkOrFolder? {
+        guard let first else { return second }
+        guard let second else { return first }
 
-private extension Optional where Wrapped == ImportedBookmarks.BookmarkOrFolder {
-
-    func merging(_ other: ImportedBookmarks.BookmarkOrFolder?) -> ImportedBookmarks.BookmarkOrFolder? {
-        guard let self, let other else { return self ?? other }
-        return .folder(name: self.name, children: (self.children ?? []) + (other.children ?? []))
+        let combinedChildren = (first.children ?? []) + (second.children ?? [])
+        return .folder(name: first.name, children: combinedChildren)
     }
 
 }

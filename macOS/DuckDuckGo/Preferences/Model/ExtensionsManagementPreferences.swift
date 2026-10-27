@@ -55,13 +55,26 @@ final class ExtensionsManagementPreferences: ObservableObject {
     }
 
     func setEnabled(_ isEnabled: Bool, for item: ChromeWebStoreListing) {
-        guard let identifier = installedIdentifier(for: item) else {
+        guard let identifier = installedExtension(for: item)?.uniqueIdentifier else {
             return
         }
 
         applyOptimisticEnabledState(isEnabled, for: item)
         Task { [weak self] in
             await self?.applyEnabledState(isEnabled, identifier: identifier)
+        }
+    }
+
+    func remove(_ item: ChromeWebStoreListing) {
+        guard
+            let store = webExtensionManager?.chromeWebStore,
+            let storeID = installedExtension(for: item)?.storeIdentity?.id
+        else {
+            return
+        }
+
+        Task {
+            _ = await store.remove(identifier: storeID)
         }
     }
 }
@@ -136,14 +149,14 @@ private extension ExtensionsManagementPreferences {
             .filter(\.isPasswordManager)
     }
 
-    func installedIdentifier(for item: ChromeWebStoreListing) -> String? {
+    func installedExtension(for item: ChromeWebStoreListing) -> InstalledWebExtension? {
         guard let manager = webExtensionManager, let store = manager.chromeWebStore else {
             return nil
         }
 
-        return manager.webExtensionIdentifiers.first { identifier in
-            manager.installedExtension(identifier: identifier).flatMap { listing(for: $0, in: store) }?.id == item.id
-        }
+        return manager.webExtensionIdentifiers.lazy
+            .compactMap(manager.installedExtension(identifier:))
+            .first { listing(for: $0, in: store)?.id == item.id }
     }
 
     func listing(for record: InstalledWebExtension, in store: ChromeWebStoreManaging) -> ChromeWebStoreListing? {

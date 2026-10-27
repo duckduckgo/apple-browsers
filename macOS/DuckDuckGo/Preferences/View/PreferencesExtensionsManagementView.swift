@@ -113,9 +113,9 @@ extension Preferences {
                                   isEnabled: Binding(get: { model.isEnabled(item) },
                                                      set: { model.setEnabled($0, for: item) }),
                                   isLocked: model.isRemotelyDisabled(item),
-                                  // Placeholders until details and removal are wired up.
+                                  // Placeholder until details are wired up.
                                   onDetails: {},
-                                  onRemove: {})
+                                  onRemove: { model.remove(item) })
         }
 
         private var moreExtensionsHeader: some View {

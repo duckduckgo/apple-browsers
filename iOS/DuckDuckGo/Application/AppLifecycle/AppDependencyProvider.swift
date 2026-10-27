@@ -331,7 +331,8 @@ final class AppDependencyProvider: DependencyProvider {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
-                                            backupStorage: backupTokenStorage)
+                                            backupStorage: backupTokenStorage,
+                                            backupUserDefaults: subscriptionUserDefaults)
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 

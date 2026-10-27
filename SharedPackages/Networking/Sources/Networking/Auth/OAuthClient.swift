@@ -131,7 +131,8 @@ public protocol OAuthClient {
 
     // MARK: Logout
 
-    /// Removes the backup token container, if any, then the current one, and asks the server to invalidate the current access token.
+    /// Records the sign-out cut-off and deletes the backup token container, if any, then removes the current one and asks the server
+    /// to invalidate the current access token. A backup issued at or before the cut-off is never restored.
     func logout() async throws
 
     /// Removes the current token container. A backup token container, if any, is kept.
@@ -141,24 +142,17 @@ public protocol OAuthClient {
 
     /// Restores the current token container from the backup: spends the backup's refresh token to mint a new current pair and a new backup,
     /// and stores both. Concurrent calls share one restore.
-    /// - Parameters:
-    ///   - expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
-    ///   - issuedAfter: A backup whose refresh token was issued at or before this date is rejected. When nil, no such check is made.
+    /// The backup must have been issued after the cut-off recorded at the last `logout()`.
+    /// - Parameter expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
     /// - Returns: The new current token container, already stored.
     /// - Throws: `TokenBackupError` when there is no usable backup, `.readFailed` when it can't be read; `TokenBackupError.sessionChanged`,
-    ///   storing nothing, when while the restore was in progress this client signed out, deleted the backup, adopted or activated a token
+    ///   storing nothing, when while the restore was in progress this client signed out, adopted or activated a token
     ///   container, or another current token container was stored, or the current one can't be read; the storage error when reading the
     ///   current token container before the restore fails (nothing is refreshed then); otherwise the error of the first refresh call or of
     ///   storing the new current pair.
     ///   A current token container deleted by another process doesn't stop the restore.
     ///   After `OAuthClientError.invalidTokenRequest` or `.unknownAccount` the backup is deleted; after any other refresh error it is kept.
-    func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> TokenContainer
-
-    /// Deletes the backup token container, if any. The current one is kept. A failure is logged and otherwise ignored.
-    func removeBackup()
-
-    /// The stored backup token container, or nil when there is no backup storage, no backup is stored, or reading it fails.
-    func backupTokenContainer() -> TokenContainer?
+    func restoreFromBackup(expectedExternalID: String?) async throws -> TokenContainer
 }
 
 public extension OAuthClient {
@@ -226,17 +220,20 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///   - backupStorage: Where the backup token container, an independent pair forked from the current one, is kept.
     ///     When non-nil, a refresh also mints a new backup when there is none, or the stored one is expired, belongs to another account
     ///     or was issued more than 14 days ago; `logout()` deletes it and `removeLocalAccount()` keeps it. When nil, no backup is created.
+    ///   - backupUserDefaults: Where the cut-off recorded at the last `logout()` is kept. Only used with `backupStorage`.
     public init(tokensStorage: any AuthTokenStoring,
                 authService: OAuthService,
                 refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
-                backupStorage: (any AuthTokenStoring)? = nil) {
+                backupStorage: (any AuthTokenStoring)? = nil,
+                backupUserDefaults: UserDefaults = .standard) {
         self.init(tokensStorage: tokensStorage,
                   authService: authService,
                   refreshEventMapping: refreshEventMapping,
                   tokenRefresher: DefaultTokenRefresher(authService: authService,
                                                         clientID: Constants.clientID,
                                                         refreshEventMapping: refreshEventMapping),
-                  backupStorage: backupStorage)
+                  backupStorage: backupStorage,
+                  backupUserDefaults: backupUserDefaults)
     }
 
     /// Creates a client that refreshes and decodes tokens through `tokenRefresher`.
@@ -248,16 +245,18 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///   - backupStorage: Where the backup token container, an independent pair forked from the current one, is kept.
     ///     When non-nil, a refresh also mints a new backup when there is none, or the stored one is expired, belongs to another account
     ///     or was issued more than 14 days ago; `logout()` deletes it and `removeLocalAccount()` keeps it. When nil, no backup is created.
+    ///   - backupUserDefaults: Where the cut-off recorded at the last `logout()` is kept. Only used with `backupStorage`.
     init(tokensStorage: any AuthTokenStoring,
          authService: OAuthService,
          refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
          tokenRefresher: any TokenRefreshing,
-         backupStorage: (any AuthTokenStoring)? = nil) {
+         backupStorage: (any AuthTokenStoring)? = nil,
+         backupUserDefaults: UserDefaults = .standard) {
         self.tokenStorage = tokensStorage
         self.authService = authService
         self.refreshEventMapping = refreshEventMapping
         self.tokenRefresher = tokenRefresher
-        self.backupStore = backupStorage.map { TokenBackupStore(storage: $0) }
+        self.backupStore = backupStorage.map { TokenBackupStore(storage: $0, userDefaults: backupUserDefaults) }
     }
 
     // MARK: - Internal
@@ -458,7 +457,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         await backupRenewalTask?.value
     }
 
-    public func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> TokenContainer {
+    public func restoreFromBackup(expectedExternalID: String?) async throws -> TokenContainer {
         if let task = backupRestoreOngoingTask {
             Logger.OAuthClient.log("Awaiting result from existing backup restore operation")
             return try await task.value
@@ -467,22 +466,20 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             defer {
                 self.backupRestoreOngoingTask = nil
             }
-            return try await performRestoreFromBackup(expectedExternalID: expectedExternalID, issuedAfter: issuedAfter)
+            return try await performRestoreFromBackup(expectedExternalID: expectedExternalID)
         }
         backupRestoreOngoingTask = task
         return try await task.value
     }
 
     /// Validates the backup, forks it into a new current pair and a new backup, and stores both, current pair first.
-    /// - Parameters:
-    ///   - expectedExternalID: The account the backup must belong to, or nil for any account.
-    ///   - issuedAfter: The date the backup's refresh token must be issued after, or nil.
+    /// - Parameter expectedExternalID: The account the backup must belong to, or nil for any account.
     /// - Returns: The new current token container. If the second fork call fails, the pair from the first call is stored as the
     ///   current one and the spent backup is deleted.
-    /// - Throws: As `restoreFromBackup(expectedExternalID:issuedAfter:)`.
-    private func performRestoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> TokenContainer {
+    /// - Throws: As `restoreFromBackup(expectedExternalID:)`.
+    private func performRestoreFromBackup(expectedExternalID: String?) async throws -> TokenContainer {
         guard let backupStore else { throw TokenBackupError.unavailable }
-        let backup = try backupStore.usableBackup(expectedExternalID: expectedExternalID, issuedAfter: issuedAfter)
+        let backup = try backupStore.usableBackup(expectedExternalID: expectedExternalID)
         let generationBeforeRestore = sessionGeneration.current
         let currentBeforeRestore = try tokenStorage.getTokenContainer()
         Logger.OAuthClient.log("Restoring tokens from the backup")
@@ -571,16 +568,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
-    public func backupTokenContainer() -> TokenContainer? {
-        backupStore?.storedBackup()
-    }
-
-    public func removeBackup() {
-        Logger.OAuthClient.log("Deleting the backup token")
-        sessionGeneration.increment()
-        backupStore?.remove()
-    }
-
     // MARK: Create
 
     /// Create an accounts, stores all tokens and returns them
@@ -609,16 +596,29 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     // MARK: Logout
 
-    /// Removes the backup token container, if any, then the current one, and asks the server to invalidate the current access token.
-    /// The server request is not awaited and its result is ignored.
+    /// Records the sign-out cut-off and deletes the backup token container, if any, then removes the current one and asks the server
+    /// to invalidate the current access token. The server request is not awaited and its result is ignored.
+    /// - Throws: The storage error when the current token container can't be read or removed. The cut-off is recorded and the backup
+    ///   deleted even then.
     public func logout() async throws {
         Logger.OAuthClient.log("Logging out")
         sessionGeneration.increment()
-        let existingToken = try tokenStorage.getTokenContainer()?.accessToken
+        let current: TokenContainer?
+        var currentReadError: Error?
+        do {
+            current = try tokenStorage.getTokenContainer()
+        } catch {
+            current = nil
+            currentReadError = error
+        }
+        backupStore?.recordSignOut(current: current, currentReadFailed: currentReadError != nil)
         backupStore?.remove()
+        if let currentReadError {
+            throw currentReadError
+        }
         try removeLocalAccount()
 
-        if let existingToken {
+        if let existingToken = current?.accessToken {
             Task { // Not waiting for an answer
                 Logger.OAuthClient.log("Invalidating the V2 token")
                 do {
@@ -637,7 +637,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     }
 }
 
-/// A counter of the changes that end or replace a session: sign-out, backup deletion, adoption, activation and account creation.
+/// A counter of the changes that end or replace a session: sign-out, adoption, activation, account creation and storing a token directly.
 /// It can be read and incremented from any thread.
 private final class SessionGeneration: @unchecked Sendable {
     private let lock = NSLock()

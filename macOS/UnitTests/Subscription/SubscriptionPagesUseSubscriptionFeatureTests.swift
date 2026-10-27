@@ -1020,6 +1020,38 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
+    func testSubscriptionChangeSelected_WhenNoOriginAndPlanChangeEntryIsAppSettings_StartsWideEventWithAppSettingsFunnelName() async throws {
+        // Given
+        let originURL = URL(string: "https://duckduckgo.com/subscriptions/plans?planChangeEntry=funnel_appsettings_macos")!
+        let webView = MockURLWebView(url: originURL)
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: [:], webView: webView)
+        let params: [String: Any] = ["id": "stripe-yearly-pro", "change": "upgrade"]
+
+        let stripeSubscription = DuckDuckGoSubscription(
+            productId: "stripe-plus-monthly",
+            name: "Plus Monthly",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(30 * 24 * 60 * 60),
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: [],
+            tier: .plus,
+            availableChanges: nil,
+            pendingPlans: nil
+        )
+        subscriptionManager.resultSubscription = .success(stripeSubscription)
+        subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+
+        // When
+        _ = try await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
+    }
+
+    @MainActor
     func testSubscriptionChangeSelected_ReportsErrorForAllErrorTypes() async throws {
         // Given
         subscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()

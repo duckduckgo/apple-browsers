@@ -30,6 +30,10 @@ final class MockHistoryStore: HistoryStoring {
         []
     }
 
+    func save(entries: [HistoryEntry]) async throws -> [UUID: [(id: Visit.ID, date: Date)]] {
+        [:]
+    }
+
     func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
         // No-op for mock
     }

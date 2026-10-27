@@ -1,6 +1,6 @@
 {
     "permission_dialog_impression": {
-        "description": "Fires when the on-site permission dialog is shown.",
+        "description": "Fires once per on-site permission dialog, when it is visible to the user: its tab is on screen and the app is active. A dialog removed while its tab is hidden does not fire.",
         "owners": ["bkunat"],
         "triggers": ["other"],
         "suffixes": [

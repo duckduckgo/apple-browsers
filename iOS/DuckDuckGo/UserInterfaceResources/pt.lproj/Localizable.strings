@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Enviar relatórios de falhas automaticamente?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Contagem atual de dispensas: % @";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Subscrições atuais";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Elemento IU de entrada";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Iniciar sessão";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Ação principal/Primeira ação";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Modal de preparação";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Proteções de Privacidade";
@@ -4181,10 +4181,10 @@
 "Reset" = "Reset";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Repor contagem de dispensas de elementos IU";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Repor estado do modal de preparação";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Nome do anfitrião armazenado: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adicionar ao dispositivo";

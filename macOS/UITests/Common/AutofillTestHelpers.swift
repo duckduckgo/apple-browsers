@@ -18,7 +18,7 @@
 
 import XCTest
 
-/// Sign-up and login flows on the privacy-test-pages.site autofill pages.
+/// Sign-up and login flows on local autofill test pages, so the tests don't depend on an outside site.
 extension XCUIApplication {
 
     enum AutofillTestPage {
@@ -26,16 +26,41 @@ extension XCUIApplication {
         case signUp
 
         var url: URL {
-            switch self {
-            case .login: URL(string: "https://privacy-test-pages.site/autofill/autoprompt/1-standard-login-form.html")!
-            case .signUp: URL(string: "https://privacy-test-pages.site/autofill/signup.html")!
-            }
+            UITests.simpleServedPage(titled: title, body: body)
         }
 
         var title: String {
             switch self {
-            case .login: "Autofill autoprompt for signin forms"
-            case .signUp: "Password generation during signup"
+            case .login: "Autofill login"
+            case .signUp: "Autofill sign up"
+            }
+        }
+
+        // Submitting keeps the page loaded, so the save and update popovers have a form to come from.
+        private var body: String {
+            switch self {
+            case .login:
+                """
+                <form id="login" onsubmit="event.preventDefault(); document.title = 'Signed in';">
+                  <label for="email">Email</label>
+                  <input id="email" type="email" autocomplete="username">
+                  <label for="password">Password</label>
+                  <input id="password" type="password" autocomplete="current-password">
+                  <button type="submit">Sign in</button>
+                </form>
+                """
+            case .signUp:
+                """
+                <form id="signup" onsubmit="event.preventDefault(); document.title = 'Signed up';">
+                  <label for="email">Email</label>
+                  <input id="email" type="email" autocomplete="email">
+                  <label for="password">Password</label>
+                  <input id="password" type="password" autocomplete="new-password" passwordrules="minlength: 5; maxlength: 10">
+                  <label for="password-2">Password Confirmation</label>
+                  <input id="password-2" type="password" autocomplete="new-password" passwordrules="minlength: 5; maxlength: 10">
+                  <button type="submit">Sign up</button>
+                </form>
+                """
             }
         }
     }
@@ -56,15 +81,7 @@ extension XCUIApplication {
     }
 
     func openAutofillTestPage(_ page: AutofillTestPage) {
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(page.url)
-        XCTAssertTrue(
-            windows.firstMatch.webViews[page.title].waitForExistence(timeout: UITests.Timeouts.navigation),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
+        openURL(page.url, waitForWebViewAccessibilityLabel: page.title)
     }
 
     var autofillEmailTextField: XCUIElement {

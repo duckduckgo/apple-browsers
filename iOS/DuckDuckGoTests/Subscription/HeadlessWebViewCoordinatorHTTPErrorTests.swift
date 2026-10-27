@@ -69,7 +69,7 @@ struct HeadlessWebViewCoordinatorHTTPErrorTests {
     func errorBridgesStatusCode() {
         let error = HeadlessWebViewHTTPError(statusCode: 404) as NSError
 
-        #expect(error.domain == "HeadlessWebViewHTTPError")
+        #expect(error.domain == "com.duckduckgo.headlessWebView")
         #expect(error.code == 404)
     }
 }

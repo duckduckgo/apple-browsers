@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DDGError
 import Foundation
 import WebKit
 
@@ -253,8 +254,9 @@ extension HeadlessWebViewCoordinator: WKNavigationDelegate {
     
 }
 
-struct HeadlessWebViewHTTPError: CustomNSError {
-    static let errorDomain = "HeadlessWebViewHTTPError"
+struct HeadlessWebViewHTTPError: DDGError {
+    static let errorDomain = "com.duckduckgo.headlessWebView"
     let statusCode: Int
     var errorCode: Int { statusCode }
+    var description: String { "HTTP error status \(statusCode)" }
 }

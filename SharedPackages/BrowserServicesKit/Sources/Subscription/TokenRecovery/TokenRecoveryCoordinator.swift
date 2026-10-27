@@ -36,21 +36,25 @@ public final class TokenRecoveryCoordinator {
 
     /// Tries each strategy for `context.trigger` in order and stops at the first success.
     /// - Parameter context: The state the recovery starts from.
-    /// - Returns: `.recovered` from the first strategy that recovers; `.sessionChanged` as soon as a strategy reports it, without trying
-    ///   the next ones; `.failed` with the error of the last strategy that failed; `.notApplicable` when no strategy applied.
-    public func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
+    /// - Returns: The result of each strategy that ran, and the outcome: `.recovered` from the first strategy that recovers;
+    ///   `.sessionChanged` as soon as a strategy reports it, without trying the next ones; `.failed` with the error of the last
+    ///   strategy that failed; `.notApplicable` when no strategy applied.
+    public func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryReport {
         let strategies = context.trigger == .invalidToken ? invalidTokenStrategies : missingTokenStrategies
         let trigger = context.trigger.rawValue
+        var attempts: [TokenRecoveryReport.Attempt] = []
         var lastFailure: Error?
         for strategy in strategies {
             let name = String(describing: type(of: strategy))
-            switch await strategy.recover(context) {
+            let result = await strategy.recover(context)
+            attempts.append(TokenRecoveryReport.Attempt(method: strategy.method, result: result))
+            switch result {
             case .recovered:
                 Logger.subscriptionTokensManagement.log("Token recovered by \(name, privacy: .public), trigger: \(trigger, privacy: .public)")
-                return .recovered
+                return TokenRecoveryReport(result: .recovered, attempts: attempts)
             case .sessionChanged:
                 Logger.subscriptionTokensManagement.log("\(name, privacy: .public) stopped the recovery, the session changed, trigger: \(trigger, privacy: .public)")
-                return .sessionChanged
+                return TokenRecoveryReport(result: .sessionChanged, attempts: attempts)
             case .notApplicable:
                 Logger.subscriptionTokensManagement.log("\(name, privacy: .public) doesn't apply, trigger: \(trigger, privacy: .public)")
             case .failed(let error):
@@ -59,9 +63,9 @@ public final class TokenRecoveryCoordinator {
             }
         }
         if let lastFailure {
-            return .failed(lastFailure)
+            return TokenRecoveryReport(result: .failed(lastFailure), attempts: attempts)
         }
         Logger.subscriptionTokensManagement.log("No token recovery applies, trigger: \(trigger, privacy: .public)")
-        return .notApplicable
+        return TokenRecoveryReport(result: .notApplicable, attempts: attempts)
     }
 }

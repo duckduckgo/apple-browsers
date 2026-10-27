@@ -92,7 +92,7 @@ enum SubscriptionPixel: PixelKit.Event {
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionAutomaticSignOut(SubscriptionAutomaticSignOutPixelData, SubscriptionPixelHandler.Source, Error)
     case subscriptionInvalidRefreshTokenSignedOut
-    case subscriptionInvalidRefreshTokenRecovered
+    case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?)
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
     // Pending Transaction
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
@@ -281,6 +281,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let platformKey = "platform"
         static let activationDayKey = "activation_day"
         static let statusKey = "status"
+        static let recoveryMethodKey = "recovery_method"
     }
 
     var parameters: [String: String]? {
@@ -293,6 +294,8 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionKeychainManagerDataWroteFromBacklog(let source),
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.description]
+        case .subscriptionInvalidRefreshTokenRecovered(let method):
+            return method.map { [SubscriptionPixelsDefaults.recoveryMethodKey: $0.rawValue] }
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.description]

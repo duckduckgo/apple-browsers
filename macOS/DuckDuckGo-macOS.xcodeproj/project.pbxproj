@@ -3871,6 +3871,7 @@
 		BB6EE5332F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */; };
 		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
+		AE82FA3BCBE6C467AF9C9DE4 /* AutofillUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0198D7999B4826E9F58CDCD /* AutofillUITests.swift */; };
 		BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */; };
 		BB7696C52D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB7696C62D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
@@ -7174,6 +7175,7 @@
 		BB6EE52E2F33DB6D009420FA /* MemoryUsageThresholdReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporter.swift; sourceTree = "<group>"; };
 		BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporterTests.swift; sourceTree = "<group>"; };
 		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
+		A0198D7999B4826E9F58CDCD /* AutofillUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillUITests.swift; sourceTree = "<group>"; };
 		BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowTests.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
 		BB77F8CD2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -10465,6 +10467,7 @@
 				65EE7C612E3297A0009FD83B /* DuckPlayerTests.swift */,
 				EE0429DF2BA31D2F009EB20F /* FindInPageTests.swift */,
 				843A52F52EA8F9170094C215 /* Fire */,
+				A0198D7999B4826E9F58CDCD /* AutofillUITests.swift */,
 				BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */,
 				8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */,
 				844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */,
@@ -18322,6 +18325,7 @@
 				E13D64DBAEF14EC797F7DE7F /* AddressBarEditingTestSupport.swift in Sources */,
 				84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */,
 				EE54F7B32BBFEA49006218DB /* BookmarksAndFavoritesTests.swift in Sources */,
+				AE82FA3BCBE6C467AF9C9DE4 /* AutofillUITests.swift in Sources */,
 				BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */,
 				8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */,
 				31EC9F58AE7A18707C8A0D08 /* YouTubeAdBlockingUITests.swift in Sources */,

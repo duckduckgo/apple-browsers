@@ -25,11 +25,13 @@ import SubscriptionTestingUtilities
 final class TokenRecoveryCoordinatorTests: XCTestCase {
 
     private final class StubStrategy: TokenRecoveryStrategy {
+        let method: TokenRecoveryMethod
         private let result: TokenRecoveryResult
         private(set) var calls = 0
 
-        init(_ result: TokenRecoveryResult) {
+        init(_ result: TokenRecoveryResult, method: TokenRecoveryMethod = .backup) {
             self.result = result
+            self.method = method
         }
 
         func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
@@ -47,7 +49,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let second = StubStrategy(.recovered)
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [first, second], missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.outcome, .recovered)
         XCTAssertEqual(first.calls, 1)
@@ -59,7 +61,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let second = StubStrategy(.recovered)
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [first, second], missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.outcome, .recovered)
         XCTAssertEqual(first.calls, 1)
@@ -72,7 +74,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failed(readFailed)), next],
                                                    missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.failure as? TokenBackupError, readFailed)
         XCTAssertEqual(next.calls, 1)
@@ -82,7 +84,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.notApplicable), StubStrategy(.notApplicable)],
                                                    missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.outcome, .notApplicable)
     }
@@ -90,7 +92,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
     func testRecover_noStrategies_isNotApplicable() async {
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [], missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.outcome, .notApplicable)
     }
@@ -99,7 +101,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failed(URLError(.timedOut))), StubStrategy(.notApplicable)],
                                                    missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual((result.failure as? URLError)?.code, .timedOut)
     }
@@ -109,7 +111,7 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
                                                                             StubStrategy(.failed(TokenBackupError.expired))],
                                                    missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.failure as? TokenBackupError, .expired)
     }
@@ -119,10 +121,48 @@ final class TokenRecoveryCoordinatorTests: XCTestCase {
         let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.sessionChanged), later],
                                                    missingTokenStrategies: [])
 
-        let result = await coordinator.recover(invalidTokenContext)
+        let result = await coordinator.recover(invalidTokenContext).result
 
         XCTAssertEqual(result.outcome, .sessionChanged)
         XCTAssertEqual(later.calls, 0)
+    }
+
+    func testRecover_reportsEachStrategyThatRan_andTheMethodThatRecovered() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failed(TokenBackupError.expired), method: .backup),
+                                                                            StubStrategy(.recovered, method: .appStore)],
+                                                   missingTokenStrategies: [])
+
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertEqual(report.attempts.map(\.method), [.backup, .appStore])
+        XCTAssertEqual(report.result(of: .backup)?.failure as? TokenBackupError, .expired)
+        XCTAssertEqual(report.result(of: .appStore)?.outcome, .recovered)
+        XCTAssertEqual(report.recoveredBy, .appStore)
+    }
+
+    func testRecover_nothingRecovered_reportsNoRecoveryMethod() async {
+        let coordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [StubStrategy(.failed(URLError(.timedOut)), method: .backup),
+                                                                            StubStrategy(.notApplicable, method: .appStore)],
+                                                   missingTokenStrategies: [])
+
+        let report = await coordinator.recover(invalidTokenContext)
+
+        XCTAssertNil(report.recoveredBy)
+        XCTAssertEqual(report.result(of: .appStore)?.outcome, .notApplicable)
+    }
+
+    // MARK: - Backup recovery outcome
+
+    func testBackupRecoveryOutcome_mapsEachBackupResult() {
+        XCTAssertEqual(BackupRecoveryOutcome(nil), .notAttempted)
+        XCTAssertEqual(BackupRecoveryOutcome(.notApplicable), .notAttempted)
+        XCTAssertEqual(BackupRecoveryOutcome(.recovered), .succeeded)
+        XCTAssertEqual(BackupRecoveryOutcome(.sessionChanged), .sessionChanged)
+        XCTAssertEqual(BackupRecoveryOutcome(.failed(TokenBackupError.accountMismatch)), .rejected)
+        XCTAssertEqual(BackupRecoveryOutcome(.failed(OAuthClientError.invalidTokenRequest(.reused))), .rejected)
+        XCTAssertEqual(BackupRecoveryOutcome(.failed(URLError(.timedOut))), .failed)
+        XCTAssertEqual(BackupRecoveryOutcome(.failed(TokenBackupError.readFailed(underlying: NSError(domain: "keychain", code: 1)))), .failed)
+        XCTAssertEqual(BackupRecoveryOutcome(.failed(NSError(domain: "unknown", code: 1))), .failed)
     }
 
     func testRecover_missingTokenTrigger_usesOnlyTheMissingTokenStrategies() async {

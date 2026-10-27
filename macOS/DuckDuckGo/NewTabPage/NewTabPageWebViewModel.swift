@@ -20,6 +20,7 @@ import Combine
 import NewTabPage
 import PixelKit
 import PrivacyConfig
+import SwiftUI
 import UniformTypeIdentifiers
 import WebKit
 
@@ -132,4 +133,41 @@ extension WKWebViewConfiguration {
         preferences[.developerExtrasEnabled] = true
         self.userContentController = NewTabPageUserContentController(newTabPageUserScript: newTabPageUserScript)
      }
+}
+
+/// The colour the New Tab Page settles on, shown behind its web view until the page paints.
+enum NewTabPageBackgroundColor {
+
+    @MainActor
+    static func current() -> NSColor {
+        color(
+            customBackground: NSApp.delegateTyped.newTabPageCustomizationModel.customBackground,
+            themeName: NSApp.delegateTyped.appearancePreferences.themeName,
+            appearance: NSApp.effectiveAppearance
+        )
+    }
+
+    static func color(customBackground: CustomBackground?, themeName: ThemeName, appearance: NSAppearance) -> NSColor {
+        let canvas = ThemeColors(themeName: themeName).surfaceCanvas
+        switch customBackground {
+        case .solidColor(let solidColor):
+            return solidColor.color
+        case .gradient(let gradient):
+            return gradient.fallbackColor
+        case .userImage(let image):
+            return canvas.resolved(isDark: image.colorScheme == .dark)
+        case .none:
+            return canvas.resolved(isDark: appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
+        }
+    }
+}
+
+private extension NSColor {
+    func resolved(isDark: Bool) -> NSColor {
+        var resolved = self
+        NSAppearance(named: isDark ? .darkAqua : .aqua)?.performAsCurrentDrawingAppearance {
+            resolved = usingColorSpace(.sRGB) ?? self
+        }
+        return resolved
+    }
 }

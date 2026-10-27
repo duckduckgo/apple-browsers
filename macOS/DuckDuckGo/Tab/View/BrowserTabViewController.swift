@@ -996,6 +996,9 @@ final class BrowserTabViewController: NSViewController {
             }
             cleanUpRemoteWebViewIfNeeded(newWebView)
             webView = newWebView
+            browserTabView.backgroundColor = newWebView === _newTabPageWebViewModel?.webView
+                ? NewTabPageBackgroundColor.current()
+                : NSColor(resource: .browserTabBackground)
 
             addWebViewToViewHierarchy(newWebView, tab: tabViewModel.tab)
             if let webViewSnapshot {

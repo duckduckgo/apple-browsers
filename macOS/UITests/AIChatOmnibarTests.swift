@@ -279,9 +279,11 @@ class AIChatOmnibarTests: UITestCase {
         XCTAssertTrue(selectedTab.wait(for: showsDuckAI, timeout: UITests.Timeouts.navigation),
                       "Submitting in Duck.ai mode should open duck.ai (current URL: \(selectedTab.url ?? "<nil>"))")
 
-        // Web pages expose their text as the static text's value, not its label
+        // Web pages expose their text as the static text's value, not its label, and some values are numbers
         let submittedQuery = app.windows.firstMatch.webViews.firstMatch.staticTexts
-            .matching(NSPredicate(format: "value CONTAINS %@", query)).firstMatch
+            .matching(NSPredicate { element, _ in
+                ((element as? NSObject)?.value(forKey: "value") as? String)?.contains(query) == true
+            }).firstMatch
         XCTAssertTrue(submittedQuery.waitForExistence(timeout: UITests.Timeouts.navigation),
                       "duck.ai should show the typed query as the first message")
     }

@@ -54,6 +54,8 @@ final class NewTabPageWebViewModel: NSObject {
 
         webView.navigationDelegate = self
         webView.uiDelegate = self
+        // Without this, WebKit paints white until the page's first frame, flashing in dark themes.
+        webView.setValue(false, forKey: "drawsBackground")
         webView.load(URLRequest(url: URL.newtab))
         newTabPageUserScript.webView = webView
 

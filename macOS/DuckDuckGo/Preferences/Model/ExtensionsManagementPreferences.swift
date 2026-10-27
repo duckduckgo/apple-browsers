@@ -27,7 +27,7 @@ struct ExtensionPasswordManager: Identifiable {
     let name: String
     let publisher: String
     let iconURL: URL?
-    let storeURL: URL?
+    let storeURL: URL
 }
 
 @MainActor
@@ -35,7 +35,6 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
 
     @Published private(set) var uninstalledPasswordManagers: [ExtensionPasswordManager] = []
 
-    private let catalog: ChromeWebStoreCatalog
     private let webExtensionManager: WebExtensionManaging?
     private var cancellables = Set<AnyCancellable>()
 
@@ -43,7 +42,6 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
     let imageLoader: RemoteMessagingImageLoading
 
     init(configurationManager: PrivacyConfigurationManaging, imageLoader: RemoteMessagingImageLoading? = nil, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
-        self.catalog = ChromeWebStoreCatalog(configurationManager: configurationManager)
         self.imageLoader = imageLoader ?? RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider, cache: RemoteMessagingImageLoader.defaultCache)
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
@@ -53,11 +51,7 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
     }
 
     func openStorePage(for passwordManager: ExtensionPasswordManager) {
-        guard let storeURL = passwordManager.storeURL else {
-            return
-        }
-
-        openNewTab(with: storeURL)
+        openNewTab(with: passwordManager.storeURL)
     }
 }
 
@@ -78,30 +72,19 @@ private extension ExtensionsManagementPreferences {
     }
 
     func reloadPasswordManagers() {
-        uninstalledPasswordManagers = catalog.extensionIDs
-            .filter(isUninstalled)
-            .compactMap(catalog.catalogEntry(of:))
+        guard #available(macOS 15.4, *), let store = webExtensionManager?.chromeWebStore else {
+            uninstalledPasswordManagers = []
+            return
+        }
+
+        uninstalledPasswordManagers = store.catalogExtensionIDs
+            .filter { store.status(for: $0) != .installed }
+            .compactMap(store.catalogEntry(of:))
             .filter(\.isPasswordManager)
-            .compactMap(passwordManager(for:))
-    }
-
-    func isUninstalled(_ storeID: String) -> Bool {
-        guard #available(macOS 15.4, *) else {
-            return true
-        }
-
-        return webExtensionManager?.chromeWebStore?.status(for: storeID) != .installed
-    }
-
-    func passwordManager(for entry: ExtensionsCatalogSubfeature) -> ExtensionPasswordManager? {
-        guard let name = catalog.name(of: entry) else {
-            return nil
-        }
-
-        return ExtensionPasswordManager(id: entry.rawValue,
-                                        name: name,
-                                        publisher: catalog.publisher(of: entry) ?? "",
-                                        iconURL: catalog.iconURL(of: entry),
-                                        storeURL: catalog.storeURL(of: entry))
+            .compactMap { entry in
+                store.listing(of: entry).map {
+                    ExtensionPasswordManager(id: entry.rawValue, name: $0.name, publisher: $0.publisher, iconURL: $0.iconURL, storeURL: $0.storeURL)
+                }
+            }
     }
 }

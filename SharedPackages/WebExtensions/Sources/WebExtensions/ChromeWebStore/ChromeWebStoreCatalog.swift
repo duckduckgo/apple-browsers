@@ -35,6 +35,14 @@ public extension ExtensionsCatalogSubfeature {
     }
 }
 
+/// A catalog entry's store listing, from its Privacy Config settings.
+public struct ChromeWebStoreListing: Equatable {
+    public let name: String
+    public let publisher: String
+    public let iconURL: URL?
+    public let storeURL: URL
+}
+
 public enum ChromeWebStoreStatus: String, Codable {
     case installable, installed, unsupported, unknown
 }
@@ -95,6 +103,9 @@ public protocol ChromeWebStoreCatalogProviding {
     /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// whether or not the catalog offers it right now. `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
+
+    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
 }
 
 public extension ChromeWebStoreCatalogProviding {
@@ -153,25 +164,15 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         }
     }
 
-    public func name(of subfeature: ExtensionsCatalogSubfeature) -> String? {
-        string(forSetting: "name", of: subfeature)
-    }
+    public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
+        guard let settings = Self.settings(of: subfeature, in: configurationManager.privacyConfig),
+              let name = settings["name"] as? String,
+              let storeURL = (settings["cwsUri"] as? String).flatMap(URL.init(string:)) else { return nil }
 
-    public func publisher(of subfeature: ExtensionsCatalogSubfeature) -> String? {
-        string(forSetting: "publisher", of: subfeature)
-    }
-
-    public func iconURL(of subfeature: ExtensionsCatalogSubfeature) -> URL? {
-        string(forSetting: "iconUri", of: subfeature).flatMap(URL.init(string:))
-    }
-
-    /// The entry's Chrome Web Store page, from its `cwsUri` setting.
-    public func storeURL(of subfeature: ExtensionsCatalogSubfeature) -> URL? {
-        string(forSetting: "cwsUri", of: subfeature).flatMap(URL.init(string:))
-    }
-
-    private func string(forSetting key: String, of subfeature: ExtensionsCatalogSubfeature) -> String? {
-        Self.settings(of: subfeature, in: configurationManager.privacyConfig)?[key] as? String
+        return ChromeWebStoreListing(name: name,
+                                     publisher: settings["publisher"] as? String ?? "",
+                                     iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
+                                     storeURL: storeURL)
     }
 
     private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {

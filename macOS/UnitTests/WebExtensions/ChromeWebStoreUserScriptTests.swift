@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PrivacyConfig
 import WebExtensions
 import WebKit
 import XCTest
@@ -229,6 +230,7 @@ private final class ChromeWebStoreServiceMock: ChromeWebStoreManaging {
         removedIdentifier = identifier
         return success
     }
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
 private final class StoreURLWebView: WKWebView {

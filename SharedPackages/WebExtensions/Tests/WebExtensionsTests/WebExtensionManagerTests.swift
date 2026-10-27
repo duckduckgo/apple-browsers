@@ -1938,6 +1938,7 @@ private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

@@ -64,16 +64,18 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         XCTAssertNil(catalog.catalogEntry(of: thirdIdentifier))
     }
 
-    func testCatalogReadsAnEntrysIcon() throws {
+    func testCatalogReadsAnEntrysListing() throws {
         let iconURL = "https://staticcdn.duckduckgo.com/extensions/bitwarden-80.png"
+        let storeURL = "https://chromewebstore.google.com/detail/\(identifier)"
         let catalog = try makeCatalog(extensions: [
-            "bitwarden": entry(identifier, iconUri: iconURL),
+            "bitwarden": entry(identifier, iconUri: iconURL, cwsUri: storeURL),
             "onePassword": entry(otherIdentifier)
         ])
 
-        XCTAssertEqual(catalog.iconURL(of: .bitwarden), URL(string: iconURL))
-        XCTAssertNil(catalog.iconURL(of: .onePassword))
-        XCTAssertNil(catalog.iconURL(of: .darkReader))
+        XCTAssertEqual(catalog.listing(of: .bitwarden),
+                       ChromeWebStoreListing(name: "Extension", publisher: "", iconURL: URL(string: iconURL), storeURL: try XCTUnwrap(URL(string: storeURL))))
+        XCTAssertNil(catalog.listing(of: .onePassword))
+        XCTAssertNil(catalog.listing(of: .darkReader))
     }
 
     func testUnknownSubfeaturesAndMalformedEntriesAreIgnored() throws {
@@ -155,10 +157,11 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil) -> [String: Any] {
+    private func entry(_ id: String, state: String = "enabled", order: Int? = nil, iconUri: String? = nil, cwsUri: String? = nil) -> [String: Any] {
         var settings: [String: Any] = ["id": id, "name": "Extension"]
         settings["order"] = order
         settings["iconUri"] = iconUri
+        settings["cwsUri"] = cwsUri
         return ["state": state, "settings": settings]
     }
 

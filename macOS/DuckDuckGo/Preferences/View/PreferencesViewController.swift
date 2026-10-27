@@ -112,6 +112,7 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         let extensionsManagementPreferences = ExtensionsManagementPreferences(configurationManager: privacyConfigurationManager,
+                                                                              webExtensionManager: Application.appDelegate.webExtensionManager,
                                                                               windowControllersManager: Application.appDelegate.windowControllersManager)
         let prefRootView = Preferences.RootViewV2(model: model,
                                                   subscriptionManager: Application.appDelegate.subscriptionManager,

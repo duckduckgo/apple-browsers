@@ -146,10 +146,6 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
             .map(\.element.id)
     }
 
-    public var enabledEntries: [ExtensionsCatalogSubfeature] {
-        extensionIDs.compactMap(catalogEntry(of:))
-    }
-
     public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
         let config = configurationManager.privacyConfig
         return ExtensionsCatalogSubfeature.allCases.first { subfeature in

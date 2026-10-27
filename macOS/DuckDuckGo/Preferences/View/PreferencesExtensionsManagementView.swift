@@ -61,7 +61,7 @@ extension Preferences {
                 }
 
                 PreferencePaneSection(UserText.extensionsSettingsPasswordManagersHeader, spacing: 12) {
-                    ForEach(model.passwordManagers) { item in
+                    ForEach(model.uninstalledPasswordManagers) { item in
                         ExtensionsManagementRow(item: item, imageLoader: model.imageLoader) {
                             model.openStorePage(for: item)
                         }
@@ -112,7 +112,7 @@ extension Preferences {
             static let buttonCornerRadius: CGFloat = 8
         }
 
-        let item: ExtensionsManagementPreferences.PasswordManager
+        let item: ExtensionPasswordManager
         let imageLoader: RemoteMessagingImageLoading
         let onGet: () -> Void
 

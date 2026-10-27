@@ -59,7 +59,9 @@ final class NewTabPageWebViewModel: NSObject {
         webView.load(URLRequest(url: URL.newtab))
         newTabPageUserScript.webView = webView
 
-        webView.publisher(for: \.window)
+        let window = webView.publisher(for: \.window).share()
+
+        window
             .map { $0 != nil }
             .sink { isOnScreen in
                 if isOnScreen && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
@@ -77,12 +79,14 @@ final class NewTabPageWebViewModel: NSObject {
         NewTabPageBackgroundColor.publisher(
             customBackground: app.newTabPageCustomizationModel.$customBackground,
             canvas: app.themeManager.$theme.map(\.palette.surfaceCanvas),
-            isDark: NSApp.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
+            isDark: webView.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
         )
-        .combineLatest(webView.publisher(for: \.window).map { [weak webView] _ in webView?.superview })
+        .removeDuplicates()
+        .combineLatest(window.map { [weak webView] window in window == nil ? nil : webView?.superview })
         .sink { color, container in
-            container?.wantsLayer = true
-            container?.layer?.backgroundColor = color.cgColor
+            guard let container else { return }
+            container.wantsLayer = true
+            container.layer?.backgroundColor = color.cgColor
         }
         .store(in: &cancellables)
 

@@ -60,14 +60,39 @@ class AutofillUITests: UITestCase {
         app.fillLoginUsingAutofill(email: email)
         XCTAssertNotEqual(app.autofillPasswordTextField.value as? String ?? "", "", "Autofill didn't fill the password field.")
 
+        let filledPassword = app.autofillPasswordTextField.value as? String ?? ""
         app.autofillPasswordTextField.click()
         // Focusing the field reopens the autofill dropdown, which would take the typed password
         app.typeKey(.escape, modifierFlags: [])
-        app.typeKey("a", modifierFlags: .command)
+        // Select All doesn't reach a secure web field on every macOS version, so delete the filled password key by key
+        app.typeKey(.rightArrow, modifierFlags: .command)
+        for _ in 0..<(filledPassword.count + 4) {
+            app.typeKey(.delete, modifierFlags: [])
+        }
         app.typeText("new-pa$$word")
+        let changedPassword = app.autofillPasswordTextField.value as? String ?? ""
         app.submitLoginForm()
 
-        XCTAssertTrue(app.updatePasswordPopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The Update password popover didn't appear after signing in with a changed password.")
+        if !app.updatePasswordPopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            XCTFail("The Update password popover didn't appear after signing in with a changed password. " +
+                    "Password field before: \(filledPassword.count) characters, after: \(changedPassword.count). Popover texts: \(popoverTextsInOneSnapshot())")
+        }
+    }
+
+    // MARK: - Utilities
+
+    /// Reading elements one by one fails when the UI changes in between, so take the texts from one snapshot.
+    private func popoverTextsInOneSnapshot() -> [String] {
+        guard let snapshot = try? app.snapshot() else { return [] }
+        var texts: [String] = []
+        var pending = [(element: snapshot, isInPopover: false)]
+        while let (element, isInPopover) = pending.popLast() {
+            let isPopoverContent = isInPopover || element.elementType == .popover
+            if isPopoverContent {
+                texts += [element.label, element.title, element.value as? String ?? ""].filter { !$0.isEmpty }
+            }
+            pending.append(contentsOf: element.children.map { ($0, isPopoverContent) })
+        }
+        return texts
     }
 }

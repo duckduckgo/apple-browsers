@@ -89,24 +89,45 @@ class FireWindowTests: UITestCase {
     func testFireWindowsSignInDoesNotShowCredentialsPopup() {
         app.openFireWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
-        openSignUpSite()
-        fillCredentials()
-        finishSignUp()
+        app.openAutofillTestPage(.signUp)
+        app.fillSignUpForm(email: "test@duck.com", password: "pa$$word")
+        app.submitSignUpForm()
         assertSavePasswordPopupIsNotShown()
     }
 
     func testCrendentialsAreAutoFilledInFireWindows() {
+        let email = "\(UITests.randomPageTitle(length: 8).lowercased())@duck.com"
+        app.resetAutofillData()
         app.openNewWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
-        openLoginSite()
-        signIn()
-        saveCredentials()
+        app.openAutofillTestPage(.login)
+        app.signIn(email: email, password: "pa$$word")
+        app.saveCredentialsFromPopover()
 
         /// Here we start the same flow but in the fire window, but we use the autofill credentials saved in the step before.
         app.openFireWindow()
         hoverMouseOutsideTabSoPreviewIsNotShown()
-        openLoginSite()
-                signInUsingAutoFill()
+        app.openAutofillTestPage(.login)
+        app.fillLoginUsingAutofill(email: email)
+    }
+
+    func testCookiesSetInRegularWindowAreNotVisibleInFireWindow() {
+        let cookieName = "regular\(UITests.randomPageTitle(length: 8))"
+        setCookie(named: cookieName)
+        assertCookie(named: cookieName, isVisible: true)
+
+        app.openFireWindow()
+        assertCookie(named: cookieName, isVisible: false)
+    }
+
+    func testCookiesSetInFireWindowAreNotVisibleInRegularWindow() {
+        let cookieName = "fire\(UITests.randomPageTitle(length: 8))"
+        app.openFireWindow()
+        setCookie(named: cookieName)
+        assertCookie(named: cookieName, isVisible: true)
+
+        app.openNewWindow()
+        assertCookie(named: cookieName, isVisible: false)
     }
 
     func testDevelopMenuIsDisabledInNewFireWindow() {
@@ -128,128 +149,28 @@ class FireWindowTests: UITestCase {
         coordinate.hover()
     }
 
-    private func signInUsingAutoFill() {
-        if areTestsRunningOnMacos13() {
-            let webViewFire = app.webViews.firstMatch
-            let webViewCoordinate = webViewFire.coordinate(withNormalizedOffset: CGVector(dx: 5, dy: 5))
-            webViewCoordinate.tap()
-            app.typeKey("\t", modifierFlags: [])
-            sleep(1)
-            let autoFillPopup = webViewFire.buttons["test@duck.com privacy-test-pages.site"]
-            let coordinate = autoFillPopup.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            coordinate.tap()
-
-            /// On macOS 13 there are some issues when accessing web view elements so we do not check the value of the email text field.
-            /// If we can access the `test@duck.com privacy-test-pages.site` button means that auto fill is working correctly in the fire window.
-            /// Checking that the email is being filled correctly is more an autofill test that fire window, so we are okay to skip it.
-            ///
-            /// We do run this test on macOS 14 and above.
-        } else {
-            let webViewFire = app.webViews.firstMatch
-            webViewFire.tap()
-            let emailTextFieldFire = webViewFire.textFields["Email"].firstMatch
-            emailTextFieldFire.click()
-            let autoFillPopup = webViewFire.buttons["test@duck.com privacy-test-pages.site"]
-            let coordinate = autoFillPopup.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            coordinate.tap()
-
-            // Use an expectation to wait for the value to update
-            let expectedValue = "test@duck.com"
-            XCTAssertTrue(emailTextFieldFire.wait(for: \.value, equals: expectedValue, timeout: UITests.Timeouts.elementExistence),
-                          "The email text field value did not update as expected.")
-            XCTAssertEqual(emailTextFieldFire.value as? String, expectedValue)
-        }
-    }
-
-    private func saveCredentials() {
-        let saveButton = app.buttons["Save"]
-        saveButton.tap()
-    }
-
-    private func signIn() {
-        if areTestsRunningOnMacos13() {
-            let webView = app.webViews.firstMatch
-            let webViewCoordinate = webView.coordinate(withNormalizedOffset: CGVector(dx: 5, dy: 5))
-            webViewCoordinate.tap()
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("test@duck.com")
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("pa$$word")
-        } else {
-            let webView = app.webViews.firstMatch
-            webView.tap()
-            let emailTextField = webView.textFields["Email"].firstMatch
-            emailTextField.click()
-            emailTextField.typeText("test@duck.com")
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("pa$$word")
-        }
-
-        let signInButton = app.webViews.firstMatch.buttons["Sign in"].firstMatch
-        signInButton.click()
-    }
-
-    private func openLoginSite() {
-        let addressBar = app.addressBar
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(URL(string: "https://privacy-test-pages.site/autofill/autoprompt/1-standard-login-form.html")!)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews["Autofill autoprompt for signin forms"].waitForExistence(timeout: UITests.Timeouts.navigation),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
-    }
-
     private func assertSavePasswordPopupIsNotShown() {
-        let credentialsPopup = app.popovers["Save password in DuckDuckGo?"]
-        XCTAssertFalse(credentialsPopup.exists)
+        XCTAssertFalse(app.savePasswordPopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                       "Fire windows shouldn't offer to save passwords.")
     }
 
-    private func finishSignUp() {
-        let signUpButton = app.webViews.firstMatch.buttons["Sign up"].firstMatch
-        signUpButton.click()
+    /// Cookies are per host and port, so every tests-server page shares them; the cookie name keeps tests apart.
+    private func setCookie(named name: String) {
+        let page = UITests.simpleServedPage(titled: "Cookie setter", body: """
+            <script>document.cookie = "\(name)=1; max-age=3600; path=/";</script>
+            <p>Cookie set</p>
+            """)
+        app.openURL(page, waitForWebViewAccessibilityLabel: "Cookie setter")
     }
 
-    private func fillCredentials() {
-        if areTestsRunningOnMacos13() {
-            /// On macOS 13 we tap in the webview coordinate and we use tabs to make it work given that it doesn't find web view elements
-            let webView = app.webViews.firstMatch
-            let webViewCoordinate = webView.coordinate(withNormalizedOffset: CGVector(dx: 5, dy: 5))
-            webViewCoordinate.tap()
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("test@duck.com")
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("pa$$word")
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("pa$$word")
-        } else {
-            let webView = app.webViews.firstMatch
-            webView.tap()
-            let emailTextField = webView.textFields["Email"].firstMatch
-            emailTextField.click()
-            emailTextField.typeText("test@duck.com")
-
-            let password = webView.secureTextFields["Password"].firstMatch
-            password.click()
-            password.typeText("pa$$word")
-            app.typeKey("\t", modifierFlags: [])
-            app.typeText("pa$$word")
-        }
-    }
-
-    private func openSignUpSite() {
-        let addressBar = app.addressBar
-        XCTAssertTrue(
-            addressBar.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The address bar text field didn't become available in a reasonable timeframe."
-        )
-        addressBar.typeURL(URL(string: "https://privacy-test-pages.site/autofill/signup.html")!)
-        XCTAssertTrue(
-            app.windows.firstMatch.webViews["Password generation during signup"].waitForExistence(timeout: UITests.Timeouts.navigation),
-            "Visited site didn't load with the expected title in a reasonable timeframe."
-        )
+    /// The reader page reports in its title whether it can see the cookie, which the web view exposes as its label.
+    private func assertCookie(named name: String, isVisible: Bool) {
+        let page = UITests.simpleServedPage(titled: "Cookie reader", body: """
+            <script>
+            document.title = document.cookie.split("; ").includes("\(name)=1") ? "Cookie present" : "Cookie absent";
+            </script>
+            """)
+        app.openURL(page, waitForWebViewAccessibilityLabel: isVisible ? "Cookie present" : "Cookie absent")
     }
 
     private func dragFirstTabOutsideOfFireWindow() {
@@ -311,10 +232,6 @@ class FireWindowTests: UITestCase {
     private func assertSiteIsNotShowingInNormalWindowHistory() {
         let siteMenuItemInHistory = app.menuItems["Some site"]
         XCTAssertFalse(siteMenuItemInHistory.exists, "Menu item should not exist because it was not stored in history.")
-    }
-
-    private func areTestsRunningOnMacos13() -> Bool {
-        return ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 13
     }
 
     private func assertDeveloperToolsEnabled(_ shouldBeEnabled: Bool) {

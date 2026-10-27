@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Tylko dla planu Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Tylko dla subskrybentów";
+"aichat.model-picker.subscriber-exclusive" = "Odblokuj dzięki subskrypcji";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Wypróbuj bezpłatnie";

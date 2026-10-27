@@ -115,6 +115,18 @@ class AIChatOmnibarTests: UITestCase {
 
     /// Switches to the previous tab via Cmd+Shift+[. Wrapped so future hardening (focus resets, sync
     /// points, etc.) can be applied in one place if these tests start to flake again.
+    /// Labels and string values from one snapshot, to show what a web page displays when an expected text is missing.
+    private func textsInOneSnapshot(of element: XCUIElement) -> [String] {
+        guard let snapshot = try? element.snapshot() else { return [] }
+        var texts: [String] = []
+        var pending = [snapshot]
+        while let element = pending.popLast() {
+            texts += [element.label, element.value as? String ?? ""].filter { !$0.isEmpty }
+            pending.append(contentsOf: element.children)
+        }
+        return texts
+    }
+
     private func switchToPreviousTab() {
         app.typeKey("[", modifierFlags: [.command, .shift])
     }
@@ -279,10 +291,12 @@ class AIChatOmnibarTests: UITestCase {
         XCTAssertTrue(selectedTab.wait(for: showsDuckAI, timeout: UITests.Timeouts.navigation),
                       "Submitting in Duck.ai mode should open duck.ai (current URL: \(selectedTab.url ?? "<nil>"))")
 
-        let submittedQuery = app.windows.firstMatch.webViews.staticTexts
+        let duckAIPage = app.windows.firstMatch.webViews.firstMatch
+        let submittedQuery = duckAIPage.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", query)).firstMatch
-        XCTAssertTrue(submittedQuery.waitForExistence(timeout: UITests.Timeouts.navigation),
-                      "duck.ai should show the typed query as the first message")
+        if !submittedQuery.waitForExistence(timeout: UITests.Timeouts.navigation) {
+            XCTFail("duck.ai should show the typed query as the first message. Page texts: \(textsInOneSnapshot(of: duckAIPage))")
+        }
     }
 
     func test_tabSwitch_SearchModeDraft_PreservedAcrossSwitchBack() throws {

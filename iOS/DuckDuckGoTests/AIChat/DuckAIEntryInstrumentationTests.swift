@@ -52,11 +52,11 @@ final class DuckAIEntryInstrumentationTests {
     }
 
     private func startTabEntry(_ sut: DefaultDuckAIEntryInstrumentation, source: AIChatEntryPointSource = .addressBarPrompt) {
-        sut.entryStarted(source: source, hasPrompt: true, chatState: .new, surface: .duckAITab)
+        sut.entryStarted(source: source, hasPrompt: true, surface: .duckAITab, chatState: nil)
     }
 
     private func startSheetEntry(_ sut: DefaultDuckAIEntryInstrumentation) {
-        sut.entryStarted(source: .contextualChat, hasPrompt: false, chatState: .existing, surface: .contextualSheet)
+        sut.entryStarted(source: .contextualChat, hasPrompt: false, surface: .contextualSheet, chatState: .existing)
     }
 
     private var started: [DuckAIEntryWideEventData] {
@@ -75,14 +75,38 @@ final class DuckAIEntryInstrumentationTests {
     @Test("An entry point starts an entry with its context", .timeLimit(.minutes(1)))
     func entryPointStartsEntry() {
         let sut = makeSUT()
-        sut.entryStarted(source: .chatHistoryOpenChat, hasPrompt: false, chatState: .existing, surface: .duckAITab)
+        sut.entryStarted(source: .chatHistoryOpenChat, hasPrompt: false, surface: .duckAITab, chatState: nil)
 
         #expect(started.count == 1)
         #expect(started.first?.source == "chat_history_open_chat")
         #expect(started.first?.hasPrompt == false)
-        #expect(started.first?.chatState == .existing)
+        #expect(started.first?.chatState == nil)
         #expect(started.first?.surface == .duckAITab)
         #expect(completions.isEmpty)
+    }
+
+    @available(iOS 16, *)
+    @Test("A tab entry reads its chat state when its Duck.ai tab is first shown",
+          .timeLimit(.minutes(1)),
+          arguments: [(nil, DuckAIEntryWideEventData.ChatState.new), ("abc", .existing)] as [(String?, DuckAIEntryWideEventData.ChatState)])
+    func tabEntryReadsChatStateOnFirstShow(chatID: String?, expected: DuckAIEntryWideEventData.ChatState) {
+        let sut = makeSUT()
+        startTabEntry(sut)
+        sut.visibleTabDidChange(web(Self.otherTab))
+        #expect(started.first?.chatState == nil)
+
+        sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: chatID))
+        sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: chatID == nil ? "later" : nil))
+        #expect(started.first?.chatState == expected)
+    }
+
+    @available(iOS 16, *)
+    @Test("A sheet entry keeps the chat state it started with", .timeLimit(.minutes(1)))
+    func sheetEntryKeepsItsChatState() {
+        let sut = makeSUT()
+        startSheetEntry(sut)
+        sut.visibleTabDidChange(duckAI(Self.chatTab))
+        #expect(started.first?.chatState == .existing)
     }
 
     @available(iOS 16, *)
@@ -200,7 +224,7 @@ final class DuckAIEntryInstrumentationTests {
         #expect(params?["feature.data.ext.prompt_submitted"] as? Bool == true)
         #expect(params?["feature.data.ext.time_to_first_prompt_ms_bucketed"] as? String == "10000")
         #expect(params?["feature.data.ext.time_in_duckai_ms_bucketed"] as? String == "60000")
-        #expect(wideEvent.updates.count == 1)
+        #expect(wideEvent.updates.count == 2)
     }
 
     @available(iOS 16, *)
@@ -268,7 +292,7 @@ final class DuckAIEntryInstrumentationTests {
     @available(iOS 16, *)
     @Test("Entries left over from a previous launch complete as app_terminated", .timeLimit(.minutes(1)))
     func leftoverEntriesCompleteAsTerminated() {
-        let orphan = DuckAIEntryWideEventData(source: .serp, hasPrompt: false, chatState: .new, surface: .duckAITab)
+        let orphan = DuckAIEntryWideEventData(source: .serp, hasPrompt: false, chatState: nil, surface: .duckAITab)
         wideEvent.startFlow(orphan)
         _ = makeSUT(completeOrphanedFlowsOnInit: true)
 

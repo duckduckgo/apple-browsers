@@ -104,7 +104,7 @@
             {
                 "key": "feature.data.ext.chat_state",
                 "type": "string",
-                "description": "Whether the entry starts a new chat or opens an existing one.",
+                "description": "Whether the entry starts a new chat or opens an existing one. Absent when the entry ended before its Duck.ai tab was shown.",
                 "enum": ["new", "existing"]
             },
             {

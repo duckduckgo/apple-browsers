@@ -48,6 +48,11 @@ final class DuckAIEntryWideEventData: WideEventData {
     enum Surface: String, Codable, CaseIterable {
         case duckAITab = "duck_ai_tab"
         case contextualSheet = "contextual_sheet"
+
+        /// The contextual sheet and floating input report `contextual_chat` without opening a tab.
+        init(source: AIChatEntryPointSource, opensNewTab: Bool) {
+            self = source == .contextualChat && !opensNewTab ? .contextualSheet : .duckAITab
+        }
     }
 
     var globalData: WideEventGlobalData
@@ -58,7 +63,8 @@ final class DuckAIEntryWideEventData: WideEventData {
     /// An `AIChatEntryPointSource` raw value.
     let source: String
     let hasPrompt: Bool
-    let chatState: ChatState
+    /// For a tab, read from the chat ID when its Duck.ai tab is first shown; nil until then.
+    var chatState: ChatState?
     let surface: Surface
     /// Carried explicitly because the sender only writes a status reason for SUCCESS and UNKNOWN.
     var statusReason: StatusReason?
@@ -69,7 +75,7 @@ final class DuckAIEntryWideEventData: WideEventData {
 
     init(source: AIChatEntryPointSource,
          hasPrompt: Bool,
-         chatState: ChatState,
+         chatState: ChatState?,
          surface: Surface,
          startedAt: Date = Date(),
          statusReason: StatusReason? = nil,
@@ -116,7 +122,7 @@ extension DuckAIEntryWideEventData {
             (WideEventParameter.DuckAIEntryFeature.exitTrigger, reportedExitTrigger),
             (WideEventParameter.DuckAIEntryFeature.source, source),
             (WideEventParameter.DuckAIEntryFeature.hasPrompt, hasPrompt),
-            (WideEventParameter.DuckAIEntryFeature.chatState, chatState.rawValue),
+            (WideEventParameter.DuckAIEntryFeature.chatState, chatState?.rawValue),
             (WideEventParameter.DuckAIEntryFeature.surface, surface.rawValue),
             (WideEventParameter.DuckAIEntryFeature.promptSubmitted, promptSubmitted),
             (WideEventParameter.DuckAIEntryFeature.timeToFirstPromptMsBucketed, firstPromptInterval.stringValue(bucket)),

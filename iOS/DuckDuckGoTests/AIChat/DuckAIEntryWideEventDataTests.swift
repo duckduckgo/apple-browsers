@@ -68,6 +68,26 @@ struct DuckAIEntryWideEventDataTests {
     }
 
     @available(iOS 16, *)
+    @Test("Chat state is absent until it is known", .timeLimit(.minutes(1)))
+    func chatStateIsAbsentUntilKnown() {
+        let data = DuckAIEntryWideEventData(source: .serp, hasPrompt: false, chatState: nil, surface: .duckAITab, startedAt: start)
+        #expect(data.jsonParameters()["feature.data.ext.chat_state"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Only contextual_chat without a new tab is the contextual sheet",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            (AIChatEntryPointSource.contextualChat, false, DuckAIEntryWideEventData.Surface.contextualSheet),
+            (.contextualChat, true, .duckAITab),
+            (.addressBarPrompt, false, .duckAITab),
+            (.tabSwitcher, true, .duckAITab),
+          ] as [(AIChatEntryPointSource, Bool, DuckAIEntryWideEventData.Surface)])
+    func surfaceFollowsSourceAndNewTab(source: AIChatEntryPointSource, opensNewTab: Bool, expected: DuckAIEntryWideEventData.Surface) {
+        #expect(DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab) == expected)
+    }
+
+    @available(iOS 16, *)
     @Test("Leaving Duck.ai emits the exit trigger", .timeLimit(.minutes(1)))
     func leavingDuckAIEmitsExitTrigger() {
         let params = makeData(statusReason: .leftDuckai, exitTrigger: .tabSwitched).jsonParameters()

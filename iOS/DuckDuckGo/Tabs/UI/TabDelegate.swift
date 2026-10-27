@@ -73,6 +73,9 @@ protocol TabDelegate: AnyObject {
              didRequestNewDuckAITabForUrl url: URL,
              entrySource: AIChatEntryPointSource?)
 
+    /// An entry into Duck.ai that the tab itself detected, reported like every other entry point.
+    func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool)
+
     /// A navigation the page started into Duck.ai from a page native attributes, today the DuckDuckGo homepage.
     /// Opens a page-owned tab when `opensNewTab`; either way the tab hosting the chat is stamped with `entrySource`.
     func tab(_ tab: TabViewController,

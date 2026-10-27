@@ -125,7 +125,7 @@
                                 },
                                 "chat_state": {
                                     "type": "string",
-                                    "description": "new when the entry starts a new chat; existing when it opens one, read from the chat ID in the Duck.ai URL at the start. The identifier itself is never sent.",
+                                    "description": "new when the entry starts a new chat; existing when it opens one. For a Duck.ai tab, read from the chat ID in its URL when the tab is first shown; for the contextual sheet, whether it reopens a chat. Absent when the entry ended before its Duck.ai tab was shown. The identifier itself is never sent.",
                                     "enum": ["new", "existing"]
                                 },
                                 "surface": {

@@ -25,10 +25,11 @@ import WideEvent
 protocol DuckAIEntryInstrumentation: AnyObject {
 
     /// An entry point fired. An entry already in flight ends as `new_entry`.
+    /// Pass `chatState` when it is known up front; a tab entry otherwise reads it when its tab is first shown.
     func entryStarted(source: AIChatEntryPointSource,
                       hasPrompt: Bool,
-                      chatState: DuckAIEntryWideEventData.ChatState,
-                      surface: DuckAIEntryWideEventData.Surface)
+                      surface: DuckAIEntryWideEventData.Surface,
+                      chatState: DuckAIEntryWideEventData.ChatState?)
 
     /// The tab on screen changed, or its URL did. `nil` means no tab is on screen.
     /// A tab entry belongs to the first Duck.ai tab shown after it starts, and ends once that tab is no longer Duck.ai on screen.
@@ -81,8 +82,8 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
 
     func entryStarted(source: AIChatEntryPointSource,
                       hasPrompt: Bool,
-                      chatState: DuckAIEntryWideEventData.ChatState,
-                      surface: DuckAIEntryWideEventData.Surface) {
+                      surface: DuckAIEntryWideEventData.Surface,
+                      chatState: DuckAIEntryWideEventData.ChatState?) {
         if let entry = activeEntry {
             end(entry, reason: .newEntry)
         }
@@ -100,6 +101,10 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
             if let tab, tab.isDuckAI {
                 activeEntry?.tabUID = tab.uid
                 activeEntry?.lastSnapshot = tab
+                if entry.data.chatState == nil {
+                    entry.data.chatState = tab.chatID == nil ? .new : .existing
+                    wideEvent.updateFlow(entry.data)
+                }
             }
             return
         }

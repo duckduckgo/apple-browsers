@@ -65,6 +65,16 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             pixelKit?.fire(SubscriptionPixel.subscriptionPurchaseSuccessAfterPendingTransaction(source), frequency: .dailyAndCount)
         case .pendingTransactionApproved:
             pixelKit?.fire(SubscriptionPixel.subscriptionPendingTransactionApproved(source), frequency: .dailyAndCount)
+        case .backupRestored(let trigger):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.restored(trigger), frequency: .dailyAndCount)
+        case .backupRestoreFailed(let trigger, let reason, let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.restoreFailed(trigger, reason, error), frequency: .dailyAndCount)
+        case .backupRenewed:
+            pixelKit?.fire(SubscriptionBackupTokenPixel.renewed, frequency: .standard)
+        case .backupRenewalFailed(let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.renewalFailed(error), frequency: .dailyAndCount)
+        case .backupKeychainError(let accessType, let error):
+            pixelKit?.fire(SubscriptionBackupTokenPixel.keychainError(accessType, error), frequency: .dailyAndCount)
         }
     }
 

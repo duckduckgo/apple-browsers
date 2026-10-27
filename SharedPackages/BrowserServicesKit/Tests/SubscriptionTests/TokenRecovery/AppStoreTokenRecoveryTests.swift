@@ -25,57 +25,50 @@ final class AppStoreTokenRecoveryTests: XCTestCase {
 
     private let context = TokenRecoveryContext(trigger: .invalidToken, deadPrimary: nil)
 
-    func test_appStore_runsTheExpiredTokenRestore() async throws {
+    func test_appStore_runsTheExpiredTokenRestore() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         let recovery = AppStoreTokenRecovery(purchasePlatform: .appStore, restoreFlow: restoreFlow)
 
-        try await recovery.recover(context)
+        let result = await recovery.recover(context)
 
+        XCTAssertEqual(result.outcome, .recovered)
         XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func test_stripe_isNotAttempted() async {
+    func test_stripe_isNotApplicable() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         let recovery = AppStoreTokenRecovery(purchasePlatform: .stripe, restoreFlow: restoreFlow)
 
-        do {
-            try await recovery.recover(context)
-            XCTFail("Expected error was not thrown")
-        } catch {
-            XCTAssertEqual(error as? SubscriptionManagerError, .tokenRecoveryNotAttempted)
-        }
+        let result = await recovery.recover(context)
 
+        XCTAssertEqual(result.outcome, .notApplicable)
         XCTAssertFalse(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func test_restoreRunsAgainAfterThePreviousOneCompleted() async throws {
+    func test_restoreRunsAgainAfterThePreviousOneCompleted() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         let recovery = AppStoreTokenRecovery(purchasePlatform: .appStore, restoreFlow: restoreFlow)
 
-        try await recovery.recover(context)
+        _ = await recovery.recover(context)
         XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
 
         restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled = false
-        try await recovery.recover(context)
+        _ = await recovery.recover(context)
         XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func test_restoreFailure_isThrown() async {
+    func test_restoreFailure_isReturned() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenError = TestError.restoreFailed
         let recovery = AppStoreTokenRecovery(purchasePlatform: .appStore, restoreFlow: restoreFlow)
 
-        do {
-            try await recovery.recover(context)
-            XCTFail("Expected error was not thrown")
-        } catch {
-            XCTAssertEqual(error as? TestError, .restoreFailed)
-        }
+        let result = await recovery.recover(context)
 
+        XCTAssertEqual(result.failure as? TestError, .restoreFailed)
         XCTAssertTrue(restoreFlow.restoreSubscriptionAfterExpiredRefreshTokenCalled)
     }
 
-    func test_concurrentRecoveries_shareOneRestore() async throws {
+    func test_concurrentRecoveries_shareOneRestore() async {
         let restoreFlow = AppStoreRestoreFlowMock()
         let recovery = AppStoreTokenRecovery(purchasePlatform: .appStore, restoreFlow: restoreFlow)
         let counter = CallCounter()
@@ -84,32 +77,22 @@ final class AppStoreTokenRecoveryTests: XCTestCase {
             try await Task.sleep(nanoseconds: 100_000_000)
         }
 
-        let results = await withTaskGroup(of: Result<Void, Error>.self, returning: [Result<Void, Error>].self) { group in
+        let outcomes = await withTaskGroup(of: TokenRecoveryResult.Outcome.self, returning: [TokenRecoveryResult.Outcome].self) { group in
             for _ in 0..<3 {
                 group.addTask {
-                    do {
-                        try await recovery.recover(self.context)
-                        return .success(())
-                    } catch {
-                        return .failure(error)
-                    }
+                    await recovery.recover(self.context).outcome
                 }
             }
-            var results: [Result<Void, Error>] = []
-            for await result in group {
-                results.append(result)
+            var outcomes: [TokenRecoveryResult.Outcome] = []
+            for await outcome in group {
+                outcomes.append(outcome)
             }
-            return results
+            return outcomes
         }
 
         let calls = await counter.count
         XCTAssertEqual(calls, 1, "Expected only one restore for concurrent recoveries")
-        XCTAssertEqual(results.count, 3)
-        for result in results {
-            if case .failure(let error) = result {
-                XCTFail("Unexpected error: \(error)")
-            }
-        }
+        XCTAssertEqual(outcomes, [.recovered, .recovered, .recovered])
     }
 
     private enum TestError: Error, Equatable {

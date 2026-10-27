@@ -36,36 +36,32 @@ public final class TokenRecoveryCoordinator {
 
     /// Tries each strategy for `context.trigger` in order and stops at the first success.
     /// - Parameter context: The state the recovery starts from.
-    /// - Throws: `TokenBackupError.sessionChanged` as soon as a strategy reports it, without trying the next ones;
-    ///   `SubscriptionManagerError.tokenRecoveryNotAttempted` when no strategy applied;
-    ///   otherwise the error of the last strategy that applied and failed.
-    public func recover(_ context: TokenRecoveryContext) async throws {
+    /// - Returns: `.recovered` from the first strategy that recovers; `.sessionChanged` as soon as a strategy reports it, without trying
+    ///   the next ones; `.failed` with the error of the last strategy that failed; `.notApplicable` when no strategy applied.
+    public func recover(_ context: TokenRecoveryContext) async -> TokenRecoveryResult {
         let strategies = context.trigger == .invalidToken ? invalidTokenStrategies : missingTokenStrategies
         let trigger = context.trigger.rawValue
         var lastFailure: Error?
         for strategy in strategies {
             let name = String(describing: type(of: strategy))
-            do {
-                try await strategy.recover(context)
+            switch await strategy.recover(context) {
+            case .recovered:
                 Logger.subscriptionTokensManagement.log("Token recovered by \(name, privacy: .public), trigger: \(trigger, privacy: .public)")
-                return
-            } catch TokenBackupError.sessionChanged {
+                return .recovered
+            case .sessionChanged:
                 Logger.subscriptionTokensManagement.log("\(name, privacy: .public) stopped the recovery, the session changed, trigger: \(trigger, privacy: .public)")
-                throw TokenBackupError.sessionChanged
-            } catch TokenBackupError.unavailable {
+                return .sessionChanged
+            case .notApplicable:
                 Logger.subscriptionTokensManagement.log("\(name, privacy: .public) doesn't apply, trigger: \(trigger, privacy: .public)")
-                continue
-            } catch SubscriptionManagerError.tokenRecoveryNotAttempted {
-                Logger.subscriptionTokensManagement.log("\(name, privacy: .public) doesn't apply, trigger: \(trigger, privacy: .public)")
-                continue
-            } catch {
+            case .failed(let error):
                 Logger.subscriptionTokensManagement.error("\(name, privacy: .public) failed, trigger: \(trigger, privacy: .public): \(String(describing: error), privacy: .public)")
                 lastFailure = error
             }
         }
-        if lastFailure == nil {
-            Logger.subscriptionTokensManagement.log("No token recovery applies, trigger: \(trigger, privacy: .public)")
+        if let lastFailure {
+            return .failed(lastFailure)
         }
-        throw lastFailure ?? SubscriptionManagerError.tokenRecoveryNotAttempted
+        Logger.subscriptionTokensManagement.log("No token recovery applies, trigger: \(trigger, privacy: .public)")
+        return .notApplicable
     }
 }

@@ -19,6 +19,7 @@
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import PreferencesUI_macOS
+import PrivacyConfig
 import RemoteMessaging
 import SwiftUI
 import SwiftUIExtensions
@@ -33,12 +34,22 @@ extension Preferences {
             static let footerSpacing: CGFloat = 4
             static let dividerTopPadding: CGFloat = 32
             static let dividerBottomPadding: CGFloat = 28
-            static let moreExtensionsBottomPadding: CGFloat = 48
+            static let moreExtensionsBottomPadding: CGFloat = 42
         }
 
-        @ObservedObject var model: ExtensionsManagementPreferences
+        @StateObject private var model: ExtensionsManagementPreferences
+        @State private var imageLoader: RemoteMessagingImageLoading = RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
+                                                                                                 cache: RemoteMessagingImageLoader.defaultCache)
 
         @Environment(\.designSystemPalette) private var palette
+
+        init(configurationManager: PrivacyConfigurationManaging,
+             webExtensionManager: WebExtensionManaging?,
+             windowControllersManager: WindowControllersManagerProtocol) {
+            _model = StateObject(wrappedValue: ExtensionsManagementPreferences(configurationManager: configurationManager,
+                                                                               webExtensionManager: webExtensionManager,
+                                                                               windowControllersManager: windowControllersManager))
+        }
 
         var body: some View {
             ViewThatFits(in: .vertical) {
@@ -65,38 +76,65 @@ extension Preferences {
                     description
                 }
 
-                VStack(alignment: .leading, spacing: 0) {
-                    if !model.installedExtensions.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            sectionTitle(UserText.extensionsSettingsAddedHeader)
-                            ForEach(model.installedExtensions) { item in
-                                // Placeholders until enabling, disabling and the options menu are wired up.
-                                InstalledExtensionRow(item: item, imageLoader: model.imageLoader, isEnabled: .constant(true), onOptions: {})
-                            }
-                        }
+                extensionsList
+            }
+        }
 
-                        if !model.uninstalledPasswordManagers.isEmpty {
-                            Divider()
-                                .padding(.top, Const.dividerTopPadding)
-                                .padding(.bottom, Const.dividerBottomPadding)
-                            sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
-                                .padding(.bottom, Const.moreExtensionsBottomPadding)
-                        }
-                    }
+        private var extensionsList: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                if !model.installedExtensions.isEmpty {
+                    installedExtensionsView
 
                     if !model.uninstalledPasswordManagers.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
-                            ForEach(model.uninstalledPasswordManagers) { item in
-                                UninstalledExtensionRow(item: item, imageLoader: model.imageLoader) {
-                                    model.openStorePage(for: item)
-                                }
-                            }
-                        }
+                        moreExtensionsHeader
                     }
                 }
-                .padding(.top, 20)
-                .padding(.bottom, 16)
+
+                if !model.uninstalledPasswordManagers.isEmpty {
+                    uninstalledExtensionsView
+                }
+            }
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+        }
+
+        private var installedExtensionsView: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionTitle(UserText.extensionsSettingsAddedHeader)
+                ForEach(model.installedExtensions) { item in
+                    installedRow(for: item)
+                }
+            }
+        }
+
+        private func installedRow(for item: ChromeWebStoreListing) -> some View {
+            InstalledExtensionRow(item: item,
+                                  imageLoader: imageLoader,
+                                  isEnabled: Binding(get: { model.isEnabled(item) },
+                                                     set: { model.setEnabled($0, for: item) }),
+                                  isLocked: model.isRemotelyDisabled(item),
+                                  // Placeholder until the options menu exists.
+                                  onOptions: {})
+        }
+
+        private var moreExtensionsHeader: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                Divider()
+                    .padding(.top, Const.dividerTopPadding)
+                    .padding(.bottom, Const.dividerBottomPadding)
+                sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                    .padding(.bottom, Const.moreExtensionsBottomPadding)
+            }
+        }
+
+        private var uninstalledExtensionsView: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
+                ForEach(model.uninstalledPasswordManagers) { item in
+                    UninstalledExtensionRow(item: item, imageLoader: imageLoader) {
+                        model.openStorePage(for: item)
+                    }
+                }
             }
         }
 
@@ -202,6 +240,7 @@ extension Preferences {
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
         @Binding var isEnabled: Bool
+        let isLocked: Bool
         let onOptions: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
@@ -230,6 +269,7 @@ extension Preferences {
                     }
                     .toggleStyle(.switch)
                     .labelsHidden()
+                    .disabled(isLocked)
                 }
             }
             .padding(.leading, Const.leadingPadding)
@@ -242,7 +282,6 @@ extension Preferences {
         }
     }
 
-    /// Icon tile, name and publisher, shared by both rows.
     private struct ExtensionSummary: View {
 
         let item: ChromeWebStoreListing

@@ -2553,6 +2553,14 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Normal mode should always have a current tab, but `bulkRemoveTabs` leaves the model empty until
+        // the tab switcher inserts a replacement in its delete animation's completion. Backgrounding or a
+        // late `webViewDidClose` from a removed tab can land in that window, so add a tab instead of crashing.
+        if tabManager.currentTabsModel.currentTab == nil {
+            pixelFiring?.fire(HomeScreenAttachPixel.missingCurrentTabRecovered, frequency: .dailyAndCount)
+            tabManager.addHomeTab()
+        }
+
         pageBackgroundColorObservation = nil
         siteThemeColorObservation = nil
         pageContentBackgroundColorObservation = nil
@@ -2578,7 +2586,8 @@ class MainViewController: UIViewController {
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
-            fatalError("No tab model")
+            assertionFailure("No current tab after recovery")
+            return
         }
         // Focus remembered for a swipe back is stale once the page is attached by any other arrival.
         tabModel.wasInputFocusedBeforeTabSwitch = false
@@ -2678,8 +2687,8 @@ class MainViewController: UIViewController {
             guard let self, appOpenKeyboardRequestID == requestID, KeyboardSettings().onNewTab,
                   !isNewTabPageKeyboardBlockedByDialog else { return }
             let focusCompleted: (Bool) -> Void = { [weak self] didFocus in
-                if openedAfterIdle && didFocus {
-                    self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+                if openedAfterIdle && didFocus, let self {
+                    postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
                 }
             }
             if wasKeyboardFeatureEnabled {
@@ -2709,7 +2718,9 @@ class MainViewController: UIViewController {
         }
         if openedAfterIdle {
             postIdleSessionInstrumentation.noteReturn(timeAwayMs: newTabPageReturnTimeAwayMs)
-            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused)
+            postIdleSessionInstrumentation.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: focused,
+                                                          toggleEnabled: isReturnSessionToggleEnabled,
+                                                          togglePosition: returnSessionTogglePosition(focused: focused))
         }
     }
 
@@ -3045,8 +3056,8 @@ class MainViewController: UIViewController {
     /// Behind `.alwaysShowKeyboardOnNewTabPage` only: the keyboard rule for the tab the app opens onto.
     func showKeyboardOnAppOpenIfAllowed(completion: @escaping (Bool) -> Void) {
         showKeyboardIfAllowed { [weak self] didShowKeyboard in
-            if didShowKeyboard {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didShowKeyboard, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
             completion(didShowKeyboard)
         }
@@ -3104,8 +3115,8 @@ class MainViewController: UIViewController {
     /// The flag-off App Launch keyboard. Like the flag-on path, it counts toward the post-idle session's `focused` value.
     func enterSearchOnAppOpen() {
         enterSearchAutomatically { [weak self] didFocus in
-            if didFocus {
-                self?.postIdleSessionInstrumentation.keyboardRaisedOnArrival()
+            if didFocus, let self {
+                postIdleSessionInstrumentation.keyboardRaisedOnArrival(togglePosition: returnSessionTogglePosition(focused: true))
             }
         }
     }
@@ -3428,6 +3439,31 @@ class MainViewController: UIViewController {
             resolved = (tab.isAITab && !isPad) ? .aiChat : .search
         }
         return resolved.displayed(isAIChatSearchInputEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled)
+    }
+
+    /// iPhone honours a pending onboarding choice; iPad reads the setting.
+    var isReturnSessionToggleEnabled: Bool {
+        isPad ? aiChatSettings.isAIChatSearchInputUserSettingsEnabled : isAIChatSearchInputToggleEnabledForCurrentOnboardingState()
+    }
+
+    func returnSessionTogglePosition(focused: Bool) -> ReturnSessionWideEventData.TogglePosition? {
+        guard let tab = tabManager.currentTabsModel.currentTab else { return nil }
+        // The resting NTP draws its own toggle.
+        if !focused, tab.isHomeTab, let page = newTabPageViewController, page.hasInlineSearchInput {
+            return page.inlineToggleMode.map(ReturnSessionWideEventData.TogglePosition.init)
+        }
+        return .onScreen(mode: liveToggleMode ?? initialOmnibarToggleMode(for: tab),
+                         isToggleEnabled: isReturnSessionToggleEnabled,
+                         isPad: isPad,
+                         isFocused: focused,
+                         isDuckAITab: tab.isAITab)
+    }
+
+    /// A restored input keeps its side rather than the initial mode.
+    private var liveToggleMode: TextEntryMode? {
+        if isPad { return viewCoordinator.omniBar.selectedTextEntryMode }
+        guard let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession else { return nil }
+        return coordinator.switchBarHandler.currentToggleState
     }
 
     func refreshOmniBar() {

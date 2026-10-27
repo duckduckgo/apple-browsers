@@ -307,6 +307,17 @@ class BrowserProfileTests: XCTestCase {
         XCTAssertFalse(profile.hasValidProfileData(for: .bookmarks))
     }
 
+    func testWhenChromiumProfileHasOnlyAccountBookmarks_ThenBookmarksAreAvailable() {
+        let profileURL = profile(named: "Default")
+        let fileStore = FileStoreMock()
+        fileStore.directoryStorage[profileURL.absoluteString] = ["AccountBookmarks"]
+        let profile = DataImport.BrowserProfile(browser: .chrome, profileURL: profileURL, fileStore: fileStore)
+
+        let hasBookmarks = profile.hasValidProfileData(for: .bookmarks)
+
+        XCTAssertTrue(hasBookmarks)
+    }
+
     private func makeThrowingFileStoreMock() -> FileStoreMock {
         let fileStore = FileStoreMock()
         fileStore.failWithError = NSError(domain: "FileStoreMock", code: 1, userInfo: [NSLocalizedDescriptionKey: "Directory access denied"])

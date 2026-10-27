@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Tik plano „Pro“ prenumeratoriams";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Tik prenumeratoriams.";
+"aichat.model-picker.subscriber-exclusive" = "Gaukite su prenumerata";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Išbandyk nemokamai";

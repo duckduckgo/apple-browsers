@@ -58,6 +58,12 @@ public struct ImportArchiveReader: ImportArchiveReading {
             passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty
         }
 
+        public func hasData(for types: Set<DataImport.DataType>) -> Bool {
+            (types.contains(.passwords) && !passwords.isEmpty)
+                || (types.contains(.bookmarks) && !bookmarks.isEmpty)
+                || (types.contains(.creditCards) && !creditCards.isEmpty)
+        }
+
         public init(passwords: [String], bookmarks: [String], creditCards: [String]) {
             self.passwords = passwords
             self.bookmarks = bookmarks

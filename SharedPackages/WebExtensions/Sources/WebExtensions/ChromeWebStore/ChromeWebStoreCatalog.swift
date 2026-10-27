@@ -25,6 +25,16 @@ public enum ChromeWebStoreID: String {
     case iCloudPasswords = "pejdijmoenmkgeppbflobdenhhabjlaj"
 }
 
+public extension ExtensionsCatalogSubfeature {
+
+    var isPasswordManager: Bool {
+        switch self {
+        case .bitwarden, .onePassword, .lastPass, .iCloudPasswords: true
+        case .darkReader: false
+        }
+    }
+}
+
 public enum ChromeWebStoreStatus: String, Codable {
     case installable, installed, unsupported, unknown
 }
@@ -136,6 +146,10 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
             .map(\.element.id)
     }
 
+    public var enabledEntries: [ExtensionsCatalogSubfeature] {
+        extensionIDs.compactMap(catalogEntry(of:))
+    }
+
     public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
         let config = configurationManager.privacyConfig
         return ExtensionsCatalogSubfeature.allCases.first { subfeature in
@@ -143,18 +157,25 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
         }
     }
 
+    public func name(of subfeature: ExtensionsCatalogSubfeature) -> String? {
+        string(forSetting: "name", of: subfeature)
+    }
+
+    public func publisher(of subfeature: ExtensionsCatalogSubfeature) -> String? {
+        string(forSetting: "publisher", of: subfeature)
+    }
+
     public func iconURL(of subfeature: ExtensionsCatalogSubfeature) -> URL? {
-        url(forSetting: "iconUri", of: subfeature)
+        string(forSetting: "iconUri", of: subfeature).flatMap(URL.init(string:))
     }
 
     /// The entry's Chrome Web Store page, from its `cwsUri` setting.
     public func storeURL(of subfeature: ExtensionsCatalogSubfeature) -> URL? {
-        url(forSetting: "cwsUri", of: subfeature)
+        string(forSetting: "cwsUri", of: subfeature).flatMap(URL.init(string:))
     }
 
-    private func url(forSetting key: String, of subfeature: ExtensionsCatalogSubfeature) -> URL? {
-        guard let value = Self.settings(of: subfeature, in: configurationManager.privacyConfig)?[key] as? String else { return nil }
-        return URL(string: value)
+    private func string(forSetting key: String, of subfeature: ExtensionsCatalogSubfeature) -> String? {
+        Self.settings(of: subfeature, in: configurationManager.privacyConfig)?[key] as? String
     }
 
     private static func settings(of subfeature: ExtensionsCatalogSubfeature, in config: PrivacyConfiguration) -> [String: Any]? {

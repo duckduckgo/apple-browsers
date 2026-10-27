@@ -17,6 +17,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import RemoteMessaging
 import SwiftUI
@@ -69,11 +70,11 @@ extension Preferences {
                         VStack(alignment: .leading, spacing: 12) {
                             sectionTitle(UserText.extensionsSettingsAddedHeader)
                             ForEach(model.installedExtensions) { item in
-                                ExtensionsManagementRow(item: item, imageLoader: model.imageLoader, onGet: nil)
+                                // Placeholders until enabling, disabling and the options menu are wired up.
+                                InstalledExtensionRow(item: item, imageLoader: model.imageLoader, isEnabled: .constant(true), onOptions: {})
                             }
                         }
 
-                        // Only needed to tell the uninstalled extensions apart from the Added ones.
                         if !model.uninstalledPasswordManagers.isEmpty {
                             Divider()
                                 .padding(.top, Const.dividerTopPadding)
@@ -87,7 +88,7 @@ extension Preferences {
                         VStack(alignment: .leading, spacing: 12) {
                             TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
                             ForEach(model.uninstalledPasswordManagers) { item in
-                                ExtensionsManagementRow(item: item, imageLoader: model.imageLoader) {
+                                UninstalledExtensionRow(item: item, imageLoader: model.imageLoader) {
                                     model.openStorePage(for: item)
                                 }
                             }
@@ -128,7 +129,7 @@ extension Preferences {
         }
     }
 
-    private struct ExtensionsManagementRow: View {
+    private struct UninstalledExtensionRow: View {
 
         private enum Const {
             /// Narrower windows shrink the box, truncating its text, rather than overflowing the pane.
@@ -148,8 +149,107 @@ extension Preferences {
 
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
-        /// `nil` hides the Get button, as for installed extensions.
-        let onGet: (() -> Void)?
+        let onGet: () -> Void
+
+        @Environment(\.designSystemPalette) private var palette
+
+        var body: some View {
+            HStack(spacing: 16) {
+                ExtensionSummary(item: item,
+                                 imageLoader: imageLoader,
+                                 tileSize: Const.iconTileSize,
+                                 tileCornerRadius: Const.iconTileCornerRadius,
+                                 iconSize: Const.iconSize)
+
+                Spacer(minLength: 0)
+
+                Button(action: onGet) {
+                    Text(UserText.extensionsSettingsGetButton)
+                        .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                        .frame(minWidth: Const.buttonLabelMinWidth, minHeight: Const.buttonMinHeight)
+                }
+                .buttonStyle(StandardButtonStyle(topPadding: 0,
+                                                 bottomPadding: 0,
+                                                 horizontalPadding: Const.buttonHorizontalPadding,
+                                                 backgroundColor: Color(designSystemColor: .controlsFillPrimary, palette: palette),
+                                                 backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary, palette: palette),
+                                                 cornerRadius: Const.buttonCornerRadius))
+                .fixedSize()
+            }
+            .padding(.horizontal, Const.padding)
+            .frame(maxWidth: Const.maxWidth)
+            .frame(height: Const.height)
+            .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+    }
+
+    private struct InstalledExtensionRow: View {
+
+        private enum Const {
+            static let maxWidth: CGFloat = 560
+            static let height: CGFloat = 80
+            static let cornerRadius: CGFloat = 16
+            static let leadingPadding: CGFloat = 16
+            static let trailingPadding: CGFloat = 24
+            static let iconTileSize: CGFloat = 48
+            static let iconTileCornerRadius: CGFloat = 8
+            static let iconSize: CGFloat = 24
+            static let optionsToSwitchSpacing: CGFloat = 16
+        }
+
+        let item: ChromeWebStoreListing
+        let imageLoader: RemoteMessagingImageLoading
+        @Binding var isEnabled: Bool
+        let onOptions: () -> Void
+
+        @Environment(\.designSystemPalette) private var palette
+
+        var body: some View {
+            HStack(spacing: 16) {
+                ExtensionSummary(item: item,
+                                 imageLoader: imageLoader,
+                                 tileSize: Const.iconTileSize,
+                                 tileCornerRadius: Const.iconTileCornerRadius,
+                                 iconSize: Const.iconSize)
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: Const.optionsToSwitchSpacing) {
+                    Button(action: onOptions) {
+                        Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
+                            .renderingMode(.template)
+                            .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(UserText.extensionsSettingsMoreOptions)
+
+                    Toggle(isOn: $isEnabled) {
+                        EmptyView()
+                    }
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                }
+            }
+            .padding(.leading, Const.leadingPadding)
+            .padding(.trailing, Const.trailingPadding)
+            .frame(maxWidth: Const.maxWidth)
+            .frame(height: Const.height)
+            .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+    }
+
+    /// Icon tile, name and publisher, shared by both rows.
+    private struct ExtensionSummary: View {
+
+        let item: ChromeWebStoreListing
+        let imageLoader: RemoteMessagingImageLoading
+        let tileSize: CGFloat
+        let tileCornerRadius: CGFloat
+        let iconSize: CGFloat
 
         @Environment(\.designSystemPalette) private var palette
         @State private var remoteIcon: NSImage?
@@ -166,12 +266,12 @@ extension Preferences {
                         Image(nsImage: icon)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: Const.iconSize, height: Const.iconSize)
+                            .frame(width: iconSize, height: iconSize)
                     }
                 }
-                .frame(width: Const.iconTileSize, height: Const.iconTileSize)
+                .frame(width: tileSize, height: tileSize)
                 .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
-                .clipShape(RoundedRectangle(cornerRadius: Const.iconTileCornerRadius, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
                 .task(id: item.iconURL) {
                     guard let iconURL = item.iconURL else { return }
                     remoteIcon = try? await imageLoader.loadImage(from: iconURL)
@@ -186,30 +286,7 @@ extension Preferences {
                 }
                 .lineLimit(1)
                 .truncationMode(.tail)
-
-                Spacer(minLength: 0)
-
-                if let onGet {
-                    Button(action: onGet) {
-                        Text(UserText.extensionsSettingsGetButton)
-                            .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                            .frame(minWidth: Const.buttonLabelMinWidth, minHeight: Const.buttonMinHeight)
-                    }
-                    .buttonStyle(StandardButtonStyle(topPadding: 0,
-                                                     bottomPadding: 0,
-                                                     horizontalPadding: Const.buttonHorizontalPadding,
-                                                     backgroundColor: Color(designSystemColor: .controlsFillPrimary, palette: palette),
-                                                     backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary, palette: palette),
-                                                     cornerRadius: Const.buttonCornerRadius))
-                    .fixedSize()
-                }
             }
-            .padding(.horizontal, Const.padding)
-            .frame(maxWidth: Const.maxWidth)
-            .frame(height: Const.height)
-            .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
-            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
-            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
         }
     }
 }

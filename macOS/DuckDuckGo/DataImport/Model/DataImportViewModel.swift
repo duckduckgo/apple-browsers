@@ -1294,7 +1294,7 @@ extension DataImportViewModel {
             source: importSource.pixelSourceParameterName,
             sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
         )
-        pixelFiring?.fire(pixel, frequency: .daily)
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private mutating func dismiss(using dismiss: @escaping () -> Void) {

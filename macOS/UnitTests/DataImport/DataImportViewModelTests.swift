@@ -2135,7 +2135,7 @@ final class DataImportViewModelTests: XCTestCase {
 
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["dataimport_bookmarks_source-file-missing_macos"])
         XCTAssertEqual(pixelKit.actualFireCalls.first?.pixel.parameters?["source"], "chrome")
-        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .daily)
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
     }
 
     @MainActor

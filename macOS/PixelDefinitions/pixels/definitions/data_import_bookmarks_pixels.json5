@@ -3,7 +3,7 @@
         "description": "Fired when the user presses Import on the import sheet and the selected browser profile's folder can be read but has none of the bookmarks files the importer knows (e.g. Chrome moving them from 'Bookmarks' to 'AccountBookmarks'). Tells us when a browser changes where it stores bookmarks.",
         "owners": ["andremartingo"],
         "triggers": ["user_interaction"],
-        "suffixes": ["daily"],
+        "suffixes": ["daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

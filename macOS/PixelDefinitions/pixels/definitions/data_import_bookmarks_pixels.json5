@@ -1,0 +1,31 @@
+{
+    "dataimport_bookmarks_source-file-missing_macos": {
+        "description": "Fired when the user presses Import on the import sheet and the selected browser profile's folder can be read but has none of the bookmarks files the importer knows (e.g. Chrome moving them from 'Bookmarks' to 'AccountBookmarks'). Tells us when a browser changes where it stores bookmarks.",
+        "owners": ["andremartingo"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": [
+                    "brave",
+                    "chrome",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "other"
+                ]
+            },
+            {
+                "key": "source_browser_version",
+                "description": "Major version of the browser the user is importing from, when known",
+                "type": "string"
+            }
+        ]
+    }
+}

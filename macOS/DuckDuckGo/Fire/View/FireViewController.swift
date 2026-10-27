@@ -142,6 +142,9 @@ final class FireViewController: NSViewController {
         return imageView
     }()
 
+    private var snapshotBurningDataCancellable: AnyCancellable?
+    private var isPresentingSnapshotBurn = false
+    private var isClosingSnapshotSource = false
     private var fireAnimationView: LottieAnimationView?
     private var fireAnimationViewLoadingTask: Task<(), Never>?
     private(set) lazy var fireIndicatorVisibilityManager = FireIndicatorVisibilityManager { [weak self] in self?.view.superview }
@@ -186,8 +189,9 @@ final class FireViewController: NSViewController {
         super.viewDidLoad()
 
         setupUI()
+        subscribeToSnapshotBurns()
 
-        if case .normal = AppVersion.runType {
+        if FireAnimationTestSupport.playsAnimations {
             fireAnimationViewLoadingTask = Task.detached(priority: .userInitiated) {
                 await self.setupFireAnimationView()
             }
@@ -293,7 +297,12 @@ final class FireViewController: NSViewController {
         fireAnimationEventsCancellable = fireViewModel.isFirePresentationInProgress
             .receive(on: DispatchQueue.main)
             .sink { [weak self] shouldShowFirePresentation in
-                self?.fireIndicatorVisibilityManager.updateVisibility(shouldShowFirePresentation)
+                guard let self else { return }
+                if isPresentingSnapshotBurn && (isClosingSnapshotSource || !shouldShowFirePresentation) {
+                    fireIndicatorVisibilityManager.hideImmediately()
+                } else {
+                    fireIndicatorVisibilityManager.updateVisibility(shouldShowFirePresentation)
+                }
             }
     }
 
@@ -304,6 +313,7 @@ final class FireViewController: NSViewController {
         }
 
         animationView.contentMode = .scaleToFill
+        animationView.isHidden = isPresentingSnapshotBurn
         animationView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(animationView, positioned: .below, relativeTo: progressIndicatorWrapper)
         let constraints = animationView.addConstraints(to: view, [
@@ -332,6 +342,8 @@ final class FireViewController: NSViewController {
                     let self = self else {
                         return
                     }
+
+                guard !fireViewModel.fire.shouldUseWindowSnapshot(for: burningData) else { return }
 
                 deletingDataLabel.stringValue = burningData.deletingDataMessage(featureFlagger: featureFlagger)
 
@@ -376,6 +388,72 @@ final class FireViewController: NSViewController {
         progressIndicatorWrapperBG.isHidden = true
         progressIndicatorWrapper.isHidden = true
         fakeFireButton.isHidden = true
+    }
+
+    /// With snapshot presentation enabled, closing-window burns render outside the browser window.
+    /// Tab burns, non-closing burns, and flag-disabled burns use the in-window animation and progress UI.
+    private func subscribeToSnapshotBurns() {
+        snapshotBurningDataCancellable = fireViewModel.fire.burningDataPublisher.sink { [weak self] burningData in
+            guard let self else { return }
+            if burningData == nil {
+                if isPresentingSnapshotBurn {
+                    fireIndicatorVisibilityManager.hideImmediately()
+                }
+                isPresentingSnapshotBurn = false
+                isClosingSnapshotSource = false
+                return
+            }
+            guard let burningData, fireViewModel.fire.shouldUseWindowSnapshot(for: burningData) else { return }
+            isPresentingSnapshotBurn = true
+            // Surviving windows still intercept input, while progress belongs to the independent panel.
+            hideBurningProgressIndicator()
+            fireAnimationView?.isHidden = true
+            fireIndicatorVisibilityManager.updateVisibility(true)
+            guard let window = view.window, isKeyWindowController,
+                  fireViewModel.claimSnapshotPresentation(),
+                  let controller = window.windowController as? MainWindowController else { return }
+            isClosingSnapshotSource = true
+            fireIndicatorVisibilityManager.hideImmediately()
+            // Closing is independent of capture availability, including the animation-disabled fallback.
+            fireViewModel.fire.beginWindowClosingPresentation(for: controller)
+
+            let progress = FireProgressWindowController.present(
+                fireViewModel: fireViewModel,
+                message: burningData.deletingDataMessage(featureFlagger: featureFlagger),
+                sourceWindow: window,
+                delay: FireProgressWindowController.presentationDelay
+            )
+            guard burningData.shouldPlayFireAnimation(decider: visualizeFireAnimationDecider) else { return }
+            let presentation = FireWindowAnimationController(sourceWindow: window, animationLoader: fireViewModel.animationLoader)
+            fireViewModel.setSnapshotAnimationPlaying(true, isFireWindow: false)
+            if let presentation {
+                presentation.start { [fireViewModel] in
+                    fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: false)
+                    progress.animationDidFinish()
+                }
+            } else {
+                fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: false)
+                progress.animationDidFinish()
+            }
+        }
+    }
+
+    @MainActor
+    func animateSnapshotWhenClosing(_ closeWindow: () -> Void) {
+        guard visualizeFireAnimationDecider.shouldShowFireAnimation else {
+            closeWindow()
+            return
+        }
+        let presentation = view.window.flatMap { FireWindowAnimationController(sourceWindow: $0, animationLoader: fireViewModel.animationLoader) }
+        fireViewModel.setSnapshotAnimationPlaying(true, isFireWindow: true)
+        closeWindow()
+        if let presentation {
+            presentation.start { [fireViewModel] in
+                fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: true)
+            }
+        } else {
+            fireViewModel.setSnapshotAnimationPlaying(false, isFireWindow: true)
+        }
     }
 
     @MainActor
@@ -520,6 +598,14 @@ final class FireIndicatorVisibilityManager {
 
     init(_ view: @escaping () -> NSView?) {
         self.view = view
+    }
+
+    /// Hide the in-window overlay immediately when a separate progress window owns the presentation.
+    func hideImmediately() {
+        timer?.invalidate()
+        timer = nil
+        fireIndicatorDialogPresentedAt = nil
+        view()?.isHidden = true
     }
 
     func updateVisibility(_ shouldShow: Bool) {

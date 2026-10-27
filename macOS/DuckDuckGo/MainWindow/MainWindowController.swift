@@ -327,7 +327,8 @@ final class MainWindowController: NSWindowController {
                 // The tab bar is only moved out of the titlebar so the fire animation can cover it.
                 // Site-level burns (e.g. from the New Tab Page) don't play the full-screen animation, so
                 // we're leaving the tab bar in place to avoid a flash from needlessly reparenting it.
-                if let burningData, burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
+                if let burningData, !fireViewModel.fire.shouldUseWindowSnapshot(for: burningData),
+                   burningData.shouldPlayFireAnimation(decider: fireViewModel.fire.visualizeFireAnimationDecider) {
                     moveTabBarView(toTitlebarView: false)
                     // The titlebar has an opaque background (see applyThemeStyle) and sits above the
                     // full-window fire animation. With the tab bar moved out, that leaves a blank bar
@@ -723,8 +724,8 @@ extension MainWindowController: NSWindowDelegate {
         return true
     }
 
+    @MainActor
     private func animateBurningIfNeededAndClose(_ window: NSWindow) {
-        // The animation is awaited, so the window stays around and closable in the meantime.
         guard !isClosingAndBurning else { return }
         isClosingAndBurning = true
 
@@ -732,10 +733,16 @@ extension MainWindowController: NSWindowDelegate {
             window.close()
             return
         }
-        Task {
-            moveTabBarView(toTitlebarView: false)
-            await mainViewController.fireViewController.animateFireWhenClosing()
-            window.close()
+        if fireViewModel.fire.isWindowSnapshotEnabled {
+            mainViewController.fireViewController.animateSnapshotWhenClosing {
+                window.close()
+            }
+        } else {
+            Task {
+                moveTabBarView(toTitlebarView: false)
+                await mainViewController.fireViewController.animateFireWhenClosing()
+                window.close()
+            }
         }
     }
 

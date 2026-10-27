@@ -144,6 +144,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // https://app.asana.com/1/137249556945/project/1208671677432066/task/1214715437711872?focus=true
     case fireDialogSimplified
 
+    /// Kill switch for snapshot-based closing-window Fire animations and independent cleanup progress.
+    case fireWindowSnapshotAnimation
+
     /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
     case faviconWKDownload
 

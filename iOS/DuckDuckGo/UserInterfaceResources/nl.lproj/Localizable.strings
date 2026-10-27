@@ -1658,7 +1658,7 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Huidig aantal afgewezen: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Huidige abonnementen";
@@ -2642,7 +2642,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Invoerknop";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Aanmelden";
@@ -4118,7 +4118,7 @@
 "Primary / First Action" = "Primaire / Eerste actie";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Priming-modal";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Privacybescherming";
@@ -4181,10 +4181,10 @@
 "Reset" = "Herstel";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Telling afgewezen knop opnieuw instellen";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Staat priming-model opnieuw instellen";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5010,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Opgeslagen hostnaam: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Toevoegen aan apparaat";

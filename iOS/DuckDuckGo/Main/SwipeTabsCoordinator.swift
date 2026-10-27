@@ -1017,6 +1017,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         chromePreview?.removeFromSuperview()
         chromePreview = nil
         teardownAuxiliarySwipeSnapshots()
+        if let tab = tabsModel?.currentTab, tab.link != nil {
+            liveTabControllerProvider(tab)?.fireSitePermissionDialogImpressionIfVisible()
+        }
     }
 
 }

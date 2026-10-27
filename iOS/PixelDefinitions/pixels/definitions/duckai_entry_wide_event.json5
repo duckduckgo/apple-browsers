@@ -1,0 +1,135 @@
+{
+    "m_ios_wide_duckai_entry": {
+        "description": "Wide pixel sent at the end of one entry into Duck.ai on iOS: from the entry point until the user leaves Duck.ai, enters it again, backgrounds the app, or the process ends. Triggers are other because the event completes on several kinds of events: user actions, backgrounding, and recovery at the next launch.",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            // Standard wide event parameters
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventFormFactor",
+            "wideEventSampleRate",
+            "wideEventIsFirstDailyOccurrence",
+            "wideEventFeatureStatus",
+            "wideEventMetaVersion",
+
+            // Wide event type identifier
+            {
+                "key": "meta.type",
+                "type": "string",
+                "description": "Wide event type identifier",
+                "enum": ["ios-duckai-entry"]
+            },
+
+            // Feature identifier
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["duckai_entry"]
+            },
+
+            // Feature data
+            {
+                "key": "feature.data.ext.status_reason",
+                "type": "string",
+                "description": "How the entry ended. SUCCESS uses left_duckai or new_entry; CANCELLED uses app_backgrounded; UNKNOWN uses app_terminated when an in-flight entry is recovered at the next launch.",
+                "enum": ["left_duckai", "new_entry", "app_backgrounded", "app_terminated"]
+            },
+            {
+                "key": "feature.data.ext.exit_trigger",
+                "type": "string",
+                "description": "The action that left Duck.ai. Present only when status_reason is left_duckai.",
+                "enum": [
+                    "back_or_close",
+                    "tab_switched",
+                    "new_tab_opened",
+                    "fire_tab_opened",
+                    "search_started",
+                    "other_navigation",
+                    "chat_deleted"
+                ]
+            },
+            {
+                "key": "feature.data.ext.source",
+                "type": "string",
+                "description": "The entry point, with the same values as m_aichat_entry_point.",
+                "enum": [
+                    "address_bar_prompt",
+                    "address_bar_icon",
+                    "address_bar_shortcut_chip",
+                    "address_bar_editing_state",
+                    "suggestion_ask_ai",
+                    "ipad_toggle_prompt",
+                    "browsing_menu_ntp",
+                    "browsing_menu_webpage",
+                    "browsing_menu_duckai",
+                    "duck_ai_new_chat",
+                    "tab_switcher",
+                    "tab_switcher_existing_chat",
+                    "tabs_bar_existing_chat",
+                    "tabs_bar_button",
+                    "new_tab_long_press_menu",
+                    "chat_history_new_chat",
+                    "chat_history_open_chat",
+                    "chat_history_view_all",
+                    "voice",
+                    "onboarding",
+                    "subscription_onboarding",
+                    "paid_settings",
+                    "direct_url",
+                    "serp",
+                    "icon_shortcut",
+                    "contextual_chat",
+                    "widget_quick_actions",
+                    "widget_quick_actions_medium",
+                    "widget_favorite",
+                    "widget_lock_screen",
+                    "widget_control_center",
+                    "siri",
+                    "deep_link_other",
+                    "return_to_chat_card",
+                    "ddg_homepage"
+                ]
+            },
+            {
+                "key": "feature.data.ext.has_prompt",
+                "type": "boolean",
+                "description": "Whether the user arrived with a prompt already."
+            },
+            {
+                "key": "feature.data.ext.chat_state",
+                "type": "string",
+                "description": "Whether the entry starts a new chat or opens an existing one.",
+                "enum": ["new", "existing"]
+            },
+            {
+                "key": "feature.data.ext.surface",
+                "type": "string",
+                "description": "Where Duck.ai is shown.",
+                "enum": ["duck_ai_tab", "contextual_sheet"]
+            },
+            {
+                "key": "feature.data.ext.prompt_submitted",
+                "type": "boolean",
+                "description": "Whether a prompt was sent during the entry, detected from the Duck.ai page."
+            },
+            {
+                "key": "feature.data.ext.time_to_first_prompt_ms_bucketed",
+                "type": "string",
+                "description": "Time from the entry to the first prompt, bucketed (lower end of bucket, in ms). Absent when no prompt was sent.",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+            },
+            {
+                "key": "feature.data.ext.time_in_duckai_ms_bucketed",
+                "type": "string",
+                "description": "Time from the entry to its end, bucketed (lower end of bucket, in ms). Absent when the entry was recovered at the next launch.",
+                "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+            }
+        ]
+    }
+}

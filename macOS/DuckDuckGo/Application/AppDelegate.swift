@@ -1302,6 +1302,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         eventHubIntegration = MacOSEventHubIntegration(
             privacyConfigurationManager: privacyConfigurationManager,
             keyValueStore: try? KeyValueFileStore(location: Self.keyValueStoresLocation, name: "EventHubKeyValueStore"))
+        autoconsentManagement.eventHub = eventHubIntegration.eventHub
 
         if AppVersion.runType.requiresEnvironment {
             let reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)

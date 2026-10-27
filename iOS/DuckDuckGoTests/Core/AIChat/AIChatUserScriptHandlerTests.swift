@@ -596,6 +596,28 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.supportsSuggestions, true)
     }
 
+    func testWhenContextualModeOnIPadThenConfigDefersInputToNative() {
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler.displayMode = .contextual
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeChatInput, true)
+    }
+
+    func testWhenFullTabOnIPadThenConfigKeepsTheWebInput() {
+        MockDevicePlatform.isIphone = false
+        mockAIChatContextualModeFeature.isAvailable = true
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsNativeChatInput, false)
+    }
+
     func testSuggestionsSupportFollowsContextualModeAvailabilityWhileRunning() {
         aiChatUserScriptHandler.displayMode = .contextual
 
@@ -1564,6 +1586,18 @@ extension AIChatUserScriptHandlerTests {
         // Then
         XCTAssertNil(result)
         XCTAssertEqual(handlerCallCount, 0)
+    }
+
+    @MainActor
+    func testWhenContextualModeOnIPadThenFocusChatInputCallsHandler() async {
+        mockUnifiedToggleInputFeature.isAvailable = false
+        aiChatUserScriptHandler.displayMode = .contextual
+        var handlerCallCount = 0
+        aiChatUserScriptHandler.focusChatInputHandler = { handlerCallCount += 1 }
+
+        _ = await aiChatUserScriptHandler.focusChatInput(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        XCTAssertEqual(handlerCallCount, 1)
     }
 
     @MainActor

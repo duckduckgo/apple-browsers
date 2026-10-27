@@ -94,6 +94,7 @@ final class AIChatContextualSheetCoordinator {
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let floatingInputFeature: AIChatContextualFloatingInputFeatureProviding
+    private let isPad: Bool
     private let attachMoreTabsFeature: AIChatContextualAttachMoreTabsFeatureProviding
     private let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
     private let duckAiFireModeStorageHandler: DuckAiNativeStorageHandling?
@@ -158,8 +159,9 @@ final class AIChatContextualSheetCoordinator {
         contextUpdateCancellable != nil
     }
 
+    /// iPad keeps its inline address-bar input, but its contextual sheet and sidebar use the same UTI as iPhone.
     private var isWebUTIEnabled: Bool {
-        unifiedToggleInputFeature.isAvailable
+        unifiedToggleInputFeature.isAvailable || isPad
     }
 
     private var persistedChatIDs: Set<String> = []
@@ -256,6 +258,7 @@ final class AIChatContextualSheetCoordinator {
          unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding = UnifiedToggleInputFeature(),
          floatingUIManager: FloatingUIManaging? = nil,
          floatingInputFeature: AIChatContextualFloatingInputFeatureProviding = AIChatContextualFloatingInputFeature(),
+         isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
          pageContextHandler: AIChatPageContextHandling,
          tabURLPublishers: AIChatTabURLPublishers,
          isFireTab: Bool = false,
@@ -280,6 +283,7 @@ final class AIChatContextualSheetCoordinator {
             isFloatingUIFeatureEnabled: featureFlagger.isFloatingUIFeatureEnabled()
         )
         self.floatingInputFeature = floatingInputFeature
+        self.isPad = isPad
         self.attachMoreTabsFeature = AIChatContextualAttachMoreTabsFeature(featureFlagger: featureFlagger, aiChatSettings: aiChatSettings)
         self.pageContextHandler = pageContextHandler
         self.tabURLPublishers = tabURLPublishers

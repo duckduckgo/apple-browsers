@@ -20,6 +20,8 @@ import XCTest
 
 class AutofillUITests: UITestCase {
 
+    private static let savePopoverTitles = ["New password saved", "Save password in DuckDuckGo?"]
+
     private var email: String!
 
     override func setUpWithError() throws {
@@ -43,9 +45,11 @@ class AutofillUITests: UITestCase {
 
         app.submitSignUpForm()
 
-        // Generated passwords are saved on submit, so the popover confirms the save instead of asking.
-        XCTAssertTrue(app.popovers.staticTexts["New password saved"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "The saved password popover didn't appear after signing up.")
+        // Depending on whether the generated password was already stored, the popover confirms the save or asks for it
+        let savePopoverTitle = app.popovers.staticTexts
+            .matching(NSPredicate(format: "label IN %@ OR value IN %@", Self.savePopoverTitles, Self.savePopoverTitles)).firstMatch
+        XCTAssertTrue(savePopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "The save password popover didn't appear after signing up.")
     }
 
     func testAutofillFillsLoginAndOffersPasswordUpdate() {

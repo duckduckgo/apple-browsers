@@ -67,6 +67,9 @@ final class UnifiedSuggestionsHost {
     }
 
     func setFocusedContent(mode: TextEntryMode, escapeHatch: EscapeHatchModel?, syncPromo: AnyView?) {
+        if focusedMode != mode || (self.syncPromo == nil) != (syncPromo == nil) {
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=content.selection mode=\(String(describing: mode), privacy: .public) promo=\(syncPromo != nil, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
+        }
         focusedMode = mode
         if usesScrollableEscapeHatch {
             self.escapeHatch = escapeHatch
@@ -279,7 +282,7 @@ final class UnifiedSuggestionsHost {
         let modelIdentity = escapeHatch.map { String(describing: ObjectIdentifier($0)) } ?? "nil"
         let content = String(describing: viewModel.content)
         let requested = String(describing: contentInsets)
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) mode=\(String(describing: self.focusedMode), privacy: .public) scrolling=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.redesignedSearchPresentation != nil, privacy: .public) modules=\(self.showsRedesignedSearchModules, privacy: .public) content=\(content, privacy: .public) hatch=\(modelIdentity, privacy: .public) returnCard=\(self.escapeHatch?.isReturnToTabCardVisible ?? false, privacy: .public) requested=\(requested, privacy: .public) extraTop=\(self.escapeHatchTopInset, privacy: .public) embeddedHatch=\(self.embeddedHatchInset, privacy: .public) contentPaddingTop=\(self.viewModel.contentTopInset, privacy: .public)")
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) mode=\(String(describing: self.focusedMode), privacy: .public) scrolling=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.redesignedSearchPresentation != nil, privacy: .public) modules=\(self.showsRedesignedSearchModules, privacy: .public) content=\(content, privacy: .public) hatch=\(modelIdentity, privacy: .public) returnCard=\(self.escapeHatch?.isReturnToTabCardVisible ?? false, privacy: .public) requested=\(requested, privacy: .public) extraTop=\(self.escapeHatchTopInset, privacy: .public) embeddedHatch=\(self.embeddedHatchInset, privacy: .public) contentPaddingTop=\(self.viewModel.contentTopInset, privacy: .public) promo=\(self.syncPromo != nil, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
         guard let view = hostingController?.viewIfLoaded else { return }
         let frame = String(describing: view.convert(view.bounds, to: nil))
         let safeArea = String(describing: view.safeAreaInsets)

@@ -22,6 +22,7 @@ import DuckUI
 import RemoteMessaging
 import SwiftUI
 import UIComponents
+import os.log
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -140,6 +141,7 @@ private extension NewTabPageView {
                         }
                     }
                     .animation(nil, value: content.recentChats != nil)
+                    .modifier(FocusedContentGeometryGroup())
                     .padding(.top, contentTopInset(in: geometry) + viewModel.focusedContentTopInset)
                     .padding(.bottom, sectionsViewPadding(in: geometry))
                     .padding(.horizontal, sectionsViewHorizontalPadding(in: geometry))
@@ -302,6 +304,30 @@ private extension NewTabPageView {
         }
         let folded = layoutConfiguration.favoritesShareHatchTopInset ? Metrics.nonGridSectionTopPadding : 0
         return sectionsViewPadding(in: geometry) + folded
+    }
+}
+
+struct FocusedContentGeometryGroup: ViewModifier {
+    var isEnabled = true
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *), isEnabled {
+            content.geometryGroup()
+                .onFrameUpdate(in: .global, using: FocusedContentGeometryFrameKey.self) { frame in
+                    Logger.unifiedInputState.debug("[EHScrollDiag] event=content.group.frame grouped=true frame=\(String(describing: frame), privacy: .public)")
+                }
+        } else {
+            content
+        }
+    }
+}
+
+private struct FocusedContentGeometryFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 

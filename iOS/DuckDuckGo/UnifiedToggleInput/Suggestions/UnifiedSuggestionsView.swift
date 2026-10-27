@@ -87,7 +87,8 @@ struct UnifiedSuggestionsView: View {
                                                    escapeHatch: escapeHatch,
                                                    syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
                                                    isAddressBarAtBottom: isAddressBarAtBottom,
-                                                   contentTopInset: viewModel.contentTopInset)
+                                                   contentTopInset: viewModel.contentTopInset,
+                                                   usesScrollableEscapeHatch: usesScrollableEscapeHatch)
                     .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.

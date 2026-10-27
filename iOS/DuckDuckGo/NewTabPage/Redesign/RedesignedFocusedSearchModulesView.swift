@@ -29,6 +29,7 @@ struct RedesignedFocusedSearchModulesView: View {
     var syncPromo: AnyView?
     var isAddressBarAtBottom = false
     var contentTopInset: CGFloat = 0
+    var usesScrollableEscapeHatch = true
 
     var body: some View {
         GeometryReader { geometry in
@@ -66,6 +67,7 @@ struct RedesignedFocusedSearchModulesView: View {
                 }
                 .animation(nil, value: showsSearchModules)
                 .animation(nil, value: recentChats != nil)
+                .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
                 .padding(.top, contentTopInset)
                 .padding(.leading, geometry.safeAreaInsets.leading)
                 .padding(.trailing, geometry.safeAreaInsets.trailing)

@@ -1036,7 +1036,9 @@ private extension UnifiedInputContentContainerViewController {
             self.view.layoutIfNeeded()
         }
 
-        if animateContentUpdates {
+        let usesSpring = animateContentUpdates && !usesScrollableEscapeHatch
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=content.refresh animated=\(animateContentUpdates, privacy: .public) usesSpring=\(usesSpring, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
+        if usesSpring {
             scheduleAnimation(applyContentUpdates)
         } else {
             applyContentUpdates()

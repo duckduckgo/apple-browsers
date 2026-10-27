@@ -12,14 +12,7 @@
                 "key": "source",
                 "description": "The browser the user is importing data from",
                 "type": "string",
-                "enum": [
-                    "brave",
-                    "chrome",
-                    "edge",
-                    "firefox",
-                    "opera",
-                    "other"
-                ]
+                "enum": ["brave", "chrome", "edge", "firefox", "opera", "other"]
             },
             {
                 "key": "source_browser_version",

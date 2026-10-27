@@ -3264,7 +3264,10 @@ class MainViewController: UIViewController {
     private func transitionTo(tab: TabViewController?, from previousTab: TabViewController?) {
         cancelPendingAppOpenKeyboard()
         guard let tab else { return }
-        previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        // Re-selecting the current tab keeps its sidebar chat open.
+        if previousTab !== tab {
+            previousTab?.aiChatContextualSheetCoordinator.dismissSheet()
+        }
         previousTab?.tabModel.openedAfterIdle = false
         dismissSystemFindNavigator(for: previousTab)
         previousTab?.dismiss()

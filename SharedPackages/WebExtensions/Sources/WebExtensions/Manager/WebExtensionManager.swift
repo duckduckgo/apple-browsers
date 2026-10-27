@@ -1254,6 +1254,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         installationStore.installedExtension(withUniqueIdentifier: identifier)
     }
 
+    @MainActor
+    public func isRemotelyDisabled(identifier: String) -> Bool {
+        guard let remoteDisableEnforcer, let installedExtension = installedExtension(identifier: identifier) else { return false }
+        return remoteDisableEnforcer.isRemotelyDisabled(installedExtension)
+    }
+
     public func extensionVersion(for identifier: String) -> String? {
         installationStore.installedExtension(withUniqueIdentifier: identifier)?.version
     }

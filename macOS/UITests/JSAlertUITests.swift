@@ -95,8 +95,9 @@ class JSAlertUITests: UITestCase {
 
         app.closeCurrentTab()
 
+        XCTAssertTrue(app.wait(for: .keyPath(\.tabs.count, equalTo: tabCount - 1), timeout: UITests.Timeouts.elementExistence),
+                      "Cmd+W should close the tab showing the \(dialog) dialog")
         assertDialogIsGone(dialog)
-        XCTAssertEqual(app.tabs.count, tabCount - 1, "Closing the tab with the \(dialog) dialog should close the tab.")
         app.activateAddressBar()
         app.openSite(pageTitle: Self.nextPageTitle)
     }

@@ -160,6 +160,7 @@ class FireWindowTests: UITestCase {
             <script>document.cookie = "\(name)=1; max-age=3600; path=/";</script>
             <p>Cookie set</p>
             """)
+        app.activateAddressBar()
         app.openURL(page, waitForWebViewAccessibilityLabel: "Cookie setter")
     }
 
@@ -170,6 +171,7 @@ class FireWindowTests: UITestCase {
             document.title = document.cookie.split("; ").includes("\(name)=1") ? "Cookie present" : "Cookie absent";
             </script>
             """)
+        app.activateAddressBar()
         app.openURL(page, waitForWebViewAccessibilityLabel: isVisible ? "Cookie present" : "Cookie absent")
     }
 

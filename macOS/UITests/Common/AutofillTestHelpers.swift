@@ -81,6 +81,7 @@ extension XCUIApplication {
     }
 
     func openAutofillTestPage(_ page: AutofillTestPage) {
+        activateAddressBar()
         openURL(page.url, waitForWebViewAccessibilityLabel: page.title)
     }
 
@@ -138,17 +139,22 @@ extension XCUIApplication {
         windows.firstMatch.webViews.firstMatch.tap()
         autofillEmailTextField.click()
 
-        // The dropdown is a child window with its own web view, so it can't be found inside the page's web view.
-        let savedLogin = buttons.matching(NSPredicate(format: "label BEGINSWITH %@", email)).firstMatch
-        XCTAssertTrue(
-            savedLogin.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The autofill dropdown didn't offer the saved login for \(email)."
-        )
+        let savedLogin = autofillDropdownButton(labelBeginningWith: email)
         savedLogin.click()
 
         XCTAssertTrue(
             autofillEmailTextField.wait(for: \.value, equals: email, timeout: UITests.Timeouts.elementExistence),
             "Autofill didn't fill the email field."
         )
+    }
+
+    /// The dropdown is a child window with its own web view, so it can't be found inside the page's web view.
+    func autofillDropdownButton(labelBeginningWith prefix: String, file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
+        let button = buttons.matching(NSPredicate(format: "label BEGINSWITH %@", prefix)).firstMatch
+        if !button.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            let labels = buttons.allElementsBoundByIndex.map(\.label).filter { !$0.isEmpty }
+            XCTFail("The autofill dropdown didn't offer \"\(prefix)…\". Windows: \(windows.count), buttons: \(labels)", file: file, line: line)
+        }
+        return button
     }
 }

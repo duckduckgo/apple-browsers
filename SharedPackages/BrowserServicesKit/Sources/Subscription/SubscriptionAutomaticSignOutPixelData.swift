@@ -259,6 +259,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     }
 
     public let recoveryOutcome: RecoveryOutcome
+    public let backupOutcome: BackupRecoveryOutcome
     public let tokenCachePolicy: AuthTokensCachePolicy
     public let entitlementStateBefore: EntitlementState
     public let accessTokenTimeRemainingBefore: TimeRemainingBucket
@@ -272,6 +273,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public let localTokenStateAfterSignOut: LocalTokenState
 
     public init(recoveryOutcome: RecoveryOutcome,
+                backupOutcome: BackupRecoveryOutcome,
                 tokenCachePolicy: AuthTokensCachePolicy,
                 entitlementStateBefore: EntitlementState,
                 accessTokenTimeRemainingBefore: TimeRemainingBucket,
@@ -284,6 +286,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
                 storedRefreshTokenStateDuringAttempt: StoredRefreshTokenState,
                 localTokenStateAfterSignOut: LocalTokenState) {
         self.recoveryOutcome = recoveryOutcome
+        self.backupOutcome = backupOutcome
         self.tokenCachePolicy = tokenCachePolicy
         self.entitlementStateBefore = entitlementStateBefore
         self.accessTokenTimeRemainingBefore = accessTokenTimeRemainingBefore
@@ -301,6 +304,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     /// `tokenBeforeAttempt` must have been snapshotted *before* the request, so that
     /// `storedRefreshTokenStateDuringAttempt` can tell whether the stored token rotated underneath it.
     public init(recoveryOutcome: RecoveryOutcome,
+                backupOutcome: BackupRecoveryOutcome,
                 policy: AuthTokensCachePolicy,
                 tokenBeforeAttempt: LocalTokenSnapshot,
                 tokenAfterAttempt: LocalTokenSnapshot,
@@ -310,6 +314,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
         let tokenContainerBefore = tokenBeforeAttempt.tokenContainer
         self.init(
             recoveryOutcome: recoveryOutcome,
+            backupOutcome: backupOutcome,
             tokenCachePolicy: policy,
             entitlementStateBefore: .init(tokenContainerBefore),
             accessTokenTimeRemainingBefore: .init(until: tokenContainerBefore?.decodedAccessToken.expirationDate, now: now),
@@ -326,6 +331,7 @@ public struct SubscriptionAutomaticSignOutPixelData: Equatable {
     public var parameters: [String: String] {
         [
             "recovery_outcome": recoveryOutcome.rawValue,
+            "backup_outcome": backupOutcome.rawValue,
             "policycache": tokenCachePolicy.description,
             "had_subscription_entitlements_before": entitlementStateBefore.rawValue,
             "access_token_time_remaining_bucket_before": accessTokenTimeRemainingBefore.rawValue,

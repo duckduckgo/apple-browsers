@@ -73,7 +73,7 @@ final class ChromeWebStoreCatalogTests: XCTestCase {
         ])
 
         XCTAssertEqual(catalog.listing(of: .bitwarden),
-                       ChromeWebStoreListing(name: "Extension", publisher: "", iconURL: URL(string: iconURL), storeURL: try XCTUnwrap(URL(string: storeURL))))
+                       ChromeWebStoreListing(entry: .bitwarden, name: "Extension", publisher: "", iconURL: URL(string: iconURL), storeURL: try XCTUnwrap(URL(string: storeURL))))
         XCTAssertNil(catalog.listing(of: .onePassword))
         XCTAssertNil(catalog.listing(of: .darkReader))
     }

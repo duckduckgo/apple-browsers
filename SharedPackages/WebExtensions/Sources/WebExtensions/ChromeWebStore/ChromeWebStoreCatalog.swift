@@ -36,11 +36,14 @@ public extension ExtensionsCatalogSubfeature {
 }
 
 /// A catalog entry's store listing, from its Privacy Config settings.
-public struct ChromeWebStoreListing: Equatable {
+public struct ChromeWebStoreListing: Equatable, Identifiable {
+    public let entry: ExtensionsCatalogSubfeature
     public let name: String
     public let publisher: String
     public let iconURL: URL?
     public let storeURL: URL
+
+    public var id: String { entry.rawValue }
 }
 
 public enum ChromeWebStoreStatus: String, Codable {
@@ -169,7 +172,8 @@ public final class ChromeWebStoreCatalog: ChromeWebStoreCatalogProviding {
               let name = settings["name"] as? String,
               let storeURL = (settings["cwsUri"] as? String).flatMap(URL.init(string:)) else { return nil }
 
-        return ChromeWebStoreListing(name: name,
+        return ChromeWebStoreListing(entry: subfeature,
+                                     name: name,
                                      publisher: settings["publisher"] as? String ?? "",
                                      iconURL: (settings["iconUri"] as? String).flatMap(URL.init(string:)),
                                      storeURL: storeURL)

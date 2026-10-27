@@ -22,18 +22,10 @@ import PrivacyConfig
 import RemoteMessaging
 import WebExtensions
 
-struct ExtensionPasswordManager: Identifiable {
-    let id: String
-    let name: String
-    let publisher: String
-    let iconURL: URL?
-    let storeURL: URL
-}
-
 @MainActor
 final class ExtensionsManagementPreferences: ObservableObject, @MainActor PreferencesTabOpening {
 
-    @Published private(set) var uninstalledPasswordManagers: [ExtensionPasswordManager] = []
+    @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
 
     private let webExtensionManager: WebExtensionManaging?
     private var cancellables = Set<AnyCancellable>()
@@ -50,7 +42,7 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
         startObservingChanges(configurationManager: configurationManager)
     }
 
-    func openStorePage(for passwordManager: ExtensionPasswordManager) {
+    func openStorePage(for passwordManager: ChromeWebStoreListing) {
         openNewTab(with: passwordManager.storeURL)
     }
 }
@@ -81,10 +73,6 @@ private extension ExtensionsManagementPreferences {
             .filter { store.status(for: $0) != .installed }
             .compactMap(store.catalogEntry(of:))
             .filter(\.isPasswordManager)
-            .compactMap { entry in
-                store.listing(of: entry).map {
-                    ExtensionPasswordManager(id: entry.rawValue, name: $0.name, publisher: $0.publisher, iconURL: $0.iconURL, storeURL: $0.storeURL)
-                }
-            }
+            .compactMap(store.listing(of:))
     }
 }

@@ -21,6 +21,7 @@ import PreferencesUI_macOS
 import RemoteMessaging
 import SwiftUI
 import SwiftUIExtensions
+import WebExtensions
 
 extension Preferences {
 
@@ -112,7 +113,7 @@ extension Preferences {
             static let buttonCornerRadius: CGFloat = 8
         }
 
-        let item: ExtensionPasswordManager
+        let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
         let onGet: () -> Void
 

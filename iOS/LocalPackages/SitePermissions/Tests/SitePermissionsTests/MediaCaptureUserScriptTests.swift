@@ -341,6 +341,71 @@ final class MediaCaptureUserScriptTests: XCTestCase {
         XCTAssertEqual(handler.receivedBodies.count, policies.count)
     }
 
+    func testPolicyFallbackRejectsForgedParentAfterDocumentLoad() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!,
+                                                   forcePolicyFallback: true)
+
+        let result = try await requestMediaFromBlobFrame(in: webView,
+                                                          allow: "camera 'none'",
+                                                          nestedFrame: true,
+                                                          beforeRequestScript: """
+                                                          window.parent = {
+                                                              __ddgMediaCapturePolicy: () => true,
+                                                              location: { origin: location.origin }
+                                                          };
+                                                          """)
+
+        XCTAssertEqual(result["rejected"] as? Bool, true)
+        XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
+        XCTAssertEqual(handler.receivedBodies.count, 1)
+        XCTAssertEqual(handler.receivedBodies.last?["isEligible"] as? Bool, false)
+    }
+
+    func testPolicyFallbackRejectsBlockedPolicyAfterStringMethodsAreReplaced() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!,
+                                                   forcePolicyFallback: true)
+        let replacements = [
+            "String.prototype.split = () => [];",
+            "String.prototype.trim = () => '';",
+            "String.prototype.startsWith = () => false;",
+            "String.prototype.slice = () => '*';",
+            "String.prototype.replace = () => '*';",
+            "String.prototype.toLowerCase = () => \"'self'\";"
+        ]
+
+        for replacement in replacements {
+            let result = try await requestMediaFromBlobFrame(in: webView,
+                                                              allow: "camera 'none'",
+                                                              beforeRequestScript: replacement)
+
+            XCTAssertEqual(result["rejected"] as? Bool, true, replacement)
+            XCTAssertEqual(result["nativeCallCount"] as? Int, 0, replacement)
+            XCTAssertEqual(handler.receivedBodies.last?["isEligible"] as? Bool, false, replacement)
+        }
+        XCTAssertEqual(handler.receivedBodies.count, replacements.count)
+    }
+
+    func testPolicyFallbackRejectsNonmatchingAllowlistAfterURLIsReplaced() async throws {
+        let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
+                                                   baseURL: URL(string: "https://duck.ai")!,
+                                                   forcePolicyFallback: true)
+
+        let result = try await requestMediaFromBlobFrame(in: webView,
+                                                          allow: "camera https://other.example",
+                                                          beforeRequestScript: """
+                                                          window.URL = function() {
+                                                              return { origin: globalThis.origin, protocol: "https:" };
+                                                          };
+                                                          """)
+
+        XCTAssertEqual(result["rejected"] as? Bool, true)
+        XCTAssertEqual(result["nativeCallCount"] as? Int, 0)
+        XCTAssertEqual(handler.receivedBodies.count, 1)
+        XCTAssertEqual(handler.receivedBodies.last?["isEligible"] as? Bool, false)
+    }
+
     func testPolicyFallbackRejectsNonmatchingAllowlistAndUsesFirstDuplicateDirective() async throws {
         let (webView, handler) = await makeWebView(reply: (["decision": "allow"], nil),
                                                    baseURL: URL(string: "https://duck.ai")!)
@@ -494,6 +559,7 @@ final class MediaCaptureUserScriptTests: XCTestCase {
     private func makeWebView(reply: (Any?, String?),
                              baseURL: URL,
                              deniedPolicyFeatures: [String] = [],
+                             forcePolicyFallback: Bool = false,
                              messageHandler: (any WKScriptMessageHandlerWithReply)? = nil) async -> (WKWebView, MediaCaptureReplyHandler) {
         let configuration = WKWebViewConfiguration()
         let contentController = WKUserContentController()
@@ -510,6 +576,18 @@ final class MediaCaptureUserScriptTests: XCTestCase {
             forMainFrameOnly: false,
             in: .page
         ))
+        if forcePolicyFallback {
+            contentController.addUserScript(WKUserScript(
+                source: """
+                for (const property of ["permissionsPolicy", "featurePolicy"]) {
+                    Object.defineProperty(document, property, { configurable: true, value: undefined });
+                }
+                """,
+                injectionTime: .atDocumentStart,
+                forMainFrameOnly: false,
+                in: .page
+            ))
+        }
         if !deniedPolicyFeatures.isEmpty {
             let featureList = deniedPolicyFeatures.map { "\"\($0)\"" }.joined(separator: ",")
             contentController.addUserScript(WKUserScript(
@@ -558,7 +636,8 @@ final class MediaCaptureUserScriptTests: XCTestCase {
                                            removeAllowAfterLoad: Bool = false,
                                            nestedFrame: Bool = false,
                                            allowAfterLoad: String? = nil,
-                                           navigateAfterChangingAllow: Bool = false) async throws -> [String: Any] {
+                                           navigateAfterChangingAllow: Bool = false,
+                                           beforeRequestScript: String = "") async throws -> [String: Any] {
         try await webView.callAsyncJavaScript(
             """
             const iframe = document.createElement("iframe");
@@ -581,12 +660,14 @@ final class MediaCaptureUserScriptTests: XCTestCase {
                     try {
                         if (${nestedFrame}) {
                             const child = document.createElement("iframe");
+                            child.setAttribute("allow", "camera");
                             child.src = location.href;
                             const loaded = new Promise(resolve => child.addEventListener("load", resolve, { once: true }));
                             document.body.appendChild(child);
                             await loaded;
                             captureWindow = child.contentWindow;
                         }
+                        captureWindow.eval(${JSON.stringify(beforeRequestScript)});
                         const result = await captureWindow.navigator.mediaDevices.getUserMedia({ video: ${video}, audio: ${audio} });
                         parent.postMessage({ result, rejected: false, nativeCallCount: captureWindow.__nativeMediaCallCount }, "*");
                     } catch (error) {
@@ -640,7 +721,8 @@ final class MediaCaptureUserScriptTests: XCTestCase {
                         "removeAllowAfterLoad": removeAllowAfterLoad,
                         "nestedFrame": nestedFrame,
                         "allowAfterLoad": allowAfterLoad as Any? ?? NSNull(),
-                        "navigateAfterChangingAllow": navigateAfterChangingAllow],
+                        "navigateAfterChangingAllow": navigateAfterChangingAllow,
+                        "beforeRequestScript": beforeRequestScript],
             in: nil,
             contentWorld: .page
         ) as? [String: Any] ?? [:]

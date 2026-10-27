@@ -45,8 +45,9 @@
     const isDuckAIHost = hostname === "duck.ai" || hostname === "duckduckgo.com" || hostname.endsWith(".duckduckgo.com");
     const hasNonOpaqueOrigin = origin !== "null" && origin.length > 0;
     const isSyntheticDocument = locationProtocol === "about:";
+    const isTopLevel = globalThis.top === globalThis;
     const isSameOriginAsTopLevel = (() => {
-        if (globalThis.top === globalThis) {
+        if (isTopLevel) {
             return true;
         }
         try {
@@ -65,10 +66,10 @@
     // Fall back to its HTML allow attribute and retain the parent's restrictions for nested
     // frames. This is a best-effort precheck; WebKit makes the final capture decision.
     // Like WebKit, use the embedding attributes from when this document loaded; a later change
-    // applies on the next navigation. The rest waits for the first check, since most frames
-    // never request media.
+    // applies on the next navigation. Parse the local rules before page scripts can replace
+    // the methods they use; only the inherited policy check waits for the first request.
     const embeddingFrame = (() => {
-        if (hasPolicyIntrospection || !isSameOriginAsTopLevel || globalThis.top === globalThis) {
+        if (hasPolicyIntrospection || !isSameOriginAsTopLevel || isTopLevel) {
             return null;
         }
         try {
@@ -76,32 +77,33 @@
             if (!frame) {
                 return null;
             }
+            const parent = globalThis.parent;
             const getAttribute = Element.prototype.getAttribute;
             const source = apply(getAttribute, frame, ["srcdoc"]) === null ? apply(getAttribute, frame, ["src"]) : null;
             return {
                 policy: apply(getAttribute, frame, ["allow"]) ?? "",
                 source,
-                baseURI: source === null ? null : apply(getOwnPropertyDescriptor(Node.prototype, "baseURI").get, frame, [])
+                baseURI: source === null ? null : apply(getOwnPropertyDescriptor(Node.prototype, "baseURI").get, frame, []),
+                parentOrigin: parent.location.origin,
+                inheritedPolicy: parent[inheritedPolicyProperty]
             };
         } catch (_) {
             return null;
         }
     })();
-    const fallbackPolicyAllows = (feature) => {
+    const localPolicyAllows = (feature) => {
         if (!isSameOriginAsTopLevel) {
             return false;
         }
-        if (globalThis.top === globalThis) {
+        if (isTopLevel) {
             return true;
         }
         try {
-            const parent = globalThis.parent;
-            const inheritedPolicy = parent[inheritedPolicyProperty];
-            if (typeof inheritedPolicy !== "function" || !inheritedPolicy(feature) || !embeddingFrame) {
+            if (!embeddingFrame) {
                 return false;
             }
-            const { policy, source, baseURI } = embeddingFrame;
-            let sourceOrigin = parent.location.origin;
+            const { policy, source, baseURI, parentOrigin } = embeddingFrame;
+            let sourceOrigin = parentOrigin;
             if (source !== null) {
                 try {
                     const sourceURL = new URL(source, baseURI);
@@ -128,7 +130,7 @@
                         return false;
                     }
                     if (token.toLowerCase() === "'self'") {
-                        allowed ||= parent.location.origin === origin;
+                        allowed ||= parentOrigin === origin;
                     } else if (token.toLowerCase() === "'src'") {
                         allowed ||= sourceOrigin === origin;
                     } else {
@@ -140,6 +142,22 @@
                 return allowed;
             }
             return true;
+        } catch (_) {
+            return false;
+        }
+    };
+    const localCameraAllowed = !hasPolicyIntrospection && localPolicyAllows("camera");
+    const localMicrophoneAllowed = !hasPolicyIntrospection && localPolicyAllows("microphone");
+    const fallbackPolicyAllows = (feature) => {
+        if (!(feature === "camera" ? localCameraAllowed : localMicrophoneAllowed)) {
+            return false;
+        }
+        if (isTopLevel) {
+            return true;
+        }
+        try {
+            const inheritedPolicy = embeddingFrame.inheritedPolicy;
+            return typeof inheritedPolicy === "function" && inheritedPolicy(feature);
         } catch (_) {
             return false;
         }

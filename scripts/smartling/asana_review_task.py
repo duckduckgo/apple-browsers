@@ -110,8 +110,26 @@ class AsanaClient:
     def sections(self, project_id: str) -> List[Dict]:
         return self._get_all(f'/projects/{project_id}/sections', {'opt_fields': 'name'})
 
+    def section_tasks(self, section_id: str, since: date) -> List[Dict]:
+        return self._get_all(f'/sections/{section_id}/tasks', {
+            'completed_since': f'{since.isoformat()}T00:00:00Z',
+            'opt_fields': 'name',
+        })
+
+    def subtasks(self, task_id: str) -> List[Dict]:
+        return self._get_all(f'/tasks/{task_id}/subtasks', {'opt_fields': 'name'})
+
     def create_task(self, body: Dict) -> Dict:
         return self._request('POST', '/tasks', {'opt_fields': 'permalink_url'}, body)
+
+    def task(self, task_id: str) -> Dict:
+        return self._request('GET', f'/tasks/{task_id}', {'opt_fields': 'completed,assignee,parent.assignee'})
+
+    def update_task(self, task_id: str, body: Dict) -> Dict:
+        return self._request('PUT', f'/tasks/{task_id}', body=body)
+
+    def add_comment(self, task_id: str, html_text: str) -> Dict:
+        return self._request('POST', f'/tasks/{task_id}/stories', body={'html_text': html_text})
 
 
 def log(message: str):

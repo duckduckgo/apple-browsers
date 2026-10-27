@@ -1004,4 +1004,54 @@ struct NewTabPageSessionInstrumentationTests {
         #expect(shownCount == 1)
         #expect(!oldRequestFocused)
     }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Resigning active marks a page uncovered by a dismissed sheet as presented", .timeLimit(.minutes(1)))
+    func resignActiveMarksUncoveredPageAsPresented() {
+        var visible = true
+        var callbacks: [String] = []
+        let notifications = NotificationCenter()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { visible })
+        let page = NSObject()
+        coordinator.schedule(for: page)
+        #expect(coordinator.hasPresentedPage)
+
+        // The app returns with Settings still covering the page, and the user then closes it. Closing a sheet
+        // posts nothing the coordinator observes, so the page stays unpresented.
+        coordinator.backgrounded()
+        visible = false
+        // Callbacks left pending while the page was covered.
+        coordinator.schedule(for: page, shown: { callbacks.append("shown") }, focus: { callbacks.append("focus") })
+        visible = true
+        #expect(!coordinator.hasPresentedPage)
+
+        notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
+        #expect(coordinator.hasPresentedPage)
+        // Leaving the app must not report the page shown or raise the keyboard.
+        #expect(callbacks.isEmpty)
+
+        // The mark lasts only until the background it precedes.
+        coordinator.backgrounded()
+        #expect(!coordinator.hasPresentedPage)
+    }
+
+    @MainActor
+    @available(iOS 16, macOS 13, *)
+    @Test("Resigning active leaves a covered or removed page unpresented", .timeLimit(.minutes(1)))
+    func resignActiveIgnoresCoveredOrRemovedPage() {
+        var visible = false
+        let notifications = NotificationCenter()
+        let coordinator = NewTabPagePresentationCoordinator(notificationCenter: notifications, isVisible: { visible })
+        let page = NSObject()
+        coordinator.schedule(for: page)
+
+        notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
+        #expect(!coordinator.hasPresentedPage)
+
+        visible = true
+        coordinator.cancel()
+        notifications.post(name: UIApplication.willResignActiveNotification, object: nil)
+        #expect(!coordinator.hasPresentedPage)
+    }
 }

@@ -66,7 +66,6 @@ final class UserScripts: UserScriptsProvider {
     private(set) var findInPageScript: FindInPageUserScript?
 
     private(set) var selectionFrameScript: SelectionFrameUserScript
-    private(set) var fullScreenVideoScript = FullScreenVideoUserScript()
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
@@ -210,7 +209,6 @@ final class UserScripts: UserScriptsProvider {
     lazy var userScripts: [UserScript] = {
         var scripts: [UserScript?] = [
             findInPageScript,
-            fullScreenVideoScript,
             mediaCaptureUserScript,
             geolocationUserScript?.policyScript,
             geolocationUserScript,

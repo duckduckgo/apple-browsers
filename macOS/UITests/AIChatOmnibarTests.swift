@@ -254,6 +254,34 @@ class AIChatOmnibarTests: UITestCase {
     /// the underlying flake (a `.suggestion(.askAIChat)` snapshot path that race-cleared the typed text)
     /// is sidestepped now that `lastAddressBarTextFieldValue` is mirrored live per keystroke from
     /// `handleTextDidChange`, always as the canonical `.text(typedText, userTyped: true)` shape.
+    /// The release smoke test: a query typed in the address bar and sent to Duck.ai with the toggle
+    /// shows up as the first message on duck.ai. The query is handed to the page by a user script, not in the URL,
+    /// so the test looks for it in the page.
+    func test_toggleClick_SubmitsTypedQueryOnDuckAI() throws {
+        let query = "Say hello to \(UITests.randomPageTitle(length: 6))"
+        app.activateAddressBar()
+        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        addressBarTextField.typeText(query)
+
+        let toggle = app.windows.firstMatch.descendants(matching: .any)[Identifiers.searchModeToggleControl]
+        XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "Search/Duck.ai toggle should be visible")
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).click()
+        app.typeKey(.return, modifierFlags: [])
+
+        let selectedTab = app.windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
+        let showsDuckAI = NSPredicate { element, _ in
+            (element as? XCUIElement)?.url.flatMap(URL.init(string:))?.host == "duck.ai"
+        }
+        XCTAssertTrue(selectedTab.wait(for: showsDuckAI, timeout: UITests.Timeouts.navigation),
+                      "Submitting in Duck.ai mode should open duck.ai (current URL: \(selectedTab.url ?? "<nil>"))")
+
+        let submittedQuery = app.windows.firstMatch.webViews.staticTexts
+            .matching(NSPredicate(format: "label CONTAINS %@", query)).firstMatch
+        XCTAssertTrue(submittedQuery.waitForExistence(timeout: UITests.Timeouts.navigation),
+                      "duck.ai should show the typed query as the first message")
+    }
+
     func test_tabSwitch_SearchModeDraft_PreservedAcrossSwitchBack() throws {
         // Tab 1: type a draft into the address bar in plain Search mode (no Duck.ai).
         app.activateAddressBar()

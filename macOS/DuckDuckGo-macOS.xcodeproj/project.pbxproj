@@ -297,7 +297,9 @@
 		1E4EDA2E2DE9ED710019B6E8 /* AIChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4EDA2D2DE9ED710019B6E8 /* AIChatViewController.swift */; };
 		1E4EDA2F2DE9ED710019B6E8 /* AIChatViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E4EDA2D2DE9ED710019B6E8 /* AIChatViewController.swift */; };
 		1E54C6602F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E54C65F2F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift */; };
+		5AF14A51B4D219F375262CE5 /* ExtensionsManagementPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62EA355A381576EAC213F2CD /* ExtensionsManagementPreferences.swift */; };
 		1E54C6612F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E54C65F2F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift */; };
+		9B79632D72F2429FE0B372D3 /* ExtensionsManagementPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62EA355A381576EAC213F2CD /* ExtensionsManagementPreferences.swift */; };
 		1E54C6632F6AFA84002370BD /* PreferencesYouTubeAdBlockingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E54C6622F6AFA84002370BD /* PreferencesYouTubeAdBlockingView.swift */; };
 		1E54C6642F6AFA84002370BD /* PreferencesYouTubeAdBlockingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E54C6622F6AFA84002370BD /* PreferencesYouTubeAdBlockingView.swift */; };
 		1E54E8E52EB376B000EB24CD /* AutoconsentTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E54E8E42EB376B000EB24CD /* AutoconsentTabExtension.swift */; };
@@ -5391,6 +5393,7 @@
 		1E4EDA272DE9ED2D0019B6E8 /* AIChatSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSessionStore.swift; sourceTree = "<group>"; };
 		1E4EDA2D2DE9ED710019B6E8 /* AIChatViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewController.swift; sourceTree = "<group>"; };
 		1E54C65F2F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YouTubeAdBlockingPreferences.swift; sourceTree = "<group>"; };
+		62EA355A381576EAC213F2CD /* ExtensionsManagementPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionsManagementPreferences.swift; sourceTree = "<group>"; };
 		1E54C6622F6AFA84002370BD /* PreferencesYouTubeAdBlockingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesYouTubeAdBlockingView.swift; sourceTree = "<group>"; };
 		1E54E8E42EB376B000EB24CD /* AutoconsentTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentTabExtension.swift; sourceTree = "<group>"; };
 		1E559BAD2BBCA9F1002B4AF6 /* AutoplayPolicyTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoplayPolicyTabExtension.swift; sourceTree = "<group>"; };
@@ -9280,6 +9283,7 @@
 				37CD54C427F2FDD100F1F7B9 /* PreferencesSection.swift */,
 				37CD54C627F2FDD100F1F7B9 /* PreferencesSidebarModel.swift */,
 				1E54C65F2F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift */,
+				62EA355A381576EAC213F2CD /* ExtensionsManagementPreferences.swift */,
 				1D220BFB2B87AACF00F8BBC6 /* PrivacyProtectionStatus.swift */,
 				1DDC84FE2B835BC000670238 /* SearchPreferences.swift */,
 				37A4CEB9282E992F00D75B89 /* StartupPreferences.swift */,
@@ -16321,6 +16325,7 @@
 				EE6666702B56EDE4001D898D /* VPNLocationsHostingViewController.swift in Sources */,
 				7B99CF322EEAC1A5003FA486 /* UserNotificationAuthorizationService.swift in Sources */,
 				1E54C6612F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift in Sources */,
+				9B79632D72F2429FE0B372D3 /* ExtensionsManagementPreferences.swift in Sources */,
 				3706FB16293F65D500E42796 /* StoredPermission.swift in Sources */,
 				A3F6EC01C15C4147828B3020 /* WebsitePermissionEntry.swift in Sources */,
 				85774B042A71CDD000DE0561 /* BlockMenuItem.swift in Sources */,
@@ -18812,6 +18817,7 @@
 				B56776752ED778C600303198 /* FaviconImageView.swift in Sources */,
 				37A756EB2DD5EAA50003C8C9 /* NewTabPageProtectionsReportSettingsMigrator.swift in Sources */,
 				1E54C6602F6AFA2A002370BD /* YouTubeAdBlockingPreferences.swift in Sources */,
+				5AF14A51B4D219F375262CE5 /* ExtensionsManagementPreferences.swift in Sources */,
 				B6F1C80B2761C45400334924 /* LocalUnprotectedDomains.swift in Sources */,
 				B69A14FA2B4D705D00B9417D /* BookmarkFolderPicker.swift in Sources */,
 				3173072F2CD2493900C492AB /* AutofillToolbarOnboardingViewModel.swift in Sources */,

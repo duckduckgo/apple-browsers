@@ -212,6 +212,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var migrationOngoingTask: Task<Void, Error>?
     private var refreshOngoingTask: Task<TokenContainer, Error>?
     private var backupRestoreOngoingTask: Task<TokenContainer, Error>?
+    private var backupRenewalTask: Task<Void, Never>?
     private let sessionGeneration = SessionGeneration()
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
     private let tokenRefresher: any TokenRefreshing
@@ -364,13 +365,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("Starting token refresh, trigger: \(trigger.rawValue, privacy: .public)")
 
                 do {
-                    let (refreshedTokens, newBackup) = try await refreshPossiblyForking(localTokenContainer, refreshID: refreshID)
+                    let refreshedTokens = try await tokenRefresher.refresh(localTokenContainer, refreshID: refreshID)
 
                     refreshEventMapping?.fire(.tokenRefreshSavingTokens(refreshID: refreshID))
-                    try saveRefreshedTokens(refreshedTokens, backup: newBackup)
+                    try saveRefreshedTokens(refreshedTokens)
 
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
+                    renewBackupIfNeeded(spending: localTokenContainer)
                     return refreshedTokens
                 } catch {
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
@@ -413,47 +415,47 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     // MARK: Backup
 
-    /// Stores the refreshed token container, then the new backup when there is one.
-    /// - Parameters:
-    ///   - refreshedTokens: The new current token container.
-    ///   - backup: The new backup token container, or nil when the refresh didn't mint one.
-    /// - Throws: The storage error when saving `refreshedTokens` fails; the backup is then not saved. A failure to save the backup is only logged.
-    private func saveRefreshedTokens(_ refreshedTokens: TokenContainer, backup: TokenContainer?) throws {
+    /// Stores the refreshed token container as the current one.
+    /// - Parameter refreshedTokens: The new current token container.
+    /// - Throws: The storage error when saving fails.
+    private func saveRefreshedTokens(_ refreshedTokens: TokenContainer) throws {
         do {
             try tokenStorage.saveTokenContainer(refreshedTokens)
         } catch {
             Logger.OAuthClient.error("Failed to save the refreshed tokens: \(String(describing: error), privacy: .public)")
             throw error
         }
-        if let backup {
-            backupStore?.save(backup)
+    }
+
+    /// Starts minting a new backup in the background when the backup needs renewal and no renewal is running.
+    /// The renewal spends `source`'s refresh token a second time, without reporting its steps on the refresh event mapping.
+    /// The new backup is stored only if, when the call returns, the session generation is unchanged and the stored current token
+    /// container belongs to the backup's account. A failure is logged, and a later refresh tries again.
+    /// - Parameter source: The token container the current refresh spent.
+    private func renewBackupIfNeeded(spending source: TokenContainer) {
+        guard let backupStore, backupRenewalTask == nil, backupStore.needsRenewal(for: source) else { return }
+        let generationBeforeRenewal = sessionGeneration.current
+        Logger.OAuthClient.log("Renewing the backup token")
+        backupRenewalTask = Task {
+            defer { self.backupRenewalTask = nil }
+            do {
+                let backup = try await tokenRefresher.refresh(source, refreshID: nil)
+                let current = try? tokenStorage.getTokenContainer()
+                guard sessionGeneration.current == generationBeforeRenewal,
+                      current?.decodedAccessToken.externalID == backup.decodedAccessToken.externalID else {
+                    Logger.OAuthClient.log("The session changed while renewing the backup token, discarding it")
+                    return
+                }
+                backupStore.save(backup)
+            } catch {
+                Logger.OAuthClient.error("Failed to renew the backup token: \(String(describing: error), privacy: .public)")
+            }
         }
     }
 
-    /// Spends the refresh token of `source` once, or twice when the backup needs renewal.
-    /// - Parameters:
-    ///   - source: The token container to refresh.
-    ///   - refreshID: The identifier of the refresh, under which the first refresh call reports its steps.
-    /// - Returns: The new primary and, when two pairs were minted, the new backup. If the second call of a renewal fails,
-    ///   the pair from the first call is returned as the primary and no backup.
-    /// - Throws: The error of the first refresh call, as `TokenRefreshing.refresh` throws it, or
-    ///   `OAuthClientError.internalError` when `fork` returns a number of pairs other than two.
-    private func refreshPossiblyForking(_ source: TokenContainer, refreshID: String) async throws -> (primary: TokenContainer, backup: TokenContainer?) {
-        guard let backupStore, backupStore.needsRenewal(for: source) else {
-            return (try await tokenRefresher.refresh(source, refreshID: refreshID), nil)
-        }
-        Logger.OAuthClient.log("Refreshing the current token and renewing the backup token")
-        do {
-            let minted = try await tokenRefresher.fork(source, count: 2, refreshID: refreshID)
-            guard minted.count == 2, let backup = minted.first, let primary = minted.last else {
-                throw OAuthClientError.internalError("Fork returned \(minted.count) token pairs instead of 2")
-            }
-            return (primary, backup)
-        } catch TokenForkError.incomplete(let minted, let underlying) {
-            guard let primary = minted.last else { throw underlying }
-            Logger.OAuthClient.error("Backup token fork incomplete, keeping the minted pair as primary: \(String(describing: underlying), privacy: .public)")
-            return (primary, nil)
-        }
+    /// Waits for the background backup renewal, if one is running.
+    func waitForBackupRenewal() async {
+        await backupRenewalTask?.value
     }
 
     public func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> TokenContainer {

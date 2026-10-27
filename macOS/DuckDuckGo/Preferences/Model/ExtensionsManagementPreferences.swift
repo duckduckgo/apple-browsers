@@ -22,9 +22,8 @@ import PrivacyConfig
 import RemoteMessaging
 import WebExtensions
 
-/// Lists the extensions catalog's password managers for the Extensions settings pane, refreshed on every Privacy Config update.
 @MainActor
-final class ExtensionsManagementPreferences: ObservableObject, PreferencesTabOpening {
+final class ExtensionsManagementPreferences: ObservableObject, @MainActor PreferencesTabOpening {
 
     struct PasswordManager: Identifiable {
         let id: String

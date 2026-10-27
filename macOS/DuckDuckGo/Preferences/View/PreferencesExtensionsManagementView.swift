@@ -30,6 +30,9 @@ extension Preferences {
 
         private enum Const {
             static let footerSpacing: CGFloat = 4
+            static let dividerTopPadding: CGFloat = 32
+            static let dividerBottomPadding: CGFloat = 28
+            static let moreExtensionsBottomPadding: CGFloat = 48
         }
 
         @ObservedObject var model: ExtensionsManagementPreferences
@@ -61,15 +64,45 @@ extension Preferences {
                     description
                 }
 
-                PreferencePaneSection(UserText.extensionsSettingsPasswordManagersHeader, spacing: 12) {
-                    ForEach(model.uninstalledPasswordManagers) { item in
-                        ExtensionsManagementRow(item: item, imageLoader: model.imageLoader) {
-                            model.openStorePage(for: item)
+                VStack(alignment: .leading, spacing: 0) {
+                    if !model.installedExtensions.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            sectionTitle(UserText.extensionsSettingsAddedHeader)
+                            ForEach(model.installedExtensions) { item in
+                                ExtensionsManagementRow(item: item, imageLoader: model.imageLoader, onGet: nil)
+                            }
+                        }
+
+                        // Only needed to tell the uninstalled extensions apart from the Added ones.
+                        if !model.uninstalledPasswordManagers.isEmpty {
+                            Divider()
+                                .padding(.top, Const.dividerTopPadding)
+                                .padding(.bottom, Const.dividerBottomPadding)
+                            sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                                .padding(.bottom, Const.moreExtensionsBottomPadding)
+                        }
+                    }
+
+                    if !model.uninstalledPasswordManagers.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
+                            ForEach(model.uninstalledPasswordManagers) { item in
+                                ExtensionsManagementRow(item: item, imageLoader: model.imageLoader) {
+                                    model.openStorePage(for: item)
+                                }
+                            }
                         }
                     }
                 }
                 .padding(.top, 20)
+                .padding(.bottom, 16)
             }
+        }
+
+        private func sectionTitle(_ title: String) -> some View {
+            Text(title)
+                .font(.callout)
+                .foregroundColor(Color(designSystemColor: .textTertiary, palette: palette))
         }
 
         private var description: some View {
@@ -115,7 +148,8 @@ extension Preferences {
 
         let item: ChromeWebStoreListing
         let imageLoader: RemoteMessagingImageLoading
-        let onGet: () -> Void
+        /// `nil` hides the Get button, as for installed extensions.
+        let onGet: (() -> Void)?
 
         @Environment(\.designSystemPalette) private var palette
         @State private var remoteIcon: NSImage?
@@ -155,18 +189,20 @@ extension Preferences {
 
                 Spacer(minLength: 0)
 
-                Button(action: onGet) {
-                    Text(UserText.extensionsSettingsGetButton)
-                        .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                        .frame(minWidth: Const.buttonLabelMinWidth, minHeight: Const.buttonMinHeight)
+                if let onGet {
+                    Button(action: onGet) {
+                        Text(UserText.extensionsSettingsGetButton)
+                            .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                            .frame(minWidth: Const.buttonLabelMinWidth, minHeight: Const.buttonMinHeight)
+                    }
+                    .buttonStyle(StandardButtonStyle(topPadding: 0,
+                                                     bottomPadding: 0,
+                                                     horizontalPadding: Const.buttonHorizontalPadding,
+                                                     backgroundColor: Color(designSystemColor: .controlsFillPrimary, palette: palette),
+                                                     backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary, palette: palette),
+                                                     cornerRadius: Const.buttonCornerRadius))
+                    .fixedSize()
                 }
-                .buttonStyle(StandardButtonStyle(topPadding: 0,
-                                                 bottomPadding: 0,
-                                                 horizontalPadding: Const.buttonHorizontalPadding,
-                                                 backgroundColor: Color(designSystemColor: .controlsFillPrimary, palette: palette),
-                                                 backgroundPressedColor: Color(designSystemColor: .controlsFillSecondary, palette: palette),
-                                                 cornerRadius: Const.buttonCornerRadius))
-                .fixedSize()
             }
             .padding(.horizontal, Const.padding)
             .frame(maxWidth: Const.maxWidth)

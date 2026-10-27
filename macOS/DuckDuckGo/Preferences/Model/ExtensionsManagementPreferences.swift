@@ -25,6 +25,7 @@ import WebExtensions
 @MainActor
 final class ExtensionsManagementPreferences: ObservableObject, @MainActor PreferencesTabOpening {
 
+    @Published private(set) var installedExtensions: [ChromeWebStoreListing] = []
     @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
 
     private let webExtensionManager: WebExtensionManaging?
@@ -38,7 +39,7 @@ final class ExtensionsManagementPreferences: ObservableObject, @MainActor Prefer
         self.webExtensionManager = webExtensionManager
         self.windowControllersManager = windowControllersManager
 
-        reloadPasswordManagers()
+        reloadExtensions()
         startObservingChanges(configurationManager: configurationManager)
     }
 
@@ -58,21 +59,25 @@ private extension ExtensionsManagementPreferences {
             .merge(with: extensionsPublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.reloadPasswordManagers()
+                self?.reloadExtensions()
             }
             .store(in: &cancellables)
     }
 
-    func reloadPasswordManagers() {
+    func reloadExtensions() {
         guard #available(macOS 15.4, *), let store = webExtensionManager?.chromeWebStore else {
+            installedExtensions = []
             uninstalledPasswordManagers = []
             return
         }
 
-        uninstalledPasswordManagers = store.catalogExtensionIDs
-            .filter { store.status(for: $0) != .installed }
-            .compactMap(store.catalogEntry(of:))
-            .compactMap(store.listing(of:))
+        let identifiers = store.catalogExtensionIDs
+        let listings = { (identifiers: [String]) in
+            identifiers.compactMap(store.catalogEntry(of:)).compactMap(store.listing(of:))
+        }
+
+        installedExtensions = listings(identifiers.filter { store.status(for: $0) == .installed })
+        uninstalledPasswordManagers = listings(identifiers.filter { store.status(for: $0) != .installed })
             .filter(\.isPasswordManager)
     }
 }

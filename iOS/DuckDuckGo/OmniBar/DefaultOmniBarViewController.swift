@@ -517,7 +517,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         let clearButtonHidden = shouldHideClearButton(for: state)
         omniBarView.isClearButtonHidden = clearButtonHidden
 
-        // Read the views, not the state: the mode toggle only shows while the address bar is focused.
         let hasTrailingAccessory = !omniBarView.isAIChatButtonHidden || !omniBarView.isModeToggleHidden
         let hasAdjacentButton = !omniBarView.isClearButtonHidden
             || !omniBarView.isVoiceSearchButtonHidden

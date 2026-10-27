@@ -460,27 +460,6 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		960C43DA308B7BC600545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Converters/WebViewTestHelper.swift,
-			);
-			target = 85D33FCA25C97B6E002B91A6 /* IntegrationTests */;
-		};
-		960C43F4308B7BD700545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				FireButtonReferenceTests.swift,
-			);
-			target = 84E341A51E2F7EFB00BDBA6F /* UnitTests */;
-		};
-		960C43F5308B7BD700545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				FireButtonReferenceTests.swift,
-			);
-			target = 984249BD2CED4F430071C7DB /* WebViewUnitTests */;
-		};
 		966FCC4B3080C463009807C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -648,6 +627,30 @@
 			);
 			target = 98E5643D2DE8DDA200E6E75F /* SharedStateTests */;
 		};
+		B0741A853090C0010057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				ContentBlocker/Converters/WebViewTestHelper.swift,
+				Telemetry/MockProductSurfaceTelemetry.swift,
+			);
+			target = 85D33FCA25C97B6E002B91A6 /* IntegrationTests */;
+		};
+		B0741A863090C0010057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				AIChat/AIChatPageContextHandlerTests.swift,
+				PrivacyReferenceTests/FireButtonReferenceTests.swift,
+				Telemetry/MockProductSurfaceTelemetry.swift,
+			);
+			target = 984249BD2CED4F430071C7DB /* WebViewUnitTests */;
+		};
+		B0741A873090C0010057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Telemetry/MockProductSurfaceTelemetry.swift,
+			);
+			target = 98E5643D2DE8DDA200E6E75F /* SharedStateTests */;
+		};
 		B0DB60103086A7DE00B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -669,41 +672,6 @@
 			);
 			target = 85D33FCA25C97B6E002B91A6 /* IntegrationTests */;
 		};
-		B0DB60A63086A9F600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				MockProductSurfaceTelemetry.swift,
-			);
-			target = 85D33FCA25C97B6E002B91A6 /* IntegrationTests */;
-		};
-		B0DB60A73086A9F600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				MockProductSurfaceTelemetry.swift,
-			);
-			target = 984249BD2CED4F430071C7DB /* WebViewUnitTests */;
-		};
-		B0DB60A83086A9F600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				MockProductSurfaceTelemetry.swift,
-			);
-			target = 98E5643D2DE8DDA200E6E75F /* SharedStateTests */;
-		};
-		B0DB60B83086AA1600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AIChatPageContextHandlerTests.swift,
-			);
-			target = 84E341A51E2F7EFB00BDBA6F /* UnitTests */;
-		};
-		B0DB60B93086AA1600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				AIChatPageContextHandlerTests.swift,
-			);
-			target = 984249BD2CED4F430071C7DB /* WebViewUnitTests */;
-		};
 		FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -714,14 +682,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		960C43B5308B7BC400545616 /* Bookmarks */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Bookmarks; sourceTree = "<group>"; };
-		960C43D0308B7BC600545616 /* ContentBlocker */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (960C43DA308B7BC600545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ContentBlocker; sourceTree = "<group>"; };
-		960C43DE308B7BCB00545616 /* Domain */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Domain; sourceTree = "<group>"; };
-		960C43E4308B7BCD00545616 /* History */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = History; sourceTree = "<group>"; };
-		960C43E8308B7BD400545616 /* MarketplaceAdPostback */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MarketplaceAdPostback; sourceTree = "<group>"; };
-		960C43EE308B7BD700545616 /* PrivacyReferenceTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (960C43F4308B7BD700545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 960C43F5308B7BD700545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PrivacyReferenceTests; sourceTree = "<group>"; };
-		960C4403308B7BDC00545616 /* Statistics */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Statistics; sourceTree = "<group>"; };
-		960C4418308B7BE100545616 /* Utilities */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Utilities; sourceTree = "<group>"; };
 		966FCBFD3080C462009807C4 /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (966FCC4B3080C463009807C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
 		966FDB203081097A009807C4 /* ShareExtension */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (966FDB233081097A009807C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ShareExtension; sourceTree = "<group>"; };
 		966FDB43308109B8009807C4 /* OpenAction */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (966FDB48308109B9009807C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = OpenAction; sourceTree = "<group>"; };
@@ -732,6 +692,7 @@
 		96EB11C4308240E600712DCF /* DuckDuckGo */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (96EB17F9308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 96EB17FA308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 96EB17FB308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DuckDuckGo; sourceTree = "<group>"; };
 		B07414103090BBA60057496E /* SharedTestUtils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B07415AA3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07415AB3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07415AC3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07415AD3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SharedTestUtils; sourceTree = "<group>"; };
 		B07415AE3090BBF90057496E /* DuckDuckGo */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B074195A3090BBFB0057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B074195B3090BBFB0057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DuckDuckGo; sourceTree = "<group>"; };
+		B074195E3090C0000057496E /* Core */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0741A853090C0010057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B0741A863090C0010057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B0741A873090C0010057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Core; sourceTree = "<group>"; };
 		B07697E3308B6D0000D0BEFA /* RemoteMessaging */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RemoteMessaging; sourceTree = "<group>"; };
 		B07697EB308B6D0000D0BEFA /* EventHub */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = EventHub; sourceTree = "<group>"; };
 		B07697EF308B6D0000D0BEFA /* Widgets */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Widgets; sourceTree = "<group>"; };
@@ -743,13 +704,6 @@
 		B0DB60273086A92B00B8B79C /* SharedStateTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB602D3086A92C00B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SharedStateTests; sourceTree = "<group>"; };
 		B0DB604E3086A95500B8B79C /* PerformanceTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PerformanceTests; sourceTree = "<group>"; };
 		B0DB60653086A9A800B8B79C /* IntegrationTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB607A3086A9A900B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = IntegrationTests; sourceTree = "<group>"; };
-		B0DB607D3086A9F500B8B79C /* Telemetry */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB60A63086A9F600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B0DB60A73086A9F600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B0DB60A83086A9F600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Telemetry; sourceTree = "<group>"; };
-		B0DB60843086A9F500B8B79C /* ToggleMode */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ToggleMode; sourceTree = "<group>"; };
-		B0DB608B3086A9F500B8B79C /* SearchToken */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SearchToken; sourceTree = "<group>"; };
-		B0DB60923086A9F500B8B79C /* TextSelection */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TextSelection; sourceTree = "<group>"; };
-		B0DB60963086A9F500B8B79C /* SwitchBar */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SwitchBar; sourceTree = "<group>"; };
-		B0DB609F3086A9F500B8B79C /* DataImport */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DataImport; sourceTree = "<group>"; };
-		B0DB60B03086AA1400B8B79C /* AIChat */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB60B83086AA1600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B0DB60B93086AA1600B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AIChat; sourceTree = "<group>"; };
 		E5DD6A2E95504643A9EF50AA /* UITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (FF204FAADFC540C083B7C6C3 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = UITests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -1153,7 +1107,7 @@
 				B07697F1308B6D0000D0BEFA /* PageRefreshMonitor */,
 				B07697F6308B6D0100D0BEFA /* SyncUI */,
 				B07415AE3090BBF90057496E /* DuckDuckGo */,
-				F1E092B31E92A6B900732CCC /* Core */,
+				B074195E3090C0000057496E /* Core */,
 				B07697EB308B6D0000D0BEFA /* EventHub */,
 				F17843E81F36226700390DCD /* MockFiles */,
 				84E341AC1E2F7EFB00BDBA6F /* Info.plist */,
@@ -1184,28 +1138,6 @@
 				C1EF5B222CC0457B002980E6 /* AuthenticationServices.framework */,
 			);
 			name = Frameworks;
-			sourceTree = "<group>";
-		};
-		F1E092B31E92A6B900732CCC /* Core */ = {
-			isa = PBXGroup;
-			children = (
-				B0DB607D3086A9F500B8B79C /* Telemetry */,
-				B0DB60963086A9F500B8B79C /* SwitchBar */,
-				B0DB60843086A9F500B8B79C /* ToggleMode */,
-				B0DB60B03086AA1400B8B79C /* AIChat */,
-				B0DB60923086A9F500B8B79C /* TextSelection */,
-				960C43B5308B7BC400545616 /* Bookmarks */,
-				960C43D0308B7BC600545616 /* ContentBlocker */,
-				B0DB609F3086A9F500B8B79C /* DataImport */,
-				960C43DE308B7BCB00545616 /* Domain */,
-				960C43E4308B7BCD00545616 /* History */,
-				960C43E8308B7BD400545616 /* MarketplaceAdPostback */,
-				960C43EE308B7BD700545616 /* PrivacyReferenceTests */,
-				B0DB608B3086A9F500B8B79C /* SearchToken */,
-				960C4403308B7BDC00545616 /* Statistics */,
-				960C4418308B7BE100545616 /* Utilities */,
-			);
-			name = Core;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1390,28 +1322,14 @@
 				84E341A81E2F7EFB00BDBA6F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				960C43B5308B7BC400545616 /* Bookmarks */,
-				960C43D0308B7BC600545616 /* ContentBlocker */,
-				960C43DE308B7BCB00545616 /* Domain */,
-				960C43E4308B7BCD00545616 /* History */,
-				960C43E8308B7BD400545616 /* MarketplaceAdPostback */,
-				960C43EE308B7BD700545616 /* PrivacyReferenceTests */,
-				960C4403308B7BDC00545616 /* Statistics */,
-				960C4418308B7BE100545616 /* Utilities */,
 				B07414103090BBA60057496E /* SharedTestUtils */,
 				B07415AE3090BBF90057496E /* DuckDuckGo */,
+				B074195E3090C0000057496E /* Core */,
 				B07697E3308B6D0000D0BEFA /* RemoteMessaging */,
 				B07697EB308B6D0000D0BEFA /* EventHub */,
 				B07697F1308B6D0000D0BEFA /* PageRefreshMonitor */,
 				B07697F6308B6D0100D0BEFA /* SyncUI */,
 				B07697FB308B6D0100D0BEFA /* Customization */,
-				B0DB607D3086A9F500B8B79C /* Telemetry */,
-				B0DB60843086A9F500B8B79C /* ToggleMode */,
-				B0DB608B3086A9F500B8B79C /* SearchToken */,
-				B0DB60923086A9F500B8B79C /* TextSelection */,
-				B0DB60963086A9F500B8B79C /* SwitchBar */,
-				B0DB609F3086A9F500B8B79C /* DataImport */,
-				B0DB60B03086AA1400B8B79C /* AIChat */,
 			);
 			name = UnitTests;
 			packageProductDependencies = (

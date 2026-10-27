@@ -255,7 +255,7 @@ final class DuckAIEntryInstrumentationTests {
         sut.sheetPromptSubmitted()
         #expect(completions.isEmpty)
 
-        sut.sheetDismissed()
+        sut.sheetDismissed(exitTrigger: nil)
         #expect(completions.count == 1)
         #expect(completions.first?.0.surface == .contextualSheet)
         #expect(completions.first?.0.statusReason == .leftDuckai)
@@ -269,7 +269,42 @@ final class DuckAIEntryInstrumentationTests {
         let sut = makeSUT()
         startSheetEntry(sut)
         sut.recordPendingExit(.tabSwitched, tabUID: Self.otherTab)
-        sut.sheetDismissed()
+        sut.sheetDismissed(exitTrigger: nil)
+        #expect(completions.first?.0.exitTrigger == .tabSwitched)
+    }
+
+    @available(iOS 16, *)
+    @Test("A deleted chat closes the sheet entry as chat_deleted, over any earlier action", .timeLimit(.minutes(1)))
+    func deletedChatClosesSheetAsChatDeleted() {
+        let sut = makeSUT()
+        startSheetEntry(sut)
+        sut.recordPendingExit(.searchStarted, tabUID: Self.otherTab)
+        sut.sheetDismissed(exitTrigger: .chatDeleted)
+        #expect(completions.first?.0.exitTrigger == .chatDeleted)
+    }
+
+    @available(iOS 16, *)
+    @Test("An action followed by a new page under the open sheet doesn't become its exit trigger", .timeLimit(.minutes(1)))
+    func pageChangeUnderSheetDiscardsAction() {
+        let sut = makeSUT()
+        startSheetEntry(sut)
+        sut.visibleTabDidChange(web(Self.otherTab))
+        sut.recordPendingExit(.searchStarted, tabUID: Self.otherTab)
+        sut.visibleTabDidChange(web(Self.otherTab))
+        sut.visibleTabDidChange(DuckAISessionTabSnapshot(uid: Self.otherTab, isDuckAI: false, url: URL(string: "https://duckduckgo.com/?q=a"), chatID: nil))
+        sut.sheetDismissed(exitTrigger: nil)
+        #expect(completions.first?.0.exitTrigger == .backOrClose)
+    }
+
+    @available(iOS 16, *)
+    @Test("Switching tabs with the sheet open keeps the recorded action", .timeLimit(.minutes(1)))
+    func tabSwitchUnderSheetKeepsAction() {
+        let sut = makeSUT()
+        startSheetEntry(sut)
+        sut.visibleTabDidChange(web(Self.otherTab))
+        sut.recordPendingExit(.tabSwitched, tabUID: Self.otherTab)
+        sut.visibleTabDidChange(web(Self.chatTab))
+        sut.sheetDismissed(exitTrigger: nil)
         #expect(completions.first?.0.exitTrigger == .tabSwitched)
     }
 
@@ -290,7 +325,7 @@ final class DuckAIEntryInstrumentationTests {
     func sheetDismissDoesntEndTabEntry() {
         let sut = makeSUT()
         startTabEntry(sut)
-        sut.sheetDismissed()
+        sut.sheetDismissed(exitTrigger: nil)
         #expect(completions.isEmpty)
     }
 

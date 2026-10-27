@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "description": "Sent at the end of one entry into Duck.ai on iOS: from the entry point (any m_aichat_entry_point, or the contextual sheet opening) until the user leaves Duck.ai, enters it again through another entry point, backgrounds the app, or the process ends. Measures which entry points lead to a prompt.",
+    "description": "Sent at the end of one entry into Duck.ai on iOS: from the entry point (whenever m_aichat_entry_point fires) until the user leaves Duck.ai, enters it again through another entry point, backgrounds the app, or the process ends. Measures which entry points lead to a prompt.",
     "$comment": "{\"owners\":[\"SabrinaTardio\"]}",
     "type": "object",
     "required": ["meta", "global", "feature", "app"],

@@ -151,9 +151,17 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         }
 
         var closedSurfaceCount = 0
+        var closedWithDeletedChat: [Bool] = []
 
-        func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator) {
+        func aiChatContextualSheetCoordinatorDidCloseSurface(_ coordinator: AIChatContextualSheetCoordinator, chatDeleted: Bool) {
             closedSurfaceCount += 1
+            closedWithDeletedChat.append(chatDeleted)
+        }
+
+        var newChatCount = 0
+
+        func aiChatContextualSheetCoordinatorDidStartNewChat(_ coordinator: AIChatContextualSheetCoordinator) {
+            newChatCount += 1
         }
     }
 
@@ -699,6 +707,27 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         sut.clearActiveChat()
 
         XCTAssertEqual(mockDelegate.closedSurfaceCount, 1)
+    }
+
+    @MainActor
+    func testClearingTheChatTellsWhetherItWasDeleted() async {
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat()
+        await sut.presentSheet(from: mockPresentingVC)
+        sut.clearActiveChat(reason: .movedToTab)
+
+        XCTAssertEqual(mockDelegate.closedWithDeletedChat, [true, false])
+    }
+
+    @MainActor
+    func testNewChatFromTheSheetReportsANewEntryWithoutAClose() async throws {
+        await sut.presentSheet(from: mockPresentingVC)
+        let sheet = try XCTUnwrap(sut.sheetViewController)
+
+        sut.aiChatContextualSheetViewControllerDidRequestNewChat(sheet)
+
+        XCTAssertEqual(mockDelegate.newChatCount, 1)
+        XCTAssertEqual(mockDelegate.closedSurfaceCount, 0)
     }
 
     // MARK: - clearActiveChat Tests

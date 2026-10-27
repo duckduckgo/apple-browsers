@@ -33,6 +33,7 @@ protocol DuckAIEntryInstrumentation: AnyObject {
 
     /// The tab on screen changed, or its URL did. `nil` means no tab is on screen.
     /// A tab entry belongs to the first Duck.ai tab shown after it starts, and ends once that tab is no longer Duck.ai on screen.
+    /// A sheet entry only uses it to notice the page under the sheet changing.
     func visibleTabDidChange(_ tab: DuckAISessionTabSnapshot?)
 
     /// A user action that will leave Duck.ai is about to run on the tab on screen. First trigger wins until the entry ends.
@@ -45,9 +46,9 @@ protocol DuckAIEntryInstrumentation: AnyObject {
     /// The contextual sheet sent a prompt.
     func sheetPromptSubmitted()
 
-    /// The contextual sheet or floating input closed. Ends a sheet entry as `left_duckai`,
-    /// with `back_or_close` unless another action was recorded first.
-    func sheetDismissed()
+    /// The contextual sheet or floating input closed. Ends a sheet entry as `left_duckai` with `exitTrigger` when given,
+    /// otherwise with an action recorded first, or `back_or_close`.
+    func sheetDismissed(exitTrigger: DuckAISessionWideEventData.ExitTrigger?)
 
     /// App was backgrounded with an entry in flight. Completes as CANCELLED.
     func entryCancelledByBackground()
@@ -97,7 +98,11 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
     }
 
     func visibleTabDidChange(_ tab: DuckAISessionTabSnapshot?) {
-        guard let entry = activeEntry, entry.data.surface == .duckAITab else { return }
+        guard let entry = activeEntry else { return }
+        guard entry.data.surface == .duckAITab else {
+            pageUnderSheetDidChange(to: tab, entry: entry)
+            return
+        }
 
         guard let boundUID = entry.tabUID else {
             if let tab, tab.isDuckAI {
@@ -138,8 +143,11 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
         recordPrompt(entry)
     }
 
-    func sheetDismissed() {
+    func sheetDismissed(exitTrigger: DuckAISessionWideEventData.ExitTrigger?) {
         guard let entry = activeEntry, entry.data.surface == .contextualSheet else { return }
+        if let exitTrigger {
+            pendingExit = exitTrigger
+        }
         end(entry, reason: .leftDuckai, defaultExitTrigger: .backOrClose)
     }
 
@@ -149,6 +157,18 @@ final class DefaultDuckAIEntryInstrumentation: DuckAIEntryInstrumentation {
     }
 
     // MARK: - Helpers
+
+    /// The page under an open sheet moved on, so an action recorded before that didn't close the sheet.
+    private func pageUnderSheetDidChange(to tab: DuckAISessionTabSnapshot?, entry: ActiveEntry) {
+        guard let tab else { return }
+        guard let last = entry.lastSnapshot else {
+            activeEntry?.lastSnapshot = tab
+            return
+        }
+        guard tab.uid == last.uid, tab != last else { return }
+        pendingExit = nil
+        activeEntry?.lastSnapshot = tab
+    }
 
     private func recordPrompt(_ entry: ActiveEntry) {
         guard !entry.data.promptSubmitted else { return }

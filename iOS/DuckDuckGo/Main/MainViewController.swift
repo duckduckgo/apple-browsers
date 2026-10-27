@@ -5002,6 +5002,10 @@ class MainViewController: UIViewController {
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
         duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, surface: surface, chatState: sheetChatState)
+        if surface == .contextualSheet {
+            // Lets the sheet entry tell later page changes under it apart from the page it opened on.
+            reportDuckAISessionCurrentTab()
+        }
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
@@ -7733,8 +7737,8 @@ extension MainViewController: TabDelegate {
         duckAIEntryInstrumentation.sheetPromptSubmitted()
     }
 
-    func tabDidCloseContextualDuckAI(_ tab: TabViewController) {
-        duckAIEntryInstrumentation.sheetDismissed()
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {
+        duckAIEntryInstrumentation.sheetDismissed(exitTrigger: chatDeleted ? .chatDeleted : nil)
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
@@ -8339,6 +8343,8 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
         if tab.isAITab {
             fireAIChatEntryPointPixel(source: .tabsBarExistingChat, opensNewTab: false, hasPrompt: false)
+            // The tab was shown before the entry started, so show it to the entry again.
+            reportDuckAISessionCurrentTab()
         }
     }
 

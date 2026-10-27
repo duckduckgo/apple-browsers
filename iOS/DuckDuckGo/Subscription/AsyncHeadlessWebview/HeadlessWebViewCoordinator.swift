@@ -157,13 +157,13 @@ extension HeadlessWebViewCoordinator: WKNavigationDelegate {
         }
     }
 
-    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse, decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void) {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         if let error = Self.httpError(for: navigationResponse.response,
                                       isForMainFrame: navigationResponse.isForMainFrame,
                                       reportsHTTPErrors: settings.reportsHTTPErrors) {
             onNavigationError?(error)
         }
-        decisionHandler(.allow)
+        return .allow
     }
 
     static func httpError(for response: URLResponse, isForMainFrame: Bool, reportsHTTPErrors: Bool) -> HeadlessWebViewHTTPError? {

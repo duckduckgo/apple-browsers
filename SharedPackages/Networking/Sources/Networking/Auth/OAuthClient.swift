@@ -214,6 +214,14 @@ public enum OAuthClientRefreshEvent {
     case tokenRefreshFailed(refreshID: String, error: Error)
 }
 
+/// The backup token renewal events `DefaultOAuthClient` reports.
+public enum OAuthClientBackupEvent {
+    /// A new backup token container was stored after a refresh.
+    case backupRenewed
+    /// Minting or storing a new backup token container failed with the associated error.
+    case backupRenewalFailed(Error)
+}
+
 final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     /// The OAuth client identifier the apps send to the auth API.
@@ -237,6 +245,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     private var backupRenewalTask: Task<Void, Never>?
     private let sessionGeneration = SessionGeneration()
     private let refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?
+    private let backupEventMapping: EventMapping<OAuthClientBackupEvent>?
     private let tokenRefresher: any TokenRefreshing
     private let backupStore: TokenBackupStore?
     private let isBackupEnabled: () -> Bool
@@ -272,12 +281,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///     account or was issued more than 14 days ago. When it returns `false`, a stored backup is still deleted as described for
     ///     `backupStorage`, but never created, renewed or restored from.
     ///   - backupUserDefaults: Where the cut-off recorded at the last `logout()` is kept.
+    ///   - backupEventMapping: Receives the backup renewal events.
     public init(tokensStorage: any AuthTokenStoring,
                 authService: OAuthService,
                 refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
                 backupStorage: any AuthTokenStoring,
                 isBackupEnabled: @escaping () -> Bool,
-                backupUserDefaults: UserDefaults = .standard) {
+                backupUserDefaults: UserDefaults = .standard,
+                backupEventMapping: EventMapping<OAuthClientBackupEvent>? = nil) {
         self.init(tokensStorage: tokensStorage,
                   authService: authService,
                   refreshEventMapping: refreshEventMapping,
@@ -286,7 +297,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                                                         refreshEventMapping: refreshEventMapping),
                   backupStorage: backupStorage,
                   isBackupEnabled: isBackupEnabled,
-                  backupUserDefaults: backupUserDefaults)
+                  backupUserDefaults: backupUserDefaults,
+                  backupEventMapping: backupEventMapping)
     }
 
     /// Creates a client that refreshes and decodes tokens through `tokenRefresher`.
@@ -303,16 +315,19 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     ///     account or was issued more than 14 days ago. When it returns `false`, a stored backup is still deleted as described for
     ///     `backupStorage`, but never created, renewed or restored from. Only used with `backupStorage`.
     ///   - backupUserDefaults: Where the cut-off recorded at the last `logout()` is kept. Only used with `backupStorage`.
+    ///   - backupEventMapping: Receives the backup renewal events. Only used with `backupStorage`.
     init(tokensStorage: any AuthTokenStoring,
          authService: OAuthService,
          refreshEventMapping: EventMapping<OAuthClientRefreshEvent>?,
          tokenRefresher: any TokenRefreshing,
          backupStorage: (any AuthTokenStoring)? = nil,
          isBackupEnabled: @escaping () -> Bool = { true },
-         backupUserDefaults: UserDefaults = .standard) {
+         backupUserDefaults: UserDefaults = .standard,
+         backupEventMapping: EventMapping<OAuthClientBackupEvent>? = nil) {
         self.tokenStorage = tokensStorage
         self.authService = authService
         self.refreshEventMapping = refreshEventMapping
+        self.backupEventMapping = backupEventMapping
         self.tokenRefresher = tokenRefresher
         self.backupStore = backupStorage.map { TokenBackupStore(storage: $0, userDefaults: backupUserDefaults) }
         self.isBackupEnabled = isBackupEnabled
@@ -512,7 +527,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     /// Starts minting a new backup in the background when the backup needs renewal and no renewal is running.
     /// The renewal spends `source`'s refresh token a second time, without reporting its steps on the refresh event mapping.
     /// The new backup is stored only if, when the call returns, the backup is still enabled, the session generation is unchanged and the
-    /// stored current token container belongs to the backup's account. A failure is logged, and a later refresh tries again.
+    /// stored current token container belongs to the backup's account. The outcome is reported on the backup event mapping, except for
+    /// a renewal discarded because the session changed or the backup was disabled. A failure is logged, and a later refresh tries again.
     /// - Parameter source: The token container the current refresh spent.
     private func renewBackupIfNeeded(spending source: TokenContainer) {
         guard isBackupEnabled(), let backupStore, backupRenewalTask == nil, backupStore.needsRenewal(for: source) else { return }
@@ -532,9 +548,11 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     Logger.OAuthClient.log("The backup token was disabled while renewing it, discarding it")
                     return
                 }
-                backupStore.save(backup)
+                try backupStore.save(backup)
+                backupEventMapping?.fire(.backupRenewed)
             } catch {
                 Logger.OAuthClient.error("Failed to renew the backup token: \(String(describing: error), privacy: .public)")
+                backupEventMapping?.fire(.backupRenewalFailed(error))
             }
         }
     }
@@ -629,7 +647,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                                    backupStore: backupStore)
         try tokenStorage.saveTokenContainer(primary)
         if let newBackup, isBackupEnabled() {
-            backupStore.save(newBackup)
+            try? backupStore.save(newBackup)
         } else {
             Logger.OAuthClient.log("No new backup token to store, deleting the spent backup")
             backupStore.remove()

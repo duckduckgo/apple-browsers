@@ -169,7 +169,6 @@
 		B23B8E32A62743D0AD136A57 /* UIComponents in Frameworks */ = {isa = PBXBuildFile; productRef = B23B8E33A62743D0AD136A57 /* UIComponents */; };
 		BB631D162DE0D9020099977D /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = BB631D152DE0D9020099977D /* DesignResourcesKitIcons */; };
 		BB82617130124E5100F8A80F /* MonthlyFreeTrialExperimentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB82617030124E5100F8A80F /* MonthlyFreeTrialExperimentTests.swift */; };
-		BBC3AF632FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC3AF622FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift */; };
 		BBD9C3972E9D73610060A6E8 /* SERPSettings in Frameworks */ = {isa = PBXBuildFile; productRef = BBD9C3962E9D73610060A6E8 /* SERPSettings */; };
 		BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = BD408CEC2DCDB17900265476 /* ZIPFoundation */; };
 		C0DE52010000000000000002 /* MediaCapturePermissionLegacyMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DE52010000000000000001 /* MediaCapturePermissionLegacyMatrixTests.swift */; };
@@ -436,7 +435,6 @@
 		B0DB60133086A90500B8B79C /* SnapshotHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SnapshotHelper.swift; path = fastlane/SnapshotHelper.swift; sourceTree = "<group>"; };
 		BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/Infrastructure/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB82617030124E5100F8A80F /* MonthlyFreeTrialExperimentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyFreeTrialExperimentTests.swift; sourceTree = "<group>"; };
-		BBC3AF622FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDeepLinkSectionTests.swift; sourceTree = "<group>"; };
 		BBD9C3942E9D71F50060A6E8 /* SERPSettings */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SERPSettings; path = ../SharedPackages/SERPSettings; sourceTree = SOURCE_ROOT; };
 		BD7008D32E1F1EED00CF9C3E /* DataBrokerProtection-iOS.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = "DataBrokerProtection-iOS.xctestplan"; path = "LocalPackages/DataBrokerProtection-iOS/Tests/DataBrokerProtection-iOS.xctestplan"; sourceTree = "<group>"; };
 		BEA13CC2BC37C33434640638 /* WebViewInputAccessoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewInputAccessoryTests.swift; sourceTree = "<group>"; };
@@ -630,23 +628,23 @@
 			);
 			target = 98E5643D2DE8DDA200E6E75F /* SharedStateTests */;
 		};
-		B07684AE308B697900D0BEFA /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		B074195A3090BBFB0057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Mocks/MockFeedbackSender.swift,
-				Mocks/MockUnifiedMetadataCollector.swift,
-				Subscription.storekit,
+				Subscription/Mocks/MockFeedbackSender.swift,
+				Subscription/Mocks/MockUnifiedMetadataCollector.swift,
+				Subscription/Subscription.storekit,
 			);
 			target = 84E341911E2F7EFB00BDBA6F /* DuckDuckGo */;
 		};
-		B07684AF308B697900D0BEFA /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		B074195B3090BBFB0057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Mocks/MockFeedbackSender.swift,
-				Mocks/MockFreeTrialConversionInstrumentationService.swift,
-				Mocks/MockSubscriptionOnboardingActivationRecorder.swift,
-				Mocks/MockUnifiedMetadataCollector.swift,
-				Mocks/SubscriptionFeatureAvailabilityMock.swift,
+				Subscription/Mocks/MockFeedbackSender.swift,
+				Subscription/Mocks/MockFreeTrialConversionInstrumentationService.swift,
+				Subscription/Mocks/MockSubscriptionOnboardingActivationRecorder.swift,
+				Subscription/Mocks/MockUnifiedMetadataCollector.swift,
+				Subscription/Mocks/SubscriptionFeatureAvailabilityMock.swift,
 			);
 			target = 98E5643D2DE8DDA200E6E75F /* SharedStateTests */;
 		};
@@ -716,27 +714,6 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		9604973C308B724A0031CA0C /* Application */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Application; sourceTree = "<group>"; };
-		96049789308B724F0031CA0C /* Autofill */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Autofill; sourceTree = "<group>"; };
-		960497AE308B72520031CA0C /* Downloads */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Downloads; sourceTree = "<group>"; };
-		960497EB308B725A0031CA0C /* Onboarding */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Onboarding; sourceTree = "<group>"; };
-		96049833308B72600031CA0C /* Tabs */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tabs; sourceTree = "<group>"; };
-		960C4302308B7B0300545616 /* AutoClear */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AutoClear; sourceTree = "<group>"; };
-		960C4306308B7B0600545616 /* Autoconsent */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Autoconsent; sourceTree = "<group>"; };
-		960C430C308B7B0C00545616 /* Feedback */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Feedback; sourceTree = "<group>"; };
-		960C4315308B7B1000545616 /* Favicons */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Favicons; sourceTree = "<group>"; };
-		960C431C308B7B1500545616 /* iPad */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = iPad; sourceTree = "<group>"; };
-		960C4323308B7B1800545616 /* Main */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Main; sourceTree = "<group>"; };
-		960C432C308B7B1A00545616 /* NetworkProtection */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = NetworkProtection; sourceTree = "<group>"; };
-		960C433C308B7B1C00545616 /* NewTabPage */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = NewTabPage; sourceTree = "<group>"; };
-		960C4354308B7B8600545616 /* OmniBar */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = OmniBar; sourceTree = "<group>"; };
-		960C4362308B7B8D00545616 /* Settings */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Settings; sourceTree = "<group>"; };
-		960C4376308B7B9400545616 /* Sync */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Sync; sourceTree = "<group>"; };
-		960C4388308B7B9A00545616 /* TextZoom */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = TextZoom; sourceTree = "<group>"; };
-		960C438B308B7BA000545616 /* Themes */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Themes; sourceTree = "<group>"; };
-		960C4394308B7BA500545616 /* Tutorials */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Tutorials; sourceTree = "<group>"; };
-		960C439C308B7BAA00545616 /* UserInterface */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = UserInterface; sourceTree = "<group>"; };
-		960C43A1308B7BB600545616 /* Utils */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Utils; sourceTree = "<group>"; };
 		960C43B5308B7BC400545616 /* Bookmarks */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Bookmarks; sourceTree = "<group>"; };
 		960C43D0308B7BC600545616 /* ContentBlocker */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (960C43DA308B7BC600545616 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ContentBlocker; sourceTree = "<group>"; };
 		960C43DE308B7BCB00545616 /* Domain */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Domain; sourceTree = "<group>"; };
@@ -754,38 +731,13 @@
 		966FFB6C30823AD6009807C4 /* PacketTunnelProvider */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (966FFB7A30823AD6009807C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 966FFB7B30823AD6009807C4 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = PacketTunnelProvider; sourceTree = "<group>"; };
 		96EB11C4308240E600712DCF /* DuckDuckGo */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (96EB17F9308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 96EB17FA308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, 96EB17FB308240E700712DCF /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DuckDuckGo; sourceTree = "<group>"; };
 		B07414103090BBA60057496E /* SharedTestUtils */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B07415AA3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07415AB3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07415AC3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07415AD3090BBA70057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SharedTestUtils; sourceTree = "<group>"; };
-		B076837A308B697800D0BEFA /* ModalPromptCoordination */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = ModalPromptCoordination; sourceTree = "<group>"; };
-		B07683B8308B697800D0BEFA /* Subscription */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B07684AE308B697900D0BEFA /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B07684AF308B697900D0BEFA /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = Subscription; sourceTree = "<group>"; };
-		B076842D308B697800D0BEFA /* UnifiedToggleInput */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = UnifiedToggleInput; sourceTree = "<group>"; };
-		B076847D308B697800D0BEFA /* DefaultBrowserPrompt */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DefaultBrowserPrompt; sourceTree = "<group>"; };
-		B076848F308B697800D0BEFA /* DuckPlayer */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DuckPlayer; sourceTree = "<group>"; };
-		B07684A3308B697800D0BEFA /* SpecialErrorPage */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SpecialErrorPage; sourceTree = "<group>"; };
+		B07415AE3090BBF90057496E /* DuckDuckGo */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B074195A3090BBFB0057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, B074195B3090BBFB0057496E /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DuckDuckGo; sourceTree = "<group>"; };
 		B07697E3308B6D0000D0BEFA /* RemoteMessaging */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = RemoteMessaging; sourceTree = "<group>"; };
 		B07697EB308B6D0000D0BEFA /* EventHub */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = EventHub; sourceTree = "<group>"; };
 		B07697EF308B6D0000D0BEFA /* Widgets */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Widgets; sourceTree = "<group>"; };
 		B07697F1308B6D0000D0BEFA /* PageRefreshMonitor */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = PageRefreshMonitor; sourceTree = "<group>"; };
 		B07697F6308B6D0100D0BEFA /* SyncUI */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SyncUI; sourceTree = "<group>"; };
 		B07697FB308B6D0100D0BEFA /* Customization */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Customization; sourceTree = "<group>"; };
-		B07697FE308B6D6500D0BEFA /* DarkReader */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DarkReader; sourceTree = "<group>"; };
-		B0769802308B6D6500D0BEFA /* SubscriptionPromo */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SubscriptionPromo; sourceTree = "<group>"; };
-		B0769806308B6D6500D0BEFA /* DefaultBrowserPiPVideo */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DefaultBrowserPiPVideo; sourceTree = "<group>"; };
-		B076980B308B6D6500D0BEFA /* DBP */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DBP; sourceTree = "<group>"; };
-		B0769812308B6D6500D0BEFA /* AdAttribution */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = AdAttribution; sourceTree = "<group>"; };
-		B076981A308B6D6500D0BEFA /* MaliciousSiteProtection */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = MaliciousSiteProtection; sourceTree = "<group>"; };
-		B0769820308B6D6500D0BEFA /* WinBackOffer */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WinBackOffer; sourceTree = "<group>"; };
-		B0769825308B6D6500D0BEFA /* Configuration */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Configuration; sourceTree = "<group>"; };
-		B076982A308B6D6500D0BEFA /* CheckDefaultBrowser */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CheckDefaultBrowser; sourceTree = "<group>"; };
-		B076982D308B6D6500D0BEFA /* Localization */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Localization; sourceTree = "<group>"; };
-		B0769839308B6D6500D0BEFA /* Fire */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Fire; sourceTree = "<group>"; };
-		B0769847308B6D6500D0BEFA /* DaxEasterEggLogos */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DaxEasterEggLogos; sourceTree = "<group>"; };
-		B076984C308B6D6500D0BEFA /* Toolbar */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Toolbar; sourceTree = "<group>"; };
-		B0769852308B6D6500D0BEFA /* BrowsingMenu */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = BrowsingMenu; sourceTree = "<group>"; };
-		B0769859308B6D6500D0BEFA /* WhatsNew */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WhatsNew; sourceTree = "<group>"; };
-		B0769861308B6D6500D0BEFA /* Autocomplete */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Autocomplete; sourceTree = "<group>"; };
-		B0769868308B6D6500D0BEFA /* NewBadge */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = NewBadge; sourceTree = "<group>"; };
-		B076986B308B6D6500D0BEFA /* Autoplay */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Autoplay; sourceTree = "<group>"; };
-		B0769870308B6D6500D0BEFA /* CustomProductPage */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = CustomProductPage; sourceTree = "<group>"; };
-		B0769875308B6D6500D0BEFA /* SystemSettingsPiPTutorial */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = SystemSettingsPiPTutorial; sourceTree = "<group>"; };
 		B0DB60093086A7DD00B8B79C /* AtbUITests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB60103086A7DE00B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = AtbUITests; sourceTree = "<group>"; };
 		B0DB601B3086A92200B8B79C /* WebViewUnitTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WebViewUnitTests; sourceTree = "<group>"; };
 		B0DB60273086A92B00B8B79C /* SharedStateTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (B0DB602D3086A92C00B8B79C /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = SharedStateTests; sourceTree = "<group>"; };
@@ -1200,7 +1152,7 @@
 				B07697E3308B6D0000D0BEFA /* RemoteMessaging */,
 				B07697F1308B6D0000D0BEFA /* PageRefreshMonitor */,
 				B07697F6308B6D0100D0BEFA /* SyncUI */,
-				F12D98401F266B30003C2EE3 /* DuckDuckGo */,
+				B07415AE3090BBF90057496E /* DuckDuckGo */,
 				F1E092B31E92A6B900732CCC /* Core */,
 				B07697EB308B6D0000D0BEFA /* EventHub */,
 				F17843E81F36226700390DCD /* MockFiles */,
@@ -1216,61 +1168,6 @@
 			);
 			name = UnitTests;
 			path = DuckDuckGoTests;
-			sourceTree = "<group>";
-		};
-		F12D98401F266B30003C2EE3 /* DuckDuckGo */ = {
-			isa = PBXGroup;
-			children = (
-				BBC3AF622FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift */,
-				9604973C308B724A0031CA0C /* Application */,
-				B076986B308B6D6500D0BEFA /* Autoplay */,
-				B0769802308B6D6500D0BEFA /* SubscriptionPromo */,
-				B0769820308B6D6500D0BEFA /* WinBackOffer */,
-				B0769812308B6D6500D0BEFA /* AdAttribution */,
-				B0769861308B6D6500D0BEFA /* Autocomplete */,
-				960C4302308B7B0300545616 /* AutoClear */,
-				960C4306308B7B0600545616 /* Autoconsent */,
-				96049789308B724F0031CA0C /* Autofill */,
-				B076982A308B6D6500D0BEFA /* CheckDefaultBrowser */,
-				B0769825308B6D6500D0BEFA /* Configuration */,
-				B0769870308B6D6500D0BEFA /* CustomProductPage */,
-				960497AE308B72520031CA0C /* Downloads */,
-				B0769847308B6D6500D0BEFA /* DaxEasterEggLogos */,
-				B0769806308B6D6500D0BEFA /* DefaultBrowserPiPVideo */,
-				B076847D308B697800D0BEFA /* DefaultBrowserPrompt */,
-				B076848F308B697800D0BEFA /* DuckPlayer */,
-				B0769839308B6D6500D0BEFA /* Fire */,
-				B076982D308B6D6500D0BEFA /* Localization */,
-				B076981A308B6D6500D0BEFA /* MaliciousSiteProtection */,
-				960C4315308B7B1000545616 /* Favicons */,
-				960C430C308B7B0C00545616 /* Feedback */,
-				960C431C308B7B1500545616 /* iPad */,
-				960C4323308B7B1800545616 /* Main */,
-				B076837A308B697800D0BEFA /* ModalPromptCoordination */,
-				B0769868308B6D6500D0BEFA /* NewBadge */,
-				960C432C308B7B1A00545616 /* NetworkProtection */,
-				960C433C308B7B1C00545616 /* NewTabPage */,
-				960C4354308B7B8600545616 /* OmniBar */,
-				960497EB308B725A0031CA0C /* Onboarding */,
-				960C4362308B7B8D00545616 /* Settings */,
-				960C4376308B7B9400545616 /* Sync */,
-				B07684A3308B697800D0BEFA /* SpecialErrorPage */,
-				B07683B8308B697800D0BEFA /* Subscription */,
-				96049833308B72600031CA0C /* Tabs */,
-				B0769875308B6D6500D0BEFA /* SystemSettingsPiPTutorial */,
-				B076984C308B6D6500D0BEFA /* Toolbar */,
-				B0769859308B6D6500D0BEFA /* WhatsNew */,
-				B0769852308B6D6500D0BEFA /* BrowsingMenu */,
-				960C4388308B7B9A00545616 /* TextZoom */,
-				960C438B308B7BA000545616 /* Themes */,
-				960C4394308B7BA500545616 /* Tutorials */,
-				960C439C308B7BAA00545616 /* UserInterface */,
-				960C43A1308B7BB600545616 /* Utils */,
-				B076842D308B697800D0BEFA /* UnifiedToggleInput */,
-				B07697FE308B6D6500D0BEFA /* DarkReader */,
-				B076980B308B6D6500D0BEFA /* DBP */,
-			);
-			name = DuckDuckGo;
 			sourceTree = "<group>";
 		};
 		F1AA545F1E48D90700223211 /* Frameworks */ = {
@@ -1493,27 +1390,6 @@
 				84E341A81E2F7EFB00BDBA6F /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				9604973C308B724A0031CA0C /* Application */,
-				96049789308B724F0031CA0C /* Autofill */,
-				960497AE308B72520031CA0C /* Downloads */,
-				960497EB308B725A0031CA0C /* Onboarding */,
-				96049833308B72600031CA0C /* Tabs */,
-				960C4302308B7B0300545616 /* AutoClear */,
-				960C4306308B7B0600545616 /* Autoconsent */,
-				960C430C308B7B0C00545616 /* Feedback */,
-				960C4315308B7B1000545616 /* Favicons */,
-				960C431C308B7B1500545616 /* iPad */,
-				960C4323308B7B1800545616 /* Main */,
-				960C432C308B7B1A00545616 /* NetworkProtection */,
-				960C433C308B7B1C00545616 /* NewTabPage */,
-				960C4354308B7B8600545616 /* OmniBar */,
-				960C4362308B7B8D00545616 /* Settings */,
-				960C4376308B7B9400545616 /* Sync */,
-				960C4388308B7B9A00545616 /* TextZoom */,
-				960C438B308B7BA000545616 /* Themes */,
-				960C4394308B7BA500545616 /* Tutorials */,
-				960C439C308B7BAA00545616 /* UserInterface */,
-				960C43A1308B7BB600545616 /* Utils */,
 				960C43B5308B7BC400545616 /* Bookmarks */,
 				960C43D0308B7BC600545616 /* ContentBlocker */,
 				960C43DE308B7BCB00545616 /* Domain */,
@@ -1523,37 +1399,12 @@
 				960C4403308B7BDC00545616 /* Statistics */,
 				960C4418308B7BE100545616 /* Utilities */,
 				B07414103090BBA60057496E /* SharedTestUtils */,
-				B076837A308B697800D0BEFA /* ModalPromptCoordination */,
-				B07683B8308B697800D0BEFA /* Subscription */,
-				B076842D308B697800D0BEFA /* UnifiedToggleInput */,
-				B076847D308B697800D0BEFA /* DefaultBrowserPrompt */,
-				B076848F308B697800D0BEFA /* DuckPlayer */,
-				B07684A3308B697800D0BEFA /* SpecialErrorPage */,
+				B07415AE3090BBF90057496E /* DuckDuckGo */,
 				B07697E3308B6D0000D0BEFA /* RemoteMessaging */,
 				B07697EB308B6D0000D0BEFA /* EventHub */,
 				B07697F1308B6D0000D0BEFA /* PageRefreshMonitor */,
 				B07697F6308B6D0100D0BEFA /* SyncUI */,
 				B07697FB308B6D0100D0BEFA /* Customization */,
-				B07697FE308B6D6500D0BEFA /* DarkReader */,
-				B0769802308B6D6500D0BEFA /* SubscriptionPromo */,
-				B0769806308B6D6500D0BEFA /* DefaultBrowserPiPVideo */,
-				B076980B308B6D6500D0BEFA /* DBP */,
-				B0769812308B6D6500D0BEFA /* AdAttribution */,
-				B076981A308B6D6500D0BEFA /* MaliciousSiteProtection */,
-				B0769820308B6D6500D0BEFA /* WinBackOffer */,
-				B0769825308B6D6500D0BEFA /* Configuration */,
-				B076982A308B6D6500D0BEFA /* CheckDefaultBrowser */,
-				B076982D308B6D6500D0BEFA /* Localization */,
-				B0769839308B6D6500D0BEFA /* Fire */,
-				B0769847308B6D6500D0BEFA /* DaxEasterEggLogos */,
-				B076984C308B6D6500D0BEFA /* Toolbar */,
-				B0769852308B6D6500D0BEFA /* BrowsingMenu */,
-				B0769859308B6D6500D0BEFA /* WhatsNew */,
-				B0769861308B6D6500D0BEFA /* Autocomplete */,
-				B0769868308B6D6500D0BEFA /* NewBadge */,
-				B076986B308B6D6500D0BEFA /* Autoplay */,
-				B0769870308B6D6500D0BEFA /* CustomProductPage */,
-				B0769875308B6D6500D0BEFA /* SystemSettingsPiPTutorial */,
 				B0DB607D3086A9F500B8B79C /* Telemetry */,
 				B0DB60843086A9F500B8B79C /* ToggleMode */,
 				B0DB608B3086A9F500B8B79C /* SearchToken */,
@@ -2393,7 +2244,6 @@
 				CB6EF0512FE020D6000C75BA /* IPadOmnibarFocusModelTests.swift in Sources */,
 				652A1E08DFB4460E2E44DEAF /* WebViewInputAccessoryTests.swift in Sources */,
 				586DE183A09495820D56CFE1 /* TabViewControllerFindInPageTests.swift in Sources */,
-				BBC3AF632FF6954500280FC7 /* SettingsDeepLinkSectionTests.swift in Sources */,
 				C0DE52010000000000000002 /* MediaCapturePermissionLegacyMatrixTests.swift in Sources */,
 				C0DE53010000000000000002 /* MediaCapturePermissionRoutingTests.swift in Sources */,
 				C0DE54010000000000000004 /* SitePermissionsPixelHandlerTests.swift in Sources */,

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import CoreLocation
 import Foundation
 
@@ -160,6 +161,7 @@ public final class GeolocationProvider {
     private var watches = [String: LocationSubscription]()
     private var permissionStatuses = [String: PermissionStatus]()
     private var locationUpdateHandlerID: UUID?
+    private var locationAuthorizationCancellable: AnyCancellable?
     // Cache the request's accuracy option, which can differ from the shared location manager's setting.
     private var latestLocation: (location: CLLocation, requestedHighAccuracy: Bool)?
     private var isActive = true
@@ -178,6 +180,10 @@ public final class GeolocationProvider {
         self.contextProvider = contextProvider
         self.requestPermission = requestPermission
         self.queryPermission = queryPermission
+        locationAuthorizationCancellable = systemPermissionClient.locationAuthorizationChanges
+            .sink { [weak self] in
+                self?.locationAuthorizationDidChange()
+            }
     }
 
     /// Returns the active native context for coordinator validation.
@@ -198,7 +204,6 @@ public final class GeolocationProvider {
         self.isActive = isActive
         if isActive {
             resumedAt = Date()
-            systemPermissionClient.refreshAuthorizationStates()
             Array(oneShotRequests.keys).forEach(resumeOneShot)
             Array(watches.keys).forEach(resumeWatch)
         } else {
@@ -313,6 +318,8 @@ public final class GeolocationProvider {
     private func resumeOneShot(_ identifier: UUID) {
         guard isActive, let request = oneShotRequests[identifier] else { return }
         if !request.hasRequestedPermission {
+            // Core Location's first report resumes the request, so the decision never uses the placeholder state.
+            guard systemPermissionClient.isLocationAuthorizationReported else { return }
             request.hasRequestedPermission = true
             requestPermission(request.retainedFrame.context) { [weak self, weak request] resolution in
                 request?.resolution = resolution
@@ -359,6 +366,7 @@ public final class GeolocationProvider {
     private func resumeWatch(_ requestID: String) {
         guard isActive, let watch = watches[requestID] else { return }
         if !watch.hasRequestedPermission {
+            guard systemPermissionClient.isLocationAuthorizationReported else { return }
             watch.hasRequestedPermission = true
             requestPermission(watch.retainedFrame.context) { [weak self, weak watch] resolution in
                 watch?.resolution = resolution
@@ -483,14 +491,7 @@ public final class GeolocationProvider {
             }
             updateLocationSubscription()
         case .failure(let error) where isPermissionDenied(error):
-            let permissionDenied = GeolocationPositionResult.failure(
-                .init(code: .permissionDenied, message: Message.denied)
-            )
-            let oneShotIDs = oneShotRequests.filter { $0.value.isAuthorized }.map(\.key)
-            oneShotIDs.forEach { finishOneShot($0, with: permissionDenied) }
-            Array(watches.filter { $0.value.isAuthorized }.keys).forEach {
-                send(permissionDenied, toWatch: $0, thenRemove: true)
-            }
+            denyAuthorizedRequests()
         case .failure(let error) where isLocationUnknown(error):
             break
         case .failure:
@@ -502,6 +503,29 @@ public final class GeolocationProvider {
                 send(.failure(.init(code: .positionUnavailable, message: Message.unavailable)), toWatch: $0)
             }
         }
+    }
+
+    private func denyAuthorizedRequests() {
+        let permissionDenied = GeolocationPositionResult.failure(
+            .init(code: .permissionDenied, message: Message.denied)
+        )
+        let oneShotIDs = oneShotRequests.filter { $0.value.isAuthorized }.map(\.key)
+        oneShotIDs.forEach { finishOneShot($0, with: permissionDenied) }
+        Array(watches.filter { $0.value.isAuthorized }.keys).forEach {
+            send(permissionDenied, toWatch: $0, thenRemove: true)
+        }
+    }
+
+    /// Ends granted use that iOS no longer allows, starts requests that waited for Core Location's first report,
+    /// and refreshes query state. The report can arrive after the tab returns, so resuming alone isn't enough.
+    private func locationAuthorizationDidChange() {
+        guard !isClosed else { return }
+        if systemPermissionClient.authorizationState(for: .location) != .authorized {
+            denyAuthorizedRequests()
+        }
+        oneShotRequests.filter { !$0.value.hasRequestedPermission }.keys.forEach(resumeOneShot)
+        watches.filter { !$0.value.hasRequestedPermission }.keys.forEach(resumeWatch)
+        refreshPermissionStatuses()
     }
 
     private func reusableLocation(for options: GeolocationRequestOptions) -> CLLocation? {

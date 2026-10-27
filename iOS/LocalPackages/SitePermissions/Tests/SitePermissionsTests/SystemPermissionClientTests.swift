@@ -18,6 +18,7 @@
 //
 
 import AVFoundation
+import Combine
 import CoreLocation
 import UIKit
 import XCTest
@@ -31,13 +32,14 @@ final class SystemPermissionClientTests: XCTestCase {
         manager.authorizationStatusValue = .restricted
         let statuses: [AVMediaType: AVAuthorizationStatus] = [.video: .authorized, .audio: .denied]
         let client = makeClient(locationManager: manager, statuses: { statuses[$0] ?? .notDetermined })
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
 
         XCTAssertEqual(client.authorizationState(for: .camera), .authorized)
         XCTAssertEqual(client.authorizationState(for: .microphone), .denied)
         XCTAssertEqual(client.authorizationState(for: .location), .restricted)
 
         manager.authorizationStatusValue = .notDetermined
-        client.refreshAuthorizationStates()
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
         XCTAssertEqual(client.authorizationState(for: .location), .notDetermined)
     }
 
@@ -187,18 +189,42 @@ final class SystemPermissionClientTests: XCTestCase {
         XCTAssertEqual(receivedLocations, [newestValid])
     }
 
-    func testWhenAppBecomesActiveWithPendingLocationRequestThenRequestCompletesWithRefreshedState() async {
+    func testLocationAuthorizationIsReadOnlyWhenCoreLocationReportsIt() {
         let manager = MockLocationManager()
         let notificationCenter = NotificationCenter()
-        let authorizationRequested = expectation(description: "Location authorization requested")
-        manager.requestAuthorizationHandler = { authorizationRequested.fulfill() }
         let client = makeClient(locationManager: manager, notificationCenter: notificationCenter)
+        var changeCount = 0
+        let cancellable = client.locationAuthorizationChanges.sink { changeCount += 1 }
+        defer { cancellable.cancel() }
+
+        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        XCTAssertEqual(manager.authorizationStatusReadCount, 0, "Reading authorizationStatus blocks on locationd")
+        XCTAssertFalse(client.isLocationAuthorizationReported)
+
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
+        XCTAssertTrue(client.isLocationAuthorizationReported)
+        XCTAssertEqual(changeCount, 1, "The first report emits even when it matches the placeholder state")
+
+        manager.authorizationStatusValue = .authorizedWhenInUse
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
+        XCTAssertEqual(client.authorizationState(for: .location), .authorized)
+        XCTAssertEqual(changeCount, 2)
+        XCTAssertEqual(manager.authorizationStatusReadCount, 3)
+    }
+
+    func testWhenLocationRequestStartsBeforeFirstAuthorizationReportThenReportCompletesIt() async {
+        let manager = MockLocationManager()
+        manager.authorizationStatusValue = .denied
+        let client = makeClient(locationManager: manager)
 
         let authorizationTask = Task { await client.requestAuthorization(for: .location) }
-        await fulfillment(of: [authorizationRequested], timeout: 1.0)
+        let didEnqueueRequest = await waitUntil {
+            client.pendingLocationAuthorizationRequestCount == 1
+        }
+        XCTAssertTrue(didEnqueueRequest)
 
-        manager.authorizationStatusValue = .denied
-        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        manager.delegate?.locationManagerDidChangeAuthorization?(manager)
 
         let authorizationState = await authorizationTask.value
         XCTAssertEqual(authorizationState, .denied)
@@ -278,12 +304,14 @@ private final class MockLocationManager: CLLocationManager {
 
     var authorizationStatusValue = CLAuthorizationStatus.notDetermined
     var requestAuthorizationHandler: (() -> Void)?
+    private(set) var authorizationStatusReadCount = 0
     private(set) var requestAuthorizationCallCount = 0
     private(set) var startUpdatingCallCount = 0
     private(set) var stopUpdatingCallCount = 0
 
     override var authorizationStatus: CLAuthorizationStatus {
-        authorizationStatusValue
+        authorizationStatusReadCount += 1
+        return authorizationStatusValue
     }
 
     override func requestWhenInUseAuthorization() {

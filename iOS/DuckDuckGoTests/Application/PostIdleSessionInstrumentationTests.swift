@@ -97,7 +97,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("When no active session then non-terminal updates are no-ops", .timeLimit(.minutes(1)))
     func nonTerminalUpdatesWithoutActiveSessionAreNoop() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.keyboardRaisedOnArrival()
+        sut.keyboardRaisedOnArrival(togglePosition: nil)
         sut.pageEngaged()
         sut.toggleUsed()
         sut.backPressed()
@@ -113,7 +113,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("When sessionStarted with ntp then a flow is started with surface=ntp", .timeLimit(.minutes(1)))
     func sessionStartedNtpStartsFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(startedData(wideEvent)?.surface == .ntp)
     }
 
@@ -121,7 +121,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("When sessionStarted with lut then a flow is started with surface=lut", .timeLimit(.minutes(1)))
     func sessionStartedLutStartsFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .web, afterIdleSurface: .lut, focused: false)
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: .lut, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(startedData(wideEvent)?.surface == .lut)
     }
 
@@ -129,7 +129,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("An after-idle return starts both the return-session and post-idle flows", .timeLimit(.minutes(1)))
     func afterIdleReturnStartsBothFlows() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: true)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: true, toggleEnabled: false, togglePosition: nil)
 
         #expect(wideEvent.started.count == 2)
         #expect(startedData(wideEvent)?.surface == .ntp)
@@ -142,7 +142,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("An ordinary return starts only the return-session flow", .timeLimit(.minutes(1)))
     func ordinaryReturnStartsOnlyReturnSessionFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .serp, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .serp, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
 
         #expect(wideEvent.started.count == 1)
         #expect(startedData(wideEvent) == nil)
@@ -156,7 +156,7 @@ struct PostIdleSessionInstrumentationTests {
         let provider = MockUsageContextProvider()
         provider.currentContext = UsageContext(hardwareKeyboard: true, layout: .compact)
         let (sut, wideEvent, _) = makeSUT(usageContextProvider: provider)
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         let returnParams = startedReturnData(wideEvent)?.jsonParameters()
         let postIdleParams = startedData(wideEvent)?.jsonParameters()
@@ -171,7 +171,7 @@ struct PostIdleSessionInstrumentationTests {
     func usageContextIsRefreshedOnCompletion() {
         let provider = MockUsageContextProvider()
         let (sut, wideEvent, _) = makeSUT(usageContextProvider: provider)
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         provider.currentContext = UsageContext(hardwareKeyboard: true, layout: .compact)
         sut.sessionEnded(reason: .searchSubmitted)
@@ -188,7 +188,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("The post-idle surface follows the treatment, not the landing", .timeLimit(.minutes(1)))
     func postIdleSurfaceFollowsTreatment() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: .lut, focused: false)
+        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: .lut, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(startedData(wideEvent)?.surface == .lut)
     }
 
@@ -196,7 +196,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Both flows share the session start date", .timeLimit(.minutes(1)))
     func bothFlowsShareStartDate() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(startedData(wideEvent)?.sessionInterval.start == clock.now)
         #expect(startedReturnData(wideEvent)?.sessionInterval.start == clock.now)
     }
@@ -207,10 +207,10 @@ struct PostIdleSessionInstrumentationTests {
         let (sut, wideEvent, _) = makeSUT()
         sut.noteReturn(timeAwayMs: 42_000)
 
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(startedReturnData(wideEvent)?.timeAwayMs == 42_000)
 
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(startedReturnData(wideEvent)?.timeAwayMs == nil)
     }
 
@@ -218,9 +218,9 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Restarting cancels the previous active session", .timeLimit(.minutes(1)))
     func restartingSessionCancelsPrevious() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 1)
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         guard let cancelled = wideEvent.completions.first(where: { $0.0 is PostIdleSessionWideEventData }),
               let data = cancelled.0 as? PostIdleSessionWideEventData else {
@@ -238,8 +238,8 @@ struct PostIdleSessionInstrumentationTests {
     @Test("An ordinary return after an after-idle session cancels the post-idle flow", .timeLimit(.minutes(1)))
     func ordinaryReturnCancelsLingeringPostIdleFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
-        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
 
         #expect(lastCompletion(wideEvent)?.0.statusReason == .appBackgrounded)
         #expect(startedReturnData(wideEvent)?.afterIdle == false)
@@ -251,12 +251,12 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Automatic arrival focus updates only the return context, once, without an interaction", .timeLimit(.minutes(1)))
     func arrivalFocusUpdatesContextOnly() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: .lut, focused: false)
+        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: .lut, focused: false, toggleEnabled: false, togglePosition: nil)
         let startedAt = clock.now
         clock.advance(by: 0.1)
 
-        sut.keyboardRaisedOnArrival()
-        sut.keyboardRaisedOnArrival()
+        sut.keyboardRaisedOnArrival(togglePosition: nil)
+        sut.keyboardRaisedOnArrival(togglePosition: nil)
 
         #expect(wideEvent.updates.count == 1)
         #expect(lastReturnUpdate(wideEvent)?.focused == true)
@@ -273,17 +273,49 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Arrival focus does not change the landing context after user interaction", .timeLimit(.minutes(1)))
     func arrivalFocusAfterInteractionIsIgnored() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .ntpUserInitiated, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.backPressed()
         let firstInteractionDate = clock.now
         clock.advance(by: 0.1)
 
-        sut.keyboardRaisedOnArrival()
+        sut.keyboardRaisedOnArrival(togglePosition: nil)
 
         #expect(wideEvent.updates.count == 1)
         #expect(lastReturnUpdate(wideEvent)?.focused == false)
         #expect(lastReturnUpdate(wideEvent)?.backPressed == true)
         #expect(lastReturnUpdate(wideEvent)?.firstInteractionInterval.end == firstInteractionDate)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Session start records the toggle setting and the side on screen", .timeLimit(.minutes(1)))
+    func sessionStartRecordsToggle() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: true, toggleEnabled: true, togglePosition: .duckAI)
+
+        #expect(startedReturnData(wideEvent)?.toggleEnabled == true)
+        #expect(startedReturnData(wideEvent)?.togglePosition == .duckAI)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Arrival focus records the toggle side when the toggle was hidden at start", .timeLimit(.minutes(1)))
+    func arrivalFocusRecordsTogglePosition() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: true, togglePosition: nil)
+
+        sut.keyboardRaisedOnArrival(togglePosition: .search)
+
+        #expect(lastReturnUpdate(wideEvent)?.togglePosition == .search)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Arrival focus keeps the toggle side already on screen at start", .timeLimit(.minutes(1)))
+    func arrivalFocusKeepsStartTogglePosition() {
+        let (sut, wideEvent, _) = makeSUT()
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: true, togglePosition: .search)
+
+        sut.keyboardRaisedOnArrival(togglePosition: .duckAI)
+
+        #expect(lastReturnUpdate(wideEvent)?.togglePosition == .search)
     }
 
     // MARK: - Non-terminal updates
@@ -292,7 +324,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("pageEngaged sets pageEngaged=true and marks first interaction", .timeLimit(.minutes(1)))
     func pageEngagedSetsFlagsAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 0.5)
         sut.pageEngaged()
 
@@ -304,7 +336,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Interactions are recorded on both in-flight flows", .timeLimit(.minutes(1)))
     func interactionsRecordedOnBothFlows() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 0.5)
         sut.pageEngaged()
 
@@ -317,7 +349,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Interactions on an ordinary return only touch the return-session flow", .timeLimit(.minutes(1)))
     func interactionsOnOrdinaryReturnOnlyTouchReturnFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.toggleUsed()
 
         #expect(lastReturnUpdate(wideEvent)?.toggleUsed == true)
@@ -328,7 +360,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("toggleUsed sets toggleUsed=true", .timeLimit(.minutes(1)))
     func toggleUsedSetsFlag() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.toggleUsed()
         #expect(lastUpdate(wideEvent)?.toggleUsed == true)
     }
@@ -337,7 +369,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("backPressed sets backPressed=true", .timeLimit(.minutes(1)))
     func backPressedSetsFlag() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.backPressed()
         #expect(lastUpdate(wideEvent)?.backPressed == true)
     }
@@ -346,7 +378,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("afterInactivitySettingsOpened sets the flag and marks first interaction without ending the session", .timeLimit(.minutes(1)))
     func afterInactivitySettingsOpenedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 0.75)
         sut.afterInactivitySettingsOpened()
 
@@ -360,7 +392,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("closeTabTapped sets closeTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
     func closeTabTappedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 0.5)
         sut.closeTabTapped()
 
@@ -372,7 +404,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("burnTabTapped sets burnTabTapped=true and marks first interaction", .timeLimit(.minutes(1)))
     func burnTabTappedSetsFlagAndFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 0.75)
         sut.burnTabTapped()
 
@@ -384,7 +416,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("First interaction is only set once across multiple updates", .timeLimit(.minutes(1)))
     func firstInteractionMarkedOnlyOnce() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         clock.advance(by: 0.5)
         let firstStamp = clock.now
@@ -403,7 +435,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded completes flow as success with given reason", .timeLimit(.minutes(1)))
     func sessionEndedCompletesAsSuccess() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 2)
         sut.sessionEnded(reason: .searchSubmitted)
 
@@ -424,7 +456,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded stores the prompt origin for an AI prompt submission", .timeLimit(.minutes(1)))
     func sessionEndedStoresPromptOriginForAIPromptSubmission() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .aiPromptSubmitted, promptOrigin: .addressBarPrompt)
 
         #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == "address_bar_prompt")
@@ -434,7 +466,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded ignores the prompt origin for non-prompt reasons", .timeLimit(.minutes(1)))
     func sessionEndedIgnoresPromptOriginForOtherReasons() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .searchSubmitted, promptOrigin: .addressBarPrompt)
 
         #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == nil)
@@ -444,7 +476,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded leaves the prompt origin empty when the caller has none", .timeLimit(.minutes(1)))
     func sessionEndedLeavesPromptOriginEmptyWhenAbsent() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .aiPromptSubmitted)
 
         #expect(lastReturnCompletion(wideEvent)?.0.promptOrigin == nil)
@@ -456,7 +488,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("promptSubmittedWithoutNavigation ends the return session with the origin", .timeLimit(.minutes(1)))
     func promptSubmittedWithoutNavigationEndsReturnSessionWithOrigin() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 3)
         sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
 
@@ -478,7 +510,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("promptSubmittedWithoutNavigation leaves the post-idle flow running", .timeLimit(.minutes(1)))
     func promptSubmittedWithoutNavigationLeavesPostIdleFlowRunning() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: .lut, focused: false)
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: .lut, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
 
         #expect(lastCompletion(wideEvent) == nil)
@@ -491,7 +523,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("promptSubmittedWithoutNavigation omits the origin when the caller has none", .timeLimit(.minutes(1)))
     func promptSubmittedWithoutNavigationOmitsOriginWhenAbsent() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.promptSubmittedWithoutNavigation(origin: nil)
 
         #expect(lastReturnCompletion(wideEvent)?.0.statusReason == .aiPromptSubmitted)
@@ -502,7 +534,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("A second no-navigation submission in the same session is a no-op", .timeLimit(.minutes(1)))
     func secondPromptSubmittedWithoutNavigationIsNoop() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .duckAI, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.promptSubmittedWithoutNavigation(origin: .addressBarIcon)
         sut.promptSubmittedWithoutNavigation(origin: .contextualChat)
 
@@ -523,7 +555,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("duckAIOpenedWithoutPrompt ends the post-idle flow as bar_used and leaves the return session running", .timeLimit(.minutes(1)))
     func duckAIOpenedWithoutPromptEndsPostIdleOnly() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .lut, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .lut, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.duckAIOpenedWithoutPrompt()
 
         #expect(lastCompletion(wideEvent)?.0.statusReason == .barUsed)
@@ -546,7 +578,7 @@ struct PostIdleSessionInstrumentationTests {
     func postIdleFlowCollapsesSubmissionsOntoBarUsed() {
         for reason in [ReturnSessionWideEventData.StatusReason.searchSubmitted, .aiPromptSubmitted, .urlSubmitted] {
             let (sut, wideEvent, _) = makeSUT()
-            sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+            sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
             sut.sessionEnded(reason: reason)
 
             guard let completion = lastCompletion(wideEvent) else {
@@ -566,7 +598,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("Non-submission reasons pass through to the post-idle flow unchanged", .timeLimit(.minutes(1)))
     func nonSubmissionReasonsPassThroughUnchanged() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .returnToPageTapped)
         #expect(lastCompletion(wideEvent)?.0.statusReason == .returnToPageTapped)
     }
@@ -584,7 +616,7 @@ struct PostIdleSessionInstrumentationTests {
     func tabChangeAndDataClearingReasonsCompleteBothFlows(reason: ReturnSessionWideEventData.StatusReason,
                                                           postIdleReason: PostIdleSessionWideEventData.StatusReason) {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: reason)
 
         #expect(reason.postIdleReason == postIdleReason)
@@ -596,7 +628,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("The first reason wins: a later sessionEnded is a no-op", .timeLimit(.minutes(1)))
     func firstReasonWins() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .tabSwitcherSelected)
         sut.sessionEnded(reason: .tabSelected)
 
@@ -608,7 +640,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded on an ordinary return completes only the return-session flow", .timeLimit(.minutes(1)))
     func sessionEndedOnOrdinaryReturnCompletesOnlyReturnFlow() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false)
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: nil, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .urlSubmitted)
 
         #expect(wideEvent.completions.count == 1)
@@ -619,7 +651,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded sets first interaction if not yet set", .timeLimit(.minutes(1)))
     func sessionEndedMarksFirstInteractionIfNotSet() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 1.5)
         sut.sessionEnded(reason: .searchSubmitted)
         guard let completion = lastCompletion(wideEvent) else {
@@ -634,7 +666,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded preserves prior first-interaction timestamp", .timeLimit(.minutes(1)))
     func sessionEndedPreservesEarlierFirstInteraction() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 0.5)
         let firstStamp = clock.now
         sut.pageEngaged()
@@ -651,10 +683,10 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionEnded clears the active session", .timeLimit(.minutes(1)))
     func sessionEndedClearsActiveSession() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionEnded(reason: .searchSubmitted)
         // Subsequent signals should be no-ops.
-        sut.keyboardRaisedOnArrival()
+        sut.keyboardRaisedOnArrival(togglePosition: nil)
         sut.pageEngaged()
         sut.sessionEnded(reason: .returnToPageTapped)
         #expect(wideEvent.completions.count == 2)
@@ -668,7 +700,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionCancelledByBackground completes as cancelled with app_backgrounded", .timeLimit(.minutes(1)))
     func sessionCancelledCompletesAsCancelled() {
         let (sut, wideEvent, clock) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         clock.advance(by: 3)
         sut.sessionCancelledByBackground()
 
@@ -688,9 +720,9 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionCancelledByBackground clears the active session", .timeLimit(.minutes(1)))
     func sessionCancelledClearsActiveSession() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         sut.sessionCancelledByBackground()
-        sut.keyboardRaisedOnArrival()
+        sut.keyboardRaisedOnArrival(togglePosition: nil)
         sut.sessionCancelledByBackground()
         #expect(wideEvent.completions.count == 2)
         #expect(wideEvent.updates.isEmpty)
@@ -706,7 +738,7 @@ struct PostIdleSessionInstrumentationTests {
         let orphan = PostIdleSessionWideEventData(surface: .ntp)
         wideEvent.startFlow(orphan)
 
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         let orphanCompletion = wideEvent.completions.first {
             ($0.0 as? PostIdleSessionWideEventData)?.globalData.id == orphan.globalData.id
@@ -729,7 +761,7 @@ struct PostIdleSessionInstrumentationTests {
         let orphan = ReturnSessionWideEventData(landedOn: .web, afterIdle: false)
         wideEvent.startFlow(orphan)
 
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         let orphanCompletion = wideEvent.completions.first {
             ($0.0 as? ReturnSessionWideEventData)?.globalData.id == orphan.globalData.id
@@ -752,7 +784,7 @@ struct PostIdleSessionInstrumentationTests {
         let orphan = PostIdleSessionWideEventData(surface: .ntp)
         wideEvent.startFlow(orphan)
 
-        sut.sessionStarted(landedOn: .web, afterIdleSurface: .lut, focused: false)
+        sut.sessionStarted(landedOn: .web, afterIdleSurface: .lut, focused: false, toggleEnabled: false, togglePosition: nil)
 
         #expect(wideEvent.started.count == 3)
         #expect(startedData(wideEvent)?.surface == .lut)
@@ -771,7 +803,7 @@ struct PostIdleSessionInstrumentationTests {
         wideEvent.startFlow(firstOrphan)
         wideEvent.startFlow(secondOrphan)
 
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
 
         let unknownCompletions = wideEvent.completions.filter {
             if case .unknown = $0.1 { return true } else { return false }
@@ -783,7 +815,7 @@ struct PostIdleSessionInstrumentationTests {
     @Test("sessionStarted with no orphans does not produce spurious completions", .timeLimit(.minutes(1)))
     func sessionStartedWithoutOrphansProducesNoCompletions() {
         let (sut, wideEvent, _) = makeSUT()
-        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false)
+        sut.sessionStarted(landedOn: .ntp, afterIdleSurface: .ntp, focused: false, toggleEnabled: false, togglePosition: nil)
         #expect(wideEvent.completions.isEmpty)
     }
 }

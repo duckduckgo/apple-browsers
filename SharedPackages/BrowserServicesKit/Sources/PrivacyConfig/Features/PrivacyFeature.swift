@@ -342,9 +342,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     case sidebarSuggestedPrompts
 
-    /// Context-aware page suggestions shown in the iOS contextual Duck.ai sheet
-    case contextualSuggestedPrompts
-
     /// Offers the page navigated to as an attachment, in an active contextual chat with auto-attach off
     case contextualPagePlaceholder
 
@@ -882,6 +879,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newDataImportExperience
     case dataImportSummarySyncPromotion
     case historyImport
+    case sourceFilter
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

@@ -35,11 +35,22 @@ final class AddFavoriteViewModel: ObservableObject {
         if trimmed.isBookmarklet() {
             return BookmarkUtils.url(from: trimmed) == nil ? nil : trimmed
         }
+        guard trimmed.contains("://") else {
+            return Self.secureWebURL(fromSchemeLessText: trimmed)?.absoluteString
+        }
         if let webURL = URL.webUrl(from: trimmed) {
             return webURL.absoluteString
         }
         // Explicit non-web schemes (e.g. ftp or app deep links) are kept as typed.
-        return trimmed.contains("://") && URL(string: trimmed) != nil ? trimmed : nil
+        return URL(string: trimmed) != nil ? trimmed : nil
+    }
+
+    /// Prefixes `https://` rather than relying on `URL.webUrl`, which reads `host:port` input as a URL scheme.
+    private static func secureWebURL(fromSchemeLessText text: String) -> URL? {
+        guard let url = URL.webUrl(from: "https://" + text),
+              let host = url.host,
+              host.contains(".") || host == "localhost" else { return nil }
+        return url
     }
     private let bookmarks: MenuBookmarksInteracting
     private let pixelFiring: (any PixelKitFiring)?

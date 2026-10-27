@@ -113,8 +113,9 @@ extension Preferences {
                                   isEnabled: Binding(get: { model.isEnabled(item) },
                                                      set: { model.setEnabled($0, for: item) }),
                                   isLocked: model.isRemotelyDisabled(item),
-                                  // Placeholder until the options menu exists.
-                                  onOptions: {})
+                                  // Placeholders until details and removal are wired up.
+                                  onDetails: {},
+                                  onRemove: {})
         }
 
         private var moreExtensionsHeader: some View {
@@ -241,7 +242,8 @@ extension Preferences {
         let imageLoader: RemoteMessagingImageLoading
         @Binding var isEnabled: Bool
         let isLocked: Bool
-        let onOptions: () -> Void
+        let onDetails: () -> Void
+        let onRemove: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
 
@@ -256,12 +258,18 @@ extension Preferences {
                 Spacer(minLength: 0)
 
                 HStack(spacing: Const.optionsToSwitchSpacing) {
-                    Button(action: onOptions) {
+                    Menu {
+                        Button(UserText.extensionsSettingsDetailsMenuItem, action: onDetails)
+                        Divider()
+                        Button(UserText.webExtensionRemoveMenuItem, action: onRemove)
+                    } label: {
                         Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
                             .renderingMode(.template)
                             .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
                     }
-                    .buttonStyle(.plain)
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
                     .accessibilityLabel(UserText.extensionsSettingsMoreOptions)
 
                     Toggle(isOn: $isEnabled) {

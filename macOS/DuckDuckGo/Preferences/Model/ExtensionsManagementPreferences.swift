@@ -59,7 +59,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
             return
         }
 
-        updateDisabledState(isEnabled, for: item)
+        applyOptimisticEnabledState(isEnabled, for: item)
         Task { [weak self] in
             await self?.applyEnabledState(isEnabled, identifier: identifier)
         }
@@ -155,7 +155,7 @@ private extension ExtensionsManagementPreferences {
     }
 
     /// Updated ahead of the async load, so the switch doesn't snap back.
-    func updateDisabledState(_ isEnabled: Bool, for item: ChromeWebStoreListing) {
+    func applyOptimisticEnabledState(_ isEnabled: Bool, for item: ChromeWebStoreListing) {
         guard isEnabled else {
             locallyDisabledIDs.insert(item.id)
             return

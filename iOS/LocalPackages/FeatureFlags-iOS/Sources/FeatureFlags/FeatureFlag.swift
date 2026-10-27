@@ -344,6 +344,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218312902503176
     case aiChatContextualAttachMoreTabs
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatToBrowserToolCalling
+
     /// Address-bar Duck.ai menu plus the floating contextual input. iPhone only.
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1215757651854873
     case aiChatContextualFloatingInput
@@ -910,6 +913,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatContextualAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualAttachMoreTabs))
+        case .aiChatToBrowserToolCalling:
+            Config(source: .remoteReleasable(AIChatSubfeature.chatToBrowserToolCalling))
         case .aiChatContextualFloatingInput:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:

@@ -46,8 +46,8 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
         self.onRestored = onRestored
     }
 
-    /// Restores from the backup. The backup must belong to the dead current token's account, when there is one,
-    /// and its refresh token must have been issued after the cut-off recorded at the last explicit sign-out.
+    /// Restores from the backup. The backup must belong to the dead current token's account, when there is one.
+    /// `OAuthClient` also rejects a backup issued before the last sign-out.
     /// For `.missingToken`, a restore within `retryInterval` of a transient failure is skipped with `TokenBackupError.unavailable`;
     /// `.accountCreation` restores are never skipped.
     public func recover(_ context: TokenRecoveryContext) async throws {
@@ -58,8 +58,7 @@ public final class BackupTokenRecovery: TokenRecoveryStrategy {
         }
 
         do {
-            _ = try await oAuthClient.restoreFromBackup(expectedExternalID: context.deadPrimary?.decodedAccessToken.externalID,
-                                                        issuedAfter: context.signOutCutoff)
+            _ = try await oAuthClient.restoreFromBackup(expectedExternalID: context.deadPrimary?.decodedAccessToken.externalID)
         } catch {
             if isMissingToken, Self.isTransient(error) {
                 let retryAfter = now().addingTimeInterval(retryInterval)

@@ -806,9 +806,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
             Logger.subscriptionTokensManagement.log("Token recovery not possible, no coordinator configured, trigger: \(trigger.rawValue, privacy: .public)")
             throw SubscriptionManagerError.tokenRecoveryNotAttempted
         }
-        try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger,
-                                                                        deadPrimary: deadPrimary,
-                                                                        signOutCutoff: signOutCutoff))
+        try await tokenRecoveryCoordinator.recover(TokenRecoveryContext(trigger: trigger, deadPrimary: deadPrimary))
 
         guard let currentTokenContainer = try oAuthClient.currentTokenContainer(),
               !currentTokenContainer.decodedRefreshToken.isExpired() else {
@@ -897,48 +895,17 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         return restored
     }
 
-    /// The cut-off recorded at the last explicit sign-out, or nil if the user never signed out explicitly.
-    /// A backup token whose refresh token was issued at or before this date it must not be used.
-    var signOutCutoff: Date? {
-        userDefaults.subscriptionSignOutCutoff
-    }
-
-    /// The sign-out cut-off for an explicit sign-out happening now: the newest issue date among the stored current and backup refresh tokens,
-    /// both measured by the auth server's clock.
-    /// - Returns: That date; the device's current date when the current token container can't be read and no backup is stored;
-    ///   nil when neither is stored, so the previous cut-off is kept.
-    private func currentSignOutCutoff() -> Date? {
-        let current: TokenContainer?
-        let currentReadFailed: Bool
-        do {
-            current = try oAuthClient.currentTokenContainer()
-            currentReadFailed = false
-        } catch {
-            current = nil
-            currentReadFailed = true
-        }
-        let newestIssueDate = [current, oAuthClient.backupTokenContainer()].compactMap { $0?.decodedRefreshToken.issuedAtDate }.max()
-        return newestIssueDate ?? (currentReadFailed ? Date() : nil)
-    }
-
     /// Signs the user out by removing the stored tokens, the cached subscription and the cached authentication state.
     /// - Parameters:
     ///   - notifyUI: Whether to publish the authentication state change so the UI updates.
     ///   - userInitiated: Whether the user requested the sign-out. Only used when `notifyUI` is `true`.
-    ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, records the sign-out cut-off if a token is stored, deletes the backup token,
-    ///     and calls `/logout`, which revokes every token issued from the same login, including the ones held by other processes.
-    ///     When `false`, only the current local token is removed and the backup is kept.
+    ///   - revokeOnServer: Whether this is an explicit sign-out. When `true`, calls `OAuthClient.logout()`, which records the sign-out cut-off,
+    ///     deletes the backup token and calls `/logout`, revoking every token issued from the same login, including the ones held by other
+    ///     processes. When `false`, only the current local token is removed and the backup is kept.
     private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool) async {
         Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
 
         if revokeOnServer {
-            if let signOutCutoff = currentSignOutCutoff() {
-                Logger.subscriptionTokensManagement.log("SignOut: Recording the sign-out cut-off: \(signOutCutoff, privacy: .public)")
-                userDefaults.subscriptionSignOutCutoff = signOutCutoff
-            } else {
-                Logger.subscriptionTokensManagement.log("SignOut: No token stored, keeping the previous sign-out cut-off")
-            }
-            oAuthClient.removeBackup()
             do {
                 try await oAuthClient.logout()
             } catch {
@@ -1046,17 +1013,6 @@ fileprivate extension UserDefaults {
     var cachedHasAppStoreProductsAvailable: Bool? {
         get { object(forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) as? Bool }
         set { set(newValue, forKey: DefaultSubscriptionManager.hasAppStoreProductsAvailableKey) }
-    }
-
-    private static let subscriptionSignOutCutoffKey = "com.duckduckgo.subscription.signOutCutoff"
-    /// The cut-off recorded at the last explicit sign-out. A backup token whose refresh token was issued at or before it must not be used.
-    var subscriptionSignOutCutoff: Date? {
-        get {
-            return object(forKey: Self.subscriptionSignOutCutoffKey) as? Date
-        }
-        set {
-            set(newValue, forKey: Self.subscriptionSignOutCutoffKey)
-        }
     }
 
     private static let isUserAuthenticatedKey = "com.duckduckgo.subscription.isUserAuthenticated"

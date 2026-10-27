@@ -101,20 +101,48 @@ public enum TokenBackupError: DDGError {
 /// Keeps the backup token container, an independent token pair forked from the current one, and decides when it must be renewed.
 struct TokenBackupStore {
 
+    private static let signOutCutoffKey = "com.duckduckgo.subscription.signOutCutoff"
+
     private let storage: any AuthTokenStoring
+    private let userDefaults: UserDefaults
     private let maxAge: TimeInterval
     private let now: @Sendable () -> Date
 
     /// - Parameters:
     ///   - storage: Where the backup token container is read from and saved to.
+    ///   - userDefaults: Where the cut-off recorded at the last sign-out is kept.
     ///   - maxAge: How long after its refresh token was issued a backup is renewed.
     ///   - now: The current date, used to measure the backup's age.
     init(storage: any AuthTokenStoring,
+         userDefaults: UserDefaults,
          maxAge: TimeInterval = .days(14),
          now: @escaping @Sendable () -> Date = { Date() }) {
         self.storage = storage
+        self.userDefaults = userDefaults
         self.maxAge = maxAge
         self.now = now
+    }
+
+    /// The cut-off recorded at the last sign-out. A backup whose refresh token was issued at or before it is never used.
+    /// Nil if no sign-out was recorded.
+    var signOutCutoff: Date? {
+        userDefaults.object(forKey: Self.signOutCutoffKey) as? Date
+    }
+
+    /// Records the cut-off for a sign-out happening now: the newest issue date among the refresh tokens of `current` and of the stored backup,
+    /// both measured by the auth server's clock. When neither is available, the previous cut-off is kept, unless `currentReadFailed`,
+    /// in which case the current date is recorded.
+    /// - Parameters:
+    ///   - current: The current token container, or nil when none is stored or it can't be read.
+    ///   - currentReadFailed: Whether reading the current token container failed.
+    func recordSignOut(current: TokenContainer?, currentReadFailed: Bool) {
+        let newestIssueDate = [current, storedBackup()].compactMap { $0?.decodedRefreshToken.issuedAtDate }.max()
+        guard let cutoff = newestIssueDate ?? (currentReadFailed ? now() : nil) else {
+            Logger.OAuthClient.log("No token stored at sign-out, keeping the previous sign-out cut-off")
+            return
+        }
+        Logger.OAuthClient.log("Recording the sign-out cut-off: \(cutoff, privacy: .public)")
+        userDefaults.set(cutoff, forKey: Self.signOutCutoffKey)
     }
 
     /// Whether a refresh of `primary` should also mint a new backup. Expiry and age are both measured with `now`.
@@ -136,14 +164,13 @@ struct TokenBackupStore {
         return now.timeIntervalSince(backup.decodedRefreshToken.issuedAtDate) > maxAge
     }
 
-    /// Returns the stored backup when it can be used to restore a session. Expiry is measured with `now`.
-    /// - Parameters:
-    ///   - expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
-    ///   - issuedAfter: A backup whose refresh token was issued at or before this date is rejected. When nil, no such check is made.
+    /// Returns the stored backup when it can be used to restore a session: it belongs to the expected account, its refresh token was issued
+    /// after `signOutCutoff`, and it hasn't expired. Expiry is measured with `now`.
+    /// - Parameter expectedExternalID: The account the backup must belong to. When nil, a backup for any account is accepted.
     /// - Returns: The stored backup token container.
     /// - Throws: `TokenBackupError.unavailable` when no backup is stored, `TokenBackupError.readFailed` when reading it fails,
     ///   otherwise the reason the backup was rejected. A rejected backup is deleted; one that is missing or can't be read is left as it is.
-    func usableBackup(expectedExternalID: String?, issuedAfter: Date?) throws(TokenBackupError) -> TokenContainer {
+    func usableBackup(expectedExternalID: String?) throws(TokenBackupError) -> TokenContainer {
         let stored: TokenContainer?
         do {
             stored = try storage.getTokenContainer()
@@ -156,7 +183,7 @@ struct TokenBackupStore {
         let rejection: TokenBackupError?
         if let expectedExternalID, backup.decodedAccessToken.externalID != expectedExternalID {
             rejection = .accountMismatch
-        } else if let issuedAfter, backup.decodedRefreshToken.issuedAtDate <= issuedAfter {
+        } else if let signOutCutoff, backup.decodedRefreshToken.issuedAtDate <= signOutCutoff {
             rejection = .predatesSignOut
         } else if backup.decodedRefreshToken.expirationDate <= now() {
             rejection = .expired

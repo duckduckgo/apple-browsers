@@ -24,8 +24,26 @@ final class TokenBackupStoreTests: XCTestCase {
 
     private let primary = OAuthTokensFactory.makeTokenContainer(accessToken: "primaryA", refreshToken: "primaryR")
 
+    private var userDefaults: UserDefaults!
+
+    override func setUp() {
+        super.setUp()
+        userDefaults = UserDefaults(suiteName: "TokenBackupStoreTests.\(UUID().uuidString)")
+    }
+
+    override func tearDown() {
+        userDefaults = nil
+        super.tearDown()
+    }
+
     private func makeStore(storage: any AuthTokenStoring, now: Date = Date()) -> TokenBackupStore {
-        TokenBackupStore(storage: storage, maxAge: .days(14), now: { now })
+        TokenBackupStore(storage: storage, userDefaults: userDefaults, maxAge: .days(14), now: { now })
+    }
+
+    /// Records a sign-out whose newest token was issued at `date`, before any backup is stored.
+    private func recordSignOut(at date: Date) {
+        makeStore(storage: MockTokenStorage()).recordSignOut(current: OAuthTokensFactory.makeTokenContainer(refreshTokenIssuedAt: date),
+                                                             currentReadFailed: false)
     }
 
     // MARK: - needsRenewal
@@ -116,11 +134,10 @@ final class TokenBackupStoreTests: XCTestCase {
     private func assertRejected(_ expected: TokenBackupError,
                                 store: TokenBackupStore,
                                 expectedExternalID: String?,
-                                issuedAfter: Date?,
                                 file: StaticString = #filePath,
                                 line: UInt = #line) {
         do {
-            _ = try store.usableBackup(expectedExternalID: expectedExternalID, issuedAfter: issuedAfter)
+            _ = try store.usableBackup(expectedExternalID: expectedExternalID)
             XCTFail("Expected \(expected)", file: file, line: line)
         } catch {
             XCTAssertEqual(error, expected, file: file, line: line)
@@ -131,57 +148,116 @@ final class TokenBackupStoreTests: XCTestCase {
         let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "acct")
         let storage = MockTokenStorage(tokenContainer: backup)
 
-        let result = try makeStore(storage: storage).usableBackup(expectedExternalID: "acct", issuedAfter: nil)
+        let result = try makeStore(storage: storage).usableBackup(expectedExternalID: "acct")
 
         XCTAssertEqual(result, backup)
         XCTAssertEqual(try storage.getTokenContainer(), backup)
     }
 
     func testUsableBackup_noBackup_isUnavailable() {
-        assertRejected(.unavailable, store: makeStore(storage: MockTokenStorage()), expectedExternalID: nil, issuedAfter: nil)
+        assertRejected(.unavailable, store: makeStore(storage: MockTokenStorage()), expectedExternalID: nil)
     }
 
     func testUsableBackup_readFails_isReadFailedWithTheStorageError() {
         let storageError = NSError(domain: "keychain", code: 1)
 
-        assertRejected(.readFailed(underlying: storageError), store: makeStore(storage: ThrowingTokenStorage()), expectedExternalID: nil, issuedAfter: nil)
+        assertRejected(.readFailed(underlying: storageError), store: makeStore(storage: ThrowingTokenStorage()), expectedExternalID: nil)
         XCTAssertEqual(TokenBackupError.readFailed(underlying: storageError).underlyingError as NSError?, storageError)
     }
 
     func testUsableBackup_anotherAccount_isRejectedAndDeleted() throws {
         let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "other"))
 
-        assertRejected(.accountMismatch, store: makeStore(storage: storage), expectedExternalID: "acct", issuedAfter: nil)
+        assertRejected(.accountMismatch, store: makeStore(storage: storage), expectedExternalID: "acct")
         XCTAssertNil(try storage.getTokenContainer())
     }
 
     func testUsableBackup_noExpectedAccount_acceptsAnyAccount() throws {
         let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", externalID: "other")
 
-        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil, issuedAfter: nil), backup)
+        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil), backup)
     }
 
     func testUsableBackup_issuedBeforeSignOut_isRejectedAndDeleted() throws {
         let signOut = Date()
+        recordSignOut(at: signOut)
         let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
                                                                                                  refreshTokenIssuedAt: signOut.addingTimeInterval(-60)))
 
-        assertRejected(.predatesSignOut, store: makeStore(storage: storage), expectedExternalID: nil, issuedAfter: signOut)
+        assertRejected(.predatesSignOut, store: makeStore(storage: storage), expectedExternalID: nil)
         XCTAssertNil(try storage.getTokenContainer())
     }
 
     func testUsableBackup_issuedAtTheCutoff_isRejected() throws {
         let cutoff = Date()
+        recordSignOut(at: cutoff)
         let storage = MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", refreshTokenIssuedAt: cutoff))
 
-        assertRejected(.predatesSignOut, store: makeStore(storage: storage), expectedExternalID: nil, issuedAfter: cutoff)
+        assertRejected(.predatesSignOut, store: makeStore(storage: storage), expectedExternalID: nil)
     }
 
     func testUsableBackup_issuedAfterSignOut_isUsable() throws {
-        let signOut = Date().addingTimeInterval(-60)
+        recordSignOut(at: Date().addingTimeInterval(-60))
         let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", refreshTokenIssuedAt: Date())
 
-        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil, issuedAfter: signOut), backup)
+        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil), backup)
+    }
+
+    func testUsableBackup_noSignOutRecorded_isUsable() throws {
+        let backup = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR", refreshTokenIssuedAt: Date().addingTimeInterval(-3600))
+
+        XCTAssertEqual(try makeStore(storage: MockTokenStorage(tokenContainer: backup)).usableBackup(expectedExternalID: nil), backup)
+    }
+
+    // MARK: - recordSignOut
+
+    func testRecordSignOut_recordsTheNewestIssueDateOfTheCurrentAndBackupTokens() {
+        let currentIssuedAt = Date().addingTimeInterval(-3600)
+        let backupIssuedAt = Date().addingTimeInterval(-60)
+        let store = makeStore(storage: MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
+                                                                                                                 refreshTokenIssuedAt: backupIssuedAt)))
+
+        store.recordSignOut(current: OAuthTokensFactory.makeTokenContainer(refreshTokenIssuedAt: currentIssuedAt), currentReadFailed: false)
+
+        XCTAssertEqual(store.signOutCutoff, backupIssuedAt)
+    }
+
+    func testRecordSignOut_nothingStored_keepsThePreviousCutoff() {
+        let previous = Date().addingTimeInterval(-3600)
+        recordSignOut(at: previous)
+        let store = makeStore(storage: MockTokenStorage())
+
+        store.recordSignOut(current: nil, currentReadFailed: false)
+
+        XCTAssertEqual(store.signOutCutoff, previous)
+    }
+
+    func testRecordSignOut_nothingStoredAndNoPreviousSignOut_recordsNoCutoff() {
+        let store = makeStore(storage: MockTokenStorage())
+
+        store.recordSignOut(current: nil, currentReadFailed: false)
+
+        XCTAssertNil(store.signOutCutoff)
+    }
+
+    func testRecordSignOut_currentUnreadableAndNoBackup_recordsTheCurrentDate() {
+        let now = Date()
+        let store = makeStore(storage: MockTokenStorage(), now: now)
+
+        store.recordSignOut(current: nil, currentReadFailed: true)
+
+        XCTAssertEqual(store.signOutCutoff, now)
+    }
+
+    func testRecordSignOut_currentUnreadable_stillUsesTheBackupIssueDate() {
+        let backupIssuedAt = Date().addingTimeInterval(-60)
+        let store = makeStore(storage: MockTokenStorage(tokenContainer: OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
+                                                                                                                 refreshTokenIssuedAt: backupIssuedAt)),
+                              now: Date())
+
+        store.recordSignOut(current: nil, currentReadFailed: true)
+
+        XCTAssertEqual(store.signOutCutoff, backupIssuedAt)
     }
 
     func testUsableBackup_expiredByTheInjectedClock_isRejectedAndDeleted() throws {
@@ -190,7 +266,7 @@ final class TokenBackupStoreTests: XCTestCase {
                                                                                                  refreshTokenIssuedAt: issuedAt,
                                                                                                  refreshTokenExpiresAt: issuedAt.addingTimeInterval(.days(30))))
 
-        assertRejected(.expired, store: makeStore(storage: storage, now: issuedAt.addingTimeInterval(.days(31))), expectedExternalID: nil, issuedAfter: nil)
+        assertRejected(.expired, store: makeStore(storage: storage, now: issuedAt.addingTimeInterval(.days(31))), expectedExternalID: nil)
         XCTAssertNil(try storage.getTokenContainer())
     }
 }

@@ -944,7 +944,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
-                                            backupStorage: backupTokenStorage)
+                                            backupStorage: backupTokenStorage,
+                                            backupUserDefaults: subscriptionUserDefaults)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,

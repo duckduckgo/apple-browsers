@@ -23,7 +23,7 @@ import SubscriptionTestingUtilities
 
 final class AppStoreTokenRecoveryTests: XCTestCase {
 
-    private let context = TokenRecoveryContext(trigger: .invalidToken, deadPrimary: nil, signOutCutoff: nil)
+    private let context = TokenRecoveryContext(trigger: .invalidToken, deadPrimary: nil)
 
     func test_appStore_runsTheExpiredTokenRestore() async throws {
         let restoreFlow = AppStoreRestoreFlowMock()

@@ -239,81 +239,33 @@ class SubscriptionManagerTests: XCTestCase {
         XCTAssertEqual(mockOAuthClient.logoutCallCount, 2)
     }
 
-    func testSignOut_Explicit_DeletesBackupBeforeLogout() async throws {
+    func testSignOut_Explicit_LogsOutThroughTheClient() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
         await subscriptionManager.signOut(notifyUI: false)
 
-        XCTAssertEqual(mockOAuthClient.removeBackupCallCount, 1)
-        XCTAssertEqual(mockOAuthClient.callOrder.prefix(2), ["removeBackup", "logout"])
-        XCTAssertNotNil(subscriptionManager.signOutCutoff)
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 1)
+        XCTAssertEqual(mockOAuthClient.callOrder.first, "logout")
     }
 
-    func testSignOut_Explicit_RecordsTheNewestStoredTokenIssueDateAsTheCutoff() async throws {
-        let currentIssuedAt = Date().addingTimeInterval(3600)
-        let backupIssuedAt = Date().addingTimeInterval(7200)
-        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "currentR",
-                                                                                              refreshTokenIssuedAt: currentIssuedAt,
-                                                                                              refreshTokenExpiresAt: currentIssuedAt.addingTimeInterval(3600))
-        mockOAuthClient.internalBackupTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "backupR",
-                                                                                             refreshTokenIssuedAt: backupIssuedAt,
-                                                                                             refreshTokenExpiresAt: backupIssuedAt.addingTimeInterval(3600))
-
-        await subscriptionManager.signOut(notifyUI: false)
-
-        XCTAssertEqual(subscriptionManager.signOutCutoff, backupIssuedAt)
-    }
-
-    func testSignOut_Explicit_NoStoredTokens_KeepsThePreviousCutoff() async throws {
-        let issuedAt = Date().addingTimeInterval(-3600)
-        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeTokenContainer(refreshToken: "currentR", refreshTokenIssuedAt: issuedAt)
-        await subscriptionManager.signOut(notifyUI: false)
-        mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.internalBackupTokenContainer = nil
-
-        await subscriptionManager.signOut(notifyUI: false)
-
-        XCTAssertEqual(subscriptionManager.signOutCutoff, issuedAt)
-    }
-
-    func testSignOut_Explicit_NoStoredTokensAndNoPreviousSignOut_RecordsNoCutoff() async throws {
-        mockOAuthClient.internalCurrentTokenContainer = nil
-        mockOAuthClient.internalBackupTokenContainer = nil
-
-        await subscriptionManager.signOut(notifyUI: false)
-
-        XCTAssertNil(subscriptionManager.signOutCutoff)
-    }
-
-    func testSignOut_Explicit_CurrentTokenUnreadable_RecordsTheDeviceTimeAsTheCutoff() async throws {
-        mockOAuthClient.currentTokenContainerError = NSError(domain: "keychain", code: 1)
-        let before = Date()
-
-        await subscriptionManager.signOut(notifyUI: false)
-
-        let cutoff = try XCTUnwrap(subscriptionManager.signOutCutoff)
-        XCTAssertGreaterThanOrEqual(cutoff, before)
-        XCTAssertLessThanOrEqual(cutoff, Date())
-    }
-
-    func testSignOut_Explicit_RecordsTimeWhenLogoutFails() async throws {
+    func testSignOut_Explicit_LogoutFails_StillSignsOutLocally() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.logoutError = NSError(domain: "Logout", code: 1)
 
         await subscriptionManager.signOut(notifyUI: false)
 
-        XCTAssertNotNil(subscriptionManager.signOutCutoff)
-        XCTAssertEqual(mockOAuthClient.removeBackupCallCount, 1)
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 1)
+        XCTAssertFalse(subscriptionManager.cachedIsUserAuthenticated)
     }
 
-    func testAutomaticSignOut_DoesNotRecordTimeOrDeleteBackup() async throws {
+    func testAutomaticSignOut_RemovesOnlyTheCurrentTokenWithoutLoggingOut() async throws {
         mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         mockOAuthClient.getTokensResponse = .failure(OAuthClientError.unknownAccount)
 
         _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
 
-        XCTAssertNil(subscriptionManager.signOutCutoff)
-        XCTAssertEqual(mockOAuthClient.removeBackupCallCount, 0)
+        XCTAssertEqual(mockOAuthClient.logoutCallCount, 0)
+        XCTAssertEqual(mockOAuthClient.removeLocalAccountCallCount, 1)
     }
 
     // MARK: - Backup recovery
@@ -494,18 +446,6 @@ class SubscriptionManagerTests: XCTestCase {
             XCTAssertEqual(error as? SubscriptionManagerError, .noTokenAvailable)
         }
         XCTAssertFalse(mockAppStoreRestoreFlowV2.restoreSubscriptionAfterExpiredRefreshTokenCalled)
-    }
-
-    func testMissingPrimary_PassesLastSignOutDate() async throws {
-        mockOAuthClient.internalCurrentTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
-        await subscriptionManager.signOut(notifyUI: false)
-        let signOutDate = try XCTUnwrap(subscriptionManager.signOutCutoff)
-        mockOAuthClient.getTokensResponse = .failure(OAuthClientError.missingTokenContainer)
-        installCoordinator(backupResult: .failure(TokenBackupError.predatesSignOut), appStoreSucceeds: true)
-
-        _ = try? await subscriptionManager.getTokenContainer(policy: .localValid)
-
-        XCTAssertEqual(mockOAuthClient.restoreFromBackupCalls.first?.issuedAfter, signOutDate)
     }
 
     func testCreateIfNeeded_MissingPrimary_RestoresBeforeTheClientCanCreateAnAccount() async throws {

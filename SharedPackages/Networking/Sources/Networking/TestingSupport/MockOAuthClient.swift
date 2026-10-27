@@ -108,7 +108,7 @@ public class MockOAuthClient: OAuthClient {
         }
     }
 
-    /// The names of the session-ending calls received, in order: `logout`, `removeLocalAccount`, `removeBackup`.
+    /// The names of the session-ending calls received, in order: `logout`, `removeLocalAccount`.
     public private(set) var callOrder: [String] = []
 
     public private(set) var logoutCallCount = 0
@@ -135,12 +135,16 @@ public class MockOAuthClient: OAuthClient {
 
     /// The result of `restoreFromBackup`. When nil, it throws `TokenBackupError.unavailable`. On success the container also becomes the current one.
     public var restoreFromBackupResponse: Result<Networking.TokenContainer, Error>?
-    /// The `(expectedExternalID, issuedAfter)` arguments of every `restoreFromBackup` call, in order.
-    public private(set) var restoreFromBackupCalls: [(expectedExternalID: String?, issuedAfter: Date?)] = []
+    /// The arguments of a `restoreFromBackup` call.
+    public struct RestoreFromBackupCall {
+        public let expectedExternalID: String?
+    }
+    /// The arguments of every `restoreFromBackup` call, in order.
+    public private(set) var restoreFromBackupCalls: [RestoreFromBackupCall] = []
     /// Called at the start of every `restoreFromBackup` call, before `restoreFromBackupResponse` is returned.
     public var onRestoreFromBackup: (() -> Void)?
-    public func restoreFromBackup(expectedExternalID: String?, issuedAfter: Date?) async throws -> Networking.TokenContainer {
-        restoreFromBackupCalls.append((expectedExternalID, issuedAfter))
+    public func restoreFromBackup(expectedExternalID: String?) async throws -> Networking.TokenContainer {
+        restoreFromBackupCalls.append(RestoreFromBackupCall(expectedExternalID: expectedExternalID))
         onRestoreFromBackup?()
         switch restoreFromBackupResponse {
         case .success(let tokenContainer):
@@ -151,17 +155,6 @@ public class MockOAuthClient: OAuthClient {
         case nil:
             throw TokenBackupError.unavailable
         }
-    }
-
-    public var internalBackupTokenContainer: Networking.TokenContainer?
-    public func backupTokenContainer() -> Networking.TokenContainer? {
-        internalBackupTokenContainer
-    }
-
-    public private(set) var removeBackupCallCount = 0
-    public func removeBackup() {
-        removeBackupCallCount += 1
-        callOrder.append("removeBackup")
     }
 
     public var changeAccountEmailResponse: Result<String, Error>!

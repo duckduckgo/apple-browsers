@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Ekskluzivno za plan Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Ekskluzivno za pretplatnike";
+"aichat.model-picker.subscriber-exclusive" = "Otključaj uz pretplatu";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Isprobaj besplatno";

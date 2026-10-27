@@ -180,8 +180,8 @@ final class SafariArchiveImporterTests: XCTestCase {
         XCTAssertEqual(creditCardImporter.importedCardsCount, 0)
     }
 
-    func testWhenArchiveContainsHistoryThenHistoryIsImported() async throws {
-        let zipURL = try createZipArchive(files: ["History.json": historyJSON])
+    func testWhenArchiveContainsHistoryOfEachProfileThenAllOfItIsImported() async throws {
+        let zipURL = try createZipArchive(files: ["History.json": historyJSON, "Work - History.json": historyJSON])
         let parseResult = HistoryImport.ParseResult(visits: [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com")!, title: nil, date: Date())], skipped: 1)
         let historyImporter = MockHistoryImporter()
         historyImporter.summary = .init(imported: 2, alreadyInHistory: 1)
@@ -193,7 +193,7 @@ final class SafariArchiveImporterTests: XCTestCase {
         let history = try XCTUnwrap(summary[.history]).get()
         XCTAssertEqual(history.successful, 2)
         XCTAssertEqual(history.duplicate, 1)
-        XCTAssertEqual(historyImporter.importedParseResults, [parseResult])
+        XCTAssertEqual(historyImporter.importedParseResults, [HistoryImport.ParseResult(visits: parseResult.visits + parseResult.visits, skipped: 2)])
     }
 
     // MARK: - Helpers

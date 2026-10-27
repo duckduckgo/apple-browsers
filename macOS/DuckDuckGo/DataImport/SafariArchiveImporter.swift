@@ -274,8 +274,8 @@ final class SafariArchiveImporter: DataImporter {
         }
 
         // Import history if requested and available
-        if types.contains(.history), let content = contents.history.first {
-            let summary = try await importHistory(content, types, updateProgress, &cumulativeFraction)
+        if types.contains(.history), !contents.history.isEmpty {
+            let summary = try await importHistory(contents.history, types, updateProgress, &cumulativeFraction)
             finalSummary.merge(summary) { (_, new) in new }
         }
 
@@ -428,16 +428,22 @@ final class SafariArchiveImporter: DataImporter {
         return creditCardResults
     }
 
-    private func importHistory(_ content: String, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+    private func importHistory(_ historyContents: [String], _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
         try updateProgress(.importingHistory(numberOfVisits: nil, fraction: cumulativeFraction))
 
-        let parseResult: HistoryImport.ParseResult
-        switch historyReader.readVisits(fromHistoryJSON: Data(content.utf8), since: .monthAgo) {
-        case .success(let result):
-            parseResult = result
-        case .failure(let error):
-            return [.history: .failure(error)]
+        // Safari exports a History file for each of its profiles
+        var visits = [HistoryImport.Visit]()
+        var skipped = 0
+        for content in historyContents {
+            switch historyReader.readVisits(fromHistoryJSON: Data(content.utf8), since: .monthAgo) {
+            case .success(let result):
+                visits += result.visits
+                skipped += result.skipped
+            case .failure(let error):
+                return [.history: .failure(error)]
+            }
         }
+        let parseResult = HistoryImport.ParseResult(visits: visits, skipped: skipped)
         // parsing a large export can take a while: don't add visits to history after the import was cancelled
         try Task.checkCancellation()
 

@@ -288,6 +288,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
+    private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()
+
+    @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
@@ -1838,6 +1841,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyAIChatSettingsStatePixel()
         fireDailyAIFeaturesStatePixel()
         fireDailyPromptBarStatePixel()
+        aiChatScreenshotCaptureService.reportPermissionGrantIfNeeded()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 

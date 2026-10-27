@@ -299,13 +299,23 @@ class SmartlingClient:
         return data.get('response', {})
 
     async def list_jobs_awaiting_authorization(self) -> List[Dict]:
-        """List the project's jobs that are awaiting authorization."""
-        data = await self._request(
-            'GET',
-            f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
-            params=[('translationJobStatus', 'AWAITING_AUTHORIZATION'), ('limit', '100')]
-        )
-        return data['response']['data'].get('items', [])
+        """List the project's jobs that are awaiting authorization, page by page, since PR label jobs wait there too."""
+        jobs = []
+        while True:
+            data = await self._request(
+                'GET',
+                f'/jobs-api/v3/projects/{self.creds.project_id}/jobs',
+                params=[
+                    ('translationJobStatus', 'AWAITING_AUTHORIZATION'),
+                    ('limit', '100'),
+                    ('offset', str(len(jobs))),
+                ]
+            )
+            page = data['response']['data']
+            items = page.get('items', [])
+            jobs.extend(items)
+            if not items or len(jobs) >= page.get('totalCount', 0):
+                return jobs
 
     async def get_file_status(self, file_uri: str) -> Dict:
         """Get a file's string counts, in total and per locale."""
@@ -476,32 +486,22 @@ def parse_estimate(report: Dict) -> tuple[int, Decimal]:
 async def run_submit(client: SmartlingClient,
                      files: List[Path],
                      job_name: str,
-                     pending_job_prefix: str,
+                     pending_job_prefixes: List[str],
                      file_uri_prefix: str,
                      auto_authorize_max_usd: Decimal,
                      delete_job_on_failure: bool = False,
                      sleep=asyncio.sleep) -> SubmitResult:
     """Submit files to a new job and authorize it if its maximum USD estimate is at most auto_authorize_max_usd.
 
-    With a pending_job_prefix, nothing is submitted while a job whose name starts with it awaits authorization.
-    Without one, only a job named exactly job_name stops a new submission.
+    With pending_job_prefixes, nothing is submitted while a job whose name starts with any of them awaits
+    authorization. Without any, only a job named exactly job_name stops a new submission.
     With delete_job_on_failure, a job this run created is deleted if the submission fails before authorizing it,
     so a rerun with the same job name starts over instead of finding a half-submitted job.
     """
     job_id = ""
     unauthorized_job_id = ""
     try:
-        pending_jobs = await client.list_jobs(
-            pending_job_prefix,
-            ['AWAITING_AUTHORIZATION']
-        ) if pending_job_prefix else []
-        pending_job = next(
-            (
-                job for job in pending_jobs
-                if job.get('jobName', '').startswith(pending_job_prefix)
-            ),
-            None
-        )
+        pending_job = await find_pending_job(client, pending_job_prefixes)
         if pending_job:
             job_id = job_uid(pending_job)
             log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {job_url(client, job_id)}")
@@ -523,8 +523,9 @@ async def run_submit(client: SmartlingClient,
                 reason=f"A job named '{job_name}' already exists"
             )
 
-        if pending_job_prefix:
-            log(f"🔍 No pending '{pending_job_prefix}' job, no job named '{job_name}'")
+        if pending_job_prefixes:
+            pending_names = ', '.join(f"'{prefix}'" for prefix in pending_job_prefixes)
+            log(f"🔍 No pending {pending_names} job, no job named '{job_name}'")
         else:
             log(f"🔍 No job named '{job_name}'")
 
@@ -646,6 +647,20 @@ def strings_awaiting_authorization(file_status: Dict, locales: List[str]) -> int
         )
         awaiting += max(total - handled, 0)
     return awaiting
+
+
+async def find_pending_job(client: SmartlingClient, pending_job_prefixes: List[str]) -> Optional[Dict]:
+    """A job awaiting authorization whose name starts with any of pending_job_prefixes, if there is one."""
+    if not pending_job_prefixes:
+        return None
+    pending_jobs = await client.list_jobs_awaiting_authorization()
+    return next(
+        (
+            job for job in pending_jobs
+            if any(job.get('jobName', '').startswith(prefix) for prefix in pending_job_prefixes)
+        ),
+        None
+    )
 
 
 async def find_job(client: SmartlingClient, job_name: str) -> Optional[Dict]:
@@ -951,6 +966,22 @@ async def release_status_command(args):
     Path(args.result_file).write_text(json.dumps(result.as_dict()), encoding='utf-8')
 
 
+async def pending_job_command(args):
+    """Report the job awaiting authorization that would stop a submission, before spending an export on it."""
+    async with SmartlingClient(get_credentials(args)) as client:
+        pending_job = await find_pending_job(client, args.pending_job_prefix)
+        result = {'job_id': '', 'job_name': '', 'job_url': ''}
+        if pending_job:
+            job_id = job_uid(pending_job)
+            result = {'job_id': job_id, 'job_name': pending_job['jobName'], 'job_url': job_url(client, job_id)}
+            log(f"⏸️ '{pending_job['jobName']}' is still awaiting authorization: {result['job_url']}")
+        else:
+            pending_names = ', '.join(f"'{prefix}'" for prefix in args.pending_job_prefix)
+            log(f"🔍 No pending {pending_names} job")
+
+    Path(args.result_file).write_text(json.dumps(result), encoding='utf-8')
+
+
 async def refresh_files_command(args):
     """Replace the content of release files with the current export, outside any job."""
     files = [Path(file_path) for file_path in args.files]
@@ -1067,8 +1098,8 @@ async def download_command(args):
 # Main CLI
 # ============================================================================
 
-def main():
-    """Main CLI entry point."""
+def build_parser() -> argparse.ArgumentParser:
+    """The CLI's argument parser."""
     parser = argparse.ArgumentParser(description='Smartling localization tool')
     subparsers = parser.add_subparsers(dest='command')
 
@@ -1080,8 +1111,9 @@ def main():
     # Submit
     submit_parser = subparsers.add_parser('submit')
     submit_parser.add_argument('--job-name', required=True)
-    submit_parser.add_argument('--pending-job-prefix', default='',
-                               help='Skip submission while a job with this name prefix awaits authorization')
+    submit_parser.add_argument('--pending-job-prefix', action='append', default=[],
+                               help='Skip submission while a job with this name prefix awaits authorization '
+                                    '(repeatable)')
     submit_parser.add_argument('--file-uri-prefix', required=True,
                                help='Smartling file URIs become <prefix>/<file name>, e.g. main or release/ios/7.200.0')
     submit_parser.add_argument('--files', nargs='+', required=True)
@@ -1090,6 +1122,12 @@ def main():
     submit_parser.add_argument('--delete-job-on-failure', action='store_true',
                                help='Delete the job this run created if the submission fails before authorizing it')
     submit_parser.add_argument('--result-file', default='submit_result.json')
+
+    # Pending job
+    pending_job_parser = subparsers.add_parser('pending-job')
+    pending_job_parser.add_argument('--pending-job-prefix', action='append', required=True,
+                                    help='Report a job with this name prefix that awaits authorization (repeatable)')
+    pending_job_parser.add_argument('--result-file', default='pending_job_result.json')
 
     # Release status
     release_status_parser = subparsers.add_parser('release-status')
@@ -1123,6 +1161,12 @@ def main():
     download_parser.add_argument('--allow-unfinished', action='store_true',
                                  help='Download even if the job is not COMPLETED (defaults to False)')
 
+    return parser
+
+
+def main():
+    """Main CLI entry point."""
+    parser = build_parser()
     args = parser.parse_args()
     if not args.command:
         parser.print_help()
@@ -1132,6 +1176,7 @@ def main():
     commands = {
         'upload': upload_command,
         'submit': submit_command,
+        'pending-job': pending_job_command,
         'release-status': release_status_command,
         'refresh-files': refresh_files_command,
         'status': status_command,

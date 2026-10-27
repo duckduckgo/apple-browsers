@@ -1,5 +1,6 @@
 //
-//  View+ApplyRebranding.swift
+//  KeyboardShortcutPixel.swift
+//  DuckDuckGo
 //
 //  Copyright © 2026 DuckDuckGo. All rights reserved.
 //
@@ -16,15 +17,18 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
-import DesignResourcesKitIcons
-import SwiftUI
+import PixelKit
 
-public extension View {
+/// Pixels for hardware keyboard shortcut use.
+enum KeyboardShortcutPixel: PixelKit.Event {
+    case used
 
-    func applyRebranding() -> Self {
-        AppRebrand.isAppRebranded = { true }
-        DesignSystemRebrand.isAppRebranded = { true }
-        return self
+    var name: String { "keyboard-shortcut_used" }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+
+    /// Fires `used` once per day and on every shortcut.
+    static func fireUsed(with pixelFiring: (any PixelKitFiring)?) {
+        pixelFiring?.fire(KeyboardShortcutPixel.used, frequency: .dailyAndCount)
     }
 }

@@ -307,6 +307,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219685718776840
     case dataImportHistory
 
+    /// Hides import sources that offer none of the data types the user selected.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219773908970690
+    case dataImportSourceFilter
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
@@ -459,6 +463,22 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
+
+    /// Duck.ai "Add Screenshot" in the address bar and prompt bar attach menus.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatOmnibarScreenshot
+
+    /// Duck.ai "Add Screenshot" in the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatNtpScreenshot
+
+    /// Duck.ai: pasting images and copied files into the address bar and prompt bar prompt.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatPasteImages
+
+    /// Duck.ai: pasting images and copied files into the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatNtpPasteImages
 
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
@@ -910,6 +930,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
         case .dataImportHistory:
             Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
+        case .dataImportSourceFilter:
+            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.sourceFilter))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
@@ -1000,6 +1022,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatOmnibarScreenshot:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
+        case .aiChatNtpScreenshot:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
+        case .aiChatPasteImages:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
+        case .aiChatNtpPasteImages:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:

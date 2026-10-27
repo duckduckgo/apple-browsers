@@ -645,6 +645,46 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     }
 
     @MainActor
+    func testSubscriptionChangeSelected_WhenNoOriginAndPlanChangeEntryIsAppSettings_StartsWideEventWithAppSettingsFunnelName() async throws {
+        // Given
+        let purchaseFlow = AppStorePurchaseFlowMock()
+        purchaseFlow.changeTierResult = .success("mock-transaction-jws")
+        purchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
+
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(
+            subscriptionManager: mockSubscriptionManager,
+            appStorePurchaseFlow: purchaseFlow,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler()
+        )
+        let sut = DefaultSubscriptionPagesUseSubscriptionFeature(
+            subscriptionManager: mockSubscriptionManager,
+            subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
+            subscriptionAttributionOrigin: nil,
+            planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue,
+            appStorePurchaseFlow: purchaseFlow,
+            appStoreRestoreFlow: AppStoreRestoreFlowMock(),
+            subscriptionDataReporter: nil,
+            internalUserDecider: mockInternalUserDecider,
+            wideEvent: mockWideEvent,
+            pendingTransactionHandler: MockPendingTransactionHandler(),
+            subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            requestValidator: mockRequestValidator,
+            subscriptionExperimentAttributionProvider: SubscriptionExperimentAttributionProviderStub()
+        )
+
+        let params: [String: Any] = ["id": "yearly-pro", "change": "upgrade"]
+        let message = WKScriptMessage.mock(name: "subscriptionChangeSelected", body: "")
+
+        // When
+        _ = await sut.subscriptionChangeSelected(params: params, original: message)
+
+        // Then
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPlanChangeWideEventData)
+        XCTAssertEqual(started.funnelName, SubscriptionFunnelOrigin.appSettings.rawValue)
+    }
+
+    @MainActor
     func testSubscriptionChangeSelected_WhenUserCancels_SetsCancelledError() async throws {
         // Given
         let purchaseFlow = AppStorePurchaseFlowMock()

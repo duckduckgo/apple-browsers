@@ -1982,6 +1982,11 @@ class TabViewController: UIViewController {
     
     func updateContentMode() {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = tabModel.isDesktop ? .desktop : .mobile
+
+        // Desktop sites expect the Fullscreen API that iPhone Safari's mobile mode doesn't expose.
+        if #available(iOS 16.0, *), UIDevice.current.userInterfaceIdiom == .phone {
+            webView.configuration.preferences.isElementFullscreenEnabled = tabModel.isDesktop && featureFlagger.isFeatureOn(.elementFullscreen)
+        }
     }
 
     func goBack() {

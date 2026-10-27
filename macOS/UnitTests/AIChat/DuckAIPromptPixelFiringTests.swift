@@ -37,8 +37,12 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.webSearchActivated, .aiChatAddressBarWebSearchActivated),
         (.webSearchDeactivated, .aiChatAddressBarWebSearchDeactivated),
         (.customizeResponsesOpened, .aiChatAddressBarCustomizeResponsesOpened),
-        (.imageAttached, .aiChatAddressBarImageAttached),
-        (.imageRemoved, .aiChatAddressBarImageRemoved),
+        (.imageAttached(source: .file), .aiChatAddressBarImageAttached(source: .file)),
+        (.imageAttached(source: .screenshot), .aiChatAddressBarImageAttached(source: .screenshot)),
+        (.imageRemoved(source: .drop), .aiChatAddressBarImageRemoved(source: .drop)),
+        (.screenshotTaken(kind: .window), .aiChatAddressBarScreenshotTaken(kind: .window)),
+        (.screenshotRemoved, .aiChatAddressBarScreenshotRemoved),
+        (.screenshotFailed(reason: .unavailable), .aiChatAddressBarScreenshotFailed(reason: .unavailable)),
         (.fileAttached, .aiChatAddressBarFileAttached),
         (.fileRemoved, .aiChatAddressBarFileRemoved),
         (.fileValidationFailed(reason: "tooLarge"), .aiChatAddressBarFileValidationFailed(reason: "tooLarge")),
@@ -86,8 +90,12 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.webSearchActivated, .webSearchActivated),
         (.webSearchDeactivated, .webSearchDeactivated),
         (.customizeResponsesOpened, nil),
-        (.imageAttached, .imageAttached),
-        (.imageRemoved, .imageRemoved),
+        (.imageAttached(source: .file), .imageAttached(source: .file)),
+        (.imageAttached(source: .screenshot), .imageAttached(source: .screenshot)),
+        (.imageRemoved(source: .drop), .imageRemoved(source: .drop)),
+        (.screenshotTaken(kind: .selection), .screenshotTaken(kind: .selection)),
+        (.screenshotRemoved, .screenshotRemoved),
+        (.screenshotFailed(reason: .failed), .screenshotFailed(reason: .failed)),
         (.fileAttached, .fileAttached),
         (.fileRemoved, .fileRemoved),
         (.fileValidationFailed(reason: "tooLarge"), .fileValidationFailed(reason: "tooLarge")),
@@ -125,6 +133,32 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.aiChatAddressBarGatedRowClick(origin: "x"), "aichat_addressbar_gated_row_click"),
         (.aiChatNtpGatedRowClick(origin: "x"), "aichat_ntp_gated_row_click")
     ]
+
+    func testScreenshotPixelNamesAndParameters() {
+        let addressBar: [(AIChatPixel, String, [String: String]?)] = [
+            (.aiChatAddressBarImageAttached(source: .screenshot), "aichat_addressbar_image_attached", ["source": "screenshot"]),
+            (.aiChatAddressBarImageRemoved(source: .drop), "aichat_addressbar_image_removed", ["source": "drop"]),
+            (.aiChatAddressBarScreenshotTaken(kind: .screen), "aichat_addressbar_screenshot_taken", ["kind": "screen"]),
+            (.aiChatAddressBarScreenshotRemoved, "aichat_addressbar_screenshot_removed", nil),
+            (.aiChatAddressBarScreenshotFailed(reason: .unavailable), "aichat_addressbar_screenshot_failed", ["reason": "unavailable"])
+        ]
+        for (pixel, name, parameters) in addressBar {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.parameters, parameters, name)
+        }
+
+        let promptBar: [(PromptBarPixel, String, [String: String]?)] = [
+            (.imageAttached(source: .file), "aichat_promptbar_image_attached", ["source": "file"]),
+            (.imageRemoved(source: .screenshot), "aichat_promptbar_image_removed", ["source": "screenshot"]),
+            (.screenshotTaken(kind: .window), "aichat_promptbar_screenshot_taken", ["kind": "window"]),
+            (.screenshotRemoved, "aichat_promptbar_screenshot_removed", nil),
+            (.screenshotFailed(reason: .unavailable), "aichat_promptbar_screenshot_failed", ["reason": "unavailable"])
+        ]
+        for (pixel, name, parameters) in promptBar {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.parameters, parameters, name)
+        }
+    }
 
     func testPickerImpressionPixelNames() {
         for (pixel, expectedName) in Self.pickerImpressionNames {

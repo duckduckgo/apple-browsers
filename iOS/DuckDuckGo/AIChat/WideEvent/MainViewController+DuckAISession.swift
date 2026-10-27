@@ -37,7 +37,7 @@ extension MainViewController {
 
     /// Records the action about to leave Duck.ai, if the visible tab is a Duck.ai tab.
     func recordDuckAISessionPendingExit(_ trigger: DuckAISessionWideEventData.ExitTrigger) {
-        // The entry event also takes actions on a web page, which close a contextual sheet over it.
+        // Unlike the session event, the entry event also takes actions on web pages, where the contextual sheet sits.
         duckAIEntryInstrumentation.recordPendingExit(trigger, tabUID: tabManager.currentTabsModel.currentTab?.uid)
         guard let tab = tabManager.currentTabsModel.currentTab, tab.isAITab else { return }
         duckAISessionInstrumentation.recordPendingExit(tabUID: tab.uid, trigger: trigger)

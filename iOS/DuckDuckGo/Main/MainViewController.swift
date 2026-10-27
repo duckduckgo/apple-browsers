@@ -5003,7 +5003,7 @@ class MainViewController: UIViewController {
             : nil
         duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, surface: surface, chatState: sheetChatState)
         if surface == .contextualSheet {
-            // Lets the sheet entry tell later page changes under it apart from the page it opened on.
+            // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
         }
     }
@@ -8343,7 +8343,7 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
         if tab.isAITab {
             fireAIChatEntryPointPixel(source: .tabsBarExistingChat, opensNewTab: false, hasPrompt: false)
-            // The tab was shown before the entry started, so show it to the entry again.
+            // This tab was shown before the entry started, so report it again for the entry.
             reportDuckAISessionCurrentTab()
         }
     }

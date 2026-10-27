@@ -46,8 +46,8 @@ protocol DuckAIEntryInstrumentation: AnyObject {
     /// The contextual sheet sent a prompt.
     func sheetPromptSubmitted()
 
-    /// The contextual sheet or floating input closed. Ends a sheet entry as `left_duckai` with `exitTrigger` when given,
-    /// otherwise with an action recorded first, or `back_or_close`.
+    /// The contextual sheet or floating input closed. Ends a sheet entry as `left_duckai`, with `exitTrigger` if given,
+    /// else the action recorded before, else `back_or_close`.
     func sheetDismissed(exitTrigger: DuckAISessionWideEventData.ExitTrigger?)
 
     /// App was backgrounded with an entry in flight. Completes as CANCELLED.

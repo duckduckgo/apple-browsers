@@ -4,6 +4,8 @@ name: Smartling - Submit
 # gets a review task.
 #   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. A failure also gets a task for
 #            the platform's owner.
+#   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
+#            the platform's strings. A failure also gets a task for the platform's owner, as for a nightly.
 #   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
 #            so a failure doesn't stop the release.
 # Any failure, including a task that couldn't be created, fails the run.
@@ -13,7 +15,7 @@ on:
   workflow_call:
     inputs:
       kind:
-        description: "nightly or release"
+        description: "nightly, merge or release"
         required: true
         type: string
       platform:
@@ -48,6 +50,7 @@ on:
         options:
           - release
           - nightly
+          - merge
       platform:
         description: "Platform"
         required: true
@@ -80,9 +83,13 @@ jobs:
     name: ${{ inputs.platform }} ${{ inputs.kind }} translation job
     runs-on: [image:osx-tahoe-27, m4pro]
     timeout-minutes: 45
-    # Runs for the same job wait for each other, so they can't both create it.
+    # Runs for the same job wait for each other, so they can't both create it. Nightly and merge runs share a group,
+    # so only one of them submits main at a time, and they can't both miss each other's pending job. GitHub keeps one
+    # run waiting per group and cancels an older waiting run when a newer one arrives. That loses nothing, because the
+    # newer run exports the latest main, but the cancelled run opens no task. Dry runs write nothing, so they get a
+    # group per branch and can't cancel a real run.
     concurrency:
-      group: smartling-submit-${{ inputs.kind }}-${{ inputs.platform }}-${{ inputs.branch }}
+      group: smartling-submit-${{ inputs.kind == 'release' && 'release' || inputs.dry_run && format('dry-run-{0}', github.ref) || 'main' }}-${{ inputs.platform }}-${{ inputs.branch }}
       cancel-in-progress: false
 
     env:
@@ -98,20 +105,29 @@ jobs:
         env:
           BRANCH: ${{ inputs.branch }}
           VERSION: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           platform_lowercase="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
           case "$KIND" in
-            nightly)
-              if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" ]]; then
-                echo "Nightly Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
+            nightly|merge)
+              # A dry run writes nothing, so it can test the job name from another branch.
+              if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" && "$DRY_RUN" != true ]]; then
+                echo "$KIND Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
                 exit 1
               fi
-              # Nothing is submitted while an earlier nightly job awaits authorization: its review task is still open.
+              # A merge job also gets the commit it exports, once it's checked out.
+              if [[ "$KIND" == nightly ]]; then
+                job_name="Nightly $PLATFORM - $(date -u +%Y-%m-%d)"
+              else
+                job_name="Merge $PLATFORM - $(date -u '+%Y-%m-%d %H:%M')"
+              fi
+              # Nothing is submitted while an earlier nightly or merge job awaits authorization: its review task is
+              # still open.
               {
                 echo "ref=${DEFAULT_BRANCH}"
-                echo "job_name=Nightly $PLATFORM - $(date -u +%Y-%m-%d)"
-                echo "pending_job_prefix=Nightly $PLATFORM - "
+                echo "job_name=$job_name"
+                echo "pending_job_prefixes=Nightly $PLATFORM - |Merge $PLATFORM - "
                 echo "file_uri_prefix=${DEFAULT_BRANCH}"
               } >> "$GITHUB_OUTPUT"
               ;;
@@ -139,7 +155,7 @@ jobs:
               {
                 echo "ref=$BRANCH"
                 echo "job_name=Release $PLATFORM $VERSION"
-                echo "pending_job_prefix="
+                echo "pending_job_prefixes="
                 echo "file_uri_prefix=$BRANCH"
               } >> "$GITHUB_OUTPUT"
               ;;
@@ -160,6 +176,17 @@ jobs:
         with:
           ref: ${{ steps.job.outputs.ref }}
           submodules: recursive
+
+      # The checkout is main's latest commit when the run starts, which can be later than the merge that started it
+      # if the run waited behind another one, so the name says what the job really exports.
+      - name: Name the merge job after its commit
+        id: name
+        env:
+          JOB_NAME: ${{ steps.job.outputs.job_name }}
+          COMMIT: ${{ steps.checkout.outputs.commit }}
+        run: |
+          [ "$KIND" != merge ] || JOB_NAME="$JOB_NAME ${COMMIT:0:7}"
+          echo "job_name=$JOB_NAME" >> "$GITHUB_OUTPUT"
 
       - name: Resolve platform configuration
         run: |
@@ -192,9 +219,6 @@ jobs:
               ;;
           esac
 
-      - name: Select Xcode
-        uses: ./.github/actions/select-xcode-version
-
       - name: Set up Python
         if: runner.environment != 'self-hosted'
         uses: actions/setup-python@v6
@@ -204,27 +228,63 @@ jobs:
       - name: Install Python dependencies
         run: pip install aiohttp
 
+      # While an earlier nightly or merge job awaits authorization, which can take days, the submission would only
+      # return pending_review, so stop before spending an export on it. The submit step checks again.
+      - name: Check for a pending ${{ inputs.platform }} job
+        id: pending
+        if: ${{ !inputs.dry_run && steps.job.outputs.pending_job_prefixes != '' }}
+        env:
+          PENDING_JOB_PREFIXES: ${{ steps.job.outputs.pending_job_prefixes }}
+        run: |
+          prefix_args=()
+          IFS='|' read -r -a pending_job_prefixes <<< "$PENDING_JOB_PREFIXES"
+          for prefix in "${pending_job_prefixes[@]}"; do
+            prefix_args+=(--pending-job-prefix "$prefix")
+          done
+          result_file="${RUNNER_TEMP}/smartling-pending-job-${PLATFORM}.json"
+          ./scripts/smartling/loc_tool.sh pending-job "${prefix_args[@]}" --result-file "$result_file"
+          # A missing key fails the step instead of reading as a waiting job and skipping every export.
+          job_name="$(jq -er '.job_name | strings' "$result_file")"
+          echo "job_name=$job_name" >> "$GITHUB_OUTPUT"
+          if [ -n "$job_name" ]; then
+            {
+              echo "## $PLATFORM Smartling job: nothing submitted"
+              echo
+              echo "- Outcome: \`pending_review\`"
+              echo "- Waiting job: [$job_name]($(jq -er '.job_url | strings' "$result_file"))"
+              echo "- Reason: it's still awaiting authorization and its review task is open, so nothing was exported"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Select Xcode
+        if: steps.pending.outputs.job_name == ''
+        uses: ./.github/actions/select-xcode-version
+
       - name: Install xmlstarlet
-        if: inputs.platform == 'macOS'
+        if: inputs.platform == 'macOS' && steps.pending.outputs.job_name == ''
         run: brew install xmlstarlet
 
       - name: Export localizations
+        if: steps.pending.outputs.job_name == ''
         run: |
           set -e -o pipefail
           "./$PLATFORM/scripts/loc_export.sh" | xcbeautify
 
       # A release job left half-submitted by a failure is deleted, so that a rerun starts over instead of finding it.
-      # A nightly one is kept for the review task, and the next night creates a new job anyway.
+      # A nightly or merge one is kept for the review task, and the next run creates a new job anyway.
       - name: Submit ${{ inputs.platform }} strings to Smartling
         id: submit
-        if: ${{ !inputs.dry_run }}
+        if: ${{ !inputs.dry_run && steps.pending.outputs.job_name == '' }}
         env:
-          JOB_NAME: ${{ steps.job.outputs.job_name }}
-          PENDING_JOB_PREFIX: ${{ steps.job.outputs.pending_job_prefix }}
+          JOB_NAME: ${{ steps.name.outputs.job_name }}
+          PENDING_JOB_PREFIXES: ${{ steps.job.outputs.pending_job_prefixes }}
           FILE_URI_PREFIX: ${{ steps.job.outputs.file_uri_prefix }}
         run: |
           kind_args=()
-          [ -z "$PENDING_JOB_PREFIX" ] || kind_args+=(--pending-job-prefix "$PENDING_JOB_PREFIX")
+          IFS='|' read -r -a pending_job_prefixes <<< "$PENDING_JOB_PREFIXES"
+          for prefix in ${pending_job_prefixes[@]+"${pending_job_prefixes[@]}"}; do
+            kind_args+=(--pending-job-prefix "$prefix")
+          done
           [ "$KIND" != release ] || kind_args+=(--delete-job-on-failure)
           ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
             --job-name "$JOB_NAME" \
@@ -235,13 +295,13 @@ jobs:
       - name: Print dry run result
         if: inputs.dry_run
         env:
-          JOB_NAME: ${{ steps.job.outputs.job_name }}
+          JOB_NAME: ${{ steps.name.outputs.job_name }}
           FILE_URI_PREFIX: ${{ steps.job.outputs.file_uri_prefix }}
         run: |
           echo "Dry run: would submit '$JOB_NAME' with files under $FILE_URI_PREFIX/, authorized up to \$$AUTO_AUTHORIZE_MAX_USD." \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
-      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly failure gets a failure
+      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly or merge failure gets a
       # task, whether it failed in Smartling or before Smartling returned a result (runner, Xcode, export), as long as
       # the platform's Asana project is known by then. A release failure only fails the run.
       - name: Decide on an Asana task
@@ -252,13 +312,14 @@ jobs:
           FAILED: ${{ steps.submit.outputs.failed }}
         run: |
           if [[ -z "$OUTCOME" || "$FAILED" == true ]]; then
-            [[ "$KIND" != nightly || -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+            [[ "$KIND" == release || -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
           elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
             echo "kind=review" >> "$GITHUB_OUTPUT"
           fi
 
       # The platform's owner gets failure tasks. For now they get review tasks too while the automation beds in;
       # remove --assignee below for review tasks to assign the platform's triage DRI instead.
+      # TODO: assign a merge run's failure task to the author of the merged commit instead of the platform's owner.
       - name: Resolve ${{ inputs.platform }} task assignee
         id: task-assignee
         if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
@@ -278,7 +339,7 @@ jobs:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           TASK_KIND: ${{ steps.task.outputs.kind }}
           ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
-          TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.job.outputs.job_name) }}"
+          TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.name.outputs.job_name || steps.job.outputs.job_name) }}"
           TASK_NOTES: |
             ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized.{2}', inputs.platform, inputs.kind, steps.submit.outputs.job_id && ' The job created before the failure is left in Smartling.' || '') }}
 

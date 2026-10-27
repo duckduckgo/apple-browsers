@@ -1338,11 +1338,11 @@ extension MainViewController {
 
     @objc func summarize(_ sender: Any) {
         Task {
-            guard let selection = await selectedTextInActiveTab() else { return }
+            guard let selection = await selectedTextInActiveTab(), isActiveTab(selection.tab) else { return }
             let request = AIChatTextSummarizationRequest(
                 text: selection.text,
-                websiteURL: selection.webView.url,
-                websiteTitle: selection.webView.title,
+                websiteURL: selection.tab.webView.url,
+                websiteTitle: selection.tab.webView.title,
                 source: .keyboardShortcut
             )
             aiChatSummarizer.summarize(request)
@@ -1351,31 +1351,37 @@ extension MainViewController {
 
     @objc func askAboutSelection(_ sender: Any) {
         Task {
-            guard let selection = await selectedTextInActiveTab() else { return }
-            aiChatSelectionContextAttacher.attach(text: selection.text, url: selection.webView.url, source: .keyboardShortcut)
+            guard let selection = await selectedTextInActiveTab(), isActiveTab(selection.tab) else { return }
+            aiChatSelectionContextAttacher.attach(text: selection.text, url: selection.tab.webView.url, source: .keyboardShortcut)
         }
     }
 
     @objc func translateSelection(_ sender: Any) {
         Task {
             guard let selection = await selectedTextInActiveTab() else { return }
-            let request = await AIChatTextTranslationRequest.make(text: selection.text, in: selection.webView, tld: Application.appDelegate.tld, source: .keyboardShortcut)
+            let request = await AIChatTextTranslationRequest.make(text: selection.text, in: selection.tab.webView, tld: Application.appDelegate.tld, source: .keyboardShortcut)
+            guard isActiveTab(selection.tab) else { return }
             aiChatTranslator.translate(request)
         }
     }
 
-    private func selectedTextInActiveTab() async -> (text: String, webView: WebView)? {
-        guard let webView = getActiveTabAndIndex()?.tab.webView else { return nil }
+    private func selectedTextInActiveTab() async -> (text: String, tab: Tab)? {
+        guard let tab = getActiveTabAndIndex()?.tab else { return nil }
         do {
-            let selectedText: String? = try await webView.evaluateJavaScript("window.getSelection().toString()")
+            let selectedText: String? = try await tab.webView.evaluateJavaScript("window.getSelection().toString()")
             guard let selectedText, !selectedText.isEmpty else {
                 return nil
             }
-            return (selectedText, webView)
+            return (selectedText, tab)
         } catch {
             Logger.aiChat.error("Failed to get selected text from the webView")
             return nil
         }
+    }
+
+    /// The selection actions act on the current tab's chat, so a tab switch during an `await` must cancel them.
+    private func isActiveTab(_ tab: Tab) -> Bool {
+        getActiveTabAndIndex()?.tab === tab
     }
 
     @objc func toggleDownloads(_ sender: Any) {

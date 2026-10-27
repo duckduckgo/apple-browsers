@@ -156,7 +156,91 @@ class TabBarTests: UITestCase {
         XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on control click")
     }
 
+    func testNewTabButtonOpensTab_andCloseButtonClosesIt() {
+        app.enforceSingleWindow()
+        let window = app.windows.firstMatch
+        let tabCount = window.tabs.count
+
+        hittableElement(in: window.buttons.matching(identifier: "NewTabButton")).click()
+        XCTAssertTrue(window.wait(for: .keyPath(\.tabs.count, equalTo: tabCount + 1), timeout: UITests.Timeouts.elementExistence),
+                      "Clicking the new tab button should open a tab")
+
+        let selectedTab = window.tabs.element(matching: \.isSelected, equalTo: true)
+        selectedTab.buttons["TabBarViewItem.closeButton"].clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(window.wait(for: .keyPath(\.tabs.count, equalTo: tabCount), timeout: UITests.Timeouts.elementExistence),
+                      "Clicking the tab's close button should close it")
+    }
+
+    func testDraggingTabIntoAnotherOpenWindow_movesTabThere() {
+        app.enforceSingleWindow()
+        app.openSite(pageTitle: "Page #1")
+
+        app.openNewWindow()
+        app.openSite(pageTitle: "Page #2")
+        app.openNewTab()
+        app.openSite(pageTitle: "Page #3")
+
+        // The new window is cascaded over the first one; move it down so the first window's tab bar can take the drop
+        let targetWindow = app.windows.element(boundBy: 1)
+        let sourceWindow = app.windows.element(boundBy: 0)
+        let sourceTitleBar = sourceWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0)).withOffset(CGVector(dx: 0, dy: 10))
+        sourceTitleBar.click(forDuration: 0.5, thenDragTo: sourceTitleBar.withOffset(CGVector(dx: 0, dy: 300)))
+        XCTAssertGreaterThan(sourceWindow.frame.minY, targetWindow.frame.minY + 100, "The second window should have moved out of the way")
+
+        let draggedTab = sourceWindow.tabs["Page #3"]
+        let lastTargetTab = targetWindow.tabs.element(boundBy: targetWindow.tabs.count - 1)
+        let dropPoint = lastTargetTab.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5)).withOffset(CGVector(dx: 40, dy: 0))
+        draggedTab.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .click(forDuration: 0.5, thenDragTo: dropPoint, withVelocity: .slow, thenHoldForDuration: 0.5)
+
+        XCTAssertTrue(targetWindow.tabs["Page #3"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "The dragged tab should be in the first window")
+        XCTAssertEqual(targetWindow.tabs.count, 2, "The first window should have its own tab and the dragged one")
+        XCTAssertEqual(sourceWindow.tabs.count, 1, "The second window should have only its remaining tab")
+    }
+
+    func testTabBarScrollButtons_bringFirstAndLastTabsIntoView() {
+        app.enforceSingleWindow()
+        let window = app.windows.firstMatch
+        let leftScrollButton = window.buttons["TabBarViewController.leftScrollButton"]
+        let rightScrollButton = window.buttons["TabBarViewController.rightScrollButton"]
+
+        // How many tabs it takes to overflow depends on the screen size, so keep adding until the scroll buttons show up
+        var openedTabs = 0
+        while !leftScrollButton.exists && openedTabs < 80 {
+            app.openNewTab()
+            openedTabs += 1
+        }
+        XCTAssertTrue(leftScrollButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "The tab bar should overflow")
+
+        let firstTab = window.tabs.element(boundBy: 0)
+        let lastTab = window.tabs.element(boundBy: window.tabs.count - 1)
+        XCTAssertFalse(firstTab.isHittable, "The first tab should be scrolled out of view")
+
+        clickRepeatedly(leftScrollButton, until: { firstTab.isHittable })
+        XCTAssertTrue(firstTab.isHittable, "The left scroll button should bring the first tab into view")
+        XCTAssertFalse(lastTab.isHittable, "The last tab should be scrolled out of view")
+
+        clickRepeatedly(rightScrollButton, until: { lastTab.isHittable })
+        XCTAssertTrue(lastTab.isHittable, "The right scroll button should bring the last tab into view")
+    }
+
     // MARK: - Utilities
+
+    /// The tab bar has two new tab buttons, one after the last tab and one pinned to the right when tabs overflow; only one is shown.
+    private func hittableElement(in query: XCUIElementQuery) -> XCUIElement {
+        let element = query.allElementsBoundByIndex.first(where: \.isHittable)
+        XCTAssertNotNil(element, "No hittable element in \(query)")
+        return element ?? query.firstMatch
+    }
+
+    private func clickRepeatedly(_ button: XCUIElement, until condition: () -> Bool) {
+        var clicks = 0
+        while !condition() && clicks < 40 {
+            button.click()
+            clicks += 1
+        }
+    }
 
     private func resetPinnedTabs() {
         app.debugMenu.click()

@@ -436,11 +436,11 @@ private extension ContextMenuManager {
     }
 
     func translateMenuItem() -> NSMenuItem {
-        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self).withImage(DesignSystemImages.Glyphs.Size12.translateAi, visibleOnMacOS27: true)
+        NSMenuItem(title: UserText.aiChatTranslate, action: #selector(translate), target: self, keyEquivalent: [.option, .command, "t"]).withImage(DesignSystemImages.Glyphs.Size12.translateAi, visibleOnMacOS27: true)
     }
 
     func attachToDuckAIMenuItem() -> NSMenuItem {
-        NSMenuItem(title: UserText.aiChatAttachSelection, action: #selector(attachToDuckAI), target: self)
+        NSMenuItem(title: UserText.aiChatAttachSelection, action: #selector(attachToDuckAI), target: self, keyEquivalent: [.option, .command, "k"])
             .withImage(DesignSystemImages.Glyphs.Size12.textSelectedRight, visibleOnMacOS27: true)
     }
 
@@ -516,7 +516,7 @@ private extension ContextMenuManager {
             return
         }
 
-        mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url)
+        mainViewController?.aiChatSelectionContextAttacher.attach(text: selectedText, url: webView?.url, source: .contextMenu)
     }
 
     func translate(_ sender: NSMenuItem) {
@@ -526,19 +526,7 @@ private extension ContextMenuManager {
         }
 
         Task { @MainActor in
-            let websiteTLD: String? = {
-                guard let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "") else { return nil }
-                return "." + sourceTLD
-            }()
-
-            let sourceLanguage: String? = await webView?.currentSelectionLanguage
-
-            let request = AIChatTextTranslationRequest(text: selectedText,
-                                                       websiteURL: webView?.url,
-                                                       websiteTitle: webView?.title,
-                                                       websiteTLD: websiteTLD,
-                                                       sourceLanguage: sourceLanguage)
-
+            let request = await AIChatTextTranslationRequest.make(text: selectedText, in: webView, tld: tld, source: .contextMenu)
             mainViewController?.aiChatTranslator.translate(request)
         }
     }

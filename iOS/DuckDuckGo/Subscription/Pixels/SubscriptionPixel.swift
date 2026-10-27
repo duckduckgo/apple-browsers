@@ -71,7 +71,7 @@ enum SubscriptionPixel: PixelKit.Event {
     // Auth
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
-    case subscriptionInvalidRefreshTokenRecovered
+    case subscriptionInvalidRefreshTokenRecovered(TokenRecoveryMethod?)
     case subscriptionAuthV2GetTokensError(AuthTokensCachePolicy, SubscriptionPixelHandler.Source, Error)
     // Pending Transaction
     case subscriptionPurchaseSuccessAfterPendingTransaction(SubscriptionPixelHandler.Source)
@@ -167,6 +167,7 @@ enum SubscriptionPixel: PixelKit.Event {
         static let entryKey = "entry"
         static let freeTrialKey = "free_trial"
         static let daysSincePurchaseKey = "days_since_purchase"
+        static let recoveryMethodKey = "recovery_method"
     }
 
     private static func vpnSubscriptionActiveValue(_ isSubscriptionActive: Bool?) -> String {
@@ -186,6 +187,8 @@ enum SubscriptionPixel: PixelKit.Event {
                 .subscriptionKeychainManagerDataWroteFromBacklog(let source),
                 .subscriptionKeychainManagerFailedToWriteDataFromBacklog(let source):
             return [SubscriptionPixelsDefaults.sourceKey: source.rawValue]
+        case .subscriptionInvalidRefreshTokenRecovered(let method):
+            return method.map { [SubscriptionPixelsDefaults.recoveryMethodKey: $0.rawValue] }
         case .subscriptionAuthV2GetTokensError(let policy, let source, _):
             return [SubscriptionPixelsDefaults.policyCacheKey: policy.description,
                     SubscriptionPixelsDefaults.sourceKey: source.rawValue]

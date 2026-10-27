@@ -32,7 +32,6 @@ extension Preferences {
         }
 
         @ObservedObject var model: ExtensionsManagementPreferences
-        let imageLoader: RemoteMessagingImageLoading
 
         @Environment(\.designSystemPalette) private var palette
 
@@ -63,7 +62,7 @@ extension Preferences {
 
                 PreferencePaneSection(UserText.extensionsSettingsPasswordManagersHeader, spacing: 12) {
                     ForEach(model.passwordManagers) { item in
-                        ExtensionsManagementRow(item: item, imageLoader: imageLoader) {
+                        ExtensionsManagementRow(item: item, imageLoader: model.imageLoader) {
                             model.openStorePage(for: item)
                         }
                     }

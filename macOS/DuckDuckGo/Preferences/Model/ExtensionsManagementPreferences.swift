@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import PrivacyConfig
+import RemoteMessaging
 import WebExtensions
 
 /// Lists the extensions catalog's password managers for the Extensions settings pane, refreshed on every Privacy Config update.
@@ -41,11 +42,16 @@ final class ExtensionsManagementPreferences: ObservableObject, PreferencesTabOpe
     @Published private(set) var passwordManagers: [PasswordManager] = []
 
     let windowControllersManager: WindowControllersManagerProtocol
+    let imageLoader: RemoteMessagingImageLoading
     private let catalog: ChromeWebStoreCatalog
     private var cancellables = Set<AnyCancellable>()
 
-    init(configurationManager: PrivacyConfigurationManaging, windowControllersManager: WindowControllersManagerProtocol) {
+    init(configurationManager: PrivacyConfigurationManaging,
+         windowControllersManager: WindowControllersManagerProtocol,
+         imageLoader: RemoteMessagingImageLoading = RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
+                                                                               cache: RemoteMessagingImageLoader.defaultCache)) {
         self.windowControllersManager = windowControllersManager
+        self.imageLoader = imageLoader
         catalog = ChromeWebStoreCatalog(configurationManager: configurationManager)
         reloadPasswordManagers()
 

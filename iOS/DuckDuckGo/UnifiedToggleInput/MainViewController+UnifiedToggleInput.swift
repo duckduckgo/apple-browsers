@@ -1022,7 +1022,7 @@ extension MainViewController {
         coordinator.contentViewController.forceBottomBarLayout = coordinator.isAITabState
 
         let isAITabCollapsed = coordinator.isAITabCollapsed
-        coordinator.viewController.setAITabCollapsedFooterPoseActive(isAITabCollapsed)
+        coordinator.viewController.setFlankingAccessoriesVisible(isAITabCollapsed ? .all : [])
         viewCoordinator.setAITabCollapsedTopSeparatorVisible(isAITabCollapsed)
 
         applyTopChromeState(renderState: renderState, isOnAITab: isOnAITab, coordinator: coordinator)

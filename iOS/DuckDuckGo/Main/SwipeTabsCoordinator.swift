@@ -696,7 +696,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         inputController.didMove(toParent: coordinator.parentController)
         inputController.apply(
             UTIViewConfig(
-                cardLayout: .flanked,
+                cardLayout: .flanked(.all),
                 cardPosition: .bottom,
                 usesOmnibarMargins: false,
                 inactiveAppearance: false,
@@ -708,7 +708,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             animated: false
         )
         inputController.text = state.text
-        inputController.setAITabCollapsedFooterPoseActive(true)
+        inputController.setFlankingAccessoriesVisible(.all)
         liveChromeControllers.append(inputController)
     }
 

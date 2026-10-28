@@ -387,6 +387,21 @@ final class AIChatContextualSheetViewController: UIViewController {
         return stack
     }()
 
+    private enum FirePlacement {
+        case header
+        /// Beside the collapsed input, as on a Duck.ai tab.
+        case input
+    }
+
+    private var isFireButtonShown = false
+
+    private lazy var firePlacement: FirePlacement = {
+        let placesFireByInput = persistentUTIHost?.collapsesToPill == true
+            && !DevicePlatform.isIpad
+            && featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+        return placesFireByInput ? .input : .header
+    }()
+
     private lazy var fireButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(DesignSystemImages.Glyphs.Size24.fire, for: .normal)
@@ -1282,7 +1297,7 @@ private extension AIChatContextualSheetViewController {
                 webVC.loadDefaultChatURL()
                 isWebViewVisible = false
             }
-            fireButton.isHidden = true
+            setFireButtonVisible(false)
             if contextualInputViewController.parent != nil {
                 updateChipUI(chipState: viewState.chipState)
             } else {
@@ -1291,14 +1306,14 @@ private extension AIChatContextualSheetViewController {
         case .webView:
             isAwaitingSubmittedChat = false
             if isWaitingForInitialPromptResponseState {
-                fireButton.isHidden = true
+                setFireButtonVisible(false)
                 return
             }
             // Web VC was created in viewDidLoad, just show it if not already visible
             if !isWebViewVisible {
                 transitionToWebView()
             }
-            fireButton.isHidden = !viewState.shouldShowNewChatButton
+            setFireButtonVisible(viewState.shouldShowNewChatButton)
         }
 
     }
@@ -1433,7 +1448,7 @@ private extension AIChatContextualSheetViewController {
         if !isWebViewVisible {
             transitionToWebView()
         }
-        fireButton.isHidden = !sessionState.viewState.shouldShowNewChatButton
+        setFireButtonVisible(sessionState.viewState.shouldShowNewChatButton)
         mountPersistentUTIHostIfNeeded()
         expandToLargeDetent()
     }
@@ -1496,7 +1511,7 @@ private extension AIChatContextualSheetViewController {
         headerView.addSubview(rightButtonContainer)
         rightButtonContainer.contentView.addSubview(rightButtonStack)
         trailingButtons.forEach(rightButtonStack.addArrangedSubview)
-        fireButton.isHidden = true
+        setFireButtonVisible(false)
 
         NSLayoutConstraint.activate((leadingButtons + trailingButtons).flatMap {
             [$0.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
@@ -1512,10 +1527,19 @@ private extension AIChatContextualSheetViewController {
     /// The redesign puts close leading and pairs the hand-off with fire; the original is the reverse.
     private func resolveHeaderButtons() -> (leading: [UIButton], trailing: [UIButton]) {
         let chats = suggestionsReader != nil ? [recentChatsButton] : []
+        let fire = firePlacement == .header ? [fireButton] : []
         guard usesRedesignedHeader else {
-            return ([expandButton] + chats, [fireButton, closeButton])
+            return ([expandButton] + chats, fire + [closeButton])
         }
-        return ([closeButton] + chats, [fireButton, expandButton])
+        return ([closeButton] + chats, fire + [expandButton])
+    }
+
+    private func setFireButtonVisible(_ visible: Bool) {
+        isFireButtonShown = visible
+        switch firePlacement {
+        case .header: fireButton.isHidden = !visible
+        case .input: persistentUTIHost?.setFireAccessoryVisible(visible)
+        }
     }
 
     private func makeTitleTapControl() -> HighlightableControl {
@@ -1585,8 +1609,13 @@ private extension AIChatContextualSheetViewController {
         persistentUTIHost.onEditModeChange = { [weak self] isEditing in
             self?.setEditMode(isEditing)
         }
+        persistentUTIHost.onFireRequested = { [weak self] in
+            self?.fireButtonTapped()
+        }
 
         let utiView = persistentUTIHost.mount(in: self)
+        // Mounting resets the host's accessories, so Fire is restored here.
+        setFireButtonVisible(isFireButtonShown)
         persistentUTIHost.onTabMentionVisibilityChanged = { [weak self] isVisible in
             guard let self else { return }
             if !isVisible {

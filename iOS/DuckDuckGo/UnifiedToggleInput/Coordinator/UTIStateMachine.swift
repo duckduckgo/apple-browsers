@@ -29,6 +29,8 @@ final class UTIStateMachine {
     private(set) var displayState: UnifiedToggleInputDisplayState
     private let host: UnifiedToggleInputHost
     private let hidesToggleOnDuckAITab: Bool
+    /// Accessories beside the contextual sheet's collapsed pill; none keeps the plain pill.
+    var contextualCollapsedAccessories: UnifiedToggleInputFlankingAccessories = []
 
     init(displayState: UnifiedToggleInputDisplayState = .hidden,
          host: UnifiedToggleInputHost,
@@ -226,8 +228,9 @@ final class UTIStateMachine {
                             inputMode: TextEntryMode,
                             isToggleEnabled: Bool) -> UnifiedToggleInputCardLayout {
         guard isExpanded else {
-            // Only a Duck.ai tab gets the flanked pose; the contextual sheet collapses to the plain pill.
-            return isAITabState ? .flanked : .collapsed
+            if isAITabState { return .flanked(.all) }
+            if isContextualChatState, !contextualCollapsedAccessories.isEmpty { return .flanked(contextualCollapsedAccessories) }
+            return .collapsed
         }
         switch host {
         case .contextualChat:

@@ -319,7 +319,7 @@ final class AIChatContextualUTIHost: UnifiedToggleInputDelegate, AIChatContextua
     func mount(in parent: UIViewController) -> UIView {
         coordinator.attachmentPresentingViewController = parent
         // Accessories belong to the surface that set them; a new mount starts with none.
-        coordinator.setContextualCollapsedAccessories([])
+        coordinator.setContextualCollapsedAccessories([], animated: false)
 
         let viewController = coordinator.viewController
         guard viewController.parent !== parent else {

@@ -781,7 +781,9 @@ extension MainViewController {
 
     /// Fire mode lists Fire chats only.
     func makeTabSwitcherRecentChatsReaderProvider() -> ((BrowsingMode) -> AIChatSuggestionsReading)? {
-        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), aiChatSettings.isAIChatEnabled else { return nil }
+        // iPhone only: "View all chats" opens the native history, which iPad doesn't have.
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), aiChatSettings.isAIChatEnabled,
+              UIDevice.current.userInterfaceIdiom == .phone else { return nil }
         return { [weak self] mode in
             guard let self else { return NilSuggestionsReader() }
             return AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: mode == .fire,

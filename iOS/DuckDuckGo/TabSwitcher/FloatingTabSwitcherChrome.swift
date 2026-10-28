@@ -291,7 +291,10 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
 
     func configureDuckChatMenu(_ menu: UIMenu?) {
         duckChatItem.menu = menu
-        duckChatItem.primaryAction = menu == nil ? UIAction { [weak self] _ in self?.actions.onDuckChatTapped?() } : nil
+        // A primary action sets the item's image too, so it has to carry the icon.
+        duckChatItem.primaryAction = menu == nil
+            ? UIAction(image: DesignSystemImages.Glyphs.Size24.aiChat) { [weak self] _ in self?.actions.onDuckChatTapped?() }
+            : nil
         if #available(iOS 16.0, *) {
             duckChatItem.preferredMenuElementOrder = .fixed
         }

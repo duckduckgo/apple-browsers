@@ -1595,10 +1595,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     /// The collapsed AI-tab fire button. Exposed for `ViewHighlighter` targeting during onboarding.
     var aiTabFireButton: UIButton { viewController.aiTabFireButton }
 
-    func setContextualCollapsedAccessories(_ accessories: UnifiedToggleInputFlankingAccessories) {
+    func setContextualCollapsedAccessories(_ accessories: UnifiedToggleInputFlankingAccessories, animated: Bool = true) {
         guard stateMachine.contextualCollapsedAccessories != accessories else { return }
         stateMachine.contextualCollapsedAccessories = accessories
-        viewController.apply(computeRenderState().viewConfig, animated: true)
+        viewController.apply(computeRenderState().viewConfig, animated: animated)
     }
 
     /// Locks or unlocks the input bar during the Duck.ai fire onboarding path.

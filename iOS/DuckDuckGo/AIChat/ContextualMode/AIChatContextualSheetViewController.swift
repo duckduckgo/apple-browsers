@@ -1526,7 +1526,9 @@ private extension AIChatContextualSheetViewController {
     private func setFireButtonVisible(_ visible: Bool) {
         isFireButtonShown = visible
         if showsFireByInput {
-            persistentUTIHost?.setFireAccessoryVisible(visible)
+            // While the floating input borrows the host, Fire waits for the sheet to mount it again.
+            guard let persistentUTIHost, persistentUTIHost.isMounted(in: self) else { return }
+            persistentUTIHost.setFireAccessoryVisible(visible)
         } else {
             fireButton.isHidden = !visible
         }

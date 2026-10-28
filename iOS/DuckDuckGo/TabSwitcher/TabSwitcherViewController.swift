@@ -703,6 +703,8 @@ class TabSwitcherViewController: UIViewController {
         }
 
         canUpdateCollection = false
+        recentChatsReaders.values.forEach { $0.tearDown() }
+        recentChatsReaders = [:]
         if let firePC = firePageController {
             tabManager.tabsModel(for: .fire).tabs.forEach { $0.removeObserver(firePC) }
         }

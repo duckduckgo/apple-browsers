@@ -3233,7 +3233,8 @@ class MainViewController: UIViewController {
 
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
     private func captureCurrentTabForSwipeBack() {
-        swipeTabsCoordinator?.captureOnScreenSnapshotForCurrentTab()
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) else { return }
+        swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
     }
 
     @discardableResult
@@ -8619,9 +8620,10 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String) {
-        fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: true, hasPrompt: false)
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
         loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
-            $0.duckAIEntrySource = .chatHistoryOpenChat
+            $0.duckAIEntrySource = .tabSwitcher
         }
     }
 

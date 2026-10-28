@@ -129,8 +129,9 @@ class SwipeTabsCoordinator: NSObject {
     private var lastEdgeTickOverscroll: CGFloat = 0
     private var isExternalPanDragging = false
 
-    /// Drags past the first or last tab give way and spring back instead of stopping dead. Read once per drag.
-    private var bouncesAtEdges = false
+    /// Swipes bounce at the first and last tab, with no new-tab page past the last one. Read once, so a flag
+    /// change mid-session can't leave the strip's pages and its gestures disagreeing.
+    private let bouncesAtEdges: Bool
     
     var isEnabled = false {
         didSet {
@@ -175,6 +176,7 @@ class SwipeTabsCoordinator: NSObject {
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
+        self.bouncesAtEdges = omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
                 
         super.init()
         
@@ -438,13 +440,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
     }
 
-    /// The frame already on screen, so swiping back to a tab being left has a full-screen snapshot.
-    func captureOnScreenSnapshotForCurrentTab() {
-        guard !floatingUIManager.isFloatingUIEnabled,
-              let tab = tabsModel.currentTab,
-              let snapshot = makeFullScreenSnapshot(afterScreenUpdates: false) else { return }
-        tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
-    }
 
     /// Renders the live `MainViewController.view` (`coordinator.superview`) into a `UIImage`,
     /// transiently zeroing the overlay's alpha so the overlay doesn't appear in its own
@@ -959,7 +954,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     /// Swiping past a last tab with content opens a new tab, unless the swipe should bounce there instead.
     private func hasNewTabDestination(after tabs: [Tab]) -> Bool {
-        tabs.last?.link != nil && !omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+        tabs.last?.link != nil && !bouncesAtEdges
     }
 
     /// The page a swipe in this direction lands on; `nil` past the first or last tab, where it can only bounce.
@@ -1022,7 +1017,6 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        bouncesAtEdges = omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
         lastEdgeTickOverscroll = 0
         edgeFeedbackGenerator.prepare()
         switch state {

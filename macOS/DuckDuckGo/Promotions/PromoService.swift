@@ -89,6 +89,7 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
                 record.timesDismissed = 0
                 record.lastShown = nil
                 record.actioned = false
+                record.lastActioned = nil
             }
             historyStore.save(record)
             notifyRecordChanged(for: promoId, record: record)
@@ -240,7 +241,8 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// Publisher for promo triggers.
     private let triggerPublisher: AnyPublisher<PromoTrigger, Never>
 
-    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished.
+    /// Provides onboarding completion state used to suppress internal promos until onboarding has finished,
+    /// except those with `canShowDuringOnboarding`.
     private let isOnboardingCompletedProvider: () -> Bool
 
     /// Triggers to be evaluated after delegate registration and deferral window ends.
@@ -515,9 +517,11 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
     /// and showing any that are newly eligible. Triggers are evaluated in promo priority order.
     private func evaluateTriggers(_ triggers: Set<PromoTrigger>) {
         dispatchPrecondition(condition: .onQueue(stateQueue))
-        guard isOnboardingCompletedProvider() else { return }
+        let isOnboardingCompleted = isOnboardingCompletedProvider()
 
-        let matchingPromos = promos.filter { $0.triggers.contains(where: triggers.contains) }
+        let matchingPromos = promos.filter {
+            $0.triggers.contains(where: triggers.contains) && (isOnboardingCompleted || $0.canShowDuringOnboarding)
+        }
         for promo in matchingPromos {
             (promo.delegate as? InternalPromoDelegate)?.refreshEligibility()
         }
@@ -694,11 +698,17 @@ final class PromoService: @unchecked Sendable, PromoHistoryProviding {
         dispatchPrecondition(condition: .onQueue(stateQueue))
         var record = historyStore.record(for: promoId)
         switch result {
-        case .actioned:
+        case .actioned(cooldown: nil):
             record.timesDismissed += 1
             record.lastDismissed = currentDate
             record.nextEligibleDate = .distantFuture
             record.actioned = true
+            record.lastActioned = currentDate
+        case .actioned(cooldown: let interval?):
+            record.timesDismissed += 1
+            record.lastDismissed = currentDate
+            record.nextEligibleDate = currentDate.addingTimeInterval(interval)
+            record.lastActioned = currentDate
         case .ignored(cooldown: nil):
             record.timesDismissed += 1
             record.lastDismissed = currentDate

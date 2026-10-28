@@ -19,6 +19,7 @@
 import AppKit
 import BrowserServicesKit
 import Foundation
+import History
 import PixelKit
 
 internal class ChromiumDataImporter: DataImporter {
@@ -26,27 +27,43 @@ internal class ChromiumDataImporter: DataImporter {
     private let bookmarkImporter: BookmarkImporter
     private let loginImporter: LoginImporter?
     private let faviconManager: FaviconManagement
+    private let historyReader: ChromiumHistoryReaderProtocol
+    private let historyImporter: HistoryImporterProtocol
+    private let pixelFiring: PixelFiring?
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
     }
 
-    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
+    init(
+        profile: DataImport.BrowserProfile,
+        loginImporter: LoginImporter?,
+        bookmarkImporter: BookmarkImporter,
+        faviconManager: FaviconManagement,
+        historyReader: ChromiumHistoryReaderProtocol,
+        historyImporter: HistoryImporterProtocol,
+        pixelFiring: PixelFiring? = PixelKit.shared
+    ) {
         self.profile = profile
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
+        self.historyReader = historyReader
+        self.historyImporter = historyImporter
+        self.pixelFiring = pixelFiring
     }
 
     convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter) {
         self.init(profile: profile,
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
-                  faviconManager: NSApp.delegateTyped.faviconManager)
+                  faviconManager: NSApp.delegateTyped.faviconManager,
+                  historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
+                  historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator))
     }
 
     var importableTypes: [DataImport.DataType] {
-        return [.passwords, .bookmarks]
+        return [.passwords, .bookmarks, .history]
     }
 
     func importData(types: Set<DataImport.DataType>) -> DataImportTask {
@@ -91,10 +108,11 @@ internal class ChromiumDataImporter: DataImporter {
             try updateProgress(.importingPasswords(numberOfPasswords: try? loginResult.get().count, fraction: dataTypeFraction * 1.0))
         }
 
-        let passwordsFraction: Double = types.contains(.passwords) ? 0.5 : 0.0
-        if types.contains(.bookmarks)
-            // don‘t proceed with bookmarks import on Keychain prompt denial
-            && (summary[.passwords]?.error as? ChromiumLoginReader.ImportError)?.type != .userDeniedKeychainPrompt {
+        // don‘t proceed with bookmarks and history import on Keychain prompt denial
+        let isKeychainPromptDenied = (summary[.passwords]?.error as? ChromiumLoginReader.ImportError)?.type == .userDeniedKeychainPrompt
+
+        let passwordsFraction: Double = types.contains(.passwords) ? dataTypeFraction : 0.0
+        bookmarksImport: if types.contains(.bookmarks), !isKeychainPromptDenied {
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
 
@@ -103,7 +121,7 @@ internal class ChromiumDataImporter: DataImporter {
 
             guard case .success(var importedBookmarks) = bookmarkResult else {
                 summary[.bookmarks] = .failure(bookmarkResult.error!)
-                return summary
+                break bookmarksImport
             }
 
             let newTabShortcuts = fetchShortcutsAsFavorites()
@@ -122,7 +140,49 @@ internal class ChromiumDataImporter: DataImporter {
                                                    fraction: passwordsFraction + dataTypeFraction * 1.0))
         }
 
+        if types.contains(.history), !isKeychainPromptDenied {
+            let historyFraction = dataTypeFraction * Double(types.intersection([.passwords, .bookmarks]).count)
+            try updateProgress(.importingHistory(numberOfVisits: nil, fraction: historyFraction))
+
+            let historySummary = try await importHistory()
+            summary[.history] = historySummary
+
+            try updateProgress(.importingHistory(numberOfVisits: try? historySummary.get().successful,
+                                                 fraction: historyFraction + dataTypeFraction))
+        }
+
         return summary
+    }
+
+    private func importHistory() async throws -> DataImportResult<DataImport.DataTypeSummary> {
+        let parseResult: HistoryImport.ParseResult
+        switch historyReader.readVisits(since: .monthAgo) {
+        case .success(let result):
+            parseResult = result
+        case .failure(let error):
+            fireHistorySourceFileMissingPixelIfNeeded()
+            return .failure(error)
+        }
+        // reading a large database can take a while: don't add visits to history after the import was cancelled
+        try Task.checkCancellation()
+
+        do {
+            let importSummary = try await historyImporter.importVisits(parseResult)
+            return .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: 0))
+        } catch {
+            return .failure(ChromiumHistoryReader.ImportError(type: .importVisits, underlyingError: error))
+        }
+    }
+
+    /// The profile folder could be read, but it has no history database where the importer looks for it.
+    private func fireHistorySourceFileMissingPixelIfNeeded() {
+        guard profile.validateProfileData() != nil, !profile.hasValidProfileData(for: .history) else { return }
+
+        let pixel = DataImportHistoryPixel.sourceFileMissing(
+            source: source.pixelSourceParameterName,
+            sourceVersion: profile.installedAppsMajorVersionDescription()
+        )
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private func importFavicons() async {

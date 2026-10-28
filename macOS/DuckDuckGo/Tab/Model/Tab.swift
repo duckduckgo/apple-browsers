@@ -601,6 +601,11 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
     let webView: WebView
 
+    /// The web view showing the tab's `webkit-extension:` page. The page needs its extension's
+    /// configuration, so it can't load in `webView`. WebKit finds the page's tab through this web
+    /// view, which extensions read as `sender.tab`.
+    var webExtensionPageWebView: WebView?
+
     var audioState: WebView.AudioState {
         webView.audioState
     }
@@ -629,6 +634,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             if !content.displaysContentInWebView && oldValue.displaysContentInWebView {
                 webView.stopAllMedia(shouldStopLoading: false)
             }
+            if content != oldValue {
+                webExtensionPageWebView = nil
+            }
             Task { @MainActor in
                 extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
             }
@@ -656,7 +664,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     @Published var hasCommittedContent = false
 
     @discardableResult
-    func setContent(_ newContent: TabContent) -> ExpectedNavigation? {
+    func setContent(_ newContent: TabContent, request: URLRequest? = nil) -> ExpectedNavigation? {
         guard contentChangeEnabled else { return nil }
 
         let oldContent = self.content
@@ -669,8 +677,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
             return newContent
         }()
 
+        if let request, request.url != newContent.urlForWebView { return nil }
+
+        // The same chat differs only by the source of the navigation that opened it; reopening it must not reload.
+        if request == nil, case .aiChat(let newURL, source: _) = newContent, case .aiChat(let oldURL, source: _) = self.content, newURL == oldURL {
+            return nil
+        }
+
         // reload if content differs or user-entered
-        guard newContent != self.content || newContent.isUserEnteredUrl else { return nil }
+        guard request != nil || newContent != self.content || newContent.isUserEnteredUrl else { return nil }
 
         self.content = newContent
 
@@ -681,7 +696,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         if error != nil { error = nil }
 
-        return reloadIfNeeded(source: .contentUpdated)
+        return reloadIfNeeded(source: .contentUpdated, request: request)
     }
 
     @discardableResult
@@ -1086,20 +1101,23 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     }
     @MainActor(unsafe)
     @discardableResult
-    private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource) -> ExpectedNavigation? {
+    private func reloadIfNeeded(source reloadIfNeededSource: ReloadIfNeededSource, request originalRequest: URLRequest? = nil) -> ExpectedNavigation? {
         guard let url = content.urlForWebView,
               shouldReload(url, source: reloadIfNeededSource) else { return nil }
 
-        if case .settings = content, case .settings = webView.url.flatMap({ TabContent.contentFromURL($0, source: .ui) }) {
-            // replace WebView URL without adding a new history item if switching settings panes
-            webView.evaluateJavaScript("location.replace('\(url.absoluteString.escapedJavaScriptString())')", in: nil, in: .defaultClient)
-            return nil
-        }
+        // An explicit request must keep its method and body instead of reloading or restoring an older navigation.
+        if originalRequest == nil {
+            if case .settings = content, case .settings = webView.url.flatMap({ TabContent.contentFromURL($0, source: .ui) }) {
+                // replace WebView URL without adding a new history item if switching settings panes
+                webView.evaluateJavaScript("location.replace('\(url.absoluteString.escapedJavaScriptString())')", in: nil, in: .defaultClient)
+                return nil
+            }
 
-        if webView.url == url, webView.backForwardList.currentItem?.url == url, !webView.isLoading, !content.isUserRequestedPageDownload {
-            return reload()
+            if webView.url == url, webView.backForwardList.currentItem?.safeURL == url, !webView.isLoading, !content.isUserRequestedPageDownload {
+                return reload()
+            }
+            if restoreInteractionStateIfNeeded() { return nil /* session restored */ }
         }
-        if restoreInteractionStateIfNeeded() { return nil /* session restored */ }
         invalidateInteractionStateData()
 
         let source = content.source
@@ -1111,8 +1129,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 .loadFileURL(url, allowingReadAccessTo: readAccessScopeURL, withExpectedNavigationType: source.navigationType)
         }
 
-        var request = URLRequest(url: url, cachePolicy: source.cachePolicy)
-        if content.isUserEnteredUrl {
+        var request = originalRequest ?? URLRequest(url: url, cachePolicy: content.cachePolicy)
+        if originalRequest == nil, content.isUserEnteredUrl {
             request.attribution = .user
         }
 
@@ -1666,7 +1684,7 @@ extension Tab {
     /// no web content process is spawned. The old Tab (and its WKWebView) is released
     /// when replaceTab assigns the new one, letting the OS reclaim the process memory.
     func makeSuspendedTab() -> UnloadedTab {
-        let unloadedTab = UnloadedTab(from: self.makeRestorationData())
+        let unloadedTab = UnloadedTab(from: self.makeRestorationData(), isFromSessionRestore: false)
         unloadedTab.isSuspended = true
 
         if let snapshotsExtension = self.tabSnapshots {

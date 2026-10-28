@@ -66,7 +66,8 @@ final class UnifiedToggleInputViewController: UIViewController {
     let handler: UnifiedToggleInputHandler
     private lazy var inputBarView = UnifiedToggleInputView(handler: handler,
                                                           isToggleEnabled: isToggleEnabled,
-                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput)
+                                                          placesAttachmentsAboveInput: placesAttachmentsAboveInput,
+                                                          usesCompactAttachmentLayout: usesCompactAttachmentLayout)
 
     /// Edges of the visible input card, for aligning content sitting around the bar.
     func inputCardFrame(in view: UIView) -> CGRect {
@@ -100,9 +101,15 @@ final class UnifiedToggleInputViewController: UIViewController {
     /// Decided by the coordinator, which knows whether this is the omnibar or a contextual surface.
     private let placesAttachmentsAboveInput: Bool
 
-    init(isToggleEnabled: Bool, isFireTab: Bool = false, placesAttachmentsAboveInput: Bool = false) {
+    private let usesCompactAttachmentLayout: Bool
+
+    init(isToggleEnabled: Bool,
+         isFireTab: Bool = false,
+         placesAttachmentsAboveInput: Bool = false,
+         usesCompactAttachmentLayout: Bool = false) {
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
+        self.usesCompactAttachmentLayout = usesCompactAttachmentLayout
         self.handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false,
                                                  isToggleEnabled: isToggleEnabled,
                                                  isFireTab: isFireTab)
@@ -193,6 +200,32 @@ final class UnifiedToggleInputViewController: UIViewController {
         set { inputBarView.isToolbarSubmitBlockedByRecoveryCard = newValue }
     }
 
+    var tabAttachmentsRequirePromptText: Bool {
+        get { inputBarView.tabAttachmentsRequirePromptText }
+        set { inputBarView.tabAttachmentsRequirePromptText = newValue }
+    }
+
+    var isPreparingInitialPrompt: Bool {
+        get { inputBarView.isPreparingInitialPrompt }
+        set { inputBarView.isPreparingInitialPrompt = newValue }
+    }
+
+    var isInputFrozenForInitialPromptPreparation: Bool {
+        get { inputBarView.isInputFrozenForInitialPromptPreparation }
+        set { inputBarView.isInputFrozenForInitialPromptPreparation = newValue }
+    }
+
+    /// Greys out Send and marks the pasted-text chips in one go.
+    var isPromptOverLimit: Bool {
+        get { inputBarView.isPromptOverLimit }
+        set { inputBarView.isPromptOverLimit = newValue }
+    }
+
+    var onAttachmentTapped: ((UUID) -> Void)? {
+        get { inputBarView.onAttachmentTapped }
+        set { inputBarView.onAttachmentTapped = newValue }
+    }
+
     /// The handler's copy closes the keyboard's own routes into a prompt; the view's greys out the
     /// controls that would offer one.
     var isInputBlockedByUsageLimit: Bool = false {
@@ -214,6 +247,11 @@ final class UnifiedToggleInputViewController: UIViewController {
     var modelName: String {
         get { inputBarView.modelName }
         set { inputBarView.modelName = newValue }
+    }
+
+    var modelIcon: UIImage? {
+        get { inputBarView.modelIcon }
+        set { inputBarView.modelIcon = newValue }
     }
 
     var modelPickerMenu: UIMenu? {

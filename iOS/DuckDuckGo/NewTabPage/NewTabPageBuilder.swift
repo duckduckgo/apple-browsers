@@ -43,6 +43,7 @@ struct NewTabPageBuilder {
     let remoteMessagingPixelReporter: RemoteMessagingPixelReporting?
     let appSettings: AppSettings
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let subscriptionManager: any SubscriptionManager
     let internalUserCommands: URLBasedDebugCommands
     let floatingUIManager: FloatingUIManaging
@@ -51,14 +52,13 @@ struct NewTabPageBuilder {
     let voiceSearchHelper: VoiceSearchHelperProtocol
     let daxGreetingProvider: DaxGreetingProviding
     let daxGreetingChanges: AnyPublisher<Void, Never>
-    let updateDaxGreetingAppearance: (DaxGreetingContext.Appearance) -> Void
 
     /// `daxDialogFactory` is supplied per page rather than stored.
     func makeNewTabPage(tab: Tab,
                         openedAfterIdle: Bool,
                         daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         if usesRedesignedPage(for: tab) {
-            return makeRedesignedNewTabPage(tab: tab, openedAfterIdle: openedAfterIdle)
+            return makeRedesignedNewTabPage(tab: tab, openedAfterIdle: openedAfterIdle, daxDialogFactory: daxDialogFactory)
         }
 
         return makeCurrentNewTabPage(tab: tab,
@@ -71,13 +71,15 @@ struct NewTabPageBuilder {
         !tab.fireTab && redesignFeature.isAvailable
     }
 
-    private func makeRedesignedNewTabPage(tab: Tab, openedAfterIdle: Bool) -> any NewTabPage {
+    private func makeRedesignedNewTabPage(tab: Tab,
+                                          openedAfterIdle: Bool,
+                                          daxDialogFactory: any NewTabDaxDialogProviding) -> any NewTabPage {
         // The callbacks are created before their owning page; keep the back-reference weak.
         weak var newTabPage: RedesignedNewTabPageViewController?
-        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, toggleModeStorage, voiceSearchHelper] in
+        let searchInputModel = NewTabPageSearchInputModel(readSettings: { [aiChatSettings, aiChatAddressBarExperience, toggleModeStorage, voiceSearchHelper] in
             NewTabPageSearchInputModel.Settings(
                 isModeToggleShown: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                isAIChatEnabled: aiChatSettings.isAIChatEnabled,
+                isAIChatShortcutEnabled: aiChatAddressBarExperience.shouldShowDuckAIAddressBarButton,
                 isVoiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
                 // Must match the address bar's home-tab mode resolution.
                 defaultTextEntryMode: aiChatSettings.defaultOmnibarMode.resolvedTextEntryMode { toggleModeStorage.restore() })
@@ -130,15 +132,23 @@ struct NewTabPageBuilder {
         let page = RedesignedNewTabPageViewController(blocks: [
             NewTabPageSwiftUIBlock(id: .welcome, rootView: NewTabPageWelcomeView(
                 model: NewTabPageWelcomeModel(greetingProvider: daxGreetingProvider,
-                                             contextChanges: daxGreetingChanges,
-                                             updateAppearance: updateDaxGreetingAppearance))),
+                                             contextChanges: daxGreetingChanges))),
             NewTabPageSwiftUIBlock(id: .searchInput, rootView: searchInputView),
-            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)),
+            NewTabPageSwiftUIBlock(id: .favorites, rootView: RedesignedNewTabPageModulesView(
+                favoritesModel: favoritesModel,
+                onAddFavorite: {
+                    guard let newTabPage else { return }
+                    newTabPage.delegate?.newTabPageDidRequestAddFavorite(newTabPage)
+                })),
             NewTabPageSwiftUIBlock(id: .escapeHatch,
                                   rootView: RedesignedNewTabPageEscapeHatchView(pageModel: pageModel)),
             NewTabPageSwiftUIBlock(id: .messages,
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
-        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel)
+        ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
+           onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
+                                                                  daxDialogsManager: daxDialogsManager,
+                                                                  onboardingFlowProvider: onboardingFlowProvider,
+                                                                  floatingUIManager: floatingUIManager))
         newTabPage = page
         return page
     }

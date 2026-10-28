@@ -45,14 +45,14 @@ struct BurnerHomePageView: View {
             ScrollView {
                 VStack(spacing: Const.contentGap) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: DesignSystemRebrand.isAppRebranded() ? 24 : 12)
-                            .stroke(Color.homeFavoritesGhost, style: StrokeStyle(lineWidth: 1.0))
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color(.homeFavoritesGhost), style: StrokeStyle(lineWidth: 1.0))
                             .background(Color(designSystemColor: .surfaceTertiary))
-                            .cornerRadius(DesignSystemRebrand.isAppRebranded() ? 24 : 12)
+                            .cornerRadius(24)
 
                         VStack(alignment: .leading, spacing: 16) {
                             HStack {
-                                Image(themeManager.isAppRebranded ? .updatedBurnerWindowHome : .updatedBurnerWindowHomeLegacy)
+                                Image(.updatedBurnerWindowHome)
                                     .resizable()
                                     .aspectRatio(contentMode: .fit)
                                     .frame(width: 64, height: 48)

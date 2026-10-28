@@ -74,10 +74,10 @@ final class JSAlertController: NSViewController {
         let view = NSView(frame: NSRect(origin: .zero, size: Constants.contentSize))
         view.autoresizingMask = [.width, .height]
 
-        backgroundView = ColorView(frame: .zero, backgroundColor: .alertBackgroundOverlay, interceptClickEvents: true)
+        backgroundView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .alertBackgroundOverlay), interceptClickEvents: true)
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
 
-        alertView = ColorView(frame: .zero, backgroundColor: .dialogPanelBackground)
+        alertView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .dialogPanelBackground))
         alertView.translatesAutoresizingMaskIntoConstraints = false
 
         titleTextField = NSTextField(labelWithString: "")

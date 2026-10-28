@@ -222,3 +222,39 @@ extension DataClearingTimeoutPixels: PixelKit.Event {
         return [.pixelSource]
     }
 }
+
+
+enum SingleTabBurnPixels: PixelKit.Event {
+    case requested(optimized: Bool, dropped: Bool)
+    case finished(optimized: Bool, duration: DurationBucket, tabClosure: DurationBucket?)
+
+    struct DurationBucket {
+        let value: String
+
+        init(seconds: TimeInterval) {
+            let milliseconds = seconds * 1_000
+            let bounds = [100, 250, 500, 1_000, 2_000, 5_000, 10_000, 30_000, 60_000, 120_000, 300_000]
+            value = bounds.first { milliseconds <= Double($0) }.map(String.init) ?? "more"
+        }
+    }
+
+    var name: String {
+        switch self {
+        case .requested: return "fire_single-tab-burn_requested"
+        case .finished: return "fire_single-tab-burn_finished"
+        }
+    }
+
+    var parameters: [String: String]? {
+        switch self {
+        case .requested(let optimized, let dropped):
+            return ["optimization_enabled": String(optimized), "dropped": String(dropped)]
+        case .finished(let optimized, let duration, let tabClosure):
+            var parameters = ["optimization_enabled": String(optimized), "duration_ms": duration.value]
+            parameters["tab_closure_ms"] = tabClosure?.value
+            return parameters
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? { nil }
+}

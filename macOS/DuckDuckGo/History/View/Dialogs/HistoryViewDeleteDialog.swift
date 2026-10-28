@@ -18,7 +18,6 @@
 
 import Common
 import SwiftUIExtensions
-import DesignResourcesKit
 
 struct HistoryViewDeleteDialog: ModalView {
 
@@ -27,7 +26,7 @@ struct HistoryViewDeleteDialog: ModalView {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(DesignSystemRebrand.isAppRebranded() ? .historyBurn : .historyBurnLegacy)
+            Image(.historyBurn)
 
             VStack(spacing: 12) {
                 Text(model.title)
@@ -48,7 +47,7 @@ struct HistoryViewDeleteDialog: ModalView {
 
                     Text(model.dataClearingExplanation)
                         .fixMultilineScrollableText()
-                        .foregroundColor(.blackWhite60)
+                        .foregroundColor(Color(.blackWhite60))
                         .font(.system(size: 11))
                         .padding(.leading, 19)
 
@@ -60,13 +59,13 @@ struct HistoryViewDeleteDialog: ModalView {
 
                         Text(UserText.deleteChatHistoryExplanation)
                             .fixMultilineScrollableText()
-                            .foregroundColor(.blackWhite60)
+                            .foregroundColor(Color(.blackWhite60))
                             .font(.system(size: 11))
                             .padding(.leading, 19)
                     }
                 }
                 .padding(.init(top: 16, leading: 12, bottom: 16, trailing: 12))
-                .background(RoundedRectangle(cornerRadius: 8.0).stroke(.blackWhite5))
+                .background(RoundedRectangle(cornerRadius: 8.0).stroke(Color(.blackWhite5)))
             }
             .padding(.bottom, 16)
 

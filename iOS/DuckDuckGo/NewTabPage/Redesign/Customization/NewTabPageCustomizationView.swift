@@ -139,7 +139,7 @@ private struct NewTabPageCustomizationRow: View {
                 }
             }
         }
-        .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+        .listRowBackground(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var label: some View {

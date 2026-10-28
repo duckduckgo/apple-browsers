@@ -22,7 +22,6 @@ import FeatureFlags_macOS
 import PrivacyConfig
 import History
 import Suggestions
-import AIChat
 
 protocol SuggestionViewControllerDelegate: AnyObject {
 
@@ -58,17 +57,8 @@ final class SuggestionViewController: NSViewController {
         suggestionContainerViewModel.isBurner
     }
 
-    private lazy var sectionDividerRowHeight: CGFloat = {
-        let rebrandedHeight: CGFloat = 14
-        let legacyHeight: CGFloat = 9
-        return themeManager.isAppRebranded ? rebrandedHeight : legacyHeight
-    }()
-
-    private lazy var scrollViewBottomInset: CGFloat = {
-        let rebrandedInset: CGFloat = 3
-        let legacyInset: CGFloat = 5
-        return themeManager.isAppRebranded ? rebrandedInset : legacyInset
-    }()
+    private let sectionDividerRowHeight: CGFloat = 14
+    private let scrollViewBottomInset: CGFloat = 3
 
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
@@ -76,11 +66,9 @@ final class SuggestionViewController: NSViewController {
 
     init(suggestionContainerViewModel: SuggestionContainerViewModel,
          themeManager: ThemeManaging,
-         aiChatPreferencesStorage: AIChatPreferencesStorage,
          featureFlagger: FeatureFlagger) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.themeManager = themeManager
-        self.aiChatPreferencesStorage = aiChatPreferencesStorage
         self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
@@ -113,7 +101,7 @@ final class SuggestionViewController: NSViewController {
 
         shadowView = ShadowView()
         shadowView.translatesAutoresizingMaskIntoConstraints = false
-        shadowView.shadowColor = .suggestionsShadow
+        shadowView.shadowColor = NSColor(resource: .suggestionsShadow)
         shadowView.shadowRadius = LayoutConstants.shadowRadius
         shadowView.cornerRadius = LayoutConstants.shadowCornerRadius
         shadowView.shadowOpacity = 1
@@ -123,15 +111,15 @@ final class SuggestionViewController: NSViewController {
         clipView.translatesAutoresizingMaskIntoConstraints = false
 
         backgroundView = ColorView(frame: .zero,
-                                   backgroundColor: .addressBarBackground,
+                                   backgroundColor: NSColor(resource: .addressBarBackground),
                                    cornerRadius: LayoutConstants.cornerRadius,
-                                   borderColor: .addressBarBorder,
+                                   borderColor: NSColor(resource: .addressBarBorder),
                                    borderWidth: LayoutConstants.borderWidth)
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
 
         innerBorderView = ColorView(frame: .zero,
                                     cornerRadius: LayoutConstants.cornerRadius,
-                                    borderColor: .addressBarInnerBorder,
+                                    borderColor: NSColor(resource: .addressBarInnerBorder),
                                     borderWidth: LayoutConstants.borderWidth)
         innerBorderView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -183,7 +171,7 @@ final class SuggestionViewController: NSViewController {
         backgroundView.addSubview(innerBorderView)
         backgroundView.addSubview(scrollView)
 
-        topSeparatorView = ColorView(frame: .zero, backgroundColor: .addressBarSeparator)
+        topSeparatorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .addressBarSeparator))
         topSeparatorView.translatesAutoresizingMaskIntoConstraints = false
 
         clipView.addSubview(backgroundView)
@@ -272,8 +260,6 @@ final class SuggestionViewController: NSViewController {
 
     /// Flag to prevent re-entrancy when programmatically updating table selection
     private var isUpdatingTableSelection = false
-    private var isAIChatToggleBeingDisplayed: Bool = false
-    private let aiChatPreferencesStorage: AIChatPreferencesStorage
     private let featureFlagger: FeatureFlagger
 
     override func viewDidLoad() {
@@ -290,14 +276,8 @@ final class SuggestionViewController: NSViewController {
         topSeparatorView?.isHidden = true
     }
 
-    private func updateAIChatToggleFlag() {
-        let isToggleFeatureEnabled = aiChatPreferencesStorage.isAIFeaturesEnabled
-        isAIChatToggleBeingDisplayed = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
-    }
-
     override func viewWillAppear() {
         super.viewWillAppear()
-        updateAIChatToggleFlag()
 
         self.view.window!.isOpaque = false
         self.view.window!.backgroundColor = .clear
@@ -331,10 +311,6 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func setupRoundedCorners() {
-        guard themeManager.isAppRebranded else {
-            return
-        }
-
         let roundedCorners: RoundedCorners = [.bottomLeft, .bottomRight]
         backgroundView.roundedCorners = roundedCorners
         innerBorderView.roundedCorners = roundedCorners
@@ -582,13 +558,10 @@ extension SuggestionViewController: NSTableViewDelegate {
                              removeAction: #selector(removeButtonAction(_:)))
         cell.theme = themeManager.theme
 
-        /// `isAIChatToggleBeingDisplayed` adds an extra leading padding. The AppRebrand new UX already picks the right leading padding via `AddressBarStyleProviding`
-        cell.isAIChatToggleBeingDisplayed = isAIChatToggleBeingDisplayed && !themeManager.isAppRebranded
-
         switch rowContent {
         case .aiChatCell:
             let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let aiChatIcon: NSImage = .aiChat
+            let aiChatIcon: NSImage = NSImage(resource: .aiChat)
             cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
 
         case .sectionDivider:
@@ -618,22 +591,15 @@ extension SuggestionViewController: NSTableViewDelegate {
 
         let dividerLine = NSView()
         dividerLine.wantsLayer = true
-        dividerLine.layer?.backgroundColor = NSColor.addressBarSeparator.cgColor
+        dividerLine.layer?.backgroundColor = NSColor(resource: .addressBarSeparator).cgColor
         dividerLine.translatesAutoresizingMaskIntoConstraints = false
 
         containerView.addSubview(dividerLine)
 
-        let isAppRebranded = themeManager.isAppRebranded
-        let leadingConstant: CGFloat = isAppRebranded ? 0 : 12
-        let trailingConstant: CGFloat = isAppRebranded ? 0 : -12
+        let leadingConstant: CGFloat = 0
+        let trailingConstant: CGFloat = 0
 
-        let verticalConstraint: NSLayoutConstraint = {
-            if isAppRebranded {
-                return dividerLine.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8)
-            }
-
-            return dividerLine.centerYAnchor.constraint(equalTo: containerView.centerYAnchor)
-        }()
+        let verticalConstraint: NSLayoutConstraint = dividerLine.topAnchor.constraint(equalTo: containerView.topAnchor, constant: 8)
 
         NSLayoutConstraint.activate([
             dividerLine.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
@@ -658,7 +624,6 @@ extension SuggestionViewController: NSTableViewDelegate {
                                                         owner: self) as? SuggestionTableRowView ?? SuggestionTableRowView()
 
         suggestionTableRowView.theme = themeManager.theme
-        suggestionTableRowView.isAppRebranded = themeManager.isAppRebranded
         return suggestionTableRowView
     }
 

@@ -30,7 +30,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
         featureName: "vpn-session-health",
         mobileMetaType: "ios-vpn-session-health",
         desktopMetaType: "macos-vpn-session-health",
-        version: "1.0.0")
+        version: "1.0.1")
 
     // MARK: - Wide event
 
@@ -47,6 +47,9 @@ public struct VPNSessionHealthWideEventData: WideEventData {
     public var startReason: EventStartReason
     public var startedAt: Date
     public var lastObservedAt: Date
+
+    /// Persisted locally for comparison at completion; never included in the pixel payload.
+    public var sessionStartPID: Int32?
 
     public var endedAt: Date?
     public var endReason: EventEndReason?
@@ -77,6 +80,21 @@ public struct VPNSessionHealthWideEventData: WideEventData {
 
     // MARK: - Other diagnostics
 
+    /// Compares event duration with wall-clock time since tunnel-provider initialization, including when recovering a backdated orphan.
+    public var eventDurationExceedsProcessLifetime: Bool?
+
+    /// Start reason of the process recovering this orphan; set only on orphan recovery.
+    public var currentProcessStartReason: EventStartReason?
+
+    /// Wall-clock time from the orphan's last observation to the recovering process start; set only on orphan recovery.
+    public var processRestartGap: TimeInterval?
+
+    /// Set only when the starting PID differs from the completing or recovering process; otherwise omitted.
+    public var processIDChanged: Bool?
+
+    /// Set only when the completing or recovering process runs a different app version than `appData.version`; otherwise omitted.
+    public var appVersionChanged: Bool?
+
     /// From `NetworkProtectionTunnelFailureMonitor`; routing outages come from the tester.
     public var staleHandshakeDetected = false
     public var staleHandshakeRecovered = false
@@ -92,6 +110,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
     public init(startReason: EventStartReason,
                 startedAt: Date,
                 extensionType: VPNConnectionWideEventData.ExtensionType,
+                sessionStartPID: Int32? = nil,
                 contextData: WideEventContextData = WideEventContextData(),
                 appData: WideEventAppData = WideEventAppData(),
                 globalData: WideEventGlobalData = WideEventGlobalData()) {
@@ -99,6 +118,7 @@ public struct VPNSessionHealthWideEventData: WideEventData {
         self.startedAt = startedAt
         self.lastObservedAt = startedAt
         self.extensionType = extensionType
+        self.sessionStartPID = sessionStartPID
         self.contextData = contextData
         self.appData = appData
         self.globalData = globalData
@@ -120,6 +140,11 @@ public struct VPNSessionHealthWideEventData: WideEventData {
             (Key.timeToFirstError, timeToFirstError.map(Self.durationBucket)),
             (Key.staleHandshakeRecovered, staleHandshakeDetected ? staleHandshakeRecovered : nil),
             (Key.failureRecoverySucceeded, failureRecoverySucceeded),
+            (Key.eventDurationExceedsProcessLifetime, eventDurationExceedsProcessLifetime),
+            (Key.currentProcessStartReason, currentProcessStartReason?.rawValue),
+            (Key.processRestartGap, processRestartGap.map(Self.processRestartGapBucket)),
+            (Key.processIDChanged, processIDChanged),
+            (Key.appVersionChanged, appVersionChanged),
         ])
 
         params[Key.startReason] = startReason.rawValue
@@ -255,6 +280,10 @@ private extension VPNSessionHealthWideEventData {
         bucket(seconds, thresholds: [0, 1, 15, 60, 300, 900, 1_800, 3_600])
     }
 
+    static func processRestartGapBucket(_ seconds: TimeInterval) -> String {
+        bucket(seconds, thresholds: [0, 60, 300, 900, 1_800, 3_600, 43_200])
+    }
+
     static func outageCountBucket(_ count: Int) -> String {
         bucket(count, thresholds: [0, 1, 2, 4, 9])
     }
@@ -358,6 +387,11 @@ extension WideEventParameter {
         static let failureReason = "feature.data.ext.failure_reason"
         static let monitoringCoverage = "feature.data.ext.monitoring_coverage"
         static let eventDuration = "feature.data.ext.event_duration_seconds_bucketed"
+        static let eventDurationExceedsProcessLifetime = "feature.data.ext.event_duration_exceeds_process_lifetime"
+        static let currentProcessStartReason = "feature.data.ext.current_process_start_reason"
+        static let processRestartGap = "feature.data.ext.process_restart_gap_seconds_bucketed"
+        static let processIDChanged = "feature.data.ext.process_id_changed"
+        static let appVersionChanged = "feature.data.ext.app_version_changed"
         static let connectionTestFailureSeen = "feature.data.ext.connection_tester_failure_seen"
         static let extendedRoutingOutageDetected = "feature.data.ext.connection_tester_extended_failure_seen"
         static let connectionTestFailureActiveAtEnd = "feature.data.ext.connection_tester_failure_active_at_end"

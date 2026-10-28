@@ -1,13 +1,13 @@
 {
-  "originHash" : "865088d2a22aae71d229d0dfc33e762191472273e30878e2a559da8f2aa4e0ab",
+  "originHash" : "3f1695ea320db0746fa1bbe8ebf0e3367c81873c604db67d55a7cd3ed91ceab6",
   "pins" : [
     {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "dfbdb5e9dea9bf076a08173f817aea0f4cfb72d8",
-        "version" : "17.4.0"
+        "revision" : "0e9cb240a0aa30197c9a50e64f10685b0652da04",
+        "version" : "17.29.0"
       }
     },
     {
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "34eb540473a90d25e11942e9c72a18c2430d4f50",
-        "version" : "19.2.0"
+        "revision" : "4d5848619462c863d6bb7553cb090fc74b172be2",
+        "version" : "19.2.1"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "88a028fe9e4aa53941cb49dfc93bbcf62bd46f3b",
-        "version" : "9.10.2"
+        "revision" : "756233c2d2d1b8abc0d3f7d47de0ea191a07fd79",
+        "version" : "9.11.0"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/gumob/PunycodeSwift.git",
       "state" : {
-        "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
-        "version" : "3.0.0"
+        "revision" : "de703481cf48b859a04bac8ef1d98217b9c97aa9",
+        "version" : "4.0.3"
       }
     },
     {

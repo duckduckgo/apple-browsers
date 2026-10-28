@@ -21,7 +21,9 @@
 import Combine
 import Common
 import FoundationExtensions
+import FeatureFlags_iOS
 import Core
+import JavaScriptCore
 import DDGSync
 import XCTest
 @testable import DuckDuckGo
@@ -31,6 +33,7 @@ import WebKit
 @_spi(Testing) import PixelKit
 
 // swiftlint:disable inclusive_language
+@MainActor
 class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
@@ -81,6 +84,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     private func makeAIChatUserScriptHandler(isNativeStorageBridgeAvailable: Bool = false,
                                              aiChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent>? = nil,
+                                             attachmentPrivacyWebKeySource: DuckAiNativeStorageHandling? = nil,
                                              installDateProvider: @escaping () -> Date? = { nil },
                                              installTypeProvider: @escaping () -> AIChatInstallType = { .new }) -> AIChatUserScriptHandler {
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger)
@@ -95,9 +99,156 @@ class AIChatUserScriptHandlerTests: XCTestCase {
             iPadDuckAIControlsFeature: mockIPadDuckAIControlsFeature,
             aiChatUserScriptErrorEventMapper: aiChatUserScriptErrorEventMapper ?? AIChatUserScriptErrorEventMapper(),
             isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+            attachmentPrivacyDisplayStore: AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults),
+            attachmentPrivacyWebKeySource: attachmentPrivacyWebKeySource,
             installDateProvider: installDateProvider,
             installTypeProvider: installTypeProvider
         )
+    }
+
+    @MainActor
+    func testAttachmentPrivacyIsIPadOnlyAndIndependentOfUnifiedInputFlag() async {
+        let flagStates: [([FeatureFlag], Bool)] = [
+            ([], false),
+            ([.unifiedToggleInputAttachmentPrivacy], false),
+            ([.aiChatAttachmentPrivacyIPad], true),
+            ([.unifiedToggleInputAttachmentPrivacy, .aiChatAttachmentPrivacyIPad], true)
+        ]
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        for isIphone in [false, true] {
+            MockDevicePlatform.isIphone = isIphone
+            for (flags, enabledOnIPad) in flagStates {
+                store.reset()
+                mockFeatureFlagger.enabledFeatureFlags = flags
+                aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+                let expected = !isIphone && enabledOnIPad
+                let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues
+                let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                    params: [:], message: message
+                ) as? AttachmentPrivacyShouldDisplayResponse
+
+                XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, expected, "iPhone: \(isIphone), flags: \(flags)")
+                XCTAssertEqual(response?.show, expected, "iPhone: \(isIphone), flags: \(flags)")
+                XCTAssertEqual(store.hasShown, expected)
+            }
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyBridgeHandlerRemainsAbsentOnIPhone() {
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler,
+                                     debugSettings: MockAIChatDebugSettingsForTests(),
+                                     devicePlatform: MockDevicePlatform.self)
+        for isIphone in [true, false] {
+            MockDevicePlatform.isIphone = isIphone
+            let handler = script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue)
+            XCTAssertEqual(handler == nil, isIphone)
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyRechecksDeviceFlagWithoutConsumingDisabledRequests() async {
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        for enabled in [false, true, false] {
+            mockFeatureFlagger.enabledFeatureFlags = enabled ? [.aiChatAttachmentPrivacyIPad] : [.unifiedToggleInputAttachmentPrivacy]
+            let config = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [:], message: message) as? AIChatNativeConfigValues
+            let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+
+            XCTAssertEqual(config?.supportsAttachmentPrivacyDisplay, enabled)
+            XCTAssertEqual(response?.show, enabled)
+            XCTAssertEqual(store.hasShown, enabled)
+            if enabled {
+                store.reset()
+            }
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyMessageClaimsOnceAndReturnsShowResponse() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler,
+                                     debugSettings: MockAIChatDebugSettingsForTests(),
+                                     devicePlatform: MockDevicePlatform.self)
+        XCTAssertNotNil(script.handler(forMethodNamed: AIChatUserScriptMessages.attachmentPrivacyShouldDisplay.rawValue))
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let firstResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message)
+        let first = try XCTUnwrap(firstResponse)
+        let json = try JSONSerialization.jsonObject(with: JSONEncoder().encode(first)) as? [String: Bool]
+        XCTAssertEqual(json, ["show": true])
+        let second = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(second?.show, false)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyMessageRechecksFlagAndAdoptsWebState() async throws {
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: "true")
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let disabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(disabled?.show, false)
+        XCTAssertFalse(store.hasShown)
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let enabled = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(params: [:], message: message) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(enabled?.show, false)
+        XCTAssertTrue(store.hasShown)
+    }
+
+    @MainActor
+    func testAttachmentPrivacyAdoptsWebStateDurablyAcrossHandlers() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        let message = MockUserScriptMessage(name: "test", body: [:])
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let shownValues: [Any] = [true, 1, 0.5, "true", "TRUE", "2"]
+
+        for value in shownValues {
+            store.reset()
+            try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: value)
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+            let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+            XCTAssertEqual(response?.show, false)
+            XCTAssertTrue(store.hasShown)
+
+            try webStorage.deleteEntry(key: AttachmentPrivacyDisclosure.webEntryKey)
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+            let subsequentResponse = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+                params: [:], message: message
+            ) as? AttachmentPrivacyShouldDisplayResponse
+            XCTAssertEqual(subsequentResponse?.show, false)
+        }
+    }
+
+    @MainActor
+    func testAttachmentPrivacyResetClearsIPadAndWebStateWithoutChangingIPhoneState() async throws {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatAttachmentPrivacyIPad]
+        let store = AttachmentPrivacyDisclosureStore(keyValueStore: mockUserDefaults)
+        let iphoneStore = UTIAttachmentPrivacyNoticeDisplayStore(keyValueStore: mockUserDefaults)
+        let webStorage = DuckAiNativeMemoryStorageHandler()
+        store.markShown()
+        iphoneStore.markShown()
+        try webStorage.putEntry(key: AttachmentPrivacyDisclosure.webEntryKey, value: true)
+        let disclosure = AttachmentPrivacyDisclosure(store: store, webKeySource: webStorage, isEnabled: { true })
+
+        disclosure.reset()
+
+        XCTAssertFalse(store.hasShown)
+        XCTAssertTrue(iphoneStore.hasShown)
+        XCTAssertNil(try webStorage.getEntry(key: AttachmentPrivacyDisclosure.webEntryKey))
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler(attachmentPrivacyWebKeySource: webStorage)
+        let response = await aiChatUserScriptHandler.attachmentPrivacyShouldDisplay(
+            params: [:], message: MockUserScriptMessage(name: "test", body: [:])
+        ) as? AttachmentPrivacyShouldDisplayResponse
+        XCTAssertEqual(response?.show, true)
     }
 
     func testWhenReturningUserThenInstallTypeIsReturning() {
@@ -167,6 +318,9 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(configValues?.platform, "ios")
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
         XCTAssertEqual(configValues?.supportsAIChatSync, false)
+        XCTAssertEqual(configValues?.supportsCanonicalChatFormat, true)
+        // Native prompt flows on iPad complete from `responseState`, which the page sends only on request.
+        XCTAssertEqual(configValues?.supportsResponseStateReporting, true)
     }
     
     func testWhenNativeStorageFeatureIsOnAndBridgeIsAvailableAndNotInFireModeThenSupportsNativeStorageIsTrue() {
@@ -330,7 +484,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     func testWhenFlagOnAndParamsValidThenEditPromptForwardsDecodedRequestAndReturnsInputBoxReply() async throws {
         mockFeatureFlagger.enabledFeatureFlags = [.nativeAIPromptEditing]
         let inputBox = MockAIChatInputBox()
-        inputBox.editPromptResult = .submit(prompt: "edited", images: nil, files: nil)
+        inputBox.editPromptResult = .submit(prompt: "edited", attachments: .none)
         aiChatUserScriptHandler.setAIChatInputBoxHandler(inputBox)
 
         let params: [String: Any] = ["prompt": "original", "hasResponsesToLose": true]
@@ -339,7 +493,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(inputBox.receivedRequest?.prompt, "original")
         XCTAssertEqual(inputBox.receivedRequest?.hasResponsesToLose, true)
-        guard case .submit(let prompt, _, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
+        guard case .submit(let prompt, _) = reply else { return XCTFail("Expected the input box's .submit reply") }
         XCTAssertEqual(prompt, "edited")
     }
 
@@ -439,6 +593,32 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
         XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
         XCTAssertEqual(configValues?.supportsAIChatContextualMode, true)
+        XCTAssertEqual(configValues?.supportsSuggestions, true)
+    }
+
+    func testSuggestionsSupportFollowsContextualModeAvailabilityWhileRunning() {
+        aiChatUserScriptHandler.displayMode = .contextual
+
+        for isAvailable in [false, true, false] {
+            mockAIChatContextualModeFeature.isAvailable = isAvailable
+
+            let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(
+                params: [], message: MockUserScriptMessage(name: "test", body: [:])
+            ) as? AIChatNativeConfigValues
+
+            XCTAssertEqual(configValues?.supportsSuggestions, isAvailable)
+        }
+    }
+
+    func testFullTabDoesNotSupportContextualSuggestions() {
+        mockAIChatContextualModeFeature.isAvailable = true
+        aiChatUserScriptHandler.displayMode = .fullTab
+
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(
+            params: [], message: MockUserScriptMessage(name: "test", body: [:])
+        ) as? AIChatNativeConfigValues
+
+        XCTAssertEqual(configValues?.supportsSuggestions, false)
     }
 
     func testGetAIChatNativeConfigValuesWithContextualModeFeatureAvailable() {
@@ -451,6 +631,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsAIChatContextualMode, true)
+        XCTAssertEqual(configValues?.supportsSuggestions, true)
     }
 
     func testGetAIChatNativeConfigValuesWithContextualModeFeatureUnavailable() {
@@ -463,6 +644,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsAIChatContextualMode, false)
+        XCTAssertEqual(configValues?.supportsSuggestions, false)
     }
 
     func testGetAIChatNativeHandoffData() {
@@ -976,6 +1158,50 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         )
         XCTAssertEqual(json, ["modelId": "claude-haiku-4-5"])
     }
+
+    // MARK: - Push Message: submitNativeInputFocused (native input focus → FE closes its dialogs)
+
+    @MainActor
+    func testWhenNativeInputFocusChangesThenFocusedFlagIsPushedToFrontEnd() async {
+        let webView = NativeInputFocusedRecordingWebView()
+        let broker = UserScriptMessageBroker(context: "aiChat", requiresRunInPageContentWorld: true)
+        let inputBox = MockAIChatInputBox()
+        let script = makeTestUserScript()
+        script.webView = webView
+        script.broker = broker
+        script.inputBoxHandler = inputBox
+        var pushed: [Bool] = []
+        let delivered = expectation(description: "Both focus changes reach the FE")
+        delivered.expectedFulfillmentCount = 2
+        webView.onFocused = { pushed.append($0); delivered.fulfill() }
+
+        inputBox.didChangeInputFocus.send(true)
+        inputBox.didChangeInputFocus.send(false)
+        await fulfillment(of: [delivered], timeout: 1)
+
+        XCTAssertEqual(pushed, [true, false])
+        withExtendedLifetime(broker) {}
+    }
+}
+
+@MainActor
+private final class NativeInputFocusedRecordingWebView: WKWebView {
+    var onFocused: ((Bool) -> Void)?
+    private let javaScriptContext = JSContext()!
+
+    override func evaluateJavaScript(_ javaScriptString: String, completionHandler: ((Any?, Error?) -> Void)? = nil) {
+        javaScriptContext.evaluateScript("""
+            var capturedFocused = null;
+            var navigator = { duckduckgo: { messageHandlers: {
+                submitNativeInputFocused: function(event) { capturedFocused = event.params.focused; }
+            } } };
+            """)
+        javaScriptContext.evaluateScript(javaScriptString)
+        if let value = javaScriptContext.objectForKeyedSubscript("capturedFocused"), value.isBoolean {
+            onFocused?(value.toBool())
+        }
+        completionHandler?(nil, nil)
+    }
 }
 
 private final class CapturingAIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptErrorEvent> {
@@ -1183,6 +1409,7 @@ extension AIChatUserScriptHandlerTests {
         DuckAiTermsOfServiceStore(keyValueStore: mockUserDefaults).recordAcceptedInNativeInput()
     }
 
+    @MainActor
     private func pullPrompt() -> AIChatNativePrompt? {
         aiChatUserScriptHandler.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativePrompt
     }
@@ -1239,23 +1466,37 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
     }
 
-    /// duck.ai on iPad keeps its own Terms of Service, even though the iPad inputs show the disclaimer.
-    func testWhenAcceptedInAnIPadInputThenPromptsCarryNoMarkerInAnyDisplayMode() {
-        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
-        MockDevicePlatform.isIphone = false
-        mockIPadDuckAIControlsFeature.isAvailable = true
-        mockAIChatContextualModeFeature.isAvailable = true
-        mockUnifiedToggleInputFeature.isAvailable = true
-        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+    /// iPad's address bar sends into a full-tab chat, which has no native chat input, so the marker can't depend on one.
+    func testWhenAcceptedInAnIPadInputThenAskPromptsCarryTheMarkerInAnyDisplayMode() {
+        enableNativeTermsOfServiceOnIPad()
         recordAcceptedInNativeInput()
 
         for displayMode in [AIChatDisplayMode.fullTab, .contextual] {
             aiChatUserScriptHandler.displayMode = displayMode
-            XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), "\(displayMode)")
+            XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt), true, "\(displayMode)")
+            XCTAssertEqual(aiChatUserScriptHandler.termsAcceptedMarker(for: promptSentWithoutAsk), false, "\(displayMode)")
         }
     }
 
+    func testWhenNativeTermsOfServiceFlagIsOffOnIPadThenPromptsCarryNoMarker() {
+        mockFeatureFlagger.enabledFeatureFlags = []
+        MockDevicePlatform.isIphone = false
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+        recordAcceptedInNativeInput()
+
+        XCTAssertNil(aiChatUserScriptHandler.termsAcceptedMarker(for: askPrompt))
+    }
+
+    private func enableNativeTermsOfServiceOnIPad() {
+        mockFeatureFlagger.enabledFeatureFlags = [.duckAINativeTermsOfService]
+        MockDevicePlatform.isIphone = false
+        mockIPadDuckAIControlsFeature.isAvailable = true
+        mockAIChatContextualModeFeature.isAvailable = true
+        aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+    }
+
     /// The page-loading path: the FE pulls the prompt, so it is stamped on the way out.
+    @MainActor
     func testWhenAskPromptIsPulledThenItCarriesTermsAccepted() {
         enableNativeTermsOfService()
         recordAcceptedInNativeInput()
@@ -1264,6 +1505,7 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(pullPrompt()?.termsAccepted, true)
     }
 
+    @MainActor
     func testWhenPromptSentWithoutAskIsPulledThenItCarriesTermsAcceptedFalse() {
         enableNativeTermsOfService()
         recordAcceptedInNativeInput()
@@ -1272,6 +1514,7 @@ extension AIChatUserScriptHandlerTests {
         XCTAssertEqual(pullPrompt()?.termsAccepted, false)
     }
 
+    @MainActor
     func testWhenNativeTermsOfServiceIsOffThenPulledPromptCarriesNoMarker() {
         mockFeatureFlagger.enabledFeatureFlags = []
         AIChatPromptHandler.shared.setData(askPrompt)
@@ -1406,6 +1649,8 @@ extension AIChatUserScriptHandlerTests {
             ("userDidClickPromotionCardButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__promotioncard"),
             ("userDidViewSettingsSubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
             ("userDidClickSettingsSubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
+            ("userDidViewSettingsResubscribeButton", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__settings"),
+            ("userDidClickSettingsResubscribeButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__settings"),
             ("userDidViewProUpgradeDisclaimerBanner", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidClickProUpgradeDisclaimerBannerButton", .aiChatSubscriptionFunnelClick, "funnel_duckai_ios__disclaimerbanner"),
             ("userDidViewVoiceChatLimitModal", .aiChatSubscriptionFunnelImpression, "funnel_duckai_ios__voicechatlimit"),
@@ -1448,6 +1693,7 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didPressCustomizeResponsesButton = PassthroughSubject<Void, Never>()
+    let didChangeInputFocus = PassthroughSubject<Bool, Never>()
 
     var persistedModelId: String?
     var persistedReasoningEffort: AIChatReasoningEffort?
@@ -1472,5 +1718,114 @@ private final class MockAIChatInputBox: AIChatInputBoxHandling {
     private(set) var cancelEditCallCount = 0
     func cancelEdit() {
         cancelEditCallCount += 1
+    }
+}
+
+@MainActor
+extension AIChatUserScriptHandlerTests {
+    func testOrdinaryPromptUsesSharedHandlerWithAttachmentFeatureOffAndOn() {
+        let prompts: [(name: String, prompt: AIChatNativePrompt)] = [
+            ("text", .queryPrompt("ordinary", autoSubmit: true)),
+            ("draft with model and reasoning", .queryPrompt("Review before sending", autoSubmit: false,
+                                                           modelId: "gpt-5.2", reasoningEffort: .medium)),
+            ("image", .queryPrompt("Describe this image", autoSubmit: true,
+                                   attachments: AIChatPromptAttachments(images: [.init(data: "image-data", format: "png")]))),
+            ("file", .queryPrompt("Summarize this file", autoSubmit: true,
+                                  attachments: AIChatPromptAttachments(files: [.init(data: "file-data", fileName: "document.pdf", mimeType: "application/pdf")])))
+        ]
+        defer { AIChatPromptHandler.shared.reset() }
+        let flagStates: [[FeatureFlag]] = [[], [.aiChatContextualAttachMoreTabs]]
+        for flags in flagStates {
+            mockFeatureFlagger.enabledFeatureFlags = flags
+            aiChatUserScriptHandler = makeAIChatUserScriptHandler()
+            let session = AIChatInitialPromptSession()
+            aiChatUserScriptHandler.connectInitialPromptSession(session)
+            for (name, prompt) in prompts {
+                AIChatPromptHandler.shared.reset()
+                AIChatPromptHandler.shared.setData(prompt)
+
+                XCTAssertEqual(pullPrompt(), prompt, "\(name) prompt must preserve its payload with flags: \(flags)")
+                XCTAssertNil(pullPrompt(), "\(name) prompt must be consumed once with flags: \(flags)")
+            }
+        }
+    }
+
+    func testRecipientConsumptionNeverFallsBackToSharedPrompt() {
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatContextualAttachMoreTabs]
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        let recipient = AIChatNativePrompt.queryPrompt("recipient", autoSubmit: true)
+        let ordinary = AIChatNativePrompt.queryPrompt("ordinary", autoSubmit: true)
+        session.install(AIChatInitialPromptDelivery(prompt: recipient) {})
+        AIChatPromptHandler.shared.setData(ordinary)
+
+        XCTAssertEqual(pullPrompt(), recipient)
+        XCTAssertNil(pullPrompt())
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), ordinary)
+    }
+
+    func testRecipientCancellationNeverFallsBackToSharedPrompt() {
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk) {})
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        aiChatUserScriptHandler.cancelInitialPrompt()
+
+        XCTAssertNil(pullPrompt())
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), askPrompt)
+    }
+
+    func testRecipientTimeoutNeverFallsBackToSharedPrompt() async throws {
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk, consumptionTimeout: 0) {})
+        AIChatPromptHandler.shared.setData(askPrompt)
+        let wait = try XCTUnwrap(aiChatUserScriptHandler.captureInitialPromptWait())
+
+        let maySubmit = await wait()
+
+        XCTAssertTrue(maySubmit)
+        XCTAssertNil(pullPrompt())
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), askPrompt)
+    }
+
+    func testRecipientPromptStillUsesTermsAcceptedMarker() {
+        enableNativeTermsOfService()
+        recordAcceptedInNativeInput()
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: askPrompt) {})
+
+        XCTAssertEqual(pullPrompt()?.termsAccepted, true)
+    }
+
+    func testReplacedHandlerCannotConsumeOrCancelRecipientOrSharedPrompt() {
+        let session = AIChatInitialPromptSession()
+        let old = aiChatUserScriptHandler!
+        old.connectInitialPromptSession(session)
+        let current = makeAIChatUserScriptHandler()
+        current.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk) {})
+        AIChatPromptHandler.shared.setData(askPrompt)
+
+        old.cancelInitialPrompt()
+        old.disconnectInitialPromptSession()
+        XCTAssertNil(old.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:])))
+        let actual = current.getAIChatNativePrompt(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+        XCTAssertEqual(actual as? AIChatNativePrompt, promptSentWithoutAsk)
+        XCTAssertEqual(AIChatPromptHandler.shared.consumeData(), askPrompt)
+    }
+
+    func testNavigationResetAllowsOrdinaryPromptAgain() {
+        let session = AIChatInitialPromptSession()
+        aiChatUserScriptHandler.connectInitialPromptSession(session)
+        session.install(AIChatInitialPromptDelivery(prompt: promptSentWithoutAsk) {})
+        _ = pullPrompt()
+        session.didStartNavigation(DummyWKNavigation())
+        session.didStartNavigation(DummyWKNavigation())
+        AIChatPromptHandler.shared.setData(promptSentWithoutAsk)
+
+        XCTAssertEqual(pullPrompt(), promptSentWithoutAsk)
     }
 }

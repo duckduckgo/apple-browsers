@@ -36,8 +36,10 @@ import FeatureFlags_iOS
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
 final class ReportingService {
 
+    private let deviceLaunchPixelReporter: DeviceLaunchPixelReporter
+
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
-    let onboardingPixelReporter = OnboardingPixelReporter()
+    let onboardingPixelReporter: OnboardingPixelReporter
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
     let attributedMetricManager: AttributedMetricManager
@@ -59,10 +61,12 @@ final class ReportingService {
          pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
+        self.deviceLaunchPixelReporter = DeviceLaunchPixelReporter(featureFlagger: featureFlagging, pixelFiring: pixelKit)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
         self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
+        self.onboardingPixelReporter = OnboardingPixelReporter(subscriptionManager: appDependencies.subscriptionManager)
 
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
@@ -165,6 +169,8 @@ final class ReportingService {
 
     private func onStatisticsLoaded() {
         PixelKit.fire(Pixel.Event.appLaunch, options: .withATB)
+        // Guide Duo app improvements with daily counts and randomized timestamps.
+        deviceLaunchPixelReporter.reportLaunch()
         reportAdAttribution()
         reportWidgetUsage()
         reportUserNotificationAuthStatus()

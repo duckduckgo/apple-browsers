@@ -45,6 +45,44 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         super.tearDown()
     }
 
+    func testSingleTabMetricsIncludeBothFlagStatesAndDroppedRequests() {
+        for optimized in [false, true] {
+            for dropped in [false, true] {
+                sut.fireSingleTabBurnRequested(optimized: optimized, dropped: dropped)
+                let call = mockPixelFiring.actualFireCalls.last
+                XCTAssertEqual(call?.pixel.name, "fire_single-tab-burn_requested")
+                XCTAssertEqual(call?.pixel.parameters, ["optimization_enabled": String(optimized), "dropped": String(dropped)])
+                XCTAssertEqual(call?.frequency, .standard)
+            }
+        }
+    }
+
+    func testSingleTabCompletionMeasuresWholeBurnAndOptionalTabClosure() {
+        for optimized in [false, true] {
+            let measurement = sut.beginMeasurement()
+            currentTime += 1.5
+            sut.fireSingleTabBurnFinished(optimized: optimized, measurement: measurement, tabClosure: 0.2)
+            let call = mockPixelFiring.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "fire_single-tab-burn_finished")
+            XCTAssertEqual(call?.pixel.parameters, [
+                "optimization_enabled": String(optimized), "duration_ms": "2000", "tab_closure_ms": "250"
+            ])
+            XCTAssertEqual(call?.frequency, .standard)
+        }
+        let measurement = sut.beginMeasurement()
+        sut.fireSingleTabBurnFinished(optimized: false, measurement: measurement, tabClosure: nil)
+        XCTAssertNil(mockPixelFiring.actualFireCalls.last?.pixel.parameters?["tab_closure_ms"])
+    }
+
+    func testSingleTabDurationBucketsIncludeBoundariesAndLongBurns() {
+        for bound in [100, 250, 500, 1_000, 2_000, 5_000, 10_000, 30_000, 60_000, 120_000, 300_000] {
+            XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: Double(bound) / 1_000).value, String(bound))
+        }
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 0).value, "100")
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 0.101).value, "250")
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 301).value, "more")
+    }
+
     // MARK: - fireRetriggerPixelIfNeeded Tests
     
     @MainActor

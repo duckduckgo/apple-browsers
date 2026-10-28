@@ -85,10 +85,23 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
 
     var showQRCodeModel: ShowQRCodeViewModel
     private let source: CodeCollectionSource
+    let isImprovedPairingFlowEnabled: Bool
 
-    public init(codeForDisplayOrPasting: String, qrCodeString: String, source: CodeCollectionSource) {
+    var canPlayIntroAnimation: Bool {
+        !isImprovedPairingFlowEnabled || videoPermission == .authorised
+    }
+
+    var showsScanInstructions: Bool {
+        !isImprovedPairingFlowEnabled || videoPermission != .denied
+    }
+
+    public init(codeForDisplayOrPasting: String,
+                qrCodeString: String,
+                source: CodeCollectionSource,
+                isImprovedPairingFlowEnabled: Bool = false) {
         showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
         self.source = source
+        self.isImprovedPairingFlowEnabled = isImprovedPairingFlowEnabled
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -122,6 +135,20 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func introAnimationCompleted() {
+        guard !isImprovedPairingFlowEnabled else { return }
+        delegate?.requestCameraPermission(for: self)
+    }
+
+    func scanTabAppeared() {
+        requestCameraPermissionUpFront()
+    }
+
+    func appWillEnterForeground() {
+        requestCameraPermissionUpFront()
+    }
+
+    private func requestCameraPermissionUpFront() {
+        guard isImprovedPairingFlowEnabled else { return }
         delegate?.requestCameraPermission(for: self)
     }
 

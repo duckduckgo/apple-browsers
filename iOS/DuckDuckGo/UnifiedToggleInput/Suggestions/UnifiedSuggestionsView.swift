@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 /// The single unified suggestions surface for both Search and Duck.ai. Switches on the
 /// resolver's content state: list rows / favorites / logo. One view, model decides the rest.
@@ -40,6 +41,9 @@ struct UnifiedSuggestionsView: View {
             logoLayer
             fireLayer
         }
+        // UIKit already bounds this host with its keyboard layout guide. Keep container
+        // safe areas and the input-bar inset, without a second SwiftUI keyboard adjustment.
+        .ignoresSafeArea(.keyboard, edges: .bottom)
     }
 
     /// On a fire tab every non-typing state is the full fire screen — favorites/recents/logo never show
@@ -136,17 +140,30 @@ struct UnifiedSuggestionsView: View {
             //    safe-area inset, so it tracks the bar in the same pass.
             // With room on both sides the pushes clamp to 0 and the logo stays at the NTP anchor.
             let frame = proxy.frame(in: .global)
+            let nativeViewport = viewModel.logoViewportFrame
+            let viewport = nativeViewport ?? frame
             let targetCenterY = Self.logoCenterY(
                 restingAt: UIScreen.main.bounds.midY - Metrics.logoScreenCenterOffset,
-                topChromeBottom: frame.minY + viewModel.chromeInsetTop,
-                barTop: frame.maxY)
-            FocusedDaxLogoView(progress: viewModel.logoModel.progress,
-                               morph: viewModel.logoModel.morphs,
-                               animationSpeed: viewModel.logoModel.morphSpeed)
+                topChromeBottom: viewport.minY + viewModel.chromeInsetTop,
+                barTop: viewport.maxY)
+            let offsetY = targetCenterY - frame.midY
+            let logo = FocusedDaxLogoView(progress: viewModel.logoModel.progress,
+                                         morph: viewModel.logoModel.morphs,
+                                         animationSpeed: viewModel.logoModel.morphSpeed)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .offset(y: targetCenterY - frame.midY)
-                // Match the bar's toggle animation (0.2s easeInOut) so the logo settles with it, not after.
-                .animation(.easeInOut(duration: 0.2), value: targetCenterY)
+            let animation: Animation? = UIApplication.shared.applicationState == .active ? .easeInOut(duration: 0.2) : nil
+            Group {
+                if nativeViewport != nil {
+                    // Animate real clearance changes; compensate transient host movement immediately.
+                    logo.offset(y: targetCenterY)
+                        .animation(animation, value: targetCenterY)
+                        .offset(y: -frame.midY)
+                        .animation(nil, value: frame.midY)
+                } else {
+                    logo.offset(y: offsetY)
+                        .animation(animation, value: targetCenterY)
+                }
+            }
                 // Show/hide is instant (matches the favorites overlay) so the logo doesn't linger over
                 // favorites/lists during a toggle. Logo→logo keeps it shown, so this never cuts a morph.
                 // Suppressed on fire tabs (fire screen takes the slot) and in landscape (no room — matches

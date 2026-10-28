@@ -27,6 +27,7 @@ struct NewImportTypePickerView: View {
     let doneAction: () -> Void
     let cancelAction: () -> Void
     @Binding var isDoneDisabled: Bool
+    var keepsOneTypeSelected = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -47,6 +48,7 @@ struct NewImportTypePickerView: View {
                         Toggle(isOn: item.isSelected)
                             .toggleStyle(.switch)
                             .rebrandedControlTint()
+                            .disabled(isLastSelectedItem(item.wrappedValue))
                     }
                     .padding(.top, 10)
                     .padding(.bottom, 10)
@@ -63,7 +65,7 @@ struct NewImportTypePickerView: View {
             HStack {
                 Spacer()
                 // Hidden “Cancel” target so hitting Esc sets the flag before dismiss
-                Button("") {
+                Button("" as String) {
                     cancelAction()
                 }
                 .keyboardShortcut(.cancelAction)  // Esc
@@ -87,5 +89,9 @@ struct NewImportTypePickerView: View {
         .background(
             Color(designSystemColor: .surfaceSecondary)
         )
+    }
+
+    private func isLastSelectedItem(_ item: ImportTypeItem) -> Bool {
+        keepsOneTypeSelected && item.isSelected && items.filter(\.isSelected).count == 1
     }
 }

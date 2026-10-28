@@ -635,6 +635,21 @@ class StatisticsLoaderTests: XCTestCase {
         testee.refreshRetentionAtbOnDuckAiPromptSubmition {
             XCTAssertTrue(self.fireDuckAISearchExperimentPixelsCalled)
             XCTAssertFalse(self.fireSearchExperimentPixelsCalled)
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
+            expect.fulfill()
+        }
+
+        waitForExpectations(timeout: 1, handler: nil)
+    }
+
+    func testWhenDuckAIPromptSubmittedWithoutInstallStatisticsThenRetentionAtbsUpdated() {
+        loadSuccessfulUpdateAtbStub()
+
+        let expect = expectation(description: "DuckAI prompt submission refreshes both retention ATBs after loading install statistics")
+        testee.refreshRetentionAtbOnDuckAiPromptSubmition {
+            XCTAssertEqual(self.mockStatisticsStore.searchRetentionAtb, "v77-5")
+            XCTAssertEqual(self.mockStatisticsStore.duckAIRetentionAtb, "v77-5")
             expect.fulfill()
         }
 

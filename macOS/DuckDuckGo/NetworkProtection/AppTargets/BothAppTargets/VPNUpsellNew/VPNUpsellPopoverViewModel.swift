@@ -64,15 +64,18 @@ extension VPNUpsellPopoverViewModel {
     }
 }
 
+protocol VPNUpsellDismissing: AnyObject {
+    @MainActor
+    func dismissUpsell()
+}
+
 @MainActor
 final class VPNUpsellPopoverViewModel: ObservableObject {
     @Published private(set) var featureSet: FeatureSet = FeatureSet(core: [], plus: [], isEligibleForFreeTrial: false)
 
-    let isAppRebranded: Bool
-
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
-    private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let upsellDismisser: any VPNUpsellDismissing
     private let urlOpener: @MainActor (URL) -> Void
     private let onDismiss: () -> Void
     private let pixelHandler: (SubscriptionPixel) -> Void
@@ -85,21 +88,19 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
 
     init(subscriptionManager: any SubscriptionManager,
          featureFlagger: FeatureFlagger,
-         vpnUpsellVisibilityManager: VPNUpsellVisibilityManager,
+         upsellDismisser: any VPNUpsellDismissing,
          urlOpener: @escaping @MainActor (URL) -> Void = { @MainActor url in
             Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
          },
          onDismiss: @escaping () -> Void,
-         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) },
-         isAppRebranded: Bool = Application.appDelegate.themeManager.isAppRebranded)
+         pixelHandler: @escaping (SubscriptionPixel) -> Void = { PixelKit.fire($0) })
     {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
+        self.upsellDismisser = upsellDismisser
         self.urlOpener = urlOpener
         self.onDismiss = onDismiss
         self.pixelHandler = pixelHandler
-        self.isAppRebranded = isAppRebranded
 
         checkFeatureEligibility()
     }
@@ -150,7 +151,7 @@ final class VPNUpsellPopoverViewModel: ObservableObject {
 
     func dismiss() {
         pixelHandler(.subscriptionToolbarButtonPopoverDismissButtonClicked)
-        vpnUpsellVisibilityManager.dismissUpsell()
+        upsellDismisser.dismissUpsell()
         onDismiss()
     }
 }

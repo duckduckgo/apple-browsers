@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+        // swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -49,15 +49,15 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../WideEvent"),
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.2"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.11.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.15.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "18.0.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -174,6 +174,7 @@ let package = Package(
         .target(
             name: "History",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
@@ -300,6 +301,7 @@ let package = Package(
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_PAGE_SIGNALS_ENABLED", .when(platforms: [.macOS, .iOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
@@ -406,6 +408,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
                 "GRDB",
             ],
+            exclude: ["README.md"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -692,6 +695,7 @@ let package = Package(
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_PAGE_SIGNALS_ENABLED", .when(platforms: [.macOS, .iOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),

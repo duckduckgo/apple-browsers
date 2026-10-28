@@ -43,9 +43,10 @@ protocol PasswordManagementDelegate: AnyObject {
 
 final class PasswordManagementViewController: NSViewController {
 
-    static func create(pinningManager: PinningManager) -> Self {
+    static func create(pinningManager: PinningManager, pixelFiring: (any PixelKitFiring)? = PixelKit.shared) -> Self {
         let controller = Self(nibName: nil, bundle: nil)
         controller.pinningManager = pinningManager
+        controller.pixelFiring = pixelFiring
         // Calling loadView() directly won't send viewDidLoad()
         _ = controller.view
 
@@ -169,6 +170,9 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private let passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
+    private let syncPromoManager: SyncPromoManaging = Application.appDelegate.syncSetupAutofillPromoManager
+    private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting = Application.appDelegate.autofillEmptyStatePromoDelegate
+    private var pixelFiring: (any PixelKitFiring)?
 
     private let emailManager = EmailManager()
     private let urlMatcher = AutofillDomainNameUrlMatcher()
@@ -223,8 +227,8 @@ final class PasswordManagementViewController: NSViewController {
         button.title = ""
         button.imageScaling = .scaleProportionallyDown
         button.alignment = .center
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         button.cornerRadius = LayoutConstants.cornerRadius
         button.target = self
         button.action = action
@@ -259,8 +263,8 @@ final class PasswordManagementViewController: NSViewController {
         autofillTitleLabel.font = .systemFont(ofSize: 17)
         autofillTitleLabel.lineBreakMode = .byClipping
 
-        addVaultItemButton = makeToolbarButton(image: .add, action: #selector(onNewClicked(_:)))
-        moreButton = makeToolbarButton(image: .settings, action: #selector(moreButtonAction(_:)))
+        addVaultItemButton = makeToolbarButton(image: NSImage(resource: .add), action: #selector(onNewClicked(_:)))
+        moreButton = makeToolbarButton(image: NSImage(resource: .settings), action: #selector(moreButtonAction(_:)))
         moreButton.menu = makeMoreButtonMenu()
 
         searchField = SearchField()
@@ -343,9 +347,9 @@ final class PasswordManagementViewController: NSViewController {
         lockScreenIconImageView.setContentHuggingPriority(.init(251), for: .horizontal)
         lockScreenIconImageView.setContentHuggingPriority(.init(251), for: .vertical)
         if DeviceAuthenticator.deviceSupportsBiometrics {
-            lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockTouchID128 : .loginsLockTouchIDLegacy
+            lockScreenIconImageView.image = NSImage(resource: .lockTouchID128)
         } else {
-            lockScreenIconImageView.image = themeManager.isAppRebranded ? .lockLocked128 : .loginsLockPasswordLegacy
+            lockScreenIconImageView.image = NSImage(resource: .lockLocked128)
         }
 
         unlockYourAutofillLabel = FlatButton(frame: .zero)
@@ -360,7 +364,7 @@ final class PasswordManagementViewController: NSViewController {
         unlockYourAutofillLabel.alignment = .center
         unlockYourAutofillLabel.imageScaling = .scaleProportionallyDown
         unlockYourAutofillLabel.cornerRadius = 5
-        unlockYourAutofillLabel.backgroundColor = .blackWhite10
+        unlockYourAutofillLabel.backgroundColor = NSColor(resource: .blackWhite10)
         unlockYourAutofillLabel.horizontalPadding = 8
         unlockYourAutofillLabel.verticalPadding = 5
         unlockYourAutofillLabel.setContentHuggingPriority(.init(750), for: .vertical)
@@ -397,7 +401,7 @@ final class PasswordManagementViewController: NSViewController {
         preferencesStack.alignment = .firstBaseline
         preferencesStack.spacing = 4
 
-        backgroundView = ColorView(frame: .zero, backgroundColor: .neutralBackground, interceptClickEvents: true)
+        backgroundView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .neutralBackground), interceptClickEvents: true)
         backgroundView.translatesAutoresizingMaskIntoConstraints = false
         backgroundView.addSubview(lockScreenStack)
         backgroundView.addSubview(lockScreenDurationLabel)
@@ -531,6 +535,13 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateTitle.attributedStringValue = NSAttributedString.make(emptyStateTitle.stringValue, lineHeight: 1.14, kern: -0.23)
 
         setUpEmptyStateMessageView()
+
+        emptyStatePromo.isPromoActivePublisher
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.updateEmptyState(state: self?.listModel?.emptyState)
+            }
+            .store(in: &cancellables)
 
         addVaultItemButton.toolTip = UserText.addItemTooltip
         moreButton.toolTip = UserText.moreOptionsTooltip
@@ -687,6 +698,8 @@ final class PasswordManagementViewController: NSViewController {
 
         moveFocusIntoPopover()
 
+        NotificationCenter.default.post(name: .passwordsPanelOpened, object: nil)
+
         if !isDirty {
             itemModel?.clearSecureVaultModel()
         }
@@ -780,14 +793,21 @@ final class PasswordManagementViewController: NSViewController {
     @objc func onImportClicked(_ sender: NSButton) {
         self.dismiss()
         ensureMainWindowExists()
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport()
+        emptyStatePromo.importStarted()
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(completion: { [emptyStatePromo] in
+            emptyStatePromo.importFinished()
+        })
     }
 
     @objc func onSyncClicked(_ sender: Any) {
         self.dismiss()
         let source = SyncDeviceButtonTouchpoint.passwordsEmpty
-        PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, withAdditionalParameters: ["source": source.rawValue])
-        DeviceSyncCoordinator()?.startDeviceSyncFlow(source: source, completion: nil)
+        pixelFiring?.fire(SyncPromoPixelKitEvent.syncPromoConfirmed, options: .parameters(["source": source.rawValue]))
+        guard let deviceSyncCoordinator = DeviceSyncCoordinator() else { return }
+        emptyStatePromo.syncSetupStarted()
+        deviceSyncCoordinator.startDeviceSyncFlow(source: source, completion: { [emptyStatePromo] in
+            emptyStatePromo.syncSetupFinished()
+        })
     }
 
     @objc func onDeleteAllPasswordsClicked(_ sender: Any) {
@@ -1394,8 +1414,6 @@ final class PasswordManagementViewController: NSViewController {
         replaceItemContainerChildView(with: view)
     }
 
-    private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
-
     private func displaySyncPromoView() {
         let touchpoint: SyncPromoManager.Touchpoint
         switch listModel?.sortDescriptor.category {
@@ -1418,8 +1436,7 @@ final class PasswordManagementViewController: NSViewController {
                 self?.dismiss()
             },
             dismissButtonAction: { [weak self] in
-                self?.syncPromoManager.dismissPromoFor(touchpoint)
-                self?.refreshData()
+                self?.syncPromoManager.promoDismissed()
             }
         )
 
@@ -1430,9 +1447,9 @@ final class PasswordManagementViewController: NSViewController {
 
     private func createNewSecureVaultItemMenu() -> NSMenu {
         return NSMenu {
-            NSMenuItem(title: UserText.pmNewLogin, action: #selector(createNewLogin), target: self).withImage(.loginGlyph, visibleOnMacOS27: true)
-            NSMenuItem(title: UserText.pmNewIdentity, action: #selector(createNewIdentity), target: self).withImage(.identityGlyph, visibleOnMacOS27: true)
-            NSMenuItem(title: UserText.pmNewCard, action: #selector(createNewCreditCard), target: self).withImage(.creditCardGlyph, visibleOnMacOS27: true)
+            NSMenuItem(title: UserText.pmNewLogin, action: #selector(createNewLogin), target: self).withImage(NSImage(resource: .loginGlyph), visibleOnMacOS27: true)
+            NSMenuItem(title: UserText.pmNewIdentity, action: #selector(createNewIdentity), target: self).withImage(NSImage(resource: .identityGlyph), visibleOnMacOS27: true)
+            NSMenuItem(title: UserText.pmNewCard, action: #selector(createNewCreditCard), target: self).withImage(NSImage(resource: .creditCardGlyph), visibleOnMacOS27: true)
         }
     }
 
@@ -1598,8 +1615,11 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func showEmptyState(category: SecureVaultSorting.Category) {
-        let isAppRebranded = themeManager.isAppRebranded
-        let passwordsAddImage: NSImage = isAppRebranded ? .passwordsAdd128 : .passwordsAddLegacy128
+        if emptyState.isHidden {
+            NotificationCenter.default.post(name: .passwordsPanelEmptyStateShown, object: nil)
+        }
+
+        let passwordsAddImage: NSImage = NSImage(resource: .passwordsAdd128)
 
         switch category {
         case .allItems:
@@ -1607,10 +1627,10 @@ final class PasswordManagementViewController: NSViewController {
         case .logins:
             showEmptyState(image: passwordsAddImage, title: UserText.pmEmptyStateLoginsTitle, hideMessage: false, hideImportButton: false, hideSyncButton: false)
         case .identities:
-            let identityAddImage: NSImage = isAppRebranded ? .identityAdd128 : .identityAddLegacy128
+            let identityAddImage: NSImage = NSImage(resource: .identityAdd128)
             showEmptyState(image: identityAddImage, title: UserText.pmEmptyStateIdentitiesTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities))
         case .cards:
-            let creditCardsAddImage: NSImage = isAppRebranded ? .creditCardsAdd128 : .creditCardsAddLegacy128
+            let creditCardsAddImage: NSImage = NSImage(resource: .creditCardsAdd128)
             showEmptyState(image: creditCardsAddImage, title: UserText.pmEmptyStateCardsTitle, hideMessage: false, hideImportButton: true, hideSyncButton: !privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards))
         }
     }
@@ -1626,8 +1646,9 @@ final class PasswordManagementViewController: NSViewController {
         if !hideMessage {
             setUpEmptyStateMessageView()
         }
+        let hideImportButton = hideImportButton || !emptyStatePromo.isPromoActive
         emptyStateImportButton.isHidden = hideImportButton
-        emptyStateSyncButton.isHidden = hideSyncButton || !syncButtonModel.shouldShowSyncButton
+        emptyStateSyncButton.isHidden = hideSyncButton || !emptyStatePromo.isPromoActive || !syncButtonModel.shouldShowSyncButton
         emptyStateMessageContainer.isHidden = hideMessage
 
         // Setting title to empty string when hidden since there is a width constraint dependency between the import and sync buttons
@@ -1637,15 +1658,8 @@ final class PasswordManagementViewController: NSViewController {
         emptyStateImportButton.title = importTitle
         emptyStateSyncButton.title = syncTitle
 
-        if themeManager.isAppRebranded {
-            emptyStateImportButton.layer?.cornerRadius = 14
-            emptyStateSyncButton.layer?.cornerRadius = 14
-        } else {
-            emptyStateImportButton.isBordered = true
-            emptyStateSyncButton.isBordered = true
-            emptyStateImportButton.bezelStyle = .rounded
-            emptyStateSyncButton.bezelStyle = .rounded
-        }
+        emptyStateImportButton.layer?.cornerRadius = 14
+        emptyStateSyncButton.layer?.cornerRadius = 14
     }
 
     private func requestSync() {
@@ -1670,10 +1684,6 @@ extension PasswordManagementViewController: ThemeUpdateListening {
         searchField.borderColor = palette.controlsBorderPrimary
         searchField.borderHighlightColor = palette.accentPrimary
         searchField.innerBackgroundColor = palette.surfaceTertiary
-
-        guard themeManager.isAppRebranded else {
-            return
-        }
 
         NSAppearance.withAppAppearance {
             emptyStateImportButton.wantsLayer = true
@@ -1757,13 +1767,13 @@ struct PasswordManagementEmptyStateMessage: View {
 
     private var description: Text {
         let text = Text(.init(message))
-            .foregroundColor(.textSecondary)
+            .foregroundColor(Color(.textSecondary))
 
         guard let image else { return text }
 
         return Text(Image(image))
             .baselineOffset(-1.0)
-            .foregroundColor(.textSecondary)
+            .foregroundColor(Color(.textSecondary))
         + Text(verbatim: " ")
         + text
     }

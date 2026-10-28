@@ -31,7 +31,7 @@ struct RedesignedFocusedSearchModulesView: View {
                 VStack(spacing: 0) {
                     RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
                     if let escapeHatch {
-                        EscapeHatchView(model: escapeHatch, usesMaterialBackground: true)
+                        RedesignedEscapeHatchView(model: escapeHatch)
                             .frame(maxWidth: .infinity)
                             .padding(.horizontal, 16)
                     }

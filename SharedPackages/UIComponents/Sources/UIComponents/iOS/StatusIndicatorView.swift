@@ -62,9 +62,7 @@ public struct StatusIndicatorView: View {
     private func colorForStatus(_ status: StatusIndicator) -> Color {
         switch status {
         case .on, .alwaysOn:
-            return DesignSystemRebrand.isAppRebranded()
-                ? Color(singleUseColor: .rebranding(.alertGreen))
-                : Color(designSystemColor: .alertGreen)
+            return Color(designSystemColor: .alertGreen)
         case .off:
             return Color(designSystemColor: .textSecondary).opacity(0.33)
         }

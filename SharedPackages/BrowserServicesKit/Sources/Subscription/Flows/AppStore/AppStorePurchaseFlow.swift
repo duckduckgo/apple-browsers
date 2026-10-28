@@ -300,19 +300,4 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
             return nil
         }
     }
-
-    public func recoverSubscriptionFromDeadToken() async throws {
-        Logger.subscriptionAppStorePurchaseFlow.log("Recovering Subscription From Dead Token")
-
-        // Clear everything, the token is unrecoverable
-        await subscriptionManager.signOut(notifyUI: true)
-
-        switch await appStoreRestoreFlow.restoreAccountFromPastPurchase() {
-        case .success:
-            Logger.subscriptionAppStorePurchaseFlow.log("Subscription recovered")
-        case .failure(let error):
-            Logger.subscriptionAppStorePurchaseFlow.fault("Failed to recover Apple subscription: \(String(describing: error), privacy: .public)")
-            throw error
-        }
-    }
 }

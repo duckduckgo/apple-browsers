@@ -83,6 +83,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
 
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = Application.appDelegate.passwordManagerCoordinator
 
+    lazy var autofillImportPromoReporter: AutofillImportPromoReporting = Application.appDelegate.autofillImportPromoObserver
+
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
@@ -147,6 +149,8 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     public override func viewWillDisappear() {
         // We should never see this but it's better than a flash of old content
         webView.load(URLRequest(url: .blankPage))
+
+        autofillImportPromoReporter.overlayWillDisappear(self)
     }
 
     public func messageMouseMove(x: CGFloat, y: CGFloat) {
@@ -269,6 +273,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
     public func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
         let prefs = AutofillPreferences()
+        guard !prefs.isManagedByExtension else { return false }
         switch type {
         case .card:
             return prefs.askToSavePaymentMethods
@@ -281,7 +286,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         }
     }
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {
-        return true
+        return !AutofillPreferences().isManagedByExtension
     }
 
     public func secureVaultManager(_: SecureVaultManager,
@@ -385,6 +390,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
         } else if pixel.isCredentialsImportPromotionPixel {
             PixelKit.fire(GeneralPixel.jsPixel(pixel))
+            autofillImportPromoReporter.overlayDidShowImportPrompt(self)
         } else {
             var existingParameters = pixel.pixelParameters ?? [:]
             let parameters = usageProvider.formattedFillDate.flatMap {
@@ -442,6 +448,14 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled)
+        autofillImportPromoReporter.overlayDidStartImport(self)
+        DataImportFlowLauncher(pinningManager: pinningManager).launchDataImport(onFinished: onFinished, onCancelled: onCancelled) { [weak self] in
+            guard let self else { return }
+            autofillImportPromoReporter.overlayDidEndImportFlow(self)
+        }
+    }
+
+    public func autofillDidPermanentlyDismissCredentialsImportPrompt() {
+        autofillImportPromoReporter.overlayDidPermanentlyDismissImportPrompt(self)
     }
 }

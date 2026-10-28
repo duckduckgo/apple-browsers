@@ -295,15 +295,103 @@ public extension NewTabPageDataModel {
         let enableAiChatDeletion: Bool?
         /// When true, history-entry suggestions show a delete button that sends `omnibar_removeSuggestion`.
         let enableSearchSuggestionDeletion: Bool?
+        /// Whether the file-upload privacy disclaimer may still be shown. Native owns the one
+        /// app-wide display; false or `nil` means the omnibar renders nothing.
+        var showAttachmentPrivacyDisclaimer: Bool?
         /// Enables the native-driven Create Image model-switch flow in the web omnibar.
         var enableUpdatedCreateImage: Bool?
         /// Native-localized notice shown after Create Image switches away from an unsupported model.
         var createImageModelSwitch: OmnibarCreateImageModelSwitch?
         var usageLimits: OmnibarUsageLimits?
+        /// True until the user accepts Duck.ai's Terms of Service. The Duck.ai tab then shows the
+        /// disclaimer and an "Ask" button that sends `aiTermsAccepted` with `omnibar_submitChat`.
+        /// The web echoes it back in `omnibar_setConfig`, where native ignores it.
+        var requiresAiTermsAcceptance: Bool?
+        var launcherPromo: OmnibarLauncherPromo?
+        /// Add Screenshot modes in display order (`dragToSelect`, `selectWindowOrDisplay`). Absent hides
+        /// the screenshot UI; choosing a mode sends `omnibar_captureScreenshot`.
+        var screenshotModes: [String]?
+        /// Lets the page attach pasted images and copied files; absent or `false` keeps a normal paste.
+        var enablePastedAttachments: Bool?
     }
 
     struct OmnibarSetImageGenerationActive: Codable, Equatable {
         let active: Bool
+    }
+
+    // MARK: - omnibar_captureScreenshot
+
+    struct OmnibarCaptureScreenshotRequest: Codable, Equatable {
+        let mode: String
+    }
+
+    /// `image` when a capture was taken, `error` when it failed; neither means the user cancelled,
+    /// and the page shows nothing.
+    struct OmnibarCaptureScreenshotResponse: Codable, Equatable {
+
+        public struct Image: Codable, Equatable {
+            /// Base64 without a data-URL prefix, at most 1024 px on the long side.
+            public let data: String
+            public let format: String
+            public let kind: String
+
+            public init(data: String, format: String, kind: String) {
+                self.data = data
+                self.format = format
+                self.kind = kind
+            }
+        }
+
+        public let image: Image?
+        public let error: String?
+
+        public init(image: Image? = nil, error: String? = nil) {
+            self.image = image
+            self.error = error
+        }
+
+        public static let cancelled = OmnibarCaptureScreenshotResponse()
+        public static let failed = OmnibarCaptureScreenshotResponse(error: "screenshotFailed")
+    }
+
+    // MARK: - Attachment privacy
+
+    /// Which attachment the disclaimer is about. Native never sees the attach, so the page has to
+    /// say, for the pixel.
+    enum OmnibarAttachmentPrivacyKind: String, Codable {
+        case image, file
+    }
+
+    struct OmnibarAttachmentPrivacyDisclaimerShown: Codable, Equatable {
+
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    struct OmnibarOpenAttachmentPrivacyLearnMore: Codable, Equatable {
+
+        public let kind: OmnibarAttachmentPrivacyKind
+
+        public init(kind: OmnibarAttachmentPrivacyKind) {
+            self.kind = kind
+        }
+    }
+
+    struct OmnibarLauncherPromo: Codable, Equatable {
+        public let message: String
+        public let secondaryText: String?
+        public let ctaLabel: String?
+        public let dismissible: Bool?
+
+        public init(message: String, secondaryText: String? = nil, ctaLabel: String? = nil, dismissible: Bool? = nil) {
+            self.message = message
+            self.secondaryText = secondaryText
+            self.ctaLabel = ctaLabel
+            self.dismissible = dismissible
+        }
     }
 
     // MARK: - omnibar_selectUsageLimitsCta
@@ -490,6 +578,10 @@ public extension NewTabPageDataModel {
         let pageContext: [OmnibarPageContext]?
         /// Files (PDFs in v1) attached via the paperclip menu. Omitted when none are attached.
         let files: [OmnibarPromptFile]?
+        /// True only when the user clicked "Ask" (or "Create") with the terms disclaimer on screen.
+        /// Enter, voice and the "Ask Duck.ai" suggestion never send it, because legal requires a click.
+        var aiTermsAccepted: Bool?
+        var launcherPromoVisible: Bool?
     }
 
     // MARK: - omnibar_getOpenTabs / omnibar_getTabContent (attach tabs)

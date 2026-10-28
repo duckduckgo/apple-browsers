@@ -1,0 +1,372 @@
+//
+//  UserScripts.swift
+//  DuckDuckGo
+//
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AIChat
+import BrowserServicesKit
+import Common
+import Core
+import EventHub
+import Foundation
+import FoundationExtensions
+import os.log
+import PrivacyConfig
+import SERPSettings
+import SitePermissions
+import SpecialErrorPages
+import Subscription
+import TrackerRadarKit
+import UIKit
+import UserScript
+import WebExtensions
+import WebKit
+import FeatureFlags_iOS
+
+final class UserScripts: UserScriptsProvider {
+
+    let autofillUserScript: AutofillUserScript
+    let loginFormDetectionScript: LoginFormDetectionUserScript?
+    let contentScopeUserScript: ContentScopeUserScript
+    let contentScopeUserScriptIsolated: ContentScopeUserScript
+    let autoconsentUserScript: AutoconsentUserScript
+    let aiChatUserScript: AIChatUserScript
+    let subscriptionUserScript: SubscriptionUserScript
+    let subscriptionNavigationHandler: SubscriptionURLNavigationHandler
+    let serpSettingsUserScript: SERPSettingsUserScript
+    let duckAiNativeStorageUserScript: DuckAiNativeStorageUserScript?
+    let pageContextUserScript: PageContextUserScript
+    let internalFeedbackUserScript: InternalFeedbackUserScript
+
+    var specialPages: SpecialPagesUserScript?
+    var duckPlayer: DuckPlayerControlling? {
+        didSet {
+            initializeDuckPlayer()
+        }
+    }
+    var youtubeOverlayScript: YoutubeOverlayUserScript?
+    var youtubePlayerUserScript: YoutubePlayerUserScript?
+    var specialErrorPageUserScript: SpecialErrorPageUserScript?
+
+    private(set) var faviconScript = FaviconUserScript()
+    private(set) var findInPageScript: FindInPageUserScript?
+
+    private(set) var selectionFrameScript: SelectionFrameUserScript
+    private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
+    private(set) var geolocationUserScript: GeolocationUserScript?
+    private(set) var printingSubfeature = PrintingSubfeature()
+    private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
+
+    private let isAutoconsentExtensionAvailable: Bool
+
+    init(with sourceProvider: ScriptSourceProviding,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
+         sitePermissionsEnabled: Bool = false,
+         mediaCaptureUserScript: MediaCaptureUserScript? = nil,
+         internalFeedbackAttachmentsProvider: InternalFeedbackAttachmentsProviding = AppDependencyProvider.shared.internalFeedbackAttachmentsProvider,
+         internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
+         geolocationUserScript: GeolocationUserScript? = nil,
+         duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+
+        isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
+        findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
+
+        selectionFrameScript = SelectionFrameUserScript()
+        self.mediaCaptureUserScript = mediaCaptureUserScript
+        self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
+
+        autofillUserScript = AutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider)
+        autofillUserScript.sessionKey = sourceProvider.contentScopeProperties.sessionKey
+
+        loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
+        do {
+            let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
+                                                                                excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue])
+            let isolatedConfigGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                                                        privacyConfigurationManager: sourceProvider.privacyConfigurationManager)
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
+                                                                properties: sourceProvider.contentScopeProperties,
+                                                                scriptContext: .contentScope(surrogateTrackerData: sourceProvider.trackerProtectionDataSource?.surrogateFilteredTrackerData),
+                                                                allowedNonisolatedFeatures: [PageContextUserScript.featureName, PrintingSubfeature.featureNameValue, TrackerProtectionSubfeature.featureNameValue,
+                                                                                             SelectionFrameUserScript.featureName],
+                                                                privacyConfigurationJSONGenerator: configGenerator)
+            contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,
+                                                                        properties: sourceProvider.contentScopeProperties,
+                                                                        scriptContext: .contentScopeIsolated,
+                                                                        privacyConfigurationJSONGenerator: isolatedConfigGenerator)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to initialize ContentScopeUserScript: \(error)")
+        }
+        autoconsentUserScript = AutoconsentUserScript(
+            config: sourceProvider.privacyConfigurationManager.privacyConfig,
+            webExtensionAvailability: sourceProvider.webExtensionAvailability,
+            featureFlagger: featureFlagger
+        )
+
+        // `setupSucceeded == nil` (setup still in flight) is treated as "available"
+        // so the launch path is not blocked. Only force the JS fallback when a
+        // permanent setup failure has been observed.
+        let isNativeStorageBridgeAvailable = featureFlagger.isFeatureOn(.aiChatNativeStorage)
+            && duckAiNativeStorageHandler != nil
+            && duckAiNativeStorageHandler?.setupSucceeded != false
+        let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
+        let aiChatSettings = AIChatSettings()
+        let homepageAiChatsProvider = HomepageAiChatsProvider(featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager,
+                                                          syncHandler: AIChatSyncHandler(sync: sourceProvider.sync,
+                                                                                         httpRequestErrorHandler: sourceProvider.syncErrorHandler.handleAiChatsError),
+                                                          featureFlagger: featureFlagger,
+                                                          isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
+                                                          attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,
+                                                          homepageAiChatsProvider: homepageAiChatsProvider)
+        aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
+                                            debugSettings: aiChatDebugSettings)
+        serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
+
+        if isNativeStorageBridgeAvailable,
+           let duckAiNativeStorageHandler {
+            var originRules: [HostnameMatchingRule] = [
+                .exactOrSubdomain(hostname: "duck.ai"),
+            ]
+            if let debugHostname = aiChatDebugSettings.messagePolicyHostname {
+                originRules.append(.exact(hostname: debugHostname))
+            }
+            duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
+                handler: duckAiNativeStorageHandler,
+                originRules: originRules,
+                pixelFiring: DuckAiNativeStoragePixelAdapter()
+            )
+        } else {
+            duckAiNativeStorageUserScript = nil
+        }
+        homepageAiChatsProvider.storageUserScript = duckAiNativeStorageUserScript
+
+        pageContextUserScript = PageContextUserScript()
+        internalFeedbackUserScript = InternalFeedbackUserScript(
+            deviceInfoProvider: IOSInternalFeedbackDeviceInfoProvider(tabCountProvider: internalFeedbackTabCountProvider),
+            attachmentsProvider: internalFeedbackAttachmentsProvider
+        )
+
+        subscriptionNavigationHandler = SubscriptionURLNavigationHandler()
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: featureFlagger)
+        subscriptionUserScript = SubscriptionUserScript(
+            platform: .ios,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
+            navigationDelegate: subscriptionNavigationHandler,
+            debugHost: aiChatDebugSettings.messagePolicyHostname)
+
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: serpSettingsUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: internalFeedbackUserScript)
+        if let duckAiNativeStorageUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: duckAiNativeStorageUserScript)
+        }
+        contentScopeUserScript.registerSubfeature(delegate: printingSubfeature)
+        contentScopeUserScript.registerSubfeature(delegate: pageContextUserScript)
+        contentScopeUserScript.registerSubfeature(delegate: trackerProtectionSubfeature)
+        contentScopeUserScript.registerSubfeature(delegate: selectionFrameScript)
+
+        // Special pages - Such as Duck Player
+        specialPages = SpecialPagesUserScript()
+        if let specialPages {
+            userScripts.append(specialPages)
+        }
+        specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(),
+                                                                languageCode: Locale.current.languageCode ?? "en")
+        specialErrorPageUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+    }
+
+    /// Registers a tab's EventHub `webEvents` handler. Unlike the subfeatures above this one cannot be
+    /// created here: it is per-tab, and `UserScripts` has no tab identity. `TabViewController` owns the
+    /// handler and calls this each time it is handed a new instance of us.
+    func registerEventHubSubfeature(_ handler: WebEventsHandler) {
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: handler)
+    }
+
+    lazy var userScripts: [UserScript] = {
+        var scripts: [UserScript?] = [
+            findInPageScript,
+            mediaCaptureUserScript,
+            geolocationUserScript?.policyScript,
+            geolocationUserScript,
+            autofillUserScript,
+            loginFormDetectionScript,
+            contentScopeUserScript,
+            contentScopeUserScriptIsolated
+        ]
+
+        if !isAutoconsentExtensionAvailable {
+            scripts.insert(autoconsentUserScript, at: 1)
+        }
+
+        return scripts.compactMap { $0 }
+    }()
+    
+    // Initialize DuckPlayer scripts
+    private func initializeDuckPlayer() {
+        if let duckPlayer {
+            // Initialize scripts if nativeUI is disabled
+            if !duckPlayer.settings.nativeUI {
+                youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
+                youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
+                youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
+                youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+            } else {
+                // Initialize DuckPlayer UserScript
+                let duckPlayerUserScript = DuckPlayerUserScriptYouTube(duckPlayer: duckPlayer)
+                contentScopeUserScriptIsolated.registerSubfeature(delegate: duckPlayerUserScript)
+            }
+        }
+    }
+    
+    @MainActor
+    func loadWKUserScripts() async -> [WKUserScript] {
+        return await withTaskGroup(of: (Int, WKUserScriptBox).self) { @MainActor group in
+            var indexedScripts = [(Int, WKUserScriptBox)]()
+            for (index, userScript) in userScripts.enumerated() {
+                group.addTask { @MainActor in
+                    (index, await userScript.makeWKUserScript())
+                }
+            }
+            for await result in group {
+                indexedScripts.append(result)
+            }
+
+            guard geolocationUserScript != nil else {
+                return indexedScripts.map { $0.1.wkUserScript }
+            }
+            // Keep concurrent preparation, then restore this small list's installation order:
+            // geolocation policy must precede its page adapter, which registers its frame immediately.
+            return indexedScripts.sorted { $0.0 < $1.0 }.map { $0.1.wkUserScript }
+        }
+    }
+
+}
+
+/// Counts open tabs for the internal feedback report.
+@MainActor
+protocol InternalFeedbackTabCounting: AnyObject {
+    /// Tabs across both normal and fire mode, whether or not they are currently loaded.
+    var openTabCount: Int { get }
+    /// Tabs holding a live web view, which is the count that bears on memory pressure.
+    var activeTabCount: Int { get }
+}
+
+final class InternalFeedbackTabCountProvider {
+
+    @MainActor weak var counter: (any InternalFeedbackTabCounting)?
+}
+
+private final class IOSInternalFeedbackDeviceInfoProvider: InternalFeedbackDeviceInfoProviding {
+
+    private let appVersion: AppVersion
+    private let tabCountProvider: InternalFeedbackTabCountProvider
+
+    init(appVersion: AppVersion = .shared,
+         tabCountProvider: InternalFeedbackTabCountProvider) {
+        self.appVersion = appVersion
+        self.tabCountProvider = tabCountProvider
+    }
+
+    private static var distributionChannel: String {
+        #if DEBUG
+        return "Internal"
+        #elseif ALPHA || EXPERIMENTAL
+        return "TestFlight"
+        #else
+        guard let receiptURL = Bundle.main.appStoreReceiptURL,
+              FileManager.default.fileExists(atPath: receiptURL.path) else {
+            return "Internal"
+        }
+        return receiptURL.lastPathComponent == "sandboxReceipt" ? "TestFlight" : "App Store"
+        #endif
+    }
+
+    private static var hardwareModel: String? {
+        var systemInfo = utsname()
+        guard uname(&systemInfo) == 0 else { return nil }
+
+        let identifier = Mirror(reflecting: systemInfo.machine).children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier.isEmpty ? nil : identifier
+    }
+
+    private static func currentMemoryFootprint() -> UInt64? {
+        var info = task_vm_info_data_t()
+        var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size) / 4
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(TASK_VM_INFO), $0, &count)
+            }
+        }
+        guard result == KERN_SUCCESS else { return nil }
+        return UInt64(info.phys_footprint)
+    }
+
+    private static func string(fromByteCount byteCount: Int64, countStyle: ByteCountFormatter.CountStyle) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = countStyle
+        return formatter.string(fromByteCount: byteCount)
+    }
+
+    @MainActor
+    private var diagnostics: [String: String] {
+        var diagnostics = [String: String]()
+
+        if let counter = tabCountProvider.counter {
+            diagnostics["Tabs"] = String(counter.openTabCount)
+            diagnostics["Active Tabs"] = String(counter.activeTabCount)
+        }
+
+        if let memoryFootprint = Self.currentMemoryFootprint() {
+            let used = Self.string(fromByteCount: Int64(memoryFootprint), countStyle: .memory)
+            let total = Self.string(fromByteCount: Int64(ProcessInfo.processInfo.physicalMemory), countStyle: .memory)
+            diagnostics["Memory"] = "\(used) used, \(total) total"
+        }
+
+        return diagnostics
+    }
+
+    @MainActor
+    func deviceInfo() -> InternalFeedbackDeviceInfo {
+        InternalFeedbackDeviceInfo(
+            platform: "ios",
+            appVersion: appVersion.versionNumber,
+            osName: UIDevice.current.systemName,
+            osVersion: appVersion.osVersionMajorMinorPatch,
+            appBuild: appVersion.buildNumber,
+            formFactor: UIDevice.current.userInterfaceIdiom == .pad ? "tablet" : "mobile",
+            locale: Locale.current.localeIdentifierAsJsonFormat,
+            channel: Self.distributionChannel,
+            deviceModel: Self.hardwareModel,
+            deviceManufacturer: "Apple",
+            diagnostics: diagnostics
+        )
+    }
+}

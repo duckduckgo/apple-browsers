@@ -65,6 +65,9 @@ extension DebugScreensViewModel {
             .action(title: "Reset Sync Prompt On Launch", { d in
                 try? d.keyValueStore.set(nil, forKey: SyncRecoveryPromptService.Key.hasPerformedSyncRecoveryCheck)
             }),
+            .view(title: "NTP Greeting", { d in
+                DaxGreetingDebugView(greeting: d.daxGreetingDebugging)
+            }),
             .action(title: "Reset TipKit", { d in
                 d.tipKitUIActionHandler.resetTipKitTapped()
             }),
@@ -296,7 +299,7 @@ extension DebugScreensViewModel {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(
-                        pixelReporter: OnboardingPixelReporter(),
+                        pixelReporter: OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,
@@ -335,8 +338,7 @@ extension DebugScreensViewModel {
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {
-        guard #available(iOS 18.4, *),
-              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+        guard #available(iOS 18.4, *) else {
             return nil
         }
 

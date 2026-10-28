@@ -128,6 +128,13 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(decoded.content.urlForWebView, URL(string: "https://nasa.gov")!)
     }
 
+    func testDuckAIContentRoundTripsWithoutItsNavigationSource() throws {
+        let url = URL(string: "https://duck.ai/chat")!
+        let original = makeRestorationData(content: .aiChat(url, source: .userEntered("duck.ai")))
+        let decoded = try encodeThenDecode(original)
+        XCTAssertEqual(decoded.content, .aiChat(url))
+    }
+
     func testNewTabContentRoundTrip() throws {
         let original = makeRestorationData(content: .newtab)
         let decoded = try encodeThenDecode(original)
@@ -189,7 +196,7 @@ final class TabRestorationDataCodingTests: XCTestCase {
         )
 
         let decoded = try encodeThenDecode(original)
-        let unloaded = UnloadedTab(from: decoded)
+        let unloaded = UnloadedTab(from: decoded, isFromSessionRestore: true)
 
         XCTAssertEqual(unloaded.uuid, "unloaded-uuid")
         XCTAssertEqual(unloaded.content.urlForWebView, URL(string: "https://example.com")!)
@@ -309,7 +316,51 @@ final class TabRestorationDataCodingTests: XCTestCase {
         XCTAssertEqual(decoded.title, "New Tab")
     }
 
+    // MARK: - Duck.ai chats in restored tabs
+
+    @MainActor
+    func testTabsDecodedFromThePreviousSessionAreMarkedAsRestored() throws {
+        let collection = TabCollection(tabs: [.unloaded(UnloadedTab(content: .url(duckAIURL, credential: nil, source: .ui)))])
+
+        let archive = try NSKeyedArchiver.archivedData(withRootObject: collection, requiringSecureCoding: true)
+        let decoded = try XCTUnwrap(NSKeyedUnarchiver.unarchivedObject(ofClass: TabCollection.self, from: archive))
+
+        guard case .unloaded(let unloaded) = decoded.tabs.first else {
+            return XCTFail("A decoded tab must stay unloaded")
+        }
+        XCTAssertTrue(unloaded.isFromSessionRestore)
+    }
+
+    @MainActor
+    func testWhenARestoredTabIsMaterializedThenItsChatIsLabelledAsRestored() {
+        let aiChat = AIChatTabExtensionMock()
+        let unloaded = UnloadedTab(from: makeRestorationData(content: .url(duckAIURL, credential: nil, source: .pendingStateRestoration)),
+                                   isFromSessionRestore: true)
+
+        _ = unloaded.materialize(extensionsBuilder: makeExtensionsBuilder(with: aiChat))
+
+        XCTAssertEqual(aiChat.recreationSources, [.sessionRestore])
+    }
+
+    @MainActor
+    func testWhenASuspendedTabWakesThenItsChatIsNotLabelled() {
+        let aiChat = AIChatTabExtensionMock()
+        let tab = Tab(content: .url(duckAIURL, credential: nil, source: .ui))
+
+        _ = tab.makeSuspendedTab().materialize(extensionsBuilder: makeExtensionsBuilder(with: aiChat))
+
+        XCTAssertEqual(aiChat.recreationSources, [])
+    }
+
     // MARK: - Helpers
+
+    private let duckAIURL = URL(string: "https://duck.ai/chat")!
+
+    private func makeExtensionsBuilder(with aiChat: AIChatTabExtensionMock) -> TestTabExtensionsBuilder {
+        TestTabExtensionsBuilder(load: [AIChatTabExtensionMock.self]) { builder in { _, _ in
+            builder.override { aiChat }
+        }}
+    }
 
     private func encodeThenDecode(_ data: TabRestorationData) throws -> TabRestorationData {
         let archiver = NSKeyedArchiver(requiringSecureCoding: true)

@@ -98,16 +98,6 @@ extension SharedColorPaletteDefinition {
         case .accentAltTextTertiary:
             return accentAltTextTertiary
 
-        /// Alert
-        case .alertGreen:
-            return alertGreen
-        case .alertYellow:
-            return alertYellow
-
-        /// Shield
-        case .shieldPrivacy:
-            return shieldPrivacy
-
         /// Status
         case .statusGray:
             return statusGray
@@ -138,33 +128,6 @@ extension SharedColorPaletteDefinition {
         case .vpnYellowForegroundPressed:
             return DynamicColor(lightColor: RebrandingColor.Pollen.pollen90, darkColor: RebrandingColor.Pollen.pollen10)
 
-        /// Buttons/Primary
-        case .buttonsPrimaryDefault:
-            return buttonsPrimaryDefault
-        case .buttonsPrimaryPressed:
-            return buttonsPrimaryPressed
-        case .buttonsPrimaryDisabled:
-            return buttonsPrimaryDisabled
-        case .buttonsPrimaryText:
-            return buttonsPrimaryText
-        case .buttonsPrimaryTextDisabled:
-            return buttonsPrimaryTextDisabled
-
-        /// Buttons/SecondaryFill
-        case .buttonsSecondaryFillDefault:
-            return buttonsSecondaryFillDefault
-        case .buttonsSecondaryFillPressed:
-            return buttonsSecondaryFillPressed
-        case .buttonsSecondaryFillDisabled:
-            return buttonsSecondaryFillDisabled
-        case .buttonsSecondaryFillText:
-            return buttonsSecondaryFillText
-        case .buttonsSecondaryFillTextDisabled:
-            return buttonsSecondaryFillTextDisabled
-
-        case .buttonsWhite:
-            return buttonsWhite
-
         /// Container Colors
         case .containerFillPrimary:
             return containerFillPrimary
@@ -180,6 +143,8 @@ extension SharedColorPaletteDefinition {
             return containerBorderTertiary
 
         /// Controls Colors
+        case .controlsBase:
+            return controlsBase
         case .controlsBorderPrimary:
             return controlsBorderPrimary
         case .controlsBorderSecondary:
@@ -208,8 +173,10 @@ extension SharedColorPaletteDefinition {
             return destructiveContentSecondary
         case .destructiveContentTertiary:
             return destructiveContentTertiary
-        case .destructiveGlow:
-            return destructiveGlow
+        case .destructiveGlowPrimary:
+            return destructiveGlowPrimary
+        case .destructiveGlowSecondary:
+            return destructiveGlowSecondary
         case .destructivePrimary:
             return destructivePrimary
         case .destructiveSecondary:
@@ -268,8 +235,6 @@ extension SharedColorPaletteDefinition {
             return unifiedInputTextSecondary
 
         /// System
-        case .lines:
-            return lines
         case .spinnerStart:
             // Non-specialized, we'll always use the default
             return LatestColorPalette.spinnerStart
@@ -286,6 +251,10 @@ extension SharedColorPaletteDefinition {
             return shadowTertiary
 
         /// Status
+        case .statusWarningContentPrimary:
+            return statusWarningContentPrimary
+        case .statusWarningFillPrimary:
+            return statusWarningFillPrimary
         case .statusYellowPrimary:
             return statusYellowPrimary
         case .statusYellowSecondary:

@@ -27,19 +27,13 @@ import DesignResourcesKitIcons
 import UIComponents
 
 @NewInstructionsView.InstructionsBuilder
-func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> [NewInstructionsView.InstructionsItem] {
+func newFileImportMultipleTypeInstructionsBuilder(
+    source: DataImport.Source,
+    dataTypes: Set<DataImport.DataType>
+) -> [NewInstructionsView.InstructionsItem] {
     switch source {
     case .safari, .safariTechnologyPreview:
-        NSLocalizedString("import.zip.instructions.safari", value: """
-        %d Open %@ **Safari → File → Export Browsing Data to File...**
-        %d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file
-        %d Upload the exported ZIP or CSV file to DuckDuckGo
-        """, comment: """
-        Instructions to import multiple data types exported as ZIP from Safari.
-        %N$d - step number
-        %2$@ - browser icon
-        **bold text**; _italic text_
-        """)
+        safariArchiveInstructions(for: dataTypes)
         (source.importSourceImage ?? DataImport.Source.safari.importSourceImage!).resizedToFaviconSize()
     case // browsers
          .brave, .chrome, .chromium, .coccoc,
@@ -52,6 +46,44 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
          .csv, .bookmarksHTML, .fileImport:
         []
         assertionFailure("Invalid source for multi import")
+    }
+}
+
+private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) -> String {
+    switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
+    case (true, false):
+        NotLocalizedString("import.zip.instructions.safari.bookmarks", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Choose **Bookmarks** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or HTML file to DuckDuckGo
+        """, comment: """
+        Instructions to import bookmarks and credit cards exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    case (false, true):
+        NotLocalizedString("import.zip.instructions.safari.passwords", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Choose **Passwords** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        """, comment: """
+        Instructions to import passwords and credit cards exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    default:
+        NSLocalizedString("import.zip.instructions.safari", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        """, comment: """
+        Instructions to import multiple data types exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
     }
 }
 
@@ -71,7 +103,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.brave, .passwords):
         NSLocalizedString("import.csv.instructions.brave.new", value: """
@@ -86,7 +118,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
+        NSImage(resource: .menuHamburger16)
 
     case (.chromium, .passwords),
         (.edge, .passwords):
@@ -102,7 +134,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.coccoc, .passwords):
         NSLocalizedString("import.csv.instructions.coccoc.new", value: """
@@ -115,7 +147,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         %3$@ - menu icon
         **bold text**; _italic text_
         """)
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.opera, .passwords):
         NSLocalizedString("import.csv.instructions.opera.new", value: """
@@ -141,7 +173,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         %3$@ - menu button icon
         **bold text**; _italic text_
         """)
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.operaGX, .passwords):
         NSLocalizedString("import.csv.instructions.operagx.new", value: """
@@ -156,7 +188,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.yandex, .passwords):
         NSLocalizedString("import.csv.instructions.yandex.new", value: """
@@ -172,8 +204,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
-        NSImage.menuVertical16
+        NSImage(resource: .menuHamburger16)
+        NSImage(resource: .menuVertical16)
 
     case (.brave, .bookmarks),
         (.chrome, .bookmarks),
@@ -192,7 +224,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.vivaldi, .bookmarks):
         NSLocalizedString("import.html.instructions.vivaldi.new", value: """
@@ -245,7 +277,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuVertical16
+        NSImage(resource: .menuVertical16)
 
     case (.safari, .passwords), (.safariTechnologyPreview, .passwords):
         if #available(macOS 15.2, *) {
@@ -292,8 +324,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.menuHamburger16
-        NSImage.menuHorizontal16
+        NSImage(resource: .menuHamburger16)
+        NSImage(resource: .menuHorizontal16)
 
     case (.firefox, .bookmarks), (.tor, .bookmarks):
         NSLocalizedString("import.html.instructions.firefox.new", value: """
@@ -308,7 +340,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage.importExport16
+        NSImage(resource: .importExport16)
 
     case (.onePassword8, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword8.new", value: """
@@ -383,7 +415,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
         (.csv, .bookmarks),
-        (_, .creditCards):
+        (_, .creditCards),
+        (_, .history):
         assertionFailure("Invalid source/dataType")
     }
 }
@@ -444,15 +477,15 @@ struct NewDataImportFilePickerScreenView: View {
 
     private var titleText: Text {
         switch mode {
-        case .fallback(.creditCards):
-            assert(false, "Credit card import fallback not handled yet")
+        case .fallback(.creditCards), .fallback(.history):
+            assert(false, "\(mode) import fallback not handled")
             fallthrough
         case .fallback(.passwords):
             return Text(UserText.importPasswordsManuallyTitle)
         case .fallback(.bookmarks):
             return Text(UserText.importBookmarksManuallyTitle)
         case .archive:
-            return Text("Import from \(model.importSource.importSourceName)")
+            return Text("Import from \(model.importSource.importSourceName)", bundle: #bundle)
         }
     }
 }
@@ -460,12 +493,12 @@ struct NewDataImportFilePickerScreenView: View {
 struct NewFileImportView: View {
     enum Kind {
         case individual(dataType: DataImport.DataType)
-        case archive
+        case archive(dataTypes: Set<DataImport.DataType>)
 
         func supportedFileTypes(for source: DataImport.Source) -> [UTType] {
             switch self {
-            case .archive:
-                return Array(source.archiveImportSupportedFiles)
+            case .archive(let dataTypes):
+                return Array(source.archiveImportSupportedFiles(for: dataTypes))
             case .individual(dataType: let dataType):
                 return dataType.allowedFileTypes
             }
@@ -495,8 +528,8 @@ struct NewFileImportView: View {
         VStack(alignment: .leading, spacing: 20) {
             NewInstructionsView {
                 switch kind {
-                case .archive:
-                    newFileImportMultipleTypeInstructionsBuilder(source: source)
+                case .archive(let dataTypes):
+                    newFileImportMultipleTypeInstructionsBuilder(source: source, dataTypes: dataTypes)
                 case .individual(let dataType):
                     newFileImportSingleTypeInstructionsBuilder(source: source, dataType: dataType)
                 }
@@ -788,7 +821,7 @@ struct NewCircleNumberView: View {
             .fill(Color(designSystemColor: .toneTintSecondary))
             .frame(width: Constants.diameter, height: Constants.diameter)
             .overlay(
-                Text("\(number)")
+                Text(verbatim: "\(number)")
                     .font(.system(size: 8.75, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .accentAltTextPrimary))
             )
@@ -800,9 +833,9 @@ struct NewCircleNumberView: View {
 
 #Preview("Multiple Types") {
     VStack(spacing: 20) {
-        Text("Safari Multi-Type Import").font(.headline)
+        Text("Safari Multi-Type Import", bundle: #bundle).font(.headline)
         NewInstructionsView {
-            newFileImportMultipleTypeInstructionsBuilder(source: .safari)
+            newFileImportMultipleTypeInstructionsBuilder(source: .safari, dataTypes: [.bookmarks, .passwords, .creditCards])
         }
     }
     .padding()
@@ -813,112 +846,112 @@ struct NewCircleNumberView: View {
 #Preview("Passwords") {
     ScrollView {
         VStack(alignment: .leading, spacing: 30) {
-            Text("Chrome").font(.headline)
+            Text("Chrome", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chrome, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Brave").font(.headline)
+            Text("Brave", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .brave, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Chromium").font(.headline)
+            Text("Chromium", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chromium, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Edge").font(.headline)
+            Text("Edge", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .edge, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Cốc Cốc").font(.headline)
+            Text("Cốc Cốc", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .coccoc, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Opera").font(.headline)
+            Text("Opera", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .opera, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Vivaldi").font(.headline)
+            Text("Vivaldi", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .vivaldi, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Opera GX").font(.headline)
+            Text("Opera GX", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .operaGX, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Yandex").font(.headline)
+            Text("Yandex", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .yandex, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Safari").font(.headline)
+            Text("Safari", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .safari, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Firefox").font(.headline)
+            Text("Firefox", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .firefox, dataType: .passwords)
             }
 
             Divider()
 
-            Text("1Password 8").font(.headline)
+            Text("1Password 8", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .onePassword8, dataType: .passwords)
             }
 
             Divider()
 
-            Text("1Password 7").font(.headline)
+            Text("1Password 7", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .onePassword7, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Bitwarden").font(.headline)
+            Text("Bitwarden", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .bitwarden, dataType: .passwords)
             }
 
             Divider()
 
-            Text("LastPass").font(.headline)
+            Text("LastPass", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .lastPass, dataType: .passwords)
             }
 
             Divider()
 
-            Text("Generic CSV").font(.headline)
+            Text("Generic CSV", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .csv, dataType: .passwords)
             }
@@ -932,91 +965,91 @@ struct NewCircleNumberView: View {
 #Preview("Bookmarks") {
     ScrollView {
         VStack(alignment: .leading, spacing: 30) {
-            Text("Chrome").font(.headline)
+            Text("Chrome", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chrome, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Brave").font(.headline)
+            Text("Brave", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .brave, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Chromium").font(.headline)
+            Text("Chromium", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .chromium, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Edge").font(.headline)
+            Text("Edge", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .edge, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Cốc Cốc").font(.headline)
+            Text("Cốc Cốc", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .coccoc, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Vivaldi").font(.headline)
+            Text("Vivaldi", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .vivaldi, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Opera").font(.headline)
+            Text("Opera", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .opera, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Opera GX").font(.headline)
+            Text("Opera GX", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .operaGX, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Yandex").font(.headline)
+            Text("Yandex", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .yandex, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Safari").font(.headline)
+            Text("Safari", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .safari, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Firefox").font(.headline)
+            Text("Firefox", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .firefox, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Tor").font(.headline)
+            Text("Tor", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .tor, dataType: .bookmarks)
             }
 
             Divider()
 
-            Text("Generic HTML").font(.headline)
+            Text("Generic HTML", bundle: #bundle).font(.headline)
             NewInstructionsView {
                 newFileImportSingleTypeInstructionsBuilder(source: .bookmarksHTML, dataType: .bookmarks)
             }

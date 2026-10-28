@@ -136,6 +136,12 @@ class SwitchBarTextEntryView: UIView {
 
     private let textView = SwitchBarTextView()
     private let textField = SwitchBarTextField()
+    var isInputFrozen = false {
+        didSet {
+            textView.isInputFrozen = isInputFrozen
+            if isInputFrozen { mentionHandler?.dismiss() }
+        }
+    }
     private let placeholderLabel = UILabel()
     private var buttonsView = SwitchBarButtonsView()
     private var currentButtonState: SwitchBarButtonState {
@@ -237,6 +243,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     var onTextInputActivated: (() -> Void)?
+    var onTextInputFocusChanged: ((Bool) -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
 
     weak var mentionHandler: TextEntryMentionHandling?
@@ -392,22 +399,28 @@ class SwitchBarTextEntryView: UIView {
 
     override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
         if action == #selector(pasteURLAndGo) {
-            return UIPasteboard.general.hasStrings
+            return !isInputFrozen && textView.pasteboard().hasStrings
         }
         return super.canPerformAction(action, withSender: sender)
     }
 
-    @objc private func pasteURLAndGo() {
-        guard let pastedText = UIPasteboard.general.string,
+    @objc func pasteURLAndGo() {
+        guard !isInputFrozen, !handler.isInputBlockedByUsageLimit,
+              let pastedText = textView.pasteboard().string,
               !pastedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        if AttachmentPasteRouting.routeInsertedText(pastedText, with: attachmentPasteHandler) {
+            setQueryText("")
+            handler.submitAIChatAttachmentOnlyPrompt(trigger: .pasteAndGo)
+            return
+        }
         handler.updateCurrentText(pastedText)
-        handler.submitText(pastedText)
+        handler.submitText(pastedText, trigger: .pasteAndGo)
     }
 
     /// Appends "Paste & Go" to the long-press menu when the clipboard has text (iOS 16+).
     @available(iOS 16.0, *)
     private func pasteAndGoEditMenu(appendingTo suggestedActions: [UIMenuElement]) -> UIMenu? {
-        guard UIPasteboard.general.hasStrings else { return nil }
+        guard textView.pasteboard().hasStrings else { return nil }
         let pasteAndGo = UIAction(title: UserText.actionPasteAndGo) { [weak self] _ in
             self?.pasteURLAndGo()
         }
@@ -1012,7 +1025,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     func insertNewlineAtCursor() {
-        guard !usesTextField else { return }
+        guard !isInputFrozen, !usesTextField else { return }
         let selectedRange = textView.selectedTextRange
             ?? textView.textRange(from: textView.endOfDocument, to: textView.endOfDocument)
         if let selectedRange {
@@ -1112,6 +1125,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     @objc private func textFieldEditingChanged() {
+        guard !isInputFrozen else {
+            textField.text = handler.currentText
+            return
+        }
         hasBeenInteractedWith = true
         updatePlaceholderVisibility()
         handler.updateCurrentText((textField.text ?? "").strippingDictationPlaceholder)
@@ -1149,14 +1166,20 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textViewDidBeginEditing(_ textView: UITextView) {
         onTextInputActivated?()
+        onTextInputFocusChanged?(true)
         fireTextAreaFocusedPixel()
     }
 
     func textViewDidEndEditing(_ textView: UITextView) {
         mentionHandler?.dismiss()
+        onTextInputFocusChanged?(false)
     }
 
     func textViewDidChange(_ textView: UITextView) {
+        guard !isInputFrozen else {
+            textView.text = handler.currentText
+            return
+        }
         hasBeenInteractedWith = true
         
         updatePlaceholderVisibility()
@@ -1177,9 +1200,8 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
     }
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        // Refusing the edit rather than clearing `isEditable`: that would end editing and take the
-        // keyboard, and the card explaining the block down with it.
-        guard !handler.isInputBlockedByUsageLimit else { return false }
+        // Refuse edits without ending editing, so the keyboard stays visible.
+        guard !handler.isInputBlockedByUsageLimit, !isInputFrozen else { return false }
         if text == "\n" {
             if currentMode == .aiChat && !handler.submitsAIChatOnKeyboardReturn {
                 return true
@@ -1189,6 +1211,13 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
             if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 handler.submitText(currentText)
             }
+            return false
+        }
+        if #available(iOS 18, *), textView.isWritingToolsActive {
+            return true
+        }
+        if AttachmentPasteRouting.routeInsertedText(text, with: attachmentPasteHandler) {
+            PastedTextInsertion.removeReplacedSelection(in: textView, range: range)
             return false
         }
         return true
@@ -1202,6 +1231,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
 extension SwitchBarTextEntryView: UITextFieldDelegate {
 
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        !isInputFrozen
+    }
+
     @available(iOS 16.0, *)
     func textField(_ textField: UITextField, editMenuForCharactersIn range: NSRange, suggestedActions: [UIMenuElement]) -> UIMenu? {
         pasteAndGoEditMenu(appendingTo: suggestedActions)
@@ -1210,11 +1243,16 @@ extension SwitchBarTextEntryView: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
         hasBeenInteractedWith = true
         onTextInputActivated?()
+        onTextInputFocusChanged?(true)
         fireTextAreaFocusedPixel()
     }
 
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        onTextInputFocusChanged?(false)
+    }
+
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        guard usesTextField else { return false }
+        guard usesTextField, !isInputFrozen else { return false }
         fireKeyboardGoPressedPixel()
         let currentText = textField.text ?? ""
         if !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

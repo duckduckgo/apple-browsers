@@ -78,6 +78,11 @@ struct AIChatContextualAttachMoreTabsFeature: AIChatContextualAttachMoreTabsFeat
     }
 #endif
 
+    /// Shared attachment styling also applies on iPad, where attaching other tabs is unavailable.
+    var usesCompactAttachmentLayout: Bool {
+        featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs)
+    }
+
     var state: AIChatContextualAttachMoreTabsState {
         guard devicePlatform.isIphone,
               featureFlagger.isFeatureOn(.aiChatContextualAttachMoreTabs) else {

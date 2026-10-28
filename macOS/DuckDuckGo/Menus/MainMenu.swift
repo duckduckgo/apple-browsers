@@ -413,6 +413,10 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.command, .shift, "\r"])
                 .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.askAboutSelection), keyEquivalent: [.option, .command, "k"])
+                .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.translateSelection), keyEquivalent: [.option, .command, "t"])
+                .hidden()
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuEditFind) {
@@ -679,7 +683,10 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            isBitwardenEnabled: { [featureFlagger] in
+                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                            }
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
@@ -1090,6 +1097,7 @@ final class MainMenu: NSMenu {
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
             FireDialogDebugMenu()
+            SiteBreakageDebugMenu(networkSignalsProvider: Application.appDelegate.networkSignalsProvider)
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")

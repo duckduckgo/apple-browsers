@@ -29,21 +29,17 @@ struct RedesignedFavoriteItemView: View {
     let onMenuAction: ((MenuAction) -> Void)?
 
     var body: some View {
-        VStack(spacing: Metrics.iconToTitleSpacing) {
+        RedesignedFavoriteTileView(title: favorite.title) {
             RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
                 .if(isEditable) {
-                    $0.contextMenu {
-                        // This context menu can be moved up in the hierarchy to `FavoritesView` once support for iOS 15 is removed. contextMenu with preview modifier can be used then.
+                    $0.contextMenuWithPreviewIfAvailable {
                         contextMenuItems()
+                    } preview: {
+                        RedesignedFavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+                            .background(Color(designSystemColor: .background))
+                            .clipShape(RedesignedFavoriteTileMetrics.tileShape)
                     }
                 }
-
-            Text(favorite.title)
-                .daxCaption1()
-                .lineLimit(Metrics.titleLineLimit)
-                .multilineTextAlignment(.center)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .frame(maxWidth: .infinity, alignment: .top)
         }
         .accessibilityElement()
         .accessibilityAddTraits(.isButton)
@@ -82,26 +78,24 @@ extension RedesignedFavoriteItemView {
     }
 }
 
-/// Keeps the favicon inside a circular tile without cropping the site's artwork.
+/// Keeps the favicon inside a rounded rectangle tile without cropping the site's artwork.
 struct RedesignedFavoriteIconView: View {
     let favorite: Favorite
     let faviconLoading: FavoritesFaviconLoading?
 
     var body: some View {
-        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading)
+        FavoriteIconView(favorite: favorite, faviconLoading: faviconLoading, showsFaviconSurface: false)
             .frame(width: Metrics.sourceIconSize, height: Metrics.sourceIconSize)
             .scaleEffect(Metrics.faviconSize / Metrics.sourceIconSize)
             .frame(width: Metrics.faviconSize, height: Metrics.faviconSize)
             .frame(width: Metrics.tileSize, height: Metrics.tileSize)
-            .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
-            .contentShape(Circle())
-            .contentShape([.contextMenuPreview, .dragPreview], Circle())
+            .background(RedesignedFavoriteTileMetrics.tileShape.fill(Color(designSystemColor: .controlsFillPrimary)))
+            .contentShape(RedesignedFavoriteTileMetrics.tileShape)
+            .contentShape([.contextMenuPreview, .dragPreview], RedesignedFavoriteTileMetrics.tileShape)
     }
 }
 
 private enum Metrics {
-    static let iconToTitleSpacing: CGFloat = 6
-    static let titleLineLimit = 2
     static let sourceIconSize: CGFloat = 64
     static let faviconSize: CGFloat = 32
     static let tileSize: CGFloat = 48

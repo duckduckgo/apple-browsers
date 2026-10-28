@@ -22,6 +22,7 @@ import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Combine
 import Core
+@_spi(Testing) import PixelKit
 import SubscriptionTestingUtilities
 import UIKit
 import UserScript
@@ -41,6 +42,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     private var subscriptionManager: SubscriptionManagerMock!
     private var retainedBridgeReadyWebView: WKWebView?
     private var retainedBridgeReadyBroker: UserScriptMessageBroker?
+    private var appOpenWindow: UIWindow?
+    private weak var previousAppOpenKeyWindow: UIWindow?
     private var cancellables = Set<AnyCancellable>()
 
     override func setUp() {
@@ -66,6 +69,15 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     override func tearDown() {
         cancellables.removeAll()
+        mockDelegate?.pendingInitialPromptRequest?.cancel()
+        if appOpenWindow != nil {
+            sut.viewController.deactivateInput()
+            appOpenWindow?.isHidden = true
+            appOpenWindow?.rootViewController = nil
+            appOpenWindow = nil
+            previousAppOpenKeyWindow?.makeKey()
+            previousAppOpenKeyWindow = nil
+        }
         sut = nil
         subscriptionManager = nil
         mockDelegate = nil
@@ -76,6 +88,32 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         retainedBridgeReadyWebView = nil
         retainedBridgeReadyBroker = nil
         super.tearDown()
+    }
+
+    func testAttachmentLayoutUsesAttachMoreTabsFlagOnEveryHost() throws {
+        func findStrip(in view: UIView) -> UnifiedToggleInputAttachmentsStripView? {
+            if let strip = view as? UnifiedToggleInputAttachmentsStripView { return strip }
+            return view.subviews.lazy.compactMap { findStrip(in: $0) }.first
+        }
+
+        for isEnabled in [false, true] {
+            let featureFlagger = MockFeatureFlagger()
+            featureFlagger.enabledFeatureFlags = isEnabled ? [.aiChatContextualAttachMoreTabs] : []
+            for host: UnifiedToggleInputHost in [.omnibar, .contextualChat] {
+                let coordinator = UnifiedToggleInputCoordinator(
+                    host: host,
+                    isToggleEnabled: host == .omnibar,
+                    preferences: mockPreferences,
+                    subscriptionManager: subscriptionManager,
+                    featureFlagger: featureFlagger)
+                coordinator.viewController.loadViewIfNeeded()
+                let strip = try XCTUnwrap(findStrip(in: coordinator.viewController.view))
+                let scrollView = try XCTUnwrap(strip.subviews.compactMap { $0 as? UIScrollView }.first)
+                let stack = try XCTUnwrap(scrollView.subviews.compactMap { $0 as? UIStackView }.first)
+                XCTAssertEqual(stack.spacing, isEnabled ? 4 : 10)
+                XCTAssertEqual(scrollView.alwaysBounceHorizontal, !isEnabled)
+            }
+        }
     }
 
     func testRejectedStaleModelSelectionDoesNotCreatePendingChoice() {
@@ -154,6 +192,54 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Tab mentions
 
+    func testWhenSurfaceChangesBeforeMentionDismissalThenReportsOriginalSurfaceUnlessFeatureWasDisabled() async throws {
+        let targetStates: [UnifiedToggleInputDisplayState] = [.omnibar(.active), .aiTab(.expanded)]
+        for targetState in targetStates {
+            for disablesFeature in [false, true] {
+                let pixelKitMock = PixelKitMock()
+                sut = makeMentionCoordinator(host: .contextualChat, pixelFiring: UTIPixelFiring(pixelKit: { pixelKitMock }))
+                let feature = MentionAttachmentFeature()
+                feature.state = .available(maximumTabAttachmentCount: 3)
+                let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
+                let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: { [tab] })
+                sut.configureTabAttachments(source: source, feature: feature)
+                let handler = try XCTUnwrap(sut.viewController.mentionHandler)
+                let textView = MentionTestTextView()
+                let window = UIWindow()
+                window.addSubview(textView)
+                defer { window.subviews.forEach { $0.removeFromSuperview() } }
+                textView.text = "@wiki"
+                textView.selectedRange = NSRange(location: 5, length: 0)
+                let presented = expectation(description: "Mention shown before surface change")
+                sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
+
+                handler.textDidChange(in: textView)
+                await fulfillment(of: [presented], timeout: 1)
+                if disablesFeature {
+                    feature.state = .unavailable
+                }
+                sut.displayState = targetState
+                XCTAssertNotEqual(sut.pixelSurface, .contextualChat)
+                sut.dismissTabMentions()
+                sut.dismissTabMentions()
+                if disablesFeature {
+                    feature.state = .available(maximumTabAttachmentCount: 3)
+                    sut.dismissTabMentions()
+                }
+
+                let calls = pixelKitMock.actualFireCalls.filter { $0.pixel.name.hasPrefix("aichat_unified_input_tab_picker_") }
+                let expectedNames = disablesFeature
+                    ? ["aichat_unified_input_tab_picker_shown"]
+                    : ["aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"]
+                XCTAssertEqual(calls.map(\.pixel.name), expectedNames)
+                for call in calls {
+                    XCTAssertEqual(call.pixel.parameters, ["surface": "contextual_chat", "page_type": "contextual", "source": "mention"])
+                    XCTAssertEqual(call.frequency, .dailyAndCount)
+                }
+            }
+        }
+    }
+
     func testWhenContextualMentionsAreEnabledThenShowsSuggestionsAndRejectsSelectionAfterDisabling() async throws {
         sut = makeMentionCoordinator(host: .contextualChat)
         let feature = MentionAttachmentFeature()
@@ -191,7 +277,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func testWhenContextualMentionsAreDisabledThenDoesNotReadTabsOrPresentSuggestions() async {
-        sut = makeMentionCoordinator(host: .contextualChat)
+        let pixelKitMock = PixelKitMock()
+        sut = makeMentionCoordinator(host: .contextualChat, pixelFiring: UTIPixelFiring(pixelKit: { pixelKitMock }))
         let feature = MentionAttachmentFeature()
         feature.state = .unavailable
         var candidateReadCount = 0
@@ -218,10 +305,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(candidateReadCount, 0)
         XCTAssertEqual(textView.text, "@wiki")
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        XCTAssertFalse(pixelKitMock.actualFireCalls.contains { $0.pixel.name.hasPrefix("aichat_unified_input_tab_picker_") })
     }
 
-    func testWhenMentionsAreConfiguredOutsideContextualThenSearchAndDuckAIStayInactive() async throws {
+    func testWhenMentionsAreConfiguredOutsideContextualThenSearchStaysInactive() async throws {
         sut = makeMentionCoordinator(host: .omnibar)
+        sut.displayState = .omnibar(.active)
+        sut.syncInputModeFromExternalSource(.search)
         let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
         var candidateReadCount = 0
         let source = MultiTabAttachmentSource(currentTabID: "wiki", mode: .normal, tabsProvider: {
@@ -236,33 +326,66 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         defer { window.subviews.forEach { $0.removeFromSuperview() } }
         textView.text = "@wiki"
         textView.selectedRange = NSRange(location: 5, length: 0)
-        let states: [(UnifiedToggleInputDisplayState, TextEntryMode)] = [
-            (.omnibar(.active), .search),
-            (.omnibar(.active), .aiChat),
-            (.aiTab(.expanded), .aiChat)
-        ]
+        let presented = expectation(description: "No mention suggestions in search mode")
+        presented.isInverted = true
+        sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
 
-        for (state, mode) in states {
-            sut.displayState = state
-            sut.syncInputModeFromExternalSource(mode)
-            let presented = expectation(description: "No mention suggestions in \(state), \(mode)")
-            presented.isInverted = true
-            sut.onTabMentionSuggestionsChanged = { if $0 != nil { presented.fulfill() } }
+        handler.textDidChange(in: textView)
+        handler.selectionDidChange(in: textView)
 
-            handler.textDidChange(in: textView)
-            handler.selectionDidChange(in: textView)
-
-            await fulfillment(of: [presented], timeout: 0.1)
-        }
+        await fulfillment(of: [presented], timeout: 0.1)
+        XCTAssertEqual(sut.inputMode, .search)
         XCTAssertEqual(candidateReadCount, 0)
         XCTAssertEqual(textView.text, "@wiki")
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
     }
 
-    private func makeMentionCoordinator(host: UnifiedToggleInputHost) -> UnifiedToggleInputCoordinator {
+    func testWhenMentionsAreConfiguredOutsideContextualThenDuckAISurfacesShowSuggestions() async throws {
+        let states: [UnifiedToggleInputDisplayState] = [.omnibar(.active), .aiTab(.expanded)]
+        for state in states {
+            sut = makeMentionCoordinator(host: .omnibar)
+            sut.displayState = state
+            sut.syncInputModeFromExternalSource(.aiChat)
+            let feature = MentionAttachmentFeature()
+            let tab = Tab(uid: "wiki", link: Link(title: "Wikipedia", url: URL(string: "https://wikipedia.org")!), fireTab: false)
+            let source = MultiTabAttachmentSource(currentTabID: "source", mode: .normal, tabsProvider: { [tab] })
+            sut.configureTabAttachments(source: source, feature: feature)
+            let handler = try XCTUnwrap(sut.viewController.mentionHandler)
+            let textView = MentionTestTextView()
+            let window = UIWindow()
+            window.addSubview(textView)
+            defer { window.subviews.forEach { $0.removeFromSuperview() } }
+            textView.text = "@wiki"
+            textView.selectedRange = NSRange(location: 5, length: 0)
+            let presented = expectation(description: "Duck.ai mention suggestions in \(state)")
+            var suggestions: [MultiTabMentionController.Suggestion]?
+            sut.onTabMentionSuggestionsChanged = {
+                suggestions = $0
+                if $0 != nil { presented.fulfill() }
+            }
+
+            handler.textDidChange(in: textView)
+            handler.selectionDidChange(in: textView)
+            await fulfillment(of: [presented], timeout: 1)
+
+            XCTAssertEqual(sut.inputMode, .aiChat)
+            XCTAssertEqual(suggestions?.map { $0.candidate.tabId }, ["wiki"])
+            XCTAssertEqual(suggestions?.first?.isEnabled, true)
+            let candidate = try XCTUnwrap(suggestions?.first?.candidate)
+            feature.state = .unavailable
+            sut.selectTabMention(candidate)
+
+            XCTAssertNil(suggestions)
+            XCTAssertEqual(textView.text, "@wiki")
+            XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+        }
+    }
+
+    private func makeMentionCoordinator(host: UnifiedToggleInputHost, pixelFiring: UTIPixelFiring = .live) -> UnifiedToggleInputCoordinator {
         UnifiedToggleInputCoordinator(host: host, isToggleEnabled: host == .omnibar,
                                       preferences: mockPreferences, subscriptionManager: subscriptionManager,
                                       toggleModeStorage: mockToggleModeStorage, featureDiscovery: mockFeatureDiscovery,
+                                      pixelFiring: pixelFiring,
                                       contextualStart: .expandedPreSubmit,
                                       updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
                                       updatedCreateImageFeature: MockUpdatedCreateImageFeature(isAvailable: false))
@@ -391,10 +514,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Model Picker (showModelPicker)
 
     func testWhenUpdatedModelPickerIsAvailableThenCoordinatorBuildsUpdatedMenu() {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: true)
         )
         coordinator.modelStore.models = [
@@ -409,10 +536,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func testWhenUpdatedModelPickerIsUnavailableThenCoordinatorBuildsLegacyMenu() {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
         coordinator.modelStore.models = [
@@ -474,7 +604,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     @MainActor
     func test_editPrompt_holdsUntilSubmit_thenResolvesWithEditedContent() async {
-        let request = EditPromptRequest(prompt: "original", images: nil, files: nil, hasResponsesToLose: false)
+        let request = EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)
 
         let editTask = Task { await sut.editPrompt(request) }
         await Task.yield() // let editPrompt reach its suspension
@@ -482,10 +612,126 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
 
         let reply = await editTask.value
-        guard case let .submit(prompt, _, _) = reply else {
+        guard case let .submit(prompt, _) = reply else {
             return XCTFail("Expected .submit, got \(reply)")
         }
         XCTAssertEqual(prompt, "edited", "Submitting during an edit resolves the held reply with the edited content")
+    }
+
+    @MainActor
+    func test_editPrompt_tabSwitch_cancelsEdit_andNextPromptIsNotAnEdit() async {
+        sut.activateForTab("tab-A")
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: true)) }
+        await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before the tab switch") }
+
+        sut.activateForTab("tab-B")
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Switching tabs resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "new chat", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "new chat", "A prompt sent after the switch starts a chat instead of replacing the edited message")
+
+        sut.activateForTab("tab-A")
+        XCTAssertEqual(sut.currentText, "", "The edited prompt isn't kept as the outgoing tab's draft")
+    }
+
+    @MainActor
+    func test_editPrompt_hide_cancelsEdit() async {
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
+        await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before hiding") }
+
+        sut.hide()
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Hiding the input resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+        XCTAssertEqual(sut.displayState, .hidden, "Ending the edit doesn't override the hidden state")
+    }
+
+    @MainActor
+    func test_editPrompt_bindingAnotherChat_cancelsEdit() async {
+        sut.bindToTab(makeBridgeReadyUserScript(), hasExistingChat: true)
+        let editTask = Task { await sut.editPrompt(EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)) }
+        await Task.yield()
+        guard sut.isEditing else { return XCTFail("The edit started before rebinding") }
+
+        sut.bindToTab(makeTestUserScript(), hasExistingChat: true)
+
+        guard case .cancelled = await editTask.value else {
+            return XCTFail("Binding another chat's script resolves the held edit as cancelled")
+        }
+        XCTAssertFalse(sut.isEditing)
+    }
+
+    @MainActor
+    func test_editPrompt_modelSupportsImagesAndFiles_repliesWithEmptyArraysWhenNothingIsAttached() async throws {
+        selectAttachmentModel(supportsImages: true, supportsFiles: true)
+
+        let json = try await submitEditAndEncodeReply()
+
+        XCTAssertEqual(json, #"{"files":[],"images":[],"prompt":"edited"}"#)
+    }
+
+    @MainActor
+    func test_editPrompt_modelSupportsNeither_omitsAttachmentKeys() async throws {
+        selectAttachmentModel(supportsImages: false, supportsFiles: false)
+
+        let json = try await submitEditAndEncodeReply()
+
+        XCTAssertEqual(json, #"{"prompt":"edited"}"#)
+    }
+
+    @MainActor
+    func test_editPrompt_modelSupportsFilesOnly_sendsAttachedFileAndOmitsImages() async throws {
+        selectAttachmentModel(supportsImages: false, supportsFiles: true)
+
+        let json = try await submitEditAndEncodeReply(attaching: makeFileAttachment())
+
+        let expectedData = Data(repeating: 0, count: 1_000).base64EncodedString()
+        XCTAssertEqual(json, #"{"files":[{"data":"\#(expectedData)","fileName":"test.pdf","mimeType":"application\/pdf"}],"prompt":"edited"}"#)
+    }
+
+    func test_submitAIChat_modelSupportsImagesAndFiles_nothingAttached_sendsNoAttachmentArrays() {
+        selectAttachmentModel(supportsImages: true, supportsFiles: true)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "hello", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "hello")
+        XCTAssertNil(mockDelegate.submittedAttachments?.images)
+        XCTAssertNil(mockDelegate.submittedAttachments?.files)
+    }
+
+    private func selectAttachmentModel(supportsImages: Bool, supportsFiles: Bool) {
+        mockPreferences.selectedModelId = "attachment-model"
+        sut.modelStore.models = [
+            AIChatModel(id: "attachment-model", name: "Attachment model", provider: .unknown,
+                        supportsImageUpload: supportsImages,
+                        supportedFileTypes: supportsFiles ? ["application/pdf"] : [],
+                        entityHasAccess: true)
+        ]
+        sut.modelStore.attachmentLimits = makeLimits()
+    }
+
+    @MainActor
+    private func submitEditAndEncodeReply(attaching file: AIChatFileAttachment? = nil) async throws -> String {
+        let request = EditPromptRequest(prompt: "original", attachments: .none, hasResponsesToLose: false)
+        let editTask = Task { await sut.editPrompt(request) }
+        await Task.yield()
+        if let file {
+            sut.addFileAttachment(file)
+        }
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "edited", mode: .aiChat, trigger: .sendButton)
+
+        let reply = await editTask.value
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        return try XCTUnwrap(String(bytes: try encoder.encode(reply), encoding: .utf8))
     }
 
     // MARK: - Recovery-Card Submit Block
@@ -620,6 +866,21 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertEqual(instrumentation.submissionStartedScopes, [.tab("tab-A")])
         XCTAssertTrue(mockDelegate.duckAIPromptSubmissionOrigins.isEmpty)
         XCTAssertTrue(instrumentation.promptDeliveryUpdates.isEmpty)
+    }
+
+    func testWhenTheFirstContextualPromptIsSubmittedThenTheChipStateReportsPageContext() {
+        for isAttached in [true, false] {
+            let instrumentation = MockDuckAIWideEventInstrumentation()
+            sut = UnifiedToggleInputCoordinator(host: .contextualChat, isToggleEnabled: false,
+                                                duckAIWideEventInstrumentation: instrumentation,
+                                                duckAIWideEventFlowScope: .contextual(UUID()))
+            sut.delegate = mockDelegate
+            sut.hasPendingPageContextProvider = { isAttached }
+
+            sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first prompt", mode: .aiChat, trigger: .sendButton)
+
+            XCTAssertEqual(instrumentation.submissionStartedPageContextFlags, [isAttached])
+        }
     }
 
     private func assertDeferredPromptReporting(expectedDelivery: Bool,
@@ -979,8 +1240,8 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         sut.submitProgrammatic(text: "Summarize This Page")
 
         XCTAssertEqual(mockDelegate.submittedPrompt, "Summarize This Page")
-        XCTAssertEqual(mockDelegate.submittedFiles?.count, 1)
-        XCTAssertEqual(mockDelegate.submittedFiles?.first?.fileName, "test.pdf")
+        XCTAssertEqual(mockDelegate.submittedAttachments?.files?.count, 1)
+        XCTAssertEqual(mockDelegate.submittedAttachments?.files?.first?.fileName, "test.pdf")
         XCTAssertEqual(attachmentCountAtSubmit, 1)
         XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
     }
@@ -1030,6 +1291,316 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     // MARK: - Omnibar Editing Lifecycle
 
+    func testWhenAppOpenFindsFocusedOmnibarThenDraftModeAndToolArePreserved() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var intents: [UnifiedToggleInputIntent] = []
+        sut.intentPublisher.sink { intents.append($0) }.store(in: &cancellables)
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        seedAppOpenDraftAndTool()
+        XCTAssertEqual(scheduledFocus.count, 1)
+        scheduledFocus.removeFirst()()
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        let intentCount = intents.count
+        var completions: [Bool] = []
+
+        sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+
+        XCTAssertEqual(completions, [true])
+        XCTAssertTrue(scheduledFocus.isEmpty)
+        XCTAssertEqual(intents.count, intentCount)
+        assertAppOpenDraftAndToolArePreserved()
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenAppOpenRestoresDismissedOmnibarThenDraftModeAndToolArePreserved() {
+        for isFloatingUIEnabled in [false, true] {
+            for becomesInactive in [false, true] {
+                var scheduledFocus: [() -> Void] = []
+                sut = makeAppOpenCoordinator(isFloatingUIEnabled: isFloatingUIEnabled, schedule: { scheduledFocus.append($0) })
+                showAppOpenInput()
+                sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+                seedAppOpenDraftAndTool()
+                scheduledFocus.removeFirst()()
+                XCTAssertTrue(sut.viewController.isInputFirstResponder)
+                sut.viewController.deactivateInput()
+                if becomesInactive {
+                    sut.updateOmnibarInputVisibility(false)
+                }
+                XCTAssertFalse(sut.viewController.isInputFirstResponder)
+                XCTAssertEqual(sut.displayState, .omnibar(becomesInactive ? .inactive : .active))
+                var showIntentCount = 0
+                sut.intentPublisher.sink { intent in
+                    if case .showOmnibarEditing = intent { showIntentCount += 1 }
+                }.store(in: &cancellables)
+                var completions: [Bool] = []
+
+                sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+
+                XCTAssertTrue(completions.isEmpty)
+                XCTAssertEqual(scheduledFocus.count, 1)
+                scheduledFocus.removeFirst()()
+                XCTAssertEqual(completions, [true])
+                XCTAssertTrue(sut.viewController.isInputFirstResponder)
+                XCTAssertEqual(showIntentCount, 0)
+                assertAppOpenDraftAndToolArePreserved()
+            }
+        }
+    }
+
+    func testWhenAppOpenArrivesDuringQueuedActivationThenOnlyOneFocusIsScheduled() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var showIntentCount = 0
+        sut.intentPublisher.sink { intent in
+            if case .showOmnibarEditing = intent { showIntentCount += 1 }
+        }.store(in: &cancellables)
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, onFocus: { completions.append($0) })
+        seedAppOpenDraftAndTool()
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+
+        sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+        sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+
+        XCTAssertEqual(scheduledFocus.count, 1)
+        XCTAssertTrue(completions.isEmpty)
+        XCTAssertEqual(showIntentCount, 1)
+        scheduledFocus.removeFirst()()
+        XCTAssertEqual(completions, [true, true, true])
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        assertAppOpenDraftAndToolArePreserved()
+    }
+
+    func testWhenAppOpenRequestIsCancelledThenCoalescedManualActivationStillFocuses() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        seedAppOpenDraftAndTool()
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        var isRequestValid = true
+        var completions: [Bool] = []
+
+        sut.restoreOmnibarInputOnAppOpen(isRequestValid: { isRequestValid }, completion: { completions.append($0) })
+        isRequestValid = false
+
+        XCTAssertEqual(scheduledFocus.count, 1)
+        scheduledFocus.removeFirst()()
+        XCTAssertEqual(completions, [false])
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        assertAppOpenDraftAndToolArePreserved()
+    }
+
+    func testWhenFirstAppOpenFocusCompletionEndsSessionThenNextCompletionFails() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        scheduledFocus.removeFirst()()
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        sut.viewController.deactivateInput()
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        var completions: [Bool] = []
+
+        sut.restoreOmnibarInputOnAppOpen { didFocus in
+            completions.append(didFocus)
+            self.sut.completeOmnibarDeactivation()
+        }
+        sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+
+        XCTAssertEqual(scheduledFocus.count, 1)
+        scheduledFocus.removeFirst()()
+        XCTAssertEqual(completions, [true, false])
+        XCTAssertEqual(sut.displayState, .hidden)
+    }
+
+    func testWhenAppOpenRequestIsInvalidatedBeforeFocusThenKeyboardRemainsDismissed() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom)
+        seedAppOpenDraftAndTool()
+        scheduledFocus.removeFirst()()
+        XCTAssertTrue(sut.viewController.isInputFirstResponder)
+        sut.viewController.deactivateInput()
+        var isRequestValid = true
+        var completions: [Bool] = []
+
+        sut.restoreOmnibarInputOnAppOpen(isRequestValid: { isRequestValid }, completion: { completions.append($0) })
+        isRequestValid = false
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        assertAppOpenDraftAndToolArePreserved()
+    }
+
+    func testWhenOnboardingLocksQueuedAutomaticFocusThenKeyboardDoesNotActivate() {
+        for allowsInactiveFocus in [false, true] {
+            var scheduledFocus: [() -> Void] = []
+            sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+            showAppOpenInput()
+            var completions: [Bool] = []
+            sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                    allowsInactiveFocus: allowsInactiveFocus, onFocus: { completions.append($0) })
+            XCTAssertTrue(sut.isOmnibarEditing)
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+            XCTAssertTrue(completions.isEmpty)
+            sut.setOnboardingControlsLocked(true)
+
+            scheduledFocus.removeFirst()()
+
+            XCTAssertEqual(completions, [false])
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+        }
+    }
+
+    func testWhenOrdinaryActivationBecomesInactiveBeforeFocusThenKeyboardStaysDismissed() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, onFocus: { completions.append($0) })
+        sut.updateOmnibarInputVisibility(false)
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenAutomaticLandingBecomesInactiveBeforeFocusThenInputStillFocuses() {
+        for isFloatingUIEnabled in [false, true] {
+            var scheduledFocus: [() -> Void] = []
+            sut = makeAppOpenCoordinator(isFloatingUIEnabled: isFloatingUIEnabled, schedule: { scheduledFocus.append($0) })
+            showAppOpenInput()
+            var completions: [Bool] = []
+            sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                    allowsInactiveFocus: true, onFocus: { completions.append($0) })
+            seedAppOpenDraftAndTool()
+            sut.updateOmnibarInputVisibility(false)
+            XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+            XCTAssertFalse(sut.viewController.isInputFirstResponder)
+
+            scheduledFocus.removeFirst()()
+
+            XCTAssertEqual(completions, [true])
+            XCTAssertEqual(sut.displayState, .omnibar(.active))
+            XCTAssertTrue(sut.viewController.isInputFirstResponder)
+            assertAppOpenDraftAndToolArePreserved()
+        }
+    }
+
+    func testWhenAutomaticLandingIsCancelledBeforeFocusThenInputStaysInactive() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var isRequestValid = true
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom,
+                                allowsInactiveFocus: true,
+                                isFocusRequestValid: { isRequestValid }, onFocus: { completions.append($0) })
+        sut.updateOmnibarInputVisibility(false)
+        isRequestValid = false
+
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertEqual(sut.displayState, .omnibar(.inactive))
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenOmnibarSessionEndsBeforeQueuedFocusThenPendingCompletionsFail() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var completions: [Bool] = []
+        sut.activateFromOmnibar(inputMode: .aiChat, cardPosition: .bottom, onFocus: { completions.append($0) })
+        sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+
+        sut.completeOmnibarDeactivation()
+        XCTAssertEqual(completions, [false, false])
+        scheduledFocus.removeFirst()()
+
+        XCTAssertEqual(completions, [false, false])
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    func testWhenNoOmnibarSessionExistsThenAppOpenRestoreDoesNotCreateOne() {
+        var scheduledFocus: [() -> Void] = []
+        sut = makeAppOpenCoordinator(schedule: { scheduledFocus.append($0) })
+        showAppOpenInput()
+        var completions: [Bool] = []
+
+        sut.restoreOmnibarInputOnAppOpen { completions.append($0) }
+
+        XCTAssertEqual(completions, [false])
+        XCTAssertTrue(scheduledFocus.isEmpty)
+        XCTAssertEqual(sut.displayState, .hidden)
+        XCTAssertFalse(sut.viewController.isInputFirstResponder)
+    }
+
+    private func makeAppOpenCoordinator(isFloatingUIEnabled: Bool = false,
+                                        schedule: @escaping (@escaping () -> Void) -> Void) -> UnifiedToggleInputCoordinator {
+        let remoteModel = AIChatRemoteModel(id: "app-open-model", name: "App Open Model", provider: "openai",
+                                           entityHasAccess: true, supportsImageUpload: false,
+                                           supportedTools: [AIChatRAGTool.webSearch.rawValue], accessTier: ["free"])
+        let model = AIChatModel(remoteModel: remoteModel, userTier: .free)
+        mockPreferences.selectedModelId = model.id
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            modelsService: AppOpenModelsService(models: [remoteModel]),
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            featureFlagger: MockFeatureFlagger(enabledFeatureFlags: isFloatingUIEnabled ? [.floatingUIiOS26, .floatingUIiOS27] : []),
+            scheduleOmnibarFocus: schedule)
+        coordinator.modelStore.models = [model]
+        coordinator.intentPublisher.sink { [weak coordinator] intent in
+            if case .showOmnibarEditing = intent {
+                coordinator?.viewController.applyOmnibarEditingShowPose()
+            }
+        }.store(in: &cancellables)
+        return coordinator
+    }
+
+    private func showAppOpenInput() {
+        if appOpenWindow == nil {
+            previousAppOpenKeyWindow = UIApplication.shared.firstKeyWindow
+        } else {
+            appOpenWindow?.isHidden = true
+            appOpenWindow?.rootViewController = nil
+        }
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.rootViewController = sut.viewController
+        window.makeKeyAndVisible()
+        sut.viewController.view.layoutIfNeeded()
+        appOpenWindow = window
+        XCTAssertNotNil(sut.viewController.view.window)
+    }
+
+    private func seedAppOpenDraftAndTool() {
+        sut.setText("retained draft")
+        sut.handleToolsMenuSelection(.webSearch)
+        assertAppOpenDraftAndToolArePreserved()
+    }
+
+    private func assertAppOpenDraftAndToolArePreserved(file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertEqual(sut.currentText, "retained draft", file: file, line: line)
+        XCTAssertEqual(sut.inputMode, .aiChat, file: file, line: line)
+        XCTAssertEqual(sut.viewController.inputMode, .aiChat, file: file, line: line)
+        XCTAssertEqual(sut.selectedTool, .webSearch, file: file, line: line)
+        XCTAssertEqual(sut.viewController.selectedTool, .webSearch, file: file, line: line)
+    }
+
     func test_activateFromOmnibar_setsDisplayState() {
         sut.activateFromOmnibar()
         XCTAssertEqual(sut.displayState, .omnibar(.active))
@@ -1054,8 +1625,16 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func test_activateFromOmnibar_respectsRequestedMode() {
+        sut.syncInputModeFromExternalSource(.search)
+        var publishedModes: [TextEntryMode] = []
+        sut.modeChangePublisher
+            .sink { publishedModes.append($0) }
+            .store(in: &cancellables)
+
         sut.activateFromOmnibar(inputMode: .aiChat)
+
         XCTAssertEqual(sut.inputMode, .aiChat)
+        XCTAssertTrue(publishedModes.isEmpty)
     }
 
     func test_activateFromOmnibar_withPrefilledText_setsPrefilledState() {
@@ -1065,6 +1644,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_activateFromOmnibar_withPrefilledTextAndToggleEnabled_selectsAllText() throws {
         let text = "test query"
+        let sut = makeSynchronousFocusCoordinator()
         sut.updateToggleEnabled(true)
         sut.activateFromOmnibar(prefilledText: text)
         let textField = try XCTUnwrap(firstDescendant(of: UITextField.self, in: sut.viewController.view))
@@ -1075,6 +1655,7 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_activateFromOmnibar_withPrefilledAIChatText_selectsAllText() throws {
         let text = "test prompt"
+        let sut = makeSynchronousFocusCoordinator()
         sut.activateFromOmnibar(prefilledText: text, inputMode: .aiChat)
         // Scoped to the text entry: the footer card carries a text view of its own.
         let textEntry = try XCTUnwrap(firstDescendant(of: SwitchBarTextEntryView.self, in: sut.viewController.view))
@@ -1086,12 +1667,29 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
     func test_activateFromOmnibar_withPrefilledTextAndToggleDisabled_selectsAllText() throws {
         let text = "test query"
+        let sut = makeSynchronousFocusCoordinator()
         sut.updateToggleEnabled(false)
         sut.activateFromOmnibar(prefilledText: text)
         let textField = try XCTUnwrap(firstDescendant(of: UITextField.self, in: sut.viewController.view))
 
         XCTAssertFalse(textField.isHidden)
         assertAllTextIsSelected(in: textField, expectedLength: text.utf16.count)
+    }
+
+    private func makeSynchronousFocusCoordinator() -> UnifiedToggleInputCoordinator {
+        let coordinator = UnifiedToggleInputCoordinator(
+            host: .omnibar,
+            isToggleEnabled: true,
+            preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
+            toggleModeStorage: mockToggleModeStorage,
+            switchBarSubmissionMetrics: mockSubmissionMetrics,
+            featureDiscovery: mockFeatureDiscovery,
+            updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false),
+            scheduleOmnibarFocus: { $0() }
+        )
+        coordinator.delegate = mockDelegate
+        return coordinator
     }
 
     func test_activateFromOmnibar_toggleDisabled_forcesSearchMode() {
@@ -1735,6 +2333,18 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
 
         sut.viewController.handler.customizeResponsesButtonTapped()
         waitForExpectations(timeout: 1)
+    }
+
+    func testWhenTextInputFocusChangesThenEachChangeIsForwardedToTheChat() {
+        var received: [Bool] = []
+        sut.didChangeInputFocus
+            .sink { received.append($0) }
+            .store(in: &cancellables)
+
+        sut.viewController.handler.textInputFocusChanged(true)
+        sut.viewController.handler.textInputFocusChanged(false)
+
+        XCTAssertEqual(received, [true, false])
     }
 
     func test_customizeResponsesTap_collapsesInput() {
@@ -2759,6 +3369,128 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
         XCTAssertNil(mockDelegate.submittedModelId)
     }
 
+    func testInitialPromptPreparationIgnoresRepeatedSendAndReturn() {
+        configureInitialPromptTabAttachment()
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .textEntry)
+
+        XCTAssertEqual(mockDelegate.initialPromptPreparationCount, 1)
+        XCTAssertNil(mockDelegate.submittedPrompt)
+        XCTAssertEqual(mockSubmissionMetrics.processedSubmissions.map(\.text), ["first"])
+    }
+
+    func testCancelledInitialPromptPreparationKeepsDraftAndAllowsRetry() {
+        configureInitialPromptTabAttachment()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+
+        mockDelegate.completeInitialPromptPreparation(false)
+
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "first")
+        XCTAssertEqual(sut.viewController.currentAttachments.count, 1)
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.initialPromptPreparationCount, 2)
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+    }
+
+    func testCompletedInitialPromptPreparationClearsDraft() {
+        configureInitialPromptTabAttachment()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+
+        mockDelegate.completeInitialPromptPreparation(true)
+
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testInitialPromptPreparationFollowsSourceTabAndClearsDraftAfterSuccess() {
+        configureInitialPromptTabAttachment()
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+
+        sut.activateForTab("other")
+        sut.updateInputMode(.aiChat, animated: false)
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        sut.setText("from other tab")
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "from other tab", mode: .aiChat, trigger: .sendButton)
+        XCTAssertEqual(mockDelegate.submittedPrompt, "from other tab")
+
+        sut.activateForTab("source")
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "first")
+
+        sut.activateForTab("other")
+        sut.setText("other draft")
+        mockDelegate.completeInitialPromptPreparation(true)
+
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "other draft")
+        sut.activateForTab("source")
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(sut.currentText, "")
+        XCTAssertTrue(sut.viewController.currentAttachments.isEmpty)
+    }
+
+    func testSwitchingBackToWaitingSourceDoesNotPrepareItsTabsAgain() {
+        var acquisitionCount = 0
+        configureInitialPromptTabAttachment { acquisitionCount += 1 }
+        XCTAssertEqual(acquisitionCount, 1)
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "first", mode: .aiChat, trigger: .sendButton)
+
+        sut.activateForTab("other")
+        sut.activateForTab("source")
+
+        XCTAssertTrue(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertTrue(sut.viewController.isInputFrozenForInitialPromptPreparation)
+        XCTAssertEqual(acquisitionCount, 1)
+    }
+
+    func testUnavailableTabAttachmentFeatureKeepsOrdinarySubmission() {
+        let feature = MentionAttachmentFeature()
+        feature.state = .unavailable
+        sut.activateForTab("source")
+        sut.configureTabAttachments(source: nil, feature: feature)
+        sut.updateInputMode(.aiChat, animated: false)
+        sut.setText("ordinary prompt")
+
+        sut.unifiedToggleInputVC(sut.viewController, didSubmitText: "ordinary prompt", mode: .aiChat, trigger: .sendButton)
+
+        XCTAssertEqual(mockDelegate.submittedPrompt, "ordinary prompt")
+        XCTAssertEqual(mockDelegate.initialPromptPreparationCount, 0)
+        XCTAssertFalse(sut.viewController.isPreparingInitialPrompt)
+        XCTAssertFalse(sut.viewController.isInputFrozenForInitialPromptPreparation)
+    }
+
+    private func configureInitialPromptTabAttachment(onAcquire: (() -> Void)? = nil) {
+        let url = URL(string: "https://example.com/page")!
+        let tab = Tab(uid: "attached", link: Link(title: "Page", url: url), fireTab: false)
+        var source = MultiTabAttachmentSource(currentTabID: "source", mode: .normal, tabsProvider: { [tab] })
+        source.acquirePage = { _ in
+            onAcquire?()
+            return nil
+        }
+        sut.activateForTab("source")
+        sut.configureTabAttachments(source: source, feature: MentionAttachmentFeature())
+        sut.updateInputMode(.aiChat, animated: false)
+        let attachment = UnifiedToggleInputTabAttachment(tabId: tab.uid, title: "Page", url: url, source: .recentTabs)
+        sut.viewController.addAttachment(.tab(attachment))
+        sut.setText("first")
+    }
+
     // MARK: - Attachments Change Publisher
 
     func test_addImageAttachment_publishesAttachmentsChange() {
@@ -3516,20 +4248,12 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     private func assertAllTextIsSelected(in textInput: UIView & UITextInput, expectedLength: Int, file: StaticString = #filePath, line: UInt = #line) {
-        let expectation = expectation(description: "All prefilled text selected")
-        DispatchQueue.main.async {
-            DispatchQueue.main.async {
-                guard let selectedRange = textInput.selectedTextRange else {
-                    XCTFail("Expected a selected text range", file: file, line: line)
-                    expectation.fulfill()
-                    return
-                }
-                XCTAssertEqual(textInput.offset(from: textInput.beginningOfDocument, to: selectedRange.start), 0, file: file, line: line)
-                XCTAssertEqual(textInput.offset(from: selectedRange.start, to: selectedRange.end), expectedLength, file: file, line: line)
-                expectation.fulfill()
-            }
+        guard let selectedRange = textInput.selectedTextRange else {
+            XCTFail("Expected a selected text range", file: file, line: line)
+            return
         }
-        waitForExpectations(timeout: 1)
+        XCTAssertEqual(textInput.offset(from: textInput.beginningOfDocument, to: selectedRange.start), 0, file: file, line: line)
+        XCTAssertEqual(textInput.offset(from: selectedRange.start, to: selectedRange.end), expectedLength, file: file, line: line)
     }
 
     private func firstDescendant<View: UIView>(of type: View.Type, in view: UIView) -> View? {
@@ -3561,16 +4285,31 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 }
 
+@MainActor
+private final class AppOpenModelsService: AIChatModelsProviding {
+    private let models: [AIChatRemoteModel]
+
+    init(models: [AIChatRemoteModel]) {
+        self.models = models
+    }
+
+    func fetchModels() async throws -> AIChatModelsResponse {
+        AIChatModelsResponse(models: models)
+    }
+}
+
 // MARK: - Mock Delegate
 
 @MainActor
 private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var submittedPrompt: String?
+    var initialPromptPreparationCount = 0
+    var pendingInitialPromptRequest: MultiTabAttachmentRequest?
+    private var initialPromptCompletion: ((Bool) -> Void)?
     var submittedModelId: String?
     var submittedTools: [AIChatRAGTool]?
     var submittedReasoningEffort: AIChatReasoningEffort?
-    var submittedImages: [AIChatNativePrompt.NativePromptImage]?
-    var submittedFiles: [AIChatNativePrompt.NativePromptFile]?
+    var submittedAttachments: AIChatPromptAttachments?
     var submittedQuery: String?
     var committedMode: TextEntryMode?
     var onPromptSubmit: (() -> Void)?
@@ -3580,14 +4319,26 @@ private final class MockUnifiedToggleInputDelegate: UnifiedToggleInputDelegate {
     var didRequestAppMenuCount = 0
     var didRequestAppMenuLongPressCount = 0
 
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?, termsAccepted: Bool) {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool) {
         submittedPrompt = prompt
         submittedModelId = modelId
         submittedTools = tools
         submittedReasoningEffort = reasoningEffort
-        submittedImages = images
-        submittedFiles = files
+        submittedAttachments = attachments
         onPromptSubmit?()
+    }
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        initialPromptPreparationCount += 1
+        pendingInitialPromptRequest = request
+        initialPromptCompletion = completion
+    }
+    func completeInitialPromptPreparation(_ prepared: Bool) {
+        pendingInitialPromptRequest?.cancel()
+        pendingInitialPromptRequest = nil
+        let completion = initialPromptCompletion
+        initialPromptCompletion = nil
+        completion?(prepared)
     }
     func unifiedToggleInputDidSubmitQuery(_ query: String) { submittedQuery = query }
     func unifiedToggleInputDidRequestVoiceSearch() { didRequestVoiceSearchCount += 1 }

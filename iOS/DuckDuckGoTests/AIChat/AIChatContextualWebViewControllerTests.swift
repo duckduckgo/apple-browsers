@@ -36,7 +36,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
         let collected = expectation(description: "Captured request collected")
         var collectionCount = 0
         script.attachedTabContextsProvider = { XCTFail("Queued prompt must not read a later draft"); return nil }
-        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+        sut.submitPrompt("first", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil,
                          tabAttachmentRequest: .init(contexts: {
             collectionCount += 1
             collected.fulfill()
@@ -55,7 +55,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     func testCancelledQueuedPromptCannotCollectAfterReadiness() async {
         let sut = makeAttachmentSubmissionController()
         var cancelled = false
-        sut.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+        sut.submitPrompt("first", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil,
                          tabAttachmentRequest: .init(contexts: { XCTFail("Cancelled prompt must not collect"); return [] },
                                                      didConsume: {}, cancel: { cancelled = true }))
         sut.cancelPendingTabAttachmentPrompt()
@@ -72,7 +72,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
     func testQueuedRequestIsReleasedOnControllerTeardown() async {
         var sut: AIChatContextualWebViewController? = makeAttachmentSubmissionController()
         let released = expectation(description: "Queued request released")
-        sut?.submitPrompt("first", images: nil, files: nil, modelId: nil, tools: nil, reasoningEffort: nil,
+        sut?.submitPrompt("first", attachments: .none, modelId: nil, tools: nil, reasoningEffort: nil,
                           tabAttachmentRequest: .init(contexts: { XCTFail("Discarded request must not collect"); return [] },
                                                       didConsume: {}, cancel: { released.fulfill() }))
         sut = nil
@@ -86,6 +86,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
                                           contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
                                           featureDiscovery: MockFeatureDiscovery(), featureFlagger: MockFeatureFlagger(),
                                           unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: utiHost != nil),
+                                          usageContextProvider: UsageContextProvider(),
                                           downloadHandler: StubDownloadHandler(), getPageContext: nil,
                                           pixelHandler: StubContextualModePixelHandler(),
                                           onboardingActivationRecorder: NullSubscriptionOnboardingActivationRecorder(),
@@ -155,7 +156,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             // Cancellation also releases the request before its suspended task finishes.
             if outcome != .cancelled { finished.fulfill() }
         })
-        sut.submitPrompt("prompt", images: nil, files: nil, modelId: nil, tools: nil,
+        sut.submitPrompt("prompt", attachments: .none, modelId: nil, tools: nil,
                          reasoningEffort: nil, tabAttachmentRequest: request)
         if queued {
             XCTAssertEqual(instrumentation.promptDeliveryUpdates.count, 1, file: file, line: line)
@@ -265,6 +266,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -289,6 +291,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             contentBlockingAssetsPublisher: Empty().eraseToAnyPublisher(),
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -312,6 +315,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -333,6 +337,7 @@ final class AIChatContextualWebViewControllerTests: XCTestCase {
             featureDiscovery: MockFeatureDiscovery(),
             featureFlagger: MockFeatureFlagger(),
             unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true),
+            usageContextProvider: UsageContextProvider(),
             downloadHandler: StubDownloadHandler(),
             getPageContext: nil,
             pixelHandler: StubContextualModePixelHandler(),
@@ -405,6 +410,10 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireSheetOpened() {}
     func fireSheetDismissed(hadUnsubmittedSelections: Bool) {}
     func fireSessionRestored() {}
+    func fireSheetOpenedOnDeletedChat() {}
+    func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket) {}
+    func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) {}
+    func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) {}
     func fireSelectionAttached() {}
     func fireSelectionLimitReached() {}
     func fireSelectionRemoved() {}
@@ -428,10 +437,11 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() {}
     func fireFireButtonConfirmed() {}
-    func fireAddressBarMenuShown() {}
-    func fireAddressBarMenuNewChatSelected() {}
-    func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireAddressBarMenuRecentChatsSelected() {}
+    func fireAddressBarMenuShown(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuNewChatSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutPageSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutSearchSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuRecentChatsSelected(source: DuckAIMenuSource) {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() {}
@@ -441,6 +451,7 @@ private final class StubContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedNative() {}
     func firePageContextRemovedFrontend() {}
     func firePageContextCollectionEmpty() {}
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {}
     func firePageContextCollectionUnavailable() {}
     func firePromptSubmittedWithContext() {}
     func firePromptSubmittedWithoutContext() {}

@@ -39,7 +39,8 @@ struct SubscriptionOnboardingWelcomeView: View {
                 visual: .image(Image(.subscriptionDDG96)),
                 title: UserText.subscriptionOnboardingWelcomeTitle,
                 explanation: UserText.subscriptionOnboardingWelcomeExplanation),
-            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext))) {
+            footer: .single(.init(UserText.subscriptionOnboardingWelcomeNextButton, action: onNext)),
+            footerBlur: true) {
             WelcomeCard(features: features, onSelect: { selectedFeature = $0 })
         }
         .subscriptionOnboardingInfoSheet(item: $selectedFeature)
@@ -119,26 +120,20 @@ private extension WelcomeCard {
 #if DEBUG
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingWelcomeView(navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

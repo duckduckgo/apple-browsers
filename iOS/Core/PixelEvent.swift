@@ -94,9 +94,6 @@ extension Pixel {
         case tabSwitcherClickCloseTab
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
-        case tabLongPressMenuDisplayed
-        case tabLongPressMenuNewFireTab
-        case tabLongPressMenuNewNormalTab
         case tabSwitcherOpenedDaily
         case appOpenTabCountIdleNTPDaily
         case appOpenTabCountIdleLastTabDaily
@@ -1531,8 +1528,6 @@ extension Pixel {
         case ntpAfterIdleEscapeHatchCloseTabTapped
         case ntpAfterIdleEscapeHatchBurnWithConfirmationTapped
         case ntpAfterIdleEscapeHatchBurnImmediatelyTapped
-        case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab
-        case ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab
         case ntpAfterIdleEscapeHatchHiddenFromMenu
         case ntpAfterIdleEscapeHatchShown
         case ntpAfterIdleEscapeHatchMenuShown
@@ -1994,10 +1989,6 @@ extension Pixel {
         case appIntentPerformed
 
         case failedToRemoveTmpDir
-        case recreateTmpAttemptFailed(attempt: Int)
-        case recreateTmpSuccessOnRetry(attempt: Int)
-        case recreateTmpWebViewFallbackSucceeded
-        case recreateTmpWebViewFallbackFailed
         case contentBlockingCompilationFailedMissingTmpDir
         case tmpDirStillMissingAfterRecreation
 
@@ -2153,9 +2144,6 @@ extension Pixel.Event {
         case .tabSwitcherClickCloseTab: return "m_tab_manager_close_tab_click"
         case .tabSwitcherSwipeCloseTab: return "m_tab_manager_close_tab_swipe"
         case .tabSwitchLongPressNewTab: return "m_tab_manager_long_press_new_tab"
-        case .tabLongPressMenuDisplayed: return "m_tab_long_press_menu_displayed"
-        case .tabLongPressMenuNewFireTab: return "m_tab_long_press_menu_new_fire_tab"
-        case .tabLongPressMenuNewNormalTab: return "m_tab_long_press_menu_new_normal_tab"
         case .tabSwitcherOpenedDaily: return "m_tab_manager_opened_daily"
         case .appOpenTabCountIdleNTPDaily: return "m_app_open_tab_count_idle_ntp_daily"
         case .appOpenTabCountIdleLastTabDaily: return "m_app_open_tab_count_idle_last_tab_daily"
@@ -3443,8 +3431,6 @@ extension Pixel.Event {
         case .ntpAfterIdleEscapeHatchCloseTabTapped: return "m_ntp_after_idle_escape_hatch_close_tab_tapped"
         case .ntpAfterIdleEscapeHatchBurnWithConfirmationTapped: return "m_ntp_after_idle_escape_hatch_burn_with_confirmation_tapped"
         case .ntpAfterIdleEscapeHatchBurnImmediatelyTapped: return "m_ntp_after_idle_escape_hatch_burn_immediately_tapped"
-        case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToNewTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_new_tab"
-        case .ntpAfterIdleEscapeHatchAfterInactivitySettingChangedToLastUsedTab: return "m_ntp_after_idle_escape_hatch_after_inactivity_setting_changed_to_last_used_tab"
         case .ntpAfterIdleEscapeHatchHiddenFromMenu: return "m_ntp_after_idle_escape_hatch_hidden_from_menu"
         case .ntpAfterIdleEscapeHatchShown: return "m_ntp_after_idle_escape_hatch_shown"
         case .ntpAfterIdleEscapeHatchMenuShown: return "m_ntp_after_idle_escape_hatch_menu_shown"
@@ -3949,10 +3935,6 @@ extension Pixel.Event {
         case .appIntentPerformed: return "m_app-intent_intent-performed"
 
         case .failedToRemoveTmpDir: return "m_debug_failed-to-remove-tmp-dir"
-        case .recreateTmpAttemptFailed(let attempt): return "m_debug_recreate-tmp-attempt-failed-\(attempt)"
-        case .recreateTmpSuccessOnRetry(let attempt): return "m_debug_recreate-tmp-success-on-retry-\(attempt)"
-        case .recreateTmpWebViewFallbackSucceeded: return "m_debug_recreate-tmp-webview-fallback-succeeded"
-        case .recreateTmpWebViewFallbackFailed: return "m_debug_recreate-tmp-webview-fallback-failed"
         case .contentBlockingCompilationFailedMissingTmpDir: return "m_debug_content-blocking-compilation-failed-missing-tmp-dir"
         case .tmpDirStillMissingAfterRecreation: return "m_debug_tmp-dir-still-missing-after-recreation"
 

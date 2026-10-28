@@ -22,7 +22,8 @@ import UIKit
 extension MainViewController {
 
     func showInlineNewTabPageInput(coordinator: UnifiedToggleInputCoordinator, height: CGFloat, pendingHeight: CGFloat?) {
-        let restingSnapshot = makeRestingNewTabPageSnapshot()
+        let showsFocusedSurfaceDirectly = isPerformingOnboardingInputHandoff
+        let restingSnapshot = showsFocusedSurfaceDirectly ? nil : makeRestingNewTabPageSnapshot()
         coordinator.contentViewController.refreshSuggestionsCaches()
         coordinator.viewController.omnibarPillWindowFrame = nil
         coordinator.cacheOmnibarPlaceholderWindowX(nil, windowSize: view.window?.bounds.size)
@@ -55,7 +56,7 @@ extension MainViewController {
         let transitionSource = newTabPageViewController as? NewTabPageInputTransitionSource
         // The keyboard already moves bottom input. Translating it from the resting card as
         // well makes it travel down before reversing direction as the keyboard arrives.
-        if !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled,
+        if !showsFocusedSurfaceDirectly, !coordinator.cardPosition.isBottom, !UIAccessibility.isReduceMotionEnabled,
            let restingFrame = transitionSource?.searchInputTransitionFrame(in: view) {
             let editingFrame = coordinator.viewController.inputCardFrame(in: view)
             inputContainer.transform = CGAffineTransform(translationX: 0, y: restingFrame.midY - editingFrame.midY)
@@ -69,7 +70,7 @@ extension MainViewController {
         contentContainer.transform = CGAffineTransform(translationX: 0, y: contentOffset)
         let duration = UIAccessibility.isReduceMotionEnabled ? 0 : Constants.omnibarTransitionDuration(
             isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
-        let animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut) { [weak self] in
+        let animations = { [weak self] in
             inputContainer.transform = .identity
             self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
             self?.viewCoordinator.focusedStateBackground.alpha = 1
@@ -78,6 +79,14 @@ extension MainViewController {
             restingSnapshot?.alpha = 0
             restingSnapshot?.transform = CGAffineTransform(translationX: 0, y: -contentOffset)
         }
+        if showsFocusedSurfaceDirectly {
+            // An onboarding dialog just covered the page. Revealing its resting modules during a fade
+            // would flash them before focus, so stage the opaque focused pose synchronously.
+            UIView.performWithoutAnimation(animations)
+            refreshFloatingToolbarBackdrop()
+            return
+        }
+        let animator = UIViewPropertyAnimator(duration: duration, curve: .easeInOut, animations: animations)
         animator.addCompletion { [weak self] _ in
             restingSnapshot?.removeFromSuperview()
             self?.refreshFloatingToolbarBackdrop()
@@ -149,9 +158,10 @@ extension MainViewController {
                     source?.alpha = 1
                 }
             },
-            interruptCleanup: { [weak self] in
+            interruptCleanup: { [weak self, weak coordinator] in
                 inputContainer.transform = .identity
                 contentContainer.transform = .identity
+                coordinator?.clearText()
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
                 self?.viewCoordinator.focusedStateBackground.alpha = 1
@@ -187,6 +197,10 @@ extension MainViewController {
     }
 
     private func makeRestingNewTabPageSnapshot() -> UIView? {
+        guard (newTabPageViewController as? NewTabPageInputTransitionSource)?.canAnimateSearchInput == true else {
+            restingNewTabPageSnapshot = nil
+            return nil
+        }
         guard let cached = restingNewTabPageSnapshot else { return nil }
         // Layout or favorites changes invalidate the captured page; hand off to the current live page instead.
         let favoritesExpanded = tabManager.currentTabsModel.currentTab?.favoritesExpansionState.isExpanded ?? false

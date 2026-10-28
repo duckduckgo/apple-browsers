@@ -56,6 +56,13 @@ struct CrashDebugScreen: View {
                         fatalError(#function)
                     }
                 }, isButton: true)
+
+                // Blocks the main thread so the next app state change (e.g. swiping home) trips the
+                // watchdog, which kills the app with EXC_CRASH / SIGKILL and termination reason 0x8badf00d.
+                // The watchdog is disabled while Xcode's debugger is attached, so launch from the home screen.
+                SettingsCellView(label: "Hang Main Thread (Watchdog SIGKILL)", action: {
+                    sleep(30)
+                }, isButton: true)
             }
 
             SettingsCellView(label: "Reset Crash Send Logs", action: {

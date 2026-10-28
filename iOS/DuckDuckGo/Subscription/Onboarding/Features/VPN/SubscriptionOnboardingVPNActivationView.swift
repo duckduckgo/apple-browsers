@@ -17,9 +17,7 @@
 //  limitations under the License.
 //
 
-import Combine
 import SwiftUI
-import UIKit
 import DesignResourcesKit
 import UIComponents
 
@@ -40,10 +38,8 @@ struct SubscriptionOnboardingVPNActivationView: View {
     private let navigationButton: SubscriptionOnboardingNavigationButton?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @StateObject private var tapAllowHint = TapAllowHintCoordinator()
 
     @State private var isShowingInfoSheet = false
-    @State private var tapAllowHintWindow = TapAllowHintOverlayWindow()
     @State private var featureRowsOffset: CGFloat = 0
 
     init(viewModel: @autoclosure @escaping () -> SubscriptionOnboardingVPNActivationViewModel,
@@ -59,37 +55,13 @@ struct SubscriptionOnboardingVPNActivationView: View {
             title: title,
             navigationButton: navigationButton,
             header: header,
-            footer: footer) {
+            footer: footer,
+            footerBlur: true) {
             content
         }
         .onAppear { viewModel.onAppear() }
-        .onDisappear {
-            viewModel.onDisappear()
-            tapAllowHintWindow.hide()
-            tapAllowHint.disappeared()
-        }
+        .onDisappear { viewModel.onDisappear() }
         .subscriptionOnboardingInfoSheet(.vpn, isPresented: $isShowingInfoSheet)
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-            tapAllowHint.appWillResignActive(isVPNConfigured: viewModel.isVPNConfigured)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-            tapAllowHint.appDidBecomeActive(isVPNConfigured: viewModel.isVPNConfigured)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
-            tapAllowHint.appDidEnterBackground()
-        }
-        .onReceive(viewModel.$didDenyVPNPermission) { didDeny in
-            guard didDeny else { return }
-            tapAllowHint.permissionDenied()
-        }
-        .onReceive(tapAllowHint.$shouldShowHint) { shouldShow in
-            viewModel.setConfigAlertShowing(shouldShow)
-            if shouldShow {
-                tapAllowHintWindow.show()
-            } else {
-                tapAllowHintWindow.hide()
-            }
-        }
     }
 }
 
@@ -198,10 +170,8 @@ private extension SubscriptionOnboardingVPNActivationView {
 
 private extension SubscriptionOnboardingVPNActivationView {
     func startVPN() {
-        tapAllowHint.startTapped()
         Task {
             await viewModel.turnOnVPN()
-            tapAllowHint.turnOnFinished()
         }
     }
 
@@ -268,80 +238,56 @@ private func activationPreview(state: SubscriptionOnboardingVPNActivationViewMod
 }
 
 #Preview("Off - Light") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid)
-    }
+    activationPreview(state: .off, original: .madrid)
 }
 
 #Preview("Off - loading") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: nil)
-    }
+    activationPreview(state: .off, original: nil)
 }
 
 #Preview("Off - denied") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didDeny: true)
-    }
+    activationPreview(state: .off, original: .madrid, didDeny: true)
 }
 
 #Preview("Off - denied - Dark") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didDeny: true)
-    }
-    .preferredColorScheme(.dark)
+    activationPreview(state: .off, original: .madrid, didDeny: true)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Off - denied - Large Text") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didDeny: true)
-    }
-    .dynamicTypeSize(.accessibility5)
+    activationPreview(state: .off, original: .madrid, didDeny: true)
+        .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("Off - start failed") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, didFailToStart: true)
-    }
+    activationPreview(state: .off, original: .madrid, didFailToStart: true)
 }
 
 #Preview("Off - activating") {
-    RebrandedPreview {
-        activationPreview(state: .off, original: .madrid, isActivating: true)
-    }
+    activationPreview(state: .off, original: .madrid, isActivating: true)
 }
 
 #Preview("On - Light") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: .valencia)
-    }
+    activationPreview(state: .on, original: .madrid, vpn: .valencia)
 }
 
 #Preview("On - loading") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: nil)
-    }
+    activationPreview(state: .on, original: .madrid, vpn: nil)
 }
 
 #Preview("On - no original IP") {
-    RebrandedPreview {
-        // Direct on-state entry: no original (pre-VPN) IP, so its card shows the placeholders.
-        activationPreview(state: .on, original: nil, vpn: .valencia)
-    }
+    // Direct on-state entry: no original (pre-VPN) IP, so its card shows the placeholders.
+    activationPreview(state: .on, original: nil, vpn: .valencia)
 }
 
 #Preview("On - Dark") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: .valencia)
-    }
-    .preferredColorScheme(.dark)
+    activationPreview(state: .on, original: .madrid, vpn: .valencia)
+        .preferredColorScheme(.dark)
 }
 
 #Preview("On - Large Text") {
-    RebrandedPreview {
-        activationPreview(state: .on, original: .madrid, vpn: .valencia)
-    }
-    .dynamicTypeSize(.accessibility5)
+    activationPreview(state: .on, original: .madrid, vpn: .valencia)
+        .dynamicTypeSize(.accessibility5)
 }
 
 /// Exercises the off→on reveal: re-run the preview (⌥⌘P) to replay, or tap "Turn On VPN" in a Live Preview.
@@ -363,9 +309,7 @@ private struct VPNRevealPreview: View {
 }
 
 #Preview("On - reveal") {
-    RebrandedPreview {
-        VPNRevealPreview()
-    }
+    VPNRevealPreview()
 }
 
 #endif

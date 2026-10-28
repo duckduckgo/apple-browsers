@@ -38,9 +38,13 @@ final class MockOmniBar: OmniBar {
     var text: String?
     var iPadDuckAIControlValues: IPadDuckAIControlValues = IPadDuckAIControlValuesSnapshot()
 
+    func bindIPadDraft(to tab: Tab?) { }
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {}
+    var onBeginEditing: (() -> Void)?
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode?) {
+        onBeginEditing?()
+    }
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }
@@ -72,7 +76,10 @@ final class MockOmniBar: OmniBar {
     func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?) { }
     func refreshCustomizableButton() {}
     func enterAIChatMode() { }
+    var selectedTextEntryMode: TextEntryMode = .search
     func setSelectedTextEntryMode(_ mode: TextEntryMode) { }
+
+    func endEditingInSearchMode() { }
     func setDaxEasterEggLogoURL(_ logoURL: String?) { }
     func refreshFireMode(fireMode: Bool) { }
     func prepareForMoveTransition() { }

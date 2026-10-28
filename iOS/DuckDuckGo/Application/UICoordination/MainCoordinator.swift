@@ -72,6 +72,7 @@ final class MainCoordinator {
     private let subscriptionManager: any SubscriptionManager
     private let featureFlagger: FeatureFlagger
     private let promoCoordinationService: PromoCoordinationService
+    let promptExposureReporter: PromptExposureReporting
     private let homePageConfiguration: HomePageConfiguration
     private let launchSourceManager: LaunchSourceManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -144,15 +145,18 @@ final class MainCoordinator {
          syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = AppDependencyProvider.shared.syncAutoRestoreDecisionManager,
          wideEvent: WideEventManaging,
          onboardingManager: OnboardingManaging,
-         eventHub: EventHubManaging
+         eventHub: EventHubManaging,
+         usageContextProvider: UsageContextProviding,
+         promptExposureReporter: PromptExposureReporting
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
-        self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFeatureOn(.floatingUIAugust2026)
+        self.isFloatingUIFeatureEnabledForCurrentLaunch = featureFlagger.isFloatingUIFeatureEnabled()
         self.keyValueStore = keyValueStore
         self.darkReaderFeatureSettings = AppDarkReaderFeatureSettings(featureFlagger: featureFlagger,
                                                                       privacyConfigurationManager: privacyConfigurationManager)
         self.promoCoordinationService = promoCoordinationService
+        self.promptExposureReporter = promptExposureReporter
         self.wideEvent = wideEvent
         self.onboardingManager = onboardingManager
         self.voiceSessionStateManager = VoiceSessionStateManager()
@@ -164,7 +168,8 @@ final class MainCoordinator {
                                                           subscriptionDataReporter: reportingService.subscriptionDataReporter,
                                                           isStillOnboarding: { daxDialogsManager.isStillOnboarding() },
                                                           promoGate: promoCoordinationService,
-                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground)
+                                                          isRMFAdmissionEnabled: !isAppLaunchedInBackground,
+                                                          promptExposureReporter: promptExposureReporter)
         self.homePageConfiguration = homePageConfiguration
         let previewsSource = DefaultTabPreviewsSource()
         let tabsPersistence = try TabsModelPersistence()
@@ -178,7 +183,7 @@ final class MainCoordinator {
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let textZoomCoordinatorProvider = Self.makeTextZoomCoordinatorProvider()
         let autoconsentManagementProvider = AutoconsentManagementProvider()
-        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing)
+        let websiteDataManager = Self.makeWebsiteDataManager(fireproofing: fireproofing, featureFlagger: featureFlagger)
         interactionStateSource = TabInteractionStateDiskSource()
         self.launchSourceManager = launchSourceManager
         let onboardingSearchExperienceProvider = OnboardingSearchExperience()
@@ -196,12 +201,13 @@ final class MainCoordinator {
             readLastActiveDate: { dailyActivityStore.currentActivity().lastActiveDate },
             isEnabled: { NewTabPageRedesignFeature(featureFlagger: featureFlagger).isAvailable })
         self.daxGreetingActivity = daxGreetingActivity
-        self.privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
+        self.privacyStats = Self.makePrivacyStats()
         let toggleModeStorage: ToggleModeStoring = ToggleModeStorage()
         let appSwitcherSnapshotCleaner = AppSwitcherSnapshotCleaner()
         let clearAppSwitcherSnapshots: @MainActor () async -> Void = {
             await appSwitcherSnapshotCleaner.clearSnapshots()
         }
+        WebContentFreezeMonitor.reportFreezeEndedWithApp(featureFlagger: featureFlagger)
         tabManager = TabManager(tabsModelProvider: tabsModelProvider,
                                 previewsSource: previewsSource,
                                 interactionStateSource: interactionStateSource,
@@ -238,6 +244,7 @@ final class MainCoordinator {
                                 darkReaderFeatureSettings: darkReaderFeatureSettings,
                                 duckAiNativeStorageHandler: contentBlockingService.duckAiNativeStorageHandler,
                                 duckAiFireModeStorageHandler: contentBlockingService.duckAiFireModeStorageHandler,
+                                usageContextProvider: usageContextProvider,
                                 toggleModeStorage: toggleModeStorage,
                                 adBlockingAvailability: contentBlockingService.adBlockingAvailability,
                                 eventHub: eventHub,
@@ -341,7 +348,9 @@ final class MainCoordinator {
                                         darkReaderFeatureSettings: darkReaderFeatureSettings,
                                         toggleModeStorage: toggleModeStorage,
                                         onboardingManager: onboardingManager,
-                                        promoCoordinationService: promoCoordinationService)
+                                        promoCoordinationService: promoCoordinationService,
+                                        usageContextProvider: usageContextProvider,
+                                        promptExposureReporter: promptExposureReporter)
 
         setupWebExtensions(privacyConfigurationManager: privacyConfigurationManager)
 
@@ -372,13 +381,6 @@ final class MainCoordinator {
         self.privacyConfigurationManager = privacyConfigurationManager
 
         guard #available(iOS 18.4, *) else { return }
-
-        let webExtensionsPublisher = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensions)
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
 
         let embeddedExtensionPublisher = featureFlagger.updatesPublisher
             .compactMap { [weak featureFlagger] in
@@ -411,16 +413,9 @@ final class MainCoordinator {
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
-            featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
-            onFeatureFlagEnabled: { [weak self] in
-                self?.initializeWebExtensions()
-            },
-            onFeatureFlagDisabled: { [weak self] in
-                self?.clearWebExtensionReferences()
-            },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             },
@@ -432,21 +427,11 @@ final class MainCoordinator {
             }
         )
 
-        if featureFlagger.isFeatureOn(.webExtensions) {
-            initializeWebExtensions()
-        } else {
-            clearWebExtensionReferences()
-        }
+        initializeWebExtensions()
     }
 
     @available(iOS 18.4, *)
     private func initializeWebExtensions() {
-        guard webExtensionManager == nil else {
-            // Already initialized, just reload extensions and re-register tabs
-            scheduleExtensionLoad()
-            return
-        }
-
         guard let privacyConfigurationManager else { return }
 
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
@@ -609,26 +594,6 @@ final class MainCoordinator {
         return enabledTypes
     }
 
-    private func clearWebExtensionReferences() {
-        isWebExtensionLoadPending = false
-        webExtensionLoadTask?.cancel()
-        webExtensionLoadTask = nil
-        protectedDataCancellable = nil
-        pendingProtectedDataWork.removeAll()
-        if #available(iOS 18.4, *) {
-            webExtensionLifecycleCoordinator?.cancelAll()
-            webExtensionLifecycleCoordinator = nil
-            controller.setWebExtensionLifecycleCoordinator(nil)
-        }
-        webExtensionManager = nil
-        webExtensionEventsCoordinator = nil
-        darkReaderCancellables.removeAll()
-        tabManager.setWebExtensionManager(nil)
-        tabManager.setWebExtensionInitialLoadWaiterProvider { nil }
-        controller.setWebExtensionEventsCoordinator(nil)
-        controller.setWebExtensionManager(nil)
-    }
-
     private static func makeHistoryManager(tabsModel: TabsModelReading) throws -> HistoryManaging {
         let provider = AppDependencyProvider.shared
         switch HistoryManager.make(isAutocompleteEnabledByUser: provider.appSettings.autocomplete,
@@ -673,10 +638,22 @@ final class MainCoordinator {
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,
+                                               featureFlagger: FeatureFlagger,
                                                dataStoreIDManager: DataStoreIDManaging = DataStoreIDManager.shared) -> WebsiteDataManaging {
         WebCacheManager(cookieStorage: MigratableCookieStorage(),
                         fireproofing: fireproofing,
-                        dataStoreIDManager: dataStoreIDManager)
+                        dataStoreIDManager: dataStoreIDManager,
+                        featureFlagger: featureFlagger,
+                        memoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: false) }),
+                        fireModeMemoryCacheCleaner: MemoryCacheCleaner(dataStoreProvider: { DDGWebsiteDataStoreProvider.current(fireMode: true) }))
+    }
+
+    private static func makePrivacyStats() -> PrivacyStatsProviding {
+        let location = PrivacyStatsDatabase.defaultLocation
+        if let database = PrivacyStatsDatabase(location: location) {
+            return PrivacyStats(databaseProvider: database)
+        }
+        return UnavailablePrivacyStats(storeLocation: location)
     }
 
     // MARK: - Public API
@@ -699,6 +676,15 @@ final class MainCoordinator {
 
     func presentModalPromptIfNeeded() {
         promoCoordinationService.presentModalPromptIfNeeded(from: controller)
+        _ = runOnceModalPromptCloses(while: { true }, {})
+    }
+
+    func runOnceModalPromptCloses(while shouldWait: @escaping @MainActor () -> Bool, _ handler: @escaping @MainActor () -> Void) -> Bool {
+        // Presentation analytics still need the dismissal when the keyboard is disabled or cancelled.
+        promoCoordinationService.runOnceModalPromptCloses(while: { true }) { [weak self] in
+            self?.controller.recordPendingNewTabPagePresentationIfVisible()
+            if shouldWait() { handler() }
+        }
     }
 
     func prepareHomePageMessagesForForegroundIfNeeded() {
@@ -768,7 +754,7 @@ extension MainCoordinator: URLHandling {
 
     func handleURL(_ url: URL) {
         guard !handleAppDeepLink(url: url) else { return }
-        controller.loadUrlInNewTab(url, reuseExisting: .any, inheritedAttribution: nil, fromExternalLink: true)
+        controller.loadExternalLinkInNewTab(url)
     }
 
     private func handleEmailSignUpDeepLink(_ url: URL) -> Bool {
@@ -942,35 +928,48 @@ extension MainCoordinator: UserActivityHandling {
 
 extension MainCoordinator: IdleReturnLaunchDelegate {
 
-    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?) {
+    func showNewTabPageAfterIdleReturn(timeAwayMs: Int?, isFirstForeground: Bool, completion: @escaping (IdleReturnNewTabPageResult) -> Void) {
         if voiceSessionStateManager.isVoiceSessionActive {
             startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+            completion(.suppressed)
             return
         }
 
-        // Already on the NTP — no rebuild needed. This preserves any existing
-        // escape hatch state, avoids bouncing the omnibar/keyboard on idle return,
-        // and avoids surfacing a stale hatch when the user has already consumed
-        // the after-idle moment and returned to the NTP.
+        // Restore a cold-start NTP's hatch; warm returns preserve its existing or consumed state and input focus.
         //
         // We require a non-nil current tab here: if there is no current tab,
         // we still want to fall through to `newTab(...)` to create one.
         if let currentTab = tabManager.currentTabsModel.currentTab, currentTab.link == nil {
-            startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+            guard featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) else {
+                startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+                completion(.keptCurrent)
+                return
+            }
+            controller.closeScreensOverNewTabPageForIdleReturn(screenLeftOpen: controller.presentedViewController) { [weak self] in
+                guard let self else { return }
+                if !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                    || !controller.restoreEscapeHatchOnKeptNewTabPage(isFirstForeground: isFirstForeground, timeAwayMs: timeAwayMs) {
+                    startUntreatedReturnSession(timeAwayMs: timeAwayMs)
+                }
+                completion(.keptCurrent)
+            }
             return
         }
 
         // The NTP session starts when the NTP actually renders; stash the time away so it carries it.
-        controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
+        controller.noteNewTabPageReturn(timeAwayMs: timeAwayMs)
+        let deferKeyboard = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
         controller.prepareForIdleReturnNTP { [weak self] in
             guard let self else { return }
-            self.controller.newTab(reuseExisting: true, allowingKeyboard: true, openedAfterIdle: true)
+            self.controller.newTab(reuseExisting: true, allowingKeyboard: !deferKeyboard, openedAfterIdle: true)
+            completion(.openedNewTab)
         }
     }
 
     func markLastUsedTabAsResumedAfterIdle(timeAwayMs: Int?) {
+        guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: .lut, focused: false)
+        startReturnSession(afterIdleSurface: .lut)
     }
 
     func recordOrdinaryReturn(timeAwayMs: Int?) {
@@ -979,9 +978,19 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     /// A return where no after-idle treatment was applied, so `after_idle` stays false and
     /// the post-idle event — which only reports on treated returns — is not started.
+    /// `focused` starts from the input focus a short return keeps; an app-open keyboard raises it later.
     private func startUntreatedReturnSession(timeAwayMs: Int?) {
+        guard !controller.resumePendingAfterIdlePresentation(timeAwayMs: timeAwayMs) else { return }
         controller.postIdleSessionInstrumentation.noteReturn(timeAwayMs: timeAwayMs)
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: nil, focused: false)
+        startReturnSession(afterIdleSurface: nil)
+    }
+
+    private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
+        let focused = controller.isInputFocused
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: afterIdleSurface,
+                                                                 focused: focused,
+                                                                 toggleEnabled: controller.isReturnSessionToggleEnabled,
+                                                                 togglePosition: controller.returnSessionTogglePosition(focused: focused))
     }
 
     private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {

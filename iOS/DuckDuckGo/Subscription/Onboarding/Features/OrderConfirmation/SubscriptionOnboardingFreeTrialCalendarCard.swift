@@ -77,6 +77,7 @@ struct SubscriptionOnboardingFreeTrialCalendarCard: View {
     private let model: SubscriptionOnboardingFreeTrialCalendarCardModel
 
     private enum Metrics {
+        static let maxWidth: CGFloat = 360
         static let cornerRadius: CGFloat = 26
         static let contentPadding: CGFloat = 24
         static let contentSpacing: CGFloat = 16
@@ -128,6 +129,7 @@ struct SubscriptionOnboardingFreeTrialCalendarCard: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityText)
         }
+        .frame(maxWidth: Metrics.maxWidth)
     }
 
     private var heading: some View {
@@ -229,23 +231,17 @@ private struct SubscriptionOnboardingFreeTrialCalendarCardPreview: View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingFreeTrialCalendarCardPreview()
-    }
+    SubscriptionOnboardingFreeTrialCalendarCardPreview()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingFreeTrialCalendarCardPreview()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingFreeTrialCalendarCardPreview()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingFreeTrialCalendarCardPreview()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingFreeTrialCalendarCardPreview()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

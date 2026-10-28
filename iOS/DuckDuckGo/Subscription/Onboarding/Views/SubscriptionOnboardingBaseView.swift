@@ -35,7 +35,8 @@ private enum Metrics {
     static let contentVerticalPadding = SubscriptionOnboardingPageInsets.vertical
     static let sectionSpacing: CGFloat = 16
     static let footerSpacing: CGFloat = 8
-    static let footerBlurFadeHeight: CGFloat = 40
+    static let footerMaxWidth: CGFloat = 360
+    static let footerBlurFadeHeight: CGFloat = 20
 }
 
 /// The navigation bar's leading button: either a back button or a close button. Both render as a
@@ -113,7 +114,7 @@ private struct FooterBlockHeightKey: PreferenceKey {
 
 /// A generic page for the post-subscription onboarding flow: an optional leading button and centered title,
 /// an optional header, a caller-supplied body, and an optional bottom-pinned footer.
-struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View {
+struct SubscriptionOnboardingBaseView<Content: View>: View {
 
     private let title: String?
     private let navigationButton: SubscriptionOnboardingNavigationButton?
@@ -122,7 +123,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
     private let scrollsContent: Bool
     private let declaresNavigationChrome: Bool
     private let footerBlur: Bool
-    private let pageBackground: PageBackground
     private let content: Content
 
     @State private var footerBlockHeight: CGFloat = 0
@@ -134,7 +134,6 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
          scrollsContent: Bool = true,
          declaresNavigationChrome: Bool = true,
          footerBlur: Bool = false,
-         @ViewBuilder pageBackground: () -> PageBackground = { EmptyView() },
          @ViewBuilder content: () -> Content) {
         self.title = title
         self.navigationButton = navigationButton
@@ -143,12 +142,18 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         self.scrollsContent = scrollsContent
         self.declaresNavigationChrome = declaresNavigationChrome
         self.footerBlur = footerBlur
-        self.pageBackground = pageBackground()
         self.content = content()
     }
 
     private var pageBackgroundColor: Color {
         Color(designSystemColor: .surfaceTertiary)
+    }
+
+    /// Whether the footer actually floats over content — `footerBlur` only has an effect when there's a
+    /// footer to float; with no footer, both branches render nothing, so this keeps every caller (and the
+    /// content's bottom padding below) from having to special-case a nil footer themselves.
+    private var isFooterFloating: Bool {
+        footerBlur && footer != nil
     }
 
     var body: some View {
@@ -165,10 +170,9 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
     private var pageWithFooter: some View {
         let page = pageContent
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background { pageBackground }
             .background(pageBackgroundColor.ignoresSafeArea())
 
-        if footerBlur {
+        if isFooterFloating {
             page
                 .overlay(alignment: .bottom) { blurredFooterView }
                 .onPreferenceChange(FooterBlockHeightKey.self) { footerBlockHeight = $0 }
@@ -209,7 +213,7 @@ struct SubscriptionOnboardingBaseView<Content: View, PageBackground: View>: View
         }
         .padding(.top, Metrics.contentVerticalPadding)
         .padding(.horizontal, Metrics.horizontalPadding)
-        .padding(.bottom, footerBlur ? footerBlockHeight : Metrics.contentVerticalPadding)
+        .padding(.bottom, isFooterFloating ? footerBlockHeight : Metrics.contentVerticalPadding)
     }
 }
 
@@ -268,7 +272,9 @@ private extension SubscriptionOnboardingBaseView {
 
     func footerContainer<Buttons: View>(@ViewBuilder _ buttons: () -> Buttons) -> some View {
         buttons()
+            .frame(maxWidth: Metrics.footerMaxWidth)
             .padding(.horizontal, Metrics.horizontalPadding)
+            .frame(maxWidth: .infinity)
     }
 
     /// The `footerBlur` variant of `footerView`
@@ -383,118 +389,102 @@ private func onboardingPreviewLongBody() -> some View {
 }
 
 #Preview("Light") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 2 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .double(primary: .init("Turn on VPN", action: {}),
-                            secondary: .init("Maybe Later", action: {}))) {
-            onboardingPreviewBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 2 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .double(primary: .init("Turn on VPN", action: {}),
+                        secondary: .init("Maybe Later", action: {}))) {
+        onboardingPreviewBody()
     }
+    .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 2 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .double(primary: .init("Turn on VPN", action: {}),
-                            secondary: .init("Maybe Later", action: {}))) {
-            onboardingPreviewBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 2 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .double(primary: .init("Turn on VPN", action: {}),
+                        secondary: .init("Maybe Later", action: {}))) {
+        onboardingPreviewBody()
     }
-    .preferredColorScheme(.dark)
+    .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Long content") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 3 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .double(primary: .init("Turn on VPN", action: {}),
-                            secondary: .init("Maybe Later", action: {}))) {
-            onboardingPreviewLongBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 3 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .double(primary: .init("Turn on VPN", action: {}),
+                        secondary: .init("Maybe Later", action: {}))) {
+        onboardingPreviewLongBody()
     }
+    .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Fixed header, scrolling content") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 3 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .double(primary: .init("Turn on VPN", action: {}),
-                            secondary: .init("Maybe Later", action: {})),
-            scrollsContent: false) {
-            ScrollView(showsIndicators: false) {
-                onboardingPreviewLongBody()
-            }
+    SubscriptionOnboardingBaseView(
+        title: "Step 3 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .double(primary: .init("Turn on VPN", action: {}),
+                        secondary: .init("Maybe Later", action: {})),
+        scrollsContent: false) {
+        ScrollView(showsIndicators: false) {
+            onboardingPreviewLongBody()
         }
-        .subscriptionOnboardingNavigationContainer()
     }
+    .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 2 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .single(.init("Turn on VPN", action: {}))) {
-            onboardingPreviewBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 2 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .single(.init("Turn on VPN", action: {}))) {
+        onboardingPreviewBody()
     }
-    .dynamicTypeSize(.accessibility5)
+    .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #Preview("Blurred footer background") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 2 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .single(.init("Activate", action: {})),
-            footerBlur: true) {
-            onboardingPreviewLongBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 2 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .single(.init("Activate", action: {})),
+        footerBlur: true) {
+        onboardingPreviewLongBody()
     }
+    .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Blurred footer background - Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 2 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader(),
-            footer: .single(.init("Activate", action: {})),
-            footerBlur: true) {
-            onboardingPreviewLongBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 2 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader(),
+        footer: .single(.init("Activate", action: {})),
+        footerBlur: true) {
+        onboardingPreviewLongBody()
     }
-    .preferredColorScheme(.dark)
+    .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Back + step, no footer") {
-    RebrandedPreview {
-        SubscriptionOnboardingBaseView(
-            title: "Step 1 of 4",
-            navigationButton: .back({}),
-            header: onboardingPreviewHeader()) {
-            onboardingPreviewBody()
-        }
-        .subscriptionOnboardingNavigationContainer()
+    SubscriptionOnboardingBaseView(
+        title: "Step 1 of 4",
+        navigationButton: .back({}),
+        header: onboardingPreviewHeader()) {
+        onboardingPreviewBody()
     }
+    .subscriptionOnboardingNavigationContainer()
 }
 
 #endif

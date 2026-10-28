@@ -34,7 +34,7 @@ final class TabContentCapabilityTests: XCTestCase {
             (.history(pane: nil), true),
             (.onboarding, false),
             (.none, true),
-            (.dataBrokerProtection, false),
+            (.dataBrokerProtection(.subscribed), false),
             (.subscription(url), false),
             (.identityTheftRestoration(url), false),
             (.releaseNotes, false),
@@ -57,7 +57,7 @@ final class TabContentCapabilityTests: XCTestCase {
             (.history(pane: nil), true),
             (.onboarding, false),
             (.none, false),
-            (.dataBrokerProtection, true),
+            (.dataBrokerProtection(.subscribed), true),
             (.subscription(url), true),
             (.identityTheftRestoration(url), true),
             (.releaseNotes, false),
@@ -80,7 +80,7 @@ final class TabContentCapabilityTests: XCTestCase {
             (.history(pane: nil), false),
             (.onboarding, false),
             (.none, false),
-            (.dataBrokerProtection, true),
+            (.dataBrokerProtection(.subscribed), true),
             (.subscription(url), true),
             (.identityTheftRestoration(url), true),
             (.releaseNotes, true),
@@ -90,5 +90,86 @@ final class TabContentCapabilityTests: XCTestCase {
         for (content, expected) in cases {
             XCTAssertEqual(content.canBeBookmarked, expected, "\(content)")
         }
+    }
+
+    // MARK: - Duck.ai navigation source
+
+    private let duckAIURL = URL(string: "https://duck.ai/chat")!
+
+    func testThatDuckAIContentKeepsOnlyTheSourcesThatTellHowItWasReached() {
+        let cases: [(Tab.TabContent.URLSource, Tab.TabContent.URLSource)] = [
+            (.userEntered("duck.ai"), .userEntered("duck.ai")),
+            (.userEntered("duck.ai", downloadRequested: true), .userEntered("duck.ai")),
+            (.bookmark(isFavorite: true), .bookmark(isFavorite: true)),
+            (.historyEntry, .historyEntry),
+            (.appOpenUrl, .appOpenUrl),
+            (.link, .link),
+            (.attributedUI(.duckAILink), .attributedUI(.duckAILink)),
+            (.ui, .ui),
+            (.pendingStateRestoration, .ui),
+            (.loadedByStateRestoration, .ui),
+            (.reload, .ui),
+            (.switchToOpenTab, .ui),
+            (.webViewUpdated, .ui),
+        ]
+        for (source, expected) in cases {
+            let content = Tab.TabContent.contentFromURL(duckAIURL, source: source)
+            XCTAssertEqual(content, .aiChat(duckAIURL, source: expected), "\(source)")
+            XCTAssertEqual(content.source, expected, "\(source)")
+        }
+    }
+
+    func testThatTypedDuckAILoadsAsAUserEnteredNavigationNotADownload() {
+        let content = Tab.TabContent.contentFromURL(duckAIURL, source: .userEntered("duck.ai", downloadRequested: true))
+
+        XCTAssertEqual(content.source.navigationType, .custom(.userEnteredUrl))
+        XCTAssertFalse(content.isUserRequestedPageDownload)
+    }
+
+    func testThatDuckAIAlwaysLoadsWithTheUICachePolicy() {
+        XCTAssertEqual(Tab.TabContent.aiChat(duckAIURL, source: .historyEntry).cachePolicy, .useProtocolCachePolicy)
+        XCTAssertEqual(Tab.TabContent.url(url, source: .historyEntry).cachePolicy, .returnCacheDataElseLoad)
+    }
+
+    func testThatUserEnteredHelpersStayURLOnly() {
+        let typed = Tab.TabContent.aiChat(duckAIURL, source: .userEntered("duck.ai"))
+
+        XCTAssertNil(typed.userEnteredValue)
+        XCTAssertFalse(typed.isUserEnteredUrl)
+    }
+
+    func testThatResettingTheSourceOnlyAffectsDuckAI() {
+        XCTAssertEqual(Tab.TabContent.aiChat(duckAIURL, source: .userEntered("duck.ai")).resettingAIChatSource, .aiChat(duckAIURL))
+        XCTAssertEqual(Tab.TabContent.url(url, source: .link).resettingAIChatSource, .url(url, source: .link))
+    }
+
+    func testThatReopeningOrReloadingDuckAIDropsItsSource() {
+        let typed = Tab.TabContent.aiChat(duckAIURL, source: .userEntered("duck.ai"))
+
+        XCTAssertEqual(typed.loadedFromCache(), .aiChat(duckAIURL))
+        XCTAssertEqual(typed.forceReload(), .aiChat(duckAIURL))
+    }
+
+    func testThatAnAttributedUISourceLoadsLikeUI() {
+        let attributed = Tab.TabContent.URLSource.attributedUI(.directNewTabPage)
+
+        XCTAssertEqual(attributed.navigationType, Tab.TabContent.URLSource.ui.navigationType)
+        XCTAssertEqual(attributed.cachePolicy, Tab.TabContent.URLSource.ui.cachePolicy)
+        XCTAssertEqual(Tab.TabContent.aiChat(duckAIURL, source: attributed).loadedFromCache(), .aiChat(duckAIURL))
+        XCTAssertEqual(Tab.TabContent.aiChat(duckAIURL, source: attributed).forceReload(), .aiChat(duckAIURL))
+    }
+
+    func testThatOnlyDuckAIsOwnLinksAmongAttributedSourcesSwitchToAnOpenTab() {
+        XCTAssertTrue(Tab.TabContent.URLSource.switchToOpenTab.switchesToOpenTab)
+        XCTAssertTrue(Tab.TabContent.URLSource.appOpenUrl.switchesToOpenTab)
+        XCTAssertTrue(Tab.TabContent.URLSource.attributedUI(.duckAILink).switchesToOpenTab)
+        XCTAssertFalse(Tab.TabContent.URLSource.attributedUI(.directNewTabPage).switchesToOpenTab)
+        XCTAssertFalse(Tab.TabContent.URLSource.ui.switchesToOpenTab)
+        XCTAssertFalse(Tab.TabContent.URLSource.link.switchesToOpenTab)
+    }
+
+    func testThatReopeningOrReloadingURLContentIsUnchanged() {
+        XCTAssertEqual(Tab.TabContent.url(url, source: .link).loadedFromCache(), .url(url, source: .pendingStateRestoration))
+        XCTAssertEqual(Tab.TabContent.url(url, source: .link).forceReload(), .url(url, source: .reload))
     }
 }

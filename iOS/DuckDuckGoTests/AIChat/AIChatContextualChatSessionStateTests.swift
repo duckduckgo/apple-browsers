@@ -1506,7 +1506,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    func testQuickActionsIsSummarizePageWhenAttached() {
+    func testQuickActionsIsEmptyWhenAttached() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
 
@@ -1514,7 +1514,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext())
 
         // Then
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
     }
 
     func testQuickActionsTransitionsOnAttach() {
@@ -1526,14 +1526,14 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.updateContext(makeTestContext())
 
         // Then
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
     }
 
     func testQuickActionsTransitionsOnChipRemoval() {
         // Given
         mockSettings.isAutomaticContextAttachmentEnabled = true
         sessionState.updateContext(makeTestContext())
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
 
         // When
         sessionState.downgradeToPlaceholder()
@@ -1582,21 +1582,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [])
     }
 
-    // MARK: - Suggested Prompts Coexistence Tests
-
-    func testQuickActionsIsAskAboutPageWhenSuggestedPromptsOnAndPlaceholder() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
-
-        // Then - auto-attach off (placeholder) pins "Ask about page" below the suggestions
-        XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
-    }
-
     // MARK: - Ask about page after an explicit removal
 
     /// Removing the context is the user declining it, so the chip stands down and the attachment menu
@@ -1611,7 +1596,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             floatingInputFeature: MockFloatingInputFeature(isAvailable: true)
         )
         sessionState.updateContext(makeTestContext())
-        XCTAssertEqual(sessionState.viewState.quickActions, [.summarizePage])
+        XCTAssertEqual(sessionState.viewState.quickActions, [])
 
         // When the user removes it, the chip stands down
         sessionState.downgradeToPlaceholder()
@@ -1640,29 +1625,11 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.viewState.quickActions, [.askAboutPage])
     }
 
-    func testQuickActionsIsEmptyWhenSuggestedPromptsOnAndAttached() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
-        mockSettings.isAutomaticContextAttachmentEnabled = true
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger
-        )
-
-        // When - context attached (auto-attach on)
-        sessionState.updateContext(makeTestContext())
-
-        // Then - only suggestions remain, no pinned quick action
-        XCTAssertEqual(sessionState.viewState.quickActions, [])
-    }
-
     // MARK: - Suggested Prompts Loading Tests
 
     func testSuggestionsPopulateViewStateWhenLoadingCompletes() {
         // Given
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary")]
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1691,7 +1658,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testSuggestionsClearedOnReset() {
         // Given
         let expected = [ContextualSuggestedPrompt(id: "note-page", label: "Key takeaways", prompt: "Key takeaways?", icon: "note")]
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1720,21 +1686,18 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.suggestionsLoadState, .loaded)
     }
 
-    func testSuggestionsNotLoadedWhenSuggestedPromptsFlagOff() {
-        // Given - flag off (default); provider would return values if it were called
-        sessionState = AIChatContextualChatSessionState(
-            aiChatSettings: mockSettings,
-            pixelHandler: mockPixelHandler,
-            featureFlagger: mockFeatureFlagger,
-            suggestedPromptsProvider: MockContextualSuggestedPromptsProvider(
-                suggestions: [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary")]
-            )
-        )
-
-        // When
+    func testSuggestionsBeginLoadingWithoutActiveChat() {
         sessionState.markPendingSignalsOnlyCollection()
 
-        // Then - loading never begins, so suggestions stay empty and state stays loaded
+        XCTAssertTrue(sessionState.suggestions.isEmpty)
+        XCTAssertEqual(sessionState.suggestionsLoadState, .loading)
+    }
+
+    func testSuggestionsDoNotBeginLoadingWithActiveChat() {
+        sessionState.handlePromptSubmission("Hello")
+
+        sessionState.beginLoadingSuggestions()
+
         XCTAssertTrue(sessionState.suggestions.isEmpty)
         XCTAssertEqual(sessionState.suggestionsLoadState, .loaded)
     }
@@ -1743,7 +1706,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // Given
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1779,7 +1741,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testSelectionSuggestionsExposeSelectionScopeForImpressionPixels() {
         let expected = [ContextualSuggestedPrompt(id: "summarize-selection", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1806,7 +1767,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testDocumentContextReachesTheResolverSoSummarizeIsWordedForADocument() {
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1833,7 +1793,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testWebPageContextIsNotResolvedAsADocument() {
         let expected = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize", prompt: "Summarize.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1862,7 +1821,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         let expected = makeSuggestedPrompts(ids: ["one", "two", "three", "four"])
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: expected)
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1911,7 +1869,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
             prioritySuggestionIDs: ["translate-page"]
         )
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1944,7 +1901,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testWhenPageIsNotAttachableThenAllFourSuggestionsRemainVisible() {
         // Given
         let expected = makeSuggestedPrompts(ids: ["one", "two", "three", "four"])
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -1977,7 +1933,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // not markPendingSignalsOnlyCollection. The resolve is keyed on `.loading`, so it must still fire.
         let expected = [ContextualSuggestedPrompt(id: "key-takeaways", label: "Key takeaways", prompt: "Key takeaways?", icon: "note")]
         mockSettings.isAutomaticContextAttachmentEnabled = true
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -2007,7 +1962,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         // Given
         let defaults = [ContextualSuggestedPrompt(id: "summarize-page", label: "Summarize this page", prompt: "Summarize this page.", icon: "summary")]
         let mockProvider = MockContextualSuggestedPromptsProvider(suggestions: defaults)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -2107,8 +2061,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     // MARK: - Signals-Only Payload Tests
 
     func testSignalsOnlyCollectionEmitsStrippedPayloadToFrontendBridge() throws {
-        // Given - suggestions ON, auto-attach OFF: the start surface collects signals only
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        // Given - auto-attach OFF: the start surface collects signals only
         mockSettings.isAutomaticContextAttachmentEnabled = false
         var delivered: [(context: AIChatPageContextData?, targets: PageContextDeliveryTargets)] = []
         sessionState.effects
@@ -2138,7 +2091,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
 
     func testSignalsOnlyCollectionWithNilContextEmitsNothing() {
         // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         mockSettings.isAutomaticContextAttachmentEnabled = false
         var delivered: [SheetEffect] = []
         sessionState.effects
@@ -2156,8 +2108,7 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     }
 
     func testChipRemovalOnStartSurfaceEmitsDetachSignalThenSignalsOnlyPayload() throws {
-        // Given - a chip attached on the start surface (suggestions ON, auto-attach OFF)
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
+        // Given - a chip attached on the start surface with auto-attach OFF
         mockSettings.isAutomaticContextAttachmentEnabled = false
         let signals = AIChatPageTypeSignals(jsonLdType: ["JobPosting"], ogType: nil, lang: "en")
         sessionState.beginManualAttach()
@@ -2189,7 +2140,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testStaleSuggestionsResolveFromPreviousNavigationIsDiscarded() async {
         // Given - a provider whose resolves complete only when the test says so
         let provider = GatedContextualSuggestedPromptsProvider()
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -2223,7 +2173,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     func testLateSuggestionsResolveAfterChatStartIsDiscarded() async {
         // Given - a resolve in flight on the start surface
         let provider = GatedContextualSuggestedPromptsProvider()
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState = AIChatContextualChatSessionState(
             aiChatSettings: mockSettings,
             pixelHandler: mockPixelHandler,
@@ -2343,6 +2292,27 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         }
     }
 
+    // MARK: - Prompt depth
+
+    func testWhenPromptsAreSentThenTheirDepthIsReported() {
+        for _ in 0..<3 {
+            sessionState.recordPromptSent()
+        }
+
+        XCTAssertEqual(mockPixelHandler.promptDepthBuckets, [.first, .second, .threeToFive])
+    }
+
+    func testWhenANewChatStartsThenDepthCountingRestarts() {
+        sessionState.recordPromptSent()
+        sessionState.recordPromptSent()
+        sessionState.resetToNoChat()
+        mockPixelHandler.promptDepthBuckets = []
+
+        sessionState.recordPromptSent()
+
+        XCTAssertEqual(mockPixelHandler.promptDepthBuckets, [.first])
+    }
+
     // MARK: - Offered page context
 
     /// Auto-attach off, UTI active, chat under way: the conditions the offer shares with auto-attach.
@@ -2410,15 +2380,54 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
     }
 
-    func testWhenAnOfferIsDismissedThenNothingIsAttachedOrDetached() {
+    func testWhenAnOfferFollowsANavigationThenItIsReportedAsSuch() {
+        arrangeOfferConditions()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferShownReasons, [.navigation])
+    }
+
+    func testWhenTheUserDetachesThePageThenTheOfferBackIsReportedAsDetached() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+        sessionState.acceptSuggestedContext()
+        mockPixelHandler.pageContextOfferShownReasons = []
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferShownReasons, [.detached])
+    }
+
+    func testWhenADetachedOfferIsAcceptedThenItIsReportedAsDetached() {
+        arrangeOfferConditions()
+        sessionState.updateContext(makeTestContext(title: "Tokamak"))
+        sessionState.acceptSuggestedContext()
+        XCTAssertTrue(sessionState.handleChipRemoval())
+        mockPixelHandler.pageContextOfferAcceptedReasons = []
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedReasons, [.detached])
+    }
+
+    func testWhenTheSameOfferIsMadeAgainThenItIsCountedOnce() {
+        let url = "https://en.wikipedia.org/wiki/Tokamak"
+        arrangeOfferConditions()
+
+        sessionState.updateContext(makeTestContext(title: "Tokamak", url: url))
+        sessionState.updateContext(makeTestContext(title: "Tokamak", url: url))
+
+        XCTAssertEqual(mockPixelHandler.pageContextOfferShownReasons, [.navigation])
+    }
+
+    func testWhenAnOfferIsAcceptedThenItIsReportedWithTheReasonItWasShownWith() {
         arrangeOfferConditions()
         sessionState.updateContext(makeTestContext(title: "Tokamak"))
 
-        sessionState.dismissSuggestedContext()
+        sessionState.acceptSuggestedContext()
 
-        XCTAssertNil(sessionState.suggestedContext)
-        XCTAssertEqual(sessionState.chipState, .placeholder)
-        XCTAssertNil(sessionState.intendedAttachedContext)
+        XCTAssertEqual(mockPixelHandler.pageContextOfferAcceptedReasons, [.navigation])
     }
 
     func testWhenNavigatingThenAPreviousOfferIsDropped() {
@@ -2428,6 +2437,61 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
         sessionState.notifyPageChanged()
 
         XCTAssertNil(sessionState.suggestedContext, "The offer belonged to the page we left")
+    }
+
+    // MARK: - Offered back after detaching
+
+    private func arrangeAttachedPage(title: String = "Tokamak") {
+        mockFeatureFlagger.enabledFeatureFlags = [.contextualPagePlaceholder]
+        mockSettings.isAutomaticContextAttachmentEnabled = true
+        sessionState.updateUnifiedToggleInputActive(true)
+        sessionState.beginChatForUTISubmission()
+        sessionState.updateContext(makeTestContext(title: title))
+    }
+
+    func testWhenAnAttachedPageIsDetachedThenItIsOfferedBack() {
+        var deliveredTargets: PageContextDeliveryTargets?
+        sessionState.effects
+            .sink { effect in
+                if case .deliverPageContext(_, let targets) = effect { deliveredTargets = targets }
+            }
+            .store(in: &cancellables)
+        arrangeAttachedPage()
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertEqual(sessionState.suggestedContext?.title, "Tokamak")
+        XCTAssertEqual(deliveredTargets, .utiSuggestedContext)
+        XCTAssertEqual(sessionState.chipState, .placeholder)
+    }
+
+    func testWhenTheOfferLeftByDetachingIsAcceptedThenThePageIsAttachedAgain() {
+        arrangeAttachedPage()
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        sessionState.acceptSuggestedContext()
+
+        XCTAssertEqual(sessionState.chipState, .attached(makeTestContext(title: "Tokamak")))
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenThePlaceholderFlagIsOffThenDetachingOffersNothing() {
+        arrangeAttachedPage()
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertNil(sessionState.suggestedContext)
+    }
+
+    func testWhenTheUnifiedToggleInputIsInactiveThenDetachingOffersNothing() {
+        arrangeAttachedPage()
+        sessionState.updateUnifiedToggleInputActive(false)
+
+        XCTAssertTrue(sessionState.handleChipRemoval())
+
+        XCTAssertNil(sessionState.suggestedContext)
     }
 
     private func makeSuggestedPrompts(ids: [String]) -> [ContextualSuggestedPrompt] {
@@ -2484,7 +2548,6 @@ final class AIChatContextualChatSessionStateTests: XCTestCase {
     }
 
     func testClearingSelectionsResolvesSuggestionsBackToPageScope() {
-        mockFeatureFlagger.enabledFeatureFlags = [.contextualSuggestedPrompts]
         sessionState.attachSelection(makeSelection())
         XCTAssertEqual(sessionState.viewState.suggestionsLoadState, .loading)
 
@@ -2703,6 +2766,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     var selectionRemovedCount = 0
     var promptSubmittedWithSelectionsCounts: [Int] = []
     var selectionToolDeliveryTimedOutCount = 0
+    var pageContextOfferShownReasons: [AIChatContextualPageContextOfferReason] = []
+    var pageContextOfferAcceptedReasons: [AIChatContextualPageContextOfferReason] = []
+    var promptDepthBuckets: [AIChatContextualPromptDepthBucket] = []
 
     func fireSheetOpened() { sheetOpenedFired = true }
     func fireSheetDismissed(hadUnsubmittedSelections: Bool) {
@@ -2710,6 +2776,9 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
         sheetDismissedHadUnsubmittedSelections = hadUnsubmittedSelections
     }
     func fireSessionRestored() { sessionRestoredFired = true }
+    func fireSheetOpenedOnDeletedChat() {}
+    func firePageContextOfferShown(reason: AIChatContextualPageContextOfferReason) { pageContextOfferShownReasons.append(reason) }
+    func firePageContextOfferAccepted(reason: AIChatContextualPageContextOfferReason) { pageContextOfferAcceptedReasons.append(reason) }
     func fireSelectionAttached() { selectionAttachedCount += 1 }
     func fireSelectionLimitReached() { selectionLimitReachedCount += 1 }
     func fireSelectionRemoved() { selectionRemovedCount += 1 }
@@ -2733,10 +2802,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func fireViewAllChatsTapped() {}
     func fireFireButtonTapped() { fireButtonTappedFired = true }
     func fireFireButtonConfirmed() { fireButtonConfirmedFired = true }
-    func fireAddressBarMenuShown() {}
-    func fireAddressBarMenuNewChatSelected() {}
-    func fireAddressBarMenuAskAboutPageSelected() {}
-    func fireAddressBarMenuRecentChatsSelected() {}
+    func fireAddressBarMenuShown(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuNewChatSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutPageSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuAskAboutSearchSelected(source: DuckAIMenuSource) {}
+    func fireAddressBarMenuRecentChatsSelected(source: DuckAIMenuSource) {}
     func fireFloatingInputDismissedWithoutSubmission(hadUnsubmittedSelections: Bool) {}
     func fireFloatingInputPromotedToSheet() {}
     func firePageContextAutoAttached() { pageContextAutoAttachedFired = true }
@@ -2746,9 +2816,11 @@ private final class MockContextualModePixelHandler: AIChatContextualModePixelFir
     func firePageContextRemovedNative() { pageContextRemovedNativeFired = true }
     func firePageContextRemovedFrontend() { pageContextRemovedFrontendFired = true }
     func firePageContextCollectionEmpty() {}
+    func fireTabAttachmentCollectionWaitTimedOut(reason: MultiTabCollectionWaitTimeoutPixel.Reason) {}
     func firePageContextCollectionUnavailable() {}
     func firePromptSubmittedWithContext() { promptSubmittedWithContextFired = true }
     func firePromptSubmittedWithoutContext() { promptSubmittedWithoutContextFired = true }
+    func firePromptDepth(_ bucket: AIChatContextualPromptDepthBucket) { promptDepthBuckets.append(bucket) }
     func beginManualAttach() { manualAttachBegan = true; isManualAttachInProgress = true }
     func endManualAttach() { manualAttachEnded = true; isManualAttachInProgress = false }
 

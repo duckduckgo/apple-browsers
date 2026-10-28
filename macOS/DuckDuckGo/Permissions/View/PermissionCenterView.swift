@@ -65,7 +65,7 @@ struct PermissionCenterView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header - only show if there are permission items
             if !viewModel.permissionItems.isEmpty {
-                Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
+                Text(String(format: UserText.permissionCenterTitle, viewModel.domain.permissionDisplayName))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
@@ -140,7 +140,7 @@ struct PermissionCenterView: View {
                 .cornerRadius(8)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                        .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                 )
                 .padding(.horizontal, 16)
                 .padding(.bottom, displaysContentBelowPermissions ? 12 : 16)
@@ -206,7 +206,7 @@ struct ReloadBannerView: View {
                     .cornerRadius(4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color(designSystemColor: .lines), lineWidth: 0.5)
+                            .stroke(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 0.5)
                     )
             }
             .buttonStyle(PlainButtonStyle())
@@ -218,7 +218,7 @@ struct ReloadBannerView: View {
                 .fill(Color(designSystemColor: .permissionWarningBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .surfaceDecorationPrimary), lineWidth: 1)
                 )
         )
     }
@@ -630,6 +630,7 @@ struct ExternalSchemeRowView: View {
             button.bezelStyle = .accessoryBarAction
             button.isBordered = true
             button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+            button.setAccessibilityIdentifier("PermissionCenterView.externalSchemeDecisionPopUp")
 
             for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
                 let item = button.menu?.addItem(withTitle: decision.localizedTitle, action: nil, keyEquivalent: "")

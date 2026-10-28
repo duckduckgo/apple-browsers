@@ -27,6 +27,10 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
     private let cpmMessagingHealthMonitor: CPMMessagingHealthMonitor
+    /// Whether Bitwarden may be installed, read each time the menu opens.
+    private let isBitwardenEnabled: () -> Bool
+    private let installBitwardenSeparator = NSMenuItem.separator()
+    private let installBitwardenMenuItem = NSMenuItem(title: "Install Bitwarden", action: #selector(WebExtensionsDebugMenu.installBitwarden))
 
     private let installExtensionMenuItem = NSMenuItem(title: "Install web extension", action: nil)
     private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
@@ -34,10 +38,15 @@ final class WebExtensionsDebugMenu: NSMenu {
     private let printScriptletInfoMenuItem = NSMenuItem(title: "Print Scriptlet Info", action: #selector(WebExtensionsDebugMenu.printScriptletInfo))
     private let simulateCPMBreakageMenuItem = NSMenuItem(title: "", action: #selector(WebExtensionsDebugMenu.toggleCPMBreakageSimulation))
     private let openExtensionsFolderMenuItem = NSMenuItem(title: "Open Extensions Folder in Finder", action: #selector(WebExtensionsDebugMenu.openExtensionsFolderInFinder))
+    private let extensionsPageMenuItem = NSMenuItem(title: "Extensions Page", action: #selector(WebExtensionsDebugMenu.showExtensionsPage))
+    private let apiCompatibilityLogMenuItem = NSMenuItem(title: "Extension Compatibility Log…", action: #selector(WebExtensionsDebugMenu.showAPICompatibilityLog))
 
-    init(webExtensionManager: WebExtensionManaging, cpmMessagingHealthMonitor: CPMMessagingHealthMonitor) {
+    init(webExtensionManager: WebExtensionManaging,
+         cpmMessagingHealthMonitor: CPMMessagingHealthMonitor,
+         isBitwardenEnabled: @escaping () -> Bool = { true }) {
         self.webExtensionManager = webExtensionManager
         self.cpmMessagingHealthMonitor = cpmMessagingHealthMonitor
+        self.isBitwardenEnabled = isBitwardenEnabled
         super.init(title: "")
 
         installExtensionMenuItem.submenu = makeInstallSubmenu()
@@ -53,6 +62,9 @@ final class WebExtensionsDebugMenu: NSMenu {
         simulateCPMBreakageMenuItem.setAccessibilityIdentifier(AccessibilityIdentifiers.DebugMenu.simulateCPMBreakage)
         openExtensionsFolderMenuItem.target = self
         openExtensionsFolderMenuItem.isEnabled = true
+        apiCompatibilityLogMenuItem.target = self
+        extensionsPageMenuItem.target = self
+        apiCompatibilityLogMenuItem.isEnabled = true
 
         addItems()
     }
@@ -73,13 +85,25 @@ final class WebExtensionsDebugMenu: NSMenu {
         addItem(processMenuItem)
         addItem(.separator())
         addItem(openExtensionsFolderMenuItem)
+        addItem(extensionsPageMenuItem)
+        addItem(apiCompatibilityLogMenuItem)
 
         if !webExtensionManager.webExtensionIdentifiers.isEmpty {
             addItem(.separator())
             for identifier in webExtensionManager.webExtensionIdentifiers {
                 let name = webExtensionManager.extensionName(for: identifier)
                 let version = webExtensionManager.extensionVersion(for: identifier)
-                let menuItem = WebExtensionMenuItem(identifier: identifier, webExtensionName: name, version: version)
+                let installedExtension = webExtensionManager.installedExtension(identifier: identifier)
+                // Embedded extensions can't be disabled, so they get no enabled state.
+                let isDisabled = installedExtension.flatMap { $0.isEmbedded ? nil : $0.isDisabled }
+                let isRemotelyDisabled = installedExtension.map {
+                    (webExtensionManager as? WebExtensionManager)?.remoteDisableEnforcer?.isRemotelyDisabled($0) == true
+                } ?? false
+                let menuItem = WebExtensionMenuItem(identifier: identifier,
+                                                    webExtensionName: name,
+                                                    version: version,
+                                                    isDisabled: isDisabled,
+                                                    isRemotelyDisabled: isRemotelyDisabled)
                 self.addItem(menuItem)
             }
         }
@@ -92,7 +116,11 @@ final class WebExtensionsDebugMenu: NSMenu {
         browseItem.target = self
         submenu.addItem(browseItem)
 
-        submenu.addItem(.separator())
+        submenu.addItem(installBitwardenSeparator)
+
+        installBitwardenMenuItem.target = self
+        submenu.addItem(installBitwardenMenuItem)
+        updateInstallBitwardenMenuItem()
 
         return submenu
     }
@@ -108,6 +136,14 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         installExtensionMenuItem.isEnabled = true
         uninstallAllExtensionsMenuItem.isEnabled = true
+        updateInstallBitwardenMenuItem()
+    }
+
+    /// The shortcut only opens Bitwarden's Web Store page, which offers no install while Bitwarden is off.
+    private func updateInstallBitwardenMenuItem() {
+        let isHidden = !isBitwardenEnabled()
+        installBitwardenSeparator.isHidden = isHidden
+        installBitwardenMenuItem.isHidden = isHidden
     }
 
     @objc func selectAndLoadWebExtension() {
@@ -120,6 +156,12 @@ final class WebExtensionsDebugMenu: NSMenu {
         Task {
             try? await webExtensionManager.installExtension(from: url)
         }
+    }
+
+    /// Opens Bitwarden's Chrome Web Store page, where it can be installed.
+    @objc func installBitwarden() {
+        let url = URL(string: "https://chromewebstore.google.com/detail/bitwarden-password-manage/nngceckbapebfimnlniiiahkandclblb")!
+        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
     }
 
     @objc func uninstallAllExtensions() {
@@ -167,6 +209,14 @@ final class WebExtensionsDebugMenu: NSMenu {
         simulateCPMBreakageMenuItem.state = isEnabled ? .on : .off
     }
 
+    @objc func showExtensionsPage() {
+        Application.appDelegate.windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
+    }
+
+    @objc func showAPICompatibilityLog() {
+        WebExtensionAPICompatibilityLogWindowPresenter.show()
+    }
+
     @objc func openExtensionsFolderInFinder() {
         let path = webExtensionManager.extensionsDirectory.path
         NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: path)
@@ -180,11 +230,22 @@ final class WebExtensionMenuItem: NSMenuItem {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(identifier: String, webExtensionName: String?, version: String?, submenu: NSMenu? = nil) {
+    /// - Parameters:
+    ///   - isDisabled: The extension's enabled state, or `nil` when it can't be disabled.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so it can't be enabled.
+    init(identifier: String,
+         webExtensionName: String?,
+         version: String?,
+         isDisabled: Bool? = nil,
+         isRemotelyDisabled: Bool = false,
+         submenu: NSMenu? = nil) {
         let displayName = webExtensionName ?? identifier
-        let title = version.map { "\(displayName) v\($0)" } ?? displayName
+        let versionedName = version.map { "\(displayName) v\($0)" } ?? displayName
+        let title = isDisabled == true ? "\(versionedName) (disabled)" : versionedName
         super.init(title: title, action: nil, keyEquivalent: "")
-        self.submenu = submenu ?? WebExtensionSubMenu(extensionIdentifier: identifier)
+        self.submenu = submenu ?? WebExtensionSubMenu(extensionIdentifier: identifier,
+                                                      isDisabled: isDisabled,
+                                                      isRemotelyDisabled: isRemotelyDisabled)
     }
 }
 
@@ -197,12 +258,69 @@ final class WebExtensionSubMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    init(extensionIdentifier: String) {
+    /// - Parameters:
+    ///   - isDisabled: The extension's enabled state, or `nil` to leave out the enable and disable item.
+    ///   - isRemotelyDisabled: Whether remote configuration lists the extension, so the enable item is unavailable.
+    init(extensionIdentifier: String, isDisabled: Bool? = nil, isRemotelyDisabled: Bool = false) {
         self.extensionIdentifier = extensionIdentifier
         super.init(title: "")
 
+        let loadStateMenuItem = isDisabled.map { isDisabled in
+            switch (isDisabled, isRemotelyDisabled) {
+            case (true, true):
+                // An item without an action is disabled.
+                NSMenuItem(title: "Enable the extension (disabled remotely)", action: nil)
+            case (true, false):
+                NSMenuItem(title: "Enable the extension", action: #selector(enableExtension), target: self)
+            case (false, _):
+                NSMenuItem(title: "Disable the extension", action: #selector(disableExtension), target: self)
+            }
+        }
+
         buildItems {
+            NSMenuItem(title: "Open Folder in Finder", action: #selector(openFolderInFinder), target: self)
+            if let loadStateMenuItem {
+                loadStateMenuItem
+            }
+            NSMenuItem.separator()
             NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
+        }
+    }
+
+    @objc func openFolderInFinder() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        let folder = webExtensionManager.extensionsDirectory.appendingPathComponent(extensionIdentifier, isDirectory: true)
+        NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: folder.path)
+    }
+
+    @objc func disableExtension() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                try await webExtensionManager.disableExtension(identifier: extensionIdentifier)
+            } catch {
+                Logger.webExtensions.error("Failed to disable extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
+            }
+        }
+    }
+
+    @objc func enableExtension() {
+        guard let webExtensionManager = NSApp.delegateTyped.webExtensionManager else {
+            return
+        }
+
+        Task { @MainActor in
+            do {
+                try await webExtensionManager.enableExtension(identifier: extensionIdentifier)
+            } catch {
+                Logger.webExtensions.error("Failed to enable extension '\(self.extensionIdentifier)': \(error.localizedDescription)")
+            }
         }
     }
 

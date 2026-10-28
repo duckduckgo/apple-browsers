@@ -36,7 +36,7 @@ final class UTIFooterMessageMapperTests: XCTestCase {
         XCTAssertNil(message.primaryAction)
         XCTAssertFalse(message.isDismissible)
         XCTAssertEqual(message.link?.text, "Learn more")
-        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy")
+        XCTAssertEqual(message.link?.url.absoluteString, "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files")
     }
 
     func testAttachmentPrivacyInsertsTranslatedLinkAtLocalizedPlaceholder() {
@@ -52,6 +52,27 @@ final class UTIFooterMessageMapperTests: XCTestCase {
             XCTAssertTrue(message.title.contains(label))
             XCTAssertFalse(message.isDismissible)
         }
+    }
+
+    func test_promptTooLongMessage_statesTheCountAgainstTheLimitAsAnErrorWithoutSeparators() {
+        let message = sut.promptTooLongMessage(count: 17_002, limit: 16_000)
+
+        XCTAssertEqual(message.icon, .alert)
+        XCTAssertEqual(message.title, "Please try a shorter message. 17002/16000")
+        XCTAssertNil(message.subtitle)
+        XCTAssertEqual(message.titleStyle, .error)
+        XCTAssertNil(message.primaryAction)
+        XCTAssertNil(message.link)
+        XCTAssertFalse(message.isDismissible)
+    }
+
+    func test_promptLengthText_fillsPlainPlaceholdersCountFirst() {
+        XCTAssertEqual(PromptLengthText.format("%d/%d", 17_002, 16_000, locale: Locale(identifier: "en_US")), "17002/16000")
+    }
+
+    func test_promptLengthText_keepsALiteralPercentAndLeavesItUnnumbered() {
+        XCTAssertEqual(PromptLengthText.format("100%% %d/%d", 17_002, 16_000, locale: Locale(identifier: "en_US")), "100% 17002/16000")
+        XCTAssertEqual(PromptLengthText.positional("%%d %d"), "%%d %1$d")
     }
 
     // MARK: - Headlines
@@ -210,6 +231,17 @@ final class UTIFooterMessageMapperTests: XCTestCase {
 
         XCTAssertTrue(message.title.contains(link.text))
         XCTAssertEqual(link.url, URL(string: "https://duckduckgo.com/duckai/privacy-terms"))
+    }
+
+    /// Matches the web: the disclaimer names the button the user taps, "Create" while Create Image is selected.
+    func test_termsOfServiceMessage_namesTheSendButton() throws {
+        let ask = sut.termsOfServiceMessage(sendButton: .ask)
+        let create = sut.termsOfServiceMessage(sendButton: .create)
+
+        XCTAssertTrue(ask.title.contains("'Ask'"))
+        XCTAssertTrue(create.title.contains("'Create'"))
+        XCTAssertFalse(create.title.contains("'Ask'"))
+        XCTAssertEqual(create.link, ask.link)
     }
 
     func test_termsOfServiceMessage_showsTheShieldAndNoResetLine() {

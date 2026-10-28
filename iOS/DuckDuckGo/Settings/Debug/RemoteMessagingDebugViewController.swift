@@ -66,7 +66,7 @@ struct RemoteMessagingDebugRootView: View {
             } header: {
                 Text(verbatim: "Install Date")
             } footer: {
-                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Refresh Config” afterwards to re-evaluate.")
+                Text(verbatim: "Sets the install date to N days ago, to test messages gated by daysSinceInstalled. Tap “Delete All”, then “Refresh Config” to re-evaluate.")
             }
 
             Section {
@@ -177,6 +177,28 @@ struct RemoteMessagingDebugRootView: View {
                 Text(verbatim: "Previews")
             } footer: {
                 Text(verbatim: "Renders a UI preview of each remote message type.")
+            }
+
+            Section {
+                HStack {
+                    Text(verbatim: "Hardware Check")
+                        .font(.system(size: 15))
+                    Spacer()
+                    Text(verbatim: model.hardwareOSUpgradeCapability.rawValue)
+                        .font(.system(size: 15))
+                        .foregroundStyle(Color(baseColor: .gray70))
+                }
+                Picker(selection: $model.osUpgradeCapabilityOverride) {
+                    ForEach(OSUpgradeCapabilityOverride.allCases, id: \.self) { override in
+                        Text(verbatim: override.title).tag(override)
+                    }
+                } label: {
+                    Text(verbatim: "Override")
+                }
+            } header: {
+                Text(verbatim: "OS Upgrade Capability")
+            } footer: {
+                Text(verbatim: "Overrides canUpgradeOS for message matching. Only honoured in debug builds. Tap “Delete All”, then “Refresh Config” to re-evaluate.")
             }
         }
         .navigationTitle(Text(verbatim: "Remote Messaging Debug"))
@@ -303,6 +325,14 @@ class RemoteMessagingDebugViewModel: ObservableObject {
     @Published var recentLogs: [LogEntry] = []
     @Published var isLoadingLogs: Bool = false
     @Published var currentDaysSinceInstalled: Int?
+    @Published var osUpgradeCapabilityOverride = OSUpgradeCapabilityOverridePersistor().current {
+        didSet {
+            osUpgradeCapabilityOverridePersistor.current = osUpgradeCapabilityOverride
+        }
+    }
+
+    let hardwareOSUpgradeCapability = SupportedOSChecker().osUpgradeCapability
+    private let osUpgradeCapabilityOverridePersistor = OSUpgradeCapabilityOverridePersistor()
 
     let database: CoreDataDatabase
     private let remoteMessagingDebugHandler: RemoteMessagingDebugHandling?

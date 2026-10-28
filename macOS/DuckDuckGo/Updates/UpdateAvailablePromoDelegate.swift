@@ -86,18 +86,20 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
         let text: String
         switch latestUpdate.type {
         case .critical:
-            icon = .criticalUpdateNotificationInfo
+            icon = NSImage(resource: .criticalUpdateNotificationInfo)
             text = "\(UserText.criticalUpdateNotification) \(action)"
         case .regular:
-            icon = .updateNotificationInfo
+            icon = NSImage(resource: .updateNotificationInfo)
             text = "\(UserText.updateAvailableNotification) \(action)"
         }
 
         return await withCheckedContinuation { continuation in
             resultContinuation = continuation
 
-            // Always apply a cooldown (not a permanent dismissal) when the popover is dismissed
-            let cooldown: PromoResult = .ignored(cooldown: .days(7))
+            // Always apply a cooldown (not a permanent dismissal) when the popover is dismissed or actioned
+            let cooldown: TimeInterval = .days(7)
+            let actioned: PromoResult = .actioned(cooldown: cooldown)
+            let ignored: PromoResult = .ignored(cooldown: cooldown)
 
             let popover = PopoverMessageViewController(
                 message: text,
@@ -109,15 +111,15 @@ final class UpdateAvailablePromoDelegate: InternalPromoDelegate, UpdateNotificat
                 buttonAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.updateController?.openUpdatesPage()
-                    self?.resolve(with: cooldown)
+                    self?.resolve(with: actioned)
                 },
                 clickAction: { [weak self] in
                     self?.pixelFiring?.fire(UpdateFlowPixels.updateNotificationTapped)
                     self?.updateController?.openUpdatesPage()
-                    self?.resolve(with: cooldown)
+                    self?.resolve(with: actioned)
                 },
                 onDismiss: { [weak self] in
-                    self?.resolve(with: cooldown)
+                    self?.resolve(with: ignored)
                 }
             )
             if #available(macOS 26.0, *) {

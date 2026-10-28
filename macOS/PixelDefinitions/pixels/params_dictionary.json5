@@ -45,6 +45,7 @@
             "vpnSystemExtension",
             "vpnSystemExtensionAppStore",
             "vpnProxyExtension",
+            "vpnSystemExtensionProxy",
             "dbpBackgroundAgent"
         ]
     },
@@ -467,6 +468,13 @@
             "funnel_duckai_macos__unknown"
         ]
     },
+    "subscriptionPageOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Origin from the subscription page URL, sent as-is. Can include web-defined origins in addition to the `subscriptionFunnelOrigin` values.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+    },
     "onboardingEventType": {
         "key": "event",
         "type": "string",
@@ -524,7 +532,7 @@
     "aiChatConversationSource": {
         "key": "source",
         "type": "string",
-        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'duckduckgo-homepage' is a conversation the duckduckgo.com homepage handed to Duck.ai from its own search/Duck.ai toggle; no native surface is involved, so it is read from the origin=funnel_home_website marker duckduckgo.com puts on the chat URL when it does so, and like every other value it is fixed when the chat loads.'unattributed' means no surface was recorded \u2014 direct navigation to duck.ai, a session restored at startup, a bookmark or external link, or an entry point not yet instrumented \u2014 so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
+        "description": "The user-facing surface that opened the Duck.ai conversation this prompt was submitted in. Recorded just before the chat opens and consumed once when it loads, so for an ongoing chat it describes how that chat was originally opened, not where this particular prompt came from. Values name the specific control that was used, down to the individual menu item, so a voice, image-generation or resumed-chat start stays attributable to the surface it came from (e.g. 'new-tab-page-voice', 'main-menu-image', 'omnibar-recent-chat'). The 'contextual-*' values are page actions on the current page or selection; 'address-bar-context-menu' is the right-click menu on the address-bar Duck.ai button and is unrelated to them. 'duckduckgo-homepage' is a conversation the duckduckgo.com homepage handed to Duck.ai from its own search/Duck.ai toggle; no native surface is involved, so it is read from the origin=funnel_home_website marker duckduckgo.com puts on the chat URL when it does so, and like every other value it is fixed when the chat loads. 'settings' covers the Duck.ai buttons in both the AI Features and the subscription's Duck.ai settings panes, and 'more-options-menu-open-duck-ai' also covers the Duck.ai item in More Options' subscription submenu. 'subscription-page' is the Duck.ai link on the subscription welcome page. The 'direct-*' values are a navigation straight to duck.ai rather than a Duck.ai surface: typed in the address bar or picked from its suggestions, a bookmark or favorite, a history entry, a link from another app, a link on a web page, or typed in the New Tab Page search box; a surface's own stamp wins over them. 'duck-ai-link' and 'duckduckgo-link' are a link on a Duck.ai or duckduckgo.com page that opened Duck.ai, other than the homepage handoff; a surface's own stamp wins over them too. 'session-restore', 'reopened-tab' and 'tab-copy' are a chat continued in a tab the browser re-created from an earlier one: restored with the previous session (tabs, pinned tabs, and sidebar or floating chats), reopened after it was closed (Reopen Closed Tab, Recently Closed, a reopened window), or duplicated. They label only the tab's first page load, and like 'direct-*' a surface's own stamp wins over them. 'unattributed' means nothing above explains the chat, such as an entry point not yet instrumented, so it measures the attribution gap rather than naming a real entry point. Mirrors AIChatConversationSource in SharedPackages/AIChat.",
         "enum": [
             "tab-bar-button",
             "ask-about-page",
@@ -545,6 +553,7 @@
             "prompt-bar-voice",
             "main-menu-file-new-chat",
             "main-menu-sidebar",
+            "main-menu-ask-about-page",
             "main-menu-open-duck-ai",
             "main-menu-new-chat",
             "main-menu-view-all-chats",
@@ -564,47 +573,44 @@
             "serp",
             "sidebar-handoff",
             "settings",
+            "subscription-page",
+            "direct-typed",
+            "direct-suggestion",
+            "direct-bookmark",
+            "direct-favorite",
+            "direct-history",
+            "direct-external",
+            "direct-link",
+            "direct-new-tab-page",
             "duckduckgo-homepage",
+            "duck-ai-link",
+            "duckduckgo-link",
+            "session-restore",
+            "reopened-tab",
+            "tab-copy",
             "unattributed"
         ]
+    },
+    "aiChatPromptSurface": {
+        "key": "surface",
+        "type": "string",
+        "description": "Where this prompt was submitted, unlike 'source', which says how the chat was opened. 'address_bar', 'new_tab_page' and 'prompt_bar' are native composers that hand Duck.ai a prompt to send on its own; only the prompt they handed over reports them. Every other prompt reports where the chat is shown: 'duck_ai' for a Duck.ai tab, 'sidebar' for the sidebar, 'floating' for a sidebar chat detached into its own window.",
+        "enum": ["address_bar", "new_tab_page", "prompt_bar", "duck_ai", "sidebar", "floating"]
+    },
+    "aiChatFirstPromptNewInstall": {
+        "key": "first_prompt_new_install",
+        "type": "boolean",
+        "description": "Present (true) only when this is the first Duck.ai prompt ever submitted on a brand-new install. Omitted on every later prompt. Installs that predate this parameter are marked at launch, from their existing install statistics, so updating users never report it. Mirrors iOS's first_prompt_new_install."
     },
     "extension_context_loaded": {
         "key": "context_loaded",
         "type": "boolean",
         "description": "Whether the CPM extension context was loaded when the failure was measured."
     },
-    "memory_pressure_critical": {
-        "key": "critical_memory_age",
-        "type": "string",
-        "description": "Time bucket since the most recent critical memory-pressure notification.",
-        "enum": ["none", "1m", "5m", "30m", "over_30"]
-    },
-    "network_process_restarted": {
-        "key": "network_restarted",
-        "type": "boolean",
-        "description": "Whether the network process restarted before the CPM failure."
-    },
-    "extension_context_errors": {
-        "key": "context_errors",
-        "type": "string",
-        "description": "Sanitized CPM extension-context error domains and numeric codes, or none."
-    },
-    "background_view_create_count": {
-        "key": "bg_view_creations",
-        "type": "string",
-        "description": "Bucketed number of CPM background web views created.",
-        "enum": ["0", "1", "2", "3_to_5", "over_5"]
-    },
     "background_view_alive": {
         "key": "bg_view_alive",
         "type": "boolean",
         "description": "Whether the current CPM background web view was alive."
-    },
-    "background_view_leaked_count": {
-        "key": "bg_view_leaked_count",
-        "type": "string",
-        "description": "Bucketed number of CPM background web views no longer referenced by WebKit but still alive.",
-        "enum": ["0", "1", "2", "3_to_5", "over_5"]
     },
     "background_web_process_alive": {
         "key": "bg_process_alive",
@@ -636,39 +642,64 @@
         "type": "boolean",
         "description": "Whether WebKit reported the CPM background web process as responsive."
     },
-    "cpm_app_version_change": {
-        "key": "app_version_change",
-        "type": "string",
-        "enum": ["updated", "downgraded"],
-        "description": "Direction of the app version/build change since the previous observed launch. Fixed for the session; omitted when unchanged or no previous version is available. Versions are not sent."
-    },
-    "cpm_app_launch_age": {
-        "key": "app_launch_age",
-        "type": "string",
-        "description": "Time since app startup, not extension load or foregrounding. Buckets: 30s (<30s), 1m (30-<60s), 2m (1-<2m), 5m (2-<5m), 15m (5-<15m), over_15 (>=15m). Exact time is not sent.",
-        "enum": ["30s", "1m", "2m", "5m", "15m", "over_15"]
-    },
-    "cpm_recovery_from": {
-        "key": "recovery_from",
-        "type": "string",
-        "enum": ["initialization_failed", "messaging_stuck"],
-        "description": "Whether the recovered episode had only an initialization failure or had been confirmed stuck."
-    },
     "background_events": {
         "key": "bg_events",
         "type": "string",
-        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), process death, graveyard hold/release, context unload and extension file removal failures with error descriptors. Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
+        "description": "Bounded, sanitized CPM lifecycle timeline, oldest first, including extension_updated (successful replacement of an installed CPM version, not first install or reload; latest update survives context reloads), base_url_changed (local comparison between context loads; no URL or identifier is sent), process death, graveyard hold/release, context unload and extension file removal failures with error descriptors, and interruption (the app resumed from background or system sleep; one event for both). Each token@age entry uses the first matching age bucket relative to the snapshot: 30s (<30s), 1m (<60s), 2m (<120s), 5m (<300s), 15m (<900s), over_15 (>=900s). Order and repeated events within a bucket are preserved; exact ages are not sent."
     },
-    "background_graveyard_enabled": {
-        "key": "background_graveyard_enabled",
-        "type": "boolean",
-        "description": "Whether graveyard treatment was enabled for the background-process termination associated with this CPM health episode."
+    "background_load_error_app_state": {
+        "key": "bg_load_error_app_state",
+        "type": "string",
+        "enum": ["active", "inactive", "background"],
+        "description": "App state captured when the first newly observed WebKit error 6 was attributed to the affected background-load attempt. Only sent when that error is in the first-failure snapshot and state is known; macOS reports active/inactive. Errors observed after the first failure are not included in this episode. Not a generic app-state dimension."
+    },
+    "background_load_error_after": {
+        "key": "bg_load_error_after",
+        "type": "string",
+        "enum": ["under_5s", "5s_to_25s", "25s_to_35s", "over_35s"],
+        "description": "Time from the affected background view's creation to the first newly observed WebKit error 6 for that load attempt: <5 s, 5-<25 s, 25-<35 s, >=35 s. Only sent when the first-failure snapshot contains an attributed error 6 with known timing; cleared for a replacement view/context. Historical error-list entries and errors observed after the first failure do not qualify for the episode report."
+    },
+    "background_view_age": {
+        "key": "bg_view_age",
+        "type": "string",
+        "enum": ["under_4s", "4s_to_8s", "8s_to_30s", "30s_to_2m", "over_2m"],
+        "description": "Age of the current background view at the first failure: <4 s, 4-<8 s, 8-<30 s, 30-<120 s, >=120 s. Omitted when no current view exists."
+    },
+    "background_ready_after": {
+        "key": "bg_ready_after",
+        "type": "string",
+        "enum": ["none", "pending", "failed", "under_1s", "1s_to_4s", "4s_to_10s", "10s_to_30s", "over_30s"],
+        "description": "Background-load evidence frozen at the first failure. none means no current view and no attributed error 6 for the latest attempt. failed includes an attributed error 6 after its view disappears, until a new view/context resets attribution. pending means loading had not completed at the snapshot; it may complete or fail later. Load fields are not refreshed when the episode is reported, so later errors are omitted. Completion buckets: <1 s, 1-<4 s, 4-<10 s, 10-<30 s, >=30 s. Omitted when observation is disabled or unavailable; readiness does not prove initResp delivery."
     },
     "web_extension_type": {
         "key": "extension_type",
         "type": "string",
         "description": "Web extension type whose reload failed.",
         "enum": ["embedded", "darkMode", "adBlocking", "searchToken", "unknown"]
+    },
+    "web_extension": {
+        "key": "extension",
+        "type": "string",
+        "description": "The extension's name in the Chrome Web Store catalog, or other for an extension the catalog doesn't list. Keep in sync with ExtensionsCatalogSubfeature.",
+        "enum": ["bitwarden", "onePassword", "lastPass", "other"]
+    },
+    "web_extension_version": {
+        "key": "extension_version",
+        "type": "string",
+        "description": "The extension's version from its manifest, one to four numbers separated by dots, or other when it has a different format.",
+        "pattern": "^([0-9]{1,9}(\\.[0-9]{1,9}){0,3}|other)$"
+    },
+    "web_extension_missing_api_count": {
+        "key": "missing_api_count",
+        "type": "integer",
+        "description": "How many distinct Chrome or JavaScript APIs the extension used that are missing.",
+        "minimum": 0
+    },
+    "web_extension_unsupported_url_count": {
+        "key": "unsupported_url_count",
+        "type": "integer",
+        "description": "How many distinct Chrome pages, such as chrome://password-manager, the extension tried to open without a DuckDuckGo counterpart.",
+        "minimum": 0
     },
     "web_extension_reload_trigger": {
         "key": "reload_trigger",
@@ -681,5 +712,40 @@
         "type": "string",
         "description": "Reload operation that failed.",
         "enum": ["unload", "load", "light_load", "full_load", "fallback_load"]
+    },
+    "eventHubAttributionPeriod": {
+        "key": "attributionPeriod",
+        "type": "integer",
+        "description": "Unix timestamp (UTC seconds) denoting the start of the measurement period"
+    },
+    "eventHubBucketedCount": {
+        "key": "count",
+        "type": "string",
+        "description": "Bucketed count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubYouTubeLoginState": {
+        "key": "loginState",
+        "type": "string",
+        "description": "The user's YouTube login state, as percent-encoded JSON, recorded as the last value seen during the period",
+        "enum": ["%22unknown%22", "%22logged-in%22", "%22logged-out%22", "%22premium%22"]
+    },
+    "eventHubBaseline": {
+        "key": "baseline",
+        "type": "string",
+        "description": "Bucketed count of periods in which EventHub ran. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdwallCount": {
+        "key": "adwallCount",
+        "type": "string",
+        "description": "Bucketed adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
+    },
+    "eventHubAdmiralAdwallCount": {
+        "key": "admiralAdwallCount",
+        "type": "string",
+        "description": "Bucketed Admiral-served adwall detection count for the period. Bucket boundaries are set by the eventHub remote config",
+        "pattern": "^\\d+(-\\d+|\\+)?$"
     }
 }

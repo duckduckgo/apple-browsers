@@ -605,7 +605,11 @@ class AutofillLoginListViewModel: ObservableObject {
         do {
             // We need to make a new account object. If we try to use the old one, secure vault will try to process it as an update, which will fail
             let oldAccount = cachedDeletedCredentials.account
-            let newAccount = SecureVaultModels.WebsiteAccount(title: oldAccount.title, username: oldAccount.username, domain: oldAccount.domain)
+            let newAccount = SecureVaultModels.WebsiteAccount(title: oldAccount.title,
+                                                             username: oldAccount.username,
+                                                             domain: oldAccount.domain,
+                                                             notes: oldAccount.notes,
+                                                             lastUsed: oldAccount.lastUsed)
             cachedDeletedCredentials.account = newAccount
             try secureVault.storeWebsiteCredentials(cachedDeletedCredentials)
             clearUndoCache()

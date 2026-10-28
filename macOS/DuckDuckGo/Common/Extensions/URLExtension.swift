@@ -168,6 +168,8 @@ extension URL {
     static let favicons = URL(string: "duck://favicons")!
     /// Debug-only permissions inspector page (Debug ▸ Permissions ▸ Inspect). Served by `DuckURLSchemeHandler`.
     static let permissions = URL(string: "duck://permissions")!
+    /// Internal extensions page with their keyboard shortcuts. Served by `DuckURLSchemeHandler`.
+    static let webExtensions = URL(string: "duck://extensions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
     static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
@@ -206,6 +208,11 @@ extension URL {
     /// `duck://permissions` (and its sub-paths) — the debug-only permissions inspector page.
     var isPermissions: Bool {
         return navigationalScheme == .duck && host == URL.permissions.host
+    }
+
+    /// `duck://extensions` (and its sub-paths) — the internal extensions page.
+    var isWebExtensions: Bool {
+        return navigationalScheme == .duck && host == URL.webExtensions.host
     }
 
     enum Invalid {
@@ -680,6 +687,18 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
     }
 
+    static var aiChatPrivacy: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy")!
+    }
+
+    static var aiChatUploadFilesAndImagesPrivacy: URL {
+        return URL(string: "\(aiChatPrivacy.absoluteString)#how-we-moderate-uploaded-images-and-files")!
+    }
+
+    static var aiChatPrivacyTerms: URL {
+        return URL(string: "\(base)/duckai/privacy-terms")!
+    }
+
     static var aiChatHelpPages: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
     }
@@ -911,6 +930,8 @@ extension URL {
     // MARK: - System Settings
 
     static var fullDiskAccess = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+
+    static var screenRecordingSystemSettings = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
 
     static var touchIDAndPassword = URL(string: "x-apple.systempreferences:com.apple.preferences.password")!
 

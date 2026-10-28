@@ -18,6 +18,10 @@
 
 public extension DesignSystemImages {
     enum Glyphs {
+        public enum Size10 {
+            public static var chevronRight: DesignSystemImage { .init(resource: .chevronRight10) }
+        }
+
         public enum Size12 {
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility12) }
             public static var add: DesignSystemImage { .init(resource: .add12) }
@@ -149,10 +153,12 @@ public extension DesignSystemImages {
         }
 
         public enum Size16 {
+            public static var returnTo: DesignSystemImage { .init(resource: .returnTo16) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneral16) }
             public static var priceTag: DesignSystemImage { .init(resource: .priceTag16) }
             public static var accessibility: DesignSystemImage { .init(resource: .accessibility16) }
             public static var add: DesignSystemImage { .init(resource: .add16) }
+            public static var addCircle: DesignSystemImage { .init(resource: .addCircle16) }
             public static var addToHome: DesignSystemImage { .init(resource: .addToHome16) }
             public static var addToTaskbar: DesignSystemImage { .init(resource: .addToTaskbar16) }
             public static var addressBarTop: DesignSystemImage { .init(resource: .addressBarPositionTop16) }
@@ -388,6 +394,7 @@ public extension DesignSystemImages {
             public static var wand: DesignSystemImage { .init(resource: .wand16) }
             public static var weather: DesignSystemImage { .init(resource: .weather16) }
             public static var windowNew: DesignSystemImage { .init(resource: .windowNew16) }
+            public static var windows: DesignSystemImage { .init(resource: .windows16) }
             public static var windowsAndTabs: DesignSystemImage { .init(resource: .windowsAndTabs16) }
             public static var zoomActualSize: DesignSystemImage { .init(resource: .zoomActualSize16) }
             public static var zoomIn: DesignSystemImage { .init(resource: .zoomIn16) }
@@ -542,6 +549,7 @@ public extension DesignSystemImages {
             public static var eye: DesignSystemImage { .init(resource: .eye24) }
             public static var eyeClosed: DesignSystemImage { .init(resource: .eyeClosed24) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation24) }
+            public static var exclamationRecolorableInvert: DesignSystemImage { .init(resource: .exclamationRecolorableInvert24) }
             public static var exclamationSolid: DesignSystemImage { .init(resource: .exclamationSolid24) }
             public static var expand: DesignSystemImage { .init(resource: .expand24) }
             public static var favorite: DesignSystemImage { .init(resource: .favorite24) }

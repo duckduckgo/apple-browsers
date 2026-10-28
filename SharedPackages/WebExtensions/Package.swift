@@ -36,6 +36,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../Common"),
+        .package(path: "../DDGError"),
         .package(path: "../Persistence"),
         .package(path: "../BrowserServicesKit"),
         .package(path: "../Networking"),
@@ -47,16 +48,19 @@ let package = Package(
             name: "WebExtensions",
             dependencies: [
                 .product(name: "Common", package: "Common"),
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Networking", package: "Networking"),
                 .product(name: "Persistence", package: "Persistence"),
+                .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
                 "ZIPFoundation",
             ],
             resources: [
-                .copy("BundledWebExtensions")
+                .copy("BundledWebExtensions"),
+                .copy("Autoconsent/site-buckets.json"),
             ]
         ),
         .target(
@@ -70,6 +74,7 @@ let package = Package(
             dependencies: [
                 "WebExtensions",
                 "WebExtensionsTestSupport",
+                "ZIPFoundation",
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "PrivacyConfigTestsUtils", package: "BrowserServicesKit")
             ]

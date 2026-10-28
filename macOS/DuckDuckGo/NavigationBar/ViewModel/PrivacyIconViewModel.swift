@@ -78,9 +78,9 @@ struct PrivacyIconViewModel {
     static var shadowTrackerImage: CGImage! {
         {
             if NSApp.effectiveAppearance.name == .aqua {
-                NSImage.shadowtracker
+                NSImage(resource: .shadowtracker)
             } else {
-                NSImage.shadowtrackerDark
+                NSImage(resource: .shadowtrackerDark)
             }
         }().cgImage(forProposedRect: nil, context: .current, hints: nil)
     }
@@ -88,9 +88,9 @@ struct PrivacyIconViewModel {
     static var blankTrackerImage: CGImage! {
         {
             if NSApp.effectiveAppearance.name == .aqua {
-                NSImage.blanktracker
+                NSImage(resource: .blanktracker)
             } else {
-                NSImage.blanktrackerDark
+                NSImage(resource: .blanktrackerDark)
             }
         }().cgImage(forProposedRect: nil, context: .current, hints: nil)
     }
@@ -128,91 +128,91 @@ struct PrivacyIconViewModel {
 
     private static func aquaLogo(for trackerNetwork: TrackerNetwork) -> NSImage? {
         switch trackerNetwork {
-        case .adform:            .adform
-        case .adobe:             .adobe
-        case .amazon:            .amazon
-        case .amobee:            .amobee
-        case .appnexus:          .appnexus
-        case .centro:            .centro
-        case .cloudflare:        .cloudflare
-        case .comscore:          .comscore
-        case .conversant:        .conversant
-        case .criteo:            .criteo
-        case .dataxu:            .dataxu
-        case .facebook:          .facebook
-        case .google:            .google
-        case .hotjar:            .hotjar
-        case .indexexchange:     .indexexchange
-        case .iponweb:           .iponweb
-        case .linkedin:          .linkedin
-        case .lotame:            .lotame
-        case .mediamath:         .mediamath
-        case .microsoft:         .microsoft
-        case .neustar:           .neustar
-        case .newrelic:          .newrelic
-        case .nielsen:           .nielsen
-        case .openx:             .openx
-        case .oracle:            .oracle
-        case .pubmatic:          .pubmatic
-        case .qwantcast:         .qwantcast
-        case .rubicon:           .rubicon
-        case .salesforce:        .salesforce
-        case .smartadserver:     .smartadserver
-        case .spotx:             .spotx
-        case .stackpath:         .stackpath
-        case .taboola:           .taboola
-        case .tapad:             .tapad
-        case .theTradeDesk:      .thetradedesk
-        case .towerdata:         .towerdata
-        case .twitter:           .twitter
-        case .verizonMedia:      .verizonmedia
-        case .windows:           .windows
-        case .xaxis:             .xaxis
+        case .adform:            NSImage(resource: .adform)
+        case .adobe:             NSImage(resource: .adobe)
+        case .amazon:            NSImage(resource: .amazon)
+        case .amobee:            NSImage(resource: .amobee)
+        case .appnexus:          NSImage(resource: .appnexus)
+        case .centro:            NSImage(resource: .centro)
+        case .cloudflare:        NSImage(resource: .cloudflare)
+        case .comscore:          NSImage(resource: .comscore)
+        case .conversant:        NSImage(resource: .conversant)
+        case .criteo:            NSImage(resource: .criteo)
+        case .dataxu:            NSImage(resource: .dataxu)
+        case .facebook:          NSImage(resource: .facebook)
+        case .google:            NSImage(resource: .google)
+        case .hotjar:            NSImage(resource: .hotjar)
+        case .indexexchange:     NSImage(resource: .indexexchange)
+        case .iponweb:           NSImage(resource: .iponweb)
+        case .linkedin:          NSImage(resource: .linkedin)
+        case .lotame:            NSImage(resource: .lotame)
+        case .mediamath:         NSImage(resource: .mediamath)
+        case .microsoft:         NSImage(resource: .microsoft)
+        case .neustar:           NSImage(resource: .neustar)
+        case .newrelic:          NSImage(resource: .newrelic)
+        case .nielsen:           NSImage(resource: .nielsen)
+        case .openx:             NSImage(resource: .openx)
+        case .oracle:            NSImage(resource: .oracle)
+        case .pubmatic:          NSImage(resource: .pubmatic)
+        case .qwantcast:         NSImage(resource: .qwantcast)
+        case .rubicon:           NSImage(resource: .rubicon)
+        case .salesforce:        NSImage(resource: .salesforce)
+        case .smartadserver:     NSImage(resource: .smartadserver)
+        case .spotx:             NSImage(resource: .spotx)
+        case .stackpath:         NSImage(resource: .stackpath)
+        case .taboola:           NSImage(resource: .taboola)
+        case .tapad:             NSImage(resource: .tapad)
+        case .theTradeDesk:      NSImage(resource: .thetradedesk)
+        case .towerdata:         NSImage(resource: .towerdata)
+        case .twitter:           NSImage(resource: .twitter)
+        case .verizonMedia:      NSImage(resource: .verizonmedia)
+        case .windows:           NSImage(resource: .windows)
+        case .xaxis:             NSImage(resource: .xaxis)
         }
     }
 
     private static func darkLogo(for trackerNetwork: TrackerNetwork) -> NSImage? {
         switch trackerNetwork {
-        case .adform:            .adformDark
-        case .adobe:             .adobeDark
-        case .amazon:            .amazonDark
-        case .amobee:            .amobeeDark
-        case .appnexus:          .appnexusDark
-        case .centro:            .centroDark
-        case .cloudflare:        .cloudflareDark
-        case .comscore:          .comscoreDark
-        case .conversant:        .conversantDark
-        case .criteo:            .criteoDark
-        case .dataxu:            .dataxuDark
-        case .facebook:          .facebookDark
-        case .google:            .googleDark
-        case .hotjar:            .hotjarDark
-        case .indexexchange:     .indexexchangeDark
-        case .iponweb:           .iponwebDark
-        case .linkedin:          .linkedinDark
-        case .lotame:            .lotameDark
-        case .mediamath:         .mediamathDark
-        case .microsoft:         .microsoftDark
-        case .neustar:           .neustarDark
-        case .newrelic:          .newrelicDark
-        case .nielsen:           .nielsenDark
-        case .openx:             .openxDark
-        case .oracle:            .oracleDark
-        case .pubmatic:          .pubmaticDark
-        case .qwantcast:         .qwantcastDark
-        case .rubicon:           .rubiconDark
-        case .salesforce:        .salesforceDark
-        case .smartadserver:     .smartadserverDark
-        case .spotx:             .spotxDark
-        case .stackpath:         .stackpathDark
-        case .taboola:           .taboolaDark
-        case .tapad:             .tapadDark
-        case .theTradeDesk:      .thetradedeskDark
-        case .towerdata:         .towerdataDark
-        case .twitter:           .twitterDark
-        case .verizonMedia:      .verizonmediaDark
-        case .windows:           .windowsDark
-        case .xaxis:             .xaxisDark
+        case .adform:            NSImage(resource: .adformDark)
+        case .adobe:             NSImage(resource: .adobeDark)
+        case .amazon:            NSImage(resource: .amazonDark)
+        case .amobee:            NSImage(resource: .amobeeDark)
+        case .appnexus:          NSImage(resource: .appnexusDark)
+        case .centro:            NSImage(resource: .centroDark)
+        case .cloudflare:        NSImage(resource: .cloudflareDark)
+        case .comscore:          NSImage(resource: .comscoreDark)
+        case .conversant:        NSImage(resource: .conversantDark)
+        case .criteo:            NSImage(resource: .criteoDark)
+        case .dataxu:            NSImage(resource: .dataxuDark)
+        case .facebook:          NSImage(resource: .facebookDark)
+        case .google:            NSImage(resource: .googleDark)
+        case .hotjar:            NSImage(resource: .hotjarDark)
+        case .indexexchange:     NSImage(resource: .indexexchangeDark)
+        case .iponweb:           NSImage(resource: .iponwebDark)
+        case .linkedin:          NSImage(resource: .linkedinDark)
+        case .lotame:            NSImage(resource: .lotameDark)
+        case .mediamath:         NSImage(resource: .mediamathDark)
+        case .microsoft:         NSImage(resource: .microsoftDark)
+        case .neustar:           NSImage(resource: .neustarDark)
+        case .newrelic:          NSImage(resource: .newrelicDark)
+        case .nielsen:           NSImage(resource: .nielsenDark)
+        case .openx:             NSImage(resource: .openxDark)
+        case .oracle:            NSImage(resource: .oracleDark)
+        case .pubmatic:          NSImage(resource: .pubmaticDark)
+        case .qwantcast:         NSImage(resource: .qwantcastDark)
+        case .rubicon:           NSImage(resource: .rubiconDark)
+        case .salesforce:        NSImage(resource: .salesforceDark)
+        case .smartadserver:     NSImage(resource: .smartadserverDark)
+        case .spotx:             NSImage(resource: .spotxDark)
+        case .stackpath:         NSImage(resource: .stackpathDark)
+        case .taboola:           NSImage(resource: .taboolaDark)
+        case .tapad:             NSImage(resource: .tapadDark)
+        case .theTradeDesk:      NSImage(resource: .thetradedeskDark)
+        case .towerdata:         NSImage(resource: .towerdataDark)
+        case .twitter:           NSImage(resource: .twitterDark)
+        case .verizonMedia:      NSImage(resource: .verizonmediaDark)
+        case .windows:           NSImage(resource: .windowsDark)
+        case .xaxis:             NSImage(resource: .xaxisDark)
         }
     }
 }

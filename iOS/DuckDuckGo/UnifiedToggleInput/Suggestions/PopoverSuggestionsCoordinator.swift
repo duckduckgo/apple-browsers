@@ -123,9 +123,10 @@ final class PopoverSuggestionsCoordinator {
 
     /// Tears down both surfaces (on dismiss or tab switch) so the next session rebuilds fresh.
     func teardown() {
+        // Cleared first: tearing the surfaces down reports a content change that re-presents the current surface.
+        lastSurface = .none
         tray?.teardownPopoverSuggestions()
         duckAIQuerySubject = nil
-        lastSurface = .none
     }
 
     /// Builds the search + Duck.ai surfaces once per focus session (idempotent). Search is built by the

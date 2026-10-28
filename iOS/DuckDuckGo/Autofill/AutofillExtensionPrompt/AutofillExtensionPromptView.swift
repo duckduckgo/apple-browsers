@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import DesignResourcesKitIcons
 
 struct AutofillExtensionPromptView: View {
 
@@ -81,11 +80,7 @@ struct AutofillExtensionPromptView: View {
         @Environment(\.colorScheme) private var colorScheme
 
         private var lottieFileName: String {
-            if AppRebrand.isAppRebranded() {
-                colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
-            } else {
-                colorScheme == .dark ? "autofill-extension-dark-legacy" : "autofill-extension-light-legacy"
-            }
+            colorScheme == .dark ? "autofill-extension-dark" : "autofill-extension-light"
         }
 
         var body: some View {

@@ -25,6 +25,8 @@ import BrowserServicesKit
 import PrivacyConfig
 import PrivacyDashboard
 import Common
+import DDGNavigation
+import FeatureFlags_iOS
 import FoundationExtensions
 import os.log
 import PixelExperimentKit
@@ -38,11 +40,15 @@ final class PrivacyDashboardViewController: UIViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingManager: ContentBlockerRulesManager
+    private let networkSignalsProvider: NetworkSignalsProviding
+    private let memoryPressureProvider: MemoryPressureProviding
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let featureFlagger: FeatureFlagger
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
+    private lazy var brokenSiteReporter: BrokenSiteReporter = { [featureFlagger] in
         BrokenSiteReporter(pixelHandler: { parameters in
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: parameters, featureFlagger: featureFlagger)
             PixelKit.fire(Pixel.Event.brokenSiteReport,
                           options: PixelKit.Options(additionalParameters: parameters,
                                                     allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters))
@@ -76,7 +82,10 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          networkSignalsProvider: NetworkSignalsProviding = AppDependencyProvider.shared.networkSignalsProvider,
+          memoryPressureProvider: MemoryPressureProviding = AppDependencyProvider.shared.memoryPressureProvider,
+          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -87,8 +96,11 @@ final class PrivacyDashboardViewController: UIViewController {
                                                                 eventMapping: privacyDashboardEvents)
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
+        self.networkSignalsProvider = networkSignalsProvider
+        self.memoryPressureProvider = memoryPressureProvider
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.featureFlagger = featureFlagger
 
         super.init(nibName: nil, bundle: nil)
 
@@ -174,8 +186,7 @@ final class PrivacyDashboardViewController: UIViewController {
 extension PrivacyDashboardViewController {
     
     private func decorate() {
-        // Enforce default color palette here until PrivacyDashboard can support different color sets
-        view.backgroundColor = UIColor(singleUseColor: .privacyDashboardBackground, palette: .default)
+        view.backgroundColor = UIColor(singleUseColor: .privacyDashboardBackground)
         privacyDashboardController.theme = .init(traitCollection)
     }
 
@@ -254,6 +265,10 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
         }
     }
 
+    func privacyDashboardControllerDidShowBrokenSiteReport(_ privacyDashboardController: PrivacyDashboardController) {
+        networkSignalsProvider.prefetchSignals()
+    }
+
     func privacyDashboardControllerDidRequestShowAlertForMissingDescription(_ privacyDashboardController: PrivacyDashboardController) {
         let alert = UIAlertController(title: UserText.brokenSiteReportMissingDescriptionAlertTitle,
                                       message: UserText.brokenSiteReportMissingDescriptionAlertDescription,
@@ -312,6 +327,7 @@ extension PrivacyDashboardViewController {
         let adBlockingExtensionScriptletsVersion: String?
         let cpmExtensionLoaded: Bool
         let cpmExtensionDroppedCallbacks: Int
+        let pageSignals: PageSignals?
     }
     
     enum BrokenSiteReportError: Error {
@@ -337,7 +353,11 @@ extension PrivacyDashboardViewController {
             throw BrokenSiteReportError.failedToFetchTheCurrentWebsiteInfo
         }
 
-        let breakageReportData = await collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        async let asyncBreakageReportData = collectBreakageReportData(breakageAdditionalInfo: breakageAdditionalInfo)
+        async let asyncNetworkSignals = networkSignalsProvider.currentSignals()
+        async let asyncDNSResolution = resolveDNS(siteURL: breakageAdditionalInfo.currentURL)
+
+        let (breakageReportData, networkSignals, dnsResolution) = await (asyncBreakageReportData, asyncNetworkSignals, asyncDNSResolution)
 
         let privacyAwareWebVitals = breakageReportData?.privacyAwarePerformanceMetrics
         let jsPerformance = breakageReportData?.jsPerformance
@@ -359,6 +379,9 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = breakageAdditionalInfo.httpStatusCode {
             statusCodes = [httpStatusCode]
         }
+
+        let pageSignalsSettings = privacyConfigurationManager.privacyConfig.settings(for: iOSBrowserConfigSubfeature.pageSignals)
+        let pageSignalsEntryLimit = PageSignalsSettings.maxEntries(from: pageSignalsSettings)
 
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
@@ -395,7 +418,21 @@ extension PrivacyDashboardViewController {
                                 isAfterTabTermination: breakageAdditionalInfo.isAfterTabTermination,
                                 breakageData: breakageData,
                                 loadedWebExtensions: breakageAdditionalInfo.loadedWebExtensions,
-                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion)
+                                adBlockingExtensionScriptletsVersion: breakageAdditionalInfo.adBlockingExtensionScriptletsVersion,
+                                networkSignals: networkSignals,
+                                dnsResolution: dnsResolution,
+                                memoryPressure: memoryPressureProvider.currentLevel,
+                                pageSignals: breakageAdditionalInfo.pageSignals,
+                                pageSignalsEntryLimit: pageSignalsEntryLimit)
+    }
+
+    /// `nil` when page signals are disabled or the URL has no host.
+    private func resolveDNS(siteURL: URL) async -> DNSResolution? {
+        guard featureFlagger.isFeatureOn(.pageSignals), let host = siteURL.host else {
+            return nil
+        }
+
+        return await DNSBlockDetector().resolution(for: host)
     }
 
 }

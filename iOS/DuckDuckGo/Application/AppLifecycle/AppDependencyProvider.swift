@@ -34,6 +34,7 @@ import PixelKit
 import WideEvent
 import PixelExperimentKit
 import PrivacyConfig
+import PrivacyDashboard
 import Networking
 import Configuration
 import Network
@@ -48,6 +49,7 @@ protocol DependencyProvider {
     var internalUserDecider: InternalUserDecider { get }
     var featureFlagger: FeatureFlagger { get }
     var isSitePermissionsEnabled: Bool { get }
+    var findInPageImplementation: FindInPageImplementation { get }
     var configurationURLProvider: CustomConfigurationURLProviding { get }
     var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
     var storageCache: StorageCache { get }
@@ -59,6 +61,8 @@ protocol DependencyProvider {
     var pageRefreshMonitor: PageRefreshMonitor { get }
     var vpnFeatureVisibility: DefaultNetworkProtectionVisibility { get }
     var networkProtectionTunnelController: NetworkProtectionTunnelController { get }
+    var networkSignalsProvider: NetworkSignalsProviding { get }
+    var memoryPressureProvider: MemoryPressureProviding { get }
     var connectionObserver: ConnectionStatusObserver { get }
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var connectionErrorObserver: ConnectionErrorObserver { get }
@@ -125,6 +129,7 @@ final class AppDependencyProvider: DependencyProvider {
     let internalUserDecider: InternalUserDecider = ContentBlocking.shared.privacyConfigurationManager.internalUserDecider
     let featureFlagger: FeatureFlagger
     let isSitePermissionsEnabled: Bool
+    let findInPageImplementation: FindInPageImplementation
     let configurationURLProvider: CustomConfigurationURLProviding
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
@@ -147,6 +152,8 @@ final class AppDependencyProvider: DependencyProvider {
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionTunnelController: NetworkProtectionTunnelController
+    let networkSignalsProvider: NetworkSignalsProviding
+    let memoryPressureProvider: MemoryPressureProviding
 
     let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
 
@@ -160,6 +167,19 @@ final class AppDependencyProvider: DependencyProvider {
     let internalFeedbackAttachmentsProvider = InternalFeedbackAttachmentsProvider()
     let internalFeedbackTabCountProvider = InternalFeedbackTabCountProvider()
     lazy var syncAutoRestoreDecisionManager: SyncAutoRestoreDecisionManaging = SyncAutoRestoreDecisionManager(featureFlagger: featureFlagger)
+
+    static func sitePermissionsEnabledAtLaunch(featureFlagger: FeatureFlagger,
+                                               isSupportedOSProvider: () -> Bool = isSitePermissionsSupportedOS) -> Bool {
+        isSupportedOSProvider() && featureFlagger.isFeatureOn(.sitePermissions)
+    }
+
+    private static func isSitePermissionsSupportedOS() -> Bool {
+        if #available(iOS 16.0, *) {
+            true
+        } else {
+            false
+        }
+    }
 
     private init() {
 
@@ -238,7 +258,8 @@ final class AppDependencyProvider: DependencyProvider {
         }
 
         // Injected scripts survive in loaded and cached documents, so every entry point uses the same launch-time value.
-        isSitePermissionsEnabled = featureFlagger.isFeatureOn(.sitePermissions)
+        isSitePermissionsEnabled = Self.sitePermissionsEnabledAtLaunch(featureFlagger: featureFlagger)
+        findInPageImplementation = FindInPageImplementation(featureFlagger: featureFlagger)
 
         // Configure PixelKit Experiments
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger,
@@ -374,6 +395,13 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               freeTrialConversionService: freeTrialConversionService
         )
 
+        networkSignalsProvider = NetworkSignalsProvider(
+            pathProvider: NetworkPathMonitor(),
+            vpnConnectivityIssuesProvider: TunnelConnectivityIssuesProvider(sessionProvider: networkProtectionTunnelController),
+            pingQualityProvider: HostnamePinger(host: NetworkSignalsProvider.pingHost, timeout: NetworkSignalsProvider.lookupTimeout),
+            isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
+
+        memoryPressureProvider = MemoryPressureMonitor(isEnabledProvider: { [featureFlagger] in featureFlagger.isFeatureOn(.pageSignals) })
     }
 
 }

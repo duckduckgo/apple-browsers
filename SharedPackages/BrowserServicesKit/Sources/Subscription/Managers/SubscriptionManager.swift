@@ -188,6 +188,12 @@ extension SubscriptionManager {
             return true
         }
     }
+
+    /// Whether the app knows the user's purchase eligibility: either they're eligible (possibly from a previous
+    /// launch's cached products) or this launch's App Store product fetch has finished.
+    public var isPurchaseEligibilityKnown: Bool {
+        isSubscriptionPurchaseEligible || hasResolvedAppStoreProducts
+    }
 }
 
 // MARK: -  Default implementation
@@ -711,7 +717,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
                                       failedRequest: FailedTokenRequestState,
                                       triggeringError: Error,
                                       notifyUI: Bool) async {
-        await signOut(notifyUI: notifyUI, userInitiated: false)
+        await clearSession(notifyUI: notifyUI, userInitiated: false, revokeOnServer: false)
 
         let data = SubscriptionAutomaticSignOutPixelData(recoveryOutcome: recoveryOutcome,
                                                          policy: failedRequest.policy,
@@ -803,9 +809,23 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     }
 
     public func signOut(notifyUI: Bool, userInitiated: Bool) async {
-        Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI ? "true" : "false"), User Initiated: \(userInitiated ? "true" : "false")")
+        await clearSession(notifyUI: notifyUI, userInitiated: userInitiated, revokeOnServer: true)
+    }
 
-        try? await oAuthClient.logout()
+    /// Signs the user out by removing the stored tokens, the cached subscription and the cached authentication state.
+    /// - Parameters:
+    ///   - notifyUI: Whether to publish the authentication state change so the UI updates.
+    ///   - userInitiated: Whether the user requested the sign-out. Only used when `notifyUI` is `true`.
+    ///   - revokeOnServer: Whether to also call `/logout`, which revokes every token issued from the same login,
+    ///     including the ones held by other processes. When `false`, only the local tokens are removed.
+    private func clearSession(notifyUI: Bool, userInitiated: Bool, revokeOnServer: Bool) async {
+        Logger.subscriptionTokensManagement.log("SignOut: Removing all traces of the subscription and account. Notify UI: \(notifyUI, privacy: .public), User Initiated: \(userInitiated, privacy: .public), Revoke on server: \(revokeOnServer, privacy: .public)")
+
+        if revokeOnServer {
+            try? await oAuthClient.logout()
+        } else {
+            try? oAuthClient.removeLocalAccount()
+        }
         subscriptionCachingService.reset()
 
         if notifyUI {

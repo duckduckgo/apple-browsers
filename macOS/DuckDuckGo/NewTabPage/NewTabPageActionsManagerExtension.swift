@@ -116,6 +116,7 @@ extension NewTabPageActionsManager {
             suggestionContainer: suggestionContainer,
             searchPreferences: NSApp.delegateTyped.searchPreferences
         )
+        let termsOfServiceStore = DuckAiTermsOfServiceStore()
         let omnibarActionHandler = NewTabPageOmnibarActionsHandler(
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
@@ -125,7 +126,8 @@ extension NewTabPageActionsManager {
                 privacyConfig: contentBlocking.privacyConfigurationManager,
                 nativeStorageHandler: NSApp.delegateTyped.duckAiNativeStorageHandler,
                 featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-            ))
+            )),
+            termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
         )
         let omnibarModelsProvider = NewTabPageOmnibarModelsProvider(featureFlagger: featureFlagger)
         let omnibarConfigProvider = NewTabPageOmnibarConfigProvider(
@@ -139,6 +141,9 @@ extension NewTabPageActionsManager {
                 NSApp.delegateTyped.burnerDuckAiStorageRegistry?.handler(for: burnerMode)
                     ?? NSApp.delegateTyped.duckAiNativeStorageHandler
             },
+            termsOfServiceStore: termsOfServiceStore,
+            attachmentPrivacyDisclosureStore: NSApp.delegateTyped.attachmentPrivacyDisclosureStore,
+            duckAiLauncherPromo: NSApp.delegateTyped.duckAiLauncherPromo,
             // Reuses whatever the model picker last resolved, rather than repeating the subscription
             // lookup on every input activation.
             userTierProvider: { [weak omnibarModelsProvider] in omnibarModelsProvider?.lastResolvedUserTier ?? .free },
@@ -257,7 +262,8 @@ extension NewTabPageActionsManager {
                                     subscriptionDialogPresenter: NewTabPageOmnibarSubscriptionDialogPresenter(
                                         coordinator: Application.appDelegate.subscriptionNavigationCoordinator,
                                         subscriptionManager: Application.appDelegate.subscriptionManager
-                                    )),
+                                    ),
+                                    screenshotProvider: NewTabPageOmnibarScreenshotProvider(featureFlagger: featureFlagger)),
             NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }

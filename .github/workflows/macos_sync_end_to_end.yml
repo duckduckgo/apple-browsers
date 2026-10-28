@@ -8,9 +8,15 @@ on:
   workflow_dispatch:
   schedule:
     - cron: '0 5 * * *' # run at 5 AM UTC
+  workflow_call:
+    inputs:
+      branch:
+        description: "Branch name"
+        required: false
+        type: string
 
 concurrency:
-  group: ${{ github.workflow }}
+  group: ${{ github.workflow }}-macos-sync-end-to-end
   cancel-in-progress: false
 
 jobs:
@@ -20,8 +26,9 @@ jobs:
     with:
       release-type: review
       create-dmg: false
-      branch: ${{ github.sha }}
+      branch: ${{ inputs.branch || github.sha }}
       skip-notify: true
+      artifact-prefix: sync-
     secrets: inherit
 
   sync-end-to-end-tests:
@@ -31,11 +38,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-14-xlarge, macos-15-xlarge, macos-26-xlarge]
+        runner: [macos-15-xlarge, macos-26-xlarge]
         include:
-          - xcode-version: "16.2"
-            runner: macos-14-xlarge
-            os-version: 14
           - xcode-version: "26.2"
             runner: macos-15-xlarge
             os-version: 15
@@ -57,6 +61,7 @@ jobs:
       uses: actions/checkout@v6
       with:
         submodules: recursive
+        ref: ${{ inputs.branch || github.sha }}
 
     - name: Print macOS version
       run: sw_vers
@@ -68,11 +73,9 @@ jobs:
         mode: start
 
     - name: Install screenresolution
-      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies
@@ -108,7 +111,9 @@ jobs:
     - name: Download and unzip artifact
       uses: actions/download-artifact@v7
       with:
-        path: macOS
+        pattern: sync-DuckDuckGo-review-*.app.tar.xz
+        merge-multiple: true
+        path: macOS/sync-app
 
     - name: Set cache key hash
       run: |
@@ -193,7 +198,7 @@ jobs:
     - name: Extract and Copy app to /DerivedData
       working-directory: macOS
       run: |
-        cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
+        cd sync-app && tar -xf DuckDuckGo-*.app.tar.xz
 
         # Find the extracted app bundle and rename if needed
         extracted_app=$(find . -maxdepth 1 -name "*.app" -type d | head -1)
@@ -269,7 +274,7 @@ jobs:
           runner: ${{ matrix.runner }}
 
     - name: Send Status Pixel
-      if: always() && github.ref_name == 'main'
+      if: always() && github.ref_name == 'main' && !inputs.branch
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_status_mac_e2e_sync_${{ matrix.os-version }}_${{ steps.run-ui-tests.outcome }}
@@ -338,7 +343,7 @@ jobs:
 
   notify-failure:
     name: Notify on failure
-    if: ${{ always() && github.event_name == 'schedule' && (needs.sync-end-to-end-tests.result == 'failure' || needs.sync-end-to-end-tests.result == 'cancelled') }}
+    if: ${{ always() && github.event_name == 'schedule' && !inputs.branch && (needs.sync-end-to-end-tests.result == 'failure' || needs.sync-end-to-end-tests.result == 'cancelled') }}
     needs: [sync-end-to-end-tests]
     runs-on: ubuntu-latest
 

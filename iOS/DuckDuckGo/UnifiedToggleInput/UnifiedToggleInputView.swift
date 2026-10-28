@@ -165,6 +165,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Hit Testing
 
     override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        if isInputFrozenForInitialPromptPreparation && cardView.frame.contains(point) { return self }
         let result = super.hitTest(point, with: event)
         return result == self ? nil : result
     }
@@ -240,6 +241,33 @@ final class UnifiedToggleInputView: UIView {
         didSet { toolsToolbar.isSubmitBlockedByRecoveryCard = isToolbarSubmitBlockedByRecoveryCard }
     }
 
+    var tabAttachmentsRequirePromptText = false {
+        didSet { updateSubmitButtonAvailability() }
+    }
+
+    var isPreparingInitialPrompt: Bool = false {
+        didSet { toolsToolbar.isPreparingInitialPrompt = isPreparingInitialPrompt }
+    }
+
+    var isInputFrozenForInitialPromptPreparation = false {
+        didSet {
+            guard oldValue != isInputFrozenForInitialPromptPreparation else { return }
+            textEntryView.isInputFrozen = isInputFrozenForInitialPromptPreparation
+            for view in [toggleView, textEntryView, attachmentsStrip, toolsToolbar, inlineDismissButton] {
+                view.accessibilityElementsHidden = isInputFrozenForInitialPromptPreparation
+            }
+            cardView.isAccessibilityElement = isInputFrozenForInitialPromptPreparation
+            cardView.accessibilityLabel = isInputFrozenForInitialPromptPreparation
+                ? UserText.aiChatToolbarSubmitButtonAccessibilityLabel : nil
+            cardView.accessibilityTraits = isInputFrozenForInitialPromptPreparation ? [.notEnabled] : []
+            frozenInputOverlay.isHidden = !isInputFrozenForInitialPromptPreparation
+        }
+    }
+
+    var isPromptOverLimit: Bool = false {
+        didSet { toolsToolbar.isSubmitBlockedByPromptLength = isPromptOverLimit }
+    }
+
     var isInputBlockedByUsageLimit: Bool = false {
         didSet { toolsToolbar.isInputBlockedByUsageLimit = isInputBlockedByUsageLimit }
     }
@@ -251,6 +279,11 @@ final class UnifiedToggleInputView: UIView {
     var modelName: String {
         get { toolsToolbar.modelName }
         set { toolsToolbar.modelName = newValue }
+    }
+
+    var modelIcon: UIImage? {
+        get { toolsToolbar.modelIcon }
+        set { toolsToolbar.modelIcon = newValue }
     }
 
     var modelPickerMenu: UIMenu? {
@@ -374,6 +407,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - Attachment Callbacks
 
     var onAttachmentRemoved: ((UUID, UnifiedToggleInputAttachment, Bool) -> Void)?
+    var onAttachmentTapped: ((UUID) -> Void)?
     var onInlineDismissTapped: (() -> Void)?
     var onAIChatShortcutTapped: (() -> Void)?
     var onFooterPrimaryTapped: ((UTIFooterItem.ID) -> Void)?
@@ -485,6 +519,7 @@ final class UnifiedToggleInputView: UIView {
         }
         let slot: BottomCardSlot = messages.isEmpty ? (editReplaceDisclaimerCard.isHidden ? .none : .editDisclaimer) : .footer
         applyBottomSlot(slot)
+        editReplaceDisclaimerCard.alpha = slot == .editDisclaimer ? 1 : 0
         reportFooterVisibility()
         footerCard.layoutIfNeeded()
         return wasVisible || !messages.isEmpty
@@ -612,6 +647,7 @@ final class UnifiedToggleInputView: UIView {
     // MARK: - UI
 
     private let cardView = UIView()
+    private let frozenInputOverlay = UIView()
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
@@ -624,7 +660,7 @@ final class UnifiedToggleInputView: UIView {
     var cardTrailingAnchor: NSLayoutXAxisAnchor { cardView.trailingAnchor }
     private let toggleView = UnifiedToggleInputToggleView()
     private lazy var inlineDismissButton: UIButton = Self.makeInlineDismissButton()
-    private let attachmentsStrip = UnifiedToggleInputAttachmentsStripView()
+    private let attachmentsStrip: UnifiedToggleInputAttachmentsStripView
     private let toolsToolbar = UnifiedToggleInputToolbarView()
 
     private lazy var editReplaceDisclaimerCard = Self.makeEditReplaceDisclaimerCard()
@@ -810,10 +846,12 @@ final class UnifiedToggleInputView: UIView {
 
     init(handler: UnifiedToggleInputHandler,
          isToggleEnabled: Bool = true,
-         placesAttachmentsAboveInput: Bool = false) {
+         placesAttachmentsAboveInput: Bool = false,
+         usesCompactAttachmentLayout: Bool = false) {
         self.handler = handler
         self.isToggleEnabled = isToggleEnabled
         self.placesAttachmentsAboveInput = placesAttachmentsAboveInput
+        self.attachmentsStrip = UnifiedToggleInputAttachmentsStripView(usesCompactLayout: usesCompactAttachmentLayout)
         self.textEntryView = SwitchBarTextEntryView(handler: handler, voiceButtonAppearance: .aiVoicePlain)
         super.init(frame: .zero)
         textEntryView.style = isToggleEnabled ? .multiLine : .singleLine
@@ -831,6 +869,8 @@ final class UnifiedToggleInputView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
         syncOmnibarMaterialTransitionCorners()
+        frozenInputOverlay.layer.cornerRadius = cardView.layer.cornerRadius
+        frozenInputOverlay.layer.maskedCorners = cardView.layer.maskedCorners
         guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
@@ -1637,13 +1677,16 @@ final class UnifiedToggleInputView: UIView {
         let hasValidAttachment = isAIChatMode && attachmentsStrip.attachments.contains { !$0.isInvalid }
         let hasInvalidAttachment = isAIChatMode && attachmentsStrip.attachments.contains(where: \.isInvalid)
 
+        toolsToolbar.isSubmitBlockedByMissingPromptText = tabAttachmentsRequirePromptText && isAIChatMode
+            && !hasText && hasValidAttachment && attachmentsStrip.attachments.allSatisfy(\.isTab)
         toolsToolbar.isSubmitEnabled = !hasInvalidAttachment && (hasText || hasValidAttachment)
         updateSubmitButtonStyle()
     }
 
     private func updateSubmitButtonStyle() {
         toolsToolbar.usesNewPromptSubmitStyle = handler.usesReturnKeySubmitButtonStyle
-        toolsToolbar.usesAskSubmitButton = handler.usesAskSubmitButton
+        toolsToolbar.termsOfServiceSendButton = handler.termsOfServiceSendButton
+        toolsToolbar.reservesTermsOfServiceSendButton = handler.reservesTermsOfServiceSendButton
     }
 
     private func submitCurrentInput() {
@@ -1863,6 +1906,9 @@ private extension UnifiedToggleInputView {
         attachmentsStrip.onAttachmentRemoved = { [weak self] id, attachment, isUserInitiated in
             self?.onAttachmentRemoved?(id, attachment, isUserInitiated)
         }
+        attachmentsStrip.onAttachmentTapped = { [weak self] id in
+            self?.onAttachmentTapped?(id)
+        }
         addSubview(attachmentsStrip)
 
         toolsToolbar.translatesAutoresizingMaskIntoConstraints = false
@@ -1897,9 +1943,26 @@ private extension UnifiedToggleInputView {
         addSubview(toolsToolbar)
         toolsToolbar.refreshFireMode(fireMode: handler.isFireTab)
 
+        frozenInputOverlay.translatesAutoresizingMaskIntoConstraints = false
+        frozenInputOverlay.backgroundColor = UIColor.systemGray.withAlphaComponent(0.3)
+        frozenInputOverlay.isUserInteractionEnabled = false
+        frozenInputOverlay.isHidden = true
+        frozenInputOverlay.clipsToBounds = true
+        addSubview(frozenInputOverlay)
+        NSLayoutConstraint.activate([
+            frozenInputOverlay.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            frozenInputOverlay.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            frozenInputOverlay.topAnchor.constraint(equalTo: cardView.topAnchor),
+            frozenInputOverlay.bottomAnchor.constraint(equalTo: cardView.bottomAnchor)
+        ])
+
         textEntryView.onTextInputActivated = { [weak self] in
             guard let self, !self.isExpanded else { return }
             self.delegate?.unifiedToggleInputViewDidTapWhileCollapsed(self)
+        }
+
+        textEntryView.onTextInputFocusChanged = { [weak self] isFocused in
+            self?.handler.textInputFocusChanged(isFocused)
         }
 
         textEntryView.onAIChatShortcutTapped = { [weak self] in
@@ -2049,7 +2112,14 @@ private extension UnifiedToggleInputView {
             }
             .store(in: &cancellables)
 
-        handler.usesAskSubmitButtonPublisher
+        handler.termsOfServiceSendButtonPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateSubmitButtonStyle()
+            }
+            .store(in: &cancellables)
+
+        handler.reservesTermsOfServiceSendButtonPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateSubmitButtonStyle()

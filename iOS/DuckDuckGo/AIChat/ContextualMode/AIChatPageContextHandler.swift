@@ -355,14 +355,25 @@ private extension AIChatPageContextHandler {
                             timeout: TimeInterval,
                             isValid: @escaping @MainActor () -> Bool) async -> MultiTabAttachmentCollectionResult {
         let deadline = now() + timeout
+        var blockingReason: MultiTabCollectionWaitTimeoutPixel.Reason?
+        func waitTimedOut() -> MultiTabAttachmentCollectionResult {
+            if let blockingReason {
+                pixelHandler.fireTabAttachmentCollectionWaitTimedOut(reason: blockingReason)
+            }
+            return .timedOut
+        }
         while isCollectingTabAttachment || extractionResolver.hasPendingCollections {
+            guard !Task.isCancelled else { return .cancelled }
+            blockingReason = MultiTabCollectionWaitTimeoutPixel.Reason(
+                hasSourceCollection: extractionResolver.hasPendingCollections,
+                hasCrossTabCollection: isCollectingTabAttachment)
             let remaining = deadline - now()
-            guard remaining > 0 else { return .timedOut }
+            guard remaining > 0 else { return waitTimedOut() }
             let availability = await MultiTabAttachmentWaiter.firstValue(
                 from: collectionStateChanges.eraseToAnyPublisher(), timeout: remaining)
             switch availability {
             case .value: break
-            case .timedOut: return .timedOut
+            case .timedOut: return waitTimedOut()
             case .cancelled: return .cancelled
             case .finished: return .unavailable
             }
@@ -372,7 +383,7 @@ private extension AIChatPageContextHandler {
               currentURLProvider()?.equals(expectedURL, by: .sameDocument) == true,
               isCurrentPageAttachable(), let script = userScriptProvider() else { return .unavailable }
         let remaining = deadline - now()
-        guard remaining > 0 else { return .timedOut }
+        guard remaining > 0 else { return waitTimedOut() }
 
         // Only the one-shot subscriber should consume results collected for another tab.
         isCollectingTabAttachment = true

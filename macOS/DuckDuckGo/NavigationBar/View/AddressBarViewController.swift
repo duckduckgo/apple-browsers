@@ -16,16 +16,16 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Combine
 import CombineExtensions
-import Lottie
 import Common
 import FoundationExtensions
-import AIChat
-import UIComponents
+import Lottie
 import PixelKit
 import PrivacyConfig
+import UIComponents
 import WebExtensions
 
 protocol AddressBarViewControllerDelegate: AnyObject {
@@ -101,34 +101,34 @@ final class AddressBarViewController: NSViewController {
         static let maxClickReleaseDistanceToResignFirstResponder: CGFloat = 4
     }
 
-    @IBOutlet var addressBarTextField: AddressBarTextField!
-    @IBOutlet var passiveTextField: PassiveAddressBarTextField!
-    @IBOutlet var inactiveBackgroundView: ColorView!
-    @IBOutlet var activeBackgroundView: ColorView!
-    @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
-    @IBOutlet var innerBorderView: ColorView!
-    @IBOutlet var bottomSeparatorView: ColorView!
-    @IBOutlet var buttonsContainerView: NSView!
-    @IBOutlet var switchToTabBox: ColorView!
-    @IBOutlet var switchToTabLabel: NSTextField!
-    @IBOutlet var shadowView: ShadowView!
+    private(set) var addressBarTextField: AddressBarTextField!
+    private(set) var passiveTextField: PassiveAddressBarTextField!
+    private(set) var inactiveBackgroundView: ColorView!
+    private(set) var activeBackgroundView: ColorView!
+    private(set) var activeBackgroundViewWithSuggestions: ColorView!
+    private(set) var innerBorderView: ColorView!
+    private(set) var bottomSeparatorView: ColorView!
+    private(set) var buttonsContainerView: NSView!
+    private(set) var switchToTabBox: ColorView!
+    private(set) var switchToTabLabel: NSTextField!
+    private(set) var shadowView: ShadowView!
 
-    @IBOutlet var activeBackgroundViewTopConstraint: NSLayoutConstraint!
-    @IBOutlet var activeBackgroundViewBottomConstraint: NSLayoutConstraint!
-    @IBOutlet var activeBackgroundViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet var activeBackgroundViewTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var inactiveBackgroundViewTopConstraint: NSLayoutConstraint!
-    @IBOutlet var inactiveBackgroundViewBottomConstraint: NSLayoutConstraint!
-    @IBOutlet var inactiveBackgroundViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet var inactiveBackgroundViewTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewTopConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewBottomConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var activeBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewTopConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewBottomConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var inactiveBackgroundViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var buttonsContainerViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var buttonsContainerViewTrailingConstraint: NSLayoutConstraint!
+    private(set) var switchToTabBoxMinXConstraint: NSLayoutConstraint!
+    private(set) var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
+    private(set) var passiveTextFieldMinXConstraint: NSLayoutConstraint!
+    private(set) var activeTextFieldMinXConstraint: NSLayoutConstraint!
+    private(set) var addressBarTextTrailingConstraint: NSLayoutConstraint!
+    private(set) var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
 
     private let popovers: NavigationBarPopovers?
     private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
@@ -155,13 +155,6 @@ final class AddressBarViewController: NSViewController {
     private var sharedTextState: AddressBarSharedTextState? {
         tabViewModel?.addressBarSharedTextState ?? AddressBarSharedTextState()
     }
-
-    /// Deprecated: Remove when `appRebranding` ships
-    @IBOutlet var activeOuterBorderView: ColorView!
-    @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var activeOuterBorderLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var activeOuterBorderBottomConstraint: NSLayoutConstraint!
-    @IBOutlet weak var activeOuterBorderTopConstraint: NSLayoutConstraint!
 
     private var mode: Mode = .editing(.text) {
         didSet {
@@ -240,8 +233,14 @@ final class AddressBarViewController: NSViewController {
         tabCollectionViewModel.isPopup
     }
 
+    /// Narrowest width the required constraints allow: leading buttons, minimum passive text field width and trailing buttons
+    var minimumWidth: CGFloat {
+        guard isViewLoaded else { return 0 }
+        return passiveTextFieldMinXConstraint.constant + LayoutConstants.passiveTextFieldMinWidth + passiveTextFieldTrailingConstraint.constant
+    }
+
     private var accentColor: NSColor {
-        return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
+        return isBurner ? NSColor(resource: .burnerAccent) : NSColor.controlAccentColor
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -269,24 +268,23 @@ final class AddressBarViewController: NSViewController {
         fatalError("AddressBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder,
-          tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager,
-          historyCoordinator: SuggestionContainer.HistoryProvider,
-          privacyConfigurationManager: PrivacyConfigurationManaging,
-          permissionManager: PermissionManagerProtocol,
-          burnerMode: BurnerMode,
-          popovers: NavigationBarPopovers?,
-          searchPreferences: SearchPreferences,
-          tabsPreferences: TabsPreferences,
-          accessibilityPreferences: AccessibilityPreferences,
-          themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
-          aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          aiChatCoordinator: AIChatCoordinating,
-          featureFlagger: FeatureFlagger,
-          adBlockingAvailability: AdBlockingAvailabilityProviding) {
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         bookmarkManager: BookmarkManager,
+         historyCoordinator: SuggestionContainer.HistoryProvider,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         permissionManager: PermissionManagerProtocol,
+         burnerMode: BurnerMode,
+         popovers: NavigationBarPopovers?,
+         searchPreferences: SearchPreferences,
+         tabsPreferences: TabsPreferences,
+         accessibilityPreferences: AccessibilityPreferences,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+         aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         aiChatCoordinator: AIChatCoordinating,
+         featureFlagger: FeatureFlagger,
+         adBlockingAvailability: AdBlockingAvailabilityProviding) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -317,12 +315,280 @@ final class AddressBarViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.adBlockingAvailability = adBlockingAvailability
 
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
     }
 
-    @IBSegueAction func createAddressBarButtonsViewController(_ coder: NSCoder) -> AddressBarButtonsViewController? {
-        let controller = AddressBarButtonsViewController(coder: coder,
-                                                         tabCollectionViewModel: tabCollectionViewModel,
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 653, height: 32)
+        static let suggestionsBackgroundHeight: CGFloat = 60
+        static let bottomSeparatorTop: CGFloat = 47
+        static let borderWidth: CGFloat = 1
+        static let activeBorderWidth: CGFloat = 2
+        static let cornerRadius: CGFloat = 8
+        static let inactiveInset: CGFloat = 2
+        static let inactiveCornerRadius: CGFloat = 6
+        static let buttonsContainerInset: CGFloat = 2
+        static let buttonsContainerVerticalInset: CGFloat = 3
+        static let textFieldLeading: CGFloat = 40
+        /// The editable text field never grows past this share of the address bar height.
+        static let textFieldMaxHeightRatio: CGFloat = 0.55
+        static let passiveTextFieldLeading: CGFloat = 37
+        static let textFieldTrailing: CGFloat = 45
+        static let passiveTextFieldMinWidth: CGFloat = 75
+        static let switchToTabBoxLeading: CGFloat = 550
+        static let switchToTabBoxTrailing: CGFloat = 29
+        static let switchToTabBoxCornerRadius: CGFloat = 6
+        static let switchToTabInset: CGFloat = 12
+        static let switchToTabArrowSide: CGFloat = 9
+        static let switchToTabHeight: CGFloat = 22
+        static let shadowRadius: CGFloat = 4
+        static let shadowOffset = CGSize(width: 0, height: -4)
+    }
+
+    // swiftlint:disable:next function_body_length
+    override func loadView() {
+        let view = DraggingDestinationView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+        view.wantsLayer = true
+
+        inactiveBackgroundView = ColorView(frame: .zero,
+                                           backgroundColor: NSColor(resource: .inactiveSearchBarBackground),
+                                           cornerRadius: LayoutConstants.inactiveCornerRadius)
+        inactiveBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+
+        activeBackgroundView = ColorView(frame: .zero,
+                                         backgroundColor: NSColor(resource: .addressBarBackground),
+                                         cornerRadius: LayoutConstants.cornerRadius,
+                                         borderColor: NSColor(resource: .addressBarBorder),
+                                         borderWidth: LayoutConstants.activeBorderWidth)
+        activeBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+
+        activeBackgroundViewWithSuggestions = ColorView(frame: .zero,
+                                                        backgroundColor: NSColor(resource: .addressBarBackground),
+                                                        cornerRadius: LayoutConstants.cornerRadius,
+                                                        borderColor: NSColor(resource: .addressBarBorder),
+                                                        borderWidth: LayoutConstants.borderWidth)
+        activeBackgroundViewWithSuggestions.translatesAutoresizingMaskIntoConstraints = false
+
+        innerBorderView = ColorView(frame: .zero,
+                                    cornerRadius: LayoutConstants.cornerRadius,
+                                    borderColor: NSColor(resource: .addressBarInnerBorder),
+                                    borderWidth: LayoutConstants.borderWidth)
+        innerBorderView.translatesAutoresizingMaskIntoConstraints = false
+
+        bottomSeparatorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .addressBarSeparator))
+        bottomSeparatorView.translatesAutoresizingMaskIntoConstraints = false
+
+        activeBackgroundViewWithSuggestions.addSubview(innerBorderView)
+        activeBackgroundViewWithSuggestions.addSubview(bottomSeparatorView)
+
+        passiveTextField = PassiveAddressBarTextField(frame: .zero)
+        passiveTextField.translatesAutoresizingMaskIntoConstraints = false
+        passiveTextField.isEditable = false
+        passiveTextField.isBordered = false
+        passiveTextField.drawsBackground = false
+        passiveTextField.focusRingType = .none
+        passiveTextField.alignment = .center
+        passiveTextField.lineBreakMode = .byTruncatingTail
+        passiveTextField.usesSingleLineMode = true
+        passiveTextField.refusesFirstResponder = true
+        passiveTextField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        passiveTextField.setContentHuggingPriority(.init(750), for: .horizontal)
+        passiveTextField.setContentHuggingPriority(.init(750), for: .vertical)
+        passiveTextField.setContentCompressionResistancePriority(.init(250), for: .horizontal)
+
+        addressBarTextField = AddressBarTextField(frame: .zero)
+        addressBarTextField.translatesAutoresizingMaskIntoConstraints = false
+        addressBarTextField.isEditable = true
+        addressBarTextField.isSelectable = true
+        addressBarTextField.isBordered = false
+        addressBarTextField.drawsBackground = false
+        addressBarTextField.focusRingType = .none
+        addressBarTextField.lineBreakMode = .byTruncatingTail
+        addressBarTextField.usesSingleLineMode = true
+        addressBarTextField.tag = 5
+        addressBarTextField.placeholderString = UserText.addressBarPlaceholder
+        addressBarTextField.cell?.sendsActionOnEndEditing = true
+        addressBarTextField.font = .systemFont(ofSize: NSFont.systemFontSize)
+        addressBarTextField.setContentHuggingPriority(.init(750), for: .vertical)
+
+        buttonsContainerView = NSView()
+        buttonsContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        switchToTabLabel = NSTextField(labelWithString: UserText.switchToTab)
+        switchToTabLabel.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabLabel.lineBreakMode = .byClipping
+        switchToTabLabel.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        switchToTabLabel.focusRingType = .none
+        switchToTabLabel.setContentHuggingPriority(.init(750), for: .vertical)
+        switchToTabLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let switchToTabArrow = NSImageView()
+        switchToTabArrow.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabArrow.image = NSImage(resource: .arrowRight12)
+        switchToTabArrow.imageScaling = .scaleProportionallyDown
+        switchToTabArrow.imageAlignment = .alignLeft
+        switchToTabArrow.refusesFirstResponder = true
+        switchToTabArrow.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let switchToTabRoundedView = ColorView(frame: .zero, cornerRadius: LayoutConstants.switchToTabBoxCornerRadius)
+        switchToTabRoundedView.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabRoundedView.setContentCompressionResistancePriority(.required, for: .horizontal)
+        switchToTabRoundedView.addSubview(switchToTabLabel)
+        switchToTabRoundedView.addSubview(switchToTabArrow)
+
+        switchToTabBox = ColorView(frame: .zero, cornerRadius: LayoutConstants.switchToTabBoxCornerRadius)
+        switchToTabBox.translatesAutoresizingMaskIntoConstraints = false
+        switchToTabBox.setContentCompressionResistancePriority(.required, for: .horizontal)
+        switchToTabBox.addSubview(switchToTabRoundedView)
+
+        // Frame-driven: `layoutShadowView` positions it with `shadowView.frame`
+        // after moving it into the window's content view, so it must keep
+        // translatesAutoresizingMaskIntoConstraints on.
+        shadowView = ShadowView()
+        shadowView.shadowColor = NSColor(resource: .addressBarShadow)
+        shadowView.shadowOffset = LayoutConstants.shadowOffset
+        shadowView.shadowRadius = LayoutConstants.shadowRadius
+        shadowView.cornerRadius = LayoutConstants.cornerRadius
+        shadowView.shadowOpacity = 1
+
+        // Order matters: the three background states go first so the text fields, buttons and the
+        // shadow all draw on top of whichever one is currently visible.
+        view.addSubview(inactiveBackgroundView)
+        view.addSubview(activeBackgroundView)
+        view.addSubview(activeBackgroundViewWithSuggestions)
+        view.addSubview(passiveTextField)
+        view.addSubview(addressBarTextField)
+        view.addSubview(buttonsContainerView)
+        view.addSubview(switchToTabBox)
+        view.addSubview(shadowView)
+
+        inactiveBackgroundViewTopConstraint = inactiveBackgroundView.topAnchor
+            .constraint(equalTo: view.topAnchor, constant: LayoutConstants.inactiveInset)
+        inactiveBackgroundViewBottomConstraint = view.bottomAnchor
+            .constraint(equalTo: inactiveBackgroundView.bottomAnchor, constant: LayoutConstants.inactiveInset)
+        inactiveBackgroundViewLeadingConstraint = inactiveBackgroundView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.inactiveInset)
+        inactiveBackgroundViewTrailingConstraint = view.trailingAnchor
+            .constraint(equalTo: inactiveBackgroundView.trailingAnchor, constant: LayoutConstants.inactiveInset)
+
+        activeBackgroundViewTopConstraint = activeBackgroundView.topAnchor.constraint(equalTo: view.topAnchor)
+        activeBackgroundViewBottomConstraint = view.bottomAnchor.constraint(equalTo: activeBackgroundView.bottomAnchor)
+        activeBackgroundViewBottomConstraint.priority = .init(300)
+        activeBackgroundViewLeadingConstraint = activeBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor)
+        activeBackgroundViewTrailingConstraint = view.trailingAnchor.constraint(equalTo: activeBackgroundView.trailingAnchor)
+
+        buttonsContainerViewLeadingConstraint = buttonsContainerView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.buttonsContainerInset)
+        buttonsContainerViewTrailingConstraint = view.trailingAnchor
+            .constraint(equalTo: buttonsContainerView.trailingAnchor, constant: LayoutConstants.buttonsContainerInset)
+
+        activeTextFieldMinXConstraint = addressBarTextField.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.textFieldLeading)
+        addressBarTextTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: addressBarTextField.trailingAnchor, constant: LayoutConstants.textFieldTrailing)
+        passiveTextFieldMinXConstraint = passiveTextField.leadingAnchor
+            .constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: LayoutConstants.passiveTextFieldLeading)
+        passiveTextFieldTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: passiveTextField.trailingAnchor, constant: LayoutConstants.textFieldTrailing)
+
+        switchToTabBoxMinXConstraint = switchToTabBox.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.switchToTabBoxLeading)
+        switchToTabBoxMinXConstraint.priority = .init(300)
+        switchToTabBoxTrailingConstraint = view.trailingAnchor
+            .constraint(greaterThanOrEqualTo: switchToTabBox.trailingAnchor, constant: LayoutConstants.switchToTabBoxTrailing)
+        switchToTabBoxTrailingConstraint.priority = .init(200)
+
+        let addressBarTextFieldTrailing = view.trailingAnchor.constraint(equalTo: addressBarTextField.trailingAnchor)
+        addressBarTextFieldTrailing.priority = .init(900)
+        let passiveTextFieldCenterX = passiveTextField.centerXAnchor.constraint(equalTo: view.centerXAnchor)
+        passiveTextFieldCenterX.priority = .init(250)
+
+        NSLayoutConstraint.activate([
+            inactiveBackgroundViewTopConstraint, inactiveBackgroundViewBottomConstraint,
+            inactiveBackgroundViewLeadingConstraint, inactiveBackgroundViewTrailingConstraint,
+
+            activeBackgroundViewTopConstraint, activeBackgroundViewBottomConstraint,
+            activeBackgroundViewLeadingConstraint, activeBackgroundViewTrailingConstraint,
+
+            activeBackgroundViewWithSuggestions.topAnchor.constraint(equalTo: view.topAnchor),
+            activeBackgroundViewWithSuggestions.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.trailingAnchor),
+            activeBackgroundViewWithSuggestions.heightAnchor
+                .constraint(equalToConstant: LayoutConstants.suggestionsBackgroundHeight),
+
+            innerBorderView.topAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.topAnchor,
+                                                 constant: LayoutConstants.borderWidth),
+            innerBorderView.leadingAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.leadingAnchor,
+                                                     constant: LayoutConstants.borderWidth),
+            activeBackgroundViewWithSuggestions.trailingAnchor.constraint(equalTo: innerBorderView.trailingAnchor,
+                                                                          constant: LayoutConstants.borderWidth),
+            activeBackgroundViewWithSuggestions.bottomAnchor.constraint(equalTo: innerBorderView.bottomAnchor,
+                                                                        constant: LayoutConstants.borderWidth),
+
+            bottomSeparatorView.heightAnchor.constraint(equalToConstant: LayoutConstants.borderWidth),
+            bottomSeparatorView.topAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.topAnchor,
+                                                     constant: LayoutConstants.bottomSeparatorTop),
+            bottomSeparatorView.leadingAnchor.constraint(equalTo: activeBackgroundViewWithSuggestions.leadingAnchor,
+                                                         constant: LayoutConstants.borderWidth),
+            activeBackgroundViewWithSuggestions.trailingAnchor.constraint(equalTo: bottomSeparatorView.trailingAnchor,
+                                                                          constant: LayoutConstants.borderWidth),
+
+            passiveTextField.widthAnchor.constraint(greaterThanOrEqualToConstant: LayoutConstants.passiveTextFieldMinWidth),
+            passiveTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            passiveTextFieldMinXConstraint, passiveTextFieldTrailingConstraint, passiveTextFieldCenterX,
+
+            addressBarTextField.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            addressBarTextField.heightAnchor.constraint(lessThanOrEqualTo: view.heightAnchor,
+                                                        multiplier: LayoutConstants.textFieldMaxHeightRatio),
+            activeTextFieldMinXConstraint, addressBarTextTrailingConstraint, addressBarTextFieldTrailing,
+
+            buttonsContainerView.topAnchor.constraint(equalTo: view.topAnchor,
+                                                      constant: LayoutConstants.buttonsContainerVerticalInset),
+            view.bottomAnchor.constraint(equalTo: buttonsContainerView.bottomAnchor,
+                                         constant: LayoutConstants.buttonsContainerVerticalInset),
+            buttonsContainerViewLeadingConstraint, buttonsContainerViewTrailingConstraint,
+
+            switchToTabBox.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            switchToTabBox.heightAnchor.constraint(equalTo: addressBarTextField.heightAnchor),
+            switchToTabBoxMinXConstraint, switchToTabBoxTrailingConstraint,
+
+            switchToTabRoundedView.leadingAnchor.constraint(equalTo: switchToTabBox.leadingAnchor),
+            switchToTabBox.trailingAnchor.constraint(equalTo: switchToTabRoundedView.trailingAnchor),
+            switchToTabRoundedView.centerYAnchor.constraint(equalTo: switchToTabBox.centerYAnchor),
+            switchToTabRoundedView.heightAnchor.constraint(equalToConstant: LayoutConstants.switchToTabHeight),
+
+            switchToTabLabel.leadingAnchor.constraint(equalTo: switchToTabRoundedView.leadingAnchor,
+                                                      constant: LayoutConstants.switchToTabInset),
+            switchToTabLabel.centerYAnchor.constraint(equalTo: switchToTabRoundedView.centerYAnchor),
+            switchToTabArrow.widthAnchor.constraint(equalToConstant: LayoutConstants.switchToTabArrowSide),
+            switchToTabArrow.heightAnchor.constraint(equalToConstant: LayoutConstants.switchToTabArrowSide),
+            switchToTabArrow.leadingAnchor.constraint(equalTo: switchToTabLabel.trailingAnchor, constant: 6),
+            switchToTabArrow.firstBaselineAnchor.constraint(equalTo: switchToTabLabel.firstBaselineAnchor),
+            switchToTabRoundedView.trailingAnchor.constraint(equalTo: switchToTabArrow.trailingAnchor,
+                                                             constant: LayoutConstants.switchToTabInset),
+        ])
+
+        // The buttons are their own controller so they keep their own state and lifecycle;
+        // embed it as a child rather than reaching into its views from here.
+        let buttonsViewController = makeAddressBarButtonsViewController()
+        addChild(buttonsViewController)
+        // Pinned with constraints rather than `addAndLayout`: the container has no size yet at
+        // `loadView()` time, so autoresizing would have to grow the child from a zero frame.
+        let buttonsView = buttonsViewController.view
+        buttonsView.translatesAutoresizingMaskIntoConstraints = false
+        buttonsContainerView.addSubview(buttonsView)
+        NSLayoutConstraint.activate([
+            buttonsView.leadingAnchor.constraint(equalTo: buttonsContainerView.leadingAnchor),
+            buttonsContainerView.trailingAnchor.constraint(equalTo: buttonsView.trailingAnchor),
+            buttonsView.topAnchor.constraint(equalTo: buttonsContainerView.topAnchor),
+            buttonsContainerView.bottomAnchor.constraint(equalTo: buttonsView.bottomAnchor),
+        ])
+
+        self.view = view
+    }
+
+    private func makeAddressBarButtonsViewController() -> AddressBarButtonsViewController {
+        let controller = AddressBarButtonsViewController(tabCollectionViewModel: tabCollectionViewModel,
                                                          bookmarkManager: bookmarkManager,
                                                          privacyConfigurationManager: privacyConfigurationManager,
                                                          permissionManager: permissionManager,
@@ -337,8 +603,8 @@ final class AddressBarViewController: NSViewController {
                                                          adBlockingAvailability: adBlockingAvailability)
 
         self.addressBarButtonsViewController = controller
-        controller?.delegate = self
-        return addressBarButtonsViewController
+        controller.delegate = self
+        return controller
     }
 
     override func viewDidLoad() {
@@ -376,10 +642,8 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.focusDelegate = self
         addressBarTextField.searchPreferences = searchPreferences
         addressBarTextField.tabsPreferences = tabsPreferences
-        addressBarTextField.aiChatPreferences = aiChatSettings
 
         setupInactiveShadowView()
-        setupActiveOuterBorderSize()
         refreshConstraints()
         refreshSuggestionsAppearance()
     }
@@ -395,7 +659,6 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.isHidden = true
             inactiveBackgroundView.isHidden = true
             activeBackgroundViewWithSuggestions.isHidden = true
-            activeOuterBorderView.isHidden = true
             activeBackgroundView.isHidden = true
 
             shadowView.isHidden = true
@@ -711,18 +974,8 @@ final class AddressBarViewController: NSViewController {
             /// text / suffix doesn't peek out past the panel edges.
             addressBarTextField.isHidden = true
             passiveTextField.isHidden = true
-        case .inactiveWithAIChat where !themeManager.isAppRebranded:
-            /// Unfocused Duck.ai: always render via `addressBarTextField` showing the preserved prompt (or empty
-            /// for the "Ask anything privately" placeholder). The value is pushed onto the field by the transitions
-            /// that enter this state (`resignFocusKeepingAIChatMode`, `applyIncomingTabAIChatMode`, and
-            /// `refocusInAIChatMode` when bouncing in/out), not here — calling `applyDuckAIUnfocusedValue` from
-            /// inside `updateView` would recurse through the `$value` sink.
-            addressBarTextField.isHidden = false
-            passiveTextField.isHidden = true
         case .active, .inactive, .inactiveWithAIChat:
-            let isPassiveTextFieldHidden = themeManager.isAppRebranded
-                ? (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
-                : (selectionState.isSelected || mode.isEditing)
+            let isPassiveTextFieldHidden = (selectionState.isSelected || (mode.isEditing && !addressBarTextField.stringValue.isEmpty))
 
             addressBarTextField.isHidden = !isPassiveTextFieldHidden
             passiveTextField.isHidden = isPassiveTextFieldHidden
@@ -753,26 +1006,11 @@ final class AddressBarViewController: NSViewController {
         inactiveBackgroundView.alphaValue = (selectionState.isSelected || isAIChatOmnibarVisible) ? 0 : 1
         activeBackgroundView.alphaValue = (selectionState.isSelected && !isAIChatOmnibarVisible) ? 1 : 0
 
-        if themeManager.isAppRebranded {
-            addressBarButtonsViewController?.trailingButtonsBackgroundColor = .clear
-        }
-
-        let isKey = self.view.window?.isKeyWindow == true
         let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
-
-        /// The outer blue glow is a "prompt the user to type" state — once the user has actually typed
-        /// something, drop it so the bar reads as editing-in-progress rather than empty-and-inviting.
-        /// Without this the glow reappears after ESC closes the suggestions window (where it had been
-        /// visually masked by the merged suggestions background) even though the bar still holds the
-        /// user's draft.
-        let currentTextFieldValue = addressBarTextField.value
-        let hasUserTypedContent = currentTextFieldValue.isUserTyped && !currentTextFieldValue.isEmpty
-        activeOuterBorderView.alphaValue = isKey && selectionState.isSelected && !isToggleFocused && !hasUserTypedContent && theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : colorsProvider.addressBarOutlineShadow
 
         if isToggleFocused {
             activeBackgroundView.borderWidth = 1.0
-            activeBackgroundView.borderColor = .addressBarBorder
+            activeBackgroundView.borderColor = NSColor(resource: .addressBarBorder)
         } else {
             activeBackgroundView.borderWidth = 2.0
             activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
@@ -789,21 +1027,18 @@ final class AddressBarViewController: NSViewController {
 
         activeBackgroundView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadius
         activeBackgroundViewWithSuggestions.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
-        activeOuterBorderView.cornerRadius = styleProvider.addressBarActiveOuterBorderViewRadius
         inactiveBackgroundView.cornerRadius = styleProvider.addressBarInactiveBackgroundViewRadius
         innerBorderView.cornerRadius = styleProvider.addressBarInnerBorderViewRadius(isSuggestionsWindowVisible: isSuggestionsWindowVisible)
 
-        if themeManager.isAppRebranded {
-            let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
+        let roundedCorners: RoundedCorners = isSuggestionsWindowVisible ? [.topLeft, .topRight] : .all
 
-            innerBorderView.roundedCorners = roundedCorners
-            activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
-        }
+        innerBorderView.roundedCorners = roundedCorners
+        activeBackgroundViewWithSuggestions.roundedCorners = roundedCorners
     }
 
     private func setupInactiveShadowView() {
         if theme.addressBarStyleProvider.shouldAddAddressBarShadowWhenInactive {
-            inactiveAddressBarShadowView.shadowColor = NSColor.shadowPrimary
+            inactiveAddressBarShadowView.shadowColor = NSColor(resource: .shadowPrimary)
             inactiveAddressBarShadowView.shadowOpacity = 1
             inactiveAddressBarShadowView.shadowOffset = CGSize(width: 0, height: 0)
             inactiveAddressBarShadowView.shadowRadius = 3
@@ -820,13 +1055,6 @@ final class AddressBarViewController: NSViewController {
                 inactiveAddressBarShadowView.bottomAnchor.constraint(equalTo: inactiveBackgroundView.bottomAnchor)
             ])
         }
-    }
-
-    private func setupActiveOuterBorderSize() {
-        activeOuterBorderTrailingConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
-        activeOuterBorderLeadingConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
-        activeOuterBorderBottomConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
-        activeOuterBorderTopConstraint.constant = theme.addressBarStyleProvider.addressBarActiveOuterBorderSize
     }
 
     private func refreshConstraints() {
@@ -937,26 +1165,17 @@ final class AddressBarViewController: NSViewController {
         shadowView.cornerRadius = styleProvider.addressBarActiveBackgroundViewRadiusWithSuggestions
 
         NSAppearance.withAppAppearance {
-            if themeManager.isAppRebranded {
-                shadowView.shadowRadius = styleProvider.suggestionShadowRadius
-                shadowView.shadowColor = colorsProvider.addressBarShadowColor
-            } else {
-                shadowView.shadowRadius = isSuggestionsWindowVisible ? theme.addressBarStyleProvider.suggestionShadowRadius : 0.0
-                shadowView.shadowColor = isSuggestionsWindowVisible ? .suggestionsShadow : .clear
-            }
+            shadowView.shadowRadius = styleProvider.suggestionShadowRadius
+            shadowView.shadowColor = colorsProvider.addressBarShadowColor
         }
 
-        let isToggleFocused = view.window?.firstResponder === addressBarButtonsViewController?.searchModeToggleControl
-        activeOuterBorderView.isHidden = isSuggestionsWindowVisible || view.window?.isKeyWindow != true || isToggleFocused
         activeBackgroundView.isHidden = isSuggestionsWindowVisible
         activeBackgroundViewWithSuggestions.isHidden = !isSuggestionsWindowVisible
         inactiveAddressBarShadowView.isHidden = isSuggestionsWindowVisible
 
-        if themeManager.isAppRebranded {
-            /// When Search Suggestions (OR) Omnibar are rendered, we'll switch to the Extended Height mode, with different rounded corners
-            resizeAddressBarIfNeeded()
-            refreshAddressBarCornerRadius()
-        }
+        /// When Search Suggestions (OR) Omnibar are rendered, we'll switch to the Extended Height mode, with different rounded corners
+        resizeAddressBarIfNeeded()
+        refreshAddressBarCornerRadius()
     }
 
     private func layoutShadowView() {
@@ -1015,7 +1234,7 @@ final class AddressBarViewController: NSViewController {
         }
 
         addressBarTextField.refreshStyle()
-        bottomSeparatorView.isHidden = !themeManager.isAppRebranded
+        bottomSeparatorView.isHidden = false
 
         let colorsProvider = theme.colorsProvider
 
@@ -1027,7 +1246,7 @@ final class AddressBarViewController: NSViewController {
             if shouldShowActiveState {
                 if isToggleFocused {
                     activeBackgroundView.borderWidth = 1.0
-                    activeBackgroundView.borderColor = .addressBarBorder
+                    activeBackgroundView.borderColor = NSColor(resource: .addressBarBorder)
                 } else {
                     activeBackgroundView.borderWidth = 2.0
                     activeBackgroundView.borderColor = colorsProvider.addressBarActiveBorderColor(isBurner: isBurner)
@@ -1035,26 +1254,12 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
                 switchToTabBox.backgroundColor = colorsProvider.activeSwitchToTabBackgroundColor
 
-                /// Important: `activeOuterBorderView` is hidden when `isAppRedesign` evaluates as true
-                activeOuterBorderView.isHidden = isToggleFocused || !theme.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) || selectionState == .activeWithAIChat
-                activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : theme.colorsProvider.addressBarOutlineShadow
-
-                if !themeManager.isAppRebranded {
-                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.activeAddressBarBackgroundColor(isBurner: isBurner)
-                }
-
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
 
                 switchToTabBox.backgroundColor = colorsProvider.inactiveSwitchToTabBackgroundColor
-
-                activeOuterBorderView.isHidden = true
-
-                if !themeManager.isAppRebranded {
-                    addressBarButtonsViewController?.trailingButtonsBackgroundColor = colorsProvider.inactiveAddressBarBackgroundColor(isBurner: isBurner)
-                }
             }
         }
     }
@@ -1075,13 +1280,8 @@ final class AddressBarViewController: NSViewController {
 
     private func refreshPlaceholderAppearance() {
         let colorsProvider = theme.colorsProvider
-
-        guard themeManager.isAppRebranded else {
-            passiveTextField.textColor = colorsProvider.textPrimaryColor
-            return
-        }
-
         let displaysPlaceholder = tabViewModel?.passiveAddressBarDisplaysPlaceholder == true
+
         passiveTextField.textColor = displaysPlaceholder ? colorsProvider.textSecondaryColor : colorsProvider.textPrimaryColor
     }
 
@@ -1115,8 +1315,8 @@ final class AddressBarViewController: NSViewController {
         /// offset so the text isn't pushed past the (now-narrower) buttons container's left edge on that path.
         if styleProvider.shouldShowNewSearchIcon && !self.mode.isEditing {
             let pullback = isAddressBarFocused
-                ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
-                : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
+            ? AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.focused
+            : AddressBarButtonsViewController.IconLeadingTuning.textFieldPullback.unfocused
             self.activeTextFieldMinXConstraint.constant = adjustedMinX - pullback
         } else {
             self.activeTextFieldMinXConstraint.constant = adjustedMinX
@@ -1127,6 +1327,21 @@ final class AddressBarViewController: NSViewController {
         addressBarTextTrailingConstraint.constant = width
         passiveTextFieldTrailingConstraint.constant = width
     }
+
+    func resizeAddressBarIfNeeded() {
+        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
+            return
+        }
+
+        requestAddressBarResize(allowsAsync: false)
+    }
+
+    func requestAddressBarResize(allowsAsync: Bool = true) {
+        displaysTallLayout = shouldUseTallAddressBarLayout
+        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
+    }
+
+    // MARK: - First Responder
 
     private func firstResponderDidChange(_ notification: Notification) {
         let firstResponder = view.window?.firstResponder
@@ -1300,8 +1515,7 @@ final class AddressBarViewController: NSViewController {
                 return nil
             }
 
-            guard self.view.window?.firstResponder !== addressBarTextField.currentEditor()
-            else { return event }
+            guard self.view.window?.firstResponder !== addressBarTextField.currentEditor() else { return event }
 
             // bookmark button visibility is usually determined by hover state, but we def need to hide it right now
             self.addressBarButtonsViewController?.bookmarkButton.isHidden = true
@@ -1391,9 +1605,9 @@ final class AddressBarViewController: NSViewController {
 
         return event
     }
-
 }
 
+// MARK: - ThemeUpdateListening
 extension AddressBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {
@@ -1403,22 +1617,7 @@ extension AddressBarViewController: ThemeUpdateListening {
     }
 }
 
-private extension AddressBarViewController {
-
-    func resizeAddressBarIfNeeded() {
-        guard isViewLoaded, shouldUseTallAddressBarLayout != displaysTallLayout else {
-            return
-        }
-
-        requestAddressBarResize(allowsAsync: false)
-    }
-
-    func requestAddressBarResize(allowsAsync: Bool = true) {
-        displaysTallLayout = shouldUseTallAddressBarLayout
-        delegate?.resizeAddressBarForHomePage(self, allowsAsync: allowsAsync)
-    }
-}
-
+// MARK: - AddressBarButtonsViewControllerDelegate
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
@@ -1558,9 +1757,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     /// clicks on the AI chat text view through.
     private func isHitViewInsideAddressBarTextFields(_ hitView: NSView?) -> Bool {
         hitView === addressBarTextField
-            || hitView?.isDescendant(of: addressBarTextField) == true
-            || hitView === passiveTextField
-            || hitView?.isDescendant(of: passiveTextField) == true
+        || hitView?.isDescendant(of: addressBarTextField) == true
+        || hitView === passiveTextField
+        || hitView?.isDescendant(of: passiveTextField) == true
     }
 
     /// Transitions from unfocused duck.ai mode (`.inactiveWithAIChat`) back to focused duck.ai mode (`.activeWithAIChat`):
@@ -1660,7 +1859,7 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
         if let tabFavicon = tabViewModel?.tab.favicon {
             favicon = tabFavicon
         } else {
-            favicon = .web
+            favicon = NSImage(resource: .web)
         }
 
         session.draggingFormation = .none
@@ -1700,6 +1899,7 @@ extension AddressBarViewController: NSDraggingDestination {
     }
 }
 
+// MARK: - AddressBarTextFieldFocusDelegate
 extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
         requestAddressBarResize()
@@ -1717,12 +1917,12 @@ extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
     }
 }
 
+// MARK: - NSView+shouldShowArrowCursor
 fileprivate extension NSView {
 
     var shouldShowArrowCursor: Bool {
         self is NSButton || self is LottieAnimationView || self is CustomToggleControl
     }
-
 }
 
 extension NSUserInterfaceItemIdentifier {

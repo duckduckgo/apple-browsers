@@ -10,7 +10,7 @@
             "pixelSource",
             {
                 "key": "automaticEnabled",
-                "description": "Whether the automatic page context collection is enabled in AI Features settings",
+                "description": "Whether page context is attached automatically: the AI Features setting, or always true when the aiChatPageContextAutoAttach feature flag is on",
                 "type": "boolean"
             },
             "channel"
@@ -26,7 +26,7 @@
             "pixelSource",
             {
                 "key": "automaticEnabled",
-                "description": "Whether the automatic page context collection is enabled in AI Features settings",
+                "description": "Whether page context is attached automatically: the AI Features setting, or always true when the aiChatPageContextAutoAttach feature flag is on",
                 "type": "boolean"
             },
             "channel"
@@ -121,5 +121,12 @@
                 "enum": ["auto", "navigation", "user_request", "tab_content"]
             }
         ]
+    },
+    "m_mac_aichat_page_context_source_link_clicked": {
+        "description": "Fired when user clicks the website link on a page context prompt in Duck.ai tab or sidebar",
+        "owners": ["moon0326"],
+        "triggers": ["other"],
+        "suffixes": ["daily_standard"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

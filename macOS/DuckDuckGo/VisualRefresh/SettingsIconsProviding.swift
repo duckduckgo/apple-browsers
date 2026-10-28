@@ -67,10 +67,10 @@ final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var dataClearingIcon: NSImage = DesignSystemImages.Color.Size16.fire
     var duckPlayerIcon: NSImage = DesignSystemImages.Color.Size16.videoPlayer
     var youTubeAdBlockingIcon: NSImage = DesignSystemImages.Color.Size16.adsBlocked
-    var websitePermissionsIcon: NSImage = DesignSystemImages.Glyphs.Size16.permissions
+    var websitePermissionsIcon: NSImage = DesignSystemImages.Color.Size16.websitePermissions
     var duckAIIcon: NSImage = DesignSystemImages.Color.Size16.aiChat
     var paidAIChatIcon: NSImage = DesignSystemImages.Color.Size16.paidAiChat
     var aboutIcon: NSImage = DesignSystemImages.Color.Size16.duckDuckGo
     var otherPlatformsIcon: NSImage = DesignSystemImages.Color.Size16.downloads
-    var subscriberOffersIcon: NSImage = .subscriptionGift
+    var subscriberOffersIcon: NSImage = NSImage(resource: .subscriptionGift)
 }

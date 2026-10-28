@@ -223,6 +223,7 @@ public final class GeolocationUserScript: NSObject, UserScript {
     @MainActor private var permissionStatusRegistry = GeolocationWatchRegistry()
     @MainActor private var frameRegistrations = GeolocationFrameRegistrationStore()
     @MainActor private var lifecycleGeneration: UInt64 = 0
+    @MainActor private var pendingDocumentEvaluations = [UUID: CheckedContinuation<Any?, Never>]()
 
     @MainActor
     /// - Parameter installImmediately: Hardens the page API synchronously at document start. Use only when the
@@ -270,10 +271,10 @@ public final class GeolocationUserScript: NSObject, UserScript {
         }
 
         let generation = lifecycleGeneration
-        guard let policy = await documentPolicy(in: frame, webView: webView),
+        guard let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
               policy.documentID == registration.documentID,
               body["documentID"] as? String == registration.pageDocumentID,
-              await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView),
+              await isCurrentDocument(registration.pageDocumentID, in: frame, webView: webView, generation: generation),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true else {
             return (Self.errorPayload(.permissionDenied, message: "Geolocation document is no longer active"), nil)
@@ -292,27 +293,33 @@ public final class GeolocationUserScript: NSObject, UserScript {
             return (handlePermissionQuery(body: body,
                                           frame: frame,
                                           nonce: nonce,
+                                          pageDocumentID: registration.pageDocumentID,
                                           constraints: policy.constraints,
                                           webView: webView), nil)
         case .startWatch:
             return (handleWatchStart(body: body,
                                      frame: frame,
                                      nonce: nonce,
+                                     pageDocumentID: registration.pageDocumentID,
                                      constraints: policy.constraints,
                                      webView: webView), nil)
         case .clearWatch:
-            return (handleWatchCancellation(body: body, nonce: nonce), nil)
+            return (handleWatchCancellation(body: body, nonce: nonce, pageDocumentID: registration.pageDocumentID), nil)
         case .registerFrame:
             return (Self.errorPayload(.positionUnavailable, message: "Invalid geolocation request"), nil)
         }
     }
 
-    /// Cancels watches and permission-status subscriptions, then clears frame registrations.
+    /// Cancels watches and permission-status subscriptions, resolves pending document checks
+    /// with no result, then clears frame registrations.
     /// Call on navigation, process replacement, and tab teardown. The delegate must
     /// separately cancel pending one-shot work.
     @MainActor
     public func cancelAllWatches() {
         lifecycleGeneration &+= 1
+        let evaluations = pendingDocumentEvaluations
+        pendingDocumentEvaluations.removeAll()
+        evaluations.values.forEach { $0.resume(returning: nil) }
         let requestIDs = watchRegistry.removeAll()
         let statusIDs = permissionStatusRegistry.removeAll()
         frameRegistrations.removeAll()
@@ -383,10 +390,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
     private func handlePermissionQuery(body: [String: Any],
                                        frame: GeolocationFrame,
                                        nonce: String,
+                                       pageDocumentID: String,
                                        constraints: GeolocationRequestConstraints,
                                        webView: WKWebView) -> [String: Any] {
         guard let statusID = body["statusID"] as? String,
-              Self.isValidRequestID(statusID),
+              Self.isCallbackID(statusID, ownedBy: pageDocumentID),
               let delegate else {
             return Self.permissionPayload(.denied)
         }
@@ -426,8 +434,8 @@ public final class GeolocationUserScript: NSObject, UserScript {
         let generation = lifecycleGeneration
         guard let webView,
               frame.isAssociated(with: webView),
-              let policy = await documentPolicy(in: frame, webView: webView),
-              await isCurrentDocument(pageDocumentID, in: frame, webView: webView),
+              let policy = await documentPolicy(in: frame, webView: webView, generation: generation),
+              await isCurrentDocument(pageDocumentID, in: frame, webView: webView, generation: generation),
               generation == lifecycleGeneration,
               activationHandler?(frame) == true,
               frame.isAssociated(with: webView),
@@ -446,10 +454,14 @@ public final class GeolocationUserScript: NSObject, UserScript {
 
     @MainActor
     private func documentPolicy(in frame: GeolocationFrame,
-                                webView: WKWebView) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
-        guard let value = try? await webView.callAsyncJavaScript(
-            "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
-            arguments: [:], in: frame.frameInfo, contentWorld: .defaultClient),
+                                webView: WKWebView,
+                                generation: UInt64) async -> (documentID: String, constraints: GeolocationRequestConstraints)? {
+        let value = await evaluateDocumentJavaScript(generation: generation) { completion in
+            webView.callAsyncJavaScript(
+                "return await globalThis.__ddgSitePermissionsGeolocationPolicy?.getConstraints();",
+                arguments: [:], in: frame.frameInfo, in: .defaultClient, completionHandler: completion)
+        }
+        guard let value,
               let policy = value as? [String: Any],
               let documentID = policy["documentID"] as? String,
               Self.isValidNonce(documentID) else { return nil }
@@ -457,10 +469,31 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    private func isCurrentDocument(_ documentID: String, in frame: GeolocationFrame, webView: WKWebView) async -> Bool {
-        await withCheckedContinuation { continuation in
-            webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID", in: frame.frameInfo, in: .page) { result in
-                continuation.resume(returning: (try? result.get()) as? String == documentID)
+    private func isCurrentDocument(_ documentID: String,
+                                   in frame: GeolocationFrame,
+                                   webView: WKWebView,
+                                   generation: UInt64) async -> Bool {
+        let value = await evaluateDocumentJavaScript(generation: generation) { completion in
+            webView.evaluateJavaScript("globalThis.__ddgSitePermissionsGeolocationDocumentID",
+                                       in: frame.frameInfo, in: .page, completionHandler: completion)
+        }
+        return value as? String == documentID
+    }
+
+    @MainActor
+    private func evaluateDocumentJavaScript(
+        generation: UInt64,
+        _ evaluate: (@escaping @MainActor @Sendable (Result<Any, Error>) -> Void) -> Void
+    ) async -> Any? {
+        // Teardown only resolves waits that already exist, so a stale caller must not start a new one.
+        guard generation == lifecycleGeneration else { return nil }
+        let evaluationID = UUID()
+        return await withCheckedContinuation { continuation in
+            pendingDocumentEvaluations[evaluationID] = continuation
+            // WebKit may never finish an evaluation in a retired document. Page teardown resolves
+            // the wait; removing its entry also makes a late WebKit completion harmless.
+            evaluate { [weak self] result in
+                self?.pendingDocumentEvaluations.removeValue(forKey: evaluationID)?.resume(returning: try? result.get())
             }
         }
     }
@@ -469,10 +502,11 @@ public final class GeolocationUserScript: NSObject, UserScript {
     private func handleWatchStart(body: [String: Any],
                                   frame: GeolocationFrame,
                                   nonce: String,
+                                  pageDocumentID: String,
                                   constraints: GeolocationRequestConstraints,
                                   webView: WKWebView?) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
-              Self.isValidRequestID(requestID),
+              Self.isCallbackID(requestID, ownedBy: pageDocumentID),
               let webView,
               let delegate else {
             return Self.errorPayload(.positionUnavailable, message: "Geolocation is unavailable")
@@ -502,9 +536,9 @@ public final class GeolocationUserScript: NSObject, UserScript {
     }
 
     @MainActor
-    private func handleWatchCancellation(body: [String: Any], nonce: String) -> [String: Any] {
+    private func handleWatchCancellation(body: [String: Any], nonce: String, pageDocumentID: String) -> [String: Any] {
         guard let requestID = body["requestID"] as? String,
-              Self.isValidRequestID(requestID) else {
+              Self.isCallbackID(requestID, ownedBy: pageDocumentID) else {
             return Self.errorPayload(.positionUnavailable, message: "Invalid geolocation watch")
         }
 
@@ -546,6 +580,12 @@ public final class GeolocationUserScript: NSObject, UserScript {
         return bytes.count == 32 && bytes.allSatisfy {
             ($0 >= 48 && $0 <= 57) || ($0 >= 97 && $0 <= 102)
         }
+    }
+
+    /// Watch and status IDs are scoped to the page document that created them, so one document cannot
+    /// claim, and so block, an ID that belongs to another.
+    static func isCallbackID(_ callbackID: String, ownedBy pageDocumentID: String) -> Bool {
+        isValidRequestID(callbackID) && callbackID.hasPrefix(pageDocumentID + ":")
     }
 
     static func isValidRequestID(_ requestID: String) -> Bool {

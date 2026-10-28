@@ -17,19 +17,19 @@
 //
 
 import AddressBarPerformance
+import AIChat
 import AppKit
 import BrowserServicesKit
 import Carbon.HIToolbox
 import Combine
 import Common
-import FoundationExtensions
-import PixelKit
-import Suggestions
-import Subscription
-import os.log
-import UIComponents
-import AIChat
 import DesignResourcesKit
+import FoundationExtensions
+import os.log
+import PixelKit
+import Subscription
+import Suggestions
+import UIComponents
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -37,6 +37,15 @@ protocol AddressBarTextFieldFocusDelegate: AnyObject {
 }
 
 final class AddressBarTextField: NSTextField {
+
+    override class var cellClass: AnyClass? {
+        get {
+            AddressBarTextFieldCell.self
+        }
+        set {
+            // NO-OP
+        }
+    }
 
     weak var tabCollectionViewModel: TabCollectionViewModel? {
         didSet {
@@ -79,7 +88,6 @@ final class AddressBarTextField: NSTextField {
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
-    var aiChatPreferences: AIChatPreferencesStorage?
 
     weak var sharedTextState: AddressBarSharedTextState? {
         didSet {
@@ -101,9 +109,23 @@ final class AddressBarTextField: NSTextField {
 
     // MARK: - Lifecycle
 
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+
+        setUpEditingAndDragging()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
 
+        setUpEditingAndDragging()
+    }
+
+    private func setUpEditingAndDragging() {
         allowsEditingTextAttributes = true
         super.delegate = self
 
@@ -503,6 +525,14 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
+    /// The suggestions that open a URL rather than search, as `navigate(suggestion:)` counts them.
+    private static func isURLSuggestion(_ suggestion: Suggestion?) -> Bool {
+        switch suggestion {
+        case .bookmark, .historyEntry, .website: true
+        default: false
+        }
+    }
+
     private func navigate(suggestion: Suggestion?) {
         switch suggestion {
         case .bookmark,
@@ -637,6 +667,9 @@ final class AddressBarTextField: NSTextField {
         }
 
         self.window?.makeFirstResponder(nil)
+        if Self.isURLSuggestion(suggestion) {
+            selectedTabViewModel.tab.aiChat?.noteAddressBarSuggestionNavigation(to: providedUrl)
+        }
         selectedTabViewModel.tab.setUrl(providedUrl, source: .userEntered(userEnteredValue, downloadRequested: downloadRequested))
         if downloadRequested {
             updateValue(selectedTabViewModel: nil, addressBarString: nil)
@@ -672,6 +705,9 @@ final class AddressBarTextField: NSTextField {
             let tab = Tab(content: .url(url, source: .userEntered(userEnteredValue)),
                           shouldLoadInBackground: true,
                           burnerMode: tabCollectionViewModel.burnerMode)
+            if Self.isURLSuggestion(suggestion) {
+                tab.aiChat?.noteAddressBarSuggestionNavigation(to: url)
+            }
 
             if isUpgraded {
                 updateTab(tab, upgradedTo: url)
@@ -762,7 +798,6 @@ final class AddressBarTextField: NSTextField {
     private(set) lazy var suggestionViewController: SuggestionViewController = {
         let suggestionViewController = SuggestionViewController(suggestionContainerViewModel: self.suggestionContainerViewModel!,
                                                                 themeManager: self.themeManager,
-                                                                aiChatPreferencesStorage: self.aiChatPreferences ?? DefaultAIChatPreferencesStorage(),
                                                                 featureFlagger: Application.appDelegate.featureFlagger)
         suggestionViewController.delegate = self
         return suggestionViewController
@@ -1590,6 +1625,7 @@ enum SuggestionInputMethod {
     case mouse
 }
 
+// MARK: - URL+makeUrl, upgradeToHttps
 extension URL {
 
     static func makeUrl(suggestion: Suggestion?, stringValueWithoutSuffix: String, completion: @escaping (URL?, String, Bool) -> Void) {
@@ -1636,7 +1672,6 @@ extension URL {
             }
         }
     }
-
 }
 
 // MARK: - SharingMenuDelegate

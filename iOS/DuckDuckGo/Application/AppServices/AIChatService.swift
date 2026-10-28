@@ -24,16 +24,24 @@ import AIChat
 final class AIChatService: NSObject {
 
     private let aiChatSettings: AIChatSettingsProvider
-    init(aiChatSettings: AIChatSettingsProvider) {
+    private let aiChatBonusService: AIChatBonusService
+    private let termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver?
+
+    init(aiChatSettings: AIChatSettingsProvider,
+         aiChatBonusService: AIChatBonusService,
+         termsOfServiceChatsObserver: DuckAiTermsOfServiceChatsObserver? = nil) {
         self.aiChatSettings = aiChatSettings
+        self.aiChatBonusService = aiChatBonusService
+        self.termsOfServiceChatsObserver = termsOfServiceChatsObserver
         super.init()
+        termsOfServiceChatsObserver?.start()
     }
 
     // MARK: - Resume
 
     @MainActor
     func resume() {
-        // No-op
+        try? aiChatBonusService.endBoostIfExpired()
     }
 
     // MARK: - Suspend

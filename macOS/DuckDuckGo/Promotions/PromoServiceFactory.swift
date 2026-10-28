@@ -79,7 +79,16 @@ struct PromoServiceFactory {
             bookmarkToolbar(dependencies: dependencies),
             autoplayDiscoverability(dependencies: dependencies),
             quitSurvey(observer: dependencies.quitSurveyPromoObserver),
-            duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver)
+            vpnUpsellToolbarButton(delegate: dependencies.vpnUpsellToolbarButtonPromoDelegate),
+            vpnUpsellDotBadge(delegate: dependencies.vpnUpsellDotBadgePromoDelegate),
+            duckPlayerOverlay(delegate: dependencies.duckPlayerOverlayObserver),
+            autofillImport(observer: dependencies.autofillImportPromoObserver),
+            syncSetupBookmarks(dependencies: dependencies),
+            syncSetupAutofill(dependencies: dependencies),
+            bookmarksBarSync(dependencies: dependencies),
+            bookmarkAddedSync(dependencies: dependencies),
+            bookmarksEmptyStateImportSync(dependencies: dependencies),
+            autofillEmptyStateImportSync(dependencies: dependencies)
         ]
 
         if let browserUpdatedPromo = browserUpdated(dependencies: dependencies) {

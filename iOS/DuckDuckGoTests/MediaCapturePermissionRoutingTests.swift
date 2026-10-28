@@ -32,6 +32,64 @@ import XCTest
 @MainActor
 final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
 
+    func testWhenSitePermissionsAreEnabledThenFireCameraUsesSitePrompt() async {
+        let sut = makeSUT(fireTab: true)
+        defer { sut.closeSitePermissions() }
+        XCTAssertTrue(sut.isMediaCapturePermissionHandlingEnabled)
+        var receivedPrompt: SitePermissionPrompt?
+        sut.sitePermissionsPromptHandlerOverride = { prompt, completion in
+            receivedPrompt = prompt
+            completion(.denyOnce)
+        }
+
+        let decision = await requestPermissionThroughBridge(on: sut,
+                                                            originHost: "top-level.example",
+                                                            captureType: .camera)
+
+        XCTAssertEqual(receivedPrompt?.site.host, "top-level.example")
+        XCTAssertEqual(receivedPrompt?.permissionTypes, [.camera])
+        XCTAssertEqual(receivedPrompt?.isFireMode, true)
+        XCTAssertEqual(decision, .deny)
+    }
+
+    func testWhenSitePermissionsAreDisabledThenFireCameraUsesLegacyRouting() async {
+        let sut = makeSUT(featureEnabled: false, fireTab: true)
+        defer { sut.closeSitePermissions() }
+        XCTAssertFalse(sut.isMediaCapturePermissionHandlingEnabled)
+        var didPrompt = false
+        sut.sitePermissionsPromptHandlerOverride = { _, completion in
+            didPrompt = true
+            completion(.denyOnce)
+        }
+
+        let bridgeDecision = await requestPermissionThroughBridge(on: sut,
+                                                                  originHost: "top-level.example",
+                                                                  captureType: .camera)
+        var nativeDecision: WKPermissionDecision?
+        requestPermission(on: sut, originHost: "top-level.example", captureType: .camera) { nativeDecision = $0 }
+
+        XCTAssertEqual(bridgeDecision, .bypass)
+        XCTAssertEqual(nativeDecision, .prompt)
+        XCTAssertFalse(didPrompt)
+        XCTAssertNil(sut.sitePermissionsState.coordinator)
+    }
+
+    func testWhenFlagChangesAfterLaunchThenGeolocationSetupUsesLaunchAvailability() {
+        for featureEnabled in [false, true] {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
+            let sut = makeSUT(featureFlagger: featureFlagger)
+            defer { sut.closeSitePermissions() }
+            featureFlagger.enabledFeatureFlags = featureEnabled ? [] : [.sitePermissions]
+            featureFlagger.triggerUpdate()
+            let userScript = GeolocationUserScript(installImmediately: true)
+
+            sut.configureSitePermissionsGeolocation(with: userScript)
+
+            XCTAssertEqual(userScript.delegate is GeolocationProvider, featureEnabled)
+            XCTAssertEqual(sut.sitePermissionsState.coordinator != nil, featureEnabled)
+        }
+    }
+
     func testWhenPermissionRemovalUndoOutlivesPageThenOnlySavedDecisionsAreRestored() throws {
         let site = try XCTUnwrap(SitePermissionKey(committedURL: URL(string: "https://top-level.example")!))
         for fireTab in [false, true] {
@@ -1025,7 +1083,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1106,7 +1163,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1162,7 +1218,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1247,7 +1302,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1292,7 +1346,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1391,7 +1444,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let locationManager = MockLocationManager()
         let systemPermissionClient = SystemPermissionClient(
             locationManager: locationManager,
-            locationServicesEnabled: { true },
             avAuthorizationStatus: { _ in .authorized },
             avRequestAccess: { _, completion in completion(true) },
             notificationCenter: NotificationCenter()
@@ -1435,7 +1487,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1495,7 +1546,6 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             let locationManager = MockLocationManager()
             let systemPermissionClient = SystemPermissionClient(
                 locationManager: locationManager,
-                locationServicesEnabled: { true },
                 avAuthorizationStatus: { _ in .authorized },
                 avRequestAccess: { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -1568,6 +1618,195 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             .permissionDialogImpression(type: .camera),
             .permissionDialogClick(type: .camera, selection: .dismissed)
         ])
+    }
+
+    func testPermissionDialogImpressionWaitsUntilTabIsVisibleAndSkipsDialogsRemovedWhileHidden() async throws {
+        var events = [SitePermissionsEvent]()
+        var isVisible = false
+        var presented = expectation(description: "First dialog presented")
+        let impression = expectation(description: "Impression after becoming active")
+        let sut = makeSUT(eventHandler: { event in
+            events.append(event)
+            if event == .permissionDialogImpression(type: .camera) { impression.fulfill() }
+        })
+        // Presenting a dialog checks visibility, so the check doubles as the "presented" signal.
+        sut.sitePermissionsDialogVisibilityOverride = {
+            presented.fulfill()
+            return isVisible
+        }
+        defer { sut.closeSitePermissions() }
+
+        // Hidden tab: the page asks, then reloads before anyone could see the dialog.
+        let firstRequest = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        let removedHostingController = try XCTUnwrap(sut.children.compactMap {
+            $0 as? UIHostingController<SitePermissionDialogView>
+        }.first)
+        sut.webView(sut.webView, didStartProvisionalNavigation: nil)
+        let firstDecision = await firstRequest.value
+        XCTAssertEqual(firstDecision, .deny)
+        sut.webView(sut.webView, didCommit: nil)
+
+        // The removed dialog stays uncounted even once the tab becomes visible.
+        isVisible = true
+        removedHostingController.viewDidAppear(false)
+        sut.fireSitePermissionDialogImpressionIfVisible()
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        XCTAssertTrue(events.isEmpty)
+        isVisible = false
+
+        // The reloaded page asks again; the impression fires only once the app becomes active with the tab visible.
+        presented = expectation(description: "Second dialog presented")
+        let secondRequest = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        XCTAssertTrue(events.isEmpty)
+
+        isVisible = true
+        presented = expectation(description: "Visibility rechecked")
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await fulfillment(of: [presented, impression], timeout: 1)
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+
+        let dialog = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+        }.first)
+        dialog.onAction(.dismissed)
+        let secondDecision = await secondRequest.value
+        XCTAssertEqual(secondDecision, .deny)
+        XCTAssertEqual(events, [
+            .permissionDialogImpression(type: .camera),
+            .permissionDialogClick(type: .camera, selection: .dismissed)
+        ])
+    }
+
+    func testPermissionDialogAppearanceRecordsImpressionOnlyOnceAcrossRetries() async throws {
+        var events = [SitePermissionsEvent]()
+        var isVisible = false
+        let presented = expectation(description: "Dialog presented while hidden")
+        let sut = makeSUT(eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.sitePermissionsDialogVisibilityOverride = {
+            presented.fulfill()
+            return isVisible
+        }
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        let hostingController = try XCTUnwrap(sut.children.compactMap {
+            $0 as? UIHostingController<SitePermissionDialogView>
+        }.first)
+        sut.sitePermissionsDialogVisibilityOverride = { isVisible }
+        XCTAssertTrue(events.isEmpty)
+
+        isVisible = true
+        hostingController.viewDidAppear(false)
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+
+        hostingController.viewDidAppear(false)
+        sut.fireSitePermissionDialogImpressionIfVisible()
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+
+        sut.closeSitePermissions()
+        _ = await request.value
+    }
+
+    func testPermissionDialogActionRecordsPendingImpressionBeforeClick() async throws {
+        var events = [SitePermissionsEvent]()
+        let presented = expectation(description: "Dialog presented while hidden")
+        let sut = makeSUT(eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.sitePermissionsDialogVisibilityOverride = {
+            presented.fulfill()
+            return false
+        }
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        let dialog = try XCTUnwrap(sut.children.compactMap {
+            ($0 as? UIHostingController<SitePermissionDialogView>)?.rootView
+        }.first)
+        XCTAssertTrue(events.isEmpty)
+
+        dialog.onAction(.allowOnce)
+
+        let decision = await request.value
+        XCTAssertEqual(decision, .allow)
+        XCTAssertEqual(events, [
+            .permissionDialogImpression(type: .camera),
+            .permissionDialogClick(type: .camera, selection: .allowOnce)
+        ])
+    }
+
+    func testCancellingTabSwipeRecordsPendingPermissionDialogImpression() async {
+        var events = [SitePermissionsEvent]()
+        let presented = expectation(description: "Dialog presented while off screen")
+        let sut = makeSUT(eventHandler: { events.append($0) })
+        defer { sut.closeSitePermissions() }
+        sut.view.transform = CGAffineTransform(translationX: -390, y: 0)
+        sut.sitePermissionsDialogVisibilityOverride = { [weak sut] in
+            if sut?.view.transform.isIdentity == true { return true }
+            presented.fulfill()
+            return false
+        }
+
+        let parent = UIViewController()
+        let coordinator = MainViewCoordinator(parentController: parent)
+        let collection = MainViewFactory.NavigationBarCollectionView(
+            frame: CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight),
+            collectionViewLayout: UICollectionViewFlowLayout()
+        )
+        coordinator.navigationBarCollectionView = collection
+        coordinator.omniBar = MockOmniBar()
+        coordinator.toolbar = BrowserToolbarView(frame: .zero)
+        let tabsModel = TabsModel(tabs: [sut.tabModel], desktop: false)
+        let previewsSource = MockTabPreviewsSource()
+        let appSettings = AppSettingsMock()
+        let swipeCoordinator = SwipeTabsCoordinator(
+            coordinator: coordinator,
+            tabPreviewsSource: previewsSource,
+            appSettings: appSettings,
+            omnibarDependencies: MockOmnibarDependency(),
+            floatingUIManager: FloatingUIManager(
+                isFloatingUIFeatureEnabled: true,
+                isPadProvider: { false },
+                isSupportedOSProvider: { true },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            ),
+            liveTabControllerProvider: { $0 === sut.tabModel ? sut : nil },
+            inputStateProvider: { _ in TabInputState() },
+            isPaidAIChatEnabledProvider: { false },
+            allowsSubscriptionUpsellProvider: { false },
+            pixelFiring: nil,
+            selectTab: { _ in },
+            newTab: {},
+            onSwipeStarted: {}
+        )
+        swipeCoordinator.tabsModel = tabsModel
+        swipeCoordinator.isEnabled = true
+        collection.layoutIfNeeded()
+        swipeCoordinator.currentView = sut.view
+        swipeCoordinator.state = .swiping(.zero, .minus)
+
+        let request = makeBridgeRequestTask(on: sut, originHost: "top-level.example", captureType: .camera)
+        await fulfillment(of: [presented], timeout: 1)
+        XCTAssertTrue(events.isEmpty)
+
+        swipeCoordinator.scrollViewDidEndDecelerating(collection)
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+
+        XCTAssertTrue(sut.view.transform.isIdentity)
+        XCTAssertEqual(events, [.permissionDialogImpression(type: .camera)])
+        sut.closeSitePermissions()
+        _ = await request.value
     }
 
     func testPermissionDialogFiresImpressionAndClickEventsAndRoutesSelectedAction() async throws {
@@ -2041,6 +2280,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
     ) -> TabViewController {
         let featureFlagger = providedFeatureFlagger
             ?? MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : [])
+        let locationManager = MockLocationManager()
+        locationManager.authorizationStatusValue = .denied
         let sut = TabViewController.fake(
             customWebView: { SitePermissionURLWebView(url: committedURL, configuration: $0) },
             featureFlagger: featureFlagger,
@@ -2050,8 +2291,7 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
         let dependencies = SitePermissionsDependencies(
             store: store ?? SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring()),
             systemPermissionClient: systemPermissionClient ?? SystemPermissionClient(
-                locationManager: CLLocationManager(),
-                locationServicesEnabled: { false },
+                locationManager: locationManager,
                 avAuthorizationStatus: avAuthorizationStatus ?? { _ in systemAuthorizationStatus },
                 avRequestAccess: avRequestAccess ?? { _, completion in completion(true) },
                 notificationCenter: NotificationCenter()
@@ -2060,6 +2300,8 @@ final class TabViewControllerMediaCapturePermissionRoutingTests: XCTestCase {
             revokePermissionsInOtherTabs: revokePermissionsInOtherTabs
         )
         sut.sitePermissionsDependenciesProvider = { dependencies }
+        // The test tab has no window; treat its dialogs as visible unless a test says otherwise.
+        sut.sitePermissionsDialogVisibilityOverride = { true }
         sut.setSitePermissionsGeolocationActive(true)
         if hasCommittedMainFrame {
             sut.webView(sut.webView, didCommit: nil)
@@ -2246,10 +2488,16 @@ private final class SitePermissionURLWebView: WKWebView {
 
 private final class MockLocationManager: CLLocationManager {
 
+    var authorizationStatusValue = CLAuthorizationStatus.authorizedWhenInUse
     private(set) var startUpdatingCallCount = 0
     private(set) var stopUpdatingCallCount = 0
 
-    override var authorizationStatus: CLAuthorizationStatus { .authorizedWhenInUse }
+    override var authorizationStatus: CLAuthorizationStatus { authorizationStatusValue }
+
+    // Core Location reports the current authorization once a delegate is set.
+    override var delegate: (any CLLocationManagerDelegate)? {
+        didSet { delegate?.locationManagerDidChangeAuthorization?(self) }
+    }
 
     override func startUpdatingLocation() {
         startUpdatingCallCount += 1

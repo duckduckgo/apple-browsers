@@ -31,7 +31,7 @@ struct AutofillSurveyView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: 8) {
                 Group {
-                    Image(rebrandable: "Passwords-DDG-96x96")
+                    Image(.passwordsDDG96X96)
                         .resizable()
                         .frame(width: 50, height: 50, alignment: .center)
 
@@ -72,7 +72,7 @@ struct AutofillSurveyView: View {
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
         .background(RoundedRectangle(cornerRadius: 8.0)
-            .foregroundColor(Color(singleUseColor: .groupedListContentBackground))
+            .foregroundColor(Color(designSystemColor: .surfaceTertiary))
         )
         .padding([.horizontal, .top], 20)
         .padding(.bottom, 30)

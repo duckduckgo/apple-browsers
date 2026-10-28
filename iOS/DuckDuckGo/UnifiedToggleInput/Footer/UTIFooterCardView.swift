@@ -66,9 +66,12 @@ final class UTIFooterCardView: UIView {
     private var contentTopConstraint: NSLayoutConstraint?
     private var actionCollapsedWidthConstraint: NSLayoutConstraint?
     private var actionTrailingConstraint: NSLayoutConstraint?
+    private var actionVerticalConstraints: [NSLayoutConstraint] = []
+    private var dismissVerticalConstraints: [NSLayoutConstraint] = []
     private var iconSlotWidthConstraint: NSLayoutConstraint?
     private var iconTextGapConstraint: NSLayoutConstraint?
     private var formattedTitleMessage: UTIFooterMessage?
+    private var titleStyle: UTIFooterMessage.TitleStyle = .standard
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -113,10 +116,12 @@ final class UTIFooterCardView: UIView {
                 titleLabel.accessibilityLabel = nil
                 formattedTitleMessage = nil
             }
-            // A title above a reset line is a headline; a standalone one is body copy.
-            let isStandaloneCopy = message.subtitle == nil
-            titleLabel.font = isStandaloneCopy ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+            titleLabel.font = Self.titleFont(for: message)
             titleLabel.text = message.title
+        }
+        if titleStyle != message.titleStyle {
+            titleStyle = message.titleStyle
+            applyColors()
         }
         // A label can't take a tap on part of its text, so copy carrying a link renders in the text view.
         titleLabel.isHidden = message.link != nil
@@ -138,7 +143,9 @@ final class UTIFooterCardView: UIView {
         // Hidden views still take part in Auto Layout, so the footprint collapses explicitly.
         actionCollapsedWidthConstraint?.isActive = message.primaryAction == nil
 
+        actionVerticalConstraints.forEach { $0.isActive = message.primaryAction != nil }
         dismissButton.isHidden = !message.isDismissible
+        dismissVerticalConstraints.forEach { $0.isActive = message.isDismissible }
         // Otherwise the CTA stops short of the trailing edge by the width of a close button that
         // isn't there.
         actionTrailingConstraint?.constant = message.isDismissible ? -Constants.dismissTrailingFootprint : 0
@@ -160,6 +167,16 @@ final class UTIFooterCardView: UIView {
         onDismissTap?()
     }
 
+    private static func titleFont(for message: UTIFooterMessage) -> UIFont {
+        switch message.titleStyle {
+        case .error:
+            return .daxCaption1()
+        case .standard:
+            // A title above a reset line is a headline; a standalone one is body copy.
+            return message.subtitle == nil ? .daxFootnoteRegular() : .daxFootnoteSemibold()
+        }
+    }
+
     private var allIcons: [UIView] {
         [usageRing, alertIcon, infoIcon, modelSwitchIcon, shieldIcon, giftIcon]
     }
@@ -171,7 +188,7 @@ final class UTIFooterCardView: UIView {
 
         let title = NSMutableAttributedString(string: message.title, attributes: [.font: font])
         let emphasisRange = (title.string as NSString).range(of: formatting.emphasizedText)
-        if emphasisRange.location != NSNotFound {
+        if emphasisRange.location != NSNotFound, emphasisRange.length > 0 {
             title.addAttribute(.font, value: UIFont.daxFootnoteSemibold(), range: emphasisRange)
         }
         let iconRange = (title.string as NSString).range(of: formatting.attachmentPlaceholder)
@@ -279,6 +296,16 @@ private extension UTIFooterCardView {
                                                             constant: Constants.iconTextGap)
         iconTextGapConstraint = iconTextGap
 
+        actionVerticalConstraints = [
+            actionButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            actionButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor)
+        ]
+        dismissVerticalConstraints = [
+            dismissButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
+            dismissButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor)
+        ]
+        NSLayoutConstraint.activate(actionVerticalConstraints + dismissVerticalConstraints)
+
         NSLayoutConstraint.activate([
             contentTop,
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.contentLeading),
@@ -316,8 +343,6 @@ private extension UTIFooterCardView {
             giftIcon.heightAnchor.constraint(equalToConstant: Constants.iconSize),
 
             iconTextGap,
-            // Centered rather than stretched: the controls keep the content at least their height even
-            // when hidden, and a text view stretched to that draws its one line at the top.
             textStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             textStack.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
             textStack.topAnchor.constraint(equalTo: contentView.topAnchor).withPriority(.defaultLow),
@@ -325,13 +350,9 @@ private extension UTIFooterCardView {
             textStack.trailingAnchor.constraint(equalTo: actionButton.leadingAnchor, constant: -Constants.actionSpacing),
             actionButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             actionTrailing,
-            actionButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
-            actionButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
 
             dismissButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
             dismissButton.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            dismissButton.topAnchor.constraint(greaterThanOrEqualTo: contentView.topAnchor),
-            dismissButton.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor),
             dismissButton.widthAnchor.constraint(equalToConstant: Constants.dismissSize),
             dismissButton.heightAnchor.constraint(equalToConstant: Constants.dismissSize),
         ])
@@ -341,7 +362,7 @@ private extension UTIFooterCardView {
 
     func applyColors() {
         backgroundColor = UIColor(designSystemColor: .surfaceSecondary)
-        titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
+        titleLabel.textColor = UIColor(designSystemColor: titleStyle == .error ? .destructivePrimary : .textPrimary)
         subtitleLabel.textColor = UIColor(designSystemColor: .textSecondary)
         alertIcon.tintColor = UIColor(designSystemColor: .icons)
         infoIcon.tintColor = UIColor(designSystemColor: .iconsSecondary)

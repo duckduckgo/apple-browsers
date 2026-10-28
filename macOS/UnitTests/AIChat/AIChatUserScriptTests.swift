@@ -307,6 +307,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
     var isFireWindowProvider: (() -> Bool)?
+    var isSidebarProvider: (() -> Bool)?
+    var attachmentPrivacyDisclosureProvider: (() -> AttachmentPrivacyDisclosure)?
+    var directNavigationFallback: AIChatConversationSource?
 
     init(messageHandling: any AIChatMessageHandling = MockAIChatMessageHandling()) {
         self.messageHandling = messageHandling
@@ -315,6 +318,11 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     func openAIChatSettings(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
         didOpenSettings = true
         return nil
+    }
+
+    @MainActor
+    func attachmentPrivacyShouldDisplay(params: Any, message: UserScriptMessage) async -> (any Encodable)? {
+        nil
     }
 
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> (any Encodable)? {
@@ -410,6 +418,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         PassthroughSubject<Void, Never>().eraseToAnyPublisher()
     }
 
+    var pageContextAddedPublisher: AnyPublisher<Void, Never> {
+        PassthroughSubject<Void, Never>().eraseToAnyPublisher()
+    }
+
     var didGetAIChatOpenTabs = false
     var didGetAIChatTabContent = false
 
@@ -468,7 +480,9 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didSubmitAIChatPageContext = true
     }
 
-    func resetConversationSourceForNewDocument() {}
+    func resetConversationSourceForNewDocument() {
+        directNavigationFallback = nil
+    }
 
     func submitAIChatSelectionContext(_ selection: AIChatSelectionContextData) {
         didSubmitAIChatSelectionContext = true
@@ -554,6 +568,10 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
     func customizeResponsesModalClosed(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        return nil
+    }
+
+    func getAIChats(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
         return nil
     }
 }

@@ -75,7 +75,8 @@ struct SubscriptionOnboardingProgressView: View {
             navigationButton: navigationButton,
             header: header,
             footer: footer,
-            declaresNavigationChrome: variant != .duckAIInterstitial) {
+            declaresNavigationChrome: variant != .duckAIInterstitial,
+            footerBlur: true) {
             SubscriptionOnboardingProgressCardView(percentage: percentage,
                                                    items: progress.checklist,
                                                    completedItems: completedItems,
@@ -179,41 +180,31 @@ private struct SubscriptionOnboardingProgressViewPreview: View {
 }
 
 #Preview("Completion — 100%") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
-    }
+    SubscriptionOnboardingProgressViewPreview(variant: .summary,
+                                              completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
 }
 
 // 75% is the most the flow itself reaches: every step but PIR, which is started from the checklist.
 #Preview("Summary — 75%") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  completedItems: [.vpn, .idtr, .duckAI])
-    }
+    SubscriptionOnboardingProgressViewPreview(variant: .summary,
+                                              completedItems: [.vpn, .idtr, .duckAI])
 }
 
 #Preview("Duck.ai interstitial") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .duckAIInterstitial,
-                                                  completedItems: [.vpn, .idtr, .duckAI])
-    }
+    SubscriptionOnboardingProgressViewPreview(variant: .duckAIInterstitial,
+                                              completedItems: [.vpn, .idtr, .duckAI])
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingProgressViewPreview(variant: .summary,
+                                              completedItems: Set(SubscriptionOnboardingChecklistItem.allCases))
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingProgressViewPreview(variant: .summary,
-                                                  completedItems: [.vpn, .idtr, .duckAI])
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingProgressViewPreview(variant: .summary,
+                                              completedItems: [.vpn, .idtr, .duckAI])
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

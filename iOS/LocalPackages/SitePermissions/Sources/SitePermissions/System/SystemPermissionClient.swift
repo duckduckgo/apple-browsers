@@ -18,6 +18,7 @@
 //
 
 import AVFoundation
+import Combine
 import CoreLocation
 import UIKit
 
@@ -27,7 +28,7 @@ public enum SystemPermissionAuthorizationState: Equatable, Sendable {
     case authorized
     case denied
     case restricted
-    /// The service is disabled or the system returned an unsupported authorization state.
+    /// The system returned an unsupported authorization state or authorization could not be completed.
     case unavailable
 }
 
@@ -45,12 +46,15 @@ public final class SystemPermissionClient: NSObject {
     }
 
     private let locationManager: CLLocationManager
-    private let locationServicesEnabled: () -> Bool
     private let avAuthorizationStatus: (AVMediaType) -> AVAuthorizationStatus
     private let avRequestAccess: (AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void
     private let notificationCenter: NotificationCenter
 
     private var locationState: SystemPermissionAuthorizationState = .notDetermined
+    private let locationAuthorizationSubject = PassthroughSubject<Void, Never>()
+
+    /// Whether Core Location has reported location authorization yet. Until it has, the location state is a placeholder.
+    public private(set) var isLocationAuthorizationReported = false
     private var locationAuthorizationContinuations = [CheckedContinuation<SystemPermissionAuthorizationState, Never>]()
     private var locationUpdateSubscribers = [UUID: LocationUpdateSubscriber]()
 
@@ -58,28 +62,30 @@ public final class SystemPermissionClient: NSObject {
         locationAuthorizationContinuations.count
     }
 
+    /// Emits on the main thread when Core Location first reports location authorization and whenever it changes.
+    public var locationAuthorizationChanges: AnyPublisher<Void, Never> {
+        locationAuthorizationSubject.eraseToAnyPublisher()
+    }
+
     public override convenience init() {
         self.init(locationManager: CLLocationManager(),
-                  locationServicesEnabled: CLLocationManager.locationServicesEnabled,
                   avAuthorizationStatus: AVCaptureDevice.authorizationStatus,
                   avRequestAccess: AVCaptureDevice.requestAccess,
                   notificationCenter: .default)
     }
 
     init(locationManager: CLLocationManager,
-         locationServicesEnabled: @escaping () -> Bool,
          avAuthorizationStatus: @escaping (AVMediaType) -> AVAuthorizationStatus,
          avRequestAccess: @escaping (AVMediaType, @escaping @Sendable (Bool) -> Void) -> Void,
          notificationCenter: NotificationCenter) {
         self.locationManager = locationManager
-        self.locationServicesEnabled = locationServicesEnabled
         self.avAuthorizationStatus = avAuthorizationStatus
         self.avRequestAccess = avRequestAccess
         self.notificationCenter = notificationCenter
         super.init()
 
+        // Core Location reports the current authorization to the delegate once it's set.
         locationManager.delegate = self
-        refreshAuthorizationStates()
         notificationCenter.addObserver(self,
                                        selector: #selector(applicationDidBecomeActive),
                                        name: UIApplication.didBecomeActiveNotification,
@@ -110,10 +116,6 @@ public final class SystemPermissionClient: NSObject {
         case .location:
             return await requestLocationAuthorization()
         }
-    }
-
-    public func refreshAuthorizationStates() {
-        refreshLocationAuthorizationState()
     }
 
     public func startUpdatingLocation() {
@@ -161,11 +163,6 @@ public final class SystemPermissionClient: NSObject {
             : kCLLocationAccuracyHundredMeters
     }
 
-    private func refreshLocationAuthorizationState() {
-        locationState = locationServicesEnabled() ? Self.state(from: locationManager.authorizationStatus) : .unavailable
-        completePendingLocationAuthorizationRequestsIfNeeded()
-    }
-
     private func completePendingLocationAuthorizationRequestsIfNeeded() {
         guard locationState != .notDetermined else { return }
 
@@ -204,7 +201,6 @@ public final class SystemPermissionClient: NSObject {
     }
 
     @objc private func applicationDidBecomeActive() {
-        refreshAuthorizationStates()
         // Core Location ignores authorization requests made while the app is inactive, so retry when it returns.
         if locationState == .notDetermined, !locationAuthorizationContinuations.isEmpty {
             locationManager.requestWhenInUseAuthorization()
@@ -245,7 +241,16 @@ public final class SystemPermissionClient: NSObject {
 extension SystemPermissionClient: @preconcurrency CLLocationManagerDelegate {
 
     public func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        refreshLocationAuthorizationState()
+        // Read authorizationStatus only here, as Apple recommends. Elsewhere it's a synchronous call to locationd,
+        // which has blocked the main thread past the watchdog limit.
+        let state = Self.state(from: manager.authorizationStatus)
+        let didChange = !isLocationAuthorizationReported || state != locationState
+        isLocationAuthorizationReported = true
+        locationState = state
+        completePendingLocationAuthorizationRequestsIfNeeded()
+        if didChange {
+            locationAuthorizationSubject.send()
+        }
     }
 
     public func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

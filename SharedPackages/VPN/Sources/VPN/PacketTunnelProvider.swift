@@ -1071,6 +1071,17 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
         cancelTunnelWithError(stopError)
     }
 
+    /// Apple docs explicitly say we shouldn't be overridding this API. Reasons for this is:
+    /// - We're observing a large number of `process_died` VPNSessionHealth wide pixel events
+    /// - We're also observing a large number of `Tunnel Start`, with no `Tunnel Stop` counterpart
+    ///
+    /// Signaling this API is being invoked might help us conclusively determine if the process is being terminated with no proper tunnel termination callbacks.
+    ///
+    open override func cancelTunnelWithError(_ error: Error?) {
+        sessionHealth.tunnelCancelledWithError()
+        super.cancelTunnelWithError(error)
+    }
+
     // MARK: - Tunnel Stop: Support Methods
 
     /// Stops resources after `stopTunnel(with:)` or `cancelTunnel(with:)` records the session outcome.
@@ -1404,6 +1415,13 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
                 }
             }
         }
+
+#if os(iOS)
+        // Loading preferences from the extension on iOS 16 can raise an Objective-C exception.
+        guard #available(iOS 17.0, *) else {
+            throw DisableOnDemandError.notSupportedByOS
+        }
+#endif
 
         Logger.networkProtection.log("🔴 Disabling Connect On Demand and shutting down the tunnel")
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()

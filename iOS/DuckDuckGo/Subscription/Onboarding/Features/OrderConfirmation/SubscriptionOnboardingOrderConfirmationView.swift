@@ -24,7 +24,8 @@ import UIComponents
 struct SubscriptionOnboardingOrderConfirmationView: View {
     private enum Metrics {
         static let contentSpacing: CGFloat = 24
-        static let illustrationOverhang: CGFloat = 36
+        static let illustrationSize: CGFloat = 194
+        static let illustrationBottomInset: CGFloat = 4
     }
 
     @StateObject private var viewModel: SubscriptionOnboardingOrderConfirmationViewModel
@@ -42,8 +43,7 @@ struct SubscriptionOnboardingOrderConfirmationView: View {
             navigationButton: navigationButton,
             header: header,
             footer: .single(.init(UserText.subscriptionOnboardingOrderConfirmationNextButton) { viewModel.proceed() }),
-            scrollsContent: false,
-            pageBackground: { illustration }) {
+            scrollsContent: false) {
             content
         }
         .overlay { ConfettiView() }
@@ -68,80 +68,66 @@ private extension SubscriptionOnboardingOrderConfirmationView {
                 SubscriptionOnboardingFreeTrialCalendarCard(model: freeTrialCard)
             }
 
-            Spacer(minLength: 0)
+            illustration
+                .frame(maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                .padding(.bottom, Metrics.illustrationBottomInset)
+                .zIndex(-1)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     var illustration: some View {
-        GeometryReader { proxy in
-            Image(.daxThumbupStatic)
-                .resizable()
-                .scaledToFit()
-                .frame(width: proxy.size.width)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-                .offset(y: Metrics.illustrationOverhang)
-        }
-        .accessibilityHidden(true)
+        Image(.daxThumbsUpCircle)
+            .resizable()
+            .frame(width: Metrics.illustrationSize, height: Metrics.illustrationSize)
+            .accessibilityHidden(true)
     }
 }
 
 #if DEBUG
 
 #Preview("Free trial — day 1") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Free trial — midway") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial(dayOffset: 3)),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Paid") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .paid),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .paid),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Loading") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .loading),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .loading),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
 }
 
 #Preview("Dark") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .preferredColorScheme(.dark)
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .preferredColorScheme(.dark)
 }
 
 #Preview("Large Text") {
-    RebrandedPreview {
-        SubscriptionOnboardingOrderConfirmationView(
-            viewModel: .preview(state: .previewFreeTrial()),
-            navigationButton: .close({}))
-            .subscriptionOnboardingNavigationContainer()
-    }
-    .dynamicTypeSize(.accessibility5)
+    SubscriptionOnboardingOrderConfirmationView(
+        viewModel: .preview(state: .previewFreeTrial()),
+        navigationButton: .close({}))
+        .subscriptionOnboardingNavigationContainer()
+        .dynamicTypeSize(.accessibility5)
 }
 
 #endif

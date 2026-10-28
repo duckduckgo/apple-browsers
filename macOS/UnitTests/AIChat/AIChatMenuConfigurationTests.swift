@@ -230,6 +230,29 @@ class AIChatMenuConfigurationTests: XCTestCase {
         XCTAssertFalse(result, "Automatic Page Context should be disabled when storage is false and feature flag is enabled.")
     }
 
+    func testAutoAttachFlagSendsPageContextAutomaticallyWhateverTheStoredSetting() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true,
+                                       FeatureFlag.aiChatPageContextAutoAttach.rawValue: true]
+        mockStorage.shouldAutomaticallySendPageContext = false
+
+        XCTAssertTrue(configuration.shouldAutomaticallySendPageContext)
+        XCTAssertEqual(configuration.shouldAutomaticallySendPageContextTelemetryValue, true)
+    }
+
+    func testAutoAttachFlagStillRequiresThePageContextFlag() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContextAutoAttach.rawValue: true]
+
+        XCTAssertFalse(configuration.shouldAutomaticallySendPageContext)
+    }
+
+    func testAutoAttachFlagStillRequiresAIFeatures() {
+        featureFlagger.featuresStub = [FeatureFlag.aiChatPageContext.rawValue: true,
+                                       FeatureFlag.aiChatPageContextAutoAttach.rawValue: true]
+        mockStorage.isAIFeaturesEnabled = false
+
+        XCTAssertFalse(configuration.shouldAutomaticallySendPageContext)
+    }
+
     func testShouldDisplayTranslationMenuItemWhenApplicationMenuShortcutIsEnabled() {
         remoteSettings.isAIChatEnabled = true
         mockStorage.isAIFeaturesEnabled = true

@@ -56,6 +56,11 @@
                     "app_backgrounded",
                     "favorite_selected",
                     "chat_selected",
+                    "tab_selected",
+                    "tab_opened",
+                    "tab_closed",
+                    "tab_swiped",
+                    "data_cleared",
                     "app_terminated"
                 ]
             },
@@ -87,9 +92,9 @@
                 "description": "Whether the user pressed back/cancel during the session."
             },
             {
-                "key": "feature.data.ext.opening_screen_changed",
+                "key": "feature.data.ext.after_inactivity_settings_opened",
                 "type": "boolean",
-                "description": "Whether the user changed the Opening Screen option from the escape hatch's settings menu during the session."
+                "description": "Whether the user opened Settings > General from the escape hatch's After Inactivity menu item during the session."
             },
             {
                 "key": "feature.data.ext.close_tab_tapped",
@@ -100,6 +105,17 @@
                 "key": "feature.data.ext.burn_tab_tapped",
                 "type": "boolean",
                 "description": "Whether the user burned the open tab from the escape hatch's menu during the session."
+            },
+            {
+                "key": "feature.data.ext.layout",
+                "type": "string",
+                "description": "Layout when the event was recorded: regular is the iPad tabs-bar layout (window 678pt or wider); compact is the phone layout, on every iPhone and on narrower iPad windows.",
+                "enum": ["regular", "compact"]
+            },
+            {
+                "key": "feature.data.ext.hardware_keyboard",
+                "type": "boolean",
+                "description": "True when a hardware keyboard was connected."
             }
         ]
     }

@@ -135,3 +135,4 @@
 
 /* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
 "sitePermissions.voice-search.settings-reminder.body" = "プライベート音声機能を使用するには、マイクのアクセス許可が必要です。";
+

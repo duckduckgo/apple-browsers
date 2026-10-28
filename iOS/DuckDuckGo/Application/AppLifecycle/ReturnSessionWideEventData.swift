@@ -32,7 +32,7 @@ final class ReturnSessionWideEventData: WideEventData {
         mobileMetaType: "ios-return-session",
         // API requires both; only mobileMetaType is read on iOS.
         desktopMetaType: "macos-return-session",
-        version: "1.2.0"
+        version: "1.5.0"
     )
 
     /// `ntp` is the after-idle NTP; `ntpUserInitiated` is an NTP reached without the treatment.
@@ -44,6 +44,25 @@ final class ReturnSessionWideEventData: WideEventData {
         case duckAI = "duck_ai"
     }
 
+    enum TogglePosition: String, Codable, CaseIterable {
+        case search
+        case duckAI = "duck_ai"
+
+        init(_ mode: TextEntryMode) {
+            self = mode == .aiChat ? .duckAI : .search
+        }
+
+        /// nil while off screen: iPhone shows the toggle only while focused and not on a Duck.ai tab; iPad always does.
+        static func onScreen(mode: TextEntryMode,
+                             isToggleEnabled: Bool,
+                             isPad: Bool,
+                             isFocused: Bool,
+                             isDuckAITab: Bool) -> TogglePosition? {
+            guard isToggleEnabled, isPad || (isFocused && !isDuckAITab) else { return nil }
+            return TogglePosition(mode)
+        }
+    }
+
     enum StatusReason: String, Codable, CaseIterable {
         case searchSubmitted = "search_submitted"
         case aiPromptSubmitted = "ai_prompt_submitted"
@@ -53,6 +72,11 @@ final class ReturnSessionWideEventData: WideEventData {
         case appBackgrounded = "app_backgrounded"
         case favoriteSelected = "favorite_selected"
         case chatSelected = "chat_selected"
+        case tabSelected = "tab_selected"
+        case tabOpened = "tab_opened"
+        case tabClosed = "tab_closed"
+        case tabSwiped = "tab_swiped"
+        case dataCleared = "data_cleared"
     }
 
     /// Fallback for `source` when an `ai_prompt_submitted` terminal has no attributed entry point.
@@ -69,6 +93,10 @@ final class ReturnSessionWideEventData: WideEventData {
     var afterIdle: Bool
     var timeAwayMs: Int?
     var focused: Bool
+    /// Optional so old pending flows decode.
+    var toggleEnabled: Bool?
+    /// The side first shown on arrival; nil while the toggle stays hidden.
+    var togglePosition: TogglePosition?
     var statusReason: StatusReason?
     /// What triggered the prompt submission (an `AIChatEntryPointSource` raw value). Set only
     /// when `statusReason` is `.aiPromptSubmitted`. Optional so old pending flows decode.
@@ -78,20 +106,25 @@ final class ReturnSessionWideEventData: WideEventData {
     var pageEngaged: Bool
     var toggleUsed: Bool
     var backPressed: Bool
-    var openingScreenChanged: Bool
+    var afterInactivitySettingsOpened: Bool
     var closeTabTapped: Bool
     var burnTabTapped: Bool
+    /// Recorded at session start and refreshed when it ends. Optional so flows pending from an older version decode.
+    var layout: UsageContext.Layout?
+    var hardwareKeyboard: Bool?
 
     init(landedOn: LandedOn,
          afterIdle: Bool,
          startedAt: Date = Date(),
          timeAwayMs: Int? = nil,
          focused: Bool = false,
+         toggleEnabled: Bool? = nil,
+         togglePosition: TogglePosition? = nil,
          statusReason: StatusReason? = nil,
          pageEngaged: Bool = false,
          toggleUsed: Bool = false,
          backPressed: Bool = false,
-         openingScreenChanged: Bool = false,
+         afterInactivitySettingsOpened: Bool = false,
          closeTabTapped: Bool = false,
          burnTabTapped: Bool = false,
          contextData: WideEventContextData = WideEventContextData(),
@@ -101,13 +134,15 @@ final class ReturnSessionWideEventData: WideEventData {
         self.afterIdle = afterIdle
         self.timeAwayMs = timeAwayMs
         self.focused = focused
+        self.toggleEnabled = toggleEnabled
+        self.togglePosition = togglePosition
         self.statusReason = statusReason
         self.sessionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.firstInteractionInterval = WideEvent.MeasuredInterval(start: startedAt)
         self.pageEngaged = pageEngaged
         self.toggleUsed = toggleUsed
         self.backPressed = backPressed
-        self.openingScreenChanged = openingScreenChanged
+        self.afterInactivitySettingsOpened = afterInactivitySettingsOpened
         self.closeTabTapped = closeTabTapped
         self.burnTabTapped = burnTabTapped
         self.contextData = contextData
@@ -119,6 +154,11 @@ final class ReturnSessionWideEventData: WideEventData {
     /// do it instead would race and complete a fresh flow as UNKNOWN.
     func completionDecision(for trigger: WideEventCompletionTrigger) async -> WideEventCompletionDecision {
         .keepPending
+    }
+
+    func record(_ usageContext: UsageContext) {
+        layout = usageContext.layout
+        hardwareKeyboard = usageContext.hardwareKeyboard
     }
 
     static let appTerminatedReason = "app_terminated"
@@ -144,6 +184,8 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.afterIdle, afterIdle),
             (WideEventParameter.ReturnSessionFeature.timeAwayMsBucketed, timeAwayMs.map { String(Self.timeAwayBucketMs($0)) }),
             (WideEventParameter.ReturnSessionFeature.focused, focused),
+            (WideEventParameter.ReturnSessionFeature.toggleEnabled, toggleEnabled),
+            (WideEventParameter.ReturnSessionFeature.togglePosition, togglePosition?.rawValue),
             (WideEventParameter.Feature.statusReason, statusReason?.rawValue),
             (WideEventParameter.ReturnSessionFeature.source, source),
             (WideEventParameter.ReturnSessionFeature.sessionDurationMsBucketed, sessionInterval.stringValue(bucket)),
@@ -151,9 +193,11 @@ extension ReturnSessionWideEventData {
             (WideEventParameter.ReturnSessionFeature.pageEngaged, pageEngaged),
             (WideEventParameter.ReturnSessionFeature.toggleUsed, toggleUsed),
             (WideEventParameter.ReturnSessionFeature.backPressed, backPressed),
-            (WideEventParameter.ReturnSessionFeature.openingScreenChanged, openingScreenChanged),
+            (WideEventParameter.ReturnSessionFeature.afterInactivitySettingsOpened, afterInactivitySettingsOpened),
             (WideEventParameter.ReturnSessionFeature.closeTabTapped, closeTabTapped),
             (WideEventParameter.ReturnSessionFeature.burnTabTapped, burnTabTapped),
+            (WideEventParameter.ReturnSessionFeature.layout, layout?.rawValue),
+            (WideEventParameter.ReturnSessionFeature.hardwareKeyboard, hardwareKeyboard),
         ])
     }
 }
@@ -169,6 +213,11 @@ extension ReturnSessionWideEventData.StatusReason {
         case .appBackgrounded: return .appBackgrounded
         case .favoriteSelected: return .favoriteSelected
         case .chatSelected: return .chatSelected
+        case .tabSelected: return .tabSelected
+        case .tabOpened: return .tabOpened
+        case .tabClosed: return .tabClosed
+        case .tabSwiped: return .tabSwiped
+        case .dataCleared: return .dataCleared
         }
     }
 }
@@ -180,14 +229,18 @@ extension WideEventParameter {
         static let afterIdle = "feature.data.ext.after_idle"
         static let timeAwayMsBucketed = "feature.data.ext.time_away_ms_bucketed"
         static let focused = "feature.data.ext.focused"
+        static let toggleEnabled = "feature.data.ext.toggle_enabled"
+        static let togglePosition = "feature.data.ext.toggle_position"
         static let source = "feature.data.ext.source"
         static let sessionDurationMsBucketed = "feature.data.ext.session_duration_ms_bucketed"
         static let timeToFirstInteractionMsBucketed = "feature.data.ext.time_to_first_interaction_ms_bucketed"
         static let pageEngaged = "feature.data.ext.page_engaged"
         static let toggleUsed = "feature.data.ext.toggle_used"
         static let backPressed = "feature.data.ext.back_pressed"
-        static let openingScreenChanged = "feature.data.ext.opening_screen_changed"
+        static let afterInactivitySettingsOpened = "feature.data.ext.after_inactivity_settings_opened"
         static let closeTabTapped = "feature.data.ext.close_tab_tapped"
         static let burnTabTapped = "feature.data.ext.burn_tab_tapped"
+        static let layout = "feature.data.ext.layout"
+        static let hardwareKeyboard = "feature.data.ext.hardware_keyboard"
     }
 }

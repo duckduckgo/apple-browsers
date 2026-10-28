@@ -77,7 +77,8 @@ class AutofillUITests: UITestCase {
 
         if !app.updatePasswordPopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
             XCTFail("The Update password popover didn't appear after signing in with a changed password. " +
-                    "Password field before: \(filledPassword.count) characters, after: \(changedPassword.count). Popover texts: \(popoverTextsInOneSnapshot())")
+                    "Password field before: \(filledPassword.count) characters, after: \(changedPassword.count). Popover texts: \(popoverTextsInOneSnapshot()). " +
+                    "Focused: \(focusedElementDescription())")
         }
     }
 
@@ -96,5 +97,11 @@ class AutofillUITests: UITestCase {
             pending.append(contentsOf: element.children.map { ($0, isPopoverContent) })
         }
         return texts
+    }
+
+    private func focusedElementDescription() -> String {
+        let focused = app.descendants(matching: .any).matching(NSPredicate(format: "hasKeyboardFocus == true")).firstMatch
+        guard focused.exists else { return "nothing" }
+        return "\(focused.elementType.rawValue) '\(focused.label)' at \(focused.frame), windows: \(app.windows.count)"
     }
 }

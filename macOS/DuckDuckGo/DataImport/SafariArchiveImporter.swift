@@ -93,6 +93,7 @@ final class SafariArchiveImporter: DataImporter {
     private let faviconManager: FaviconManagement
     private let historyReader: SafariHistoryReaderProtocol
     private let historyImporter: HistoryImporterProtocol
+    private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     private let secureVaultReporter: SecureVaultReporting
     private let tld: TLD
@@ -107,6 +108,7 @@ final class SafariArchiveImporter: DataImporter {
     ///   - faviconManager: The favicon manager for handling favicons
     ///   - historyReader: The reader used to parse the archive's History.json
     ///   - historyImporter: The importer that adds the parsed visits to history
+    ///   - pixelFiring: Fires the pixel that reports an export without a history file
     ///   - featureFlagger: Feature flagger for controlling import behavior
     ///   - secureVaultReporter: Reporter for secure vault operations
     ///   - tld: TLD helper for URL processing
@@ -119,6 +121,7 @@ final class SafariArchiveImporter: DataImporter {
          faviconManager: FaviconManagement,
          historyReader: SafariHistoryReaderProtocol = SafariHistoryReader(),
          historyImporter: HistoryImporterProtocol,
+         pixelFiring: PixelFiring? = PixelKit.shared,
          featureFlagger: FeatureFlagger,
          secureVaultReporter: SecureVaultReporting,
          tld: TLD) {
@@ -132,6 +135,7 @@ final class SafariArchiveImporter: DataImporter {
         self.faviconManager = faviconManager
         self.historyReader = historyReader
         self.historyImporter = historyImporter
+        self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
         self.secureVaultReporter = secureVaultReporter
         self.tld = tld
@@ -243,6 +247,10 @@ final class SafariArchiveImporter: DataImporter {
                 finalSummary[type] = DataImportResult.failure(ImportError(action: .generic, type: .unarchive, underlyingError: error))
             }
             return finalSummary
+        }
+
+        if types.contains(.history), contents.history.isEmpty {
+            fireHistorySourceFileMissingPixelIfNeeded()
         }
 
         guard contents.hasData(for: types) else {
@@ -458,6 +466,14 @@ final class SafariArchiveImporter: DataImporter {
         cumulativeFraction += 1.0 / Double(types.count)
         try updateProgress(.importingHistory(numberOfVisits: try? historyResult.get().successful, fraction: cumulativeFraction))
         return [.history: historyResult]
+    }
+
+    /// The archive could be read, but it has no history file the archive reader recognises.
+    private func fireHistorySourceFileMissingPixelIfNeeded() {
+        guard sourceFileType == .archive else { return }
+
+        let pixel = DataImportHistoryPixel.sourceFileMissing(source: DataImport.Source.safari.pixelSourceParameterName, sourceVersion: nil)
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private static func contentType(for url: URL) -> UTType? {

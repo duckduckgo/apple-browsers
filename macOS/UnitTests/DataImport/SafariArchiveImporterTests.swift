@@ -22,6 +22,7 @@ import Combine
 import Common
 import FoundationExtensions
 import History
+@_spi(Testing) import PixelKit
 import PrivacyConfig
 import SecureStorage
 import XCTest
@@ -185,7 +186,8 @@ final class SafariArchiveImporterTests: XCTestCase {
         let parseResult = HistoryImport.ParseResult(visits: [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com")!, title: nil, date: Date())], skipped: 1)
         let historyImporter = MockHistoryImporter()
         historyImporter.summary = .init(imported: 2, alreadyInHistory: 1)
-        let importer = makeImporter(fileURL: zipURL, historyReader: MockSafariHistoryReader(result: .success(parseResult)), historyImporter: historyImporter)
+        let pixelKit = PixelKitMock()
+        let importer = makeImporter(fileURL: zipURL, historyReader: MockSafariHistoryReader(result: .success(parseResult)), historyImporter: historyImporter, pixelFiring: pixelKit)
 
         let summary = await importer.importData(types: [.history]).task.value
 
@@ -194,6 +196,19 @@ final class SafariArchiveImporterTests: XCTestCase {
         XCTAssertEqual(history.successful, 2)
         XCTAssertEqual(history.duplicate, 1)
         XCTAssertEqual(historyImporter.importedParseResults, [HistoryImport.ParseResult(visits: parseResult.visits + parseResult.visits, skipped: 2)])
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    func testWhenArchiveHasNoHistoryFileThenSourceFileMissingPixelIsFired() async throws {
+        let zipURL = try createZipArchive(files: ["Bookmarks.html": "<!DOCTYPE NETSCAPE-Bookmark-file-1>"])
+        let pixelKit = PixelKitMock()
+        let importer = makeImporter(fileURL: zipURL, pixelFiring: pixelKit)
+
+        _ = await importer.importData(types: [.history]).task.value
+
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["dataimport_history_source-file-missing_macos"])
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.pixel.parameters?["source"], "safari")
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
     }
 
     // MARK: - Helpers
@@ -201,7 +216,8 @@ final class SafariArchiveImporterTests: XCTestCase {
     private func makeImporter(
         fileURL: URL,
         historyReader: SafariHistoryReaderProtocol = MockSafariHistoryReader(),
-        historyImporter: HistoryImporterProtocol = MockHistoryImporter()
+        historyImporter: HistoryImporterProtocol = MockHistoryImporter(),
+        pixelFiring: PixelFiring? = nil
     ) -> SafariArchiveImporter {
         SafariArchiveImporter(archiveURL: fileURL,
                               bookmarkImporter: bookmarkImporter,
@@ -211,6 +227,7 @@ final class SafariArchiveImporterTests: XCTestCase {
                               faviconManager: faviconManager,
                               historyReader: historyReader,
                               historyImporter: historyImporter,
+                              pixelFiring: pixelFiring,
                               featureFlagger: featureFlagger,
                               secureVaultReporter: secureVaultReporter,
                               tld: TLD())

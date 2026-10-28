@@ -1,6 +1,6 @@
 {
     "dataimport_history_source-file-missing_macos": {
-        "description": "Fired when history import from a Chromium browser fails and the selected browser profile's folder can be read but has no 'History' database. Tells us when a browser renames or moves its history database.",
+        "description": "Fired when history import finds no history file where it looks for one: a Chromium browser profile's folder can be read but has no 'History' database, or a Safari export archive can be read but has no history JSON file. Tells us when a browser renames or moves its history file.",
         "owners": ["andremartingo"],
         "triggers": ["user_interaction"],
         "suffixes": ["daily_count"],
@@ -12,7 +12,7 @@
                 "key": "source",
                 "description": "The browser the user is importing data from",
                 "type": "string",
-                "enum": ["brave", "chrome", "edge", "opera", "other"]
+                "enum": ["brave", "chrome", "edge", "opera", "other", "safari"]
             },
             {
                 "key": "source_browser_version",

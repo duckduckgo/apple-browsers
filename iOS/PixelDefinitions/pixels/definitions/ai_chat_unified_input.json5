@@ -499,6 +499,7 @@
                     "widget_control_center",
                     "address_bar_custom_button",
                     "toolbar_custom_button",
+                    "onboarding_completion_promo",
                     "siri",
                     "deep_link_other",
                     "browsing_menu_duckai",

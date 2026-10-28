@@ -336,6 +336,8 @@ class MainViewController: UIViewController {
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let duckAISessionInstrumentation: DuckAISessionInstrumentation
     let duckAIEntryInstrumentation: DuckAIEntryInstrumentation
+    /// Set by onboarding's Try Duck.ai; the next address-bar prompt reports it instead, and any entry clears it.
+    var pendingOnboardingPromoEntry = false
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -4995,6 +4997,9 @@ class MainViewController: UIViewController {
     /// `chatState` overrides how the entry wide event reads it, for an entry that starts a new chat in the tab on screen.
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
                                    chatState: DuckAIEntryWideEventData.ChatState? = nil) {
+        let isAddressBarPrompt = source == .addressBarPrompt || source == .ipadTogglePrompt
+        let source: AIChatEntryPointSource = pendingOnboardingPromoEntry && isAddressBarPrompt ? .onboardingCompletionPromo : source
+        pendingOnboardingPromoEntry = false
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
@@ -6716,6 +6721,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func performCancel(animated: Bool = true) {
+        pendingOnboardingPromoEntry = false
         cancelPendingAppOpenKeyboard()
         dismissOmniBar(animated: animated)
         omniBar.cancel()
@@ -7511,6 +7517,10 @@ extension MainViewController: EscapeHatchActionRouter {
 }
 
 extension MainViewController: NewTabPageControllerDelegate {
+
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) {
+        pendingOnboardingPromoEntry = true
+    }
 
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) {
         segueToSettings()

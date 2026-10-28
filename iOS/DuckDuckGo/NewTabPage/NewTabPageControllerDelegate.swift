@@ -42,6 +42,8 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidRequestSettings(_ controller: any NewTabPage)
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
+    /// Onboarding's completion-step Try Duck.ai opened the address bar in Duck.ai mode.
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage)
 }
 
 extension NewTabPageControllerDelegate {
@@ -53,4 +55,5 @@ extension NewTabPageControllerDelegate {
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
+    func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) { }
 }

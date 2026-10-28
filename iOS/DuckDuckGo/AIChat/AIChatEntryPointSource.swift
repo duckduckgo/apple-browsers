@@ -76,6 +76,8 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case chatHistoryViewAll = "chat_history_view_all"
     case voice
     case onboarding
+    /// A prompt sent from the address bar that onboarding's completion-step Try Duck.ai opened.
+    case onboardingCompletionPromo = "onboarding_completion_promo"
     case subscriptionOnboarding = "subscription_onboarding"
     case paidSettings = "paid_settings"
     case directURL = "direct_url"

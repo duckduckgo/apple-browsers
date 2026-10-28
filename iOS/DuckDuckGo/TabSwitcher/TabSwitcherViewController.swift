@@ -870,33 +870,30 @@ extension TabSwitcherViewController {
     func makeRecentChatsMenu() -> UIMenu? {
         guard recentChatsReaderProvider != nil else { return nil }
         return UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                self?.loadRecentChatsMenuSections(completion) ?? completion([])
-            }
+            AIChatRecentChatsMenuViewModel.deferredMenuElement(
+                // The viewed page's mode, which is where the chosen chat opens.
+                reader: { [weak self] in self.flatMap { $0.recentChatsReader(for: $0.selectedBrowsingMode) } },
+                sections: { [weak self] in self?.makeRecentChatsMenuSections(for: $0) ?? [] }
+            )
         ])
     }
 
-    private func loadRecentChatsMenuSections(_ completion: @escaping ([UIMenuElement]) -> Void) {
-        Task { @MainActor in
-            // The viewed page's mode, which is where the chosen chat opens.
-            let reader = recentChatsReader(for: selectedBrowsingMode)
-            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: reader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
-            PixelKit.fire(AIChatTabSwitcherMenuPixel.shown, frequency: .dailyAndCount)
-            completion(viewModel.makeMenuSections(style: .compact, actions: .init(
-                newChat: { [weak self] in
-                    PixelKit.fire(AIChatTabSwitcherMenuPixel.newChatSelected, frequency: .dailyAndCount)
-                    self?.addNewAIChatTab()
-                },
-                selectChat: { [weak self] in
-                    PixelKit.fire(AIChatTabSwitcherMenuPixel.recentChatSelected, frequency: .dailyAndCount)
-                    self?.openRecentChat($0)
-                },
-                viewAll: { [weak self] in
-                    PixelKit.fire(AIChatTabSwitcherMenuPixel.viewAllChatsSelected, frequency: .dailyAndCount)
-                    self?.openAIChatHistory()
-                }
-            )))
-        }
+    private func makeRecentChatsMenuSections(for viewModel: AIChatRecentChatsMenuViewModel) -> [UIMenuElement] {
+        PixelKit.fire(AIChatTabSwitcherMenuPixel.shown, frequency: .dailyAndCount)
+        return viewModel.makeMenuSections(style: .compact, actions: .init(
+            newChat: { [weak self] in
+                PixelKit.fire(AIChatTabSwitcherMenuPixel.newChatSelected, frequency: .dailyAndCount)
+                self?.addNewAIChatTab()
+            },
+            selectChat: { [weak self] in
+                PixelKit.fire(AIChatTabSwitcherMenuPixel.recentChatSelected, frequency: .dailyAndCount)
+                self?.openRecentChat($0)
+            },
+            viewAll: { [weak self] in
+                PixelKit.fire(AIChatTabSwitcherMenuPixel.viewAllChatsSelected, frequency: .dailyAndCount)
+                self?.openAIChatHistory()
+            }
+        ))
     }
 
     private func recentChatsReader(for mode: BrowsingMode) -> AIChatSuggestionsReading? {

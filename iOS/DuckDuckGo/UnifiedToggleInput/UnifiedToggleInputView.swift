@@ -1163,15 +1163,12 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    private var visibleFlankingAccessories: UnifiedToggleInputFlankingAccessories {
-        var accessories: UnifiedToggleInputFlankingAccessories = []
-        if !aiTabCollapsedFireButton.isHidden { accessories.insert(.fire) }
-        if !aiTabCollapsedMenuButton.isHidden { accessories.insert(.menu) }
-        return accessories
+    private var flankingButtons: [(accessory: UnifiedToggleInputFlankingAccessories, button: UIButton)] {
+        [(.fire, aiTabCollapsedFireButton), (.menu, aiTabCollapsedMenuButton)]
     }
 
-    private func flankingButton(for accessory: UnifiedToggleInputFlankingAccessories) -> UIButton {
-        accessory == .fire ? aiTabCollapsedFireButton : aiTabCollapsedMenuButton
+    private var visibleFlankingAccessories: UnifiedToggleInputFlankingAccessories {
+        UnifiedToggleInputFlankingAccessories(flankingButtons.filter { !$0.button.isHidden }.map(\.accessory))
     }
 
     func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
@@ -1179,8 +1176,7 @@ final class UnifiedToggleInputView: UIView {
         guard previous != accessories else { return }
         let appearing = accessories.subtracting(previous)
 
-        for accessory in [UnifiedToggleInputFlankingAccessories.fire, .menu] {
-            let button = flankingButton(for: accessory)
+        for (accessory, button) in flankingButtons {
             // alpha-0 before unhide avoids a 1-frame flash on top of the still-wide pill.
             if appearing.contains(accessory) { button.alpha = 0 }
             button.isHidden = !accessories.contains(accessory)
@@ -1194,8 +1190,8 @@ final class UnifiedToggleInputView: UIView {
         UIView.animate(withDuration: Constants.aiTabCollapsedAccessoryFadeDuration,
                        delay: Constants.aiTabCollapsedAccessoryFadeDelay,
                        options: .curveEaseOut) {
-            for accessory in [UnifiedToggleInputFlankingAccessories.fire, .menu] where appearing.contains(accessory) {
-                self.flankingButton(for: accessory).alpha = 1
+            for (accessory, button) in self.flankingButtons where appearing.contains(accessory) {
+                button.alpha = 1
             }
         }
     }
@@ -1244,9 +1240,9 @@ final class UnifiedToggleInputView: UIView {
         let hidesPillVoice = layout.isFlanked && isAITab
         textEntryView.setVoiceButtonAppearance(hidesPillVoice ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
         // Accessories the layout doesn't flank must hide; the reverse is `setFlankingAccessoriesVisible` (fades in).
-        let unflanked = UnifiedToggleInputFlankingAccessories.all.subtracting(layout.flankingAccessories)
-        if unflanked.contains(.fire) { aiTabCollapsedFireButton.isHidden = true }
-        if unflanked.contains(.menu) { aiTabCollapsedMenuButton.isHidden = true }
+        for (accessory, button) in flankingButtons where !layout.flankingAccessories.contains(accessory) {
+            button.isHidden = true
+        }
         guard layout != currentLayout else {
             updateExpandedBorderVisibility(expanded && (layout.showsToggle || layout.showsToolbar))
             return

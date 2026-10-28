@@ -299,9 +299,10 @@ final class AIChatContextualSheetViewController: UIViewController {
             self?.setHeaderPillShadowsDimmed(false, alongside: animator)
         }
         button.menu = UIMenu(children: [
-            UIDeferredMenuElement.uncached { [weak self] completion in
-                self?.buildNativeChatsMenuElements(completion) ?? completion([])
-            }
+            AIChatRecentChatsMenuViewModel.deferredMenuElement(
+                reader: { [weak self] in self?.suggestionsReader },
+                sections: { [weak self] in self?.makeRecentChatsMenuSections(for: $0) ?? [] }
+            )
         ])
         return button
     }()
@@ -317,19 +318,15 @@ final class AIChatContextualSheetViewController: UIViewController {
         return menu.replacingChildren(menu.children.reversed())
     }
 
-    /// Sections are fetched when the menu opens rather than on the tap.
-    private func buildNativeChatsMenuElements(_ completion: @escaping ([UIMenuElement]) -> Void) {
-        Task { @MainActor in
-            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
-            let sections = viewModel.makeMenuSections(
-                style: .contextual(showsNewChat: sessionState.hasActiveChat),
-                actions: .init(openDuckAI: { [weak self] in self?.recentChatsMenuDidSelectOpenDuckAI() },
-                               newChat: { [weak self] in self?.recentChatsMenuDidSelectNewChat() },
-                               selectChat: { [weak self] in self?.recentChatsMenuDidSelectChat($0) },
-                               viewAll: { [weak self] in self?.recentChatsMenuDidSelectViewAll() })
-            )
-            completion(menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections)
-        }
+    private func makeRecentChatsMenuSections(for viewModel: AIChatRecentChatsMenuViewModel) -> [UIMenuElement] {
+        let sections = viewModel.makeMenuSections(
+            style: .contextual(showsNewChat: sessionState.hasActiveChat),
+            actions: .init(openDuckAI: { [weak self] in self?.recentChatsMenuDidSelectOpenDuckAI() },
+                           newChat: { [weak self] in self?.recentChatsMenuDidSelectNewChat() },
+                           selectChat: { [weak self] in self?.recentChatsMenuDidSelectChat($0) },
+                           viewAll: { [weak self] in self?.recentChatsMenuDidSelectViewAll() })
+        )
+        return menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections
     }
 
     private lazy var titleContainer: UIStackView = {
@@ -387,20 +384,12 @@ final class AIChatContextualSheetViewController: UIViewController {
         return stack
     }()
 
-    private enum FirePlacement {
-        case header
-        /// Beside the collapsed input, as on a Duck.ai tab.
-        case input
-    }
-
     private var isFireButtonShown = false
 
-    private lazy var firePlacement: FirePlacement = {
-        let placesFireByInput = persistentUTIHost?.collapsesToPill == true
-            && !DevicePlatform.isIpad
-            && featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
-        return placesFireByInput ? .input : .header
-    }()
+    /// Fire sits beside the collapsed input, as on a Duck.ai tab, instead of in the header.
+    private lazy var showsFireByInput: Bool = persistentUTIHost?.collapsesToPill == true
+        && !DevicePlatform.isIpad
+        && featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
 
     private lazy var fireButton: UIButton = {
         let button = UIButton(type: .system)
@@ -1527,7 +1516,7 @@ private extension AIChatContextualSheetViewController {
     /// The redesign puts close leading and pairs the hand-off with fire; the original is the reverse.
     private func resolveHeaderButtons() -> (leading: [UIButton], trailing: [UIButton]) {
         let chats = suggestionsReader != nil ? [recentChatsButton] : []
-        let fire = firePlacement == .header ? [fireButton] : []
+        let fire = showsFireByInput ? [] : [fireButton]
         guard usesRedesignedHeader else {
             return ([expandButton] + chats, fire + [closeButton])
         }
@@ -1536,9 +1525,10 @@ private extension AIChatContextualSheetViewController {
 
     private func setFireButtonVisible(_ visible: Bool) {
         isFireButtonShown = visible
-        switch firePlacement {
-        case .header: fireButton.isHidden = !visible
-        case .input: persistentUTIHost?.setFireAccessoryVisible(visible)
+        if showsFireByInput {
+            persistentUTIHost?.setFireAccessoryVisible(visible)
+        } else {
+            fireButton.isHidden = !visible
         }
     }
 

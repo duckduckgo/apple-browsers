@@ -76,6 +76,17 @@ extension AIChatRecentChatsMenuViewModel {
         let viewAll: () -> Void
     }
 
+    /// Fetches the chats each time the menu opens, rather than once when the menu is built.
+    static func deferredMenuElement(reader: @escaping () -> AIChatSuggestionsReading?,
+                                    sections: @escaping (AIChatRecentChatsMenuViewModel) -> [UIMenuElement]) -> UIMenuElement {
+        UIDeferredMenuElement.uncached { completion in
+            Task { @MainActor in
+                let viewModel = await fetch(using: reader()) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
+                completion(sections(viewModel))
+            }
+        }
+    }
+
     /// Sections in top-down order.
     func makeMenuSections(style: MenuStyle, actions: MenuActions) -> [UIMenuElement] {
         var sections = Self.leadingSections(style: style, actions: actions)

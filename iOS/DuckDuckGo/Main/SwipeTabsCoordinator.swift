@@ -129,10 +129,8 @@ class SwipeTabsCoordinator: NSObject {
     private var lastEdgeTickOverscroll: CGFloat = 0
     private var isExternalPanDragging = false
 
-    /// Drags past the first or last tab give way and spring back instead of stopping dead.
-    private var bouncesAtEdges: Bool {
-        omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
-    }
+    /// Drags past the first or last tab give way and spring back instead of stopping dead. Read once per drag.
+    private var bouncesAtEdges = false
     
     var isEnabled = false {
         didSet {
@@ -330,7 +328,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                         prepareLiveDestinationChrome(offset: offset)
                     }
                     prepareLiveOutgoingChrome()
-                } else if !hasDestination(offset: offset) {
+                } else if destinationIndex(offset: offset) == nil {
                     // Same tab, nothing to swap in: the chrome outside the strip just rides along.
                     edgePulledChromeViews = auxiliarySwipeViews.filter { !$0.isHidden }
                 }
@@ -437,6 +435,14 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         // Capture the restored layout rather than the last rendered focused frame.
         coordinator.superview.layoutIfNeeded()
         guard let snapshot = makeFullScreenSnapshot(afterScreenUpdates: true) else { return }
+        tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
+    }
+
+    /// The frame already on screen, so swiping back to a tab being left has a full-screen snapshot.
+    func captureOnScreenSnapshotForCurrentTab() {
+        guard !floatingUIManager.isFloatingUIEnabled,
+              let tab = tabsModel.currentTab,
+              let snapshot = makeFullScreenSnapshot(afterScreenUpdates: false) else { return }
         tabPreviewsSource.updateFullScreenSnapshot(snapshot, forTab: tab)
     }
 
@@ -882,9 +888,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
             return
         }
 
-        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        let isNewTabDestination = destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs)
-        guard tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination else { return }
+        guard let destinationIndex = destinationIndex(offset: offset) else { return }
         let currentTab = tabsModel.get(tabAt: currentIndex)
         let destinationTab = tabsModel.get(tabAt: destinationIndex)
         guard currentTab?.isAITab != true, destinationTab?.isAITab != true else { return }
@@ -958,12 +962,12 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         tabs.last?.link != nil && !omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
     }
 
-    /// False past the first or last tab, where a swipe can only bounce.
-    private func hasDestination(offset: CGFloat) -> Bool {
-        guard let currentIndex = tabsModel.currentIndex else { return false }
+    /// The page a swipe in this direction lands on; `nil` past the first or last tab, where it can only bounce.
+    private func destinationIndex(offset: CGFloat) -> Int? {
+        guard let currentIndex = tabsModel.currentIndex else { return nil }
         let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        return tabsModel.tabs.indices.contains(destinationIndex)
-            || (destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs))
+        let isNewTabDestination = destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs)
+        return tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination ? destinationIndex : nil
     }
 
     private func isCrossingChromeBoundary(offset: CGFloat) -> Bool {
@@ -971,9 +975,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
               let currentTab = tabsModel.get(tabAt: currentIndex) else {
             return false
         }
-        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        let isNewTabDestination = destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs)
-        guard tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination else { return false }
+        guard let destinationIndex = destinationIndex(offset: offset) else { return false }
         let destinationTab = tabsModel.get(tabAt: destinationIndex)
         if hasInlineSearchInput(currentTab) != hasInlineSearchInput(destinationTab) {
             return true
@@ -1020,6 +1022,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        bouncesAtEdges = omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
         lastEdgeTickOverscroll = 0
         edgeFeedbackGenerator.prepare()
         switch state {

@@ -3231,12 +3231,12 @@ class MainViewController: UIViewController {
         transitionTo(tab: tab, from: nil)
     }
 
-    @discardableResult
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
     private func captureCurrentTabForSwipeBack() {
-        swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
+        swipeTabsCoordinator?.captureOnScreenSnapshotForCurrentTab()
     }
 
+    @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
         captureCurrentTabForSwipeBack()
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)

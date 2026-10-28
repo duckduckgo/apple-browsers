@@ -3871,7 +3871,6 @@
 		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */; };
-		8A4C9BF988B7691AD50B6934 /* SettingsPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0B4DA100196F73334491C /* SettingsPersistenceTests.swift */; };
 		BB7696C52D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB7696C62D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB77F8CE2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB77F8CD2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift */; };
@@ -4261,6 +4260,7 @@
 		CC199E992F4E183000964714 /* DebugSimulatedDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E972F4E183000964712 /* DebugSimulatedDateStore.swift */; };
 		CC199EA12F4E199900964702 /* PromoQueueUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199EA02F4E199900964701 /* PromoQueueUITests.swift */; };
 		D1A9C0022F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A9C0012F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift */; };
+		8A4C9BF988B7691AD50B6934 /* SettingsPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8A0B4DA100196F73334491C /* SettingsPersistenceTests.swift */; };
 		CC199EA32F4E182C00964720 /* PromoDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E9B2F4E182C00964716 /* PromoDependencies.swift */; };
 		CC199EA42F4E182C00964721 /* PromoServiceFactory+RemoteMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E9C2F4E182C00964717 /* PromoServiceFactory+RemoteMessage.swift */; };
 		CC199EA52F4E182C00964722 /* PromoServiceFactory+Test.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC199E9D2F4E182C00964718 /* PromoServiceFactory+Test.swift */; };
@@ -7174,7 +7174,6 @@
 		BB6EE5312F33DF8F009420FA /* MemoryUsageThresholdReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageThresholdReporterTests.swift; sourceTree = "<group>"; };
 		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
 		BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowTests.swift; sourceTree = "<group>"; };
-		A8A0B4DA100196F73334491C /* SettingsPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPersistenceTests.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
 		BB77F8CD2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB7B5F972C4ED73800BA4AF8 /* BookmarksSearchAndSortMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksSearchAndSortMetrics.swift; sourceTree = "<group>"; };
@@ -7362,6 +7361,7 @@
 		CC199E9D2F4E182C00964718 /* PromoServiceFactory+Test.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+Test.swift"; sourceTree = "<group>"; };
 		CC199EA02F4E199900964701 /* PromoQueueUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoQueueUITests.swift; sourceTree = "<group>"; };
 		D1A9C0012F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCredentialsPopoverUITests.swift; sourceTree = "<group>"; };
+		A8A0B4DA100196F73334491C /* SettingsPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPersistenceTests.swift; sourceTree = "<group>"; };
 		CC199EB92F4E182C00964739 /* SessionRestorePromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionRestorePromoDelegate.swift; sourceTree = "<group>"; };
 		CC199EBA2F4E182C0096473A /* PromoServiceFactory+SessionRestore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PromoServiceFactory+SessionRestore.swift"; sourceTree = "<group>"; };
 		CC19E9EC2E82CFBB0043F931 /* AIChatHistoryCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatHistoryCleaner.swift; sourceTree = "<group>"; };
@@ -10458,6 +10458,7 @@
 				CCD89A3C2ECF5AC5008E738B /* DefaultBrowserAndDockPromptsUITests.swift */,
 				CC199EA02F4E199900964701 /* PromoQueueUITests.swift */,
 				D1A9C0012F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift */,
+				A8A0B4DA100196F73334491C /* SettingsPersistenceTests.swift */,
 				CCD89A402ECF5AC6008E738B /* NextStepsListUITests.swift */,
 				BB0346F42CEB80B400D23E05 /* DownloadsUITests.swift */,
 				5A684B180D40B1C434FAF833 /* AppStoreSandboxUITests.swift */,
@@ -10465,7 +10466,6 @@
 				EE0429DF2BA31D2F009EB20F /* FindInPageTests.swift */,
 				843A52F52EA8F9170094C215 /* Fire */,
 				BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */,
-				A8A0B4DA100196F73334491C /* SettingsPersistenceTests.swift */,
 				8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */,
 				844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */,
 				8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */,
@@ -18283,6 +18283,7 @@
 				CCD89A3D2ECF5AC5008E738B /* DefaultBrowserAndDockPromptsUITests.swift in Sources */,
 				CC199EA12F4E199900964702 /* PromoQueueUITests.swift in Sources */,
 				D1A9C0022F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift in Sources */,
+				8A4C9BF988B7691AD50B6934 /* SettingsPersistenceTests.swift in Sources */,
 				CCD89A3E2ECF5AC6008E738B /* NextStepsListUITests.swift in Sources */,
 				843A52F72EA8F9170094C215 /* FireDialogTabScopeUITests.swift in Sources */,
 				843A52F82EA8F9170094C215 /* FireDialogGeneralUITests.swift in Sources */,
@@ -18320,7 +18321,6 @@
 				84E2FC462E0DB043000874F7 /* XCUIElementSnapshotExtension.swift in Sources */,
 				EE54F7B32BBFEA49006218DB /* BookmarksAndFavoritesTests.swift in Sources */,
 				BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */,
-				8A4C9BF988B7691AD50B6934 /* SettingsPersistenceTests.swift in Sources */,
 				8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */,
 				31EC9F58AE7A18707C8A0D08 /* YouTubeAdBlockingUITests.swift in Sources */,
 				844905412E54A3540054F4FD /* AddressBarUITests.swift in Sources */,

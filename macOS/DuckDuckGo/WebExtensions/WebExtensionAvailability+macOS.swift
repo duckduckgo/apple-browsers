@@ -55,6 +55,6 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
     }
 
     var isExtensionManagementAvailable: Bool {
-        StandardApplicationBuildType().isSparkleBuild && isAvailable
+        isAvailable && StandardApplicationBuildType().isSparkleBuild && featureFlagger.isFeatureOn(.webExtensions)
     }
 }

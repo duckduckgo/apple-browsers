@@ -233,7 +233,7 @@ final class SafariArchiveImporter: DataImporter {
             return finalSummary
         }
 
-        guard !contents.isEmpty else {
+        guard contents.hasData(for: types) else {
             for type in types {
                 finalSummary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
             }

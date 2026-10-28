@@ -113,8 +113,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214085808544002
     case dbpFreemiumPIR
 
-    /// https://app.asana.com/1/137249556945/task/1213609085394793
-    case dbpWebViewUserAgent
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219955912780435
+    case dbpCustomWebViewUserAgent
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
@@ -754,8 +754,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.continuedProcessing))
         case .dbpFreemiumPIR:
             Config(source: .remoteReleasable(DBPSubfeature.freemiumPIR))
-        case .dbpWebViewUserAgent:
-            Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true)
+        case .dbpCustomWebViewUserAgent:
+            Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours))
         case .dbpExtractedProfileRefresh:

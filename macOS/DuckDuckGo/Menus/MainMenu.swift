@@ -413,6 +413,10 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.command, .shift, "\r"])
                 .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.askAboutSelection), keyEquivalent: [.option, .command, "k"])
+                .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.translateSelection), keyEquivalent: [.option, .command, "t"])
+                .hidden()
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuEditFind) {

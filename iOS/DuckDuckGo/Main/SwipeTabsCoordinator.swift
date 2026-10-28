@@ -71,6 +71,26 @@ enum LiveTabSwipePolicy {
     }
 }
 
+/// The rubber band `UIScrollView` gives drags past its content, for drags it doesn't own.
+enum SwipeTabsEdgeResistance {
+
+    private static let coefficient: CGFloat = 0.55
+
+    static func offset(for proposed: CGFloat, limits: ClosedRange<CGFloat>, dimension: CGFloat) -> CGFloat {
+        if proposed > limits.upperBound {
+            return limits.upperBound + damped(proposed - limits.upperBound, dimension: dimension)
+        }
+        if proposed < limits.lowerBound {
+            return limits.lowerBound - damped(limits.lowerBound - proposed, dimension: dimension)
+        }
+        return proposed
+    }
+
+    private static func damped(_ overshoot: CGFloat, dimension: CGFloat) -> CGFloat {
+        (1 - 1 / (overshoot * coefficient / dimension + 1)) * dimension
+    }
+}
+
 struct SwipeChromeSnapshot {
     let image: UIImage
     let captureRect: CGRect
@@ -104,6 +124,15 @@ class SwipeTabsCoordinator: NSObject {
         generator.prepare()
         return generator
     }()
+
+    private let edgeFeedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    private var hasSignalledEdgeThisDrag = false
+    private var isExternalPanDragging = false
+
+    /// Drags past the first or last tab give way and spring back instead of stopping dead.
+    private var bouncesAtEdges: Bool {
+        omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+    }
     
     var isEnabled = false {
         didSet {
@@ -281,6 +310,7 @@ class SwipeTabsCoordinator: NSObject {
 extension SwipeTabsCoordinator: UICollectionViewDelegate {
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        signalEdgeIfDraggedPastIt(scrollView)
 
         switch state {
         case .idle: break
@@ -885,6 +915,28 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         floatingIncomingOmnibarController = nil
     }
 
+    /// Released past the first or last tab, the strip springs back like a scroll view's bounce.
+    private func animateExternalPanSettle(to targetOffset: CGPoint, completion: @escaping (Bool) -> Void) {
+        let maxX = max(collectionView.contentSize.width - collectionView.frame.width, 0)
+        let isPastAnEdge = collectionView.contentOffset.x < 0 || collectionView.contentOffset.x > maxX
+        let animations = { self.collectionView.contentOffset = targetOffset }
+        if isPastAnEdge {
+            UIView.animate(withDuration: 0.45, delay: 0, usingSpringWithDamping: 0.82, initialSpringVelocity: 0,
+                           options: .curveEaseOut, animations: animations, completion: completion)
+        } else {
+            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: animations, completion: completion)
+        }
+    }
+
+    /// A soft tap the moment a drag pulls past the first or last tab, once per drag.
+    private func signalEdgeIfDraggedPastIt(_ scrollView: UIScrollView) {
+        guard scrollView.isDragging || isExternalPanDragging, !hasSignalledEdgeThisDrag, bouncesAtEdges else { return }
+        let maxOffsetX = scrollView.contentSize.width - scrollView.bounds.width
+        guard scrollView.contentOffset.x < 0 || scrollView.contentOffset.x > maxOffsetX else { return }
+        hasSignalledEdgeThisDrag = true
+        edgeFeedbackGenerator.impactOccurred(intensity: 0.6)
+    }
+
     /// Swiping past a last tab with content opens a new tab, unless the swipe should bounce there instead.
     private func hasNewTabDestination(after tabs: [Tab]) -> Bool {
         tabs.last?.link != nil && !omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
@@ -944,6 +996,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        hasSignalledEdgeThisDrag = false
+        edgeFeedbackGenerator.prepare()
         switch state {
         case .idle:
             if floatingUIManager.isFloatingUIEnabled {
@@ -1087,15 +1141,20 @@ extension SwipeTabsCoordinator {
             state = .idle
             scrollViewWillBeginDragging(collectionView)
             externalPanStartOffset = collectionView.contentOffset
+            isExternalPanDragging = true
 
         case .changed:
             let translation = gesture.translation(in: panView).x
             let pageWidth = collectionView.frame.width
             let proposedX = externalPanStartOffset.x - translation
             let maxX = max(collectionView.contentSize.width - pageWidth, 0)
-            collectionView.contentOffset = CGPoint(x: max(0, min(proposedX, maxX)), y: 0)
+            let x = bouncesAtEdges
+                ? SwipeTabsEdgeResistance.offset(for: proposedX, limits: 0...maxX, dimension: pageWidth)
+                : max(0, min(proposedX, maxX))
+            collectionView.contentOffset = CGPoint(x: x, y: 0)
 
         case .ended, .cancelled, .failed:
+            isExternalPanDragging = false
             let pageWidth = collectionView.frame.width
             guard pageWidth > 0 else {
                 scrollViewDidEndDecelerating(collectionView)
@@ -1128,9 +1187,7 @@ extension SwipeTabsCoordinator {
                 self.scrollViewDidEndDecelerating(self.collectionView)
             }
             pendingSnapCommit = commit
-            UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseOut, animations: {
-                self.collectionView.contentOffset = targetOffset
-            }, completion: { [weak self] finished in
+            animateExternalPanSettle(to: targetOffset, completion: { [weak self] finished in
                 guard let self else { return }
                 if finished {
                     commit.perform()

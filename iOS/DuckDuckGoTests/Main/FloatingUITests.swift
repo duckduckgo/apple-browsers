@@ -2883,3 +2883,31 @@ final class ChromeMorphAnimatorTests: XCTestCase {
         XCTAssertFalse(animator.isAnimating)
     }
 }
+
+final class SwipeTabsEdgeResistanceTests: XCTestCase {
+
+    func testOffsetsWithinTheTabsAreUnchanged() {
+        XCTAssertEqual(SwipeTabsEdgeResistance.offset(for: 120, limits: 0...800, dimension: 400), 120)
+    }
+
+    func testDraggingPastTheLastTabMovesLessThanTheFinger() {
+        let offset = SwipeTabsEdgeResistance.offset(for: 900, limits: 0...800, dimension: 400)
+
+        XCTAssertGreaterThan(offset, 800)
+        XCTAssertLessThan(offset, 900)
+    }
+
+    func testDraggingBeforeTheFirstTabMovesLessThanTheFinger() {
+        let offset = SwipeTabsEdgeResistance.offset(for: -100, limits: 0...800, dimension: 400)
+
+        XCTAssertLessThan(offset, 0)
+        XCTAssertGreaterThan(offset, -100)
+    }
+
+    func testResistanceGrowsTheFurtherTheDragGoes() {
+        let near = SwipeTabsEdgeResistance.offset(for: 850, limits: 0...800, dimension: 400) - 800
+        let far = SwipeTabsEdgeResistance.offset(for: 1200, limits: 0...800, dimension: 400) - 800
+
+        XCTAssertLessThan(far / 400, near / 50)
+    }
+}

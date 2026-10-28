@@ -944,7 +944,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabLRUEviction:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.tabLRUEviction), supportsLocalOverriding: true)
         case .webExtensions:
-            Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions))
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled))
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear))
         case .cpmBackgroundDelegateProxy:

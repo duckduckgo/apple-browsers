@@ -115,7 +115,9 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let attachmentPrivacyChangedSubject = PassthroughSubject<Void, Never>()
     private let suggestedPromptsChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
+    private var existingChatCount = 0
     private var aiChatsProviderCancellable: AnyCancellable?
+    private var chatCountCancellable: AnyCancellable?
     private var customizeResponsesChangeObserver: NSObjectProtocol?
     private var attachmentPrivacyChangeObserver: NSObjectProtocol?
 
@@ -172,6 +174,16 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         ) { [weak self] _ in
             self?.attachmentPrivacyChangedSubject.send(())
         }
+
+        chatCountCancellable = (duckAiStorageHandlerProvider(.regular) as? DuckAiNativeChatsObserving)?.chatsPublisher()
+            .map(\.count)
+            .replaceError(with: 0)
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] count in
+                self?.existingChatCount = count
+                self?.suggestedPromptsChangedSubject.send(())
+            }
     }
 
     deinit {
@@ -658,9 +670,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
+    /// Not the sum: every NTP prompt also starts a chat.
     var showSuggestedPrompts: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts)
-            && suggestedPromptsPromptCount < suggestedPromptsPromptLimit
+            && max(suggestedPromptsPromptCount, existingChatCount) < suggestedPromptsPromptLimit
     }
 
     var suggestedPromptsPromptLimit: Int {

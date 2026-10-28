@@ -916,6 +916,7 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
     case cpmBackgroundLoadRecovery
     /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
     case cpmBackgroundLoadRestart
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery

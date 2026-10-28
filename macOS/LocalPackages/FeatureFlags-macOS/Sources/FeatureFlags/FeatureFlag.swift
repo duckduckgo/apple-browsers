@@ -294,6 +294,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746481
     case partnershipsHub
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219810901971905
+    case authBackupToken
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
 
@@ -922,6 +925,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign), category: .subscription)
         case .partnershipsHub:
             Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub), category: .subscription)
+        case .authBackupToken:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(PrivacyProSubfeature.authBackupToken), category: .subscription)
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
         case .syncIdentities:

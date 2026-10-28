@@ -4942,14 +4942,13 @@ class MainViewController: UIViewController {
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
                     termsAccepted: Bool = false,
-                    nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                    voice: Bool = false) {
+                    nativePromptFlow: DuckAIPromptFlowStart? = nil) {
 
         openAIChat(source: source, query, autoSend: autoSend, payload: payload, flowType: flowType,
                    tools: tools, modelId: modelId, reasoningEffort: reasoningEffort,
                    attachments: attachments, reportsNewTab: reportsNewTab, forcesNewTab: forcesNewTab,
                    fromDeepLink: fromDeepLink, termsAccepted: termsAccepted, nativePromptFlow: nativePromptFlow,
-                   tabAttachmentRequest: nil, voice: voice)
+                   tabAttachmentRequest: nil)
     }
 
     func openAIChat(source: AIChatEntryPointSource,
@@ -9425,7 +9424,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()
-                openAIChat(source: isPad ? .ipadTogglePrompt : .addressBarPrompt, query, autoSend: true, voice: true)
+                openAIChat(source: isPad ? .ipadTogglePrompt : .addressBarPrompt, query, autoSend: true, tabAttachmentRequest: nil, voice: true)
             }
         }
     }
@@ -9835,7 +9834,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
-            self.openAIChatInVoiceMode()
+            self.openAIChatInVoiceMode(source: .voice, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case \(button)")
@@ -9930,7 +9929,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
-            openAIChatInVoiceMode()
+            openAIChatInVoiceMode(source: .voice, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case: \(button)")

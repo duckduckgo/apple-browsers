@@ -21,6 +21,9 @@ import Foundation
 import PrivacyConfig
 
 public enum FeatureFlag: String {
+    /// https://app.asana.com/1/137249556945/task/1219972523893967
+    case ipadMenuBar
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
 
@@ -693,6 +696,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     private var config: Config {
         switch self {
+        case .ipadMenuBar:
+            Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.ipadMenuBar))
         case .sync:
             Config(source: .remoteReleasable(SyncSubfeature.level0ShowSync), supportsLocalOverriding: false)
         case .autofillCredentialInjecting:

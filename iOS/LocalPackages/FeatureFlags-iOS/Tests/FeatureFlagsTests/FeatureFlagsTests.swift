@@ -22,6 +22,7 @@ import Foundation
 import PrivacyConfig
 import PrivacyConfigTestsUtils
 import XCTest
+import Testing
 
 final class FeatureFlagsTests: XCTestCase {
 
@@ -209,5 +210,43 @@ final class FeatureFlagsTests: XCTestCase {
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+}
+
+struct IPadMenuBarFeatureFlagTests {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func flagIsDefaultOnRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.ipadMenuBar
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            Issue.record("Expected a remote releasable flag")
+            return
+        }
+        #expect(subfeature as? iOSBrowserConfigSubfeature == .ipadMenuBar)
+        #expect(subfeature.parent == .iOSBrowserConfig)
+        #expect(subfeature.rawValue == "ipadMenuBar")
+        guard case .enabled = flag.defaultValue else {
+            Issue.record("Expected an enabled default")
+            return
+        }
+        #expect(flag.supportsLocalOverriding)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [nil, false, true] as [Bool?])
+    func remoteConfigurationControlsTheFlag(remoteEnabled: Bool?) {
+        let subfeatures = remoteEnabled.map { "\"ipadMenuBar\": { \"state\": \"\($0 ? "enabled" : "disabled")\" }" } ?? ""
+        let data = """
+        {
+          "features": { "iOSBrowserConfig": { "state": "enabled", "features": { \(subfeatures) } } },
+          "unprotectedTemporary": []
+        }
+        """.data(using: .utf8)!
+        let manager = PrivacyConfigurationManager(
+            fetchedETag: nil, fetchedData: nil,
+            embeddedDataProvider: MockEmbeddedDataProvider(data: data, etag: "test"),
+            localProtection: MockDomainsProtectionStore(), internalUserDecider: MockInternalUserDecider())
+        #expect(manager.privacyConfig.isSubfeatureEnabled(iOSBrowserConfigSubfeature.ipadMenuBar, defaultValue: true)
+                == (remoteEnabled ?? true))
     }
 }

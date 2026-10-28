@@ -534,8 +534,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor func openAIChatLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
-        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
-        else { return nil }
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params),
+              let url = openLinkParams.url.url,
+              let scheme = url.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              url.host != nil else {
+            return nil
+        }
 
         let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
         // Duck.ai linking to itself isn't a direct navigation; the chat it opens is attributed to the link.

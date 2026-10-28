@@ -166,6 +166,18 @@ struct AIChatUserScriptHandlerTests {
         #expect(windowControllersManager.openCalls.map(\.source) == [.link])
     }
 
+    static let nonWebURLs = ["file:///etc/passwd", "duck://settings", "javascript:alert(1)"]
+    @available(iOS 16, macOS 13, *)
+    @Test("openAIChatLink ignores links that aren't http(s) with a host", .timeLimit(.minutes(1)), arguments: nonWebURLs)
+    @MainActor
+    func testThatOpenAIChatLinkIgnoresNonWebLinks(_ url: String) async {
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "same-tab"], message: WKScriptMessage.mock())
+        _ = await handler.openAIChatLink(params: ["url": url, "target": "new-tab"], message: WKScriptMessage.mock())
+
+        #expect(windowControllersManager.showCalled == nil)
+        #expect(windowControllersManager.openCalls.isEmpty)
+    }
+
     @available(iOS 16, macOS 13, *)
     @Test("An invalid executeClientTool is invalid_arguments and echoes the readable callId", .timeLimit(.minutes(1)))
     @MainActor

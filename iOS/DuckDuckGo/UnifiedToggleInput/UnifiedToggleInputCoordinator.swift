@@ -1629,6 +1629,10 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         viewController.handler.isAIChatShortcutAvailable = available
     }
 
+    func updateAIChatShortcutEmptyInputMenu(_ menu: UIMenu?) {
+        viewController.aiChatShortcutEmptyInputMenu = menu
+    }
+
     func updateIsFireTab(_ isFireTab: Bool) {
         guard viewController.handler.isFireTab != isFireTab else { return }
         viewController.handler.isFireTab = isFireTab

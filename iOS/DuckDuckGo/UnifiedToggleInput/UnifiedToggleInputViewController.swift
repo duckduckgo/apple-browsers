@@ -172,6 +172,11 @@ final class UnifiedToggleInputViewController: UIViewController {
         }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { inputBarView.aiChatShortcutEmptyInputMenu }
+        set { inputBarView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     var cardPosition: UnifiedToggleInputCardPosition {
         get { inputBarView.cardPosition }
         set {

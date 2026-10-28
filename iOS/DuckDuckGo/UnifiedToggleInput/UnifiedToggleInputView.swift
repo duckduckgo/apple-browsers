@@ -392,6 +392,11 @@ final class UnifiedToggleInputView: UIView {
         didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { textEntryView.aiChatShortcutEmptyInputMenu }
+        set { textEntryView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
 

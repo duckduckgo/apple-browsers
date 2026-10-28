@@ -19,7 +19,7 @@
 
 import AIChat
 import Bookmarks
-import Foundation
+import UIKit
 
 /// Which control of a New Tab Page message the user pressed.
 enum NewTabPageMessageInteraction {
@@ -42,6 +42,7 @@ protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidRequestSettings(_ controller: any NewTabPage)
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode)
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu?
 }
 
 extension NewTabPageControllerDelegate {
@@ -53,4 +54,5 @@ extension NewTabPageControllerDelegate {
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) { }
     func newTabPageDidRequestSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
     func newTabPageDidRequestVoiceSearch(_ controller: any NewTabPage, textEntryMode: TextEntryMode) { }
+    func newTabPageDuckAIMenu(_ controller: any NewTabPage) -> UIMenu? { nil }
 }

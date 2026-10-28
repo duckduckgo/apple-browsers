@@ -4,6 +4,27 @@ DuckDuckGo wrapper around [Point-Free's `swift-snapshot-testing`](https://github
 
 This package gives shared UI snapshot tests one consistent home for rendering SwiftUI views, validating the simulator or host environment, naming generated images, and keeping preview states reusable between Xcode previews and automated tests. It keeps the app-facing preview helpers separate from the test-only assertion helpers, so production targets can share preview configuration without taking a dependency on snapshot testing libraries.
 
+## Quick start
+
+Reference images live in a separate repo, [`duckduckgo/apple-browsers-snapshots`](https://github.com/duckduckgo/apple-browsers-snapshots), checked out as the `SnapshotReferences` submodule. Every PR that adds or changes images therefore comes with a companion PR in that repo.
+
+1. **Write the test and run it to record the reference.**
+2. **Open the snapshots PR.** From the monorepo root, on your feature branch:
+
+   ```bash
+   ./scripts/open-snapshot-submodule-pr.sh
+   ```
+
+   It commits the new images to a branch of the same name in the snapshots repo, opens the companion PR, and stages the updated `SnapshotReferences` pointer.
+
+3. **Open your main PR.** Commit the staged `SnapshotReferences` pointer with your code, push, and add the companion PR link the script printed to the description.
+
+4. **Once the PR is approved, add the `Merge snapshots` label.** The label merges the companion PR and checks that your pointer is on the snapshots repo's `main`. If you push new images after this, re-run step 2 and re-add the label.
+
+5. **Merge your PR.** Profit.
+
+
+
 ## Why snapshot testing?
 
 Snapshot testing records the rendered output of a view, data structure, or other value as a reference artifact, then compares future test runs against that reference. For UI work, this is useful because many regressions are visual rather than purely behavioral: spacing changes, missing states, clipped text, incorrect colors, light / dark appearance differences, or unexpected layout shifts can all be caught by comparing the final rendered image.
@@ -19,7 +40,7 @@ Use snapshot tests as a focused regression safety net for stable UI states. They
 
 Keep `SnapshotTestingSupport` linked only to test targets.
 
-## Quick start
+## Writing tests
 
 ### Direct view snapshots
 

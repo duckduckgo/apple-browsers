@@ -18,12 +18,18 @@
 
 import Foundation
 import History
+@_spi(Testing) import PixelKit
 import Testing
 
 @testable import DuckDuckGo_Privacy_Browser
 @testable import BrowserServicesKit
 
 class ChromiumDataImporterTests {
+    private var createdProfileURLs: [URL] = []
+
+    deinit {
+        createdProfileURLs.forEach { try? FileManager.default.removeItem(at: $0) }
+    }
 
     @available(iOS 16, macOS 13, *)
     @Test("Check if bookmarks import summary is populated after a successful bookmark import", .timeLimit(.minutes(1)))
@@ -103,6 +109,37 @@ class ChromiumDataImporterTests {
         #expect(historyImporter.importedParseResults == [parseResult])
     }
 
+    @available(iOS 16, macOS 13, *)
+    @Test("Check if a missing History database is reported only when the profile folder has no History file",
+          .timeLimit(.minutes(1)),
+          arguments: [(profileFiles: ["Bookmarks"], firesPixel: true), (profileFiles: ["Bookmarks", "History"], firesPixel: false)])
+    func whenHistoryCantBeRead_ThenSourceFileMissingPixelIsFiredOnlyWithoutHistoryFile(profileFiles: [String], firesPixel: Bool) async throws {
+        let pixelKit = PixelKitMock()
+        let importer = makeImporter(profileURL: try makeProfile(files: profileFiles),
+                                    historyReader: MockChromiumHistoryReader(result: .failure(historyReadError)),
+                                    pixelFiring: pixelKit)
+
+        _ = await importer.importData(types: [.history])
+
+        let expectedPixels = firesPixel ? ["dataimport_history_source-file-missing_macos"] : []
+        #expect(pixelKit.actualFireCalls.map(\.pixel.name) == expectedPixels)
+        #expect(pixelKit.actualFireCalls.allSatisfy { $0.pixel.parameters?["source"] == "chrome" && $0.frequency == .dailyAndCount })
+    }
+
+    private var historyReadError: ChromiumHistoryReader.ImportError {
+        ChromiumHistoryReader.ImportError(type: .copyTemporaryFile, underlyingError: nil)
+    }
+
+    private func makeProfile(files: [String]) throws -> URL {
+        let profileURL = missingProfileURL
+        try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
+        for file in files {
+            FileManager.default.createFile(atPath: profileURL.appendingPathComponent(file).path, contents: Data())
+        }
+        createdProfileURLs.append(profileURL)
+        return profileURL
+    }
+
     private var missingProfileURL: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     }
@@ -113,14 +150,16 @@ class ChromiumDataImporterTests {
         bookmarkImporter: BookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 0, duplicates: 0, failed: 0) }),
         faviconManager: FaviconManagement = FaviconManagerMock(),
         historyReader: ChromiumHistoryReaderProtocol = MockChromiumHistoryReader(),
-        historyImporter: HistoryImporterProtocol = MockHistoryImporter()
+        historyImporter: HistoryImporterProtocol = MockHistoryImporter(),
+        pixelFiring: PixelFiring? = nil
     ) -> ChromiumDataImporter {
         ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: profileURL),
                              loginImporter: loginImporter,
                              bookmarkImporter: bookmarkImporter,
                              faviconManager: faviconManager,
                              historyReader: historyReader,
-                             historyImporter: historyImporter)
+                             historyImporter: historyImporter,
+                             pixelFiring: pixelFiring)
     }
 
     private func visit(url: String) -> HistoryImport.Visit {

@@ -3839,6 +3839,12 @@
 		BB470EBC2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */; };
 		BB4830CB2E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */; };
 		BB4830CD2E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */; };
+		80978128CD955A845BE962D1 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */; };
+		2DDC6062FFB8E4F4C4618F55 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */; };
+		792BE1F0CD5692DD43762863 /* AddressBarUpdateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */; };
+		56249313D17C9A5B0CFBC973 /* AddressBarUpdateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */; };
+		362FAD50191BC48E988D89A8 /* MoreProminentUpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */; };
+		96A6957FC87A0E7D373A79E6 /* MoreProminentUpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */; };
 		BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */; };
 		BB4AA66F2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */; };
 		BB4AA6752E96FD600008CC12 /* WinBackOfferPromptPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */; };
@@ -7157,6 +7163,9 @@
 		BB44A0012F50000000000001 /* MemoryUsageMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageMonitorTests.swift; sourceTree = "<group>"; };
 		BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModel.swift; sourceTree = "<group>"; };
 		BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStoreUpdatesDebugMenu.swift; sourceTree = "<group>"; };
+		398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBannerView.swift; sourceTree = "<group>"; };
+		0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarUpdateButton.swift; sourceTree = "<group>"; };
+		54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreProminentUpdatesDebugMenu.swift; sourceTree = "<group>"; };
 		BB4AA66D2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferFeatureFlagger.swift; sourceTree = "<group>"; };
 		BB4AA6712E96FD600008CC12 /* WinBackOfferPromptPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptPresenter.swift; sourceTree = "<group>"; };
 		BB4AA6722E96FD600008CC12 /* WinBackOfferPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromptView.swift; sourceTree = "<group>"; };
@@ -8390,6 +8399,7 @@
 				BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */,
 				BB98DF472E74AEC500C15330 /* AppStore */,
 				BB98DF462E74AE9100C15330 /* Sparkle */,
+				5D0C91F836258CA674F5DA16 /* MoreProminentUpdates */,
 				C8E83B44C98E513830A68B8C /* UpdateNotificationPromoBridge.swift */,
 				AC0AC7AE1E7A467B93B0F2C5 /* UpdateAvailablePromoDelegate.swift */,
 				0306A5AC965747A4A7BD1343 /* BrowserUpdatedPromoDelegate.swift */,
@@ -13431,6 +13441,16 @@
 			path = Rebranding;
 			sourceTree = "<group>";
 		};
+		5D0C91F836258CA674F5DA16 /* MoreProminentUpdates */ = {
+			isa = PBXGroup;
+			children = (
+				398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */,
+				0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */,
+				54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */,
+			);
+			path = MoreProminentUpdates;
+			sourceTree = "<group>";
+		};
 		BB98DF462E74AE9100C15330 /* Sparkle */ = {
 			isa = PBXGroup;
 			children = (
@@ -16826,6 +16846,9 @@
 				3706FBDC293F65D500E42796 /* Permissions.xcdatamodeld in Sources */,
 				4B41EDB52B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */,
 				BB4830CD2E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift in Sources */,
+				2DDC6062FFB8E4F4C4618F55 /* UpdateBannerView.swift in Sources */,
+				56249313D17C9A5B0CFBC973 /* AddressBarUpdateButton.swift in Sources */,
+				96A6957FC87A0E7D373A79E6 /* MoreProminentUpdatesDebugMenu.swift in Sources */,
 				371209302C233D66003ADF3D /* RemoteMessagingDatabase.swift in Sources */,
 				3706FBDD293F65D500E42796 /* PaddedImageButton.swift in Sources */,
 				BB8E056E2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift in Sources */,
@@ -19448,6 +19471,9 @@
 				BBB891E72DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */,
 				CB63DECB2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */,
 				BB4830CB2E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift in Sources */,
+				80978128CD955A845BE962D1 /* UpdateBannerView.swift in Sources */,
+				792BE1F0CD5692DD43762863 /* AddressBarUpdateButton.swift in Sources */,
+				362FAD50191BC48E988D89A8 /* MoreProminentUpdatesDebugMenu.swift in Sources */,
 				BB3A50B32EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift in Sources */,
 				B6040856274B830F00680351 /* DictionaryExtension.swift in Sources */,
 				B684592725C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift in Sources */,

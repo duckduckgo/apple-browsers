@@ -113,6 +113,8 @@
                                         "widget_favorite",
                                         "widget_lock_screen",
                                         "widget_control_center",
+                                        "address_bar_custom_button",
+                                        "toolbar_custom_button",
                                         "siri",
                                         "deep_link_other",
                                         "return_to_chat_card",

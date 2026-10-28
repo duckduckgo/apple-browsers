@@ -9834,7 +9834,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.toolbar.rawValue]))
-            self.openAIChatInVoiceMode(source: .voice, fromDeepLink: false)
+            self.openAIChatInVoiceMode(source: .toolbarCustomButton, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case \(button)")
@@ -9929,7 +9929,7 @@ extension MainViewController {
 
         case .duckAIVoice:
             pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: VoiceEntryPointSource.addressBar.rawValue]))
-            openAIChatInVoiceMode(source: .voice, fromDeepLink: false)
+            openAIChatInVoiceMode(source: .addressBarCustomButton, fromDeepLink: false)
 
         default:
             assertionFailure("Unexpected case: \(button)")

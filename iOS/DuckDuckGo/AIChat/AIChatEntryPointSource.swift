@@ -87,6 +87,9 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case widgetFavorite = "widget_favorite"
     case widgetLockScreen = "widget_lock_screen"
     case widgetControlCenter = "widget_control_center"
+    /// The customizable address bar and toolbar buttons (Settings → Appearance), iPhone only.
+    case addressBarCustomButton = "address_bar_custom_button"
+    case toolbarCustomButton = "toolbar_custom_button"
     case siri
     case deepLinkOther = "deep_link_other"
     case returnToChatCard = "return_to_chat_card"

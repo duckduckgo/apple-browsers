@@ -186,7 +186,10 @@ class TabBarTests: UITestCase {
         let firstWindowFrame = firstWindow.frame
 
         // The second window is cascaded over the first one; move it down so the first window's tab bar can take the drop
-        let secondWindowTitleBar = secondWindow.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0)).withOffset(CGVector(dx: 0, dy: 10))
+        // Just right of the new tab button the tab bar is empty at any window width, so dragging there moves the window
+        let newTabButtonFrame = hittableElement(in: secondWindow.buttons.matching(identifier: "NewTabButton")).frame
+        let secondWindowTitleBar = secondWindow.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: newTabButtonFrame.maxX + 30 - secondWindow.frame.minX, dy: newTabButtonFrame.midY - secondWindow.frame.minY))
         secondWindowTitleBar.click(forDuration: 0.5, thenDragTo: secondWindowTitleBar.withOffset(CGVector(dx: 0, dy: 300)))
         let secondWindowFrame = secondWindow.frame
         XCTAssertGreaterThan(secondWindowFrame.minY, firstWindowFrame.minY + 100, "The second window should have moved out of the way")

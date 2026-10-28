@@ -146,13 +146,28 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         }
     }
 
+    // MARK: - JSON Validation
+
+    /// Web messages can carry values JSON can't hold, such as a JS `Date` (bridged to `NSDate`), `NaN` or `Infinity`.
+    /// `JSONSerialization` raises an Objective-C exception for them that `try?` can't catch, so they're checked first.
+    private static func jsonData(from object: Any) -> Data? {
+        guard JSONSerialization.isValidJSONObject(object) else { return nil }
+        return try? JSONSerialization.data(withJSONObject: object)
+    }
+
+    /// `isValidJSONObject` rejects top-level fragments such as strings and numbers, so the value is wrapped.
+    private static func isValidJSONValue(_ value: Any) -> Bool {
+        JSONSerialization.isValidJSONObject([value])
+    }
+
     // MARK: - Entry Handlers
 
     private func putEntry(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← putEntry called")
         guard let dict = params as? [String: Any],
               let key = dict["key"] as? String,
-              let value = dict["value"] else {
+              let value = dict["value"],
+              Self.isValidJSONValue(value) else {
             Logger.aiChat.error("DuckAiNativeStorage: putEntry — invalid params")
             return nil
         }
@@ -239,7 +254,8 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     private func replaceAllEntries(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← replaceAllEntries called")
         guard let dict = params as? [String: Any],
-              let entries = dict["entries"] as? [String: Any] else {
+              let entries = dict["entries"] as? [String: Any],
+              JSONSerialization.isValidJSONObject(entries) else {
             Logger.aiChat.error("DuckAiNativeStorage: replaceAllEntries — invalid params")
             return nil
         }
@@ -262,7 +278,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         guard let dict = params as? [String: Any],
               let chatId = dict["chatId"] as? String,
               let data = dict["data"] as? [String: Any],
-              let jsonData = try? JSONSerialization.data(withJSONObject: data) else {
+              let jsonData = Self.jsonData(from: data) else {
             Logger.aiChat.error("DuckAiNativeStorage: putChat — invalid params")
             return nil
         }
@@ -289,7 +305,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         let records: [DuckAiChatRecord] = chatsArray.compactMap { entry in
             guard let chatId = entry["chatId"] as? String, !chatId.isEmpty,
                   let data = entry["data"] as? [String: Any],
-                  let jsonData = try? JSONSerialization.data(withJSONObject: data) else {
+                  let jsonData = Self.jsonData(from: data) else {
                 return nil
             }
             return DuckAiChatRecord(chatId: chatId, data: jsonData)
@@ -405,7 +421,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
             return nil
         }
         // Store the entire params JSON opaquely — preserves all FE fields (data, mimeType, fileName, etc.)
-        guard let paramsData = try? JSONSerialization.data(withJSONObject: dict, options: []) else {
+        guard let paramsData = Self.jsonData(from: dict) else {
             Logger.aiChat.error("DuckAiNativeStorage: putFile — failed to serialize params")
             return nil
         }
@@ -576,7 +592,7 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         let records: [DuckAiChatRecord] = chatsArray.compactMap { entry in
             guard let chatId = entry["chatId"] as? String, !chatId.isEmpty,
                   let data = entry["data"] as? [String: Any],
-                  let jsonData = try? JSONSerialization.data(withJSONObject: data) else {
+                  let jsonData = Self.jsonData(from: data) else {
                 return nil
             }
             return DuckAiChatRecord(chatId: chatId, data: jsonData)

@@ -63,6 +63,23 @@ final class SuggestionsListViewModelTests: XCTestCase {
         XCTAssertEqual(sections.first?.rows.first?.title, "R")
     }
 
+    func testRecentChatPresenceTracksActualChatsAndIgnoresOtherRows() {
+        let chats = AIChatSuggestionsViewModel()
+        let list = SuggestionsListViewModel(source: RecentsSuggestionsSource(viewModel: chats))
+        XCTAssertFalse(list.hasRecentChats)
+        chats.setChats(pinned: [], recent: [AIChatSuggestion(id: "one", title: "One", isPinned: false, chatId: "one")])
+        XCTAssertTrue(list.hasRecentChats)
+        chats.setChats(pinned: [], recent: [])
+        XCTAssertFalse(list.hasRecentChats)
+
+        let source = ScrollPolicyRowsSource(sections: [SuggestionSection(id: "other", rows: [
+            SuggestionRowMapper.viewAllChatsRow(id: "all"),
+            SuggestionRowMapper.searchRow(query: "query", idPrefix: "query"),
+            SuggestionRow(id: "url", icon: .globe, title: "URL", accessory: .delete, accessibilityID: "url")
+        ])])
+        XCTAssertFalse(SuggestionsListViewModel(source: source).hasRecentChats)
+    }
+
     func test_listViewModel_publishesSectionsFromSource() {
         let snapshot = DuckAISuggestionsPipeline.Snapshot(
             chats: [],
@@ -131,4 +148,16 @@ final class SuggestionsListViewModelTests: XCTestCase {
         let whileSearching = DuckAISuggestionsSource.sections(from: snapshot, query: "rec", viewAllChatsEnabled: true)
         XCTAssertFalse(whileSearching.first?.rows.contains { $0.id == "view-all-chats" } == true)
     }
+}
+
+@MainActor
+private final class ScrollPolicyRowsSource: SuggestionsSource {
+    let sectionsPublisher: AnyPublisher<[SuggestionSection], Never>
+
+    init(sections: [SuggestionSection]) {
+        sectionsPublisher = Just(sections).eraseToAnyPublisher()
+    }
+
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
 }

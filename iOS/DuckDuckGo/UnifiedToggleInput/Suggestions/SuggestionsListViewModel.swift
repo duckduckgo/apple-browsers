@@ -26,6 +26,10 @@ import Foundation
 final class SuggestionsListViewModel: ObservableObject {
 
     @Published private(set) var sections: [SuggestionSection] = []
+
+    var hasRecentChats: Bool {
+        sections.contains { section in section.rows.contains { $0.accessory == .fire } }
+    }
     /// Transient keyboard-selection highlight; not part of the row model.
     @Published var selectedRowID: String?
 

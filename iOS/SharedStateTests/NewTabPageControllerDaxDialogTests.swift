@@ -23,7 +23,7 @@ import Bookmarks
 import Combine
 import Core
 import SwiftUI
-import Persistence
+@_spi(Testing) import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
@@ -395,6 +395,207 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         }
     }
 
+    func testLegacyFocusedHatchScrollsOnlyWithOtherContent() throws {
+        try assertFocusedHatchContentPolicy(usesRedesign: false)
+    }
+
+    func testRedesignedFocusedHatchScrollsOnlyWithOtherContent() throws {
+        try assertFocusedHatchContentPolicy(usesRedesign: true)
+    }
+
+    private func assertFocusedHatchContentPolicy(usesRedesign: Bool) throws {
+        let configuration = HomePageMessagesConfigurationMock(homeMessages: [])
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration, usesContentDependentScrolling: true)
+        let source = MutableHatchRowsSource()
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .aiChat, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let host = UnifiedSuggestionsHost(config: UnifiedSuggestionsHostConfig(
+            source: EmptySuggestionsSource(), inputsPublisher: inputs.eraseToAnyPublisher(), isAddressBarAtBottom: false,
+            favoritesProvider: { controller }, onSelectRow: { _ in }, onDeleteRow: { _ in }, onTapAheadRow: { _ in }),
+            usesScrollableEscapeHatch: true)
+        let hatch = makeScrollingHatch()
+        host.setUsesRedesignedNewTabPageLayout(usesRedesign)
+        host.attachDuckAISurface(.init(source: source, onSelectRow: { _ in }, onDeleteRow: { _ in },
+                                      onTapAheadRow: { _ in }, onFireDeleteRow: { _ in }), textPublisher: Just("").eraseToAnyPublisher())
+        host.setFocusedContent(mode: .aiChat, escapeHatch: hatch, syncPromo: AnyView(Color.clear.frame(height: 1_200)))
+        let parent = UIViewController()
+        let window = try mountScrollingPage(parent)
+        host.start(in: parent.view, parentViewController: parent, textPublisher: Just(""))
+        defer { host.tearDown(); window.isHidden = true; window.rootViewController = nil; testWindow?.makeKeyAndVisible() }
+        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            guard let scrollView = self.outerContentScrollView(in: parent.view) else { return false }
+            return scrollView.bounds.height > 0 && scrollView.contentSize.height > scrollView.bounds.height
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view))
+        assertScrollingPermission(false, scrollView: scrollView)
+        XCTAssertGreaterThan(scrollView.contentSize.height, scrollView.bounds.height, "A promo alone must not enable even overflowing content")
+        source.sections.send([SuggestionSection(id: "recent", rows: [
+            SuggestionRow(id: "chat", icon: .aiChat, title: "Chat", accessory: .fire, accessibilityID: "chat")
+        ])])
+        assertScrollingPermission(true, scrollView: scrollView)
+        scrollView.contentOffset.y = 100
+        source.sections.send([])
+        assertScrollingPermission(false, scrollView: scrollView)
+        XCTAssertEqual(scrollView.contentOffset.y, -scrollView.adjustedContentInset.top, accuracy: 1)
+
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        host.setFocusedContent(mode: .search, escapeHatch: hatch, syncPromo: nil)
+        configuration.homeMessages = [.placeholder]
+        controller.messagesModel.refresh()
+        assertScrollingPermission(false, scrollView: scrollView)
+        configuration.homeMessages = [scrollingRemoteMessage()]
+        controller.messagesModel.refresh()
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: true, hasRecents: false, resultsPending: false))
+        assertScrollingPermission(true, scrollView: scrollView)
+        configuration.homeMessages = [.placeholder]
+        controller.messagesModel.refresh()
+        assertScrollingPermission(false, scrollView: scrollView)
+        configuration.homeMessages = [scrollingRemoteMessage()]
+        controller.messagesModel.refresh()
+        assertScrollingPermission(true, scrollView: scrollView)
+        configuration.homeMessages = []
+        controller.messagesModel.refresh()
+        inputs.send(.init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        assertScrollingPermission(false, scrollView: scrollView)
+    }
+
+    func testRestingLegacyHatchPolicyPreservesFlagOffAndRespondsToMessages() throws {
+        for isEnabled in [false, true] {
+            let configuration = HomePageMessagesConfigurationMock(homeMessages: [])
+            let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration,
+                                            usesContentDependentScrolling: isEnabled, isFocussedState: false)
+            controller.setEscapeHatch(makeScrollingHatch())
+            let window = try mountScrollingPage(controller)
+            defer { window.isHidden = true; window.rootViewController = nil; testWindow?.makeKeyAndVisible() }
+            let scrollView = try XCTUnwrap(outerContentScrollView(in: controller.view))
+            if !isEnabled { XCTAssertTrue(scrollView.isScrollEnabled); continue }
+            assertScrollingPermission(false, scrollView: scrollView)
+            configuration.homeMessages = [scrollingRemoteMessage()]
+            controller.messagesModel.refresh()
+            assertScrollingPermission(true, scrollView: scrollView)
+            configuration.homeMessages = []
+            controller.messagesModel.refresh()
+            assertScrollingPermission(false, scrollView: scrollView)
+            controller.setEscapeHatch(nil)
+            XCTAssertTrue(scrollView.isScrollEnabled)
+        }
+    }
+
+    func testRestingRedesignedHatchPolicyTracksFavoritesVisibilityAndEditing() throws {
+        var customization = NewTabPageCustomizationStore()
+        let wasVisible = customization.isFavoritesSectionVisible
+        customization.isFavoritesSectionVisible = true
+        defer { customization.isFavoritesSectionVisible = wasVisible }
+        let source = MutableHatchFavoritesSource()
+        let favorites = FavoritesViewModel(isFocussedState: false, favoriteDataSource: source,
+                                           faviconLoader: EmptyFaviconLoading(), faviconsCache: Favicons())
+        let model = NewTabPageViewModel(fireTab: false)
+        let page = RedesignedNewTabPageViewController(blocks: [], favoritesModel: favorites, pageModel: model,
+                                                      usesContentDependentEscapeHatchScrolling: true)
+        let window = try mountScrollingPage(page)
+        defer { window.isHidden = true; window.rootViewController = nil; testWindow?.makeKeyAndVisible() }
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: page.view))
+        XCTAssertTrue(scrollView.isScrollEnabled, "Without a hatch, other redesign modules retain their existing scrolling")
+        page.setEscapeHatch(makeScrollingHatch())
+        assertScrollingPermission(false, scrollView: scrollView)
+        source.favorites = [Favorite(id: "one", title: "One", domain: "example.com")]
+        source.updates.send(())
+        assertScrollingPermission(true, scrollView: scrollView)
+        customization.isFavoritesSectionVisible = false
+        assertScrollingPermission(false, scrollView: scrollView)
+        customization.isFavoritesSectionVisible = true
+        assertScrollingPermission(true, scrollView: scrollView)
+        page.setSearchInputEditing(true)
+        XCTAssertFalse(scrollView.isScrollEnabled)
+        source.favorites = []
+        source.updates.send(())
+        assertScrollingPermission(false, scrollView: scrollView)
+        page.setSearchInputEditing(false)
+        assertScrollingPermission(false, scrollView: scrollView)
+        XCTAssertEqual(scrollView.contentOffset.y, -scrollView.adjustedContentInset.top, accuracy: 1)
+        page.setEscapeHatch(nil)
+        let restored = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in scrollView.isScrollEnabled }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [restored], timeout: 5), .completed)
+    }
+
+    func testRestingRedesignedEmptyHatchResetsSavedOffsetAfterDetachment() throws {
+        var customization = NewTabPageCustomizationStore()
+        let wasVisible = customization.isFavoritesSectionVisible
+        customization.isFavoritesSectionVisible = true
+        defer { customization.isFavoritesSectionVisible = wasVisible }
+        let source = MutableHatchFavoritesSource()
+        source.favorites = [Favorite(id: "one", title: "One", domain: "example.com")]
+        let favorites = FavoritesViewModel(isFocussedState: false, favoriteDataSource: source,
+                                           faviconLoader: EmptyFaviconLoading(), faviconsCache: Favicons())
+        let model = NewTabPageViewModel(fireTab: false)
+        let page = RedesignedNewTabPageViewController(
+            blocks: [NewTabPageSwiftUIBlock(id: .welcome, rootView: Color.clear.frame(height: 2_000))],
+            favoritesModel: favorites, pageModel: model, usesContentDependentEscapeHatchScrolling: true)
+        page.setEscapeHatch(makeScrollingHatch())
+        let window = try mountScrollingPage(page)
+        defer { window.isHidden = true; window.rootViewController = nil; testWindow?.makeKeyAndVisible() }
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: page.view))
+        assertScrollingPermission(true, scrollView: scrollView)
+        let overflowing = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom > 200
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [overflowing], timeout: 5), .completed)
+        scrollView.contentOffset.y = 200
+        XCTAssertEqual(scrollView.contentOffset.y, 200, accuracy: 1)
+        page.dismiss()
+        source.favorites = []
+        source.updates.send(())
+        assertScrollingPermission(false, scrollView: scrollView)
+        XCTAssertGreaterThan(scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom, 200)
+        page.viewDidAppear(false)
+        XCTAssertFalse(scrollView.isScrollEnabled)
+        XCTAssertEqual(scrollView.contentOffset.y, -scrollView.adjustedContentInset.top, accuracy: 1)
+    }
+
+    func testRestingRedesignedFlagOffKeepsScrollingWithOnlyHatch() throws {
+        let model = NewTabPageViewModel(fireTab: false)
+        let page = RedesignedNewTabPageViewController(blocks: [], pageModel: model, usesContentDependentEscapeHatchScrolling: false)
+        page.setEscapeHatch(makeScrollingHatch())
+        let window = try mountScrollingPage(page)
+        defer { window.isHidden = true; window.rootViewController = nil; testWindow?.makeKeyAndVisible() }
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: page.view))
+        assertScrollingPermission(true, scrollView: scrollView)
+    }
+
+    private func assertScrollingPermission(_ allowed: Bool, scrollView: UIScrollView, file: StaticString = #filePath, line: UInt = #line) {
+        let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            scrollView.isScrollEnabled == allowed && scrollView.alwaysBounceVertical == allowed
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed, file: file, line: line)
+    }
+
+    private func mountScrollingPage(_ controller: UIViewController) throws -> UIWindow {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        window.rootViewController = controller
+        window.makeKeyAndVisible()
+        controller.view.layoutIfNeeded()
+        return window
+    }
+
+    private func scrollingRemoteMessage() -> HomeMessage {
+        .remoteMessage(remoteMessage: .init(id: "scrolling", surfaces: .newTabPage,
+                                           content: .small(titleText: "Title", descriptionText: "Message"),
+                                           matchingRules: [], exclusionRules: [], isMetricsEnabled: false))
+    }
+
+    private func makeScrollingHatch() -> EscapeHatchModel {
+        let tab = Tab()
+        return EscapeHatchModel(title: "Return", subtitle: "Tab", tabType: .regular, domain: nil, targetTab: tab,
+                                tabsSource: HatchTabsSource(tab: tab),
+                                afterInactivityOptionAdapter: AfterInactivityOptionAdapter(initialOption: .lastUsedTab, keyValueStore: MockKeyValueFileStore()),
+                                lastTabShortcutAdapter: LastTabShortcutAdapter(keyValueStore: MockKeyValueFileStore()),
+                                onCardTap: {}, onTabSwitcherTap: {}, onCloseTab: {}, onBurnTabWithConfirmation: { _ in }, onBurnTabImmediately: {})
+    }
+
     func testWhenDialogIsReplacedThenItRemainsAboveHostedPageInContainer() throws {
         let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
         specProvider.specToReturn = .initial
@@ -439,9 +640,11 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     /// after-idle signal passed in (the embedded surface suppresses its own escape hatch, so the
     /// signal can't be derived from it).
     private func makeNewTabPage(openedAfterIdle: Bool,
-                                homePageMessagesConfiguration: HomePageMessagesConfiguration) -> NewTabPageViewController {
+                                homePageMessagesConfiguration: HomePageMessagesConfiguration,
+                                usesContentDependentScrolling: Bool = false,
+                                isFocussedState: Bool = true) -> NewTabPageViewController {
         NewTabPageViewController(
-            isFocussedState: true,
+            isFocussedState: isFocussedState,
             openedAfterIdle: openedAfterIdle,
             dismissKeyboardOnScroll: false,
             tab: Tab(),
@@ -457,7 +660,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             faviconsCache: Favicons(),
             subscriptionManager: SubscriptionManagerMock(),
             internalUserCommands: MockURLBasedDebugCommands(),
-            tutorialSettings: tutorialSettings)
+            tutorialSettings: tutorialSettings,
+            usesContentDependentEscapeHatchScrolling: usesContentDependentScrolling)
     }
 
     private func makeConfiguration(withScheduledMessage: Bool) -> (HomePageConfiguration, MockRemoteMessagingStore) {
@@ -692,4 +896,27 @@ struct MockVariant: Variant {
     init(features: [BrowserServicesKit.FeatureName]) {
         self.features = features
     }
+}
+
+private struct HatchTabsSource: EscapeHatchTabsSource {
+    let tab: DuckDuckGo.Tab
+    func tabsPublisher(for mode: BrowsingMode) -> AnyPublisher<[DuckDuckGo.Tab], Never> { Just([tab]).eraseToAnyPublisher() }
+}
+
+@MainActor
+private final class MutableHatchRowsSource: SuggestionsSource {
+    let sections = CurrentValueSubject<[SuggestionSection], Never>([])
+    var sectionsPublisher: AnyPublisher<[SuggestionSection], Never> { sections.eraseToAnyPublisher() }
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
+}
+
+private final class MutableHatchFavoritesSource: NewTabPageFavoriteDataSource {
+    var favorites: [Favorite] = []
+    let updates = PassthroughSubject<Void, Never>()
+    var externalUpdates: AnyPublisher<Void, Never> { updates.eraseToAnyPublisher() }
+    func moveFavorite(_ favorite: Favorite, fromIndex: Int, toIndex: Int) {}
+    func bookmarkEntity(for favorite: Favorite) -> BookmarkEntity? { nil }
+    func favorite(at index: Int) throws -> Favorite? { favorites.indices.contains(index) ? favorites[index] : nil }
+    func removeFavorite(_ favorite: Favorite) {}
 }

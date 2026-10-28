@@ -22,7 +22,9 @@ import Bookmarks
 import BrowserServicesKit
 import Combine
 import Core
+import FeatureFlags_iOS
 import Onboarding
+import PrivacyConfig
 import RemoteMessaging
 import Subscription
 import SwiftUI
@@ -31,6 +33,7 @@ import SwiftUI
 @MainActor
 struct NewTabPageBuilder {
 
+    let featureFlagger: any FeatureFlagger
     let favoritesInteractionModel: FavoritesListInteracting
     let homePageMessagesConfiguration: HomePageMessagesConfiguration
     let subscriptionDataReporting: SubscriptionDataReporting
@@ -145,6 +148,7 @@ struct NewTabPageBuilder {
             NewTabPageSwiftUIBlock(id: .messages,
                                   rootView: RedesignedNewTabPageMessagesView(messagesModel: messagesModel))
         ], favoritesModel: favoritesModel, pageModel: pageModel, messagesModel: messagesModel, searchInputModel: searchInputModel,
+           usesContentDependentEscapeHatchScrolling: featureFlagger.isFeatureOn(.scrollableEscapeHatch),
            onboardingCoordinator: NewTabPageOnboardingCoordinator(newTabDialogFactory: daxDialogFactory,
                                                                   daxDialogsManager: daxDialogsManager,
                                                                   onboardingFlowProvider: onboardingFlowProvider,
@@ -176,6 +180,7 @@ struct NewTabPageBuilder {
                                  internalUserCommands: internalUserCommands,
                                  // Read per page: the setting can change while the app runs.
                                  narrowLayoutInLandscape: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
-                                 floatingUIManager: floatingUIManager)
+                                 floatingUIManager: floatingUIManager,
+                                 usesContentDependentEscapeHatchScrolling: featureFlagger.isFeatureOn(.scrollableEscapeHatch))
     }
 }

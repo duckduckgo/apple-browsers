@@ -36,6 +36,33 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
                                  resultsPending: resultsPending)
     }
 
+    func testEscapeHatchScrollingRequiresContentForTheSelectedMode() {
+        let cases: [(facts: UnifiedSuggestionsInputs, expected: Bool)] = [
+            (inputs(mode: .search), false),
+            (inputs(mode: .search, hasRecents: true), false),
+            (inputs(mode: .search, hasMessages: true), true),
+            (inputs(mode: .search, hasMessages: true, hasRecents: true), true),
+            (inputs(mode: .search, hasFavorites: true), true),
+            (inputs(mode: .search, hasFavorites: true, hasRecents: true), true),
+            (inputs(mode: .search, hasFavorites: true, hasMessages: true), true),
+            (inputs(mode: .search, hasFavorites: true, hasMessages: true, hasRecents: true), true),
+            (inputs(mode: .aiChat), false),
+            (inputs(mode: .aiChat, hasRecents: true), true),
+            (inputs(mode: .aiChat, hasMessages: true), false),
+            (inputs(mode: .aiChat, hasMessages: true, hasRecents: true), true),
+            (inputs(mode: .aiChat, hasFavorites: true), false),
+            (inputs(mode: .aiChat, hasFavorites: true, hasRecents: true), true),
+            (inputs(mode: .aiChat, hasFavorites: true, hasMessages: true), false),
+            (inputs(mode: .aiChat, hasFavorites: true, hasMessages: true, hasRecents: true), true)
+        ]
+        for testCase in cases {
+            XCTAssertEqual(UnifiedSuggestionsContentResolver.allowsEscapeHatchScrolling(
+                mode: testCase.facts.mode, hasFavorites: testCase.facts.hasFavorites,
+                hasMessages: testCase.facts.hasMessages, hasRecentChats: testCase.facts.hasRecents),
+                testCase.expected, "Case: \(testCase)")
+        }
+    }
+
     func test_searchEmpty_withFavorites_isFavorites() {
         let kind = UnifiedSuggestionsContentResolver.resolve(
             inputs(mode: .search, hasFavorites: true), previous: nil)

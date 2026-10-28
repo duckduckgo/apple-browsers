@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Combine
 import DDGSync
 import Bookmarks
 import BrowserServicesKit
@@ -71,6 +72,12 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     let messagesModel: NewTabPageMessagesModel
     let favoritesModel: FavoritesViewModel
     private let associatedTab: Tab
+    private let usesContentDependentEscapeHatchScrolling: Bool
+    private var scrollingCancellables = Set<AnyCancellable>()
+    private var recentsScrollingCancellable: AnyCancellable?
+    private weak var observedRecentsModel: SuggestionsListViewModel?
+    private weak var hatchScrollView: UIScrollView?
+    private var hatchScrollDefaults: (enabled: Bool, bounce: Bool)?
 
     private var isBorderSuppressedForChromeLayout = false
     private let appSettings: AppSettings
@@ -110,7 +117,8 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
          appWidthObserver: AppWidthObserver = .shared,
          notificationCenter: NotificationCenter = .default,
          tutorialSettings: TutorialSettings = DefaultTutorialSettings(),
-         contextualContentProvider: ContextualOnboardingContentProviding = ContextualOnboardingContentProvider()) {
+         contextualContentProvider: ContextualOnboardingContentProviding = ContextualOnboardingContentProvider(),
+         usesContentDependentEscapeHatchScrolling: Bool = false) {
 
         onboardingCoordinator = NewTabPageOnboardingCoordinator(newTabDialogFactory: newTabDialogFactory,
                                                                daxDialogsManager: daxDialogsManager,
@@ -120,6 +128,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
                                                                contextualContentProvider: contextualContentProvider,
                                                                unifiedToggleInputFeature: unifiedToggleInputFeature)
         self.associatedTab = tab
+        self.usesContentDependentEscapeHatchScrolling = usesContentDependentEscapeHatchScrolling
         self.appSettings = appSettings
         self.appWidthObserver = appWidthObserver
         self.floatingUIManager = floatingUIManager
@@ -154,6 +163,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         onboardingCoordinator.page = self
         assignFavoriteModelActions()
         assignSessionInstrumentationActions()
+        observeHatchScrolling()
         messagesModel.onMessageVisibilityChanged = { [weak self] in
             self?.notifyRemoteMessageSurfaceChanged()
         }
@@ -176,10 +186,13 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
         newTabPageViewModel.openedAfterIdle = (model != nil)
         messagesModel.refresh()
         updateBorderView()
+        requestHatchScrollingUpdate()
     }
 
     func setFocusedContent(_ content: LegacyFocusedNewTabPageContent?, escapeHatch: EscapeHatchModel? = nil) {
         newTabPageViewModel.setFocusedContent(content, escapeHatch: escapeHatch)
+        observeRecentChatScrolling(content?.recentChats)
+        requestHatchScrollingUpdate()
         if isViewLoaded {
             view.backgroundColor = content == nil ? UIColor(designSystemColor: .background) : .clear
         }
@@ -228,11 +241,61 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        if newTabPageViewModel.focusedContent != nil {
-            // SwiftUI's scrollBounceBehavior is unavailable on iOS 15.
-            focusedScrollView(in: view)?.alwaysBounceVertical = true
-        }
+        updateHatchScrolling()
         onboardingCoordinator.refreshContextualOnboardingDialogLayout()
+    }
+
+    private func observeHatchScrolling() {
+        guard usesContentDependentEscapeHatchScrolling else { return }
+        Publishers.Merge(favoritesModel.$allFavorites.map { _ in () },
+                         messagesModel.$homeMessageViewModels.map { _ in () })
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.requestHatchScrollingUpdate() }
+            .store(in: &scrollingCancellables)
+    }
+
+    private func observeRecentChatScrolling(_ model: SuggestionsListViewModel?) {
+        guard usesContentDependentEscapeHatchScrolling, observedRecentsModel !== model else { return }
+        observedRecentsModel = model
+        recentsScrollingCancellable = model?.$sections
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.requestHatchScrollingUpdate() }
+    }
+
+    private func requestHatchScrollingUpdate() {
+        guard isViewLoaded else { return }
+        view.setNeedsLayout()
+        updateHatchScrolling()
+    }
+
+    private func updateHatchScrolling() {
+        guard isViewLoaded, !newTabPageViewModel.fireTab else { return }
+        guard let scrollView = focusedScrollView(in: view) else { return }
+        if !usesContentDependentEscapeHatchScrolling || newTabPageViewModel.escapeHatch == nil {
+            if let defaults = hatchScrollDefaults, let controlledScrollView = hatchScrollView {
+                controlledScrollView.isScrollEnabled = defaults.enabled
+                controlledScrollView.alwaysBounceVertical = defaults.bounce
+            }
+            hatchScrollDefaults = nil
+            hatchScrollView = nil
+            if newTabPageViewModel.focusedContent != nil { scrollView.alwaysBounceVertical = true }
+            return
+        }
+        if hatchScrollView !== scrollView {
+            hatchScrollView = scrollView
+            hatchScrollDefaults = (scrollView.isScrollEnabled, scrollView.alwaysBounceVertical)
+        }
+        let recents = newTabPageViewModel.focusedContent?.recentChats
+        let allowsScrolling = UnifiedSuggestionsContentResolver.allowsEscapeHatchScrolling(
+            mode: recents == nil ? .search : .aiChat,
+            hasFavorites: !favoritesModel.allFavorites.isEmpty,
+            hasMessages: messagesModel.homeMessageViewModels.contains { !$0.messageId.isEmpty },
+            hasRecentChats: recents?.hasRecentChats == true)
+        scrollView.isScrollEnabled = allowsScrolling
+        scrollView.alwaysBounceVertical = allowsScrolling
+        if !allowsScrolling, scrollView.contentOffset.y != -scrollView.adjustedContentInset.top {
+            scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -scrollView.adjustedContentInset.top), animated: false)
+        }
     }
 
     private func focusedScrollView(in view: UIView) -> UIScrollView? {

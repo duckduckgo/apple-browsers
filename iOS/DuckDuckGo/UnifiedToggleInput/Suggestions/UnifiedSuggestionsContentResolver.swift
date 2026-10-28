@@ -53,6 +53,16 @@ struct UnifiedSuggestionsInputs: Equatable {
 /// duck.ai fetchers are still settling, so the logo never flashes mid-query.
 enum UnifiedSuggestionsContentResolver {
 
+    static func allowsEscapeHatchScrolling(mode: TextEntryMode,
+                                           hasFavorites: Bool,
+                                           hasMessages: Bool,
+                                           hasRecentChats: Bool) -> Bool {
+        switch mode {
+        case .search: return hasFavorites || hasMessages
+        case .aiChat: return hasRecentChats
+        }
+    }
+
     static func resolveChromePlacement(usesScrollableEscapeHatch: Bool,
                                        usesRedesignedNewTabPageLayout: Bool,
                                        showsRedesignedSearchModules: Bool,

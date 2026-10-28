@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import Combine
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
@@ -54,6 +55,9 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
     private let pageModel: NewTabPageViewModel?
     private let messagesModel: NewTabPageMessagesModel?
     private let searchInputModel: NewTabPageSearchInputModel?
+    private let usesContentDependentEscapeHatchScrolling: Bool
+    private let customizationStore = NewTabPageCustomizationStore()
+    private var scrollingCancellables = Set<AnyCancellable>()
     private let customizationStateReporter = NewTabPageCustomizationStateReporter()
     private var isRemoteMessageSurfacePresented = false
     private var areFavoritesHidden = false
@@ -114,8 +118,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
          pageModel: NewTabPageViewModel? = nil,
          messagesModel: NewTabPageMessagesModel? = nil,
          searchInputModel: NewTabPageSearchInputModel? = nil,
+         usesContentDependentEscapeHatchScrolling: Bool = false,
          onboardingCoordinator: NewTabPageOnboardingCoordinator? = nil) {
         self.onboardingCoordinator = onboardingCoordinator
+        self.usesContentDependentEscapeHatchScrolling = usesContentDependentEscapeHatchScrolling
         self.blocks = blocks
         self.favoritesModel = favoritesModel
         self.pageModel = pageModel
@@ -142,6 +148,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         installBlocks()
         // Load once per page, after the caller has supplied the initial escape-hatch context.
         messagesModel?.load()
+        observeHatchScrolling()
     }
 
     override func viewWillLayoutSubviews() {
@@ -173,6 +180,41 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         if let preservedOffset = editingOffset ?? detachedContentOffset,
            scrollView.contentOffset != preservedOffset {
             scrollView.setContentOffset(preservedOffset, animated: false)
+        }
+        updateHatchScrolling()
+    }
+
+    private func observeHatchScrolling() {
+        guard usesContentDependentEscapeHatchScrolling else { return }
+        var updates = [customizationStore.favoritesVisibilityPublisher.map { _ in () }.eraseToAnyPublisher()]
+        if let favoritesModel { updates.append(favoritesModel.$allFavorites.map { _ in () }.eraseToAnyPublisher()) }
+        if let messagesModel { updates.append(messagesModel.$homeMessageViewModels.map { _ in () }.eraseToAnyPublisher()) }
+        if let pageModel { updates.append(pageModel.$escapeHatch.map { _ in () }.eraseToAnyPublisher()) }
+        Publishers.MergeMany(updates)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.view.setNeedsLayout()
+                self?.updateHatchScrolling()
+            }
+            .store(in: &scrollingCancellables)
+    }
+
+    private func updateHatchScrolling() {
+        guard isViewLoaded else { return }
+        guard usesContentDependentEscapeHatchScrolling, pageModel?.escapeHatch != nil else {
+            scrollView.isScrollEnabled = inputEditingLayout == nil
+            scrollView.alwaysBounceVertical = true
+            return
+        }
+        let allowsScrolling = UnifiedSuggestionsContentResolver.allowsEscapeHatchScrolling(
+            mode: .search,
+            hasFavorites: customizationStore.isFavoritesSectionVisible && favoritesModel?.allFavorites.isEmpty == false,
+            hasMessages: messagesModel?.homeMessageViewModels.contains { !$0.messageId.isEmpty } == true,
+            hasRecentChats: false)
+        scrollView.isScrollEnabled = allowsScrolling && inputEditingLayout == nil
+        scrollView.alwaysBounceVertical = allowsScrolling
+        if !allowsScrolling, scrollView.contentOffset.y != -scrollView.adjustedContentInset.top {
+            scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -scrollView.adjustedContentInset.top), animated: false)
         }
     }
 
@@ -227,6 +269,7 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         let maximumY = max(minimumY, scrollView.contentSize.height - scrollView.bounds.height + scrollView.adjustedContentInset.bottom)
         let restoredY = min(max(savedOffset.y, minimumY), maximumY)
         scrollView.setContentOffset(CGPoint(x: savedOffset.x, y: restoredY), animated: false)
+        updateHatchScrolling()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -469,7 +512,7 @@ extension RedesignedNewTabPageViewController: NewTabPageInputTransitionSource {
         searchInputView?.alpha = isEditing ? 0 : 1
         view.accessibilityElementsHidden = isEditing && !isPresentingOnboardingDialog
         searchInputView?.isUserInteractionEnabled = !isEditing
-        scrollView.isScrollEnabled = !isEditing
+        updateHatchScrolling()
         customizeButton.alpha = isEditing ? 0 : 1
         customizeButton.isUserInteractionEnabled = !isEditing
     }

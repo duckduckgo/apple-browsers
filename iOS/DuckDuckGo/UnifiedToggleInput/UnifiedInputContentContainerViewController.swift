@@ -831,7 +831,8 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             faviconsCache: ntpDeps.faviconsCache,
             subscriptionManager: ntpDeps.subscriptionManager,
             internalUserCommands: ntpDeps.internalUserCommands,
-            floatingUIManager: floatingUIManager
+            floatingUIManager: floatingUIManager,
+            usesContentDependentEscapeHatchScrolling: usesScrollableEscapeHatch
         )
         if let tab = dependencies.tabsModelProvider().currentTab {
             controller.favoritesModel.expansionState = tab.favoritesExpansionState

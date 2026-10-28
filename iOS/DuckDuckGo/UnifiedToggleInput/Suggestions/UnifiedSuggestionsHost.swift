@@ -45,6 +45,9 @@ final class UnifiedSuggestionsHost {
     private var contentInsets: UIEdgeInsets = .zero
     private var embeddedHatchInset: CGFloat = 0
     private var cancellables = Set<AnyCancellable>()
+    private var hatchScrollingCancellables = Set<AnyCancellable>()
+    private var recentsScrollingCancellable: AnyCancellable?
+    private let customizationStore = NewTabPageCustomizationStore()
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
@@ -160,6 +163,7 @@ final class UnifiedSuggestionsHost {
         ])
         hosting.didMove(toParent: parentViewController)
         hostingController = hosting
+        observeHatchScrolling()
     }
 
     func setUsesRedesignedNewTabPageLayout(_ enabled: Bool) {
@@ -305,6 +309,7 @@ final class UnifiedSuggestionsHost {
         listVM.onDelete = { surface.onDeleteRow($0) }
         listVM.onFireDelete = { id, _ in surface.onFireDeleteRow(id) }
         viewModel.setDuckAIListViewModel(listVM)
+        observeRecentChatScrolling()
 
         surface.source.start(textPublisher: textPublisher)
         rebuildRootView()
@@ -318,6 +323,7 @@ final class UnifiedSuggestionsHost {
         duckAISurface?.source.tearDown()
         duckAISurface = nil
         viewModel.setDuckAIListViewModel(nil)
+        observeRecentChatScrolling()
         rebuildRootView()
     }
 
@@ -325,6 +331,8 @@ final class UnifiedSuggestionsHost {
         redesignedPresentationCancellable = nil
         redesignedSearchPresentation = nil
         cancellables.removeAll()
+        hatchScrollingCancellables.removeAll()
+        recentsScrollingCancellable = nil
         onContentChanged = nil
         config.source.tearDown()
         duckAISurface?.source.tearDown()
@@ -334,6 +342,29 @@ final class UnifiedSuggestionsHost {
         hostingController?.removeFromParent()
         hostingController = nil
         viewModel.logoViewportFrame = nil
+    }
+
+    private func observeHatchScrolling() {
+        guard usesScrollableEscapeHatch else { return }
+        var updates = [customizationStore.favoritesVisibilityPublisher.map { _ in () }.eraseToAnyPublisher(),
+                       viewModel.$content.map { _ in () }.eraseToAnyPublisher(),
+                       viewModel.$isFireTab.map { _ in () }.eraseToAnyPublisher()]
+        if let controller = favoritesPresentation.viewController {
+            updates.append(controller.favoritesModel.$allFavorites.map { _ in () }.eraseToAnyPublisher())
+            updates.append(controller.messagesModel.$homeMessageViewModels.map { _ in () }.eraseToAnyPublisher())
+        }
+        Publishers.MergeMany(updates)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.hostingController?.view.setNeedsLayout() }
+            .store(in: &hatchScrollingCancellables)
+        observeRecentChatScrolling()
+    }
+
+    private func observeRecentChatScrolling() {
+        guard usesScrollableEscapeHatch else { return }
+        recentsScrollingCancellable = viewModel.listViewModel(for: .recents).$sections
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.hostingController?.view.setNeedsLayout() }
     }
 
     // MARK: - Private
@@ -359,11 +390,12 @@ final class UnifiedSuggestionsHost {
 private final class UnifiedSuggestionsHostingController: UIHostingController<UnifiedSuggestionsView>, RemoteMessagePresenting {
 
     var isFloatingUIEnabled = false
+    private let customizationStore = NewTabPageCustomizationStore()
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         if rootView.usesScrollableEscapeHatch, rootView.usesRedesignedNewTabPageLayout {
-            enableVerticalBounce(in: view)
+            updateHatchScrolling(in: view)
         }
         guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
         // These are the native anchors used to constrain the host. The logo ignores the top
@@ -375,12 +407,31 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         rootView.viewModel.logoViewportFrame = viewport
     }
 
-    private func enableVerticalBounce(in view: UIView) {
+    private func updateHatchScrolling(in view: UIView) {
         if let scrollView = view as? UIScrollView {
-            scrollView.alwaysBounceVertical = true
+            if scrollView is UICollectionView || scrollView is UITableView || rootView.viewModel.isFireTab {
+                scrollView.alwaysBounceVertical = true
+                return
+            }
+            guard rootView.escapeHatch != nil else {
+                scrollView.isScrollEnabled = true
+                scrollView.alwaysBounceVertical = true
+                return
+            }
+            let controller = rootView.favoritesPresentation.viewController
+            let allowsScrolling = UnifiedSuggestionsContentResolver.allowsEscapeHatchScrolling(
+                mode: rootView.mode,
+                hasFavorites: rootView.showsRedesignedSearchModules && customizationStore.isFavoritesSectionVisible && controller?.favoritesModel.allFavorites.isEmpty == false,
+                hasMessages: rootView.showsRedesignedSearchModules && controller?.messagesModel.homeMessageViewModels.contains { !$0.messageId.isEmpty } == true,
+                hasRecentChats: rootView.viewModel.listViewModel(for: .recents).hasRecentChats)
+            scrollView.isScrollEnabled = allowsScrolling
+            scrollView.alwaysBounceVertical = allowsScrolling
+            if !allowsScrolling, scrollView.contentOffset.y != -scrollView.adjustedContentInset.top {
+                scrollView.setContentOffset(CGPoint(x: scrollView.contentOffset.x, y: -scrollView.adjustedContentInset.top), animated: false)
+            }
             return
         }
-        view.subviews.forEach { enableVerticalBounce(in: $0) }
+        view.subviews.forEach { updateHatchScrolling(in: $0) }
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {

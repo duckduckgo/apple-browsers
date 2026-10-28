@@ -187,7 +187,8 @@ class MainViewController: UIViewController {
 
     private lazy var newTabPageControllerStore = NewTabPageControllerStore(builder: newTabPageBuilder)
 
-    private lazy var newTabPageBuilder = NewTabPageBuilder(favoritesInteractionModel: favoritesViewModel,
+    private lazy var newTabPageBuilder = NewTabPageBuilder(featureFlagger: featureFlagger,
+                                                           favoritesInteractionModel: favoritesViewModel,
                                                            homePageMessagesConfiguration: homePageConfiguration,
                                                            subscriptionDataReporting: subscriptionDataReporter,
                                                            daxDialogsManager: daxDialogsManager,

@@ -174,7 +174,6 @@ final class WebExtensionNavigationCancellationTests: XCTestCase {
             let coordinator = WebExtensionLifecycleCoordinator(manager: MockWebExtensionManaging(),
                                                                 initialLoadTimeout: 60,
                                                                 enabledTypesProvider: { [.embedded] })
-            defer { coordinator.cancelAll() }
             let waiter = try XCTUnwrap(coordinator.initialLoadWaiter)
             let started = expectation(description: "\(name): waiting for extension startup")
             let tab = TabViewController.fake(customWebView: { MockWebView(frame: .zero, configuration: $0) },

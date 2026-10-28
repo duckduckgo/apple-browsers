@@ -311,6 +311,7 @@ final class AppDependencyProvider: DependencyProvider {
                                              userDefaults: subscriptionUserDefaults,
                                              field: .backupTokenContainer) { accessType, error in
                 Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                pixelHandler.handle(pixel: .backupKeychainError(accessType, error))
             }
         }
 
@@ -332,7 +333,8 @@ final class AppDependencyProvider: DependencyProvider {
                                             authService: authService,
                                             refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
                                             backupStorage: backupTokenStorage,
-                                            backupUserDefaults: subscriptionUserDefaults)
+                                            backupUserDefaults: subscriptionUserDefaults,
+                                            backupEventMapping: pixelHandler.backupEventMapping())
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
         dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
@@ -386,7 +388,7 @@ final class AppDependencyProvider: DependencyProvider {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
                                                      storePurchaseManager: storePurchaseManager,
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient, pixelHandler: pixelHandler)
         let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
                                                      restoreFlow: restoreFlow)
         subscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],

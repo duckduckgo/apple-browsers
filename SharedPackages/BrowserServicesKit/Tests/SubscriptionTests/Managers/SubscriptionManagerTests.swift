@@ -275,7 +275,7 @@ class SubscriptionManagerTests: XCTestCase {
                                     appStoreSucceeds: Bool,
                                     purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) {
         mockOAuthClient.restoreFromBackupResponse = backupResult
-        let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, onRestored: { _ in })
+        let backup = BackupTokenRecovery(oAuthClient: mockOAuthClient, pixelHandler: mockPixelHandler)
         let appStore = AppStoreTokenRecovery(purchasePlatform: purchasePlatform,
                                              restoreFlow: mockAppStoreRestoreFlowV2)
         if !appStoreSucceeds {
@@ -588,6 +588,7 @@ class SubscriptionManagerTests: XCTestCase {
             XCTAssertNotNil(error as? SubscriptionManagerError)
         }
         XCTAssertTrue(mockOAuthClient.getTokensPolicies.isEmpty)
+        XCTAssertTrue(mockPixelHandler.handledPixels.contains(.backupRestoreFailed(.accountCreation, .temporary, URLError(.timedOut))))
     }
 
     func testCreateIfNeeded_MissingPrimary_BackupPermanentlyRejected_CreatesAnAccount() async throws {

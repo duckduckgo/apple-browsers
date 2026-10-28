@@ -98,6 +98,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468401462
     case syncPromotionPasswords
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219992425728802
+    case syncPromotionSyncAnotherDevice
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
@@ -741,6 +744,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(SyncPromotionSubfeature.bookmarks), supportsLocalOverriding: false)
         case .syncPromotionPasswords:
             Config(source: .remoteReleasable(SyncPromotionSubfeature.passwords), supportsLocalOverriding: false)
+        case .syncPromotionSyncAnotherDevice:
+            Config(source: .remoteReleasable(SyncPromotionSubfeature.syncAnotherDevice))
         case .autofillSurveys:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSurveysSubfeature.featureEnabled), supportsLocalOverriding: false)
         case .adAttributionReporting:

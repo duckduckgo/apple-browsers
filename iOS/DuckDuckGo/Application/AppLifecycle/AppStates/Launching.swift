@@ -489,12 +489,15 @@ struct Launching: LaunchingHandling {
         )
 #endif
 
+        (UIApplication.shared.delegate as? AppDelegate)?.configureMainMenu(featureFlagger: featureFlagger)
+
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.
         // - Use AppConfiguration for one-time setup.
         // - Use a service for functionality that persists throughout the app's lifecycle.
         // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
         // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
+
     }
 
     private static func makeNativeStorageHandler(featureFlagger: FeatureFlagger,

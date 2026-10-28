@@ -285,6 +285,7 @@ extension MainViewController {
                                                    duckAIGridContentProvider: duckAIGridContentProvider,
                                                    duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker,
                                                    floatingUIManager: floatingUIManager,
+                                                   isFireShortcutEnabled: { [weak self] in self?.isShortcutEnabled() == true },
                                                    pixelFiring: self.pixelFiring)
 
         controller.transitioningDelegate = tabSwitcherTransition

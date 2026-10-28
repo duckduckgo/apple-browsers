@@ -239,8 +239,13 @@ extension MainViewController {
     }
 
     @objc func keyboardFire() {
+        if let tabSwitcherController {
+            tabSwitcherController.keyboardFire()
+            return
+        }
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
-        onQuickFirePressed()
+        guard isShortcutEnabled() else { return }
+        onFirePressed()
     }
 
     @objc func keyboardSettings() {

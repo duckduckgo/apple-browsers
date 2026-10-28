@@ -125,6 +125,48 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(cancelCalled)
     }
     
+    func testWhenConfirmationIsShownThenNothingBurnsBeforeConfirming() {
+        for source in [FireRequest.Source.browsing, .tabSwitcher] {
+            for browsingMode in BrowsingMode.allCases {
+                var requests: [FireRequest] = []
+                let sut = makeSUT(tabViewModel: nil, source: source, browsingMode: browsingMode,
+                                  onConfirm: { requests.append($0) })
+
+                XCTAssertTrue(requests.isEmpty)
+
+                sut.buttons[0].action()
+
+                XCTAssertEqual(requests.count, 1)
+                XCTAssertEqual(requests.first?.source, source)
+                XCTAssertEqual(requests.first?.options, .all)
+                switch requests.first?.scope {
+                case .all:
+                    XCTAssertEqual(browsingMode, .normal)
+                case .fireMode:
+                    XCTAssertEqual(browsingMode, .fire)
+                default:
+                    XCTFail("Expected the confirmed scope to match the selected browsing mode")
+                }
+            }
+        }
+    }
+
+    func testWhenConfirmationIsCancelledThenNothingBurns() {
+        for source in [FireRequest.Source.browsing, .tabSwitcher] {
+            for browsingMode in BrowsingMode.allCases {
+                var requests: [FireRequest] = []
+                var cancelCount = 0
+                let sut = makeSUT(tabViewModel: nil, source: source, browsingMode: browsingMode,
+                                  onConfirm: { requests.append($0) }, onCancel: { cancelCount += 1 })
+
+                sut.cancel()
+
+                XCTAssertEqual(cancelCount, 1)
+                XCTAssertTrue(requests.isEmpty)
+            }
+        }
+    }
+
     // MARK: - Button Layout Tests
     
     func testWhenNoTabThenSingleDeleteAllButton() {

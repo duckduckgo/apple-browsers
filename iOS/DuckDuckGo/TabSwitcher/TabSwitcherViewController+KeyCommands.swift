@@ -63,7 +63,12 @@ extension TabSwitcherViewController {
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandCloseTab)
         ]
 
-        let commands = [closeCommands, newTabCommands, newFireTabCommands, selectionCommands].flatMap { $0 }
+        let fireCommands = [
+            UIKeyCommand(title: "", action: #selector(keyboardFire), input: UIKeyCommand.inputBackspace,
+                         modifierFlags: [.control, .alternate], discoverabilityTitle: UserText.keyCommandFire)
+        ]
+
+        let commands = [closeCommands, newTabCommands, newFireTabCommands, selectionCommands, fireCommands].flatMap { $0 }
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
@@ -88,7 +93,7 @@ extension TabSwitcherViewController {
         guard featureFlagger.isIPadMenuBarEnabled(), let command = MainMenuCommand(action: action) else {
             return super.canPerformAction(action, withSender: sender)
         }
-        guard [.newTab, .newFireTab, .closeTab, .showTabs].contains(command) else {
+        guard [.newTab, .newFireTab, .closeTab, .showTabs, .fire].contains(command) else {
             return super.canPerformAction(action, withSender: sender)
         }
         return switcherMenuAvailability.isEnabled(command)
@@ -166,6 +171,13 @@ extension TabSwitcherViewController {
         guard switcherMenuAvailability.isEnabled(.showTabs) else { return }
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         dismissIfPossible()
+    }
+
+    @objc func keyboardFire() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isFireShortcutEnabled(), !isProcessingUpdates else { return }
+        let source: AnyObject = isEditing ? view : chrome.fireButton
+        burn(sender: source)
     }
 
     @objc func keyboardNewTab() {

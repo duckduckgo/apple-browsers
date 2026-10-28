@@ -421,7 +421,6 @@ class TabsBarViewController: UIViewController {
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
-        recomputeItemSize()
         reloadData()
         fireUsageDailyPixels()
         if scrollToSelected { scrollToSelectedTab() }
@@ -582,13 +581,13 @@ class TabsBarViewController: UIViewController {
     private func reloadData() {
         tabAwaitingSelection = nil
         collectionView.reloadData()
+        recomputeItemSize()
         refreshTabSwitcherButton()
         collectionView.layoutIfNeeded()
         flareBackground.update()
     }
 
     func backgroundTabAdded() {
-        recomputeItemSize()
         reloadData()
         tabSwitcherButton.animateUpdate {
             self.tabSwitcherButton.tabCount = self.tabsCount

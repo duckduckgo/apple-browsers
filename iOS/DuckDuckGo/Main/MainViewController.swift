@@ -2778,7 +2778,8 @@ class MainViewController: UIViewController {
 
         func showFireConfirmation() {
             let presenter = FireConfirmationPresenter()
-            let source: UIView = findFireButton() ?? viewCoordinator.toolbar
+            let tabsBarFireButton = viewCoordinator.tabBarContainer.isHidden ? nil : tabsBarController?.fireButton
+            let source: UIView = tabsBarFireButton ?? findFireButton() ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,

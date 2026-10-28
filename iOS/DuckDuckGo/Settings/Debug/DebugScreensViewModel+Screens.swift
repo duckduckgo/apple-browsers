@@ -30,6 +30,7 @@ import DuckUI
 import Persistence
 import FeatureFlags_iOS
 import UIComponents
+import Subscription
 
 extension DebugScreensViewModel {
 
@@ -411,27 +412,57 @@ private struct CPMDebugScreensView: View {
 
 struct SheetPresentationsDebugView: View {
 
-    static var makeSubscribeFlow: (() -> AnyView)?
+    static var makeSubscribeFlow: ((SubscriptionURL?) -> AnyView)?
 
     enum SwiftUISheet: String, Identifiable {
-        case plain, page, form, fitted, custom
+        case plain, page, custom
         var id: String { rawValue }
     }
 
+    private static let subscriptionURLs: [(name: String, url: SubscriptionURL?)] = [
+        ("default (paywall)", nil),
+        ("baseURL", .baseURL),
+        ("purchase", .purchase),
+        ("welcome", .welcome),
+        ("faq", .faq),
+        ("privacyPolicy", .privacyPolicy),
+        ("helpPagesAddingEmail", .helpPagesAddingEmail),
+        ("activationFlow", .activationFlow),
+        ("activationFlowThisDeviceEmailStep", .activationFlowThisDeviceEmailStep),
+        ("activationFlowThisDeviceActivateEmailStep", .activationFlowThisDeviceActivateEmailStep),
+        ("activationFlowThisDeviceActivateEmailOTPStep", .activationFlowThisDeviceActivateEmailOTPStep),
+        ("activationFlowAddEmailStep", .activationFlowAddEmailStep),
+        ("activationFlowLinkViaEmailStep", .activationFlowLinkViaEmailStep),
+        ("activationFlowSuccess", .activationFlowSuccess),
+        ("manageEmail", .manageEmail),
+        ("manageSubscriptionsInAppStore", .manageSubscriptionsInAppStore),
+        ("identityTheftRestoration", .identityTheftRestoration),
+        ("plans", .plans),
+        ("addEmail", .addEmail),
+        ("addEmailSuccess", .addEmailSuccess),
+        ("partnershipsHub", .partnershipsHub)
+    ]
+
     @State private var swiftUISheet: SwiftUISheet?
+    @State private var selectedURLIndex = 0
+
+    private var selectedURL: SubscriptionURL? {
+        Self.subscriptionURLs[selectedURLIndex].url
+    }
 
     var body: some View {
         List {
-            Section("UIKit") {
-                Button("formSheet") { presentUIKit(.formSheet) }
-                Button("pageSheet") { presentUIKit(.pageSheet) }
-            }
-            Section("SwiftUI") {
+            Section {
                 Button(".sheet (default)") { swiftUISheet = .plain }
                 Button(".presentationSizing(.page)") { swiftUISheet = .page }
-                Button(".presentationSizing(.form)") { swiftUISheet = .form }
-                Button(".presentationSizing(.fitted)") { swiftUISheet = .fitted }
                 Button(".presentationSizing(custom)") { swiftUISheet = .custom }
+            }
+            Section {
+                Picker("Subscription URL", selection: $selectedURLIndex) {
+                    ForEach(Self.subscriptionURLs.indices, id: \.self) { index in
+                        Text(Self.subscriptionURLs[index].name).tag(index)
+                    }
+                }
             }
         }
         .navigationTitle("Sheet Presentations")
@@ -444,24 +475,18 @@ struct SheetPresentationsDebugView: View {
     private func sheetContent(for kind: SwiftUISheet) -> some View {
         if #available(iOS 18, *) {
             switch kind {
-            case .plain: SheetPresentationsDemoContent(title: ".sheet (default)")
-            case .page: SheetPresentationsDemoContent(title: ".page").presentationSizing(.page)
-            case .form: SheetPresentationsDemoContent(title: ".form").presentationSizing(.form)
-            case .fitted: SheetPresentationsDemoContent(title: ".fitted", fillsSheet: false).presentationSizing(.fitted)
-            case .custom: SheetPresentationsDemoContent(title: "custom 400x300").presentationSizing(DemoPresentationSizing())
+            case .plain:
+                SheetPresentationsDemoContent(title: ".sheet (default)", subscriptionURL: selectedURL)
+            case .page:
+                SheetPresentationsDemoContent(title: ".page", subscriptionURL: selectedURL)
+                    .presentationSizing(.page)
+            case .custom:
+                SheetPresentationsDemoContent(title: "custom 400x300", subscriptionURL: selectedURL)
+                    .presentationSizing(DemoPresentationSizing())
             }
         } else {
-            SheetPresentationsDemoContent(title: "presentationSizing needs iOS 18")
+            SheetPresentationsDemoContent(title: "presentationSizing needs iOS 18", subscriptionURL: selectedURL)
         }
-    }
-
-    private func presentUIKit(_ style: UIModalPresentationStyle) {
-        let title = style == .formSheet ? "UIKit formSheet" : "UIKit pageSheet"
-        let controller = UIHostingController(rootView: SheetPresentationsDemoContent(title: title))
-        controller.modalPresentationStyle = style
-        var top = UIApplication.shared.firstKeyWindow?.rootViewController
-        while let presented = top?.presentedViewController { top = presented }
-        top?.present(controller, animated: true)
     }
 }
 
@@ -474,7 +499,7 @@ private struct DemoPresentationSizing: PresentationSizing {
 
 private struct SheetPresentationsDemoContent: View {
     let title: String
-    var fillsSheet = true
+    let subscriptionURL: SubscriptionURL?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -487,12 +512,12 @@ private struct SheetPresentationsDemoContent: View {
                 }
         }
         .navigationViewStyle(.stack)
-        .frame(maxWidth: fillsSheet ? .infinity : nil, maxHeight: fillsSheet ? .infinity : nil)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     @ViewBuilder private var subscribeFlow: some View {
         if let makeSubscribeFlow = SheetPresentationsDebugView.makeSubscribeFlow {
-            makeSubscribeFlow()
+            makeSubscribeFlow(subscriptionURL)
         } else {
             Text("MainViewController hasn't set up the subscribe flow")
         }

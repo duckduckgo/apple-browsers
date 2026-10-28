@@ -1000,7 +1000,7 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        SheetPresentationsDebugView.makeSubscribeFlow = { [weak self] in
+        SheetPresentationsDebugView.makeSubscribeFlow = { [weak self] subscriptionURL in
             guard let self else { return AnyView(Text("MainViewController is gone")) }
             let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
                 privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
@@ -1009,6 +1009,7 @@ class MainViewController: UIViewController {
             let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
             return AnyView(SubscriptionContainerViewFactory.makeSubscribeFlowV2(
                 redirectURLComponents: nil,
+                landingURL: subscriptionURL.map { AppDependencyProvider.shared.subscriptionManager.url(for: $0) },
                 navigationCoordinator: SubscriptionNavigationCoordinator(),
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: subscriptionFeatureAvailability,

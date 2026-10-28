@@ -20,22 +20,77 @@
 struct MenuCommandAvailability {
     struct State {
         enum Presentation {
-            case browser
-            case tabSwitcher
-            case blockingModal
+            case browser, tabSwitcher, passwords, downloads, bookmarks, settings, blockingModal
         }
 
         let shortcutsEnabled: Bool
         let presentation: Presentation
+        var hasTab = false
+        var hasWebsite = false
+        var isLoading = false
+        var findActive = false
+        var omnibarEditing = false
+        var fireModeEnabled = false
+        var voiceSearchEnabled = false
+        var passwordsEnabled = false
+        var canHideTabs = true
+        var tabCount = 0
+        var canGoBack = false
+        var canGoForward = false
     }
 
     let state: State
 
     func isEnabled(_ command: MainMenuCommand) -> Bool {
-        guard state.shortcutsEnabled else { return false }
+        guard state.shortcutsEnabled, state.presentation != .blockingModal else { return false }
         switch command {
-        case .settings:
-            return state.presentation != .blockingModal
+        case .showTabs:
+            return state.presentation != .tabSwitcher || state.canHideTabs
+        case .showPasswords:
+            return state.passwordsEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
+        case .showDownloads:
+            return state.presentation != .tabSwitcher || state.canHideTabs
+        case .about:
+            guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
+            return state.presentation == .browser || state.presentation == .tabSwitcher || state.presentation == .settings
+        case .settings, .feedback:
+            guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
+            return state.presentation == .browser || state.presentation == .tabSwitcher
+        case .newTab:
+            return state.presentation == .browser || state.presentation == .tabSwitcher
+        case .newFireTab:
+            return state.fireModeEnabled && (state.presentation == .browser || state.presentation == .tabSwitcher)
+        case .closeTab:
+            return state.presentation == .tabSwitcher ? state.canHideTabs : state.presentation == .browser && state.hasTab
+        case .fire:
+            return state.presentation == .browser || state.presentation == .tabSwitcher
+        default:
+            guard state.presentation == .browser else { return false }
+        }
+        switch command {
+        case .voiceSearch: return state.voiceSearchEnabled
+        case .location, .newTabOnRight: return true
+        case .duplicateTab: return state.hasTab
+        case .stop: return state.isLoading
+        case .reload: return state.hasWebsite
+        case .openLink, .openBackgroundLink: return false
+        case .share, .printPage, .find, .zoomIn, .zoomOut, .actualSize:
+            return state.hasWebsite && !state.omnibarEditing
+        case .findNext, .findPrevious: return state.hasWebsite && state.findActive && !state.omnibarEditing
+        case .previousTab, .nextTab: return state.tabCount > 1
+        case .selectTab: return state.tabCount > 0
+        case .back: return state.canGoBack && !state.omnibarEditing
+        case .forward: return state.canGoForward && !state.omnibarEditing
+        default: return false
+        }
+    }
+
+    func title(for command: MainMenuCommand) -> String? {
+        switch command {
+        case .showTabs: return state.presentation == .tabSwitcher ? UserText.menuHideTabs : UserText.menuShowTabs
+        case .showPasswords: return state.presentation == .passwords ? UserText.menuHidePasswords : UserText.menuShowPasswords
+        case .showDownloads: return state.presentation == .downloads ? UserText.menuHideDownloads : UserText.menuShowDownloads
+        default: return nil
         }
     }
 }

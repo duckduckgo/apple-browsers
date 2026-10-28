@@ -647,11 +647,25 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
     }
 
     @MainActor
-    func addHomeTab(in tabsModel: TabsModelManaging? = nil) {
+    func addHomeTab(in tabsModel: TabsModelManaging? = nil, placement: TabsModel.TabPlacement = .atEnd) {
         let model = tabsModel ?? currentTabsModel
         let tab = Tab(fireTab: model.shouldCreateFireTabs)
-        model.insert(tab: tab, placement: .atEnd, selectNewTab: true)
+        model.insert(tab: tab, placement: placement, selectNewTab: true)
         _ = save()
+    }
+
+    @MainActor
+    func duplicate(_ source: TabViewController) -> TabViewController {
+        let model = source.tabModel.fireTab ? fireModeTabsModel : normalTabsModel
+        let tab = Tab(link: source.tabModel.link, desktop: source.tabModel.isDesktop, fireTab: source.tabModel.fireTab)
+        let controller = buildController(forTab: tab, url: source.url, inheritedAttribution: nil,
+                                         interactionState: source.webView.interactionState as? Data)
+        current()?.dismiss()
+        model.insert(tab: tab, placement: .afterCurrentTab, selectNewTab: false)
+        tab.viewed = true
+        addToCache(controller)
+        _ = save()
+        return controller
     }
 
     func firstHomeTab(in tabsModel: TabsModelManaging? = nil) -> Tab? {

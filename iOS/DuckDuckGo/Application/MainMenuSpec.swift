@@ -20,7 +20,10 @@
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
-    case settings
+    case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
+    case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
+    case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
+    case selectTab, back, forward, findNext, findPrevious, fire, openLink, openBackgroundLink
 }
 
 struct MainMenuSpec {
@@ -28,6 +31,11 @@ struct MainMenuSpec {
         case legacy
         case responder
         case menu
+    }
+
+    struct Context: Equatable {
+        var voiceSearchEnabled = false
+        var fireModeEnabled = false
     }
 
     struct Shortcut: Equatable {
@@ -42,23 +50,79 @@ struct MainMenuSpec {
     }
 
     struct Menu {
+        enum Placement {
+            case replaceChildren, appendChildren
+        }
+
         let identifier: UIMenu.Identifier
         let items: [Item]
+        var placement: Placement = .replaceChildren
+        var submenus: [Menu] = []
+        var title = ""
+        var inline = false
+
+        var allItems: [Item] { items + submenus.flatMap(\.allItems) }
     }
 
     let menus: [Menu]
-    private let baselineMenus: [Menu]
     let removedMenus: [UIMenu.Identifier]
+    private let baselineMenus: [Menu]
     let shortcutRegistration: ShortcutRegistration
 
-    init(isEnabled: Bool, idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) {
+    init(isEnabled: Bool, idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom, context: Context = Context()) {
         shortcutRegistration = isEnabled ? (idiom == .pad ? .menu : .responder) : .legacy
         baselineMenus = [Menu(identifier: .preferences, items: [
-            Item(command: .settings, title: UserText.settingsTitle,
-                 shortcut: Shortcut(input: ",", modifiers: .command))
+            Self.item(.settings, UserText.settingsTitle, ",", .command)
         ])]
-        menus = baselineMenus
+        let settings = Menu(identifier: .preferences, items: [
+            Self.item(.settings, isEnabled ? UserText.menuSettings : UserText.settingsTitle, ",", .command)
+        ])
+        guard isEnabled else {
+            menus = [settings]
+            removedMenus = []
+            return
+        }
         removedMenus = shortcutRegistration == .menu ? [.format] : []
+        var newTabs = [Self.item(.newTab, UserText.keyCommandNewTab, "t", .command)]
+        if context.fireModeEnabled {
+            newTabs.append(Self.item(.newFireTab, UserText.keyCommandNewFireTab, "n", [.shift, .command]))
+        }
+        if context.voiceSearchEnabled {
+            newTabs.append(Self.item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command]))
+        }
+        let file = Menu(identifier: .file, items: [], submenus: [
+            Self.group("file.new", newTabs),
+            Self.group("file.location", [Self.item(.location, UserText.menuOpenLocation, "l", .command)]),
+            Self.group("file.close", [Self.item(.closeTab, UserText.keyCommandCloseTab, "w", .command)]),
+            Self.group("file.share", [Self.item(.share, UserText.actionShare)]),
+            Self.group("file.print", [Self.item(.printPage, UserText.menuPrint, "p", .command)])
+        ])
+        let edit = Menu(identifier: .edit, items: [], placement: .appendChildren, submenus: [
+            Self.group("edit.find", [Self.item(.find, UserText.keyCommandFind, "f", .command)])
+        ])
+        let view = Menu(identifier: .view, items: [], submenus: [
+            Self.group("view.loading", [Self.item(.stop, UserText.menuStop, ".", .command),
+                                        Self.item(.reload, UserText.keyCommandReload, "r", .command)]),
+            Self.group("view.panels", [Self.item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
+                                       Self.item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
+                                       Self.item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
+            Self.group("view.zoom", [Self.item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
+                                     Self.item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
+                                     Self.item(.actualSize, UserText.menuActualSize, "0", .command)])
+        ])
+        let window = Menu(identifier: .window, items: [], placement: .appendChildren, submenus: [
+            Self.group("window.tabs", [Self.item(.newTabOnRight, UserText.menuNewTabOnRight),
+                                       Self.item(.duplicateTab, UserText.menuDuplicateTab)]),
+            Self.group("window.select", [Self.item(.previousTab, UserText.menuPreviousTab, "[", [.shift, .command]),
+                                         Self.item(.nextTab, UserText.menuNextTab, "]", [.shift, .command])])
+        ])
+        let help = Menu(identifier: .help, items: [], placement: .appendChildren, submenus: [
+            Self.group("help.about", [Self.item(.about, UserText.settingsAboutDDG),
+                                      Self.item(.feedback, UserText.menuFeedback)]),
+            Menu(identifier: UIMenu.Identifier("com.duckduckgo.moreShortcuts"), items: Self.moreShortcuts,
+                 title: UserText.menuMoreShortcuts)
+        ])
+        menus = [settings, file, edit, view, window, help]
     }
 
     var mainMenus: [Menu] {
@@ -66,16 +130,55 @@ struct MainMenuSpec {
     }
 
     var shortcutItems: [Item] {
-        menus.flatMap(\.items).filter { $0.shortcut != nil }
+        allItems.filter { $0.shortcut != nil }
     }
+
+    var allItems: [Item] { menus.flatMap(\.allItems) }
 
     func remainingKeyCommands(from commands: [UIKeyCommand]) -> [UIKeyCommand] {
         guard shortcutRegistration != .legacy else { return commands }
-        return commands.filter { command in
-            !shortcutItems.contains { item in
+        return commands.compactMap { command in
+            let removedArrow = command.modifierFlags == .command &&
+                [UIKeyCommand.inputLeftArrow, UIKeyCommand.inputRightArrow].contains(command.input ?? "")
+            guard !removedArrow, command.input != "tap link", !allItems.contains(where: { item in
                 item.command.action == command.action && item.shortcut?.input == command.input
                     && item.shortcut?.modifiers == command.modifierFlags
-            }
+            }) else { return nil }
+            guard allItems.contains(where: { $0.command.action == command.action }),
+                  let alternate = command.copy() as? UIKeyCommand else { return command }
+            alternate.attributes.insert(.hidden)
+            return alternate
         }
+    }
+
+    static func tabIndex(number: Int, count: Int, menuEnabled: Bool) -> Int? {
+        guard (1...9).contains(number), count > 0 else { return nil }
+        let index = menuEnabled && number == 9 ? count - 1 : number - 1
+        return index < count ? index : nil
+    }
+
+    private static func item(_ command: MainMenuCommand, _ title: String,
+                             _ input: String? = nil, _ modifiers: UIKeyModifierFlags = []) -> Item {
+        Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) })
+    }
+
+    private static func group(_ identifier: String, _ items: [Item]) -> Menu {
+        Menu(identifier: UIMenu.Identifier("com.duckduckgo." + identifier), items: items, inline: true)
+    }
+
+    private static var moreShortcuts: [Item] {
+        (1...8).map { item(.selectTab, UserText.menuSelectTab($0), String($0), .command) } + [
+            item(.selectTab, UserText.menuLastTab, "9", .command),
+            item(.nextTab, UserText.keyCommandNextTab, UIKeyCommand.inputTab, .control),
+            item(.previousTab, UserText.keyCommandPreviousTab, UIKeyCommand.inputTab, [.control, .shift]),
+            item(.back, UserText.menuBack, "[", .command), item(.forward, UserText.menuForward, "]", .command),
+            item(.findNext, UserText.keyCommandFindNext, "g", .command),
+            item(.findPrevious, UserText.keyCommandFindPrevious, "g", [.shift, .command]),
+            item(.showTabs, UserText.menuShowTabs, "\\", [.control, .shift]),
+            item(.showTabs, UserText.menuShowTabs, UIKeyCommand.inputTab, [.alternate, .command]),
+            item(.openLink, UserText.menuOpenLink),
+            item(.openBackgroundLink, UserText.menuOpenBackgroundLink),
+            item(.fire, UserText.menuClearTabsAndData, UIKeyCommand.inputBackspace, [.control, .alternate])
+        ]
     }
 }

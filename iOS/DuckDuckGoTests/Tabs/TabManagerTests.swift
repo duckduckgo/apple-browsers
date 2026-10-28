@@ -944,6 +944,47 @@ final class TabManagerTests: XCTestCase {
         return .queryPrompt(text, autoSubmit: true, pageContext: .multiple(contexts))
     }
 
+    func testHomeTabPlacementCanInsertAfterCurrentWithoutChangingDefaultAppend() throws {
+        let model = TabsModel(desktop: false)
+        let manager = try makeManager(model)
+        let first = try XCTUnwrap(model.currentTab)
+        manager.addHomeTab()
+        let last = try XCTUnwrap(model.currentTab)
+        model.select(tab: first)
+        manager.addHomeTab(placement: .afterCurrentTab)
+        XCTAssertEqual(model.currentIndex, 1)
+        XCTAssertTrue(model.tabs.last === last)
+        model.select(tab: first)
+        manager.addHomeTab()
+        XCTAssertEqual(model.currentIndex, model.count - 1)
+    }
+
+    func testDuplicateCreatesIndependentTabAfterSourceAndKeepsMode() throws {
+        for fire in [false, true] {
+            let normal = TabsModel(desktop: false)
+            let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
+            let flagger = MockFeatureFlagger()
+            flagger.enabledFeatureFlags = [.fireMode]
+            let manager = try makeManager(normal, fireModel: fireModel, featureFlagger: flagger)
+            manager.setBrowsingMode(fire ? .fire : .normal, source: .tabSelection)
+            let url = try XCTUnwrap(URL(string: "https://example.com/source"))
+            let source = manager.add(url: url, inheritedAttribution: nil)
+            source.tabModel.isDesktop = true
+            let model = manager.currentTabsModel
+            let sourceIndex = try XCTUnwrap(model.currentIndex)
+            let duplicate = manager.duplicate(source)
+            XCTAssertFalse(duplicate.tabModel === source.tabModel)
+            XCTAssertEqual(duplicate.tabModel.link?.url, source.tabModel.link?.url)
+            XCTAssertEqual(duplicate.tabModel.fireTab, fire)
+            XCTAssertTrue(duplicate.tabModel.isDesktop)
+            XCTAssertTrue(model.tabs[sourceIndex + 1] === duplicate.tabModel)
+            XCTAssertTrue(model.currentTab === source.tabModel)
+            manager.select(duplicate.tabModel)
+            XCTAssertTrue(manager.current() === duplicate)
+            XCTAssertEqual(manager.currentBrowsingMode, fire ? .fire : .normal)
+        }
+    }
+
     /// Capacity 2 holds the current tab plus one background tab, so a second background tab forces eviction.
     private func makeManagerWithLoadedCurrentTab() throws -> TabManager {
         let currentTab = Tab(link: Link(title: "current", url: URL(string: "https://example.com/current")!))

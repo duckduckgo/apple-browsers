@@ -176,6 +176,7 @@ class MainViewController: UIViewController {
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
     var isPerformingOnboardingInputHandoff = false
+    var isPresentingNewTabInputDirectly = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private let daxGreetingActivity: DaxGreetingActivityStore?
@@ -229,6 +230,10 @@ class MainViewController: UIViewController {
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
+    }
+
+    var hasInlineNewTabPageInput: Bool {
+        newTabPageViewController?.hasInlineSearchInput == true
     }
 
     /// Allows delayed keyboard callbacks to detect cancellation.
@@ -2675,6 +2680,9 @@ class MainViewController: UIViewController {
             let beginEditing = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
                 ? defaultOmniBar.beginEditingOnNewTabPageAppOpen
                 : defaultOmniBar.beginEditingAutomatically
+            let wasPresentingDirectly = isPresentingNewTabInputDirectly
+            isPresentingNewTabInputDirectly = controller.hasInlineSearchInput
+            defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
             beginEditing(isRequestValid) { _ in }
         }
 
@@ -3174,6 +3182,8 @@ class MainViewController: UIViewController {
             coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
             return
         }
+        isPresentingNewTabInputDirectly = hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true
+        defer { isPresentingNewTabInputDirectly = false }
         showBars()
         if let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
             defaultOmniBar.beginEditingAutomatically(isRequestValid: isRequestValid, completion: focusCompleted)

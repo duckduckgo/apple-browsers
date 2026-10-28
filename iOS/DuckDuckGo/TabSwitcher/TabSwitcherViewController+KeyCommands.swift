@@ -63,13 +63,28 @@ extension TabSwitcherViewController {
                          modifierFlags: [], discoverabilityTitle: UserText.keyCommandCloseTab)
         ]
 
-        let commands = [closeCommands, newTabCommands, newFireTabCommands, selectionCommands].flatMap { $0 }
+        var fireCommands: [UIKeyCommand] = []
+        if featureFlagger.isFeatureOn(.ipadMenuBar) {
+            fireCommands.append(
+                UIKeyCommand(title: "", action: #selector(keyboardFire), input: UIKeyCommand.inputBackspace,
+                             modifierFlags: [.control, .alternate], discoverabilityTitle: UserText.keyCommandFire)
+            )
+        }
+
+        let commands = [closeCommands, newTabCommands, newFireTabCommands, selectionCommands, fireCommands].flatMap { $0 }
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
         return commands
     }
     
+    @objc func keyboardFire() {
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        guard isFireShortcutEnabled(), !isProcessingUpdates else { return }
+        let source: AnyObject = isEditing ? view : chrome.fireButton
+        burn(sender: source, prefersSheet: true)
+    }
+
     @objc func keyboardNewTab() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }

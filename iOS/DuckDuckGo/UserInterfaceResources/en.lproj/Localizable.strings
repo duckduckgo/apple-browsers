@@ -3166,6 +3166,9 @@ https://duckduckgo.com/mac";
 /* iPad menu bar command */
 "menuBack" = "Back";
 
+/* iPad menu bar title */
+"menuBookmarks" = "Bookmarks";
+
 /* iPad menu bar command */
 "menuClearTabsAndData" = "Clear Tabs and Data";
 
@@ -3173,10 +3176,19 @@ https://duckduckgo.com/mac";
 "menuDuplicateTab" = "Duplicate Tab";
 
 /* iPad menu bar command */
+"menuExportBookmarks" = "Export Bookmarks...";
+
+/* iPad menu bar submenu */
+"menuFavorites" = "Favorites";
+
+/* iPad menu bar command */
 "menuFeedback" = "Share Feedback";
 
 /* iPad menu bar command */
 "menuForward" = "Forward";
+
+/* iPad menu bar command */
+"menuHideBookmarks" = "Hide Bookmarks";
 
 /* iPad menu bar command */
 "menuHideDownloads" = "Hide Downloads";
@@ -3186,6 +3198,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command */
 "menuHideTabs" = "Hide Tabs";
+
+/* iPad menu bar command */
+"menuImportBookmarks" = "Import Bookmarks...";
 
 /* iPad menu bar command */
 "menuLastTab" = "Last Tab";
@@ -3219,6 +3234,9 @@ https://duckduckgo.com/mac";
 
 /* iPad menu bar command */
 "menuSettings" = "DuckDuckGo Settings...";
+
+/* iPad menu bar command */
+"menuShowBookmarks" = "Show Bookmarks";
 
 /* iPad menu bar command */
 "menuShowDownloads" = "Show Downloads";

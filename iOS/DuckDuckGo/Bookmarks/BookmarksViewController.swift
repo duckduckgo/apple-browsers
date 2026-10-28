@@ -22,8 +22,6 @@ import FoundationExtensions
 import UIKit
 import Core
 import DDGSync
-import MobileCoreServices
-import UniformTypeIdentifiers
 import Bookmarks
 import CoreData
 import Combine
@@ -36,11 +34,6 @@ import DesignResourcesKitIcons
 import PixelKit
 
 class BookmarksViewController: UIViewController, UITableViewDelegate {
-
-    private enum Constants {
-        static var saveToFiles = "com.apple.DocumentManagerUICore.SaveToFiles"
-        static var bookmarksFileName = "DuckDuckGo Bookmarks.html"
-    }
 
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var editButton: UIBarButtonItem!
@@ -58,6 +51,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     // Is set to nil once used as it should only be fired once per access
     private var productSurfaceTelemetry: ProductSurfaceTelemetry?
+
+    private lazy var bookmarksFileFlow = BookmarksFileFlow(bookmarksDatabase: bookmarksDatabase, appSettings: appSettings)
 
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
@@ -667,11 +662,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     func presentDocumentPicker() {
         finishEditing()
 
-        let docTypes = [UTType.html]
-        let docPicker = UIDocumentPickerViewController(forOpeningContentTypes: docTypes, asCopy: true)
-        docPicker.delegate = self
-        docPicker.allowsMultipleSelection = false
-        present(docPicker, animated: true)
+        bookmarksFileFlow.presentDocumentPicker(from: self)
     }
 
     private func makeDataImportViewController(importScreen: DataImportViewModel.ImportScreen) -> DataImportViewController {
@@ -723,29 +714,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     }
 
     func importBookmarks(fromHtml html: String) {
-        Task {
-
-            let result = await BookmarksImporter(coreDataStore: bookmarksDatabase,
-                                                 favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
-                                                 htmlContent: html)
-                .parseAndSave()
-
-            switch result {
-            case .success(let summary):
-                WidgetCenter.shared.reloadAllTimelines()
-                DispatchQueue.main.async {
-                    PixelKit.fire(Pixel.Event.bookmarkImportSuccess,
-                                  options: .parameters([PixelParameters.bookmarkCount: "\(summary.successful)"]))
-                    ActionMessageView.present(message: UserText.importBookmarksSuccessMessage)
-                }
-            case .failure(let bookmarksImportError):
-                Logger.bookmarks.error("Bookmarks import error \(bookmarksImportError.localizedDescription, privacy: .public)")
-                PixelKit.fire(Pixel.Event.bookmarkImportFailure)
-                DispatchQueue.main.async {
-                    ActionMessageView.present(message: UserText.importBookmarksFailedMessage)
-                }
-            }
-        }
+        bookmarksFileFlow.importBookmarks(fromHtml: html)
     }
 
     func segueToSync(source: String? = nil) {
@@ -773,59 +742,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     }
 
     func exportHtmlFile() {
-        // create file to export
-        let tempFileUrl = FileManager.default.temporaryDirectory.appendingPathComponent(Constants.bookmarksFileName)
-        do {
-            try BookmarksExporter(coreDataStore: bookmarksDatabase, favoritesDisplayMode: viewModel.favoritesDisplayMode)
-                .exportBookmarksTo(url: tempFileUrl)
-        } catch {
-            Logger.general.error("bookmarks failed to export: \(error.localizedDescription, privacy: .public)")
-            ActionMessageView.present(message: UserText.exportBookmarksFailedMessage)
-            return
-        }
-
-        // create activityViewController with exported file
-        let activity = UIActivityViewController(activityItems: [tempFileUrl], applicationActivities: nil)
-        activity.completionWithItemsHandler = {[weak self] (activityType: UIActivity.ActivityType?, completed: Bool, _: [Any]?, error: Error?) in
-            guard error == nil else {
-                // this trips if user cancelled Save to Files but they are still in the UIActivityViewController so
-                // can still choose to share to another app so in this case we don't want to delete the bookmarks file yet
-                if let error = error as NSError?, error.code == NSUserCancelledError {
-                    return
-                }
-
-                PixelKit.fire(Pixel.Event.bookmarkExportFailure)
-                self?.presentActionMessageView(withMessage: UserText.exportBookmarksFailedMessage)
-                self?.cleanupTempFile(tempFileUrl)
-                return
-            }
-
-            if completed && activityType != nil {
-                if let activityTypeStr = activityType?.rawValue, activityTypeStr == Constants.saveToFiles {
-                    self?.presentActionMessageView(withMessage: UserText.exportBookmarksFilesSuccessMessage)
-                } else {
-                    self?.presentActionMessageView(withMessage: UserText.exportBookmarksShareSuccessMessage)
-                }
-                PixelKit.fire(Pixel.Event.bookmarkExportSuccess)
-            }
-
-            self?.cleanupTempFile(tempFileUrl)
-        }
-
-        if let popover = activity.popoverPresentationController {
-            popover.sourceView = moreBarButtonItem.customView
-        }
-        present(activity, animated: true, completion: nil)
-    }
-
-    func cleanupTempFile(_ tempFileUrl: URL) {
-        try? FileManager.default.removeItem(at: tempFileUrl)
-    }
-
-    func presentActionMessageView(withMessage message: String) {
-        DispatchQueue.main.async {
-            ActionMessageView.present(message: message)
-        }
+        bookmarksFileFlow.exportHtmlFile(from: self, anchor: moreButton)
     }
 
     // when swipe-to-delete control is shown tableView.isEditing is true
@@ -1081,17 +998,6 @@ extension BookmarksViewController {
         navigationController?.view.backgroundColor = tableView.backgroundColor
 
         tableView.reloadData()
-    }
-}
-
-extension BookmarksViewController: UIDocumentPickerDelegate {
-
-    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
-        guard let url = urls.first, let data = try? Data(contentsOf: url), let contents = String(data: data, encoding: .utf8) else {
-            ActionMessageView.present(message: UserText.importBookmarksFailedMessage)
-            return
-        }
-        importBookmarks(fromHtml: contents)
     }
 }
 

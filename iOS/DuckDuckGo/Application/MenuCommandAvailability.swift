@@ -48,7 +48,7 @@ struct MenuCommandAvailability {
             return state.presentation != .tabSwitcher || state.canHideTabs
         case .showPasswords:
             return state.passwordsEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
-        case .showDownloads:
+        case .showDownloads, .showBookmarks, .importBookmarks, .exportBookmarks, .openBookmark:
             return state.presentation != .tabSwitcher || state.canHideTabs
         case .about:
             guard state.presentation != .tabSwitcher || state.canHideTabs else { return false }
@@ -68,6 +68,7 @@ struct MenuCommandAvailability {
             guard state.presentation == .browser else { return false }
         }
         switch command {
+        case .addBookmark, .addFavorite: return state.hasWebsite
         case .voiceSearch: return state.voiceSearchEnabled
         case .location, .newTabOnRight: return true
         case .duplicateTab: return state.hasTab
@@ -89,6 +90,7 @@ struct MenuCommandAvailability {
         switch command {
         case .showTabs: return state.presentation == .tabSwitcher ? UserText.menuHideTabs : UserText.menuShowTabs
         case .showPasswords: return state.presentation == .passwords ? UserText.menuHidePasswords : UserText.menuShowPasswords
+        case .showBookmarks: return state.presentation == .bookmarks ? UserText.menuHideBookmarks : UserText.menuShowBookmarks
         case .showDownloads: return state.presentation == .downloads ? UserText.menuHideDownloads : UserText.menuShowDownloads
         default: return nil
         }

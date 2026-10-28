@@ -20,6 +20,7 @@
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
+    case showBookmarks, addBookmark, addFavorite, importBookmarks, exportBookmarks, openBookmark
     case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
     case newTabOnRight, duplicateTab, previousTab, nextTab, about, feedback
@@ -30,6 +31,7 @@ struct MainMenuSpec {
     struct Context: Equatable {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
+        var favorites: [MainMenuBookmark] = []
     }
 
     struct Shortcut: Equatable {
@@ -41,11 +43,13 @@ struct MainMenuSpec {
         let command: MainMenuCommand
         let title: String
         let shortcut: Shortcut?
+        var url: URL?
     }
 
     struct Menu {
         enum Placement {
             case replaceChildren, appendChildren
+            case insertBefore(UIMenu.Identifier)
         }
 
         let identifier: UIMenu.Identifier
@@ -54,6 +58,7 @@ struct MainMenuSpec {
         var submenus: [Menu] = []
         var title = ""
         var inline = false
+        var loadsBookmarks = false
 
         var allItems: [Item] { items + submenus.flatMap(\.allItems) }
     }
@@ -113,7 +118,23 @@ struct MainMenuSpec {
             Menu(identifier: UIMenu.Identifier("com.duckduckgo.moreShortcuts"), items: Self.moreShortcuts,
                  title: UserText.menuMoreShortcuts)
         ])
-        menus = [settings, file, edit, view, window, help]
+        let favorites = context.favorites.enumerated().map { index, bookmark in
+            Item(command: .openBookmark, title: bookmark.title,
+                 shortcut: index < 9 ? Shortcut(input: String(index + 1), modifiers: [.alternate, .command]) : nil,
+                 url: bookmark.url)
+        }
+        let bookmarks = Menu(identifier: UIMenu.Identifier("com.duckduckgo.bookmarks"), items: [],
+                             placement: .insertBefore(.window), submenus: [
+            Self.group("bookmarks.show", [Self.item(.showBookmarks, UserText.menuShowBookmarks, "k", [.shift, .command])]),
+            Self.group("bookmarks.add", [Self.item(.addBookmark, UserText.keyCommandAddBookmark, "d", .command),
+                                         Self.item(.addFavorite, UserText.keyCommandAddFavorite, "d", [.control, .command])]),
+            Self.group("bookmarks.files", [Self.item(.importBookmarks, UserText.menuImportBookmarks),
+                                           Self.item(.exportBookmarks, UserText.menuExportBookmarks)]),
+            Menu(identifier: UIMenu.Identifier("com.duckduckgo.bookmarks.favorites"), items: favorites,
+                 title: UserText.menuFavorites),
+            Menu(identifier: UIMenu.Identifier("com.duckduckgo.bookmarks.tree"), items: [], inline: true, loadsBookmarks: true)
+        ], title: UserText.menuBookmarks)
+        menus = [settings, file, edit, view, bookmarks, window, help]
     }
 
     var allItems: [Item] { menus.flatMap(\.allItems) }

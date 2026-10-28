@@ -65,6 +65,47 @@ extension MainViewController {
         return MainMenuSpec.tabIndex(number: number, count: tabManager.currentTabsModel.count, menuEnabled: true) != nil
     }
 
+    @objc func menuToggleBookmarks() {
+        guard menuCommandAvailability.isEnabled(.showBookmarks) else { return }
+        let hide = menuCommandAvailability.state.presentation == .bookmarks
+        dismissMenuPresentation { [weak self] in
+            guard !hide else { return }
+            self?.onBookmarksPressed()
+        }
+    }
+
+    @objc func menuImportBookmarks() {
+        guard menuCommandAvailability.isEnabled(.importBookmarks) else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self else { return }
+            if #available(iOS 18.2, *) {
+                self.launchDataImport(source: .bookmarks, onFinished: {}, onCancelled: {})
+            } else {
+                self.bookmarksFileFlow.presentDocumentPicker(from: self)
+            }
+        }
+    }
+
+    @objc func menuExportBookmarks() {
+        guard menuCommandAvailability.isEnabled(.exportBookmarks) else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self else { return }
+            let anchor: UIView
+            if let button = self.viewCoordinator.omniBar.barView.menuButton, button.window != nil, !button.isHidden {
+                anchor = button
+            } else {
+                anchor = self.view
+            }
+            self.bookmarksFileFlow.exportHtmlFile(from: self, anchor: anchor)
+        }
+    }
+
+    @objc func menuOpenBookmark(_ command: UICommand) {
+        guard menuCommandAvailability.isEnabled(.openBookmark),
+              let value = command.propertyList as? String, let url = URL(string: value) else { return }
+        dismissMenuPresentation { [weak self] in self?.bookmarksDidSelect(url: url) }
+    }
+
     @objc func menuVoiceSearch() {
         guard menuCommandAvailability.isEnabled(.voiceSearch) else { return }
         handleVoiceSearchOpenRequest(preferredTarget: .SERP)

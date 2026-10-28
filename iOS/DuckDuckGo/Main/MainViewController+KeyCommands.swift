@@ -398,12 +398,14 @@ extension MainViewController {
     }
 
     @objc func keyboardAddBookmark() {
+        guard !featureFlagger.isIPadMenuBarEnabled() || menuCommandAvailability.isEnabled(.addBookmark) else { return }
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: false)
     }
 
     @objc func keyboardAddFavorite() {
+        guard !featureFlagger.isIPadMenuBarEnabled() || menuCommandAvailability.isEnabled(.addFavorite) else { return }
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard isShortcutEnabled() else { return }
         saveBookmark(favorite: true)

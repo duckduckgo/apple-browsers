@@ -18,6 +18,7 @@
 
 import AIChat
 import Combine
+import DuckAiDataStore
 import FeatureFlags_macOS
 import XCTest
 @_spi(Testing) import Persistence

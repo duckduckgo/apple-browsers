@@ -1468,6 +1468,7 @@ class MainViewController: UIViewController {
                     bookmarksDatabase: bookmarksDatabase,
                     featureFlagger: featureFlagger,
                     aiChatSettings: aiChatSettings,
+                    appSettings: appSettings,
                     privacyConfigurationManager: privacyConfigurationManager,
                     aiChatSyncCleaner: aiChatSyncCleaner,
                     duckAiNativeStorageHandler: duckAiNativeStorageHandler,

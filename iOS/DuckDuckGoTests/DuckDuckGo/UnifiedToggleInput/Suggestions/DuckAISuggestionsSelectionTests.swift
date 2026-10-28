@@ -52,7 +52,9 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
             chatViewModel: chatViewModel,
             urlLoader: urlLoader,
             chatManager: chatManager,
-            query: { query }
+            query: { query },
+            searchSuggestionsEnabled: { true },
+            chatSuggestionsEnabled: { true }
         )
         // Drain one emission so internal state is current.
         source.sectionsPublisher.sink { _ in }.store(in: &cancellables)
@@ -100,7 +102,8 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { "hotmail" },
-            searchSuggestionsEnabled: { false }
+            searchSuggestionsEnabled: { false },
+            chatSuggestionsEnabled: { true }
         )
         let textSubject = PassthroughSubject<String, Never>()
         source.start(textPublisher: textSubject.eraseToAnyPublisher())
@@ -127,7 +130,8 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { "hotmail" },
-            searchSuggestionsEnabled: { true }
+            searchSuggestionsEnabled: { true },
+            chatSuggestionsEnabled: { true }
         )
         let textSubject = PassthroughSubject<String, Never>()
         source.start(textPublisher: textSubject.eraseToAnyPublisher())
@@ -155,6 +159,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { "" },
+            searchSuggestionsEnabled: { true },
             chatSuggestionsEnabled: { false }
         )
         let textSubject = PassthroughSubject<String, Never>()
@@ -181,6 +186,7 @@ final class DuckAISuggestionsSelectionTests: XCTestCase {
             urlLoader: urlLoader,
             chatManager: chatManager,
             query: { "" },
+            searchSuggestionsEnabled: { true },
             chatSuggestionsEnabled: { true }
         )
         let textSubject = PassthroughSubject<String, Never>()

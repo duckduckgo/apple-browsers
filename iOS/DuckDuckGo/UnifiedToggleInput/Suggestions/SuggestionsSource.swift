@@ -50,8 +50,8 @@ final class DuckAISuggestionsSource: SuggestionsSource {
          chatManager: AIChatHistoryManager,
          query: @escaping () -> String,
          viewAllChatsEnabled: @escaping () -> Bool = { false },
-         searchSuggestionsEnabled: @escaping () -> Bool = { true },
-         chatSuggestionsEnabled: @escaping () -> Bool = { true }) {
+         searchSuggestionsEnabled: @escaping () -> Bool,
+         chatSuggestionsEnabled: @escaping () -> Bool) {
         self.chatViewModel = chatViewModel
         self.urlLoader = urlLoader
         self.chatManager = chatManager

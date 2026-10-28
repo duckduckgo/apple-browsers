@@ -38,7 +38,7 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     var isAvailable: Bool {
         guard #available(macOS 15.4, *) else { return false }
-        return featureFlagger.isFeatureOn(.webExtensions)
+        return true
     }
 
     var isAutoconsentExtensionAvailable: Bool {

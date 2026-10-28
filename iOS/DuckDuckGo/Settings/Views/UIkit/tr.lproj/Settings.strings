@@ -1,9 +1,3 @@
-/* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
-"2pp-PM-6rW.title" = "Klavye";
-
-/* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
-"13n-KI-KLq.text" = "Uygulamayı Başlatma";
-
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Oturum açıldığında sitelerin Korumalı hâle getirilip getirilmeyeceğini sor";
 
@@ -19,9 +13,6 @@
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Henüz Korumalı site yok";
 
-/* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
-"tGh-di-rfq.headerTitle" = "Şu durumda klavyeyi göster:";
-
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Küresel Gizlilik Kontrolü (GPC)";
 
@@ -30,12 +21,6 @@
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Korumalı Siteler";
-
-/* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
-"Zpg-h0-rYv.text" = "Yeni Sekme";
-
-/* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
-"zWP-d3-nVc.title" = "Ana Ekran";
 
 /* Class = "UINavigationItem"; title = "Add Widget to Home Screen"; ObjectID = "zZa-pF-SHk"; */
 "zZa-pF-SHk.title" = "Widget'ı Ana Ekrana Ekle";

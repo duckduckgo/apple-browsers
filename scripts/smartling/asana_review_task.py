@@ -122,6 +122,15 @@ class AsanaClient:
     def create_task(self, body: Dict) -> Dict:
         return self._request('POST', '/tasks', {'opt_fields': 'permalink_url'}, body)
 
+    def task(self, task_id: str) -> Dict:
+        return self._request('GET', f'/tasks/{task_id}', {'opt_fields': 'completed,assignee,parent.assignee'})
+
+    def update_task(self, task_id: str, body: Dict) -> Dict:
+        return self._request('PUT', f'/tasks/{task_id}', body=body)
+
+    def add_comment(self, task_id: str, html_text: str) -> Dict:
+        return self._request('POST', f'/tasks/{task_id}/stories', body={'html_text': html_text})
+
 
 def log(message: str):
     print(f"[smartling] {message}", flush=True)

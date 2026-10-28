@@ -4,7 +4,7 @@
         "owners": ["Bunn"],
         "meta": {
             "type": "ios-return-session",
-            "version": "4.0"
+            "version": "5.0"
         },
         "feature": {
             "name": "return-session",
@@ -23,6 +23,15 @@
                     "focused": {
                         "type": "boolean",
                         "description": "True when the landing surface appeared with the address bar focused (keyboard up)"
+                    },
+                    "toggle_enabled": {
+                        "type": "boolean",
+                        "description": "True when the Search/Duck.ai toggle setting is on at the start of the session"
+                    },
+                    "toggle_position": {
+                        "type": "string",
+                        "description": "The side the Search/Duck.ai toggle shows the first time it is on screen on arrival. On iPad the toggle is always in the address bar and the redesigned new tab page shows its own; elsewhere on iPhone only while the address bar is focused, and never on a Duck.ai tab. Absent while the toggle stays hidden.",
+                        "enum": ["search", "duck_ai"]
                     },
                     "time_away_ms_bucketed": {
                         "type": "string",

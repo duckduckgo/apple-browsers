@@ -116,7 +116,6 @@ jobs:
         exit 1
 
     - name: Install screenresolution
-      if: inputs.os-version != '14'
       run: brew install screenresolution
 
     - name: Ensure GNU timeout is available
@@ -128,7 +127,6 @@ jobs:
         fi
 
     - name: Change screen resolution
-      if: inputs.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies

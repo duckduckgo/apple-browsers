@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import Combine
 import UIKit
 import Common
 import PrivacyConfig
@@ -28,14 +29,29 @@ import Persistence
 
     private var mainMenuController: MainMenuController?
     private var mainMenuBookmarks: MainMenuBookmarks?
+    private var mainMenuChatObservation: AnyCancellable?
+    private var mainMenuChatHistory: (@escaping ([MainMenuSpec.Menu]) -> Void) -> Void = { $0([]) }
 
     func configureMainMenu(featureFlagger: FeatureFlagger, voiceSearchHelper: VoiceSearchHelperProtocol,
-                           fireModeCapability: FireModeCapable, bookmarksDatabase: CoreDataDatabase, appSettings: AppSettings) {
+                           fireModeCapability: FireModeCapable, bookmarksDatabase: CoreDataDatabase, appSettings: AppSettings,
+                           mainViewController: MainViewController) {
         let bookmarks = MainMenuBookmarks(database: bookmarksDatabase, appSettings: appSettings)
         mainMenuBookmarks = bookmarks
-        mainMenuController = MainMenuController(featureFlagger: featureFlagger, contextProvider: {
-            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
-                  favorites: bookmarks.favorites)
+        mainMenuChatHistory = { [weak mainViewController] completion in
+            guard let mainViewController else { completion([]); return }
+            mainViewController.loadMainMenuChats(completion: completion)
+        }
+        mainMenuController = MainMenuController(featureFlagger: featureFlagger, contextProvider: { [weak self, weak mainViewController] in
+            guard let self, let mainViewController else { return .init() }
+            if mainViewController.menuNativeChatsAvailable, mainMenuChatObservation == nil {
+                mainMenuChatObservation = mainViewController.mainMenuAIChats.updatesPublisher
+                    .sink { [weak self] in self?.mainMenuController?.requestRebuild() }
+            } else if !mainViewController.menuNativeChatsAvailable {
+                mainMenuChatObservation = nil
+            }
+            return .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  favorites: bookmarks.favorites, aiChatEnabled: mainViewController.aiChatSettings.isAIChatEnabled,
+                  nativeChatsAvailable: mainViewController.menuNativeChatsAvailable)
         }, bookmarksDatabase: bookmarksDatabase)
         mainMenuController?.requestRebuild()
     }
@@ -44,8 +60,10 @@ import Persistence
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        MainMenuBuilder(bookmarkChildren: { [weak self] in self?.mainMenuBookmarks?.children(of: $0) ?? [] })
-            .build(mainMenuController?.spec ?? MainMenuSpec(isEnabled: false), with: builder)
+        let spec = mainMenuController?.spec ?? MainMenuSpec(isEnabled: false)
+        if !spec.ownsKeyCommands { mainMenuChatObservation = nil }
+        MainMenuBuilder(chatHistory: mainMenuChatHistory, bookmarkChildren: { [weak self] in self?.mainMenuBookmarks?.children(of: $0) ?? [] })
+            .build(spec, with: builder)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

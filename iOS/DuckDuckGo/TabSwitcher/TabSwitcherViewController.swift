@@ -274,6 +274,7 @@ class TabSwitcherViewController: UIViewController {
         let source = modeChangeFromSwipe ? "swipe" : "tap"
         modeChangeFromSwipe = false
         selectedBrowsingMode = newMode
+        NotificationCenter.default.post(name: .mainMenuTabChanged, object: nil)
         PixelKit.fire(Pixel.Event.tabSwitcherModeToggled, options: .parameters([
             PixelParameters.browsingMode: newMode.pixelParamValue,
             PixelParameters.source: source

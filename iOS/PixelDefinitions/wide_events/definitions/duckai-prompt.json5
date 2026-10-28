@@ -4,7 +4,7 @@
         "owners": ["samsymons"],
         "meta": {
             "type": "ios-duckai-prompt",
-            "version": "3.0"
+            "version": "4.0"
         },
         "feature": {
             "name": "duckai-prompt",
@@ -124,6 +124,11 @@
                                     "duck_ai_new_chat",
                                     "tab_switcher_existing_chat",
                                     "tabs_bar_existing_chat",
+                                    "menu_bar_open",
+                                    "menu_bar_new_chat",
+                                    "menu_bar_voice_chat",
+                                    "menu_bar_image_chat",
+                                    "menu_bar_recent_chat",
                                     "return_to_chat_card",
                                     "ddg_homepage",
                                     "unattributed"

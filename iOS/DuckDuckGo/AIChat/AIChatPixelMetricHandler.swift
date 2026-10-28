@@ -174,6 +174,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
 /// Identifies the entry point from which the user launched Duck.ai voice mode.
 enum VoiceEntryPointSource: String {
+    case menuBar = "menu_bar"
     case ntp
     case toolbar
     case addressBar = "address_bar"

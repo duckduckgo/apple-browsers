@@ -24,6 +24,11 @@ enum AIBoundaryNavigationDecision: Equatable {
     case loadInPlace
     case openInNewTab
 
+    static func forVoiceChat(currentHasContent: Bool, isPad: Bool,
+                             unifiedToggleInputAvailable: Bool, fromDeepLink: Bool) -> AIBoundaryNavigationDecision {
+        currentHasContent && (isPad || unifiedToggleInputAvailable || fromDeepLink) ? .openInNewTab : .loadInPlace
+    }
+
     /// Programmatic loads (favorites, bookmarks, suggestions, query submits).
     /// Rule: with UTI on and the current tab having content, a boundary cross spawns a new tab. NTP/empty stays in-place; legacy mode (feature off) stays in-place.
     static func forProgrammaticNavigation(currentIsAI: Bool,

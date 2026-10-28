@@ -42,18 +42,24 @@ enum AIChatEntryPointPixel: PixelKit.Event {
                      duckAIEnabled: Bool,
                      toggleEnabled: Bool,
                      opensNewTab: Bool,
-                     hasPrompt: Bool) {
-        PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, withAdditionalParameters: [
+                     hasPrompt: Bool,
+                     pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
+        pixelFiring?.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, options: .parameters([
             PixelParameters.source: source.rawValue,
             "duckai_enabled": String(duckAIEnabled),
             "toggle_enabled": String(toggleEnabled),
             "opens_new_tab": String(opensNewTab),
             "has_prompt": String(hasPrompt)
-        ])
+        ]))
     }
 }
 
 public enum AIChatEntryPointSource: String, CaseIterable {
+    case menuBarOpen = "menu_bar_open"
+    case menuBarNewChat = "menu_bar_new_chat"
+    case menuBarVoiceChat = "menu_bar_voice_chat"
+    case menuBarImageChat = "menu_bar_image_chat"
+    case menuBarRecentChat = "menu_bar_recent_chat"
     case addressBarPrompt = "address_bar_prompt"
     case addressBarIcon = "address_bar_icon"
     case addressBarShortcutChip = "address_bar_shortcut_chip"

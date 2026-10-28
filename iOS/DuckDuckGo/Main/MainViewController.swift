@@ -493,7 +493,7 @@ class MainViewController: UIViewController {
 
     let gestureBookmarksButton = GestureToolbarButton()
 
-    private lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
+    lazy var fireButtonAnimator: FireButtonAnimator = FireButtonAnimator(appSettings: appSettings)
 
     let bookmarksCachingSearch: BookmarksCachingSearch
 
@@ -535,6 +535,10 @@ class MainViewController: UIViewController {
 
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
+    lazy var mainMenuAIChats = MainMenuAIChats(
+        regularReader: (duckAiNativeStorageHandler as? DuckAiNativeChatsObserving).map { ChatHistoryReader(observer: $0) },
+        fireReader: (duckAiFireModeStorageHandler as? DuckAiNativeChatsObserving).map { ChatHistoryReader(observer: $0) })
+
     let aiChatSettings: AIChatSettingsProvider
     let aiChatAddressBarExperience: AIChatAddressBarExperienceProviding
     let privacyStats: PrivacyStatsProviding
@@ -3469,6 +3473,7 @@ class MainViewController: UIViewController {
     }
 
     func refreshOmniBar() {
+        NotificationCenter.default.post(name: .mainMenuTabChanged, object: nil)
         if isPad {
             viewCoordinator.omniBar.bindIPadDraft(to: tabManager.currentTabsModel.currentTab)
         }
@@ -5000,7 +5005,7 @@ class MainViewController: UIViewController {
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
-                                   hasPrompt: hasPrompt)
+                                   hasPrompt: hasPrompt, pixelFiring: pixelFiring)
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
@@ -5022,13 +5027,13 @@ class MainViewController: UIViewController {
         startDuckAIVoiceMode(from: .addressBar)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entryPointSource: AIChatEntryPointSource = .voice) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode()
+        openAIChatInVoiceMode(entryPointSource: entryPointSource)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
@@ -5037,7 +5042,7 @@ class MainViewController: UIViewController {
 
     /// `deepLinkSource` is nil when voice was started in-app, so a widget voice entry is
     /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
-    private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
+    private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil, entryPointSource: AIChatEntryPointSource = .voice) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5053,7 +5058,7 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        let source = deepLinkSource ?? .voice
+        let source = deepLinkSource ?? entryPointSource
         let fromDeepLink = deepLinkSource != nil
         openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
     }
@@ -5071,7 +5076,9 @@ class MainViewController: UIViewController {
 
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
-        let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
+        let openInNewTab = AIBoundaryNavigationDecision.forVoiceChat(currentHasContent: hasContent, isPad: isPad,
+                                                                  unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable,
+                                                                  fromDeepLink: fromDeepLink) == .openInNewTab
         fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false)
 
         if openInNewTab {
@@ -6072,8 +6079,18 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func onChatHistorySelected(url: URL) {
+        openChatHistorySelection(url: url, source: .chatHistoryOpenChat)
+    }
+
+    func openChatHistorySelection(url: URL, source: AIChatEntryPointSource) {
         postIdleSessionInstrumentation.sessionEnded(reason: .chatSelected)
         newTabPageSessionInstrumentation.visitEnded(terminalAction: .loadPreviousChat)
+
+        if let existing = tabManager.currentTabsModel.firstAIChat(with: url) {
+            fireAIChatEntryPointPixel(source: source, opensNewTab: false, hasPrompt: false)
+            selectTab(existing)
+            return
+        }
 
         // Bypasses `openAIChat` (routes via the boundary helper), so fire the entry pixel directly.
         let opensNewTab = AIBoundaryNavigationDecision.forProgrammaticNavigation(
@@ -6082,9 +6099,9 @@ extension MainViewController: OmniBarDelegate {
             targetIsAI: true,
             unifiedToggleInputAvailable: unifiedToggleInputFeature.isAvailable
         ) == .openInNewTab
-        fireAIChatEntryPointPixel(source: .chatHistoryOpenChat, opensNewTab: opensNewTab, hasPrompt: false)
+        fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: false)
         // Route through boundary helper so NTP transforms in-place; web→chat spawns a new tab; chat→chat stays. Matches `onPromptSubmitted`.
-        loadUrlRespectingAIBoundary(url) { $0.duckAIEntrySource = .chatHistoryOpenChat }
+        loadUrlRespectingAIBoundary(url) { $0.duckAIEntrySource = source }
     }
 
     func onViewAllChatsSelected() {

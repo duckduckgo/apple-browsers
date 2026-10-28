@@ -20,7 +20,8 @@
                     "widget.quickactions",
                     "widget.quickactions.medium",
                     "siri",
-                    "duck_ai"
+                    "duck_ai",
+                    "menu_bar"
                 ]
             }
         ]

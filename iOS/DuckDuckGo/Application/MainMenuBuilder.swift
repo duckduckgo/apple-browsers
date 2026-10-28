@@ -20,6 +20,7 @@
 import UIKit
 
 struct MainMenuBuilder {
+    var chatHistory: (@escaping ([MainMenuSpec.Menu]) -> Void) -> Void = { $0([]) }
     var bookmarkChildren: (String?) -> [MainMenuBookmarkEntry] = { _ in [] }
 
     func build(_ spec: MainMenuSpec, with builder: UIMenuBuilder) {
@@ -48,9 +49,21 @@ struct MainMenuBuilder {
 
     private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
         let deferred: [UIMenuElement] = menu.loadsBookmarks ? [makeBookmarkFolder()] : []
-        return menu.items.map(makeCommand) + deferred + menu.submenus.map { submenu in
+        let chats: [UIMenuElement] = menu.loadsChats ? [makeChatHistory()] : []
+        return menu.items.map(makeCommand) + deferred + chats + menu.submenus.map { submenu in
             UIMenu(title: submenu.title, identifier: submenu.identifier,
                    options: submenu.inline ? .displayInline : [], children: makeElements(for: submenu))
+        }
+    }
+
+    func makeChatHistory() -> UIDeferredMenuElement {
+        UIDeferredMenuElement.uncached { completion in
+            chatHistory { menus in
+                completion(menus.map { menu in
+                    UIMenu(title: menu.title, identifier: menu.identifier,
+                           options: menu.inline ? .displayInline : [], children: makeElements(for: menu))
+                })
+            }
         }
     }
 
@@ -97,15 +110,24 @@ struct MainMenuBuilder {
     }
 
     private func favicon(for item: MainMenuSpec.Item) -> UIImage? {
-        guard let url = item.url else { return nil }
+        guard item.command == .openBookmark, let url = item.url else { return nil }
         return FaviconsHelper.loadFaviconSync(forDomain: url.host, usingCache: .fireproof, useFakeFavicon: true).image
     }
 
     func makeCommand(for item: MainMenuSpec.Item) -> UICommand {
-        guard let shortcut = item.shortcut else {
-            return UICommand(title: item.title, image: favicon(for: item), action: item.command.action, propertyList: item.url?.absoluteString)
+        let propertyList: Any?
+        if let isFireMode = item.isFireMode {
+            propertyList = MainMenuAIChatPayload(isFireMode: isFireMode, url: item.url, chatCount: item.chatCount).propertyList
+        } else if let url = item.url {
+            propertyList = url.absoluteString
+        } else if let shortcut = item.shortcut {
+            propertyList = ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
+        } else {
+            propertyList = nil
         }
-        let propertyList: Any = item.url?.absoluteString as Any? ?? ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
+        guard let shortcut = item.shortcut else {
+            return UICommand(title: item.title, image: favicon(for: item), action: item.command.action, propertyList: propertyList)
+        }
         let command = UIKeyCommand(title: item.title, image: favicon(for: item), action: item.command.action,
                                    input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
         command.wantsPriorityOverSystemBehavior = true
@@ -116,6 +138,12 @@ struct MainMenuBuilder {
 extension MainMenuCommand {
     var action: Selector {
         switch self {
+        case .openDuckAI: return #selector(MainViewController.menuOpenDuckAI)
+        case .newChat: return #selector(MainViewController.menuNewChat)
+        case .newVoiceChat: return #selector(MainViewController.menuNewVoiceChat)
+        case .newImageChat: return #selector(MainViewController.menuNewImageChat)
+        case .openRecentChat: return #selector(MainViewController.menuOpenRecentChat(_:))
+        case .deleteAllChats: return #selector(MainViewController.menuDeleteAllChats(_:))
         case .showBookmarks: return #selector(MainViewController.menuToggleBookmarks)
         case .addBookmark: return #selector(MainViewController.keyboardAddBookmark)
         case .addFavorite: return #selector(MainViewController.keyboardAddFavorite)

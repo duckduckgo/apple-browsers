@@ -77,7 +77,7 @@ extension TabSwitcherViewController {
         guard featureFlagger.isIPadMenuBarEnabled(), let menuCommand = MainMenuCommand(action: command.action) else { return }
         let availability = switcherMenuAvailability
         if let title = availability.title(for: menuCommand) { command.title = title }
-        if availability.isEnabled(menuCommand) {
+        if availability.isEnabled(menuCommand) && ((presentingViewController as? MainViewController)?.isMenuChatCommandAvailable(command) ?? false) {
             command.attributes.remove(.disabled)
         } else {
             command.attributes.insert(.disabled)
@@ -98,9 +98,43 @@ extension TabSwitcherViewController {
         var state = MenuCommandAvailability.State(
             shortcutsEnabled: !isProcessingUpdates && ((presentingViewController as? MainViewController)?.isShortcutEnabled() ?? true),
             presentation: presentedViewController == nil ? .tabSwitcher : .blockingModal)
+        if let main = presentingViewController as? MainViewController {
+            state.aiChatEnabled = main.aiChatSettings.isAIChatEnabled
+            state.nativeChatsAvailable = main.menuNativeChatsAvailable
+        }
         state.fireModeEnabled = fireModeCapability.isFireModeEnabled
         state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
         return MenuCommandAvailability(state: state)
+    }
+
+    @objc func menuOpenDuckAI() {
+        guard switcherMenuAvailability.isEnabled(.openDuckAI) else { return }
+        (presentingViewController as? MainViewController)?.menuOpenDuckAI()
+    }
+
+    @objc func menuNewChat() {
+        guard switcherMenuAvailability.isEnabled(.newChat) else { return }
+        (presentingViewController as? MainViewController)?.menuNewChat()
+    }
+
+    @objc func menuNewVoiceChat() {
+        guard switcherMenuAvailability.isEnabled(.newVoiceChat) else { return }
+        (presentingViewController as? MainViewController)?.menuNewVoiceChat()
+    }
+
+    @objc func menuNewImageChat() {
+        guard switcherMenuAvailability.isEnabled(.newImageChat) else { return }
+        (presentingViewController as? MainViewController)?.menuNewImageChat()
+    }
+
+    @objc func menuDeleteAllChats(_ command: UICommand) {
+        guard switcherMenuAvailability.isEnabled(.deleteAllChats) else { return }
+        (presentingViewController as? MainViewController)?.menuDeleteAllChats(command)
+    }
+
+    @objc func menuOpenRecentChat(_ command: UICommand) {
+        guard switcherMenuAvailability.isEnabled(.openRecentChat) else { return }
+        (presentingViewController as? MainViewController)?.menuOpenRecentChat(command)
     }
 
     @objc func menuToggleBookmarks() {

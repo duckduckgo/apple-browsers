@@ -493,7 +493,8 @@ struct Launching: LaunchingHandling {
                                                                                   voiceSearchHelper: voiceSearchHelper,
                                                                                   fireModeCapability: mainCoordinator.controller.fireModeCapability,
                                                                                   bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
-                                                                                  appSettings: appSettings)
+                                                                                  appSettings: appSettings,
+                                                                                  mainViewController: mainCoordinator.controller)
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

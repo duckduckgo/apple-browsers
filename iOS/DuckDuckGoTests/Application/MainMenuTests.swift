@@ -185,7 +185,8 @@ struct MainMenuTests {
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
     func builtStaticMenuCommandsHaveUniqueUIKitIdentities() {
-        let spec = MainMenuSpec(isEnabled: true, context: .init(voiceSearchEnabled: true, fireModeEnabled: true))
+        let spec = MainMenuSpec(isEnabled: true, context: .init(voiceSearchEnabled: true, fireModeEnabled: true,
+                                                               aiChatEnabled: true, nativeChatsAvailable: true))
         let builder = MainMenuBuilderSpy()
         MainMenuBuilder().build(spec, with: builder)
         func collectCommands(in elements: [UIMenuElement]) -> [UICommand] {

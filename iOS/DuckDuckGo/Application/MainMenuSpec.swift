@@ -17,9 +17,11 @@
 //  limitations under the License.
 //
 
+import AIChat
 import UIKit
 
 enum MainMenuCommand: CaseIterable {
+    case openDuckAI, newChat, newVoiceChat, newImageChat, openRecentChat, deleteAllChats
     case showBookmarks, addBookmark, addFavorite, importBookmarks, exportBookmarks, openBookmark
     case settings, newTab, newFireTab, voiceSearch, location, closeTab, share, printPage
     case find, stop, reload, showTabs, showPasswords, showDownloads, zoomIn, zoomOut, actualSize
@@ -32,6 +34,8 @@ struct MainMenuSpec {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
         var favorites: [MainMenuBookmark] = []
+        var aiChatEnabled = false
+        var nativeChatsAvailable = false
     }
 
     struct Shortcut: Equatable {
@@ -44,6 +48,8 @@ struct MainMenuSpec {
         let title: String
         let shortcut: Shortcut?
         var url: URL?
+        var isFireMode: Bool?
+        var chatCount: Int?
     }
 
     struct Menu {
@@ -59,6 +65,7 @@ struct MainMenuSpec {
         var title = ""
         var inline = false
         var loadsBookmarks = false
+        var loadsChats = false
 
         var allItems: [Item] { items + submenus.flatMap(\.allItems) }
     }
@@ -133,7 +140,35 @@ struct MainMenuSpec {
                  title: UserText.menuFavorites),
             Menu(identifier: UIMenu.Identifier("com.duckduckgo.bookmarks.tree"), items: [], inline: true, loadsBookmarks: true)
         ], title: UserText.menuBookmarks)
-        menus = [settings, file, edit, view, bookmarks, window, help]
+        var duckAI: [Menu] = []
+        if context.aiChatEnabled {
+            var groups = [Self.group("duckai.open", [Self.item(.openDuckAI, UserText.menuOpenDuckAI)]),
+                          Self.group("duckai.new", [Self.item(.newChat, UserText.menuNewChat, "n", [.alternate, .command]),
+                                                    Self.item(.newVoiceChat, UserText.menuNewVoiceChat, "v", [.alternate, .command]),
+                                                    Self.item(.newImageChat, UserText.menuNewImageChat, "g", [.alternate, .command])])]
+            if context.nativeChatsAvailable {
+                groups.append(Menu(identifier: UIMenu.Identifier("com.duckduckgo.duckai.history"), items: [], inline: true, loadsChats: true))
+            }
+            duckAI = [Menu(identifier: UIMenu.Identifier("com.duckduckgo.duckai"), items: [],
+                           placement: .insertBefore(UIMenu.Identifier("com.duckduckgo.bookmarks")), submenus: groups,
+                           title: "Duck.ai")]
+        }
+        menus = [settings, file, edit, view, bookmarks] + duckAI + [window, help]
+    }
+
+    static func chatHistoryMenus(snapshot: MainMenuAIChats.Snapshot, aiChatURL: URL, isFireMode: Bool) -> [Menu] {
+        let items = snapshot.recent.map {
+            Item(command: .openRecentChat, title: $0.title, shortcut: nil,
+                 url: aiChatURL.withChatID($0.id), isFireMode: isFireMode)
+        }
+        var menus: [Menu] = []
+        if !items.isEmpty {
+            menus.append(Menu(identifier: UIMenu.Identifier("com.duckduckgo.duckai.recent"), items: items,
+                              title: UserText.menuRecentChats, inline: true))
+        }
+        menus.append(group("duckai.delete", [Item(command: .deleteAllChats, title: UserText.menuDeleteAllChats,
+                                                  shortcut: nil, isFireMode: isFireMode, chatCount: snapshot.totalCount)]))
+        return menus
     }
 
     var allItems: [Item] { menus.flatMap(\.allItems) }

@@ -25,6 +25,8 @@ struct MenuCommandAvailability {
 
         let shortcutsEnabled: Bool
         let presentation: Presentation
+        var aiChatEnabled = false
+        var nativeChatsAvailable = false
         var hasTab = false
         var hasWebsite = false
         var isLoading = false
@@ -44,6 +46,13 @@ struct MenuCommandAvailability {
     func isEnabled(_ command: MainMenuCommand) -> Bool {
         guard state.shortcutsEnabled, state.presentation != .blockingModal else { return false }
         switch command {
+        case .openDuckAI, .newChat, .newVoiceChat, .newImageChat:
+            return state.aiChatEnabled && (state.presentation != .tabSwitcher || state.canHideTabs)
+        case .openRecentChat:
+            return state.aiChatEnabled && state.nativeChatsAvailable && (state.presentation != .tabSwitcher || state.canHideTabs)
+        case .deleteAllChats:
+            return state.aiChatEnabled && state.nativeChatsAvailable &&
+                (state.presentation != .tabSwitcher || state.canHideTabs)
         case .showTabs:
             return state.presentation != .tabSwitcher || state.canHideTabs
         case .showPasswords:

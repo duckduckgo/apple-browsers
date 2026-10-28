@@ -17,9 +17,119 @@
 //  limitations under the License.
 //
 
+import AIChat
+import FeatureFlags_iOS
 import UIKit
 
 extension MainViewController {
+    var effectiveMenuBrowsingMode: BrowsingMode {
+        tabSwitcherController?.selectedBrowsingMode ?? tabManager.currentBrowsingMode
+    }
+
+    var menuNativeChatsAvailable: Bool {
+        aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.aiChatNativeStorage) &&
+            mainMenuAIChats.isAvailable(isFireMode: effectiveMenuBrowsingMode == .fire)
+    }
+
+    func loadMainMenuChats(completion: @escaping ([MainMenuSpec.Menu]) -> Void) {
+        guard aiChatSettings.isAIChatEnabled, menuNativeChatsAvailable else { completion([]); return }
+        let isFireMode = effectiveMenuBrowsingMode == .fire
+        mainMenuAIChats.loadSnapshot(isFireMode: isFireMode) { [weak self] snapshot in
+            guard let self, let snapshot, aiChatSettings.isAIChatEnabled, menuNativeChatsAvailable,
+                  isFireMode == (effectiveMenuBrowsingMode == .fire) else { completion([]); return }
+            completion(MainMenuSpec.chatHistoryMenus(snapshot: snapshot, aiChatURL: aiChatSettings.aiChatURL, isFireMode: isFireMode))
+        }
+    }
+
+    func isMenuChatCommandAvailable(_ command: UICommand?) -> Bool {
+        guard let command, let kind = MainMenuCommand(action: command.action), kind == .openRecentChat || kind == .deleteAllChats else { return true }
+        guard let payload = MainMenuAIChatPayload(propertyList: command.propertyList) else { return false }
+        return payload.isEnabled(for: kind, currentMode: tabManager.currentBrowsingMode, switcherMode: tabSwitcherController?.selectedBrowsingMode)
+    }
+
+    @objc func menuOpenDuckAI() {
+        guard menuCommandAvailability.isEnabled(.openDuckAI) else { return }
+        dismissMenuPresentation { [weak self] in
+            self?.openAIChat(source: .menuBarOpen, forcesNewTab: true)
+        }
+    }
+
+    @objc func menuNewChat() {
+        guard menuCommandAvailability.isEnabled(.newChat) else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self else { return }
+            if let tab = currentTab, tab.isAITab {
+                openNewChatFromDuckAIPage(tab, source: .menuBarNewChat)
+            } else {
+                newTab(allowingKeyboard: false, startsNewTabPageSessionVisit: false)
+                openAIChat(source: .menuBarNewChat, reportsNewTab: true)
+            }
+        }
+    }
+
+    @objc func menuNewVoiceChat() {
+        guard menuCommandAvailability.isEnabled(.newVoiceChat) else { return }
+        dismissMenuPresentation { [weak self] in
+            self?.startDuckAIVoiceMode(from: .menuBar, entryPointSource: .menuBarVoiceChat)
+        }
+    }
+
+    @objc func menuNewImageChat() {
+        guard menuCommandAvailability.isEnabled(.newImageChat) else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self else { return }
+            fireAIChatEntryPointPixel(source: .menuBarImageChat, opensNewTab: true, hasPrompt: false)
+            let url = AIChatURLParameters.imageModeURL(from: aiChatSettings.aiChatURL)
+            loadUrlInNewTab(url, inheritedAttribution: nil) { $0.duckAIEntrySource = .menuBarImageChat }
+        }
+    }
+
+    @objc func menuOpenRecentChat(_ command: UICommand) {
+        guard menuCommandAvailability.isEnabled(.openRecentChat), isMenuChatCommandAvailable(command),
+              let payload = MainMenuAIChatPayload(propertyList: command.propertyList), let url = payload.url else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self, payload.isEnabled(for: .openRecentChat, currentMode: tabManager.currentBrowsingMode, switcherMode: nil) else { return }
+            mainMenuAIChats.chatOpened()
+            openChatHistorySelection(url: url, source: .menuBarRecentChat)
+        }
+    }
+
+    @objc func menuDeleteAllChats(_ command: UICommand) {
+        guard menuCommandAvailability.isEnabled(.deleteAllChats), isMenuChatCommandAvailable(command),
+              let payload = MainMenuAIChatPayload(propertyList: command.propertyList) else { return }
+        dismissMenuPresentation { [weak self] in
+            guard let self, payload.isEnabled(for: .deleteAllChats, currentMode: tabManager.currentBrowsingMode, switcherMode: nil) else { return }
+            mainMenuAIChats.loadSnapshot(isFireMode: payload.isFireMode) { [weak self] snapshot in
+                guard let self, let snapshot, menuCommandAvailability.isEnabled(.deleteAllChats),
+                      payload.isEnabled(for: .deleteAllChats, currentMode: tabManager.currentBrowsingMode, switcherMode: nil),
+                      let deletion = mainMenuAIChats.deletion(snapshot: snapshot, isFireMode: payload.isFireMode, executor: fireExecutor,
+                                                             onDeleted: { [weak self] in self?.refreshMenuChatsAfterDeletion(isFireMode: payload.isFireMode) }) else { return }
+                presentMenuChatDeletion(deletion)
+            }
+        }
+    }
+
+    private func refreshMenuChatsAfterDeletion(isFireMode: Bool) {
+        for tab in tabManager.tabsModel(for: isFireMode ? .fire : .normal).tabs {
+            guard let controller = tabManager.controller(for: tab) else { continue }
+            controller.reloadFullModeAIChatIfNeeded()
+            controller.reloadContextualAIChatIfNeeded()
+        }
+    }
+
+    private func presentMenuChatDeletion(_ deletion: MainMenuAIChats.Deletion) {
+        let anchor: UIView = viewCoordinator.omniBar.barView.menuButton ?? view
+        let sourceRect = anchor.convert(anchor.bounds, to: view.window)
+        FireConfirmationPresenter().presentFireConfirmation(
+            on: self, sourceRect: sourceRect, tabViewModel: nil, pixelSource: .browsing,
+            fireContext: .deleteChats(count: deletion.count, onDelete: { [weak self] in
+                self?.dismiss(animated: true) { [weak self] in
+                    guard let self else { return }
+                    fireButtonAnimator.animate { await deletion.confirm() } onTransitionCompleted: {} completion: {}
+                }
+            }), browsingMode: deletion.isFireMode ? .fire : .normal, onConfirm: { _ in }, onCancel: {})
+    }
+
     var menuCommandAvailability: MenuCommandAvailability {
         let presentation: MenuCommandAvailability.State.Presentation
         if let tabSwitcherController {
@@ -41,6 +151,8 @@ extension MainViewController {
             presentation = .browser
         }
         var state = MenuCommandAvailability.State(shortcutsEnabled: isShortcutEnabled(), presentation: presentation)
+        state.aiChatEnabled = aiChatSettings.isAIChatEnabled
+        state.nativeChatsAvailable = menuNativeChatsAvailable
         state.hasTab = tabManager.currentTabsModel.currentTab != nil
         state.hasWebsite = currentTab?.link != nil && currentTab?.isError != true
         state.isLoading = currentTab?.isLoading == true

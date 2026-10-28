@@ -42,11 +42,22 @@ final class MainMenuController {
          contextProvider: @escaping () -> MainMenuSpec.Context = { .init() },
          notificationCenter: NotificationCenter = .default,
          bookmarksDatabase: CoreDataDatabase? = nil,
+         aiChatUpdates: AnyPublisher<Void, Never>? = nil,
          rebuildDelay: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(100),
          rebuild: @escaping () -> Void = { UIMenuSystem.main.setNeedsRebuild() }) {
         self.featureFlagger = featureFlagger
         self.idiom = idiom
         self.contextProvider = contextProvider
+
+        aiChatUpdates?.sink { [weak self] in self?.requestRebuild() }.store(in: &cancellables)
+        notificationCenter.publisher(for: .aiChatSettingsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
+        notificationCenter.publisher(for: .mainMenuTabChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
 
         notificationCenter.publisher(for: .speechRecognizerDidChangeAvailability)
             .sink { [weak self] _ in self?.requestRebuild() }
@@ -72,10 +83,11 @@ final class MainMenuController {
             .sink { rebuild() }
             .store(in: &cancellables)
 
+        let menuContext = { featureFlagger.isIPadMenuBarEnabled(idiom: idiom) ? contextProvider() : nil }
         featureFlagger.updatesPublisher
             .receive(on: DispatchQueue.main)
-            .map { featureFlagger.isIPadMenuBarEnabled(idiom: idiom) }
-            .prepend(featureFlagger.isIPadMenuBarEnabled(idiom: idiom))
+            .map { menuContext() }
+            .prepend(menuContext())
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] _ in self?.requestRebuild() }
@@ -92,4 +104,8 @@ extension FeatureFlagger {
     func isIPadMenuBarEnabled(idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom) -> Bool {
         idiom == .pad && isFeatureOn(.ipadMenuBar)
     }
+}
+
+extension Notification.Name {
+    static let mainMenuTabChanged = Notification.Name("com.duckduckgo.mainMenu.tabChanged")
 }

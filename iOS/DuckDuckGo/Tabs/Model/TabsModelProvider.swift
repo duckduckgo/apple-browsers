@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Foundation
 import Combine
 import PrivacyConfig
@@ -27,6 +28,11 @@ protocol TabsModelReading {
 }
 
 extension TabsModelReading {
+    func firstAIChat(with url: URL) -> Tab? {
+        guard let chatID = url.duckAIChatID else { return nil }
+        return tabs.first { $0.link?.url.duckAIChatID == chatID }
+    }
+
     func indexOf(tab: Tab) -> Int? {
         return tabs.firstIndex { $0 === tab }
     }

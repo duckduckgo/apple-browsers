@@ -141,6 +141,11 @@
             "tab_switcher_existing_chat",
             "ddg_homepage",
             "tabs_bar_existing_chat",
+            "menu_bar_open",
+            "menu_bar_new_chat",
+            "menu_bar_voice_chat",
+            "menu_bar_image_chat",
+            "menu_bar_recent_chat",
             "unattributed"
         ]
     },

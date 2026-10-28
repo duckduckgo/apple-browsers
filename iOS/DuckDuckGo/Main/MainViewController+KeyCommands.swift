@@ -154,7 +154,7 @@ extension MainViewController {
         super.validate(command)
         guard featureFlagger.isIPadMenuBarEnabled(), let menuCommand = MainMenuCommand(action: command.action) else { return }
         if let title = menuCommandAvailability.title(for: menuCommand) { command.title = title }
-        if menuCommandAvailability.isEnabled(menuCommand), isMenuTabSelectionAvailable(command) {
+        if menuCommandAvailability.isEnabled(menuCommand), isMenuTabSelectionAvailable(command) && isMenuChatCommandAvailable(command) {
             command.attributes.remove(.disabled)
         } else {
             command.attributes.insert(.disabled)
@@ -165,7 +165,7 @@ extension MainViewController {
         guard featureFlagger.isIPadMenuBarEnabled(), let command = MainMenuCommand(action: action) else {
             return super.canPerformAction(action, withSender: sender)
         }
-        return menuCommandAvailability.isEnabled(command) && isMenuTabSelectionAvailable(sender as? UICommand)
+        return menuCommandAvailability.isEnabled(command) && isMenuTabSelectionAvailable(sender as? UICommand) && isMenuChatCommandAvailable(sender as? UICommand)
     }
 
     @objc func keyboardMoveSelectionUp() {

@@ -115,6 +115,96 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("hintsResult.fullVersionList === undefined")
     }
 
+    func testWhenHintsChangeAfterTheCall_ThenTheOriginalRequestIsUsed() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hints = ['fullVersionList'];
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(hints).then(function(value) { hintsResult = value; });
+        hints.length = 0;
+        """)
+
+        try assertTrue("hintsResult.fullVersionList !== undefined")
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenHintValuesNeedStringConversion_ThenTheyAreRecognized() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues([new String('fullVersionList')]).then(function(value) { hintsResult = value; });
+        """)
+
+        try assertTrue("hintsResult.fullVersionList !== undefined")
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenHintsAreInvalid_ThenThePromiseRejectsWithTypeError() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var invalidResults;
+        var invalidHints = [null, undefined, 42, 'fullVersionList', {}, [Symbol('hint')]];
+        Promise.all(invalidHints.map(function(hints) {
+            return navigator.userAgentData.getHighEntropyValues(hints).then(
+                function() { return false; },
+                function(error) { return error instanceof TypeError; }
+            );
+        })).then(function(values) { invalidResults = values; });
+        """)
+
+        try assertTrue("invalidResults.length === invalidHints.length")
+        try assertTrue("invalidResults.every(function(rejected) { return rejected; })")
+    }
+
+    func testWhenNativeReceivesHints_ThenTheyAreNormalizedAtCallTime() throws {
+        context.evaluateScript("""
+        var nativeRequested;
+        var navigator = { userAgent: 'Chrome/140.0.0.0', userAgentData: {
+            brands: [], mobile: false, platform: 'macOS',
+            getHighEntropyValues: function(hints) {
+                nativeRequested = hints;
+                return Promise.resolve({ fullVersionList: [] });
+            }
+        } };
+        """)
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        var hints = [{ toString: function() { return 'fullVersionList'; } }];
+        navigator.userAgentData.getHighEntropyValues(hints).then(function(value) { hintsResult = value; });
+        hints.length = 0;
+        """)
+
+        try assertTrue("JSON.stringify(nativeRequested) === '[\"fullVersionList\"]'")
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenNativeOmitsFullVersionList_ThenItRemainsOmitted() throws {
+        context.evaluateScript("""
+        var nativeResult = { brands: [{ brand: 'AppleWebKit', version: '605' }], mobile: false, platform: 'macOS' };
+        var navigator = { userAgent: 'Chrome/140.0.0.0', userAgentData: {
+            brands: nativeResult.brands, mobile: nativeResult.mobile, platform: nativeResult.platform,
+            getHighEntropyValues: function() { return Promise.resolve(nativeResult); }
+        } };
+        """)
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(['fullVersionList']).then(function(value) { hintsResult = value; });
+        """)
+
+        try assertTrue("hintsResult.fullVersionList === undefined")
+        try assertTrue("hintsResult.brands.some(function(item) { return item.brand === 'DuckDuckGo'; })")
+    }
+
     func testWhenNativeClientHintsExist_ThenTheirValuesAndReceiverArePreserved() throws {
         context.evaluateScript("""
         var nativeUAData = {

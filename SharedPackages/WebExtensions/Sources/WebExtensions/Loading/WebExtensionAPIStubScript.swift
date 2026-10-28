@@ -147,22 +147,23 @@ public enum WebExtensionAPIStubScript {
                         toJSON: function() {
                             return { brands: this.brands, mobile: this.mobile, platform: this.platform };
                         },
-                        getHighEntropyValues: function(hints) {
-                            var requested;
-                            return Promise.resolve().then(function() {
-                                if (hints == null || typeof hints[Symbol.iterator] !== "function") {
-                                    throw new TypeError("Client hints must be an iterable");
-                                }
-                                requested = Array.from(hints);
-                                return originalUAData && typeof originalUAData.getHighEntropyValues === "function"
-                                    ? originalUAData.getHighEntropyValues(requested) : {};
-                            }).then(function(values) {
-                                var result = Object.assign({}, values, uaData.toJSON());
-                                if (requested.indexOf("fullVersionList") !== -1) {
-                                    result.fullVersionList = brandedList(values.fullVersionList || existingBrands, fullBrandVersion);
-                                }
-                                return result;
-                            });
+                        getHighEntropyValues: async function(hints) {
+                            if (hints === null || (typeof hints !== "object" && typeof hints !== "function")) {
+                                throw new TypeError("Client hints must be an iterable object");
+                            }
+                            // Snapshot and convert the sequence before yielding, as native argument conversion does.
+                            var requested = [];
+                            for (var hint of hints) {
+                                requested.push(`${hint}`);
+                            }
+                            var values = originalUAData && typeof originalUAData.getHighEntropyValues === "function"
+                                ? await originalUAData.getHighEntropyValues(requested) : {};
+                            var result = Object.assign({}, values, uaData.toJSON());
+                            // A native implementation may deliberately withhold high-entropy values.
+                            if (requested.indexOf("fullVersionList") !== -1 && (!originalUAData || values.fullVersionList !== undefined)) {
+                                result.fullVersionList = brandedList(values.fullVersionList, fullBrandVersion);
+                            }
+                            return result;
                         }
                     };
                     Object.defineProperty(navigator, "userAgentData", {

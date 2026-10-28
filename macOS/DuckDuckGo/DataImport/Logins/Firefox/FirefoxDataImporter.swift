@@ -120,32 +120,12 @@ internal class FirefoxDataImporter: DataImporter {
         let requiresPrimaryPassword = (summary[.passwords]?.error as? FirefoxLoginReader.ImportError)?.type == .requiresPrimaryPassword
 
         let passwordsFraction: Double = types.contains(.passwords) ? dataTypeFraction : 0.0
-        bookmarksImport: if types.contains(.bookmarks), !requiresPrimaryPassword {
-
-            try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: passwordsFraction + 0.0))
-
-            let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL)
-            let bookmarkResult = bookmarkReader.readBookmarks()
-
-            guard case .success(var importedBookmarks) = bookmarkResult else {
-                summary[.bookmarks] = .failure(bookmarkResult.error!)
-                break bookmarksImport
-            }
-
-            let newTabFavorites = fetchNewTabFavorites()
-            FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabFavorites)
-
-            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
-                                                   fraction: passwordsFraction + dataTypeFraction * 0.5))
-
-            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false, maxFavoritesCount: nil)
-
-            await importFavicons()
-
-            summary[.bookmarks] = .success(.init(bookmarksSummary))
-
-            try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
-                                                   fraction: passwordsFraction + dataTypeFraction * 1.0))
+        if types.contains(.bookmarks), !requiresPrimaryPassword {
+            summary[.bookmarks] = try await importBookmarks(
+                progressOffset: passwordsFraction,
+                dataTypeFraction: dataTypeFraction,
+                updateProgress: updateProgress
+            )
         }
 
         if types.contains(.history), !requiresPrimaryPassword {
@@ -161,6 +141,36 @@ internal class FirefoxDataImporter: DataImporter {
         try updateProgress(.done)
 
         return summary
+    }
+
+    private func importBookmarks(
+        progressOffset: Double,
+        dataTypeFraction: Double,
+        updateProgress: DataImportProgressCallback
+    ) async throws -> DataImportResult<DataImport.DataTypeSummary> {
+        try updateProgress(.importingBookmarks(numberOfBookmarks: nil, fraction: progressOffset + 0.0))
+
+        let bookmarkReader = FirefoxBookmarksReader(firefoxDataDirectoryURL: profile.profileURL)
+        let bookmarkResult = bookmarkReader.readBookmarks()
+
+        guard case .success(var importedBookmarks) = bookmarkResult else {
+            return .failure(bookmarkResult.error!)
+        }
+
+        let newTabFavorites = fetchNewTabFavorites()
+        FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabFavorites)
+
+        try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
+                                               fraction: progressOffset + dataTypeFraction * 0.5))
+
+        let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false, maxFavoritesCount: nil)
+
+        await importFavicons()
+
+        try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
+                                               fraction: progressOffset + dataTypeFraction * 1.0))
+
+        return .success(.init(bookmarksSummary))
     }
 
     private func importHistory() async throws -> DataImportResult<DataImport.DataTypeSummary> {

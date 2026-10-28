@@ -101,6 +101,15 @@ final class DuckAIEntryInstrumentationTests {
     }
 
     @available(iOS 16, *)
+    @Test("A tab entry started with a known chat state keeps it when its tab is shown", .timeLimit(.minutes(1)))
+    func tabEntryKeepsKnownChatState() {
+        let sut = makeSUT()
+        sut.entryStarted(source: .duckAINewChat, hasPrompt: false, voice: false, surface: .duckAITab, chatState: .new)
+        sut.visibleTabDidChange(duckAI(Self.chatTab, chatID: "previous-chat"))
+        #expect(started.first?.chatState == .new)
+    }
+
+    @available(iOS 16, *)
     @Test("A sheet entry keeps the chat state it started with", .timeLimit(.minutes(1)))
     func sheetEntryKeepsItsChatState() {
         let sut = makeSUT()

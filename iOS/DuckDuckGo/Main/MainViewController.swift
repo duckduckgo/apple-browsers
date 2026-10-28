@@ -4992,7 +4992,9 @@ class MainViewController: UIViewController {
         )
     }
 
-    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false) {
+    /// `chatState` overrides how the entry wide event reads it, for an entry that starts a new chat in the tab on screen.
+    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
+                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) {
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
@@ -5004,7 +5006,8 @@ class MainViewController: UIViewController {
         let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
-        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface, chatState: sheetChatState)
+        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface,
+                                                chatState: chatState ?? sheetChatState)
         if surface == .contextualSheet {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()

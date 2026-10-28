@@ -345,7 +345,25 @@ public enum FeatureFlag: String {
     case aiChatContextualAttachMoreTabs
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
-    case aiChatToBrowserToolCalling
+    case aiChatBrowserTools
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolListOpenTabs
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolSwitchToTab
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolSearchHistory
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolReadTabContent
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolFindInPage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219948022392209?focus=true
+    case aiChatBrowserToolHighlightInPage
 
     /// Address-bar Duck.ai menu plus the floating contextual input. iPhone only.
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1215757651854873
@@ -913,8 +931,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.contextualUnifiedToggleInput))
         case .aiChatContextualAttachMoreTabs:
             Config(source: .remoteReleasable(AIChatSubfeature.contextualAttachMoreTabs))
-        case .aiChatToBrowserToolCalling:
-            Config(source: .remoteReleasable(AIChatSubfeature.chatToBrowserToolCalling))
+        case .aiChatBrowserTools:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled))
+        case .aiChatBrowserToolListOpenTabs:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.listOpenTabs))
+        case .aiChatBrowserToolSwitchToTab:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.switchToTab))
+        case .aiChatBrowserToolSearchHistory:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.searchHistory))
+        case .aiChatBrowserToolReadTabContent:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.readTabContent))
+        case .aiChatBrowserToolFindInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.findInPage))
+        case .aiChatBrowserToolHighlightInPage:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.highlightInPage))
         case .aiChatContextualFloatingInput:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualFloatingInput))
         case .unifiedToggleInputAttachmentPaste:

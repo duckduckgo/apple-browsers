@@ -395,9 +395,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables attaching content from multiple open tabs in the iOS contextual AI chat sheet.
     case contextualAttachMoreTabs
 
-    /// Enables browser tool calling from AI Chat.
-    case chatToBrowserToolCalling
-
     /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput

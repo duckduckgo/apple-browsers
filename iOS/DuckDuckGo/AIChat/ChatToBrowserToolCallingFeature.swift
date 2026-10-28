@@ -33,6 +33,6 @@ struct ChatToBrowserToolCallingFeature: ChatToBrowserToolCallingFeatureProviding
     }
 
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.aiChatToBrowserToolCalling)
+        featureFlagger.isFeatureOn(.aiChatBrowserTools)
     }
 }

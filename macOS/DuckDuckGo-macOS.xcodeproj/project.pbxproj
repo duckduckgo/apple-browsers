@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -2550,14 +2550,6 @@
 		843965132C6F2FFE004C8899 /* NSDragOperationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */; };
 		843965152C737022004C8899 /* NSPasteboardExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965142C737022004C8899 /* NSPasteboardExtension.swift */; };
 		843965162C737022004C8899 /* NSPasteboardExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965142C737022004C8899 /* NSPasteboardExtension.swift */; };
-		843A52F62EA8F9170094C215 /* FireDialogUITestsBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52F32EA8F9170094C215 /* FireDialogUITestsBase.swift */; };
-		843A52F72EA8F9170094C215 /* FireDialogTabScopeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52F22EA8F9170094C215 /* FireDialogTabScopeUITests.swift */; };
-		843A52F82EA8F9170094C215 /* FireDialogGeneralUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52EC2EA8F9170094C215 /* FireDialogGeneralUITests.swift */; };
-		843A52F92EA8F9170094C215 /* FireDialogHistoryDeleteAllUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52EE2EA8F9170094C215 /* FireDialogHistoryDeleteAllUITests.swift */; };
-		843A52FA2EA8F9170094C215 /* FireDialogHistoryMultiSelectDeletionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52F02EA8F9170094C215 /* FireDialogHistoryMultiSelectDeletionUITests.swift */; };
-		843A52FB2EA8F9170094C215 /* FireDialogHistoryDateDeletionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52ED2EA8F9170094C215 /* FireDialogHistoryDateDeletionUITests.swift */; };
-		843A52FD2EA8F9170094C215 /* FireDialogHistoryIndividualDeletionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52EF2EA8F9170094C215 /* FireDialogHistoryIndividualDeletionUITests.swift */; };
-		843A52FE2EA8F9170094C215 /* FireDialogHistorySitesDeletionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843A52F12EA8F9170094C215 /* FireDialogHistorySitesDeletionUITests.swift */; };
 		843AD3DC2CD389CC00163067 /* XMLNodeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */; };
 		843AD3DD2CD389CC00163067 /* XMLNodeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */; };
 		843D73BB2C786E5400E4F9DC /* BookmarkListPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F1C8DA2C774CA900716446 /* BookmarkListPopover.swift */; };
@@ -6345,14 +6337,6 @@
 		8438BB162F2874270084DE69 /* WarnBeforeQuitUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarnBeforeQuitUITests.swift; sourceTree = "<group>"; };
 		843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDragOperationExtension.swift; sourceTree = "<group>"; };
 		843965142C737022004C8899 /* NSPasteboardExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtension.swift; sourceTree = "<group>"; };
-		843A52EC2EA8F9170094C215 /* FireDialogGeneralUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogGeneralUITests.swift; sourceTree = "<group>"; };
-		843A52ED2EA8F9170094C215 /* FireDialogHistoryDateDeletionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogHistoryDateDeletionUITests.swift; sourceTree = "<group>"; };
-		843A52EE2EA8F9170094C215 /* FireDialogHistoryDeleteAllUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogHistoryDeleteAllUITests.swift; sourceTree = "<group>"; };
-		843A52EF2EA8F9170094C215 /* FireDialogHistoryIndividualDeletionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogHistoryIndividualDeletionUITests.swift; sourceTree = "<group>"; };
-		843A52F02EA8F9170094C215 /* FireDialogHistoryMultiSelectDeletionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogHistoryMultiSelectDeletionUITests.swift; sourceTree = "<group>"; };
-		843A52F12EA8F9170094C215 /* FireDialogHistorySitesDeletionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogHistorySitesDeletionUITests.swift; sourceTree = "<group>"; };
-		843A52F22EA8F9170094C215 /* FireDialogTabScopeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogTabScopeUITests.swift; sourceTree = "<group>"; };
-		843A52F32EA8F9170094C215 /* FireDialogUITestsBase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogUITestsBase.swift; sourceTree = "<group>"; };
 		843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLNodeExtension.swift; sourceTree = "<group>"; };
 		8440B2B62EF136D200E32722 /* QuitSurveyPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyPresenter.swift; sourceTree = "<group>"; };
 		8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+OnboardingNavigationDelegate.swift"; sourceTree = "<group>"; };
@@ -7708,6 +7692,10 @@
 		FE6295B8821741B1BF7FDCF6 /* BookmarksBarPromptViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarPromptViewModelTests.swift; sourceTree = "<group>"; };
 		FEE12B412E520E4D00AD9808 /* PromoHistoryRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoHistoryRecordTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		843A52F52EA8F9170094C215 /* Fire */ = {isa = PBXFileSystemSynchronizedRootGroup; path = Fire; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		3706FCA6293F65D500E42796 /* Frameworks */ = {
@@ -10656,21 +10644,6 @@
 				8434D9552F23713000B4796F /* WarnBeforeQuitManagerTests.swift */,
 			);
 			path = WarnBeforeQuit;
-			sourceTree = "<group>";
-		};
-		843A52F52EA8F9170094C215 /* Fire */ = {
-			isa = PBXGroup;
-			children = (
-				843A52EC2EA8F9170094C215 /* FireDialogGeneralUITests.swift */,
-				843A52ED2EA8F9170094C215 /* FireDialogHistoryDateDeletionUITests.swift */,
-				843A52EE2EA8F9170094C215 /* FireDialogHistoryDeleteAllUITests.swift */,
-				843A52EF2EA8F9170094C215 /* FireDialogHistoryIndividualDeletionUITests.swift */,
-				843A52F02EA8F9170094C215 /* FireDialogHistoryMultiSelectDeletionUITests.swift */,
-				843A52F12EA8F9170094C215 /* FireDialogHistorySitesDeletionUITests.swift */,
-				843A52F22EA8F9170094C215 /* FireDialogTabScopeUITests.swift */,
-				843A52F32EA8F9170094C215 /* FireDialogUITestsBase.swift */,
-			);
-			path = Fire;
 			sourceTree = "<group>";
 		};
 		84524C052D79E6A100F723D6 /* Fire */ = {
@@ -14740,6 +14713,9 @@
 			dependencies = (
 				EE02D41E2BB460B500DBE6B3 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				843A52F52EA8F9170094C215 /* Fire */,
+			);
 			name = "UI Tests";
 			packageProductDependencies = (
 				9D9DE57E2C63B64F00D20B15 /* AppKitExtensions */,
@@ -18296,19 +18272,11 @@
 				BB5F46A32C8751F6005F72DF /* BookmarkSortTests.swift in Sources */,
 				4B7948152F81DE2600DA4028 /* TabNavigationTestHelpers.swift in Sources */,
 				844905532E55C9CD0054F4FD /* ErrorPageUITests.swift in Sources */,
-				843A52F62EA8F9170094C215 /* FireDialogUITestsBase.swift in Sources */,
 				CCD89A3D2ECF5AC5008E738B /* DefaultBrowserAndDockPromptsUITests.swift in Sources */,
 				CC199EA12F4E199900964702 /* PromoQueueUITests.swift in Sources */,
 				D1A9C0022F8E000000A1B2C1 /* SaveCredentialsPopoverUITests.swift in Sources */,
 				CCD89A3E2ECF5AC6008E738B /* NextStepsListUITests.swift in Sources */,
-				843A52F72EA8F9170094C215 /* FireDialogTabScopeUITests.swift in Sources */,
-				843A52F82EA8F9170094C215 /* FireDialogGeneralUITests.swift in Sources */,
-				843A52F92EA8F9170094C215 /* FireDialogHistoryDeleteAllUITests.swift in Sources */,
-				843A52FA2EA8F9170094C215 /* FireDialogHistoryMultiSelectDeletionUITests.swift in Sources */,
 				4B7948172F81DFC100DA4028 /* TabNavigationInterfaceTests.swift in Sources */,
-				843A52FB2EA8F9170094C215 /* FireDialogHistoryDateDeletionUITests.swift in Sources */,
-				843A52FD2EA8F9170094C215 /* FireDialogHistoryIndividualDeletionUITests.swift in Sources */,
-				843A52FE2EA8F9170094C215 /* FireDialogHistorySitesDeletionUITests.swift in Sources */,
 				EE7F74912BB5D76600CD9456 /* BookmarksBarTests.swift in Sources */,
 				7B0A53D02F78469500F9A0DE /* StalledResourceLoadUITests.swift in Sources */,
 				84E2FC482E0DB058000874F7 /* XCUIElementTypeExtension.swift in Sources */,

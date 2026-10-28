@@ -158,8 +158,8 @@ final class SwipeChromeCrossFade {
                                         incoming: incomingToolbar.restingHorizontalOuterInset)
         capturedInsets = insets
         let blendedInset = insets.outgoing + (insets.incoming - insets.outgoing) * progress
-        outgoingToolbar.setHorizontalOuterInsetOverride(blendedInset)
-        incomingToolbar.setHorizontalOuterInsetOverride(blendedInset)
+        outgoingToolbar.setHorizontalOuterInsetsOverride((left: blendedInset, right: blendedInset))
+        incomingToolbar.setHorizontalOuterInsetsOverride((left: blendedInset, right: blendedInset))
     }
 }
 
@@ -938,7 +938,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         // A copy parked off screen resolves the camera cutout from where it is rather than from where it
         // will land, so its own inset would differ from the live toolbar it hands over to.
         guard #available(iOS 26.0, *) else { return }
-        toolbar.setHorizontalOuterInsetOverride(BrowserToolbarView.floatingStandaloneOuterInsets(in: coordinator.superview).left)
+        let insets = BrowserToolbarView.floatingStandaloneOuterInsets(in: coordinator.superview)
+        toolbar.setHorizontalOuterInsetsOverride((left: insets.left, right: insets.right))
     }
 
     private func makeReadOnlyToolbar(for tab: Tab?) -> BrowserToolbarView {

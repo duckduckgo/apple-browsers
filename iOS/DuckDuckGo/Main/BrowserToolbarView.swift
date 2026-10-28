@@ -350,7 +350,7 @@ final class BrowserToolbarView: UIView {
     /// paints its own backdrop — so in the non-floating style its own background must stay clear.
     private var isLegacyBackgroundTransparent = false
     private var toolbarButtonViews: [UIView] = []
-    private var horizontalOuterInsetOverride: CGFloat?
+    private var horizontalOuterInsetsOverride: (left: CGFloat, right: CGFloat)?
     private(set) var usesCompactStandaloneHeight = false
 
     private var hasEmbeddedOmnibar: Bool {
@@ -621,9 +621,9 @@ final class BrowserToolbarView: UIView {
 
     private func applyHorizontalChromeMetrics() {
         var insets = currentBarOuterInsets
-        if let horizontalOuterInsetOverride {
-            insets.left = horizontalOuterInsetOverride
-            insets.right = horizontalOuterInsetOverride
+        if let horizontalOuterInsetsOverride {
+            insets.left = horizontalOuterInsetsOverride.left
+            insets.right = horizontalOuterInsetsOverride.right
         }
         // `insets` are physical (left/right); these constraints are directional, so mirror in RTL.
         let isRightToLeft = effectiveUserInterfaceLayoutDirection == .rightToLeft
@@ -1284,9 +1284,9 @@ extension BrowserToolbarView {
         currentBarOuterInsets.left
     }
 
-    /// Overrides the glass side inset. Pass nil to return to the resting layout.
-    func setHorizontalOuterInsetOverride(_ inset: CGFloat?) {
-        horizontalOuterInsetOverride = inset
+    /// Overrides the glass's physical left and right insets. Pass nil to return to the resting layout.
+    func setHorizontalOuterInsetsOverride(_ insets: (left: CGFloat, right: CGFloat)?) {
+        horizontalOuterInsetsOverride = insets
         applyHorizontalChromeMetrics()
         layoutIfNeeded()
     }

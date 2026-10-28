@@ -1610,8 +1610,10 @@ extension MainViewController: UnifiedToggleInputDelegate {
 
         // Match omnibar toggle: URL-shaped submissions from non-Duck.ai origin load the URL even when toggle is Duck.ai. Attachments suppress (no sensible URL-load with attachments).
         // On a Duck.ai tab, keep prompt semantics so users can ask the model about a URL by name.
+        // Only web URLs (http/https/duck) divert, same as the toggle's URL detection; other schemes stay prompt text.
         if currentTab?.isAITab != true, tabAttachmentRequest == nil,
            attachments.isEmpty,
+           URL.isValidAddressBarURLInput(prompt.trimmingCharacters(in: .whitespacesAndNewlines)),
            let url = URL(trimmedAddressBarString: prompt, useUnifiedLogic: isUnifiedURLPredictionEnabled),
            url.isValid(usingUnifiedLogic: isUnifiedURLPredictionEnabled) {
             unifiedToggleInputCoordinator?.recordDuckAIPromptInterpretedAsURL()

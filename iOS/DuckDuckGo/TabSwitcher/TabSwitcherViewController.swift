@@ -878,10 +878,20 @@ extension TabSwitcherViewController {
     private func loadRecentChatsMenuSections(_ completion: @escaping ([UIMenuElement]) -> Void) {
         Task { @MainActor in
             let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: recentChatsReader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
+            PixelKit.fire(AIChatTabSwitcherMenuPixel.shown, frequency: .dailyAndCount)
             completion(viewModel.makeMenuSections(style: .compact, actions: .init(
-                newChat: { [weak self] in self?.addNewAIChatTab() },
-                selectChat: { [weak self] in self?.openRecentChat($0) },
-                viewAll: { [weak self] in self?.openAIChatHistory() }
+                newChat: { [weak self] in
+                    PixelKit.fire(AIChatTabSwitcherMenuPixel.newChatSelected, frequency: .dailyAndCount)
+                    self?.addNewAIChatTab()
+                },
+                selectChat: { [weak self] in
+                    PixelKit.fire(AIChatTabSwitcherMenuPixel.recentChatSelected, frequency: .dailyAndCount)
+                    self?.openRecentChat($0)
+                },
+                viewAll: { [weak self] in
+                    PixelKit.fire(AIChatTabSwitcherMenuPixel.viewAllChatsSelected, frequency: .dailyAndCount)
+                    self?.openAIChatHistory()
+                }
             )))
         }
     }
@@ -901,4 +911,15 @@ extension TabSwitcherViewController {
             self.delegate.tabSwitcherDidRequestAIChatHistory(self)
         }
     }
+}
+
+enum AIChatTabSwitcherMenuPixel: String, PixelKit.Event {
+    case shown = "aichat_tab_switcher_menu_shown"
+    case newChatSelected = "aichat_tab_switcher_menu_new_chat_selected"
+    case recentChatSelected = "aichat_tab_switcher_menu_recent_chat_selected"
+    case viewAllChatsSelected = "aichat_tab_switcher_menu_view_all_chats_selected"
+
+    var name: String { rawValue }
+    var parameters: [String: String]? { nil }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

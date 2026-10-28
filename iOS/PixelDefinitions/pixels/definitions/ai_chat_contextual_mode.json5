@@ -181,6 +181,34 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "aichat_menu_source"]
     },
+    "aichat_tab_switcher_menu_shown": {
+        "description": "Fired when the user taps the Duck.ai button in the tab switcher and its recent chats menu opens",
+        "owners": ["jaceklyp"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_tab_switcher_menu_new_chat_selected": {
+        "description": "Fired when the user selects New Chat in the tab switcher's Duck.ai menu",
+        "owners": ["jaceklyp"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_tab_switcher_menu_recent_chat_selected": {
+        "description": "Fired when the user selects one of the recent chats in the tab switcher's Duck.ai menu",
+        "owners": ["jaceklyp"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "aichat_tab_switcher_menu_view_all_chats_selected": {
+        "description": "Fired when the user selects View all chats in the tab switcher's Duck.ai menu",
+        "owners": ["jaceklyp"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
     "aichat_contextual_floating_input_dismissed_without_submission": {
         "description": "Fired when the floating contextual input is closed without the user sending a prompt. The had_unsubmitted_selections parameter says whether text selections were still attached",
         "owners": ["jaceklyp"],

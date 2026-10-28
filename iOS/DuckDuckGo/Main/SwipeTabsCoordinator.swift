@@ -362,7 +362,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         // Include the trailing "new tab" cell so swiping past the last tab works.
-        let extras = tabs.last?.link != nil ? 1 : 0
+        let extras = hasNewTabDestination(after: tabs) ? 1 : 0
         let pageCount = tabs.count + extras
         // A single swipe can only reach an adjacent page, so we only need snapshots for
         // current ± 1. Non-adjacent pages stay nil — the overlay skips view creation for them.
@@ -520,7 +520,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let modifier = (offset > 0 ? -1 : 1)
         let nextIndex = index + modifier
 
-        guard tabsModel.tabs.indices.contains(nextIndex) || tabsModel.tabs.last?.link != nil else {
+        guard tabsModel.tabs.indices.contains(nextIndex) || hasNewTabDestination(after: tabsModel.tabs) else {
             return
         }
 
@@ -652,7 +652,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         let state = inputStateProvider(tab)
         let header = AIChatTabChatHeaderView(
             isFireModeEnabled: true,
-            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar)
+            shouldShowImageGeneration: omnibarDependencies.featureFlagger.isFeatureOn(.aiChatNativeSidebar),
+            layout: AIChatTabChatHeaderView.Layout(featureFlagger: omnibarDependencies.featureFlagger)
         )
         header.isUserInteractionEnabled = false
 
@@ -846,8 +847,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        let hasNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
-        guard tabsModel.tabs.indices.contains(destinationIndex) || hasNewTabDestination else { return }
+        let isNewTabDestination = destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs)
+        guard tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination else { return }
         let currentTab = tabsModel.get(tabAt: currentIndex)
         let destinationTab = tabsModel.get(tabAt: destinationIndex)
         guard currentTab?.isAITab != true, destinationTab?.isAITab != true else { return }
@@ -884,13 +885,18 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         floatingIncomingOmnibarController = nil
     }
 
+    /// Swiping past a last tab with content opens a new tab, unless the swipe should bounce there instead.
+    private func hasNewTabDestination(after tabs: [Tab]) -> Bool {
+        tabs.last?.link != nil && !omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+    }
+
     private func isCrossingChromeBoundary(offset: CGFloat) -> Bool {
         guard let currentIndex = tabsModel.currentIndex,
               let currentTab = tabsModel.get(tabAt: currentIndex) else {
             return false
         }
         let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
-        let isNewTabDestination = destinationIndex == tabsModel.count && tabsModel.tabs.last?.link != nil
+        let isNewTabDestination = destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs)
         guard tabsModel.tabs.indices.contains(destinationIndex) || isNewTabDestination else { return false }
         let destinationTab = tabsModel.get(tabAt: destinationIndex)
         if hasInlineSearchInput(currentTab) != hasInlineSearchInput(destinationTab) {
@@ -1189,7 +1195,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         guard isEnabled, let tabsModel else { return 1 }
-        let extras = tabsModel.tabs.last?.link != nil ? 1 : 0 // last tab is not a home page, so let's add one
+        let extras = hasNewTabDestination(after: tabsModel.tabs) ? 1 : 0
         let count = tabsModel.count + extras
         return count
     }

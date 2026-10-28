@@ -4342,7 +4342,9 @@
 		CC82ABC52F52106400AD9807 /* PromoResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC82ABC42F52106400AD9807 /* PromoResult.swift */; };
 		CC82ABC62F52106400AD9807 /* PromoResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC82ABC42F52106400AD9807 /* PromoResult.swift */; };
 		CC8777092E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
+		F14253694F593C7D54833373 /* FirefoxHistoryVisitsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA43327873327E9F0B2CC56E /* FirefoxHistoryVisitsReader.swift */; };
 		CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */; };
+		644EA1545BAD6AFFC282EAF6 /* FirefoxHistoryVisitsReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA43327873327E9F0B2CC56E /* FirefoxHistoryVisitsReader.swift */; };
 		CC87770C2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CC87770D2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */; };
 		CC8B4BE32F730591000D1884 /* PreferencesVideoSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8B4BE22F730591000D1884 /* PreferencesVideoSheet.swift */; };
@@ -4421,9 +4423,11 @@
 		C957725981F91509282279A3 /* ChromiumHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */; };
 		CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
 		B04D9ECDC9D29516FBE0E5D6 /* ChromiumHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */; };
-		56C08CD1A217B33A40785AF4 /* SafariHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */; };
+		8107133F89E2D3E8CE153889 /* FirefoxHistoryVisitsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8640EB94A9D08A121A3214F /* FirefoxHistoryVisitsReaderTests.swift */; };
 		CCC87D742E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
 		4936CA2C31A4E49D5AAFC5C1 /* ChromiumHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */; };
+		09169F55BEFCA606F82D0BE2 /* FirefoxHistoryVisitsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8640EB94A9D08A121A3214F /* FirefoxHistoryVisitsReaderTests.swift */; };
+		56C08CD1A217B33A40785AF4 /* SafariHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */; };
 		06E7F97DFCA6F1B3670DFD0F /* SafariHistoryReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */; };
 		CCD235FA3052BE170046906B /* MockPromoHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD235F93052BE170046906B /* MockPromoHistoryProvider.swift */; };
 		CCD235FB3052BE170046906B /* MockPromoHistoryProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCD235F93052BE170046906B /* MockPromoHistoryProvider.swift */; };
@@ -7406,6 +7410,7 @@
 		CC82ABC12F52100D00AD9807 /* PromoContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoContext.swift; sourceTree = "<group>"; };
 		CC82ABC42F52106400AD9807 /* PromoResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoResult.swift; sourceTree = "<group>"; };
 		CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReader.swift; sourceTree = "<group>"; };
+		DA43327873327E9F0B2CC56E /* FirefoxHistoryVisitsReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryVisitsReader.swift; sourceTree = "<group>"; };
 		CC87770B2E1FF5CA00113863 /* FirefoxHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryReaderTests.swift; sourceTree = "<group>"; };
 		CC8B4BE22F730591000D1884 /* PreferencesVideoSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesVideoSheet.swift; sourceTree = "<group>"; };
 		CC8E70D22F0EC0A2008C8070 /* NewTabPageNextStepsCardsPersistorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageNextStepsCardsPersistorTests.swift; sourceTree = "<group>"; };
@@ -7444,6 +7449,7 @@
 		00F33F77DBE9F9B7609E7050 /* ChromiumHistoryReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumHistoryReader.swift; sourceTree = "<group>"; };
 		CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumTopSitesReaderTests.swift; sourceTree = "<group>"; };
 		734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumHistoryReaderTests.swift; sourceTree = "<group>"; };
+		C8640EB94A9D08A121A3214F /* FirefoxHistoryVisitsReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxHistoryVisitsReaderTests.swift; sourceTree = "<group>"; };
 		B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariHistoryReaderTests.swift; sourceTree = "<group>"; };
 		CCD235F93052BE170046906B /* MockPromoHistoryProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPromoHistoryProvider.swift; sourceTree = "<group>"; };
 		CCD899FA2ECDCF72008E738B /* MockDefaultBrowserAndDockPromptNotificationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptNotificationPresenter.swift; sourceTree = "<group>"; };
@@ -9898,6 +9904,7 @@
 				4B59024B26B38BB800489384 /* ChromiumLoginReaderTests.swift */,
 				CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */,
 				734A5B94E7FF38122204B77E /* ChromiumHistoryReaderTests.swift */,
+				C8640EB94A9D08A121A3214F /* FirefoxHistoryVisitsReaderTests.swift */,
 				B497B2CDC8BE9E2A0EE7F3E9 /* SafariHistoryReaderTests.swift */,
 				4B723DFF26B0003E00E14D75 /* DataImportMocks.swift */,
 				B6619F022B17123200CD9186 /* DataImportViewModelTests.swift */,
@@ -10077,6 +10084,7 @@
 				4BB99CF526FE191E001E4761 /* FirefoxBookmarksReader.swift */,
 				4B0A63E7289DB58E00378EF7 /* FirefoxFaviconsReader.swift */,
 				CC8777082E1FF39B00113863 /* FirefoxHistoryReader.swift */,
+				DA43327873327E9F0B2CC56E /* FirefoxHistoryVisitsReader.swift */,
 				CCEB617F2E05710A00AEBED4 /* FirefoxPreferences.swift */,
 			);
 			path = Firefox;
@@ -16419,6 +16427,7 @@
 				CC4B39C02ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */,
 				56D60AA82EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */,
 				CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */,
+				644EA1545BAD6AFFC282EAF6 /* FirefoxHistoryVisitsReader.swift in Sources */,
 				1E15F69A2DF0D1590061395E /* AIChatState.swift in Sources */,
 				A1B2C3D42F16000000000001 /* AIChatSession.swift in Sources */,
 				3706FB35293F65D500E42796 /* FlatButton.swift in Sources */,
@@ -17694,6 +17703,7 @@
 				7B1522AE2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				CCC87D742E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */,
 				4936CA2C31A4E49D5AAFC5C1 /* ChromiumHistoryReaderTests.swift in Sources */,
+				09169F55BEFCA606F82D0BE2 /* FirefoxHistoryVisitsReaderTests.swift in Sources */,
 				06E7F97DFCA6F1B3670DFD0F /* SafariHistoryReaderTests.swift in Sources */,
 				567DA94029E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				9FBB0C0A2CBD3B800006B6A6 /* ViewHighlighterTests.swift in Sources */,
@@ -18736,6 +18746,7 @@
 				BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */,
 				37AFCE9227DB8CAD00471A10 /* PreferencesAboutView.swift in Sources */,
 				CC8777092E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */,
+				F14253694F593C7D54833373 /* FirefoxHistoryVisitsReader.swift in Sources */,
 				BB7BA64D2D11FC170020B47E /* TabBarRemoteMessagePresenting.swift in Sources */,
 				4B2F565C2B38F93E001214C0 /* VPNSubscriptionEventsHandler.swift in Sources */,
 				9826B0A02747DF3D0092F683 /* ContentBlocking.swift in Sources */,
@@ -20029,6 +20040,7 @@
 				4B59024C26B38BB800489384 /* ChromiumLoginReaderTests.swift in Sources */,
 				CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */,
 				B04D9ECDC9D29516FBE0E5D6 /* ChromiumHistoryReaderTests.swift in Sources */,
+				8107133F89E2D3E8CE153889 /* FirefoxHistoryVisitsReaderTests.swift in Sources */,
 				56C08CD1A217B33A40785AF4 /* SafariHistoryReaderTests.swift in Sources */,
 				31FBF2312CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */,
 				6A06A7E014E04F60B399531F /* AIChatTabOpenerTests.swift in Sources */,

@@ -26,12 +26,12 @@ struct KeyboardShortcutPixelTests {
 
     @available(iOS 16, macOS 13, *)
     @Test(.timeLimit(.minutes(1)))
-    func fireUsed_firesDailyAndCountWithoutParameters() {
+    func fireUsed_firesDailyWithoutParameters() {
         let pixelFiring = PixelKitMock()
 
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
 
-        #expect(pixelFiring.actualFireCalls == [ExpectedFireCall(pixel: KeyboardShortcutPixel.used, frequency: .dailyAndCount)])
+        #expect(pixelFiring.actualFireCalls == [ExpectedFireCall(pixel: KeyboardShortcutPixel.used, frequency: .daily)])
         #expect(pixelFiring.actualFireCalls.first?.pixel.name == "keyboard-shortcut_used")
         #expect(pixelFiring.actualFireCalls.first?.pixel.parameters == nil)
         #expect(pixelFiring.actualFireCalls.first?.pixel.standardParameters == nil)

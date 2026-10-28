@@ -3,7 +3,7 @@
         "description": "User triggers a keyboard shortcut (e.g. Cmd+T, Cmd+W). Also fires when the same command is chosen from the iPad menu bar.",
         "owners": ["dus7"],
         "triggers": ["user_interaction"],
-        "suffixes": ["daily_count", "platform", "form_factor"],
+        "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

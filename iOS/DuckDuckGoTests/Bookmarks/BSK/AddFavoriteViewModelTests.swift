@@ -23,7 +23,7 @@ import XCTest
 
 @MainActor
 final class AddFavoriteViewModelTests: XCTestCase {
-    func testSchemeLessURLIsPreservedAndBlankNameUsesAddress() {
+    func testSchemeLessURLGetsHTTPSAndBlankNameUsesAddress() {
         let bookmarks = AddFavoriteBookmarksMock()
         let model = AddFavoriteViewModel(bookmarks: bookmarks)
         model.urlText = "  example.com  "
@@ -32,8 +32,26 @@ final class AddFavoriteViewModelTests: XCTestCase {
         XCTAssertTrue(model.canSave)
         XCTAssertTrue(model.save())
         XCTAssertEqual(bookmarks.creations.count, 1)
-        XCTAssertEqual(bookmarks.creations.first?.urlString, "example.com")
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "https://example.com")
         XCTAssertEqual(bookmarks.creations.first?.title, "example.com")
+    }
+
+    func testBareSubdomainAddressGetsHTTPSSoTheFavoriteCanLoad() {
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = "news.sky.com"
+
+        XCTAssertTrue(model.save())
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "https://news.sky.com")
+    }
+
+    func testHTTPSAddressIsSavedAsEntered() {
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = "https://news.sky.com/world?id=1"
+
+        XCTAssertTrue(model.save())
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "https://news.sky.com/world?id=1")
     }
 
     func testExplicitSchemePathAndNameArePreserved() {
@@ -60,8 +78,8 @@ final class AddFavoriteViewModelTests: XCTestCase {
         }
     }
 
-    func testRelativeURLsAndCustomSchemesMatchBookmarkEditor() {
-        for input in ["-11", "hello", "ftp://example.com", "myapp://open/page"] {
+    func testExplicitNonWebSchemesAreSavedAsEntered() {
+        for input in ["ftp://example.com", "myapp://open/page"] {
             let bookmarks = AddFavoriteBookmarksMock()
             let model = AddFavoriteViewModel(bookmarks: bookmarks)
             model.urlText = input
@@ -69,6 +87,18 @@ final class AddFavoriteViewModelTests: XCTestCase {
             XCTAssertTrue(model.canSave, input)
             XCTAssertTrue(model.save(), input)
             XCTAssertEqual(bookmarks.creations.first?.urlString, input)
+        }
+    }
+
+    func testRelativeAddressesWithoutADomainCannotSave() {
+        for input in ["-11", "hello"] {
+            let bookmarks = AddFavoriteBookmarksMock()
+            let model = AddFavoriteViewModel(bookmarks: bookmarks)
+            model.urlText = input
+
+            XCTAssertFalse(model.canSave, input)
+            XCTAssertFalse(model.save(), input)
+            XCTAssertTrue(bookmarks.creations.isEmpty, input)
         }
     }
 
@@ -103,22 +133,37 @@ final class AddFavoriteViewModelTests: XCTestCase {
         XCTAssertTrue(bookmarks.creations.isEmpty)
     }
 
-    func testAddressWithPortIsSavedAsEntered() {
-        let bookmarks = AddFavoriteBookmarksMock()
-        let model = AddFavoriteViewModel(bookmarks: bookmarks)
-        model.urlText = "example.com:8443/page"
+    func testAddressWithPortGetsHTTPS() {
+        for (input, expected) in [("example.com:8443/page", "https://example.com:8443/page"),
+                                  ("localhost:8080", "https://localhost:8080")] {
+            let bookmarks = AddFavoriteBookmarksMock()
+            let model = AddFavoriteViewModel(bookmarks: bookmarks)
+            model.urlText = input
 
-        XCTAssertTrue(model.save())
-        XCTAssertEqual(bookmarks.creations.first?.urlString, "example.com:8443/page")
+            XCTAssertTrue(model.canSave, input)
+            XCTAssertTrue(model.save(), input)
+            XCTAssertEqual(bookmarks.creations.first?.urlString, expected)
+        }
     }
 
-    func testInternationalDomainIsSavedAsEntered() {
+    func testExplicitHTTPIsSavedAsEntered() {
         let bookmarks = AddFavoriteBookmarksMock()
         let model = AddFavoriteViewModel(bookmarks: bookmarks)
-        model.urlText = "https://例子.测试/page"
+        model.urlText = "http://example.com:8080/page"
 
         XCTAssertTrue(model.save())
-        XCTAssertEqual(bookmarks.creations.first?.urlString, "https://例子.测试/page")
+        XCTAssertEqual(bookmarks.creations.first?.urlString, "http://example.com:8080/page")
+    }
+
+    func testInternationalDomainKeepsItsHost() {
+        let input = "https://例子.测试/page"
+        let bookmarks = AddFavoriteBookmarksMock()
+        let model = AddFavoriteViewModel(bookmarks: bookmarks)
+        model.urlText = input
+
+        XCTAssertTrue(model.save())
+        let savedURLString = bookmarks.creations.first?.urlString ?? ""
+        XCTAssertEqual(URL(string: savedURLString)?.host, URL(string: input)?.host)
     }
 
     func testSaveCallbackRunsAfterEachSuccessfulSave() {

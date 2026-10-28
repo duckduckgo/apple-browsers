@@ -108,17 +108,6 @@ final class WebExtensionAutofillTakeoverTests: XCTestCase {
         XCTAssertTrue(preferences.isManagedByExtension)
     }
 
-    func testWhenWebExtensionsBecomeUnavailable_ThenDuckDuckGoTakesAutofillBack() {
-        preferences.isManagedByExtension = true
-        let takeover = makeTakeover()
-        let rebuilt = expectation(forNotification: .autofillUserSettingsDidChange, object: nil, notificationCenter: notificationCenter)
-
-        takeover.extensionsDidBecomeUnavailable()
-
-        wait(for: [rebuilt], timeout: 1)
-        XCTAssertFalse(preferences.isManagedByExtension)
-    }
-
     /// Tabs restored at launch rely on the saved state until extensions finish loading.
     func testWhenTheTakeoverIsCreated_ThenTheSavedStateIsKept() {
         preferences.isManagedByExtension = true

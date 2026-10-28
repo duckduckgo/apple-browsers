@@ -62,6 +62,11 @@ final class HistoryDebugMenu: NSMenu {
                 target: self
             ).withAccessibilityIdentifier("HistoryDebugMenu.importFromChrome")
             NSMenuItem(
+                title: "Import from Firefox",
+                action: #selector(importFromFirefox),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromFirefox")
+            NSMenuItem(
                 title: "Import from Safari…",
                 action: #selector(importFromSafari),
                 target: self
@@ -97,6 +102,24 @@ final class HistoryDebugMenu: NSMenu {
                                             historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
         importHistory(with: importer, browserName: "Chrome")
+    }
+
+    /// Imports the last month of history from Firefox's default profile through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromFirefox(_ sender: NSMenuItem) {
+        guard let profile = ThirdPartyBrowser.firefox.browserProfiles().defaultProfile else {
+            showAlert(title: "Firefox History Import Failed", message: "No Firefox profile found")
+            return
+        }
+
+        let importer = FirefoxDataImporter(profile: profile,
+                                           primaryPassword: nil,
+                                           loginImporter: SecureVaultLoginImporter(),
+                                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                           faviconManager: NSApp.delegateTyped.faviconManager,
+                                           historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
+                                           historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
+        importHistory(with: importer, browserName: "Firefox")
     }
 
     /// Imports the last month of history from a Safari "Export Browsing Data" archive through the importer the data import flow uses.

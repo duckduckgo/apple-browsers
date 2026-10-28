@@ -15,6 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+import DDGNavigation
 import PixelKit
 import WebKit
 
@@ -59,7 +60,7 @@ final class DuckPlayerOverlayUsagePixels: NSObject, DuckPlayerOverlayPixelFiring
             return
         }
 
-        let backItemURL = webView.backForwardList.backItem?.url
+        let backItemURL = webView.backForwardList.backItem?.safeURL
 
         if lastVisitedURL != nil {
             // Back navigation

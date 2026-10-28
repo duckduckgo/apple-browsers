@@ -182,7 +182,11 @@ final class SafariArchiveImporterTests: XCTestCase {
     }
 
     func testWhenArchiveContainsHistoryOfEachProfileThenAllOfItIsImported() async throws {
-        let zipURL = try createZipArchive(files: ["History.json": historyJSON, "Work - History.json": historyJSON])
+        let zipURL = try createZipArchive(files: [
+            "History.json": historyJSON,
+            "Work - History.json": historyJSON,
+            "__MACOSX/._History.json": appleDoubleData
+        ])
         let parseResult = HistoryImport.ParseResult(visits: [HistoryImport.Visit(url: URL(string: "https://duckduckgo.com")!, title: nil, date: Date())], skipped: 1)
         let historyImporter = MockHistoryImporter()
         historyImporter.summary = .init(imported: 2, alreadyInHistory: 1)
@@ -199,12 +203,13 @@ final class SafariArchiveImporterTests: XCTestCase {
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
     }
 
-    func testWhenArchiveHasNoHistoryFileThenSourceFileMissingPixelIsFired() async throws {
-        let zipURL = try createZipArchive(files: ["Bookmarks.html": "<!DOCTYPE NETSCAPE-Bookmark-file-1>"])
+    func testWhenArchiveHasHistoryFileInUnknownFormatThenSourceFileMissingPixelIsFired() async throws {
+        let unknownHistoryJSON = historyJSON.replacingOccurrences(of: "\"data_type\": \"history\"", with: "\"data_type\": \"browsing_history\"")
+        let zipURL = try createZipArchive(files: ["passwords.csv": "title,url,username,password\nExample,duck.com,user,pass", "History.json": unknownHistoryJSON])
         let pixelKit = PixelKitMock()
         let importer = makeImporter(fileURL: zipURL, pixelFiring: pixelKit)
 
-        _ = await importer.importData(types: [.history]).task.value
+        _ = await importer.importData(types: [.passwords]).task.value
 
         XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["dataimport_history_source-file-missing_macos"])
         XCTAssertEqual(pixelKit.actualFireCalls.first?.pixel.parameters?["source"], "safari")
@@ -271,6 +276,11 @@ final class SafariArchiveImporterTests: XCTestCase {
             "history": [{ "url": "https://duckduckgo.com", "time_usec": 1793118145000000 }]
         }
         """
+    }
+
+    /// The start of an AppleDouble `._` file: valid UTF-8, but not JSON.
+    private var appleDoubleData: Data {
+        Data([0x00, 0x05, 0x16, 0x07, 0x00, 0x02, 0x00, 0x00]) + Data("Mac OS X        ".utf8)
     }
 
     private func createZipArchive(files: [String: Any]) throws -> URL {

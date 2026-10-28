@@ -108,7 +108,7 @@ final class SafariArchiveImporter: DataImporter {
     ///   - faviconManager: The favicon manager for handling favicons
     ///   - historyReader: The reader used to parse the archive's History.json
     ///   - historyImporter: The importer that adds the parsed visits to history
-    ///   - pixelFiring: Fires the pixel that reports an export without a history file
+    ///   - pixelFiring: Fires the pixel that reports a history file the archive reader can't recognise
     ///   - featureFlagger: Feature flagger for controlling import behavior
     ///   - secureVaultReporter: Reporter for secure vault operations
     ///   - tld: TLD helper for URL processing
@@ -249,8 +249,8 @@ final class SafariArchiveImporter: DataImporter {
             return finalSummary
         }
 
-        if types.contains(.history), contents.history.isEmpty {
-            fireHistorySourceFileMissingPixelIfNeeded()
+        if contents.unrecognizedHistoryFileCount > 0 {
+            fireHistorySourceFileMissingPixel()
         }
 
         guard contents.hasData(for: types) else {
@@ -468,10 +468,8 @@ final class SafariArchiveImporter: DataImporter {
         return [.history: historyResult]
     }
 
-    /// The archive could be read, but it has no history file the archive reader recognises.
-    private func fireHistorySourceFileMissingPixelIfNeeded() {
-        guard sourceFileType == .archive else { return }
-
+    /// The archive has a file that looks like Safari history, but not one the archive reader can read.
+    private func fireHistorySourceFileMissingPixel() {
         let pixel = DataImportHistoryPixel.sourceFileMissing(source: DataImport.Source.safari.pixelSourceParameterName, sourceVersion: nil)
         pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }

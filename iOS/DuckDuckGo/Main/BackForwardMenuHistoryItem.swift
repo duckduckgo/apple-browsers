@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DDGNavigation
 import Foundation
 import WebKit
 
@@ -25,19 +26,16 @@ struct BackForwardMenuHistoryItem {
     var title: String {
         backForwardItem.title ?? ""
     }
-    
-    var url: URL {
-        backForwardItem.initialURL
-    }
-    
+
     var sanitizedURLForDisplay: String {
-        BackForwardMenuHistoryItemURLSanitizer.sanitizedURLForDisplay(backForwardItem.initialURL)
+        BackForwardMenuHistoryItemURLSanitizer.sanitizedURLForDisplay(backForwardItem.safeInitialURL ?? backForwardItem.safeURL)
     }
 }
 
 struct BackForwardMenuHistoryItemURLSanitizer {
-    
-    static func sanitizedURLForDisplay(_ url: URL) -> String {
+
+    static func sanitizedURLForDisplay(_ url: URL?) -> String {
+        guard let url else { return "" }
         guard let punyURL = URL(trimmedAddressBarString: url.absoluteString),
               let components = URLComponents(string: punyURL.absoluteString) else {
             return "\(url)"

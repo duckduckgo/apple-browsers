@@ -27,7 +27,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
     func testSettingsEntryVisible_whenFullyEnabled() throws {
         try skipIfUnsupported()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": true
         ])
         app.openPreferencesWindow()
@@ -36,23 +35,9 @@ final class YouTubeAdBlockingUITests: UITestCase {
                       "YouTube Ad Blocking sidebar entry should be visible when fully enabled")
     }
 
-    func testSettingsEntryHidden_whenWebExtensionsOff() throws {
-        try skipIfUnsupported()
-        app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": false
-        ])
-        app.openPreferencesWindow()
-        let generalButton = app.buttons[XCUIApplication.AccessibilityIdentifiers.preferencesGeneralButton]
-        XCTAssertTrue(generalButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-                      "Preferences sidebar did not load")
-        XCTAssertFalse(app.buttons[sidebarButtonIdentifier].exists,
-                       "YouTube Ad Blocking sidebar entry should be hidden when webExtensions is off")
-    }
-
     func testSettingsEntryVisibleWithContingencyMessage_whenRemotelyDisabled() throws {
         try skipIfUnsupported()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": false
         ])
         app.openPreferencesWindow()
@@ -72,7 +57,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
 
         try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": true,
             "adBlockingExtensionEnabledByDefault": true
         ])
@@ -84,7 +68,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
         app.terminate()
         try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": true,
             "adBlockingExtensionEnabledByDefault": false
         ])
@@ -102,7 +85,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
         try skipIfUnsupported()
         try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": true,
             "adBlockingExtensionEnabledByDefault": true
         ])
@@ -121,7 +103,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
     func testYouTubeAdBlockButtonShowsContingencyMessage_whenRemotelyDisabled() throws {
         try skipIfUnsupported()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": false
         ])
         app.enforceSingleWindow()
@@ -140,7 +121,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
     func testYouTubeAdBlockButtonAbsent_onNonYouTubeURL_whenEnabled() throws {
         try skipIfUnsupported()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": true
         ])
         app.enforceSingleWindow()
@@ -160,7 +140,6 @@ final class YouTubeAdBlockingUITests: UITestCase {
         try skipIfUnsupported()
         try clearYouTubeAdBlockingEnabledDefault()
         app = XCUIApplication.setUp(featureFlags: [
-            "webExtensions": true,
             "adBlockingExtension": true,
             "adBlockingExtensionEnabledByDefault": true
         ])

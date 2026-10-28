@@ -51,6 +51,17 @@
                 "description": "Whether the landing surface appeared with the address bar focused."
             },
             {
+                "key": "feature.data.ext.toggle_enabled",
+                "type": "boolean",
+                "description": "Whether the Search/Duck.ai toggle setting is on at the start of the session."
+            },
+            {
+                "key": "feature.data.ext.toggle_position",
+                "type": "string",
+                "description": "The side the Search/Duck.ai toggle shows the first time it is on screen on arrival. Absent while the toggle stays hidden.",
+                "enum": ["search", "duck_ai"]
+            },
+            {
                 "key": "feature.data.ext.time_away_ms_bucketed",
                 "type": "string",
                 "description": "Time in the background before this return, bucketed (lower end of bucket, in ms)",

@@ -201,7 +201,10 @@ extension DataImport {
                 if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
-            case .creditCards, .history:
+            case .history:
+                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                return profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
+            case .creditCards:
                 return false
             }
         }

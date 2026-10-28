@@ -24,6 +24,10 @@ import XCTest
 
 class BackForwardMenuHistoryItemURLSanitizerTests: XCTestCase {
 
+    func testNilURLReturnsEmptyString() {
+        XCTAssertEqual(BackForwardMenuHistoryItemURLSanitizer.sanitizedURLForDisplay(nil), "")
+    }
+
     func testURLWithoutWWW() {
         let base = URL(string: "duck.com")!
         let expected = "duck.com"

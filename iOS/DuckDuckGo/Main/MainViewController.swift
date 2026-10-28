@@ -1249,6 +1249,9 @@ class MainViewController: UIViewController {
                                                             return false
                                                         }
                                                         return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
+                                                    },
+                                                    usesMinimalChromeForWebPages: { [weak self] in
+                                                        self?.usesMinimalChromeForWebPages() ?? false
                                                     }) { [weak self] tab in
 
             guard let self else { return }
@@ -2623,6 +2626,7 @@ class MainViewController: UIViewController {
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
+        updateCompactToolbarForNewTabPage()
 
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
@@ -2756,6 +2760,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        updateCompactToolbarForNewTabPage()
         isAddressBarHandOffInProgress = false
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
@@ -3773,12 +3778,25 @@ class MainViewController: UIViewController {
         // The redesigned NTP hides the resting address bar. Keep the normal toolbar rather than
         // moving its controls into the hidden minimal-chrome bar, for either floating UI setting.
         guard newTabPageViewController?.hasInlineSearchInput != true else { return false }
-        let size = size ?? view.bounds.size
-        return MinimalChromeModeDecision.isActive(
-            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),
+        return minimalChromeDecision(isAITab: currentTab?.isAITab ?? false, size: size ?? view.bounds.size)
+    }
+
+    /// Whether a web page tab would use minimal chrome at `size`, even while the NTP keeps its regular chrome.
+    private func usesMinimalChromeForWebPages(in size: CGSize? = nil) -> Bool {
+        minimalChromeDecision(isAITab: false, size: size ?? view.bounds.size)
+    }
+
+    private func minimalChromeDecision(isAITab: Bool, size: CGSize) -> Bool {
+        MinimalChromeModeDecision.isActive(
+            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: isAITab),
             isPad: AppWidthObserver.shared.isPad,
             isLandscape: size.width > size.height
         )
+    }
+
+    private func updateCompactToolbarForNewTabPage(for size: CGSize? = nil) {
+        let isCompact = newTabPageViewController?.hasInlineSearchInput == true && usesMinimalChromeForWebPages(in: size)
+        viewCoordinator.setCompactStandaloneToolbar(isCompact)
     }
 
     private var isApplyingWidth = false
@@ -3799,6 +3817,7 @@ class MainViewController: UIViewController {
         }
         closeContextualSidebarIfItNoLongerFits()
 
+        updateCompactToolbarForNewTabPage(for: size)
         updateNewTabPageLayoutForCurrentChromeMode()
 
         DispatchQueue.main.async {

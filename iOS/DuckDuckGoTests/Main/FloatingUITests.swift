@@ -2742,6 +2742,92 @@ final class LiveTabSwipePolicyTests: XCTestCase {
     }
 }
 
+final class SwipeChromeTransitionPolicyTests: XCTestCase {
+
+    private func transition(currentHasInlineSearchInput: Bool,
+                            destinationHasInlineSearchInput: Bool,
+                            currentIsAITab: Bool = false,
+                            destinationIsAITab: Bool = false,
+                            usesMinimalChromeForWebPages: Bool = false) -> SwipeChromeTransition {
+        SwipeChromeTransitionPolicy.transition(currentHasInlineSearchInput: currentHasInlineSearchInput,
+                                               destinationHasInlineSearchInput: destinationHasInlineSearchInput,
+                                               currentIsAITab: currentIsAITab,
+                                               destinationIsAITab: destinationIsAITab,
+                                               usesMinimalChromeForWebPages: usesMinimalChromeForWebPages)
+    }
+
+    func testWhenSwipingFromNewTabPageToWebPageThenChromeCrossFadesLeavingNewTabPage() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true, destinationHasInlineSearchInput: false),
+                       .crossFade(leavingNewTabPage: true))
+    }
+
+    func testWhenSwipingFromWebPageToNewTabPageThenChromeCrossFadesEnteringNewTabPage() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false, destinationHasInlineSearchInput: true),
+                       .crossFade(leavingNewTabPage: false))
+    }
+
+    func testWhenBothTabsHaveTheSameChromeThenChromeSlides() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false, destinationHasInlineSearchInput: false), .slide)
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true, destinationHasInlineSearchInput: true), .slide)
+    }
+
+    func testWhenWebPagesUseMinimalChromeThenChromeSlides() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true,
+                                  destinationHasInlineSearchInput: false,
+                                  usesMinimalChromeForWebPages: true), .slide)
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false,
+                                  destinationHasInlineSearchInput: true,
+                                  usesMinimalChromeForWebPages: true), .slide)
+    }
+
+    func testWhenEitherTabIsAITabThenChromeSlides() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false,
+                                  destinationHasInlineSearchInput: true,
+                                  currentIsAITab: true), .slide)
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true,
+                                  destinationHasInlineSearchInput: false,
+                                  destinationIsAITab: true), .slide)
+    }
+}
+
+final class LiveDestinationParkingTests: XCTestCase {
+
+    private let landingInsets = UIEdgeInsets(top: 0, left: 59, bottom: 21, right: 0)
+    private let original = UIEdgeInsets(top: 4, left: 1, bottom: 2, right: 3)
+
+    func testWhenPageIsAtItsLandingPositionThenOriginalInsetsAreKept() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: 0, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, original)
+    }
+
+    func testWhenPageIsShiftedRightThenLeftInsetMakesUpTheCutoutItMovedPast() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: 20, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 4, left: 21, bottom: 2, right: 3))
+    }
+
+    func testWhenPageIsShiftedPastTheCutoutThenLeftInsetIsCappedAtTheLandingInset() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: 400, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 4, left: 60, bottom: 2, right: 3))
+    }
+
+    func testWhenPageIsShiftedLeftThenRightInsetMakesUpOnlyTheRightLandingInset() {
+        let rightCutout = UIEdgeInsets(top: 0, left: 0, bottom: 21, right: 59)
+
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: -30, landingInsets: rightCutout)
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 4, left: 1, bottom: 2, right: 33))
+    }
+
+    func testWhenPageIsShiftedTowardsAnEdgeWithoutCutoutThenInsetsAreUnchanged() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: -30, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, original)
+    }
+}
+
 final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
 
     private let bounds = CGRect(x: 0, y: 0, width: 300, height: 60)

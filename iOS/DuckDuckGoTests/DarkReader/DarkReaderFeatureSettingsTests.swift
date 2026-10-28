@@ -61,7 +61,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     @available(iOS 18.4, *)
     func testIsFeatureEnabled_WhenFlagIsOn_ReturnsTrue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
 
         XCTAssertTrue(sut.isFeatureEnabled)
@@ -76,7 +76,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     @available(iOS 18.4, *)
     func testIsFeatureEnabled_WhenFlagIsOnButThemeIsLight_ReturnsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         mockAppSettings.currentThemeStyle = .light
         sut = makeSUT()
 
@@ -85,7 +85,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     @available(iOS 18.4, *)
     func testIsForceDarkModeEnabled_WhenThemeIsLight_ReturnsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         mockAppSettings.currentThemeStyle = .light
         sut = makeSUT()
         sut.setForceDarkModeEnabled(true)
@@ -97,7 +97,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     @available(iOS 18.4, *)
     func testThemeDidChange_EmitsOnForceDarkModeChangedPublisher() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
         sut.setForceDarkModeEnabled(true)
 
@@ -126,7 +126,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
     }
 
     func testIsForceDarkModeEnabled_WhenFlagOnAndStoredFalse_ReturnsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
         sut.setForceDarkModeEnabled(false)
 
@@ -134,7 +134,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
     }
 
     func testIsForceDarkModeEnabled_WhenFlagOnAndStoredTrue_ReturnsTrue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
         sut.setForceDarkModeEnabled(true)
 
@@ -142,7 +142,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
     }
 
     func testIsForceDarkModeEnabled_WhenFlagOnAndNothingStored_ReturnsFalse() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
 
         XCTAssertFalse(sut.isForceDarkModeEnabled)
@@ -160,7 +160,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     @available(iOS 18.4, *)
     func testSetForceDarkModeEnabled_PersistsValue() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
 
         sut.setForceDarkModeEnabled(true)
@@ -174,7 +174,7 @@ class DarkReaderFeatureSettingsTests: XCTestCase {
 
     @available(iOS 18.4, *)
     func testForceDarkModeChangedPublisher_EmitsValueOnChange() {
-        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites, .webExtensions]
+        mockFeatureFlagger.enabledFeatureFlags = [.forceDarkModeOnWebsites]
         sut = makeSUT()
         var receivedValues: [Bool] = []
         let cancellable = sut.forceDarkModeChangedPublisher

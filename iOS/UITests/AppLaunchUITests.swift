@@ -59,11 +59,14 @@ final class AppLaunchUITests: XCTestCase {
 
         let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
         XCTAssertTrue(menuButton.waitForExistence(timeout: UITestTimeouts.navigation))
+        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
+        if dismissInput.waitForExistence(timeout: 3) {
+            dismissInput.tap()
+        }
         menuButton.tap()
         let newTab = app.buttons["New Tab"]
         XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
         newTab.tap()
-        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
         XCTAssertTrue(dismissInput.waitForExistence(timeout: UITestTimeouts.navigation))
         dismissInput.tap()
 
@@ -101,41 +104,23 @@ final class AppLaunchUITests: XCTestCase {
     }
 
     func testSwipeToDeleteDebugVariantsAndLongText() {
-        let menu = app.buttons["Browser.Toolbar.Button.Menu"]
-        XCTAssertTrue(menu.waitForExistence(timeout: UITestTimeouts.navigation))
+        openSlideToDeleteDebugScreen()
         let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
-        if dismissInput.exists {
-            dismissInput.tap()
-        }
-        menu.tap()
-        let settings = app.buttons["Settings"]
-        XCTAssertTrue(settings.waitForExistence(timeout: UITestTimeouts.navigation))
-        settings.tap()
-        let debugOptions = app.buttons["All debug options"]
-        for _ in 0..<8 where !debugOptions.isHittable {
-            app.swipeUp()
-        }
-        XCTAssertTrue(debugOptions.isHittable)
-        debugOptions.tap()
-        let filter = app.searchFields["Filter"]
-        XCTAssertTrue(filter.waitForExistence(timeout: UITestTimeouts.navigation))
-        filter.tap()
-        filter.typeText("Slide to Delete")
-        let screen = app.buttons["Slide to Delete"].firstMatch
-        XCTAssertTrue(screen.waitForExistence(timeout: UITestTimeouts.navigation))
-        screen.tap()
 
         let slider = app.buttons["SlideToDelete.Debug.Preview"]
         XCTAssertTrue(slider.waitForExistence(timeout: UITestTimeouts.navigation))
+        scrollDebugControlIntoView(app.switches["SlideToDelete.Debug.DoubleLength"])
         app.switches["SlideToDelete.Debug.DoubleLength"]
             .coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
         XCTAssertTrue(slider.wait(for: \.label, equals: "Slide To Delete All Slide To Delete All"))
         for variant in ["Basic", "Flame Burst", "Fire Sweep", "Shimmer"] {
             XCTContext.runActivity(named: variant) { _ in
+                scrollDebugControlIntoView(app.buttons[variant], abovePreview: true)
                 app.buttons[variant].tap()
+                scrollDebugControlIntoView(slider)
                 let start = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
                 let middle = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-                start.press(forDuration: 0.2, thenDragTo: middle, withVelocity: .slow, thenHoldForDuration: 0.5)
+                start.press(forDuration: 0.6, thenDragTo: middle, withVelocity: .slow, thenHoldForDuration: 0.5)
                 XCTAssertFalse(app.staticTexts["Slide completed. No data deleted."].exists)
                 let end = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5))
                 start.press(forDuration: 0.2, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.8)
@@ -144,19 +129,23 @@ final class AppLaunchUITests: XCTestCase {
                 screenshot.name = "\(variant) with double-length text"
                 screenshot.lifetime = .keepAlways
                 add(screenshot)
+                XCTAssertEqual(app.staticTexts["SlideToDelete.Debug.TouchDiagnostics"].label, "Touch requests: 2")
                 if variant == "Shimmer" {
                     XCTAssertTrue(app.staticTexts["SlideToDelete.Debug.Diagnostics"]
                         .wait(for: \.label, equals: "Haptic requests: 1 · Label reveals: 1"))
                 }
+                scrollDebugControlIntoView(app.buttons["Reset Preview"])
                 app.buttons["Reset Preview"].tap()
                 XCTAssertTrue(slider.isEnabled)
             }
         }
 
         let diagnostics = app.staticTexts["SlideToDelete.Debug.Diagnostics"]
+        scrollDebugControlIntoView(app.buttons["SlideToDelete.Debug.TestHaptic"])
         app.buttons["SlideToDelete.Debug.TestHaptic"].tap()
         XCTAssertTrue(diagnostics.wait(for: \.label, equals: "Haptic requests: 1 · Label reveals: 0"))
         app.buttons["Reset Preview"].tap()
+        scrollDebugControlIntoView(slider)
         let fastStart = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
         let fastEnd = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5))
         fastStart.press(forDuration: 0.05, thenDragTo: fastEnd, withVelocity: .fast, thenHoldForDuration: 0)
@@ -197,6 +186,92 @@ final class AppLaunchUITests: XCTestCase {
                    withVelocity: .slow,
                    thenHoldForDuration: 0.8)
         XCTAssertTrue(deleteAll.waitForNonExistence(timeout: UITestTimeouts.navigation))
+    }
+
+    func testSwipeToDeleteStylesAndAvailability() {
+        openSlideToDeleteDebugScreen()
+        let original = app.buttons["SlideToDelete.Debug.Style.original"]
+        let glass = app.buttons["SlideToDelete.Debug.Style.glass"]
+        XCTAssertTrue(original.isEnabled)
+        if #available(iOS 26.0, *) {
+            XCTAssertTrue(glass.isEnabled)
+            XCTAssertTrue(glass.isSelected)
+        } else {
+            XCTAssertFalse(glass.isEnabled)
+            XCTAssertTrue(original.isSelected)
+            XCTAssertEqual(app.staticTexts["SlideToDelete.Debug.StyleAvailability"].label,
+                           "Liquid Glass requires iOS 26 or later. Original is used on this device.")
+        }
+        let availability = XCTAttachment(screenshot: app.screenshot())
+        availability.name = "Slider styles and OS availability"
+        availability.lifetime = .keepAlways
+        add(availability)
+
+        let styles = glass.isEnabled ? [("Original", original), ("Glass", glass)] : [("Original", original)]
+        for (name, option) in styles {
+            XCTContext.runActivity(named: "Slider style: \(name)") { _ in
+                scrollDebugControlIntoView(option, abovePreview: true)
+                option.tap()
+                XCTAssertTrue(option.isSelected)
+                let slider = app.buttons["SlideToDelete.Debug.Preview"]
+                scrollDebugControlIntoView(slider)
+                let start = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
+                start.press(forDuration: 0.8,
+                            thenDragTo: slider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)),
+                            withVelocity: .slow, thenHoldForDuration: 0.6)
+                XCTAssertFalse(app.staticTexts["Slide completed. No data deleted."].exists)
+                start.press(forDuration: 0.2,
+                            thenDragTo: slider.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)),
+                            withVelocity: .slow, thenHoldForDuration: 0.8)
+                XCTAssertTrue(app.staticTexts["Slide completed. No data deleted."].waitForExistence(timeout: UITestTimeouts.navigation))
+                XCTAssertEqual(app.staticTexts["SlideToDelete.Debug.TouchDiagnostics"].label, "Touch requests: 2")
+            }
+        }
+    }
+
+    private func openSlideToDeleteDebugScreen() {
+        let menu = app.buttons["Browser.Toolbar.Button.Menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: UITestTimeouts.navigation))
+        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
+        if dismissInput.waitForExistence(timeout: 3) {
+            dismissInput.tap()
+        }
+        menu.tap()
+        let settings = app.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: UITestTimeouts.navigation))
+        settings.tap()
+        let debugOptions = app.buttons["All debug options"]
+        for _ in 0..<8 where !debugOptions.isHittable {
+            app.swipeUp()
+        }
+        XCTAssertTrue(debugOptions.isHittable)
+        debugOptions.tap()
+        let filter = app.searchFields["Filter"]
+        let screen = app.buttons["Slide to Delete"].firstMatch
+        if filter.waitForExistence(timeout: 3) {
+            filter.tap()
+            filter.typeText("Slide to Delete")
+        } else {
+            for _ in 0..<12 where !screen.isHittable {
+                app.swipeUp()
+            }
+        }
+        XCTAssertTrue(screen.waitForExistence(timeout: UITestTimeouts.navigation))
+        screen.tap()
+    }
+
+    private func scrollDebugControlIntoView(_ element: XCUIElement, abovePreview: Bool = false) {
+        for _ in 0..<6 {
+            if element.isHittable && element.frame.minY > 125 && element.frame.maxY < app.frame.maxY - 80 {
+                return
+            }
+            if element.exists ? element.frame.minY <= 125 : abovePreview {
+                app.swipeDown()
+            } else {
+                app.swipeUp()
+            }
+        }
+        XCTAssertTrue(element.isHittable)
     }
 
     private func navigateToBlankPage() {

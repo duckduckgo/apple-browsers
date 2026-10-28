@@ -768,6 +768,30 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(feedback.impact())
     }
 
+    func testSlideTouchFeedbackFiresOncePerTouchAndRearmsAfterRelease() {
+        let feedback = SlideToDeleteFeedback()
+        let view = UIView()
+        feedback.attach(to: view)
+        XCTAssertTrue(feedback.beginTouch())
+        XCTAssertFalse(feedback.beginTouch())
+        feedback.endTouch()
+        XCTAssertTrue(feedback.beginTouch())
+        XCTAssertFalse(feedback.beginTouch())
+        feedback.endTouch()
+    }
+
+    func testSlideStyleDefaultsToGlassOnlyWhenAvailable() {
+        XCTAssertEqual(SlideToDeleteStyle.defaultValue(isGlassAvailable: true), .glass)
+        XCTAssertEqual(SlideToDeleteStyle.defaultValue(isGlassAvailable: false), .original)
+    }
+
+    func testSlideStyleHonorsOriginalAndFallsBackForUnsupportedGlass() {
+        XCTAssertEqual(SlideToDeleteStyle.original.resolved(isGlassAvailable: true), .original)
+        XCTAssertEqual(SlideToDeleteStyle.original.resolved(isGlassAvailable: false), .original)
+        XCTAssertEqual(SlideToDeleteStyle.glass.resolved(isGlassAvailable: true), .glass)
+        XCTAssertEqual(SlideToDeleteStyle.glass.resolved(isGlassAvailable: false), .original)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(tabViewModel: TabViewModel?,

@@ -76,6 +76,31 @@ struct SlideToDeleteState {
     }
 }
 
+enum SlideToDeleteStyle: String, CaseIterable, Identifiable {
+    static let preferenceKey = "slideToDeleteStyle"
+
+    case original
+    case glass
+
+    var id: String { rawValue }
+    var title: String { self == .original ? "Original" : "Glass" }
+
+    static var isGlassAvailable: Bool {
+        if #available(iOS 26.0, *) { return true }
+        return false
+    }
+
+    static var defaultValue: Self { defaultValue(isGlassAvailable: isGlassAvailable) }
+
+    static func defaultValue(isGlassAvailable: Bool) -> Self {
+        isGlassAvailable ? .glass : .original
+    }
+
+    func resolved(isGlassAvailable: Bool) -> Self {
+        self == .glass && !isGlassAvailable ? .original : self
+    }
+}
+
 enum SlideToDeleteVariant: String, CaseIterable, Identifiable {
     static let preferenceKey = "slideToDeleteVariant"
 
@@ -99,20 +124,29 @@ enum SlideToDeleteVariant: String, CaseIterable, Identifiable {
 struct SlideToDeleteControl: View {
     let title: String
     var variant: SlideToDeleteVariant = .basic
+    var style: SlideToDeleteStyle = .defaultValue
     var onHapticRequest: () -> Void = { }
+    var onTouchHapticRequest: () -> Void = { }
     var onCompletionLabelReveal: () -> Void = { }
     let action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.layoutDirection) private var layoutDirection
-    @GestureState(resetTransaction: Transaction(animation: .spring(response: 0.3, dampingFraction: 0.8))) private var translation: CGFloat = 0
-    @GestureState private var isDragging = false
+    @GestureState private var gestureIsActive = false
+    @State private var translation: CGFloat = 0
+    @State private var isDragging = false
+    @State private var isThumbExpanded = false
+    @State private var hasSlid = false
+    @State private var returnID = 0
     @State private var state = SlideToDeleteState()
     @StateObject private var feedback = SlideToDeleteFeedback()
 
     private let minimumHeight: CGFloat = 50
     private let handleInset: CGFloat = 4
+    private var effectiveStyle: SlideToDeleteStyle { style.resolved(isGlassAvailable: SlideToDeleteStyle.isGlassAvailable) }
     private var direction: CGFloat { layoutDirection == .rightToLeft ? -1 : 1 }
     private var completionHoldID: Int? {
         variant == .shimmer && isDragging && state.isAtCompletionThreshold && !state.isComplete ? state.thresholdEntryCount : nil
@@ -139,78 +173,9 @@ struct SlideToDeleteControl: View {
             }
             .overlay {
                 GeometryReader { geometry in
-                    let inset = isDragging || state.isComplete ? 0 : handleInset
-                    let diameter = max(geometry.size.height - inset * 2, 0)
-                    let travel = max(geometry.size.width - geometry.size.height, 0)
-                    let progress = state.isComplete ? 1 : state.progress(translation: translation, travel: travel)
-                    let offset = progress * travel
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(fillColor(progress: progress))
-                            .frame(width: diameter + offset, height: diameter)
-                            .overlay {
-                                if variant == .shimmer {
-                                    LinearGradient(colors: [Color(designSystemColor: .destructivePrimary), Color(singleUseColor: .fireModeAccent)],
-                                                   startPoint: .leading, endPoint: .trailing)
-                                        .opacity(min(max((progress - 0.35) / 0.45, 0), 1))
-                                }
-                            }
-                            .overlay {
-                                SlideToDeleteCompletionEffect(variant: variant,
-                                                              isActive: progress >= SlideToDeleteState.completionThreshold,
-                                                              showCompletionLabel: isDragging && state.shouldShowCompletionLabel)
-                            }
-                            .overlay {
-                                Capsule()
-                                    .strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5)
-                            }
-                            .overlay {
-                                Capsule()
-                                    .inset(by: 0.5)
-                                    .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: 1)
-                                    .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center))
-                            }
-                            .clipShape(Capsule())
-                            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 3, y: 2)
-                            .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 1, y: 1)
-                            .allowsHitTesting(false)
-                        Image(uiImage: layoutDirection == .rightToLeft
-                              ? DesignSystemImages.Glyphs.Size24.chevronLeftSmall
-                              : DesignSystemImages.Glyphs.Size24.chevronRightSmall)
-                            .foregroundColor(Color(designSystemColor: colorScheme == .dark || progress > 0
-                                                   ? .destructiveContentPrimary : .destructivePrimary))
-                            .opacity(progress >= SlideToDeleteState.completionThreshold ? 0 : 1)
-                            .frame(width: diameter, height: diameter)
-                            .contentShape(Capsule())
-                            .offset(x: direction * offset)
-                            .gesture(
-                                DragGesture(minimumDistance: 0)
-                                    .updating($translation) { value, translation, _ in
-                                        translation = direction * value.translation.width
-                                    }
-                                    .updating($isDragging) { _, isDragging, _ in
-                                        isDragging = true
-                                    }
-                                    .onChanged { value in
-                                        if state.updateDrag(translation: direction * value.translation.width, travel: travel) {
-                                            requestHaptic()
-                                        }
-                                    }
-                                    .onEnded { value in
-                                        withAnimation(nil) {
-                                            if state.endDrag(translation: direction * value.translation.width, travel: travel) {
-                                                requestHaptic()
-                                            }
-                                        }
-                                    }
-                            )
-                    }
-                    .frame(width: geometry.size.width - inset * 2, height: diameter, alignment: .leading)
-                    .padding(inset)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isDragging)
+                    slider(size: geometry.size)
                 }
             }
-            .clipShape(Capsule())
             .dynamicTypeSize(...DynamicTypeSize.accessibility3)
             .background(SlideToDeleteFeedbackView(feedback: feedback))
             .accessibilityElement(children: .ignore)
@@ -246,13 +211,139 @@ struct SlideToDeleteControl: View {
                     }
                 }
             }
-            .onChange(of: isDragging) { isDragging in
-                if isDragging {
-                    feedback.prepare()
-                } else {
-                    state.resetDrag()
+            .task(id: returnID) {
+                guard !isDragging, !state.isComplete else { return }
+                if !reduceMotion {
+                    do {
+                        try await Task.sleep(nanoseconds: 160_000_000)
+                    } catch {
+                        return
+                    }
+                }
+                guard !Task.isCancelled else { return }
+                hasSlid = false
+                withAnimation(reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 0.8)) {
+                    isThumbExpanded = false
                 }
             }
+            .onChange(of: gestureIsActive) { active in
+                if !active && isDragging { cancelDrag() }
+            }
+            .onChange(of: scenePhase) { phase in
+                if phase != .active { cancelDrag() }
+            }
+            .onAppear { feedback.prepare() }
+            .onDisappear { cancelDrag() }
+    }
+
+    private func slider(size: CGSize) -> some View {
+        let inset = isThumbExpanded || state.isComplete ? 0 : handleInset
+        let diameter = max(size.height - inset * 2, 0)
+        let travel = max(size.width - size.height, 0)
+        let progress = state.isComplete ? 1 : state.progress(translation: translation, travel: travel)
+        let offset = progress * travel
+        let isOriginal = effectiveStyle == .original
+        let showsCompletion = progress >= SlideToDeleteState.completionThreshold
+        return ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Color(designSystemColor: isOriginal && colorScheme != .dark && !hasSlid && !state.isComplete
+                            ? .controlsRaisedFillPrimary : .destructivePrimary))
+                .frame(width: isOriginal ? diameter + offset : size.width - inset * 2, height: diameter)
+                .overlay {
+                    if variant == .shimmer {
+                        LinearGradient(colors: [Color(designSystemColor: .destructivePrimary), Color(singleUseColor: .fireModeAccent)],
+                                       startPoint: .leading, endPoint: .trailing)
+                            .opacity(isOriginal ? min(max((progress - 0.35) / 0.45, 0), 1) : 1)
+                    }
+                }
+                .overlay {
+                    SlideToDeleteCompletionEffect(variant: variant,
+                                                  isActive: showsCompletion,
+                                                  showCompletionLabel: isDragging && state.shouldShowCompletionLabel)
+                }
+                .overlay {
+                    if isOriginal {
+                        Capsule().strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5)
+                    }
+                }
+                .overlay {
+                    if isOriginal {
+                        Capsule().inset(by: 0.5)
+                            .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: 1)
+                            .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center))
+                    }
+                }
+                .clipShape(Capsule())
+                .shadow(color: Color(designSystemColor: .shadowSecondary).opacity(isOriginal ? 1 : 0), radius: 3, y: 2)
+                .shadow(color: Color(designSystemColor: .shadowPrimary).opacity(isOriginal ? 1 : 0), radius: 1, y: 1)
+                .opacity(isOriginal || (showsCompletion && variant != .basic) ? 1 : 0)
+                .allowsHitTesting(false)
+            thumb(diameter: diameter)
+                .contentShape(Capsule())
+                .opacity(state.isComplete || (isOriginal && showsCompletion) ? 0 : 1)
+                .offset(x: direction * offset)
+                .gesture(dragGesture(travel: travel))
+        }
+        .frame(width: size.width - inset * 2, height: diameter, alignment: .leading)
+        .padding(inset)
+        .animation(reduceMotion || isDragging ? nil : .easeOut(duration: 0.16), value: translation)
+    }
+
+    @ViewBuilder private func thumb(diameter: CGFloat) -> some View {
+        let label = Image(uiImage: layoutDirection == .rightToLeft
+                          ? DesignSystemImages.Glyphs.Size24.chevronLeftSmall
+                          : DesignSystemImages.Glyphs.Size24.chevronRightSmall)
+            .foregroundColor(Color(designSystemColor: effectiveStyle == .glass ? .textPrimary
+                                   : colorScheme == .dark || hasSlid ? .destructiveContentPrimary : .destructivePrimary))
+            .frame(width: diameter, height: diameter)
+        if effectiveStyle == .original {
+            label
+        } else if #available(iOS 26.0, *), !reduceTransparency {
+            label.glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            label
+                .background(Color(designSystemColor: .controlsRaisedFillPrimary), in: Capsule())
+                .overlay { Capsule().strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5) }
+                .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 3, y: 2)
+                .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 1, y: 1)
+        }
+    }
+
+    private func dragGesture(travel: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .updating($gestureIsActive) { _, active, _ in active = true }
+            .onChanged { value in
+                guard !state.isComplete else { return }
+                if !isDragging {
+                    isDragging = true
+                    returnID += 1
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 0.75)) {
+                        isThumbExpanded = true
+                    }
+                    if feedback.beginTouch() { onTouchHapticRequest() }
+                }
+                translation = direction * value.translation.width
+                let progress = state.progress(translation: translation, travel: travel)
+                if progress > 0 { hasSlid = true }
+                if state.updateDrag(translation: translation, travel: travel) { requestHaptic() }
+            }
+            .onEnded { value in
+                feedback.endTouch()
+                if state.endDrag(translation: direction * value.translation.width, travel: travel) { requestHaptic() }
+                isDragging = false
+                returnID += 1
+                if !state.isComplete {
+                    translation = 0
+                }
+            }
+    }
+
+    private func cancelDrag() {
+        feedback.endTouch()
+        isDragging = false
+        returnID += 1
+        state.resetDrag()
+        translation = 0
     }
 
     private func requestHaptic() {
@@ -261,44 +352,4 @@ struct SlideToDeleteControl: View {
         }
     }
 
-    private func fillColor(progress: CGFloat) -> Color {
-        Color(designSystemColor: colorScheme == .dark || progress > 0 ? .destructivePrimary : .controlsRaisedFillPrimary)
-    }
-}
-
-@MainActor
-final class SlideToDeleteFeedback: ObservableObject {
-    private var generator: UIImpactFeedbackGenerator?
-
-    func attach(to view: UIView) {
-        if #available(iOS 17.5, *) {
-            generator = UIImpactFeedbackGenerator(style: .medium, view: view)
-        } else {
-            generator = UIImpactFeedbackGenerator(style: .medium)
-        }
-    }
-
-    func prepare() {
-        generator?.prepare()
-    }
-
-    @discardableResult
-    func impact() -> Bool {
-        guard let generator else { return false }
-        generator.impactOccurred()
-        return true
-    }
-}
-
-struct SlideToDeleteFeedbackView: UIViewRepresentable {
-    let feedback: SlideToDeleteFeedback
-
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.isAccessibilityElement = false
-        feedback.attach(to: view)
-        return view
-    }
-
-    func updateUIView(_ uiView: UIView, context: Context) { }
 }

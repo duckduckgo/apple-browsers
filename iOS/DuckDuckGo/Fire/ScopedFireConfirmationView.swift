@@ -30,6 +30,7 @@ struct ScopedFireConfirmationView: View {
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
     @AppStorage(SlideToDeleteVariant.preferenceKey) private var slideVariant = SlideToDeleteVariant.basic
+    @AppStorage(SlideToDeleteStyle.preferenceKey) private var slideStyle = SlideToDeleteStyle.defaultValue
 
     /// Presenting context's size class; the built-in one reports `.compact` inside a popover even on a wide iPad.
     @Environment(\.presentationHorizontalSizeClass) private var presentationSizeClass
@@ -100,7 +101,7 @@ struct ScopedFireConfirmationView: View {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
                 if button.style == .slide {
-                    SlideToDeleteControl(title: button.title, variant: slideVariant, action: button.action)
+                    SlideToDeleteControl(title: button.title, variant: slideVariant, style: slideStyle, action: button.action)
                         .accessibilityIdentifier(button.accessibilityIdentifier)
                 } else {
                     Button(action: button.action) {

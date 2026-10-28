@@ -18,6 +18,7 @@
 
 import Foundation
 import History
+@_spi(Testing) import PixelKit
 import SharedTestUtilities
 import XCTest
 
@@ -83,6 +84,46 @@ class FirefoxDataImporterTests: XCTestCase {
         XCTAssertEqual(historyImporter.importedParseResults, [parseResult])
     }
 
+    @MainActor
+    func testWhenHistoryCantBeRead_AndProfileHasNoPlacesDatabase_ThenSourceFileMissingPixelIsFired() async throws {
+        let pixelKit = PixelKitMock()
+        let importer = makeImporter(profileURL: try makeProfile(files: ["logins.json"]),
+                                    historyReader: MockFirefoxHistoryVisitsReader(result: .failure(historyReadError)),
+                                    pixelFiring: pixelKit)
+
+        _ = await importer.importData(types: [.history])
+
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["dataimport_history_source-file-missing_macos"])
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.pixel.parameters?["source"], "firefox")
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
+    }
+
+    @MainActor
+    func testWhenHistoryCantBeRead_AndProfileHasPlacesDatabase_ThenSourceFileMissingPixelIsNotFired() async throws {
+        let pixelKit = PixelKitMock()
+        let importer = makeImporter(profileURL: try makeProfile(files: ["logins.json", "places.sqlite"]),
+                                    historyReader: MockFirefoxHistoryVisitsReader(result: .failure(historyReadError)),
+                                    pixelFiring: pixelKit)
+
+        _ = await importer.importData(types: [.history])
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    private var historyReadError: FirefoxHistoryVisitsReader.ImportError {
+        FirefoxHistoryVisitsReader.ImportError(type: .copyTemporaryFile, underlyingError: nil)
+    }
+
+    private func makeProfile(files: [String]) throws -> URL {
+        let profileURL = missingProfileURL
+        try FileManager.default.createDirectory(at: profileURL, withIntermediateDirectories: true)
+        for file in files {
+            FileManager.default.createFile(atPath: profileURL.appendingPathComponent(file).path, contents: Data())
+        }
+        addTeardownBlock { try? FileManager.default.removeItem(at: profileURL) }
+        return profileURL
+    }
+
     private var missingProfileURL: URL {
         FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     }
@@ -93,7 +134,8 @@ class FirefoxDataImporterTests: XCTestCase {
         bookmarkImporter: BookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 0, duplicates: 0, failed: 0) }),
         faviconManager: FaviconManagement = FaviconManagerMock(),
         historyReader: FirefoxHistoryVisitsReaderProtocol = MockFirefoxHistoryVisitsReader(),
-        historyImporter: HistoryImporterProtocol = MockHistoryImporter()
+        historyImporter: HistoryImporterProtocol = MockHistoryImporter(),
+        pixelFiring: PixelFiring? = nil
     ) -> FirefoxDataImporter {
         FirefoxDataImporter(profile: .init(browser: .firefox, profileURL: profileURL),
                             primaryPassword: nil,
@@ -101,7 +143,8 @@ class FirefoxDataImporterTests: XCTestCase {
                             bookmarkImporter: bookmarkImporter,
                             faviconManager: faviconManager,
                             historyReader: historyReader,
-                            historyImporter: historyImporter)
+                            historyImporter: historyImporter,
+                            pixelFiring: pixelFiring)
     }
 
     private func visit(url: String) -> HistoryImport.Visit {

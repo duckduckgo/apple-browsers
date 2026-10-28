@@ -245,9 +245,7 @@ extension URL {
     // MARK: ATB
 
     static var devMode: String {
-        let testParameter = BuildFlags.isProductionBuild ? "" : "?test=1"
-        Logger.atb.notice("🧪 ATB request mode: \(testParameter.isEmpty ? "production (no test parameter)" : "test (test=1)", privacy: .public)")
-        return testParameter
+        BuildFlags.isProductionBuild ? "" : "?test=1"
     }
 
     static let atb = "\(Self.duckDuckGo)atb.js\(devMode)"

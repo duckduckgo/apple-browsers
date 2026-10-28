@@ -273,8 +273,12 @@ class AIChatOmnibarTests: UITestCase {
         app.typeKey(.return, modifierFlags: [])
 
         let selectedTab = app.windows.firstMatch.tabs.element(matching: \.isSelected, equalTo: true)
+        // Remote config picks the Duck.ai URL, so accept any the app treats as Duck.ai: duck.ai, or duckduckgo.com with ia=chat
         let showsDuckAI = NSPredicate { element, _ in
-            (element as? XCUIElement)?.url.flatMap(URL.init(string:))?.host == "duck.ai"
+            guard let url = (element as? XCUIElement)?.url.flatMap(URLComponents.init(string:)), let host = url.host else { return false }
+            let isDuckDuckGoChat = (host == "duckduckgo.com" || host.hasSuffix(".duckduckgo.com"))
+                && url.queryItems?.contains { $0.name == "ia" && $0.value == "chat" } == true
+            return host == "duck.ai" || isDuckDuckGoChat
         }
         XCTAssertTrue(selectedTab.wait(for: showsDuckAI, timeout: UITests.Timeouts.navigation),
                       "Submitting in Duck.ai mode should open duck.ai (current URL: \(selectedTab.url ?? "<nil>"))")

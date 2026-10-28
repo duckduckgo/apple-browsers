@@ -167,11 +167,12 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
 
     func testInvalidRefreshTokenRecoveredPixel() {
         let handler = SubscriptionPixelHandler(source: subscriptionSource, pixelKit: pixelKit)
-        handler.handle(pixel: .invalidRefreshTokenRecovered)
+        handler.handle(pixel: .invalidRefreshTokenRecovered(.backup))
 
         assertDailyAndCountPixel(
-            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered.name,
+            baseName: SubscriptionPixel.subscriptionInvalidRefreshTokenRecovered(.backup).name,
             expectedParameters: [
+                "recovery_method": "backup",
                 PixelKit.Parameters.pixelSource: pixelSource,
                 PixelKit.Parameters.appVersion: "1.0.0"
             ]
@@ -284,6 +285,7 @@ final class SubscriptionPixelHandlerTests: XCTestCase {
     private func makeAutomaticSignOutPixelData() -> SubscriptionAutomaticSignOutPixelData {
         SubscriptionAutomaticSignOutPixelData(
             recoveryOutcome: .failed,
+            backupOutcome: .rejected,
             tokenCachePolicy: .localValid,
             entitlementStateBefore: .present,
             accessTokenTimeRemainingBefore: .expired,

@@ -320,38 +320,14 @@ final class AIChatContextualSheetViewController: UIViewController {
     /// Sections are fetched when the menu opens rather than on the tap.
     private func buildNativeChatsMenuElements(_ completion: @escaping ([UIMenuElement]) -> Void) {
         Task { @MainActor in
-            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader)
-            let openDuckAI = UIAction(title: UserText.duckAiContextualOpenDuckAi,
-                                      image: DesignSystemImages.Glyphs.Size16.aiChat) { [weak self] _ in
-                self?.recentChatsMenuDidSelectOpenDuckAI()
-            }
-            var sections: [UIMenuElement] = [UIMenu(options: .displayInline, children: [openDuckAI])]
-
-            if sessionState.hasActiveChat {
-                let newChat = UIAction(title: UserText.actionNewAIChat,
-                                       image: DesignSystemImages.Glyphs.Size16.compose) { [weak self] _ in
-                    self?.recentChatsMenuDidSelectNewChat()
-                }
-                sections.append(UIMenu(options: .displayInline, children: [newChat]))
-            }
-
-            let chats = (viewModel?.suggestions ?? []).map { suggestion in
-                UIAction(title: suggestion.title,
-                         image: suggestion.isPinned ? DesignSystemImages.Glyphs.Size16.pin : DesignSystemImages.Glyphs.Size16.chat) { [weak self] _ in
-                    self?.recentChatsMenuDidSelectChat(suggestion)
-                }
-            }
-            if !chats.isEmpty {
-                sections.append(UIMenu(title: UserText.aiChatRecentChatsSectionTitle,
-                                       options: .displayInline,
-                                       children: chats))
-            }
-
-            let viewAll = UIAction(title: UserText.aiChatViewAllChats,
-                                   image: DesignSystemImages.Glyphs.Size16.openIn) { [weak self] _ in
-                self?.recentChatsMenuDidSelectViewAll()
-            }
-            sections.append(UIMenu(options: .displayInline, children: [viewAll]))
+            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: suggestionsReader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
+            let sections = viewModel.makeMenuSections(
+                style: .contextual(showsNewChat: sessionState.hasActiveChat),
+                actions: .init(openDuckAI: { [weak self] in self?.recentChatsMenuDidSelectOpenDuckAI() },
+                               newChat: { [weak self] in self?.recentChatsMenuDidSelectNewChat() },
+                               selectChat: { [weak self] in self?.recentChatsMenuDidSelectChat($0) },
+                               viewAll: { [weak self] in self?.recentChatsMenuDidSelectViewAll() })
+            )
             completion(menuOpensUpward ? sections.reversed().map(Self.reversingChildren) : sections)
         }
     }

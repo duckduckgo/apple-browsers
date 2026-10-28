@@ -121,6 +121,8 @@ class TabSwitcherViewController: UIViewController {
 
     weak var delegate: TabSwitcherDelegate!
     weak var previewsSource: TabPreviewsSource!
+    /// Backs the Duck.ai button's recent chats menu; `nil` keeps the button opening a new chat.
+    var recentChatsReader: AIChatSuggestionsReading?
 
     var selectedTabs: [IndexPath] {
         activePageController.selectedIndexPaths
@@ -289,6 +291,7 @@ class TabSwitcherViewController: UIViewController {
         chrome.install(in: view, contentView: pagingScrollView)
         chrome.actions = makeChromeActions()
         chrome.configurePlusButtonLongPressMenu(isFireModeEnabled: fireModeCapability.isFireModeEnabled)
+        chrome.configureDuckChatMenu(makeRecentChatsMenu())
 
         setupModeToggle()
 
@@ -855,6 +858,47 @@ extension BrowsingMode {
                 text: nil,
                 selectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs),
                 unselectedImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.fireTabs))
+        }
+    }
+}
+
+// MARK: - Recent chats menu
+
+extension TabSwitcherViewController {
+
+    func makeRecentChatsMenu() -> UIMenu? {
+        guard recentChatsReader != nil else { return nil }
+        return UIMenu(children: [
+            UIDeferredMenuElement.uncached { [weak self] completion in
+                self?.loadRecentChatsMenuSections(completion) ?? completion([])
+            }
+        ])
+    }
+
+    private func loadRecentChatsMenuSections(_ completion: @escaping ([UIMenuElement]) -> Void) {
+        Task { @MainActor in
+            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: recentChatsReader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
+            completion(viewModel.makeMenuSections(style: .compact, actions: .init(
+                newChat: { [weak self] in self?.addNewAIChatTab() },
+                selectChat: { [weak self] in self?.openRecentChat($0) },
+                viewAll: { [weak self] in self?.openAIChatHistory() }
+            )))
+        }
+    }
+
+    private func openRecentChat(_ chat: AIChatSuggestion) {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        dismissIfPossible(forceDismissOnEmpty: true)
+        delegate.tabSwitcher(self, didRequestAIChat: chat.chatId)
+    }
+
+    private func openAIChatHistory() {
+        guard !isProcessingUpdates else { return }
+        canUpdateCollection = false
+        dismiss(animated: true) { [weak self] in
+            guard let self else { return }
+            self.delegate.tabSwitcherDidRequestAIChatHistory(self)
         }
     }
 }

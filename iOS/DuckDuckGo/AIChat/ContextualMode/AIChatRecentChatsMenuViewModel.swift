@@ -18,7 +18,9 @@
 //
 
 import AIChat
+import DesignResourcesKitIcons
 import Foundation
+import UIKit
 
 /// Backs the chats menu: the recent chats to offer, capped.
 @MainActor
@@ -53,5 +55,63 @@ extension AIChatRecentChatsMenuViewModel {
         let result = await reader.fetchSuggestions(query: nil, maxChats: maxVisibleChats + 1)
         let all = result.pinned + result.recent
         return AIChatRecentChatsMenuViewModel(suggestions: Array(all.prefix(maxVisibleChats)))
+    }
+}
+
+// MARK: - Menu
+
+extension AIChatRecentChatsMenuViewModel {
+
+    enum MenuStyle {
+        /// Contextual sheet: Open Duck.ai, New Chat while a chat is active, and a titled Recent Chats section.
+        case contextual(showsNewChat: Bool)
+        /// Tab switcher: New Chat, then the chats without a section title.
+        case compact
+    }
+
+    struct MenuActions {
+        var openDuckAI: () -> Void = {}
+        let newChat: () -> Void
+        let selectChat: (AIChatSuggestion) -> Void
+        let viewAll: () -> Void
+    }
+
+    /// Sections in top-down order.
+    func makeMenuSections(style: MenuStyle, actions: MenuActions) -> [UIMenuElement] {
+        var sections = Self.leadingSections(style: style, actions: actions)
+        if let chats = makeChatsSection(style: style, actions: actions) {
+            sections.append(chats)
+        }
+        let viewAll = UIAction(title: UserText.aiChatViewAllChats, image: DesignSystemImages.Glyphs.Size16.openIn) { _ in actions.viewAll() }
+        sections.append(UIMenu(options: .displayInline, children: [viewAll]))
+        return sections
+    }
+
+    private static func leadingSections(style: MenuStyle, actions: MenuActions) -> [UIMenuElement] {
+        let newChat = UIAction(title: UserText.actionNewAIChat, image: DesignSystemImages.Glyphs.Size16.compose) { _ in actions.newChat() }
+        switch style {
+        case .contextual(let showsNewChat):
+            let openDuckAI = UIAction(title: UserText.duckAiContextualOpenDuckAi, image: DesignSystemImages.Glyphs.Size16.aiChat) { _ in actions.openDuckAI() }
+            let openDuckAISection = UIMenu(options: .displayInline, children: [openDuckAI])
+            return showsNewChat ? [openDuckAISection, UIMenu(options: .displayInline, children: [newChat])] : [openDuckAISection]
+        case .compact:
+            return [UIMenu(options: .displayInline, children: [newChat])]
+        }
+    }
+
+    private func makeChatsSection(style: MenuStyle, actions: MenuActions) -> UIMenu? {
+        guard !suggestions.isEmpty else { return nil }
+        let chats = suggestions.map { suggestion in
+            UIAction(title: suggestion.title,
+                     image: suggestion.isPinned ? DesignSystemImages.Glyphs.Size16.pin : DesignSystemImages.Glyphs.Size16.chat) { _ in
+                actions.selectChat(suggestion)
+            }
+        }
+        switch style {
+        case .contextual:
+            return UIMenu(title: UserText.aiChatRecentChatsSectionTitle, options: .displayInline, children: chats)
+        case .compact:
+            return UIMenu(options: .displayInline, children: chats)
+        }
     }
 }

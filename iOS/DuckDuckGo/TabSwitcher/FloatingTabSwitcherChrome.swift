@@ -289,6 +289,14 @@ final class FloatingTabSwitcherChrome: TabSwitcherChrome {
         ))
     }
 
+    func configureDuckChatMenu(_ menu: UIMenu?) {
+        duckChatItem.menu = menu
+        duckChatItem.primaryAction = menu == nil ? UIAction { [weak self] _ in self?.actions.onDuckChatTapped?() } : nil
+        if #available(iOS 16.0, *) {
+            duckChatItem.preferredMenuElementOrder = .fixed
+        }
+    }
+
     func decorate(theme: Theme) {
         let tint = UIColor(singleUseColor: .toolbarButton)
         navigationBar.tintColor = tint

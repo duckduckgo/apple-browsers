@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -76,6 +77,50 @@ final class AIChatRecentChatsMenuViewModelTests: XCTestCase {
     }
 
     // MARK: - Action Tests
+
+    // MARK: - Menu Tests
+
+    func testCompactMenuListsNewChatThenChatsThenViewAll() {
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: makeSuggestions(count: 2))
+
+        let sections = vm.makeMenuSections(style: .compact, actions: noopActions)
+
+        XCTAssertEqual(titles(of: sections), [[UserText.actionNewAIChat], ["Chat 0", "Chat 1"], [UserText.aiChatViewAllChats]])
+        XCTAssertEqual((sections as? [UIMenu])?.map(\.title), ["", "", ""])
+    }
+
+    func testCompactMenuWithoutChatsListsNewChatAndViewAll() {
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: [])
+
+        let sections = vm.makeMenuSections(style: .compact, actions: noopActions)
+
+        XCTAssertEqual(titles(of: sections), [[UserText.actionNewAIChat], [UserText.aiChatViewAllChats]])
+    }
+
+    func testContextualMenuKeepsOpenDuckAIAndTitledRecentChats() {
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: makeSuggestions(count: 1))
+
+        let sections = vm.makeMenuSections(style: .contextual(showsNewChat: true), actions: noopActions)
+
+        XCTAssertEqual(titles(of: sections), [[UserText.duckAiContextualOpenDuckAi], [UserText.actionNewAIChat], ["Chat 0"], [UserText.aiChatViewAllChats]])
+        XCTAssertEqual((sections as? [UIMenu])?[2].title, UserText.aiChatRecentChatsSectionTitle)
+    }
+
+    func testContextualMenuOmitsNewChatWithoutActiveChat() {
+        let vm = AIChatRecentChatsMenuViewModel(suggestions: [])
+
+        let sections = vm.makeMenuSections(style: .contextual(showsNewChat: false), actions: noopActions)
+
+        XCTAssertEqual(titles(of: sections), [[UserText.duckAiContextualOpenDuckAi], [UserText.aiChatViewAllChats]])
+    }
+
+    private var noopActions: AIChatRecentChatsMenuViewModel.MenuActions {
+        .init(newChat: {}, selectChat: { _ in }, viewAll: {})
+    }
+
+    private func titles(of sections: [UIMenuElement]) -> [[String]] {
+        sections.map { (($0 as? UIMenu)?.children ?? []).map(\.title) }
+    }
 
     // MARK: - fetch() Tests
 

@@ -31,6 +31,8 @@ import os.log
 import DataBrokerProtection_iOS
 import VPN
 import PixelKit
+import AIChat
+import FeatureFlags_iOS
 
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
@@ -289,6 +291,7 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.recentChatsReader = makeTabSwitcherRecentChatsReader()
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -772,4 +775,17 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 
 extension NSNotification.Name {
     static let settingsDidDisappear: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.settings.didDisappear")
+}
+
+extension MainViewController {
+
+    /// Fire mode lists Fire chats only.
+    func makeTabSwitcherRecentChatsReader() -> AIChatSuggestionsReading? {
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), aiChatSettings.isAIChatEnabled else { return nil }
+        return AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: tabManager.currentBrowsingMode == .fire,
+                                                             nativeStorageHandler: duckAiNativeStorageHandler,
+                                                             fireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                             featureFlagger: featureFlagger,
+                                                             privacyConfig: privacyConfigurationManager)
+    }
 }

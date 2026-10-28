@@ -258,7 +258,20 @@ struct AccountManager: AccountManaging {
                 throw AuditLogError.missingRequiredAfterCursor
             }
         }
-        return response.auditLog
+        let pageKeyProvider = accountInfoKeys.map { PageScopedAccountInfoKeys(manager: $0) }
+        let pagePasswordRecoveryCache = ThirdPartyPasswordRecoveryCache()
+        let decoder = AuditLogEntryDecoder(accountInfoKeys: pageKeyProvider,
+                                           deviceMapper: registeredDeviceMapper,
+                                           thirdPartyPasswordRecoveryCache: pagePasswordRecoveryCache)
+        var entries = [AuditLogEntryDecodingResult]()
+        entries.reserveCapacity(response.auditLog.entries.count)
+        // Validate third-party passwords against each event's snapshots separately.
+        // Process events sequentially because they share mutable page caches.
+        for entry in response.auditLog.entries {
+            try Task.checkCancellation()
+            entries.append(try await decoder.decode(entry, for: account))
+        }
+        return AuditLogPage(entries: entries, after: response.auditLog.after, before: response.auditLog.before)
     }
 
     func updateDevice(_ update: UpdateDevices.Update, for account: SyncAccount) async throws -> [RegisteredDevice] {
@@ -517,8 +530,8 @@ struct AccountManager: AccountManaging {
         var devices: DeviceWrapper?
     }
 
-    struct FetchAuditLogResult: Decodable {
-        let auditLog: AuditLogPage
+    private struct FetchAuditLogResult: Decodable {
+        let auditLog: AuditLogResponsePage
     }
 }
 
@@ -548,8 +561,14 @@ enum AuditLogError: DDGError {
     }
 }
 
-struct AuditLogPage: Decodable {
+private struct AuditLogResponsePage: Decodable {
     let entries: [AuditLogEntry]
+    let after: String?
+    let before: String?
+}
+
+struct AuditLogPage {
+    let entries: [AuditLogEntryDecodingResult]
     let after: String?
     let before: String?
 }

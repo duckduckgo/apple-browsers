@@ -20,6 +20,8 @@
 import UIKit
 
 struct MainMenuBuilder {
+    var bookmarkChildren: (String?) -> [MainMenuBookmarkEntry] = { _ in [] }
+
     func build(_ spec: MainMenuSpec, with builder: UIMenuBuilder) {
         guard builder.system == .main else { return }
         for identifier in spec.removedMenus {
@@ -27,6 +29,10 @@ struct MainMenuBuilder {
         }
         for menu in spec.menus {
             let elements = makeElements(for: menu)
+            if case .insertBefore(let sibling) = menu.placement {
+                builder.insertSibling(UIMenu(title: menu.title, identifier: menu.identifier, children: elements), beforeMenu: sibling)
+                continue
+            }
             builder.replaceChildren(ofMenu: menu.identifier) { existing in
                 let retained = menu.identifier == .window && spec.ownsKeyCommands ? removingCloseShortcut(from: existing) : existing
                 if menu.identifier == .edit, spec.ownsKeyCommands {
@@ -34,15 +40,33 @@ struct MainMenuBuilder {
                     let updated = replacingFind(in: retained, with: elements[0], replaced: &replacedFind)
                     return updated + (replacedFind ? Array(elements.dropFirst()) : elements)
                 }
-                return menu.placement == .appendChildren ? retained + elements : elements
+                if case .appendChildren = menu.placement { return retained + elements }
+                return elements
             }
         }
     }
 
     private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
-        menu.items.map(makeCommand) + menu.submenus.map { submenu in
+        let deferred: [UIMenuElement] = menu.loadsBookmarks ? [makeBookmarkFolder()] : []
+        return menu.items.map(makeCommand) + deferred + menu.submenus.map { submenu in
             UIMenu(title: submenu.title, identifier: submenu.identifier,
                    options: submenu.inline ? .displayInline : [], children: makeElements(for: submenu))
+        }
+    }
+
+    func makeBookmarkFolder(id: String? = nil) -> UIDeferredMenuElement {
+        UIDeferredMenuElement.uncached { completion in
+            DispatchQueue.main.async {
+                let elements: [UIMenuElement] = bookmarkChildren(id).map { entry in
+                    switch entry {
+                    case .bookmark(let bookmark):
+                        return makeCommand(for: .init(command: .openBookmark, title: bookmark.title, shortcut: nil, url: bookmark.url))
+                    case .folder(let title, let folderID):
+                        return UIMenu(title: title, children: [makeBookmarkFolder(id: folderID)])
+                    }
+                }
+                completion(elements)
+            }
         }
     }
 
@@ -72,12 +96,17 @@ struct MainMenuBuilder {
         }
     }
 
+    private func favicon(for item: MainMenuSpec.Item) -> UIImage? {
+        guard let url = item.url else { return nil }
+        return FaviconsHelper.loadFaviconSync(forDomain: url.host, usingCache: .fireproof, useFakeFavicon: true).image
+    }
+
     func makeCommand(for item: MainMenuSpec.Item) -> UICommand {
         guard let shortcut = item.shortcut else {
-            return UICommand(title: item.title, action: item.command.action)
+            return UICommand(title: item.title, image: favicon(for: item), action: item.command.action, propertyList: item.url?.absoluteString)
         }
-        let propertyList: [String: Any] = ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
-        let command = UIKeyCommand(title: item.title, action: item.command.action,
+        let propertyList: Any = item.url?.absoluteString as Any? ?? ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
+        let command = UIKeyCommand(title: item.title, image: favicon(for: item), action: item.command.action,
                                    input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
         command.wantsPriorityOverSystemBehavior = true
         return command
@@ -87,6 +116,12 @@ struct MainMenuBuilder {
 extension MainMenuCommand {
     var action: Selector {
         switch self {
+        case .showBookmarks: return #selector(MainViewController.menuToggleBookmarks)
+        case .addBookmark: return #selector(MainViewController.keyboardAddBookmark)
+        case .addFavorite: return #selector(MainViewController.keyboardAddFavorite)
+        case .importBookmarks: return #selector(MainViewController.menuImportBookmarks)
+        case .exportBookmarks: return #selector(MainViewController.menuExportBookmarks)
+        case .openBookmark: return #selector(MainViewController.menuOpenBookmark(_:))
         case .settings: return #selector(MainViewController.keyboardSettings)
         case .newTab: return #selector(MainViewController.keyboardNewTab)
         case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)

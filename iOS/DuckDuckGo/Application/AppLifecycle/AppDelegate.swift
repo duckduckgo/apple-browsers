@@ -20,18 +20,23 @@
 import UIKit
 import Common
 import PrivacyConfig
+import Persistence
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
     private var mainMenuController: MainMenuController?
+    private var mainMenuBookmarks: MainMenuBookmarks?
 
     func configureMainMenu(featureFlagger: FeatureFlagger, voiceSearchHelper: VoiceSearchHelperProtocol,
-                           fireModeCapability: FireModeCapable) {
+                           fireModeCapability: FireModeCapable, bookmarksDatabase: CoreDataDatabase, appSettings: AppSettings) {
+        let bookmarks = MainMenuBookmarks(database: bookmarksDatabase, appSettings: appSettings)
+        mainMenuBookmarks = bookmarks
         mainMenuController = MainMenuController(featureFlagger: featureFlagger, contextProvider: {
-            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
-        })
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled,
+                  favorites: bookmarks.favorites)
+        }, bookmarksDatabase: bookmarksDatabase)
         mainMenuController?.requestRebuild()
     }
 
@@ -39,7 +44,8 @@ import PrivacyConfig
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        MainMenuBuilder().build(mainMenuController?.spec ?? MainMenuSpec(isEnabled: false), with: builder)
+        MainMenuBuilder(bookmarkChildren: { [weak self] in self?.mainMenuBookmarks?.children(of: $0) ?? [] })
+            .build(mainMenuController?.spec ?? MainMenuSpec(isEnabled: false), with: builder)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

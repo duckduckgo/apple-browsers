@@ -319,6 +319,12 @@ public struct UserText {
 
     public static let menuOpenLink = NSLocalizedString("menuOpenLink", value: "Open Link in New Tab (⇧⌘ + tap)", comment: "Informational iPad menu item describing a link gesture")
     public static let menuOpenBackgroundLink = NSLocalizedString("menuOpenBackgroundLink", value: "Open Link in Background (⌘ + tap)", comment: "Informational iPad menu item describing a link gesture")
+    public static let menuBookmarks = NSLocalizedString("menuBookmarks", value: "Bookmarks", comment: "iPad menu bar title")
+    public static let menuFavorites = NSLocalizedString("menuFavorites", value: "Favorites", comment: "iPad menu bar submenu")
+    public static let menuShowBookmarks = NSLocalizedString("menuShowBookmarks", value: "Show Bookmarks", comment: "iPad menu bar command")
+    public static let menuHideBookmarks = NSLocalizedString("menuHideBookmarks", value: "Hide Bookmarks", comment: "iPad menu bar command")
+    public static let menuImportBookmarks = NSLocalizedString("menuImportBookmarks", value: "Import Bookmarks...", comment: "iPad menu bar command")
+    public static let menuExportBookmarks = NSLocalizedString("menuExportBookmarks", value: "Export Bookmarks...", comment: "iPad menu bar command")
     public static let menuSettings = NSLocalizedString("menuSettings", value: "DuckDuckGo Settings...", comment: "iPad menu bar command")
     public static let menuVoiceSearch = NSLocalizedString("menuVoiceSearch", value: "Private Voice Search", comment: "iPad menu bar command")
     public static let menuOpenLocation = NSLocalizedString("menuOpenLocation", value: "Open Location...", comment: "iPad menu bar command")

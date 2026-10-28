@@ -491,7 +491,9 @@ struct Launching: LaunchingHandling {
 
         (UIApplication.shared.delegate as? AppDelegate)?.configureMainMenu(featureFlagger: featureFlagger,
                                                                                   voiceSearchHelper: voiceSearchHelper,
-                                                                                  fireModeCapability: mainCoordinator.controller.fireModeCapability)
+                                                                                  fireModeCapability: mainCoordinator.controller.fireModeCapability,
+                                                                                  bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                                                                  appSettings: appSettings)
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

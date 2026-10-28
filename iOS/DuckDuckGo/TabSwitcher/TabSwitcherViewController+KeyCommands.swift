@@ -103,6 +103,26 @@ extension TabSwitcherViewController {
         return MenuCommandAvailability(state: state)
     }
 
+    @objc func menuToggleBookmarks() {
+        guard switcherMenuAvailability.isEnabled(.showBookmarks) else { return }
+        (presentingViewController as? MainViewController)?.menuToggleBookmarks()
+    }
+
+    @objc func menuImportBookmarks() {
+        guard switcherMenuAvailability.isEnabled(.importBookmarks) else { return }
+        (presentingViewController as? MainViewController)?.menuImportBookmarks()
+    }
+
+    @objc func menuExportBookmarks() {
+        guard switcherMenuAvailability.isEnabled(.exportBookmarks) else { return }
+        (presentingViewController as? MainViewController)?.menuExportBookmarks()
+    }
+
+    @objc func menuOpenBookmark(_ command: UICommand) {
+        guard switcherMenuAvailability.isEnabled(.openBookmark) else { return }
+        (presentingViewController as? MainViewController)?.menuOpenBookmark(command)
+    }
+
     @objc func keyboardCloseTab() {
         guard switcherMenuAvailability.isEnabled(.closeTab) else { return }
         keyboardCloseWindowShortcut()

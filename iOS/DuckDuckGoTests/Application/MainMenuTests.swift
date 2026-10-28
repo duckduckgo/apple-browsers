@@ -18,6 +18,10 @@
 //
 
 import FeatureFlags_iOS
+import Bookmarks
+import Core
+import CoreData
+import Persistence
 import Testing
 import UIKit
 @testable import DuckDuckGo
@@ -190,7 +194,7 @@ struct MainMenuTests {
                 return (element as? UICommand).map { [$0] } ?? []
             }
         }
-        let commands = collectCommands(in: builder.children.values.flatMap { $0 })
+        let commands = collectCommands(in: builder.children.values.flatMap { $0 } + builder.insertedMenus.map(\.menu))
         #expect(commands.count == spec.allItems.count)
         for (index, command) in commands.enumerated() {
             let duplicates = commands.dropFirst(index + 1).filter {
@@ -368,6 +372,150 @@ struct MainMenuTests {
         }
     }
 
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func bookmarksMenuOwnsShortcutsAndBuildsFavoritesStatically() throws {
+        let favorites = (1...12).map { MainMenuBookmark(title: "Favorite \($0)", url: URL(string: "https://example.com/\($0)")!) }
+        let spec = MainMenuSpec(isEnabled: true, context: .init(favorites: favorites))
+        let builder = MainMenuBuilderSpy()
+        var folderFetchCount = 0
+        MainMenuBuilder(bookmarkChildren: { _ in
+            folderFetchCount += 1
+            return []
+        }).build(spec, with: builder)
+        #expect(folderFetchCount == 0)
+        let insertion = try #require(builder.insertedMenus.first)
+        #expect(insertion.before == .window)
+        #expect(insertion.menu.title == UserText.menuBookmarks)
+        let favoritesMenu = try #require(insertion.menu.children.compactMap { $0 as? UIMenu }
+            .first { $0.identifier == UIMenu.Identifier("com.duckduckgo.bookmarks.favorites") })
+        #expect(favoritesMenu.children.count == 12)
+        let shortcuts = favoritesMenu.children.compactMap { $0 as? UIKeyCommand }
+        #expect(shortcuts.map(\.input) == (1...9).map { String($0) })
+        #expect(shortcuts.allSatisfy { $0.modifierFlags == [.alternate, .command] })
+        #expect(shortcuts.first?.propertyList as? String == favorites.first?.url.absoluteString)
+        #expect(!favoritesMenu.children.contains { $0 is UIDeferredMenuElement })
+        let tree = try #require(insertion.menu.children.compactMap { $0 as? UIMenu }
+            .first { $0.identifier == UIMenu.Identifier("com.duckduckgo.bookmarks.tree") })
+        #expect(tree.children.first is UIDeferredMenuElement)
+        for (command, input, modifiers) in [(MainMenuCommand.showBookmarks, "k", UIKeyModifierFlags([.shift, .command])),
+                                            (.addBookmark, "d", .command), (.addFavorite, "d", [.control, .command])] {
+            let item = try #require(spec.allItems.first { $0.command == command })
+            #expect(item.shortcut == .init(input: input, modifiers: modifiers))
+        }
+        #expect(spec.menus.first { $0.identifier == .view }?.allItems.contains { $0.command == .showBookmarks } == false)
+        #expect(MainMenuSpec(isEnabled: false, context: .init(favorites: favorites)).allItems.allSatisfy { $0.command == .settings })
+        let allShortcuts = spec.allItems.compactMap(\.shortcut)
+        #expect(allShortcuts.allSatisfy { shortcut in allShortcuts.filter { $0 == shortcut }.count == 1 })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func bookmarksAvailabilityFollowsPageAndModalState() {
+        for hasWebsite in [false, true] {
+            var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+            state.hasWebsite = hasWebsite
+            #expect(MenuCommandAvailability(state: state).isEnabled(.addBookmark) == hasWebsite)
+            #expect(MenuCommandAvailability(state: state).isEnabled(.addFavorite) == hasWebsite)
+        }
+        for presentation in [MenuCommandAvailability.State.Presentation.bookmarks, .settings, .downloads, .passwords] {
+            let availability = MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: presentation))
+            #expect(availability.isEnabled(.showBookmarks))
+            #expect(availability.isEnabled(.importBookmarks))
+            #expect(availability.isEnabled(.exportBookmarks))
+            #expect(availability.isEnabled(.openBookmark))
+            #expect(availability.title(for: .showBookmarks) == (presentation == .bookmarks ? UserText.menuHideBookmarks : UserText.menuShowBookmarks))
+            #expect(!availability.isEnabled(.addBookmark))
+        }
+        var emptySwitcher = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .tabSwitcher)
+        emptySwitcher.canHideTabs = false
+        for command in [MainMenuCommand.showBookmarks, .importBookmarks, .exportBookmarks, .openBookmark] {
+            #expect(!MenuCommandAvailability(state: emptySwitcher).isEnabled(command))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func bookmarkSnapshotsReadCurrentFolderContentsWithoutACap() throws {
+        let model = try #require(CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel"))
+        let database = CoreDataDatabase(name: "MenuBookmarks", containerLocation: tempDBDir(), model: model)
+        database.loadStore()
+        defer { try? database.tearDown(deleteStores: true) }
+        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        BasicBookmarksStructure.populateDB(context: context)
+        let settings = AppSettingsMock()
+        settings.favoritesDisplayMode = .displayNative(.mobile)
+        let provider = MainMenuBookmarks(database: database, appSettings: settings)
+        let folder = try #require(provider.children().compactMap { entry -> String? in
+            if case .folder(_, let id) = entry { return id }
+            return nil
+        }.first)
+        #expect(provider.children(of: folder).count == 3)
+        let folderRequest = BookmarkEntity.fetchRequest()
+        folderRequest.predicate = NSPredicate(format: "uuid == %@", folder)
+        let entity = try #require(context.fetch(folderRequest).first)
+        _ = BasicBookmarksStructure.createBookmarksList(usingNames: (1...40).map { "Extra\($0)" }, parent: entity, in: context)
+        try context.save()
+        #expect(provider.children(of: folder).count == 43)
+        #expect(provider.children().count == 4)
+        #expect(provider.favorites.map(\.title) == BasicBookmarksStructure.favoriteTitles)
+        settings.favoritesDisplayMode = .displayNative(.desktop)
+        #expect(provider.favorites.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func bookmarkSaveRebuildsForItsStoreIncludingBackgroundSyncContexts() async throws {
+        let model = try #require(CoreDataDatabase.loadModel(from: Bookmarks.bundle, named: "BookmarksModel"))
+        let database = CoreDataDatabase(name: "MenuBookmarks", containerLocation: tempDBDir(), model: model)
+        database.loadStore()
+        defer { try? database.tearDown(deleteStores: true) }
+        let notifications = NotificationCenter()
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.ipadMenuBar]
+        let (rebuilds, continuation) = AsyncStream<Void>.makeStream()
+        var iterator = rebuilds.makeAsyncIterator()
+        var rebuildCount = 0
+        let controller = MainMenuController(featureFlagger: flagger, idiom: .pad, notificationCenter: notifications,
+                                            bookmarksDatabase: database, rebuildDelay: .milliseconds(1)) {
+            rebuildCount += 1
+            continuation.yield(())
+        }
+        let unrelated = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        notifications.post(name: NSManagedObjectContext.didSaveObjectsNotification, object: unrelated)
+        try await Task.sleep(for: .milliseconds(30))
+        #expect(rebuildCount == 0)
+        let local = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        let sync = database.makeContext(concurrencyType: .privateQueueConcurrencyType)
+        for context in [local, sync] {
+            await context.perform {
+                notifications.post(name: NSManagedObjectContext.didSaveObjectsNotification, object: context)
+            }
+            _ = await iterator.next()
+        }
+        #expect(rebuildCount == 2)
+        #expect(controller.spec.ownsKeyCommands)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func favoritesDisplayModeChangeRebuildsStaticFavorites() async {
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.ipadMenuBar]
+        let notifications = NotificationCenter()
+        let (rebuilds, continuation) = AsyncStream<Void>.makeStream()
+        var iterator = rebuilds.makeAsyncIterator()
+        var favorites: [MainMenuBookmark] = []
+        let controller = MainMenuController(featureFlagger: flagger, idiom: .pad,
+                                            contextProvider: { .init(favorites: favorites) }, notificationCenter: notifications,
+                                            rebuildDelay: .milliseconds(1)) { continuation.yield(()) }
+        favorites = [MainMenuBookmark(title: "Changed", url: URL(string: "https://example.com")!)]
+        notifications.post(name: AppUserDefaults.Notifications.favoritesDisplayModeChange, object: nil)
+        _ = await iterator.next()
+        #expect(controller.spec.allItems.filter { $0.command == .openBookmark }.map(\.title) == ["Changed"])
+    }
+
 }
 
 @MainActor
@@ -393,7 +541,10 @@ private final class MainMenuBuilderSpy: NSObject, UIMenuBuilder {
     // swiftlint:disable:next identifier_name
     func __command(forAction action: Selector, propertyList: Any?) -> UICommand? { nil }
     func replace(menu replacedIdentifier: UIMenu.Identifier, with replacementMenu: UIMenu) {}
-    func insertSibling(_ siblingMenu: UIMenu, beforeMenu siblingIdentifier: UIMenu.Identifier) {}
+    var insertedMenus: [(menu: UIMenu, before: UIMenu.Identifier)] = []
+    func insertSibling(_ siblingMenu: UIMenu, beforeMenu siblingIdentifier: UIMenu.Identifier) {
+        insertedMenus.append((siblingMenu, siblingIdentifier))
+    }
     func insertSibling(_ siblingMenu: UIMenu, afterMenu siblingIdentifier: UIMenu.Identifier) {}
     func insertChild(_ childMenu: UIMenu, atStartOfMenu parentIdentifier: UIMenu.Identifier) {}
     func insertChild(_ childMenu: UIMenu, atEndOfMenu parentIdentifier: UIMenu.Identifier) {}

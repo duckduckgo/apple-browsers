@@ -18,6 +18,9 @@
 //
 
 import Combine
+import CoreData
+import Core
+import Persistence
 import FeatureFlags_iOS
 import PrivacyConfig
 import UIKit
@@ -30,13 +33,15 @@ final class MainMenuController {
     private var cancellables = Set<AnyCancellable>()
 
     var spec: MainMenuSpec {
-        MainMenuSpec(isEnabled: featureFlagger.isIPadMenuBarEnabled(idiom: idiom), context: contextProvider())
+        let enabled = featureFlagger.isIPadMenuBarEnabled(idiom: idiom)
+        return MainMenuSpec(isEnabled: enabled, context: enabled ? contextProvider() : .init())
     }
 
     init(featureFlagger: FeatureFlagger,
          idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom,
          contextProvider: @escaping () -> MainMenuSpec.Context = { .init() },
          notificationCenter: NotificationCenter = .default,
+         bookmarksDatabase: CoreDataDatabase? = nil,
          rebuildDelay: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(100),
          rebuild: @escaping () -> Void = { UIMenuSystem.main.setNeedsRebuild() }) {
         self.featureFlagger = featureFlagger
@@ -46,6 +51,21 @@ final class MainMenuController {
         notificationCenter.publisher(for: .speechRecognizerDidChangeAvailability)
             .sink { [weak self] _ in self?.requestRebuild() }
             .store(in: &cancellables)
+
+        notificationCenter.publisher(for: AppUserDefaults.Notifications.favoritesDisplayModeChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
+
+        if let bookmarksDatabase {
+            notificationCenter.publisher(for: NSManagedObjectContext.didSaveObjectsNotification)
+                .filter { notification in
+                    (notification.object as? NSManagedObjectContext)?.persistentStoreCoordinator === bookmarksDatabase.coordinator
+                }
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in self?.requestRebuild() }
+                .store(in: &cancellables)
+        }
 
         rebuildRequests
             .debounce(for: rebuildDelay, scheduler: DispatchQueue.main)

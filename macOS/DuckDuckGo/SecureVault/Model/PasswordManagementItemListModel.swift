@@ -314,10 +314,12 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     @Published private(set) var selected: SecureVaultItem?
+    private var isFirstItemSelectedAutomatically = false
     @Published var externalPasswordManagerSelected: Bool = false {
         didSet {
             if externalPasswordManagerSelected {
                 selected = nil
+                isFirstItemSelectedAutomatically = false
             }
         }
     }
@@ -326,6 +328,7 @@ final class PasswordManagementItemListModel: ObservableObject {
         didSet {
             if syncPromoSelected {
                 selected = nil
+                isFirstItemSelectedAutomatically = false
             }
         }
     }
@@ -415,12 +418,12 @@ final class PasswordManagementItemListModel: ObservableObject {
             }
     }
 
-    /// Shows or removes the sync promo row in place, keeping the user's selection unless it was the promo.
     private func syncPromoActivityDidChange() {
         objectWillChange.send()
         let selectedPromoRowWasRemoved = syncPromoSelected && !shouldDisplaySyncPromoRow
         let nothingIsSelected = selected == nil && !externalPasswordManagerSelected && !syncPromoSelected
-        if selectedPromoRowWasRemoved || nothingIsSelected {
+        let promoRowCanReplaceFirstItem = isFirstItemSelectedAutomatically && shouldDisplaySyncPromoRow
+        if selectedPromoRowWasRemoved || nothingIsSelected || promoRowCanReplaceFirstItem {
             selectFirst()
         }
     }
@@ -437,6 +440,7 @@ final class PasswordManagementItemListModel: ObservableObject {
 
         let previous = selected
         selected = item
+        isFirstItemSelectedAutomatically = false
 
         if selected != nil {
             externalPasswordManagerSelected = false
@@ -574,6 +578,7 @@ final class PasswordManagementItemListModel: ObservableObject {
 
         if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
             selected(item: selectedItem)
+            isFirstItemSelectedAutomatically = true
         } else {
             selected(item: nil)
         }
@@ -597,6 +602,7 @@ final class PasswordManagementItemListModel: ObservableObject {
 
     func clearSelection() {
         selected = nil
+        isFirstItemSelectedAutomatically = false
     }
 
     private func sortIntoSectionsByItemType(_ items: [SecureVaultItem]) -> [PasswordManagementListSection] {

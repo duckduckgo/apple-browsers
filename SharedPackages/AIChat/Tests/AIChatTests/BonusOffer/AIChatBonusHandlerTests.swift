@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Security
 import Testing
 @testable import AIChat
 
@@ -63,7 +62,7 @@ struct AIChatBonusHandlerTests {
     @Test("Check getAIChatBonusRecord replies with nothing when the record can't be read")
     func recordRepliesWithNothingWhenReadFails() {
         // GIVEN
-        service.error = AIChatBonusStoreError.readFailed(errSecInteractionNotAllowed)
+        service.error = AIChatBonusStoreError.readFailed(domain: NSCocoaErrorDomain, code: NSFileReadNoPermissionError)
 
         // WHEN
         let result = sut.getAIChatBonusRecord()
@@ -87,7 +86,7 @@ struct AIChatBonusHandlerTests {
     @Test("Check getAIChatNewBonusRecord replies with nothing when the claim can't be stored")
     func newRecordRepliesWithNothingWhenClaimFails() throws {
         // GIVEN
-        service.error = AIChatBonusStoreError.writeFailed(errSecNotAvailable)
+        service.error = AIChatBonusStoreError.writeFailed(domain: NSCocoaErrorDomain, code: NSFileWriteOutOfSpaceError)
 
         // WHEN
         let result = sut.getAIChatNewBonusRecord(params: try Self.params(#"{ "campaignName": "launch" }"#))

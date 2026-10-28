@@ -1,9 +1,3 @@
-/* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
-"2pp-PM-6rW.title" = "Klávesnica";
-
-/* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
-"13n-KI-KLq.text" = "Spustenie aplikácie";
-
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Požadovať zakázanie cookie pre stránky pri prihlásení";
 
@@ -19,9 +13,6 @@
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Zatiaľ žiadne stránky so zakázanými cookie";
 
-/* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
-"tGh-di-rfq.headerTitle" = "Zobraziť klávesnicu v";
-
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Globálna kontrola súkromia (GPC)";
 
@@ -30,12 +21,6 @@
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Zabezpečené stránky";
-
-/* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
-"Zpg-h0-rYv.text" = "Nová karta";
-
-/* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
-"zWP-d3-nVc.title" = "Domovská obrazovka";
 
 /* Class = "UINavigationItem"; title = "Add Widget to Home Screen"; ObjectID = "zZa-pF-SHk"; */
 "zZa-pF-SHk.title" = "Pridať miniaplikáciu na domovskú obrazovku";

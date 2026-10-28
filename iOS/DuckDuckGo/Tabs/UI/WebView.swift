@@ -157,7 +157,11 @@ final class WebView: WKWebView {
         return trimmed
     }
 
-    /// Reads in the isolated content world so page-world overrides cannot replace the selection reader.
+    /// Reads in the page content world, where content-scope-scripts installs the reader before page scripts run.
+    ///
+    /// The reader cannot be redefined and captures the selection APIs it uses at load, so page-world overrides
+    /// cannot change what it reports. A page can post its own frame claim, so it can choose which of its frames
+    /// is read; that is a known residual.
     ///
     /// Returns the stored snapshot rather than reading live, so text-node mutation that fires no
     /// selectionchange cannot change what is read. A page that replaces the selection outright does fire
@@ -182,7 +186,7 @@ final class WebView: WKWebView {
 
         frame.evaluateJavaScript(SelectionFrameUserScript.readSelectionScript,
                                  in: self,
-                                 contentWorld: .defaultClient,
+                                 contentWorld: .page,
                                  completionHandler: handler)
     }
 

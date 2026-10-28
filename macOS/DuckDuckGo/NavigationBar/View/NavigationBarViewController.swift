@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import CombineExtensions
 import Common
+import DDGNavigation
 import DesignResourcesKitIcons
 import FoundationExtensions
 import Freemium
@@ -1600,7 +1601,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.url) {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.safeURL) {
             selectedTabViewModel.tab.goBack()
         }
     }
@@ -1610,7 +1611,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.url) {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.safeURL) {
             selectedTabViewModel.tab.goForward()
         }
     }

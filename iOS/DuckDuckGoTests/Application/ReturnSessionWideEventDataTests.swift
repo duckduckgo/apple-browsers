@@ -33,7 +33,7 @@ struct ReturnSessionWideEventDataTests {
         #expect(ReturnSessionWideEventData.metadata.pixelName == "return_session")
         #expect(ReturnSessionWideEventData.metadata.featureName == "return-session")
         #expect(ReturnSessionWideEventData.metadata.type == "ios-return-session")
-        #expect(ReturnSessionWideEventData.metadata.version == "1.4.0")
+        #expect(ReturnSessionWideEventData.metadata.version == "1.5.0")
     }
 
     // MARK: - jsonParameters
@@ -71,6 +71,60 @@ struct ReturnSessionWideEventDataTests {
         #expect(params["feature.data.ext.after_idle"] as? Bool == false)
         #expect(params["feature.data.ext.time_away_ms_bucketed"] as? String == "300000")
         #expect(params["feature.data.ext.focused"] as? Bool == true)
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle fields emit the setting and the side on screen", .timeLimit(.minutes(1)))
+    func toggleFieldsEmit() {
+        let data = ReturnSessionWideEventData(landedOn: .ntp, afterIdle: true, toggleEnabled: true, togglePosition: .duckAI)
+        let params = data.jsonParameters()
+        #expect(params["feature.data.ext.toggle_enabled"] as? Bool == true)
+        #expect(params["feature.data.ext.toggle_position"] as? String == "duck_ai")
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle fields are absent when unknown or the toggle stayed hidden", .timeLimit(.minutes(1)))
+    func toggleFieldsAbsentWhenNil() {
+        let params = ReturnSessionWideEventData(landedOn: .web, afterIdle: false).jsonParameters()
+        #expect(params["feature.data.ext.toggle_enabled"] == nil)
+        #expect(params["feature.data.ext.toggle_position"] == nil)
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle position follows the input mode only while the toggle is on screen",
+          .timeLimit(.minutes(1)),
+          arguments: [
+            ToggleCase(isToggleEnabled: false, isPad: true, isFocused: true, isDuckAITab: false, expected: nil),
+            ToggleCase(isToggleEnabled: false, isPad: false, isFocused: true, isDuckAITab: false, expected: nil),
+            ToggleCase(isToggleEnabled: true, isPad: true, isFocused: false, isDuckAITab: false, expected: .duckAI),
+            ToggleCase(isToggleEnabled: true, isPad: true, isFocused: false, isDuckAITab: true, expected: .duckAI),
+            ToggleCase(isToggleEnabled: true, isPad: false, isFocused: false, isDuckAITab: false, expected: nil),
+            ToggleCase(isToggleEnabled: true, isPad: false, isFocused: true, isDuckAITab: false, expected: .duckAI),
+            ToggleCase(isToggleEnabled: true, isPad: false, isFocused: true, isDuckAITab: true, expected: nil),
+          ])
+    func togglePositionOnScreen(_ toggleCase: ToggleCase) {
+        let position = ReturnSessionWideEventData.TogglePosition.onScreen(mode: .aiChat,
+                                                                          isToggleEnabled: toggleCase.isToggleEnabled,
+                                                                          isPad: toggleCase.isPad,
+                                                                          isFocused: toggleCase.isFocused,
+                                                                          isDuckAITab: toggleCase.isDuckAITab)
+        #expect(position == toggleCase.expected)
+    }
+
+    /// One `onScreen` input set, expected for `.aiChat`.
+    struct ToggleCase {
+        let isToggleEnabled: Bool
+        let isPad: Bool
+        let isFocused: Bool
+        let isDuckAITab: Bool
+        let expected: ReturnSessionWideEventData.TogglePosition?
+    }
+
+    @available(iOS 16, *)
+    @Test("Toggle position maps each input mode to its side", .timeLimit(.minutes(1)))
+    func togglePositionMapsInputMode() {
+        #expect(ReturnSessionWideEventData.TogglePosition(.search) == .search)
+        #expect(ReturnSessionWideEventData.TogglePosition(.aiChat) == .duckAI)
     }
 
     @available(iOS 16, *)

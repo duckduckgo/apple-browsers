@@ -36,6 +36,17 @@ public protocol PrivacyConfigurationManaging: AnyObject {
     var internalUserDecider: InternalUserDecider { get }
 
     @discardableResult func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult
+
+    /// The current config re-encoded for injection into content scripts, without `excludedFeatures`.
+    func currentConfigJSON(excludingFeatures excludedFeatures: [String]) -> Data?
+}
+
+public extension PrivacyConfigurationManaging {
+
+    func currentConfigJSON(excludingFeatures excludedFeatures: [String]) -> Data? {
+        guard let config = try? PrivacyConfigurationData(data: currentConfig) else { return nil }
+        return try? config.toJSONData(excludeFeatures: excludedFeatures)
+    }
 }
 
 public class PrivacyConfigurationManager: PrivacyConfigurationManaging {
@@ -151,10 +162,47 @@ public class PrivacyConfigurationManager: PrivacyConfigurationManaging {
         return embeddedConfigData.rawData
     }
 
+    // Every tab builds two content scope scripts from this JSON, so it's encoded once per config
+    // version for each exclusion set. `reload` clears it and bumps the generation, so an encode
+    // that races a reload is returned but not stored.
+    private let configJSONLock = NSLock()
+    private var configJSONCache: [[String]: Data] = [:]
+    private var configJSONGeneration = 0
+
+    public func currentConfigJSON(excludingFeatures excludedFeatures: [String]) -> Data? {
+        configJSONLock.lock()
+        if let cached = configJSONCache[excludedFeatures] {
+            configJSONLock.unlock()
+            return cached
+        }
+        let generation = configJSONGeneration
+        configJSONLock.unlock()
+
+        let config = fetchedConfigData?.data ?? embeddedConfigData.data
+        guard let json = try? config.toJSONData(excludeFeatures: excludedFeatures) else { return nil }
+
+        configJSONLock.lock()
+        if generation == configJSONGeneration {
+            configJSONCache[excludedFeatures] = json
+        }
+        configJSONLock.unlock()
+        return json
+    }
+
+    private func invalidateConfigJSON() {
+        configJSONLock.lock()
+        configJSONGeneration += 1
+        configJSONCache.removeAll()
+        configJSONLock.unlock()
+    }
+
     @discardableResult
     public func reload(etag: String?, data: Data?) -> ReloadResult {
 
-        defer { self.updatesSubject.send() }
+        defer {
+            invalidateConfigJSON()
+            self.updatesSubject.send()
+        }
 
         let result: ReloadResult
 

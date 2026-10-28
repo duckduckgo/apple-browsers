@@ -17,7 +17,8 @@ name: test_chat_tab_send_prompt
 - tapOn:
     id: "searchEntry"
 - inputText: "What is a duck?"
-- tapOn: "Submit"
+- tapOn:
+    id: "AIChat.Toolbar.Button.Submit"
 
 # First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
 # the pending prompt (verified on-device: no re-submit needed). On a non-clean device the

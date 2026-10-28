@@ -458,7 +458,7 @@
 "aichat.model-picker.pro-plan-exclusive" = "Esclusiva del piano Pro";
 
 /* Section header for subscription models shown to users who are not eligible for a free trial */
-"aichat.model-picker.subscriber-exclusive" = "Esclusiva per abbonati";
+"aichat.model-picker.subscriber-exclusive" = "Sblocca con un abbonamento";
 
 /* Section header for subscription models shown to free users */
 "aichat.model-picker.try-free" = "Provalo gratuitamente";
@@ -468,6 +468,27 @@
 
 /* Spoken name of the inline attachment icon in the multi-tab feature promotion, used in the VoiceOver accessibility label. */
 "aichat.multiTab.promotion.attachment" = "allegato";
+
+/* VoiceOver label of the Duck.ai attachment chip holding a long block of text the user pasted */
+"aichat.pasted.text.accessibility.label" = "Testo incollato";
+
+/* Character counter under the title of the Duck.ai pasted-text sheet, e.g. 923/16,000. %1$d is the number of characters in the pasted text, %2$d is the most it may hold. Keep both numbers; change the slash only if your language writes this kind of counter differently. */
+"aichat.pasted.text.count" = "%1$d/%2$d";
+
+/* What VoiceOver reads for the character counter in the Duck.ai pasted-text sheet, e.g. 923 of 16,000 characters. %1$d is the number of characters in the pasted text, %2$d is the most it may hold */
+"aichat.pasted.text.count.accessibility" = "%1$d di %2$d caratteri";
+
+/* Title of the sheet that edits a long block of text the user pasted into Duck.ai */
+"aichat.pasted.text.edit.sheet.title" = "Modifica testo";
+
+/* VoiceOver action on a Duck.ai pasted-text attachment chip that removes it from the message */
+"aichat.pasted.text.remove" = "Rimuovi";
+
+/* Title of the sheet that shows a long block of text the user pasted into a Duck.ai message that was already sent */
+"aichat.pasted.text.sheet.title" = "Testo incollato";
+
+/* Error shown below the Duck.ai input while the message is longer than allowed, e.g. Please try a shorter message. 17002/16000. %1$d is the number of characters in the message, %2$d is the most characters allowed */
+"aichat.prompt.too.long.format" = "Prova a scrivere un messaggio più breve. %1$d/%2$d";
 
 /* Subtitle for the extended reasoning mode in the Duck.ai reasoning picker */
 "aichat.reasoning.extended.subtitle" = "Per attività analitiche";
@@ -1658,7 +1679,7 @@
 "crash.report.dialog.title" = "Inviare automaticamente le segnalazioni di arresto anomalo?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Numero attuale degli ignora: %@";
 
 /* No comment provided by engineer. */
 "Current Subscriptions" = "Abbonamenti attuali";
@@ -2642,7 +2663,7 @@
 "Enter duration in seconds. Examples: 30, 60, 300" = "Enter duration in seconds. Examples: 30, 60, 300";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Pillola d'ingresso";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Accedi";
@@ -4118,7 +4139,7 @@
 "Primary / First Action" = "Azione principali/prima azione";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Priming Modal";
+"Priming Modal" = "Modale priming";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Protezioni della Privacy";
@@ -4181,10 +4202,10 @@
 "Reset" = "Ripristina";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+"Reset Pill Dismiss Count" = "Reimposta numero delle pillole ignorate";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Ripristina lo stato modale di priming";
 
 /* No comment provided by engineer. */
 "Reset to Default" = "Reset to Default";
@@ -5010,9 +5031,6 @@
 
 /* No comment provided by engineer. */
 "Status:" = "Status:";
-
-/* No comment provided by engineer. */
-"Stored Hostname: %@" = "Nome host salvato: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Aggiungi al dispositivo";

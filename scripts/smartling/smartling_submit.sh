@@ -8,7 +8,7 @@ set -euo pipefail
 # to GITHUB_OUTPUT.
 
 usage() {
-	echo "Usage: $0 <iOS|macOS> --job-name <name> [--pending-job-prefix <prefix>] --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>] [--delete-job-on-failure]" >&2
+	echo "Usage: $0 <iOS|macOS> --job-name <name> [--pending-job-prefix <prefix>]... --file-uri-prefix <prefix> [--auto-authorize-max-usd <usd>] [--delete-job-on-failure]" >&2
 	echo "  e.g. $0 iOS --job-name 'Release iOS 7.200.0' --file-uri-prefix release/ios/7.200.0 --delete-job-on-failure" >&2
 	exit 1
 }

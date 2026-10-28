@@ -158,9 +158,10 @@ extension MainViewController {
                     source?.alpha = 1
                 }
             },
-            interruptCleanup: { [weak self] in
+            interruptCleanup: { [weak self, weak coordinator] in
                 inputContainer.transform = .identity
                 contentContainer.transform = .identity
+                coordinator?.clearText()
                 self?.viewCoordinator.unifiedInputContentContainer.alpha = 1
                 self?.viewCoordinator.unifiedToggleInputContainer.alpha = 1
                 self?.viewCoordinator.focusedStateBackground.alpha = 1

@@ -251,8 +251,16 @@ if [ -n "${GITHUB_RUN_ID:-}" ]; then
 	workflow_line="- Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 fi
 
+TASK_URL="${TRANSLATIONS_TASK_URL:-}"
+if [ -n "$OPEN_PR_URL" ]; then
+	open_pr_task_url="$(gh pr view "$OPEN_PR_URL" --json body --jq '.body' | tr -d '\r' | sed -n 's#^Task/Issue URL:[[:space:]]*\(https://[^[:space:]]*\).*#\1#p' | sed -n '1p')"
+	TASK_URL="${open_pr_task_url:-$TASK_URL}"
+fi
+[ -n "$TASK_URL" ] || echo "::warning::No Translations task to link, so the pull request has no Task/Issue URL"
+
 PR_BODY_FILE="$(mktemp)"
 cat > "$PR_BODY_FILE" <<EOF
+Task/Issue URL: $TASK_URL
 Tech Design URL: https://app.asana.com/0/0/1219548238783890/f
 
 ### Description

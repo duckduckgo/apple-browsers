@@ -30,6 +30,7 @@ import DuckUI
 import Persistence
 import FeatureFlags_iOS
 import UIComponents
+import Subscription
 
 extension DebugScreensViewModel {
 
@@ -51,6 +52,9 @@ extension DebugScreensViewModel {
                         d.webExtensionManager?.clearCachedScriptlets()
                     }
                 }
+            }),
+            .view(title: "Sheet Presentations", { _ in
+                SheetPresentationsDebugView()
             }),
             .view(title: "CPM", { d in
                 CPMDebugScreensView(
@@ -401,6 +405,120 @@ private struct CPMDebugScreensView: View {
             presented.dismiss(animated: true, completion: present)
         } else {
             present()
+        }
+    }
+}
+
+struct SheetPresentationsDebugView: View {
+
+    static var makeSubscribeFlow: ((SubscriptionURL?) -> AnyView)?
+
+    enum SwiftUISheet: String, Identifiable {
+        case plain, page, custom
+        var id: String { rawValue }
+    }
+
+    private static let subscriptionURLs: [(name: String, url: SubscriptionURL?)] = [
+        ("default (paywall)", nil),
+        ("baseURL", .baseURL),
+        ("purchase", .purchase),
+        ("welcome", .welcome),
+        ("faq", .faq),
+        ("privacyPolicy", .privacyPolicy),
+        ("helpPagesAddingEmail", .helpPagesAddingEmail),
+        ("activationFlow", .activationFlow),
+        ("activationFlowThisDeviceEmailStep", .activationFlowThisDeviceEmailStep),
+        ("activationFlowThisDeviceActivateEmailStep", .activationFlowThisDeviceActivateEmailStep),
+        ("activationFlowThisDeviceActivateEmailOTPStep", .activationFlowThisDeviceActivateEmailOTPStep),
+        ("activationFlowAddEmailStep", .activationFlowAddEmailStep),
+        ("activationFlowLinkViaEmailStep", .activationFlowLinkViaEmailStep),
+        ("activationFlowSuccess", .activationFlowSuccess),
+        ("manageEmail", .manageEmail),
+        ("manageSubscriptionsInAppStore", .manageSubscriptionsInAppStore),
+        ("identityTheftRestoration", .identityTheftRestoration),
+        ("plans", .plans),
+        ("addEmail", .addEmail),
+        ("addEmailSuccess", .addEmailSuccess),
+        ("partnershipsHub", .partnershipsHub)
+    ]
+
+    @State private var swiftUISheet: SwiftUISheet?
+    @State private var selectedURLIndex = 0
+
+    private var selectedURL: SubscriptionURL? {
+        Self.subscriptionURLs[selectedURLIndex].url
+    }
+
+    var body: some View {
+        List {
+            Section {
+                Button(".sheet (default)") { swiftUISheet = .plain }
+                Button(".presentationSizing(.page)") { swiftUISheet = .page }
+                Button(".presentationSizing(custom)") { swiftUISheet = .custom }
+            }
+            Section {
+                Picker("Subscription URL", selection: $selectedURLIndex) {
+                    ForEach(Self.subscriptionURLs.indices, id: \.self) { index in
+                        Text(Self.subscriptionURLs[index].name).tag(index)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Sheet Presentations")
+        .sheet(item: $swiftUISheet) { kind in
+            sheetContent(for: kind)
+        }
+    }
+
+    @ViewBuilder
+    private func sheetContent(for kind: SwiftUISheet) -> some View {
+        if #available(iOS 18, *) {
+            switch kind {
+            case .plain:
+                SheetPresentationsDemoContent(title: ".sheet (default)", subscriptionURL: selectedURL)
+            case .page:
+                SheetPresentationsDemoContent(title: ".page", subscriptionURL: selectedURL)
+                    .presentationSizing(.page)
+            case .custom:
+                SheetPresentationsDemoContent(title: "custom 400x300", subscriptionURL: selectedURL)
+                    .presentationSizing(DemoPresentationSizing())
+            }
+        } else {
+            SheetPresentationsDemoContent(title: "presentationSizing needs iOS 18", subscriptionURL: selectedURL)
+        }
+    }
+}
+
+@available(iOS 18, *)
+private struct DemoPresentationSizing: PresentationSizing {
+    func proposedSize(for root: PresentationSizingRoot, context: PresentationSizingContext) -> ProposedViewSize {
+        ProposedViewSize(width: 400, height: 300)
+    }
+}
+
+private struct SheetPresentationsDemoContent: View {
+    let title: String
+    let subscriptionURL: SubscriptionURL?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            subscribeFlow
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Dismiss (\(title))") { dismiss() }
+                    }
+                }
+        }
+        .navigationViewStyle(.stack)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder private var subscribeFlow: some View {
+        if let makeSubscribeFlow = SheetPresentationsDebugView.makeSubscribeFlow {
+            makeSubscribeFlow(subscriptionURL)
+        } else {
+            Text("MainViewController hasn't set up the subscribe flow")
         }
     }
 }

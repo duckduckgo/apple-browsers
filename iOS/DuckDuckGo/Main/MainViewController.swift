@@ -176,6 +176,7 @@ class MainViewController: UIViewController {
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
     var isPerformingOnboardingInputHandoff = false
+    var isPresentingNewTabInputDirectly = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private let daxGreetingActivity: DaxGreetingActivityStore?
@@ -229,6 +230,10 @@ class MainViewController: UIViewController {
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
+    }
+
+    var hasInlineNewTabPageInput: Bool {
+        newTabPageViewController?.hasInlineSearchInput == true
     }
 
     /// Allows delayed keyboard callbacks to detect cancellation.
@@ -2661,6 +2666,30 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
+        if willBeginEditing,
+           let switcher = tabSwitcherController, presentedViewController === switcher, switcher.isBeingDismissed,
+           let defaultOmniBar = omniBar as? DefaultOmniBarViewController {
+            let requestID = appOpenKeyboardRequestID
+            let tabID = tabModel.uid
+            let isRequestValid = { [weak self, weak controller, weak switcher] in
+                guard let self, let controller else { return false }
+                let isDismissingOriginalSwitcher = switcher?.isBeingDismissed == true && presentedViewController === switcher
+                return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible
+                    && tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === controller
+                    && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+                    && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+                    && !daxDialogsManager.isShowingContextualOnboardingDialog
+                    && (presentedViewController == nil || isDismissingOriginalSwitcher)
+            }
+            let beginEditing = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                ? defaultOmniBar.beginEditingOnNewTabPageAppOpen
+                : defaultOmniBar.beginEditingAutomatically
+            let wasPresentingDirectly = isPresentingNewTabInputDirectly
+            isPresentingNewTabInputDirectly = controller.hasInlineSearchInput
+            defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
+            beginEditing(isRequestValid) { _ in }
+        }
+
         scheduleAttachedNewTabPagePresentation(for: controller, trigger: sessionTrigger,
                                                startsVisit: startsNewTabPageSessionVisit,
                                                openedAfterIdle: openedAfterIdle, hatch: hatch,
@@ -3154,6 +3183,12 @@ class MainViewController: UIViewController {
             }
             completion(true)
         }
+        if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
+            coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
+            return
+        }
+        isPresentingNewTabInputDirectly = hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true
+        defer { isPresentingNewTabInputDirectly = false }
         showBars()
         if let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
             defaultOmniBar.beginEditingAutomatically(isRequestValid: isRequestValid, completion: focusCompleted)

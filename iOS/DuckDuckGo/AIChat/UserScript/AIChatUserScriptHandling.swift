@@ -768,30 +768,28 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             return OpenKeyboardResponse(success: false, error: "WebView not available")
         }
 
-        return await withCheckedContinuation { continuation in
-            DispatchQueue.main.async {
-                let javascript = """
-                (function() {
-                    try {
-                        const element = document.querySelector('\(cssSelector)');
-                        element?.focus?.();
-                        return true;
-                    } catch (error) {
-                        console.error('Error focusing element:', error);
-                        return false;
-                    }
-                })();
-                """
+        return await focusElement(matching: cssSelector, in: webView)
+    }
 
-                webView.evaluateJavaScript(javascript) { _, error in
-                    if let error = error {
-                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
-                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
-                    } else {
-                        continuation.resume(returning: OpenKeyboardResponse(success: true))
-                    }
-                }
-            }
+    /// The selector is passed as a script argument, never interpolated into the source, so page-supplied text cannot run as code.
+    @MainActor
+    private func focusElement(matching selector: String, in webView: WKWebView) async -> OpenKeyboardResponse {
+        let javascript = """
+        try {
+            document.querySelector(selector)?.focus?.();
+            return true;
+        } catch (error) {
+            console.error('Error focusing element:', error);
+            return false;
+        }
+        """
+
+        do {
+            _ = try await webView.callAsyncJavaScript(javascript, arguments: ["selector": selector], in: nil, contentWorld: .page)
+            return OpenKeyboardResponse(success: true)
+        } catch {
+            Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+            return OpenKeyboardResponse(success: false, error: "JavaScript execution failed")
         }
     }
 

@@ -27,8 +27,11 @@ import PrivacyConfig
 
     private var mainMenuController: MainMenuController?
 
-    func configureMainMenu(featureFlagger: FeatureFlagger) {
-        mainMenuController = MainMenuController(featureFlagger: featureFlagger)
+    func configureMainMenu(featureFlagger: FeatureFlagger, voiceSearchHelper: VoiceSearchHelperProtocol,
+                           fireModeCapability: FireModeCapable) {
+        mainMenuController = MainMenuController(featureFlagger: featureFlagger, contextProvider: {
+            .init(voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled, fireModeEnabled: fireModeCapability.isFireModeEnabled)
+        })
         mainMenuController?.requestRebuild()
     }
 

@@ -1,0 +1,41 @@
+{
+    "m_autofill_management_opened": {
+        "description": "Fired when a user opens password management. The menu bar entry uses the menu_bar source.",
+        "owners": ["dus7"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "Where password management was opened.",
+                "enum": [
+                    "settings",
+                    "overflow_menu",
+                    "menu_bar",
+                    "sync",
+                    "app_icon_shortcut",
+                    "home_screen_widget",
+                    "lock_screen_widget",
+                    "new_tab_page_shortcut",
+                    "save_login_disable_prompt",
+                    "save_credit_card_disable_prompt",
+                    "view_saved_login_prompt",
+                    "new_tab_page_toolbar",
+                    "view_saved_credit_card_prompt",
+                    "credit_card_keyboard_shortcut",
+                    "customized_toolbar_button",
+                    "customized_address_bar_button",
+                    "extension_enable_prompt"
+                ]
+            },
+            {
+                "key": "has_credentials_saved",
+                "type": "string",
+                "description": "Whether the vault has saved credentials.",
+                "enum": ["0", "1"]
+            }
+        ]
+    }
+}

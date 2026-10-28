@@ -67,12 +67,57 @@ extension TabSwitcherViewController {
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
-        return commands
+        return MainMenuSpec(isEnabled: featureFlagger.isIPadMenuBarEnabled(),
+                            context: .init(fireModeEnabled: fireModeCapability.isFireModeEnabled))
+            .remainingKeyCommands(from: commands)
     }
     
+    override func validate(_ command: UICommand) {
+        super.validate(command)
+        guard featureFlagger.isIPadMenuBarEnabled(), let menuCommand = MainMenuCommand(action: command.action) else { return }
+        let availability = switcherMenuAvailability
+        if let title = availability.title(for: menuCommand) { command.title = title }
+        if availability.isEnabled(menuCommand) {
+            command.attributes.remove(.disabled)
+        } else {
+            command.attributes.insert(.disabled)
+        }
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        guard featureFlagger.isIPadMenuBarEnabled(), let command = MainMenuCommand(action: action) else {
+            return super.canPerformAction(action, withSender: sender)
+        }
+        guard [.newTab, .newFireTab, .closeTab, .showTabs].contains(command) else {
+            return super.canPerformAction(action, withSender: sender)
+        }
+        return switcherMenuAvailability.isEnabled(command)
+    }
+
+    private var switcherMenuAvailability: MenuCommandAvailability {
+        var state = MenuCommandAvailability.State(
+            shortcutsEnabled: !isProcessingUpdates && ((presentingViewController as? MainViewController)?.isShortcutEnabled() ?? true),
+            presentation: presentedViewController == nil ? .tabSwitcher : .blockingModal)
+        state.fireModeEnabled = fireModeCapability.isFireModeEnabled
+        state.canHideTabs = canDismissOnEmpty || !tabsModel.isEmpty
+        return MenuCommandAvailability(state: state)
+    }
+
+    @objc func keyboardCloseTab() {
+        guard switcherMenuAvailability.isEnabled(.closeTab) else { return }
+        keyboardCloseWindowShortcut()
+    }
+
+    @objc func keyboardShowAllTabs() {
+        guard switcherMenuAvailability.isEnabled(.showTabs) else { return }
+        KeyboardShortcutPixel.fireUsed(with: pixelFiring)
+        dismissIfPossible()
+    }
+
     @objc func keyboardNewTab() {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }
+        guard !featureFlagger.isIPadMenuBarEnabled() || switcherMenuAvailability.isEnabled(.newTab) else { return }
         dismissIfPossible(forceDismissOnEmpty: true)
         delegate?.tabSwitcherDidRequestNewTab(tabSwitcher: self)
     }
@@ -81,6 +126,7 @@ extension TabSwitcherViewController {
         KeyboardShortcutPixel.fireUsed(with: pixelFiring)
         guard !isProcessingUpdates else { return }
         guard fireModeCapability.isFireModeEnabled else { return }
+        guard !featureFlagger.isIPadMenuBarEnabled() || switcherMenuAvailability.isEnabled(.newFireTab) else { return }
 
         addNewFireTab(source: .keyCommand)
     }

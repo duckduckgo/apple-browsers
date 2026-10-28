@@ -190,8 +190,8 @@ extension DataClearingCompletionPixels: PixelKit.Event {
 
 // MARK: - Data Clearing Timeouts
 
-/// Timeouts that bound the hidden page loads a burn performs. Kept separate from
-/// `DataClearingPixels`; these use the current PixelKit defaults.
+/// Timeouts that bound the hidden page loads a burn performs. These use the current PixelKit
+/// defaults.
 enum DataClearingTimeoutPixels {
 
     /// The WebKit warm-up page did not report back before its deadline, so the burn gave up

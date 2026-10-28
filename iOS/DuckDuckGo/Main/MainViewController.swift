@@ -2657,19 +2657,14 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
-        let focusesDuringSwitcherDismissal = isNewTab && willBeginEditing
-            && !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
-            && isAppOpenKeyboardWindowVisible
-            && tabSwitcherController != nil && presentedViewController === tabSwitcherController
-            && presentedViewController?.isBeingDismissed == true
-        if focusesDuringSwitcherDismissal, let switcher = tabSwitcherController,
+        if willBeginEditing, !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+           let switcher = tabSwitcherController, presentedViewController === switcher, switcher.isBeingDismissed,
            let defaultOmniBar = omniBar as? DefaultOmniBarViewController {
             let requestID = appOpenKeyboardRequestID
             let tabID = tabModel.uid
             let isRequestValid = { [weak self, weak controller, weak switcher] in
                 guard let self, let controller else { return false }
-                let isDismissingOriginalSwitcher = switcher != nil && presentedViewController === switcher
-                    && switcher?.isBeingDismissed == true
+                let isDismissingOriginalSwitcher = switcher?.isBeingDismissed == true && presentedViewController === switcher
                 return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible
                     && tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === controller
                     && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog

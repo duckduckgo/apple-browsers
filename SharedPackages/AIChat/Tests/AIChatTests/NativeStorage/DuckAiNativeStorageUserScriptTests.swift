@@ -194,12 +194,23 @@ final class DuckAiNativeStorageUserScriptTests: XCTestCase {
         XCTAssertTrue(firedInvalidValues.isEmpty)
     }
 
-    func testWhenReplaceAllEntriesContainsDateThenEntriesAreNotReplaced() async throws {
+    func testWhenReplaceAllEntriesContainsDateThenOnlyValidEntriesAreReplaced() async throws {
         let handler = try XCTUnwrap(sut.handler(forMethodNamed: "replaceAllEntries"))
 
-        _ = try await handler(["entries": ["setting": "on", "updatedAt": Date()]], WKScriptMessage.mock())
+        _ = try await handler(["entries": ["setting": "on", "theme": "dark", "updatedAt": Date()]], WKScriptMessage.mock())
 
-        XCTAssertEqual(mockHandler.replaceAllEntriesCalls, 0)
+        XCTAssertEqual(mockHandler.replaceAllEntriesCalls, 1)
+        XCTAssertEqual(mockHandler.replacedEntryKeys, ["setting", "theme"])
+        XCTAssertEqual(firedInvalidValues, [.init(operation: .replaceAllEntries, valueType: .date)])
+    }
+
+    func testWhenReplaceAllEntriesContainsSeveralInvalidValuesThenOnePixelFires() async throws {
+        let handler = try XCTUnwrap(sut.handler(forMethodNamed: "replaceAllEntries"))
+        let entries: [String: Any] = ["setting": "on", "updatedAt": Date(), "createdAt": Date()]
+
+        _ = try await handler(["entries": entries], WKScriptMessage.mock())
+
+        XCTAssertEqual(mockHandler.replacedEntryKeys, ["setting"])
         XCTAssertEqual(firedInvalidValues, [.init(operation: .replaceAllEntries, valueType: .date)])
     }
 
@@ -363,6 +374,7 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     var stubbedFiles: [DuckAiFileContent] = []
     var putEntryCalls = 0
     var replaceAllEntriesCalls = 0
+    var replacedEntryKeys: [String] = []
     var putChatIds: [String] = []
     var putChatsIds: [String] = []
     var putFileCalls = 0
@@ -375,7 +387,10 @@ final class MockDuckAiNativeStorageHandler: DuckAiNativeStorageHandling {
     }
     func deleteEntry(key: String) throws {}
     func deleteAllEntries() throws {}
-    func replaceAllEntries(_ entries: [String: Any]) throws { replaceAllEntriesCalls += 1 }
+    func replaceAllEntries(_ entries: [String: Any]) throws {
+        replaceAllEntriesCalls += 1
+        replacedEntryKeys = entries.keys.sorted()
+    }
     func putChat(chatId: String, data: Data) throws { putChatIds.append(chatId) }
     func putChats(_ chats: [DuckAiChatRecord]) throws { putChatsIds += chats.map(\.chatId) }
     func getChat(chatId: String) throws -> DuckAiChatRecord? { stubbedChats.first { $0.chatId == chatId } }

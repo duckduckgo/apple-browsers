@@ -184,6 +184,21 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
         return records
     }
 
+    /// Bad keys are skipped and reported once per message, so one bad value doesn't drop every setting.
+    private func validEntries(from entries: [String: Any], for operation: DuckAiNativeStorageUserScriptMessages) -> [String: Any] {
+        var invalidValueType: DuckAiNativeStorageInvalidValue.ValueType?
+        let validEntries = entries.filter { _, value in
+            // `isValidJSONObject` rejects top-level fragments such as strings and numbers, so the value is wrapped.
+            guard let valueType = Self.invalidValueType(in: [value]) else { return true }
+            invalidValueType = invalidValueType ?? valueType
+            return false
+        }
+        if let invalidValueType {
+            reportInvalidValue(invalidValueType, in: operation)
+        }
+        return validEntries
+    }
+
     private func reportInvalidValue(_ valueType: DuckAiNativeStorageInvalidValue.ValueType,
                                     in operation: DuckAiNativeStorageUserScriptMessages) {
         Logger.aiChat.error("DuckAiNativeStorage: \(operation.rawValue) — dropped a value JSON can't store (\(valueType.rawValue))")
@@ -308,11 +323,11 @@ public final class DuckAiNativeStorageUserScript: NSObject, Subfeature {
     private func replaceAllEntries(params: Any, message: UserScriptMessage) async -> Encodable? {
         Logger.aiChat.debug("DuckAiNativeStorage: ← replaceAllEntries called")
         guard let dict = params as? [String: Any],
-              let entries = dict["entries"] as? [String: Any],
-              isValidJSON(entries, for: .replaceAllEntries) else {
+              let allEntries = dict["entries"] as? [String: Any] else {
             Logger.aiChat.error("DuckAiNativeStorage: replaceAllEntries — invalid params")
             return nil
         }
+        let entries = validEntries(from: allEntries, for: .replaceAllEntries)
         do {
             try await performStorageOperation {
                 try self.handler.replaceAllEntries(entries)

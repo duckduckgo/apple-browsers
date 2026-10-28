@@ -413,11 +413,9 @@ final class MainCoordinator {
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
-            featureFlagPublisher: nil,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
-            onFeatureFlagDisabled: {},
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             },

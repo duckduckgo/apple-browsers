@@ -396,6 +396,55 @@ final class WebExtensionManagerTests: XCTestCase {
         await startup.value
     }
 
+    /// WebKit's `loadBackgroundWebViewIfNeeded` returns early while the failed background view still exists,
+    /// so `loadBackgroundContent` can never replace it. Only restarting the context gets out of that state.
+    @MainActor
+    func testRetainedFailedBackgroundViewRestartsContextInsteadOfRetrying() async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let reloaded = expectation(description: "A retained failed background view restarts the context")
+        let observer = Task { @MainActor in
+            for await event in manager.lifecycleEvents {
+                guard case .reloaded(let identifier, _, _) = event, identifier == "embedded" else { continue }
+                reloaded.fulfill()
+                return
+            }
+        }
+        defer { observer.cancel() }
+
+        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
+
+        XCTAssertTrue(scheduled)
+        await fulfillment(of: [reloaded], timeout: 3)
+        XCTAssertTrue(context.completions.isEmpty, "A retry cannot replace a retained failed view")
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        observer.cancel()
+        await observer.value
+    }
+
+    @MainActor
+    func testReleasedFailedBackgroundViewStillRetriesWithoutRestartingContext() async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        XCTAssertNil(context.retainedBackgroundWebView)
+        let retried = expectation(description: "A released failed view is replaced by the plain retry")
+        context.onBackgroundLoad = { retried.fulfill() }
+
+        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
+
+        XCTAssertTrue(scheduled)
+        await fulfillment(of: [retried], timeout: 2)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
     @MainActor
     func testDisabledBackgroundLoadRecoveryPreservesConfirmedHangRestart() async throws {
         let monitor = CPMMessagingHealthMonitor(pixelFiring: NoOpWebExtensionPixelFiring())
@@ -1850,6 +1899,8 @@ private final class DeferredCPMBackgroundContext: WKWebExtensionContext {
     var completions: [(Swift.Error?) -> Void] = []
     var recordedErrors: [Swift.Error] = []
     var onBackgroundLoad: (() -> Void)?
+    /// Stands in for WebKit's private `_backgroundWebView`, which the manager reads to see whether a failed view is retained.
+    @objc(_backgroundWebView) var retainedBackgroundWebView: WKWebView?
 
     override var errors: [Swift.Error] { recordedErrors }
 

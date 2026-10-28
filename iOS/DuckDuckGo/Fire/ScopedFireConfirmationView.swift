@@ -96,7 +96,7 @@ struct ScopedFireConfirmationView: View {
     
     /// Scope selection buttons
     private var scopeButtons: some View {
-        VStack(spacing: ButtonStackMetrics.interButtonSpacing) {
+        VStack(spacing: Constants.buttonSpacing) {
             ForEach(viewModel.buttons.indices, id: \.self) { index in
                 let button = viewModel.buttons[index]
                 if button.style == .slide {
@@ -163,9 +163,10 @@ extension EnvironmentValues {
 
 private extension ScopedFireConfirmationView {
     enum Constants {
-        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 64, trailing: 24)
+        static let sheetViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let popoverViewPadding: EdgeInsets = .init(top: 24, leading: 24, bottom: 24, trailing: 24)
         static let mainSectionSpacing: CGFloat = 16
+        static let buttonSpacing: CGFloat = 16
         static let headerSectionPadding: EdgeInsets = .init(top: 24, leading: 0, bottom: 16, trailing: 0)
         static let headerSectionPaddingNoAnimation: EdgeInsets = .init(top: 36, leading: 0, bottom: 16, trailing: 0)
         static let headerIconSize: CGFloat = 96

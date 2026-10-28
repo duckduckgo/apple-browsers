@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 struct SlideToDeleteCompletionEffect: View {
     let variant: SlideToDeleteVariant
     let isActive: Bool
+    let showCompletionLabel: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expanded = false
@@ -47,7 +48,7 @@ struct SlideToDeleteCompletionEffect: View {
         .accessibilityHidden(true)
         .onChange(of: isActive) { active in
             if active {
-                withAnimation(reduceMotion ? nil : .easeOut(duration: variant == .shimmer ? 1 : 0.6)) {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: variant == .shimmer ? 0.45 : 0.6)) {
                     expanded = true
                 }
             } else {
@@ -64,9 +65,6 @@ struct SlideToDeleteCompletionEffect: View {
     private func shimmer(size: CGSize) -> some View {
         let orange = Color(singleUseColor: .fireModeAccent)
         return ZStack {
-            Capsule()
-                .fill(LinearGradient(colors: [Color(designSystemColor: .destructivePrimary), orange],
-                                     startPoint: .leading, endPoint: .trailing))
             if !reduceMotion {
                 Rectangle()
                     .fill(LinearGradient(colors: [.clear, orange, .clear], startPoint: .leading, endPoint: .trailing))
@@ -82,9 +80,7 @@ struct SlideToDeleteCompletionEffect: View {
                 .foregroundColor(Color(designSystemColor: .destructiveContentPrimary))
                 .padding(.horizontal, 24)
                 .frame(maxWidth: .infinity)
-                .mask(Rectangle().scaleEffect(x: expanded ? 1 : 0, anchor: .leading))
-                .offset(y: expanded ? 0 : 6)
-                .opacity(expanded ? 1 : 0)
+                .opacity(showCompletionLabel ? 1 : 0)
         }
         .frame(width: size.width, height: size.height)
         .clipShape(Capsule())

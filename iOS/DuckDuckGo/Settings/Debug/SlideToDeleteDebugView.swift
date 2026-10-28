@@ -25,6 +25,9 @@ struct SlideToDeleteDebugView: View {
     @State private var doubleLength = false
     @State private var previewID = UUID()
     @State private var completed = false
+    @State private var hapticRequests = 0
+    @State private var labelReveals = 0
+    @StateObject private var feedback = SlideToDeleteFeedback()
 
     private var title: String {
         let title = UserText.scopedFireConfirmationSlideToDeleteAll
@@ -51,7 +54,10 @@ struct SlideToDeleteDebugView: View {
             Section {
                 Toggle("Double-length text", isOn: $doubleLength)
                     .accessibilityIdentifier("SlideToDelete.Debug.DoubleLength")
-                SlideToDeleteControl(title: title, variant: variant) {
+                SlideToDeleteControl(title: title,
+                                     variant: variant,
+                                     onHapticRequest: { hapticRequests += 1 },
+                                     onCompletionLabelReveal: { labelReveals += 1 }) {
                     completed = true
                 }
                 .id(previewID)
@@ -61,20 +67,33 @@ struct SlideToDeleteDebugView: View {
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .accessibilityIdentifier("SlideToDelete.Debug.Status")
+                Text("Haptic requests: \(hapticRequests) · Label reveals: \(labelReveals)")
+                    .font(.footnote)
+                    .accessibilityIdentifier("SlideToDelete.Debug.Diagnostics")
                 Button("Reset Preview", action: resetPreview)
+                Button("Test haptic") {
+                    feedback.prepare()
+                    if feedback.impact() {
+                        hapticRequests += 1
+                    }
+                }
+                .background(SlideToDeleteFeedbackView(feedback: feedback))
+                .accessibilityIdentifier("SlideToDelete.Debug.TestHaptic")
             } header: {
                 Text("Safe preview")
             } footer: {
-                Text("No tabs or site data are deleted here. On a device, a haptic plays each time you cross the completion threshold. Reduce Motion uses a static completion effect.")
+                Text("No data is deleted here. Hold at the end to reveal Shimmer’s label; release to complete immediately. Haptic requests count app calls, not vibrations felt. Test on an iPhone with System Haptics and Accessibility > Touch > Vibration enabled.")
             }
         }
-        .navigationTitle("Swipe to Delete")
+        .navigationTitle("Slide to Delete")
         .onChange(of: variant) { _ in resetPreview() }
         .onChange(of: doubleLength) { _ in resetPreview() }
     }
 
     private func resetPreview() {
         completed = false
+        hapticRequests = 0
+        labelReveals = 0
         previewID = UUID()
     }
 }

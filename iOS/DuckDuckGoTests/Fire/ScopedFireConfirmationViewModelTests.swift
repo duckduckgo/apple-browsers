@@ -18,6 +18,7 @@
 //
 
 import XCTest
+import UIKit
 import Core
 import Persistence
 import FeatureFlags_iOS
@@ -707,6 +708,64 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(state.complete(translation: 200, travel: 200))
         state.resetDrag()
         XCTAssertFalse(state.updateDrag(translation: 200, travel: 200))
+    }
+
+    func testFastSlideRequestsHapticWhenOnlyReleaseReachesThreshold() {
+        var state = SlideToDeleteState()
+        XCTAssertFalse(state.updateDrag(translation: 150, travel: 200))
+        XCTAssertTrue(state.endDrag(translation: 200, travel: 200))
+        XCTAssertTrue(state.isComplete)
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.endDrag(translation: 200, travel: 200))
+    }
+
+    func testReleaseDoesNotRepeatThresholdHaptic() {
+        var state = SlideToDeleteState()
+        XCTAssertTrue(state.updateDrag(translation: 195, travel: 200))
+        XCTAssertFalse(state.endDrag(translation: 200, travel: 200))
+        XCTAssertTrue(state.isComplete)
+    }
+
+    func testLabelRequiresCurrentHoldAndHidesOnRelease() {
+        var state = SlideToDeleteState()
+        XCTAssertFalse(state.revealCompletionLabel(for: state.thresholdEntryCount))
+        XCTAssertTrue(state.updateDrag(translation: 200, travel: 200))
+        let entry = state.thresholdEntryCount
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertTrue(state.revealCompletionLabel(for: entry))
+        XCTAssertTrue(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: entry))
+        XCTAssertFalse(state.endDrag(translation: 200, travel: 200))
+        XCTAssertTrue(state.isComplete)
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: entry))
+    }
+
+    func testMovingBackCancelsLabelAndInvalidatesEarlierHold() {
+        var state = SlideToDeleteState()
+        XCTAssertTrue(state.updateDrag(translation: 200, travel: 200))
+        let firstEntry = state.thresholdEntryCount
+        XCTAssertTrue(state.revealCompletionLabel(for: firstEntry))
+        XCTAssertFalse(state.updateDrag(translation: 100, travel: 200))
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: firstEntry))
+        XCTAssertTrue(state.updateDrag(translation: 200, travel: 200))
+        XCTAssertFalse(state.revealCompletionLabel(for: firstEntry))
+        XCTAssertTrue(state.revealCompletionLabel(for: state.thresholdEntryCount))
+        state.resetDrag()
+        XCTAssertFalse(state.shouldShowCompletionLabel)
+        XCTAssertFalse(state.revealCompletionLabel(for: state.thresholdEntryCount))
+    }
+
+    func testSlideFeedbackIsAttachedToControlView() {
+        let feedback = SlideToDeleteFeedback()
+        XCTAssertFalse(feedback.impact())
+        let view = UIView()
+        feedback.attach(to: view)
+        if #available(iOS 17.5, *) {
+            XCTAssertEqual(view.interactions.filter { $0 is UIImpactFeedbackGenerator }.count, 1)
+        }
+        XCTAssertTrue(feedback.impact())
     }
 
     // MARK: - Helpers

@@ -160,7 +160,7 @@ extension DebugScreensViewModel {
                                             userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
 
             }),
-            .view(title: "Swipe to Delete", { _ in
+            .view(title: "Slide to Delete", { _ in
                 SlideToDeleteDebugView()
             }),
             .view(title: "Alert Playground", { _ in

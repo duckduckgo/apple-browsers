@@ -54,7 +54,7 @@ final class AppLaunchUITests: XCTestCase {
 
     func testSwipeToDeleteRequiresCompletedDrag() {
         app.terminate()
-        app.launchArguments += ["-ff.swipeToDelete", "true"]
+        app.launchArguments += ["-ff.swipeToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
 
         let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
@@ -74,6 +74,11 @@ final class AppLaunchUITests: XCTestCase {
         let slider = app.buttons["alert.forget-data.confirm"]
         XCTAssertTrue(slider.waitForExistence(timeout: UITestTimeouts.navigation))
         XCTAssertEqual(slider.label, "Slide To Delete All")
+        let deleteThis = app.buttons["Fire.Confirmation.Button.ThisTab"]
+        XCTAssertTrue(deleteThis.waitForExistence(timeout: UITestTimeouts.navigation))
+        app.swipeUp()
+        XCTAssertEqual(slider.frame.minY - deleteThis.frame.maxY, 16, accuracy: 1)
+        XCTAssertEqual(slider.frame.height, deleteThis.frame.height, accuracy: 1)
         slider.tap()
         XCTAssertTrue(slider.exists)
 
@@ -115,8 +120,8 @@ final class AppLaunchUITests: XCTestCase {
         let filter = app.searchFields["Filter"]
         XCTAssertTrue(filter.waitForExistence(timeout: UITestTimeouts.navigation))
         filter.tap()
-        filter.typeText("Swipe to Delete")
-        let screen = app.buttons["Swipe to Delete"].firstMatch
+        filter.typeText("Slide to Delete")
+        let screen = app.buttons["Slide to Delete"].firstMatch
         XCTAssertTrue(screen.waitForExistence(timeout: UITestTimeouts.navigation))
         screen.tap()
 
@@ -139,15 +144,35 @@ final class AppLaunchUITests: XCTestCase {
                 screenshot.name = "\(variant) with double-length text"
                 screenshot.lifetime = .keepAlways
                 add(screenshot)
+                if variant == "Shimmer" {
+                    XCTAssertTrue(app.staticTexts["SlideToDelete.Debug.Diagnostics"]
+                        .wait(for: \.label, equals: "Haptic requests: 1 · Label reveals: 1"))
+                }
                 app.buttons["Reset Preview"].tap()
                 XCTAssertTrue(slider.isEnabled)
             }
         }
 
+        let diagnostics = app.staticTexts["SlideToDelete.Debug.Diagnostics"]
+        app.buttons["SlideToDelete.Debug.TestHaptic"].tap()
+        XCTAssertTrue(diagnostics.wait(for: \.label, equals: "Haptic requests: 1 · Label reveals: 0"))
+        app.buttons["Reset Preview"].tap()
+        let fastStart = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
+        let fastEnd = slider.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5))
+        fastStart.press(forDuration: 0.05, thenDragTo: fastEnd, withVelocity: .fast, thenHoldForDuration: 0)
+        XCTAssertTrue(app.staticTexts["Slide completed. No data deleted."].waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertEqual(diagnostics.label, "Haptic requests: 1 · Label reveals: 0")
+
         app.terminate()
         app.launchArguments.removeAll { $0 == "-clearAllDefaults" }
-        app.launchArguments += ["-ff.swipeToDelete", "true"]
+        app.launchArguments += ["-ff.swipeToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
+        navigateToBlankPage()
+        app.buttons["Browser.Toolbar.Button.Menu"].tap()
+        let newTab = app.buttons["New Tab"]
+        XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))
+        newTab.tap()
+        navigateToBlankPage()
         let fireButton = app.buttons["Browser.Toolbar.Button.Fire"]
         XCTAssertTrue(fireButton.waitForExistence(timeout: UITestTimeouts.navigation))
         if dismissInput.exists {
@@ -157,12 +182,33 @@ final class AppLaunchUITests: XCTestCase {
         let deleteAll = app.buttons["alert.forget-data.confirm"]
         XCTAssertTrue(deleteAll.waitForExistence(timeout: UITestTimeouts.navigation))
         XCTAssertEqual(deleteAll.label, "Slide To Delete All")
+        let deleteThis = app.buttons["Fire.Confirmation.Button.ThisTab"]
+        XCTAssertTrue(deleteThis.waitForExistence(timeout: UITestTimeouts.navigation))
+        XCTAssertEqual(deleteAll.frame.minY - deleteThis.frame.maxY, 16, accuracy: 1)
+        XCTAssertEqual(deleteAll.frame.height, deleteThis.frame.height, accuracy: 1)
+        XCTAssertEqual(deleteAll.frame.width, deleteThis.frame.width, accuracy: 1)
+        let sheetScreenshot = XCTAttachment(screenshot: app.screenshot())
+        sheetScreenshot.name = "Fire sheet with 16-point button spacing"
+        sheetScreenshot.lifetime = .keepAlways
+        add(sheetScreenshot)
         deleteAll.coordinate(withNormalizedOffset: CGVector(dx: 0.07, dy: 0.5))
             .press(forDuration: 0.2,
                    thenDragTo: deleteAll.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.5)),
                    withVelocity: .slow,
                    thenHoldForDuration: 0.8)
         XCTAssertTrue(deleteAll.waitForNonExistence(timeout: UITestTimeouts.navigation))
+    }
+
+    private func navigateToBlankPage() {
+        let search = app.descendants(matching: .any)["searchEntry"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: UITestTimeouts.navigation))
+        search.tap()
+        search.typeText("about:blank")
+        app.keyboards.buttons["Go"].tap()
+        let dismissInput = app.buttons["UnifiedToggleInput.Button.Dismiss"]
+        if dismissInput.exists {
+            dismissInput.tap()
+        }
     }
 
     func testSwipeToDeleteDisabledKeepsDeleteAllButton() {

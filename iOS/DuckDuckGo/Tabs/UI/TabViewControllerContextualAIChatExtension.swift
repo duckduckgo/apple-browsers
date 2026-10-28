@@ -122,7 +122,7 @@ extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: true,
                                    hasPrompt: false)
-        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: entrySource)
+        delegate?.tab(self, didRequestNewDuckAITabForUrl: url, entrySource: entrySource, newChatInputRequest: nil)
     }
 
     func aiChatContextualSheetCoordinatorDidRequestViewAllChats(_ coordinator: AIChatContextualSheetCoordinator) {

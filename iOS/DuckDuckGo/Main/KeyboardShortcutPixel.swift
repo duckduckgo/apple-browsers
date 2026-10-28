@@ -27,8 +27,8 @@ enum KeyboardShortcutPixel: PixelKit.Event {
     var parameters: [String: String]? { nil }
     var standardParameters: [PixelKitStandardParameter]? { nil }
 
-    /// Fires `used` once per day and on every shortcut.
+    /// Fires `used` once per day.
     static func fireUsed(with pixelFiring: (any PixelKitFiring)?) {
-        pixelFiring?.fire(KeyboardShortcutPixel.used, frequency: .dailyAndCount)
+        pixelFiring?.fire(KeyboardShortcutPixel.used, frequency: .daily)
     }
 }

@@ -26,8 +26,49 @@ struct MainMenuBuilder {
             builder.remove(menu: identifier)
         }
         for menu in spec.menus {
-            let commands = menu.items.map(makeCommand)
-            builder.replaceChildren(ofMenu: menu.identifier) { _ in commands }
+            let elements = makeElements(for: menu)
+            builder.replaceChildren(ofMenu: menu.identifier) { existing in
+                let retained = menu.identifier == .window && spec.ownsKeyCommands ? removingCloseShortcut(from: existing) : existing
+                if menu.identifier == .edit, spec.ownsKeyCommands {
+                    var replacedFind = false
+                    let updated = replacingFind(in: retained, with: elements[0], replaced: &replacedFind)
+                    return updated + (replacedFind ? Array(elements.dropFirst()) : elements)
+                }
+                return menu.placement == .appendChildren ? retained + elements : elements
+            }
+        }
+    }
+
+    private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
+        menu.items.map(makeCommand) + menu.submenus.map { submenu in
+            UIMenu(title: submenu.title, identifier: submenu.identifier,
+                   options: submenu.inline ? .displayInline : [], children: makeElements(for: submenu))
+        }
+    }
+
+    private func removingCloseShortcut(from elements: [UIMenuElement]) -> [UIMenuElement] {
+        elements.compactMap { element in
+            if let command = element as? UIKeyCommand, command.input == "w", command.modifierFlags == .command {
+                guard let action = command.action else { return nil }
+                return UICommand(title: command.title, image: command.image, action: action,
+                                 propertyList: command.propertyList, attributes: command.attributes, state: command.state)
+            }
+            if let menu = element as? UIMenu {
+                return menu.replacingChildren(removingCloseShortcut(from: menu.children))
+            }
+            return element
+        }
+    }
+
+    private func replacingFind(in elements: [UIMenuElement], with replacement: UIMenuElement,
+                               replaced: inout Bool) -> [UIMenuElement] {
+        elements.map { element in
+            guard let menu = element as? UIMenu else { return element }
+            if menu.identifier == .find {
+                replaced = true
+                return replacement
+            }
+            return menu.replacingChildren(replacingFind(in: menu.children, with: replacement, replaced: &replaced))
         }
     }
 
@@ -45,8 +86,37 @@ struct MainMenuBuilder {
 extension MainMenuCommand {
     var action: Selector {
         switch self {
-        case .settings:
-            return #selector(MainViewController.keyboardSettings)
+        case .settings: return #selector(MainViewController.keyboardSettings)
+        case .newTab: return #selector(MainViewController.keyboardNewTab)
+        case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)
+        case .voiceSearch: return #selector(MainViewController.menuVoiceSearch)
+        case .location: return #selector(MainViewController.keyboardLocation)
+        case .closeTab: return #selector(MainViewController.keyboardCloseTab)
+        case .share: return #selector(MainViewController.menuShare)
+        case .printPage: return #selector(MainViewController.keyboardPrint)
+        case .find: return #selector(MainViewController.keyboardFind)
+        case .stop: return #selector(MainViewController.menuStop)
+        case .reload: return #selector(MainViewController.keyboardReload)
+        case .showTabs: return #selector(MainViewController.keyboardShowAllTabs)
+        case .showPasswords: return #selector(MainViewController.menuTogglePasswords)
+        case .showDownloads: return #selector(MainViewController.menuToggleDownloads)
+        case .zoomIn: return #selector(MainViewController.keyboardZoomIn)
+        case .zoomOut: return #selector(MainViewController.keyboardZoomOut)
+        case .actualSize: return #selector(MainViewController.keyboardZoomReset)
+        case .newTabOnRight: return #selector(MainViewController.menuNewTabOnRight)
+        case .duplicateTab: return #selector(MainViewController.menuDuplicateTab)
+        case .previousTab: return #selector(MainViewController.keyboardPreviousTab)
+        case .nextTab: return #selector(MainViewController.keyboardNextTab)
+        case .about: return #selector(MainViewController.menuAbout)
+        case .feedback: return #selector(MainViewController.menuFeedback)
+        case .selectTab: return #selector(MainViewController.keyboardSelectTab(_:))
+        case .back: return #selector(MainViewController.keyboardBrowserBack)
+        case .forward: return #selector(MainViewController.keyboardBrowserForward)
+        case .findNext: return #selector(MainViewController.keyboardFindNext)
+        case .findPrevious: return #selector(MainViewController.keyboardFindPrevious)
+        case .fire: return #selector(MainViewController.keyboardFire)
+        case .openLink: return #selector(MainViewController.menuOpenLink)
+        case .openBackgroundLink: return #selector(MainViewController.menuOpenBackgroundLink)
         }
     }
 

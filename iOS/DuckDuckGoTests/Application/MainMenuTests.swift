@@ -32,7 +32,7 @@ struct MainMenuTests {
         #expect(menu.identifier == .preferences)
         #expect(menu.items.count == 1)
         let command = try #require(MainMenuBuilder().makeCommand(for: menu.items[0]) as? UIKeyCommand)
-        #expect(command.title == UserText.settingsTitle)
+        #expect(command.title == UserText.menuSettings)
         #expect(command.action == #selector(MainViewController.keyboardSettings))
         #expect(command.input == ",")
         #expect(command.modifierFlags == .command)
@@ -73,7 +73,7 @@ struct MainMenuTests {
         for enabled in [false, true, false] {
             flagger.enabledFeatureFlags = enabled ? [.ipadMenuBar] : []
             let padSpec = MainMenuSpec(isEnabled: flagger.isIPadMenuBarEnabled(idiom: .pad))
-            #expect(padSpec.remainingKeyCommands(from: commands) == (enabled ? [alternate, fire] : commands))
+            #expect(padSpec.remainingKeyCommands(from: commands) == (enabled ? [alternate] : commands))
             #expect(padSpec.removedMenus == (enabled ? [.format] : []))
             let phoneSpec = MainMenuSpec(isEnabled: flagger.isIPadMenuBarEnabled(idiom: .phone))
             #expect(phoneSpec.remainingKeyCommands(from: commands) == commands)
@@ -94,7 +94,7 @@ struct MainMenuTests {
     @Test(.timeLimit(.minutes(1)))
     func unknownSelectorsAreNotMenuCommands() {
         #expect(MainMenuCommand(action: #selector(MainViewController.keyboardSettings)) == .settings)
-        #expect(MainMenuCommand(action: #selector(MainViewController.keyboardReload)) == nil)
+        #expect(MainMenuCommand(action: #selector(MainViewController.keyboardEscape)) == nil)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -159,6 +159,145 @@ struct MainMenuTests {
         #expect(rebuildCount == 0)
         #expect(controller.spec.removedMenus.isEmpty)
     }
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [false, true], [false, true])
+    func optionalCommandsFollowCapabilities(voice: Bool, fire: Bool) {
+        let spec = MainMenuSpec(isEnabled: true, context: .init(voiceSearchEnabled: voice, fireModeEnabled: fire))
+        #expect(spec.allItems.contains { $0.command == .voiceSearch } == voice)
+        #expect(spec.allItems.contains { $0.command == .newFireTab } == fire)
+        let shortcuts = spec.allItems.compactMap(\.shortcut)
+        for shortcut in shortcuts {
+            #expect(shortcuts.filter { $0 == shortcut }.count == 1)
+        }
+        let prints = spec.allItems.filter { $0.command == .printPage }
+        #expect(prints.count == 2)
+        #expect(prints.compactMap(\.shortcut).count == 1)
+        #expect(spec.menus.first { $0.identifier == .help }?.allItems.filter { $0.command == .selectTab }.count == 9)
+        #expect(spec.allItems.filter { [.openLink, .openBackgroundLink].contains($0.command) }.allSatisfy { $0.shortcut == nil })
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func builderPreservesSystemItemsAndReplacesFindInPlace() throws {
+        let builder = MainMenuBuilderSpy()
+        let undo = UICommand(title: "Undo", action: #selector(UndoManager.undo))
+        let autofillAction = UICommand(title: "Passwords", action: #selector(UndoManager.undo))
+        let autofill = UIMenu(title: "AutoFill", identifier: UIMenu.Identifier("system.autofill"), children: [autofillAction])
+        let find = UIMenu(title: "Find", identifier: .find, children: [])
+        let close = UIKeyCommand(title: "Close", action: #selector(MainViewController.keyboardCloseTab), input: "w", modifierFlags: .command)
+        let minimize = UICommand(title: "Minimize", action: #selector(UndoManager.undo))
+        let search = UICommand(title: "Search", action: #selector(UndoManager.undo))
+        builder.children = [.edit: [undo, find, autofill], .window: [close, minimize], .help: [search]]
+        MainMenuBuilder().build(MainMenuSpec(isEnabled: true), with: builder)
+        let edit = try #require(builder.children[.edit])
+        #expect(edit[0] === undo)
+        let retainedAutofill = try #require(edit[2] as? UIMenu)
+        #expect(retainedAutofill.identifier == autofill.identifier)
+        #expect(retainedAutofill.title == autofill.title)
+        #expect(retainedAutofill.children.count == 1)
+        #expect((retainedAutofill.children.first as? UICommand)?.action == autofillAction.action)
+        let findGroup = try #require(edit[1] as? UIMenu)
+        #expect((findGroup.children.first as? UIKeyCommand)?.action == MainMenuCommand.find.action)
+        let window = try #require(builder.children[.window])
+        #expect(window[1] === minimize)
+        #expect((window[0] as? UICommand)?.action == close.action)
+        #expect(!(window[0] is UIKeyCommand))
+        #expect(builder.children[.help]?.first === search)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func menuOwnsEquivalentsAcrossRespondersAndRetainsHiddenAlternates() {
+        let make = { (action: Selector, input: String, modifiers: UIKeyModifierFlags) in
+            UIKeyCommand(title: "", action: action, input: input, modifierFlags: modifiers)
+        }
+        let close = make(#selector(TabSwitcherViewController.keyboardCloseWindowShortcut), "w", .command)
+        let newTabAlternate = make(MainMenuCommand.newTab.action, "n", .command)
+        let zoomAlternate = make(MainMenuCommand.zoomIn.action, "=", .command)
+        let cursor = make(MainMenuCommand.back.action, UIKeyCommand.inputLeftArrow, .command)
+        let commands = [close, newTabAlternate, zoomAlternate, cursor]
+        for enabled in [false, true, false] {
+            let spec = MainMenuSpec(isEnabled: enabled)
+            #expect(spec.remainingKeyCommands(from: commands) == (enabled ? [newTabAlternate, zoomAlternate] : commands))
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [0, 1, 5, 9, 12])
+    func commandNineSelectsLastTabOnlyInNewMode(count: Int) {
+        #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: true) == (count > 0 ? count - 1 : nil))
+        #expect(MainMenuSpec.tabIndex(number: 9, count: count, menuEnabled: false) == (count >= 9 ? 8 : nil))
+        #expect(MainMenuSpec.tabIndex(number: 1, count: count, menuEnabled: true) == (count > 0 ? 0 : nil))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func availabilityTracksWebsiteLoadingFindAndModalState() {
+        var state = MenuCommandAvailability.State(shortcutsEnabled: true, presentation: .browser)
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.share))
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.find))
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.stop))
+        state.hasTab = true
+        #expect(MenuCommandAvailability(state: state).isEnabled(.newTab))
+        #expect(MenuCommandAvailability(state: state).isEnabled(.closeTab))
+        #expect(MenuCommandAvailability(state: state).isEnabled(.duplicateTab))
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.reload))
+        state.hasWebsite = true
+        state.isLoading = true
+        state.findActive = true
+        state.tabCount = 3
+        let website = MenuCommandAvailability(state: state)
+        for command in [MainMenuCommand.share, .find, .findNext, .findPrevious, .stop, .reload, .printPage, .nextTab] {
+            #expect(website.isEnabled(command))
+        }
+        state.omnibarEditing = true
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.findNext))
+        state = .init(shortcutsEnabled: true, presentation: .downloads)
+        state.passwordsEnabled = true
+        let downloads = MenuCommandAvailability(state: state)
+        #expect(downloads.isEnabled(.showPasswords))
+        #expect(downloads.isEnabled(.showTabs))
+        #expect(downloads.title(for: .showDownloads) == UserText.menuHideDownloads)
+        #expect(downloads.title(for: .showPasswords) == UserText.menuShowPasswords)
+        #expect(!downloads.isEnabled(.newTab))
+        state = .init(shortcutsEnabled: true, presentation: .tabSwitcher)
+        state.canHideTabs = false
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.showTabs))
+        #expect(!MenuCommandAvailability(state: state).isEnabled(.closeTab))
+        #expect(MenuCommandAvailability(state: state).isEnabled(.newTab))
+        for command in [MainMenuCommand.showDownloads, .showPasswords, .settings, .about, .feedback] {
+            #expect(!MenuCommandAvailability(state: state).isEnabled(command))
+        }
+        #expect(MenuCommandAvailability(state: state).title(for: .showTabs) == UserText.menuHideTabs)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: MainMenuCommand.allCases)
+    func lockedAndBlockingPresentationsDisableCommands(command: MainMenuCommand) {
+        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: false, presentation: .browser)).isEnabled(command))
+        #expect(!MenuCommandAvailability(state: .init(shortcutsEnabled: true, presentation: .blockingModal)).isEnabled(command))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)))
+    func voiceAvailabilityRebuildsStaticCommandsAtRuntime() async {
+        let flagger = MockFeatureFlagger()
+        flagger.enabledFeatureFlags = [.ipadMenuBar]
+        let notifications = NotificationCenter()
+        var voiceEnabled = false
+        let (rebuilds, continuation) = AsyncStream<Void>.makeStream()
+        var iterator = rebuilds.makeAsyncIterator()
+        let controller = MainMenuController(featureFlagger: flagger, idiom: .pad,
+                                            contextProvider: { .init(voiceSearchEnabled: voiceEnabled) },
+                                            notificationCenter: notifications, rebuildDelay: .milliseconds(1)) { continuation.yield(()) }
+        for enabled in [true, false] {
+            voiceEnabled = enabled
+            notifications.post(name: .speechRecognizerDidChangeAvailability, object: nil)
+            _ = await iterator.next()
+            #expect(controller.spec.allItems.contains { $0.command == .voiceSearch } == enabled)
+        }
+    }
+
 }
 
 @MainActor

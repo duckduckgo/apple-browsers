@@ -92,6 +92,8 @@ class FireWindowTests: UITestCase {
         app.openAutofillTestPage(.signUp)
         app.fillSignUpForm(email: "test@duck.com", password: "pa$$word")
         app.submitSignUpForm()
+        XCTAssertTrue(app.windows.firstMatch.webViews["Signed up"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+                      "The sign-up form should submit")
         assertSavePasswordPopupIsNotShown()
     }
 
@@ -149,8 +151,9 @@ class FireWindowTests: UITestCase {
         coordinate.hover()
     }
 
+    /// Any popover counts: besides asking, the app can confirm a save or offer an update.
     private func assertSavePasswordPopupIsNotShown() {
-        XCTAssertFalse(app.savePasswordPopoverTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+        XCTAssertFalse(app.popovers.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
                        "Fire windows shouldn't offer to save passwords.")
     }
 

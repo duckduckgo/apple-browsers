@@ -86,7 +86,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
     // MARK: - Business Logic
 
     private static func makeImportTypeItems(selectableTypes: [DataImport.DataType], selectedTypes: [DataImport.DataType]) -> [ImportTypeItem] {
-        selectableTypes.sorted(by: { $0.displayName < $1.displayName }).map {
+        selectableTypes.sorted().map {
             .init(dataType: $0, isSelected: selectedTypes.contains($0))
         }
     }
@@ -177,15 +177,23 @@ private extension ImportSourcePickerViewModel {
             return UserText.importDataImportTypeTitleSelected
         }
 
-        if selectedImportTypes.count >= 2,
-            selectedImportTypes.contains(.passwords),
-            selectedImportTypes.contains(.bookmarks) {
+        let selectedTypes = Set(selectedImportTypes)
+        switch (selectedTypes.contains(.bookmarks), selectedTypes.contains(.passwords), selectedTypes.contains(.history)) {
+        case (true, true, true):
+            return UserText.importTypeSelectionTitleAllWithHistory
+        case (true, true, false):
             return UserText.importTypeSelectionTitleAll
-        } else if selectedImportTypes.first == .bookmarks {
+        case (true, false, true):
+            return UserText.importTypeSelectionTitleBookmarksAndHistory
+        case (false, true, true):
+            return UserText.importTypeSelectionTitlePasswordsAndHistory
+        case (true, false, false):
             return UserText.importTypeSelectionTitleBookmarks
-        } else if selectedImportTypes.first == .passwords {
+        case (false, true, false):
             return UserText.importTypeSelectionTitlePasswords
-        } else {
+        case (false, false, true):
+            return UserText.importTypeSelectionTitleHistory
+        case (false, false, false):
             // Fallback for unexpected cases
             return UserText.importDataImportTypeTitleSelected
         }

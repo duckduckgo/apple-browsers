@@ -613,6 +613,26 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(Set(kind.supportedFileTypes(for: .safari)), Source.safari.archiveImportSupportedFiles)
     }
 
+    func testSupportedDataTypes_historyFlagTurnedOn_addsHistoryForBrowsersThatImportIt() throws {
+        try setHistoryImportFlag(false)
+        let typesWithFlagOff = [Source.chrome, .firefox, .safari].map(\.supportedDataTypes)
+
+        try setHistoryImportFlag(true)
+
+        XCTAssertTrue(typesWithFlagOff.allSatisfy { !$0.contains(.history) })
+        XCTAssertTrue([Source.chrome, .yandex, .firefox, .safari].allSatisfy { $0.supportedDataTypes.contains(.history) })
+        XCTAssertFalse(Source.tor.supportedDataTypes.contains(.history))
+    }
+
+    @MainActor
+    func testInit_historyFlagOn_selectsHistoryByDefaultForFirefoxAndSafari() throws {
+        try setHistoryImportFlag(true)
+
+        let models = [Source.firefox, .safari].map(defaultProfileModel(importSource:))
+
+        XCTAssertEqual(models.map { $0.selectedDataTypes.contains(.history) }, [true, true])
+    }
+
     @MainActor
     func testUpdateWithSource_filterOn_keepsFilterAndImportsItsTypesTheSourceSupports() {
         model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
@@ -2989,6 +3009,26 @@ final class DataImportViewModelTests: XCTestCase {
         let originalValue = featureFlagger.featuresStub[key]
         featureFlagger.featuresStub[key] = true
         addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
+    private func setHistoryImportFlag(_ isOn: Bool) throws {
+        let featureFlagger = try XCTUnwrap(Application.appDelegate.featureFlagger as? MockFeatureFlagger)
+        let key = FeatureFlag.dataImportHistory.rawValue
+        let originalValue = featureFlagger.featuresStub[key]
+        featureFlagger.featuresStub[key] = isOn
+        addTeardownBlock { featureFlagger.featuresStub[key] = originalValue }
+    }
+
+    @MainActor
+    private func defaultProfileModel(importSource: Source) -> DataImportViewModel {
+        DataImportViewModel(
+            importSource: importSource,
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                .init(browser: browser, profiles: [BrowserProfile.default(fileStore: self.fileStore)(browser)])
+            },
+            directoryAccessAvailability: .mockUnavailable()
+        )
     }
 
     private var sourceFilterSources: [Source] {

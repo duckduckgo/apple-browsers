@@ -1931,6 +1931,10 @@ struct UserText {
     static let importTypeSelectionTitleAll = NSLocalizedString("import.type-selection.title.all", value: "Import Bookmarks & Passwords", comment: "Title text for the button to select the type of data to import (e.g passwords, bookmarks)")
     static let importTypeSelectionTitleBookmarks = NSLocalizedString("import.type-selection.title.bookmarks", value: "Import Bookmarks", comment: "Title text for the button to select the type of data to import when bookmarks selected")
     static let importTypeSelectionTitlePasswords = NSLocalizedString("import.type-selection.title.passwords", value: "Import Passwords", comment: "Title text for the button to select the type of data to import when passwords selected")
+    static let importTypeSelectionTitleAllWithHistory = NotLocalizedString("import.type-selection.title.all-with-history", value: "Import Bookmarks, Passwords, and History", comment: "Title text for the button to select the type of data to import when bookmarks, passwords and history are selected")
+    static let importTypeSelectionTitleBookmarksAndHistory = NotLocalizedString("import.type-selection.title.bookmarks-and-history", value: "Import Bookmarks and History", comment: "Title text for the button to select the type of data to import when bookmarks and history are selected")
+    static let importTypeSelectionTitlePasswordsAndHistory = NotLocalizedString("import.type-selection.title.passwords-and-history", value: "Import Passwords and History", comment: "Title text for the button to select the type of data to import when passwords and history are selected")
+    static let importTypeSelectionTitleHistory = NotLocalizedString("import.type-selection.title.history", value: "Import History", comment: "Title text for the button to select the type of data to import when history selected")
 
     static let importChromeAllowKeychainIntructions = NSLocalizedString("import.chrome.allow-keychain.instructions", value: "Enter your device password and click **Allow** to complete the import. DuckDuckGo won't see your password.", comment: "Instructions shown to the user when Chrome needs to access their Keychain. Contains markdown for bold text.")
     static let importChromeAllowButtonTitle = NSLocalizedString("import.chrome.allow-keychain.allow.button.title", value: "Allow", comment: "Button title of example dialog demonstrating to the user what to click when the system needs to access their Keychain.")
@@ -1949,6 +1953,7 @@ struct UserText {
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
     static let importHistory = NotLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
+    static let importHistoryTimeRange = NotLocalizedString("import.history.time-range", value: "Last 30 days", comment: "Label next to the History import option explaining that only the last 30 days of browsing history are imported")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
@@ -2012,12 +2017,13 @@ struct UserText {
         return String(format: localized, successful, total)
     }
     static func importSummaryHistoryImported(_ count: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.imported", value: "History Imported: %d (last 30 days)", comment: "Summary text showing number of browsing history visits imported from the last 30 days")
+        let localized = NotLocalizedString("import.summary.history.imported", value: "History: %d", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange or importSummaryHistoryTotal")
         return String(format: localized, count)
     }
-    static func importSummaryHistoryImportedPartial(_ successful: Int, _ total: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.imported.partial", value: "History Imported: %d / %d (last 30 days)", comment: "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days")
-        return String(format: localized, successful, total)
+    static let importSummaryHistoryTimeRange = NotLocalizedString("import.summary.history.time-range", value: "(last 30 days)", comment: "Shown after the number of imported browsing history visits when every visit found was new")
+    static func importSummaryHistoryTotal(_ total: Int) -> String {
+        let localized = NotLocalizedString("import.summary.history.total", value: "/ %d (last 30 days)", comment: "Shown after the number of imported browsing history visits: %d is the number of visits found in the last 30 days, including the ones already in history")
+        return String(format: localized, total)
     }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")

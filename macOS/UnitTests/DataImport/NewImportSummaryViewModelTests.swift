@@ -291,8 +291,24 @@ final class NewImportSummaryViewModelTests: XCTestCase {
         guard case .success(let item) = viewModel.items.first else {
             return XCTFail("Expected success item")
         }
-        XCTAssertEqual(item.primaryText, UserText.importSummaryHistoryImported(120))
+        XCTAssertEqual(item.primaryText, "History: 120")
+        XCTAssertEqual(item.secondaryText, "(last 30 days)")
         XCTAssertNil(item.shortcut)
+    }
+
+    func testInitWithHistoryAlreadyInHistoryShowsNewVisitsOutOfAllFound() {
+        let summary: DataImportSummary = [
+            .history: .success(DataImport.DataTypeSummary(successful: 60, duplicate: 740, failed: 0))
+        ]
+
+        let viewModel = makeViewModel(summary: summary)
+
+        guard case .success(let item) = viewModel.items.first else {
+            return XCTFail("Expected success item")
+        }
+        XCTAssertEqual(item.primaryText, "History: 60")
+        XCTAssertEqual(item.secondaryText, "/ 800 (last 30 days)")
+        XCTAssertNil(item.duplicateText)
     }
 
     func testInitWithHistoryFailureShowsHistoryFailureTitle() {

@@ -55,6 +55,7 @@ final class NewImportSummaryViewModel: ObservableObject {
 
         var image: NSImage
         var primaryText: String
+        var secondaryText: String?
         var duplicateText: String?
         var failureText: String?
         var shortcut: ShortcutItem?
@@ -161,6 +162,14 @@ final class NewImportSummaryViewModel: ObservableObject {
 
         let image = image(for: dataType)
         let primaryText = primaryText(for: dataType, summary: typeSummary)
+        // History reports the visits already in history as a count, without per-item details.
+        let secondaryText: String? = if dataType != .history {
+            nil
+        } else if typeSummary.duplicate > 0 {
+            UserText.importSummaryHistoryTotal(typeSummary.successful + typeSummary.duplicate)
+        } else {
+            UserText.importSummaryHistoryTimeRange
+        }
         let duplicateText = duplicateText(from: typeSummary)
         let failureText = failureText(from: typeSummary)
         let shortcut = shortcutItem(for: dataType)
@@ -169,6 +178,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             type: dataType,
             image: image,
             primaryText: primaryText,
+            secondaryText: secondaryText,
             duplicateText: duplicateText,
             failureText: failureText,
             shortcut: shortcut
@@ -214,7 +224,7 @@ final class NewImportSummaryViewModel: ObservableObject {
             case .creditCards:
                 return UserText.importSummaryCreditCardsImportedPartial(summary.successful, total)
             case .history:
-                return UserText.importSummaryHistoryImportedPartial(summary.successful, total)
+                return UserText.importSummaryHistoryImported(summary.successful)
             }
         }
     }

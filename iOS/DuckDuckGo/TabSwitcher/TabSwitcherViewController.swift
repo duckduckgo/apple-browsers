@@ -121,8 +121,9 @@ class TabSwitcherViewController: UIViewController {
 
     weak var delegate: TabSwitcherDelegate!
     weak var previewsSource: TabPreviewsSource!
-    /// Backs the Duck.ai button's recent chats menu; `nil` keeps the button opening a new chat.
-    var recentChatsReader: AIChatSuggestionsReading?
+    /// Backs the Duck.ai button's recent chats menu per browsing mode; `nil` keeps the button opening a new chat.
+    var recentChatsReaderProvider: ((BrowsingMode) -> AIChatSuggestionsReading)?
+    private var recentChatsReaders: [BrowsingMode: AIChatSuggestionsReading] = [:]
 
     var selectedTabs: [IndexPath] {
         activePageController.selectedIndexPaths
@@ -867,7 +868,7 @@ extension BrowsingMode {
 extension TabSwitcherViewController {
 
     func makeRecentChatsMenu() -> UIMenu? {
-        guard recentChatsReader != nil else { return nil }
+        guard recentChatsReaderProvider != nil else { return nil }
         return UIMenu(children: [
             UIDeferredMenuElement.uncached { [weak self] completion in
                 self?.loadRecentChatsMenuSections(completion) ?? completion([])
@@ -877,7 +878,9 @@ extension TabSwitcherViewController {
 
     private func loadRecentChatsMenuSections(_ completion: @escaping ([UIMenuElement]) -> Void) {
         Task { @MainActor in
-            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: recentChatsReader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
+            // The viewed page's mode, which is where the chosen chat opens.
+            let reader = recentChatsReader(for: selectedBrowsingMode)
+            let viewModel = await AIChatRecentChatsMenuViewModel.fetch(using: reader) ?? AIChatRecentChatsMenuViewModel(suggestions: [])
             PixelKit.fire(AIChatTabSwitcherMenuPixel.shown, frequency: .dailyAndCount)
             completion(viewModel.makeMenuSections(style: .compact, actions: .init(
                 newChat: { [weak self] in
@@ -894,6 +897,13 @@ extension TabSwitcherViewController {
                 }
             )))
         }
+    }
+
+    private func recentChatsReader(for mode: BrowsingMode) -> AIChatSuggestionsReading? {
+        if let reader = recentChatsReaders[mode] { return reader }
+        let reader = recentChatsReaderProvider?(mode)
+        recentChatsReaders[mode] = reader
+        return reader
     }
 
     private func openRecentChat(_ chat: AIChatSuggestion) {

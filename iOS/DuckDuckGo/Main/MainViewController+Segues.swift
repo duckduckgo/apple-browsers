@@ -291,7 +291,7 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
-        controller.recentChatsReader = makeTabSwitcherRecentChatsReader()
+        controller.recentChatsReaderProvider = makeTabSwitcherRecentChatsReaderProvider()
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -780,12 +780,15 @@ extension NSNotification.Name {
 extension MainViewController {
 
     /// Fire mode lists Fire chats only.
-    func makeTabSwitcherRecentChatsReader() -> AIChatSuggestionsReading? {
+    func makeTabSwitcherRecentChatsReaderProvider() -> ((BrowsingMode) -> AIChatSuggestionsReading)? {
         guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), aiChatSettings.isAIChatEnabled else { return nil }
-        return AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: tabManager.currentBrowsingMode == .fire,
-                                                             nativeStorageHandler: duckAiNativeStorageHandler,
-                                                             fireModeStorageHandler: duckAiFireModeStorageHandler,
-                                                             featureFlagger: featureFlagger,
-                                                             privacyConfig: privacyConfigurationManager)
+        return { [weak self] mode in
+            guard let self else { return NilSuggestionsReader() }
+            return AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: mode == .fire,
+                                                                 nativeStorageHandler: self.duckAiNativeStorageHandler,
+                                                                 fireModeStorageHandler: self.duckAiFireModeStorageHandler,
+                                                                 featureFlagger: self.featureFlagger,
+                                                                 privacyConfig: self.privacyConfigurationManager)
+        }
     }
 }

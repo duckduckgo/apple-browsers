@@ -41,7 +41,7 @@ class SubscriptionEntryPointsTests: UITestCase {
 
     func testSettingsPurchaseButtonOpensPurchasePageInNewTab() {
         app.openSettings()
-        app.preferencesWindow.buttons["PreferencesSidebar.privacyProButton"].clickAfterExistenceTestSucceeds()
+        app.preferencesGoToPrivacyProPane()
         let tabCount = app.windows.firstMatch.tabs.count
 
         app.preferencesWindow.buttons["PreferencesPurchaseSubscriptionView.purchaseButton"].clickAfterExistenceTestSucceeds()

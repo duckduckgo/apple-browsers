@@ -2657,7 +2657,7 @@ class MainViewController: UIViewController {
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
 
-        if willBeginEditing, !featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage),
+        if willBeginEditing,
            let switcher = tabSwitcherController, presentedViewController === switcher, switcher.isBeingDismissed,
            let defaultOmniBar = omniBar as? DefaultOmniBarViewController {
             let requestID = appOpenKeyboardRequestID
@@ -2668,10 +2668,14 @@ class MainViewController: UIViewController {
                 return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible
                     && tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === controller
                     && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+                    && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
                     && !daxDialogsManager.isShowingContextualOnboardingDialog
                     && (presentedViewController == nil || isDismissingOriginalSwitcher)
             }
-            defaultOmniBar.beginEditingAutomatically(isRequestValid: isRequestValid) { _ in }
+            let beginEditing = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                ? defaultOmniBar.beginEditingOnNewTabPageAppOpen
+                : defaultOmniBar.beginEditingAutomatically
+            beginEditing(isRequestValid) { _ in }
         }
 
         scheduleAttachedNewTabPagePresentation(for: controller, trigger: sessionTrigger,

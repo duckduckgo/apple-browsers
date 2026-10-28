@@ -110,7 +110,7 @@ final class TabContentCapabilityTests: XCTestCase {
             (.loadedByStateRestoration, .ui),
             (.reload, .ui),
             (.switchToOpenTab, .ui),
-            (.webViewUpdated, .ui),
+            (.webViewUpdated, .webViewUpdated),
         ]
         for (source, expected) in cases {
             let content = Tab.TabContent.contentFromURL(duckAIURL, source: source)

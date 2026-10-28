@@ -1031,10 +1031,16 @@ extension MainCoordinator: IdleReturnLaunchDelegate {
 
     private func startReturnSession(afterIdleSurface: PostIdleSessionWideEventData.Surface?) {
         let focused = controller.isInputFocused
-        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOnForCurrentTab(), afterIdleSurface: afterIdleSurface,
+        let landedOn = landedOnForCurrentTab()
+        controller.postIdleSessionInstrumentation.sessionStarted(landedOn: landedOn, afterIdleSurface: afterIdleSurface,
                                                                  focused: focused,
                                                                  toggleEnabled: controller.isReturnSessionToggleEnabled,
                                                                  togglePosition: controller.returnSessionTogglePosition(focused: focused))
+        if landedOn == .duckAI {
+            controller.fireAIChatEntryPointPixel(source: .appOpen, opensNewTab: false, hasPrompt: false)
+            // The Duck.ai tab is already on screen, so show it to the entry that just started.
+            controller.reportDuckAISessionCurrentTab()
+        }
     }
 
     private func landedOnForCurrentTab() -> ReturnSessionWideEventData.LandedOn {

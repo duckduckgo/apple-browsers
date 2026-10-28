@@ -95,6 +95,8 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case siri
     case deepLinkOther = "deep_link_other"
     case returnToChatCard = "return_to_chat_card"
+    /// The app opened, or came back from the background, onto a tab already showing Duck.ai.
+    case appOpen = "app_open"
     case ddgHomepage = "ddg_homepage"
 }
 

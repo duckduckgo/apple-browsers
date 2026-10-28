@@ -514,10 +514,14 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     // MARK: - Model Picker (showModelPicker)
 
     func testWhenUpdatedModelPickerIsAvailableThenCoordinatorBuildsUpdatedMenu() {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+        subscriptionManager.isEligibleForFreeTrialResult = true
+
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: true)
         )
         coordinator.modelStore.models = [
@@ -532,10 +536,13 @@ final class UnifiedToggleInputCoordinatorTests: XCTestCase {
     }
 
     func testWhenUpdatedModelPickerIsUnavailableThenCoordinatorBuildsLegacyMenu() {
+        subscriptionManager.hasAppStoreProductsAvailable = true
+
         let coordinator = UnifiedToggleInputCoordinator(
             host: .omnibar,
             isToggleEnabled: true,
             preferences: mockPreferences,
+            subscriptionManager: subscriptionManager,
             updatedModelPickerFeature: MockUpdatedModelPickerFeature(isAvailable: false)
         )
         coordinator.modelStore.models = [

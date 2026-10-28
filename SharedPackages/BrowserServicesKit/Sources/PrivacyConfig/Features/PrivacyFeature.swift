@@ -565,6 +565,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// screenshot preview.
     case tabSwitcherRichCard
 
+    /// iPhone: Duck.ai tab ↔ browser handoff improvements (new-tab menus, tab switcher recent chats).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970758953673?focus=true
+    case tabHandoffImprovements
+
     /// macOS only. When on, the onboarding Search/Duck.ai toggle choice also drives the New Tab Page
     /// search-mode toggle and seeds the duckduckgo.com homepage. Off keeps the choice address-bar only.
     case onboardingToggleAffectsNtpAndDdg

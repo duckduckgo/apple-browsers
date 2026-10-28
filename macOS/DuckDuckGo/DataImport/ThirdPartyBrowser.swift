@@ -118,9 +118,9 @@ enum ThirdPartyBrowser: CaseIterable {
     /// Browsers are hidden when not installed, so this only applies to password managers.
     var fallbackApplicationIcon: NSImage? {
         switch self {
-        case .lastPass: return .lastPassIcon
-        case .onePassword8: return ._1PasswordIcon
-        case .onePassword7: return ._1PasswordIcon
+        case .lastPass: return NSImage(resource: .lastPassIcon)
+        case .onePassword8: return NSImage(resource: ._1PasswordIcon)
+        case .onePassword7: return NSImage(resource: ._1PasswordIcon)
         default: return nil
         }
     }

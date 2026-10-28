@@ -20,7 +20,7 @@ import Combine
 import Common
 import FoundationExtensions
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import SpecialErrorPages
 import WebKit

@@ -749,6 +749,20 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
     // MARK: - DisplayConditions Mapping Tests
 
+    func testWhenMaxImpressionsIsABareIntegerThenItDecodes() throws {
+        let data = try XCTUnwrap(#"{"maxImpressions":5}"#.data(using: .utf8))
+
+        let conditions = try JSONDecoder().decode(RemoteMessageResponse.JsonDisplayConditions.self, from: data)
+
+        XCTAssertEqual(conditions.maxImpressions, 5)
+    }
+
+    func testWhenMaxImpressionsIsAnObjectThenItDoesNotDecode() throws {
+        let data = try XCTUnwrap(#"{"maxImpressions":{"value":5}}"#.data(using: .utf8))
+
+        XCTAssertThrowsError(try JSONDecoder().decode(RemoteMessageResponse.JsonDisplayConditions.self, from: data))
+    }
+
     func testWhenMessageHasDisplayConditionsWithTriggerThenItIsMappedCorrectly() {
         let jsonMessage = makeJsonMessage(
             id: "msg-trigger",
@@ -795,6 +809,21 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(result.count, 1)
         XCTAssertNil(result.first?.displayConditions?.trigger)
         XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 3)
+    }
+
+    func testWhenMessageHasMaxImpressionsThenItIsMapped() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-max-impressions",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: nil, maxImpressions: 5)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.maxImpressions, 5)
     }
 
     func testWhenMessageHasUnknownTriggerThenMessageIsDiscarded() {
@@ -851,6 +880,21 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
         XCTAssertEqual(result.count, 1)
         XCTAssertEqual(result.first?.displayConditions?.dismissAfterDaysShown, 1)
+    }
+
+    func testWhenMaxImpressionsIsNotPositiveThenItIsClampedToOne() {
+        let jsonMessage = makeJsonMessage(
+            id: "msg-max-impressions-clamp",
+            displayConditions: RemoteMessageResponse.JsonDisplayConditions(trigger: nil, dismissAfterDaysShown: nil, maxImpressions: 0)
+        )
+
+        let result = JsonToRemoteMessageModelMapper.maps(
+            jsonRemoteMessages: [jsonMessage],
+            surveyActionMapper: MockSurveyActionMapper(),
+            supportedSurfacesForMessage: { _ in .newTabPage })
+
+        XCTAssertEqual(result.count, 1)
+        XCTAssertEqual(result.first?.displayConditions?.maxImpressions, 1)
     }
 
     func testWhenMultipleMessagesAndOneHasUnknownTriggerThenOnlyThatOneIsDiscarded() {

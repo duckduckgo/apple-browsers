@@ -23,7 +23,7 @@ final class PromoQueueUITests: UITestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        app = XCUIApplication.setUp(featureFlags: ["promoQueue": true])
+        app = XCUIApplication.setUp()
         app.enforceSingleWindow()
         app.resetPromoState()
         app.dismissExternalPromos()

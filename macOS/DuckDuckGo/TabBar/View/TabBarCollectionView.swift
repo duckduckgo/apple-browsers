@@ -62,9 +62,10 @@ open class TabBarCollectionView: NSCollectionView {
         return false
     }
 
-    open override func awakeFromNib() {
-        super.awakeFromNib()
-
+    /// Registers item/supplementary-view classes and the accepted drag types.
+    ///
+    /// Call this only after `collectionViewLayout` has been assigned.
+    func registerItemsAndDraggedTypes() {
         register(TabBarViewItem.self, forItemWithIdentifier: TabBarViewItem.identifier)
         register(TabBarFooter.self, forSupplementaryViewOfKind: NSCollectionView.elementKindSectionFooter, withIdentifier: TabBarFooter.identifier)
 

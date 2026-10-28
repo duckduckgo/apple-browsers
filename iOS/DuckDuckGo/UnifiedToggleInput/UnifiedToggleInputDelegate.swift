@@ -18,10 +18,15 @@
 //
 
 import AIChat
+import Foundation
 
 @MainActor
 protocol UnifiedToggleInputDelegate: AnyObject {
-    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, images: [AIChatNativePrompt.NativePromptImage]?, files: [AIChatNativePrompt.NativePromptFile]?)
+    /// `termsAccepted` is `true` only for a prompt sent with Ask.
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool)
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?)
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void)
     /// Nothing to deliver, only the moment — reported before the keyboard takes the surface with it.
     func unifiedToggleInputDidSubmitPromptToBoundChat()
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?)
@@ -33,6 +38,7 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     func unifiedToggleInputDidCommitMode(_ mode: TextEntryMode)
     func unifiedToggleInputDidRequestFire()
     func unifiedToggleInputDidRequestAppMenu()
+    func unifiedToggleInputDidRequestAppMenuLongPress()
     /// Destination state the UTI should snap to at the start of an inline-dismiss animation.
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot
     func unifiedToggleInputDidTapClearText()
@@ -40,13 +46,27 @@ protocol UnifiedToggleInputDelegate: AnyObject {
     /// Edit mode entered/exited — the host applies the surrounding chrome (transcript whiteout,
     /// header swap). The input side is handled within the coordinator.
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool)
+    /// A link inside a footer message. Always a new tab: loading in place would discard the draft
+    /// and the attachment the message is about.
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL)
 }
 
 extension UnifiedToggleInputDelegate {
+    func unifiedToggleInputDidSubmitPrompt(_ prompt: String, modelId: String?, tools: [AIChatRAGTool]?, reasoningEffort: AIChatReasoningEffort?, attachments: AIChatPromptAttachments, termsAccepted: Bool, tabAttachmentRequest: MultiTabAttachmentRequest?) {
+        tabAttachmentRequest?.cancel()
+        unifiedToggleInputDidSubmitPrompt(prompt, modelId: modelId, tools: tools, reasoningEffort: reasoningEffort,
+                                         attachments: attachments, termsAccepted: termsAccepted)
+    }
+    func unifiedToggleInputPrepareInitialPrompt(_ prompt: AIChatNativePrompt, request: MultiTabAttachmentRequest,
+                                                completion: @escaping (Bool) -> Void) {
+        request.cancel()
+        completion(false)
+    }
     func unifiedToggleInputDidSubmitPromptToBoundChat() {}
     func unifiedToggleInputDidSubmitDuckAIPrompt(origin: AIChatEntryPointSource?) {}
     func unifiedToggleInputDismissSnapshot() -> UTIDismissSnapshot { .empty }
     func unifiedToggleInputDidTapClearText() {}
     func unifiedToggleInputDidTapToActivate() {}
     func unifiedToggleInputDidChangeEditMode(_ isEditing: Bool) {}
+    func unifiedToggleInputDidRequestOpenInNewTab(_ url: URL) {}
 }

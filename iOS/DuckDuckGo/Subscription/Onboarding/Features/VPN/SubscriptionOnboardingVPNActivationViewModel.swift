@@ -19,6 +19,7 @@
 
 import Combine
 import Foundation
+import UserNotifications
 import VPN
 
 /// Drives the VPN activation screen, from the pre-VPN connection info through to reporting completion.
@@ -40,6 +41,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     static let locationPlaceholder = "XX,XX"
 
     @Published private(set) var connectionState: ConnectionState
+
+    /// Whether `turnOnVPN()` is in flight.
+    @Published private(set) var isActivating = false
 
     /// The original (pre-VPN) connection, mirrored from the prefetcher while off and retained.
     @Published private(set) var originalConnectionInfo: ConnectionInfoState = .idle
@@ -65,6 +69,10 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     private var hasReportedCompletion = false
     private var hasAttemptedActivation = false
     private var cancellables = Set<AnyCancellable>()
+
+    /// Safety net for a stuck `isActivating` if none of the controller's reset signals ever fire.
+    private static let activationTimeout: TimeInterval = 60
+    private var activationTimeoutTask: Task<Void, Never>?
 
     init(prefetcher: SubscriptionOnboardingPrefetcher,
          vpnController: SubscriptionOnboardingVPNControlling = DefaultSubscriptionOnboardingVPNController(),
@@ -144,6 +152,7 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
 
     func onDisappear() {
         cancellables.removeAll()
+        activationTimeoutTask?.cancel()
     }
 
     /// Finishes this section, moving the flow to the next one.
@@ -154,12 +163,9 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
     /// Starts the VPN.
     func turnOnVPN() async {
         hasAttemptedActivation = true
+        isActivating = true
+        scheduleActivationTimeout()
         await vpnController.start()
-    }
-
-    /// Whether a VPN configuration is already installed. When it isn't, starting shows the system permission prompt
-    func isVPNConfigured() async -> Bool {
-        await vpnController.isVPNConfigured()
     }
 
     // MARK: - Connection observing
@@ -179,6 +185,8 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
             .sink { [weak self] in
                 self?.didDenyVPNPermission = true
                 self?.didFailToStartVPN = false
+                self?.isActivating = false
+                self?.activationTimeoutTask?.cancel()
             }
             .store(in: &cancellables)
 
@@ -191,6 +199,8 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
                 guard self?.hasAttemptedActivation == true else { return }
                 self?.didFailToStartVPN = true
                 self?.didDenyVPNPermission = false
+                self?.isActivating = false
+                self?.activationTimeoutTask?.cancel()
             }
             .store(in: &cancellables)
 
@@ -217,6 +227,8 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         if isConnected {
             didDenyVPNPermission = false
             didFailToStartVPN = false
+            isActivating = false
+            activationTimeoutTask?.cancel()
             reportCompletionIfNeeded()
         }
     }
@@ -225,6 +237,21 @@ final class SubscriptionOnboardingVPNActivationViewModel: ObservableObject {
         guard !hasReportedCompletion else { return }
         hasReportedCompletion = true
         onComplete()
+    }
+}
+
+// MARK: - Activation timeout
+
+private extension SubscriptionOnboardingVPNActivationViewModel {
+    func scheduleActivationTimeout() {
+        activationTimeoutTask?.cancel()
+        activationTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.activationTimeout * 1_000_000_000))
+            guard !Task.isCancelled, let self, self.isActivating else { return }
+            self.didFailToStartVPN = true
+            self.didDenyVPNPermission = false
+            self.isActivating = false
+        }
     }
 }
 
@@ -240,9 +267,6 @@ protocol SubscriptionOnboardingVPNControlling {
     /// Carries the user-facing message for a start failure that aborts before the tunnel session exists
     var controllerErrorPublisher: AnyPublisher<String?, Never> { get }
     func start() async
-    /// Whether a VPN configuration is already installed. If not, starting triggers the system permission
-    /// prompt — used to decide whether to show the "Tap allow" hint.
-    func isVPNConfigured() async -> Bool
 }
 
 /// The live controller, wrapping the app's existing VPN plumbing: it starts the tunnel through
@@ -250,11 +274,14 @@ protocol SubscriptionOnboardingVPNControlling {
 final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNControlling {
     private let tunnelController: NetworkProtectionTunnelController
     private let connectionObserver: ConnectionStatusObserver
+    private let notificationsAuthorization: NotificationsAuthorizationControlling
 
     init(tunnelController: NetworkProtectionTunnelController = AppDependencyProvider.shared.networkProtectionTunnelController,
-         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver) {
+         connectionObserver: ConnectionStatusObserver = AppDependencyProvider.shared.connectionObserver,
+         notificationsAuthorization: NotificationsAuthorizationControlling = NotificationsAuthorizationController()) {
         self.tunnelController = tunnelController
         self.connectionObserver = connectionObserver
+        self.notificationsAuthorization = notificationsAuthorization
     }
 
     var isConnected: Bool {
@@ -276,11 +303,10 @@ final class DefaultSubscriptionOnboardingVPNController: SubscriptionOnboardingVP
     }
 
     func start() async {
-        await tunnelController.start()
-    }
-
-    func isVPNConfigured() async -> Bool {
-        await tunnelController.isConfigurationInstalled
+        guard !isConnected else { return }
+        let status = await notificationsAuthorization.authorizationStatus
+        let mightPrompt = status == .notDetermined || status == .provisional
+        await tunnelController.start(suppressNotificationAuthorizationRequest: mightPrompt)
     }
 }
 
@@ -327,8 +353,6 @@ struct PreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingVPNCont
     var controllerErrorPublisher: AnyPublisher<String?, Never> { Empty().eraseToAnyPublisher() }
 
     func start() async {}
-
-    func isVPNConfigured() async -> Bool { false }
 }
 
 /// A preview controller that starts disconnected and flips to connected on `start()`, for the off→on reveal.
@@ -348,8 +372,6 @@ struct RevealPreviewSubscriptionOnboardingVPNController: SubscriptionOnboardingV
     func start() async {
         subject.send(true)
     }
-
-    func isVPNConfigured() async -> Bool { false }
 }
 
 /// A no-network connection-info service for previews: never resolves, so seeded values stand.
@@ -402,7 +424,8 @@ extension SubscriptionOnboardingVPNActivationViewModel {
                         vpnConnectionInfo: SubscriptionOnboardingConnectionInfo? = nil,
                         isNearestSelected: Bool = false,
                         didDenyVPNPermission: Bool = false,
-                        didFailToStartVPN: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
+                        didFailToStartVPN: Bool = false,
+                        isActivating: Bool = false) -> SubscriptionOnboardingVPNActivationViewModel {
         let serverInfo = NetworkProtectionStatusServerInfo.previewServerInfo(vpnConnectionInfo)
         let viewModel = SubscriptionOnboardingVPNActivationViewModel(
             prefetcher: .preview(connectionInfo: originalConnectionInfo.map(ConnectionInfoState.loaded) ?? .loading),
@@ -415,6 +438,7 @@ extension SubscriptionOnboardingVPNActivationViewModel {
         viewModel.vpnServerInfo = serverInfo
         viewModel.didDenyVPNPermission = didDenyVPNPermission
         viewModel.didFailToStartVPN = didFailToStartVPN
+        viewModel.isActivating = isActivating
         return viewModel
     }
 

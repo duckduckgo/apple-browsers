@@ -283,7 +283,8 @@
             },
             "description": {
                 "type": "string",
-                "description": "Additional error description"
+                "description": "Additional error description",
+                "enum": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
             },
             "underlying_domain": {
                 "type": "string",

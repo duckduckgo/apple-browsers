@@ -31,6 +31,7 @@ protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectSuggestion suggestion: ContextualSuggestedPrompt)
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
     func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didTapLink url: URL)
 }
 
 // MARK: - Input Surface
@@ -83,6 +84,8 @@ final class AIChatContextualInputViewController: UIViewController {
     private let showsBasicNativeInput: Bool
     private let showsWelcomeMessage: Bool
     private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let inputOutcomeMeasurement: DuckAiInputOutcomeMeasurement
     private lazy var basicNativeInputViewController = AIChatBasicNativeInputViewController(voiceSearchHelper: voiceSearchHelper)
     private lazy var inputSurface: AIChatContextualInputSurface = {
         if showsBasicNativeInput {
@@ -115,19 +118,46 @@ final class AIChatContextualInputViewController: UIViewController {
         return label
     }()
 
+    /// Sits behind the basic native input and shows below it, like the UTI's footer card.
+    private lazy var termsOfServiceCard: UTIFooterCardView = {
+        let card = UTIFooterCardView()
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.isHidden = true
+        card.onLinkTap = { [weak self] url in
+            guard let self else { return }
+            delegate?.contextualInputViewController(self, didTapLink: url)
+        }
+        return card
+    }()
+
     private var welcomeCenterYConstraint: NSLayoutConstraint?
     private var startActionsLeadingConstraint: NSLayoutConstraint?
     private var startActionsTrailingConstraint: NSLayoutConstraint?
+    /// Pins the input to the keyboard while the disclaimer is hidden.
     private var bottomConstraint: NSLayoutConstraint?
+    /// Pins the disclaimer, and the input above it, to the keyboard while it shows.
+    private var termsOfServiceBottomConstraint: NSLayoutConstraint?
+    private var bottomInset: CGFloat = 0 {
+        didSet {
+            bottomConstraint?.constant = bottomInset
+            termsOfServiceBottomConstraint?.constant = bottomInset
+        }
+    }
+    private var displayedTermsOfServiceMessage: UTIFooterMessage?
+    private var renderedStartActions: [ContextualSheetAction] = []
 
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          showsBasicNativeInput: Bool = true,
-         showsWelcomeMessage: Bool = true) {
+         showsWelcomeMessage: Bool = true,
+         termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(),
+         inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring = DuckAiInputOutcomePixelAdapter()) {
         self.showsBasicNativeInput = showsBasicNativeInput
         self.showsWelcomeMessage = showsWelcomeMessage
         self.voiceSearchHelper = voiceSearchHelper
+        self.termsOfServiceDisclaimer = termsOfServiceDisclaimer
+        self.inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(pixelFiring: inputOutcomePixelFiring)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -147,6 +177,8 @@ final class AIChatContextualInputViewController: UIViewController {
         if showsBasicNativeInput {
             configureBasicNativeInput()
             setupKeyboardObservers()
+            setupAppLifecycleObservers()
+            refreshTermsOfServiceDisclaimer()
         }
         configureQuickActions()
     }
@@ -159,6 +191,17 @@ final class AIChatContextualInputViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         updateBottomPaddingForOrientation()
+        refreshTermsOfServiceDisclaimer()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        startInputOutcomeMeasurement()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        inputOutcomeMeasurement.inputClosed()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -211,6 +254,8 @@ final class AIChatContextualInputViewController: UIViewController {
     func updateStartActions(suggestions: [ContextualSuggestedPrompt], quickActions: [AIChatContextualQuickAction]) {
         let actions = suggestions.map(ContextualSheetAction.suggestion)
             + quickActions.map(ContextualSheetAction.quickAction)
+        guard actions != renderedStartActions else { return }
+        renderedStartActions = actions
         quickActionsView.configure(with: actions)
     }
 
@@ -243,12 +288,39 @@ final class AIChatContextualInputViewController: UIViewController {
     /// Whether `point`, expressed in `view`'s coordinate space, lands on a chip rather than the gaps
     /// around them. Lets a host pass taps in the empty areas through to whatever sits behind.
     func containsStartAction(at point: CGPoint, from view: UIView) -> Bool {
-        quickActionsView.containsChip(at: point, from: view)
+        !self.view.isHidden && quickActionsView.containsChip(at: point, from: view)
     }
 
     func setStartActionsDimmed(_ dimmed: Bool) {
         quickActionsView.alpha = dimmed ? Constants.dimmedStartActionsAlpha : 1
         quickActionsView.isUserInteractionEnabled = !dimmed
+    }
+
+    /// Call only for an Ask tap: sending with the disclaimer on screen is the acceptance, a chip never is.
+    /// Returns whether the terms are accepted afterwards, on this tap or an earlier one.
+    @discardableResult
+    func acceptTermsIfDisclaimerShown() -> Bool {
+        if termsOfServiceDisclaimer.acceptIfShown(visibleTermsOfServiceMessage) {
+            refreshTermsOfServiceDisclaimer()
+        }
+        return termsOfServiceDisclaimer.hasAccepted
+    }
+
+    /// Call before `acceptTermsIfDisclaimerShown()`, for every prompt the basic input sends.
+    func recordInputOutcome(_ outcome: DuckAiInputOutcome) {
+        inputOutcomeMeasurement.record(outcome)
+    }
+
+    /// The basic input shows only before the sheet's chat has a prompt, so every opening here starts a new chat.
+    private func startInputOutcomeMeasurement() {
+        guard showsBasicNativeInput, viewIfLoaded?.window != nil else { return }
+        inputOutcomeMeasurement.inputOpened(surface: .contextualChat,
+                                            isTermsOfServiceDisclaimerShown: visibleTermsOfServiceMessage != nil)
+    }
+
+    private var visibleTermsOfServiceMessage: UTIFooterMessage? {
+        guard viewIfLoaded?.window != nil else { return nil }
+        return displayedTermsOfServiceMessage
     }
 
 }
@@ -299,10 +371,12 @@ private extension AIChatContextualInputViewController {
         quickActionsScrollView.addSubview(quickActionsView)
         view.addSubview(welcomeLabel)
         embedBasicNativeInputViewController()
+        view.insertSubview(termsOfServiceCard, belowSubview: basicNativeInputViewController.view)
 
         configureWelcomeLabel()
 
         bottomConstraint = basicNativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+        termsOfServiceBottomConstraint = termsOfServiceCard.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
 
         let centerY = welcomeLabel.centerYAnchor.constraint(equalTo: view.topAnchor)
         centerY.priority = .defaultHigh
@@ -330,7 +404,33 @@ private extension AIChatContextualInputViewController {
             basicNativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             basicNativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
             bottomConstraint!,
+
+            termsOfServiceCard.topAnchor.constraint(equalTo: basicNativeInputViewController.view.bottomAnchor,
+                                                    constant: -UTIFooterCardView.overlap),
+            termsOfServiceCard.leadingAnchor.constraint(equalTo: basicNativeInputViewController.view.leadingAnchor),
+            termsOfServiceCard.trailingAnchor.constraint(equalTo: basicNativeInputViewController.view.trailingAnchor),
         ])
+    }
+
+    /// Re-read whenever the input comes on screen: the user may have accepted on the web since.
+    func refreshTermsOfServiceDisclaimer() {
+        guard showsBasicNativeInput else { return }
+        // The basic input has no tool picker, so Create Image never applies here.
+        let message = termsOfServiceDisclaimer.message(sendButton: .ask)
+        if let message {
+            termsOfServiceCard.configure(with: message, animateIcon: false)
+        }
+        displayedTermsOfServiceMessage = message
+        termsOfServiceCard.isHidden = message == nil
+        if visibleTermsOfServiceMessage != nil { inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible() }
+        basicNativeInputViewController.submitButtonTitle = message == nil ? nil : UserText.duckAIAskButtonTitle
+
+        // The outgoing pin goes first, so the two are never active together.
+        let (outgoing, incoming) = message == nil
+            ? (termsOfServiceBottomConstraint, bottomConstraint)
+            : (bottomConstraint, termsOfServiceBottomConstraint)
+        outgoing?.isActive = false
+        incoming?.isActive = true
     }
 
     func setupImmediateUTIUI() {
@@ -456,16 +556,40 @@ private extension AIChatContextualInputViewController {
         )
     }
 
+    /// Going to the background closes the input for measurement; one still on screen on return counts as a new opening.
+    private func setupAppLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appDidEnterBackground),
+            name: UIApplication.didEnterBackgroundNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillEnterForeground),
+            name: UIApplication.willEnterForegroundNotification,
+            object: nil
+        )
+    }
+
+    @objc private func appDidEnterBackground() {
+        inputOutcomeMeasurement.inputClosed()
+    }
+
+    @objc private func appWillEnterForeground() {
+        startInputOutcomeMeasurement()
+    }
+
     @objc func keyboardWillShow(_ notification: Notification) {
-        bottomConstraint?.constant = -Constants.keyboardSpacing
+        bottomInset = -Constants.keyboardSpacing
     }
 
     @objc func keyboardWillHide(_ notification: Notification) {
-        bottomConstraint?.constant = bottomPaddingForOrientation()
+        bottomInset = bottomPaddingForOrientation()
     }
 
     func updateBottomPaddingForOrientation() {
-        bottomConstraint?.constant = bottomPaddingForOrientation()
+        bottomInset = bottomPaddingForOrientation()
     }
 
     func bottomPaddingForOrientation() -> CGFloat {

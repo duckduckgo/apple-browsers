@@ -176,6 +176,17 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenOnlyLocationIsStoredThenSitePermissionsEntryIsShownInBothMenus() throws {
+        let store = SitePermissionsStore(storage: InMemoryKeyValueStore().keyedStoring())
+        let sut = makeTabViewController(featureEnabled: true, storedDecision: nil, store: store)
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: XCTUnwrap(sut.webView.url)))
+        store.setPersistentDecision(.allow, for: .location, at: site)
+
+        XCTAssertNil(sut.sitePermissionsState.coordinator)
+        assertSitePermissionsEntry(isPresent: true, on: sut)
+    }
+
+    @MainActor
     func testSitePermissionsEntryIsShownForExplicitAskInLegacyAndSheetMenus() {
         assertSitePermissionsEntry(isPresent: true, featureEnabled: true, storedDecision: .ask)
     }
@@ -272,6 +283,25 @@ final class BrowsingMenuBuilderTests: XCTestCase {
     }
 
     @MainActor
+    func testFireModeManagementRevocationKeepsFireSessionDenialWithoutRevokingOtherTabs() async throws {
+        let sut = makeTabViewController(
+            featureEnabled: true,
+            storedDecision: .allow,
+            fireTab: true,
+            revokePermissionsInOtherTabs: { _, _, _ in XCTFail("Fire-tab management must not revoke other tabs") }
+        )
+        let site = try XCTUnwrap(SitePermissionKey(committedURL: XCTUnwrap(sut.webView.url)))
+        await grantCurrentSessionCameraPermission(on: sut)
+        let coordinator = try XCTUnwrap(sut.sitePermissionsState.coordinator)
+        // The sheet's Never Allow applies the Fire-session override, then revokes capture.
+        coordinator.applyFireModeManagementDecision(.deny, for: .camera, at: site)
+
+        sut.revokeSitePermissionsFromManagement([.camera], for: site)
+
+        XCTAssertEqual(coordinator.managementSnapshot(for: site).storedPermissions[.camera], .deny)
+    }
+
+    @MainActor
     func testManagementPresenterRefusesFlagOffAndStaleCommittedSite() {
         let flagOff = makeTabViewController(featureEnabled: false, storedDecision: .allow)
         flagOff.presentSitePermissionsManagement()
@@ -281,6 +311,71 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         staleCommittedSite.webView(staleCommittedSite.webView, didStartProvisionalNavigation: nil)
         staleCommittedSite.presentSitePermissionsManagement()
         XCTAssertNil(staleCommittedSite.presentedViewController)
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsHiddenOnDuckDuckGoAndDuckAI() {
+        let urls = [
+            "https://duckduckgo.com",
+            "https://duckduckgo.com/?q=catfood&t=h_&ia=web",
+            "https://www.duckduckgo.com/?q=catfood",
+            "https://duckduckgo.com/?q=catfood&ia=chat",
+            "https://duck.ai",
+            "https://duck.ai/?chat=123"
+        ]
+
+        for urlString in urls {
+            let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: urlString)!))
+            assertReportBrokenSiteEntry(isPresent: false, on: sut)
+        }
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsVisibleOnWebsites() {
+        for urlString in ["https://example.com", "http://example.com", "https://duckduckgo.com.example.com", "https://duck.ai.example.com"] {
+            let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: urlString)!))
+            assertReportBrokenSiteEntry(isPresent: true, on: sut)
+        }
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsVisibleOnErrorPages() {
+        for urlString in ["https://example.com", "https://duckduckgo.com/?q=catfood", "https://duck.ai"] {
+            let url = URL(string: urlString)!
+            let sut = TabViewController.fake(
+                customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
+                link: Link(title: nil, url: url)
+            )
+            sut.error.isHidden = false
+
+            assertReportBrokenSiteEntry(isPresent: true, on: sut)
+
+            sut.error.isHidden = true
+            assertReportBrokenSiteEntry(isPresent: urlString == "https://example.com", on: sut)
+        }
+    }
+
+    @MainActor
+    func testReportBrokenSiteIsHiddenWithoutLink() {
+        let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: "https://example.com")!))
+        sut.url = nil
+
+        assertReportBrokenSiteEntry(isPresent: false, on: sut)
+    }
+
+    @MainActor
+    func testReportBrokenSiteVisibilityUpdatesAfterNavigation() {
+        let sut = TabViewController.fake(link: Link(title: nil, url: URL(string: "https://example.com")!))
+        assertReportBrokenSiteEntry(isPresent: true, on: sut)
+
+        sut.url = URL(string: "https://duckduckgo.com/?q=catfood")!
+        assertReportBrokenSiteEntry(isPresent: false, on: sut)
+
+        sut.url = URL(string: "https://duck.ai")!
+        assertReportBrokenSiteEntry(isPresent: false, on: sut)
+
+        sut.url = URL(string: "https://example.com")!
+        assertReportBrokenSiteEntry(isPresent: true, on: sut)
     }
 
     // MARK: - Privacy Protection toggle SERP gating
@@ -337,6 +432,33 @@ final class BrowsingMenuBuilderTests: XCTestCase {
 
     private func makeMobileCustomization() -> MobileCustomization {
         MobileCustomization(keyValueStore: MockKeyValueStore(), isPad: false)
+    }
+
+    @MainActor
+    private func assertReportBrokenSiteEntry(
+        isPresent: Bool,
+        on sut: TabViewController,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        for isPad in [false, true] {
+            let mobileCustomization = MobileCustomization(keyValueStore: MockKeyValueStore(), isPad: isPad)
+            let legacyEntries = sut.buildBrowsingMenu(
+                with: MockMenuBookmarksInteractor(),
+                mobileCustomization: mobileCustomization,
+                clearTabsAndData: {}
+            )
+            let sheetSections = sut.buildSheetBrowsingMenu(
+                context: .website,
+                with: MockMenuBookmarksInteractor(),
+                mobileCustomization: mobileCustomization,
+                browsingMenuSheetCapability: BrowsingMenuSheetDefaultCapability(),
+                clearTabsAndData: {}
+            )?.sections ?? []
+
+            XCTAssertEqual(legacyEntries.compactMap(\.name).contains(UserText.actionReportBrokenSite), isPresent, file: file, line: line)
+            XCTAssertEqual(sheetSections.flatMap(\.items).map(\.name).contains(UserText.actionReportBrokenSite), isPresent, file: file, line: line)
+        }
     }
 
     @MainActor
@@ -413,6 +535,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
         let sut = TabViewController.fake(
             customWebView: { SitePermissionsMenuURLWebView(url: url, configuration: $0) },
             featureFlagger: MockFeatureFlagger(enabledFeatureFlags: featureEnabled ? [.sitePermissions] : []),
+            sitePermissionsEnabled: featureEnabled,
             link: Link(title: nil, url: url),
             fireTab: fireTab
         )
@@ -420,8 +543,7 @@ final class BrowsingMenuBuilderTests: XCTestCase {
             SitePermissionsDependencies(
                 store: store,
                 systemPermissionClient: SystemPermissionClient(
-                    locationManager: CLLocationManager(),
-                    locationServicesEnabled: { false },
+                    locationManager: DeniedLocationManager(),
                     avAuthorizationStatus: { _ in .authorized },
                     avRequestAccess: { _, completion in completion(true) },
                     notificationCenter: NotificationCenter()
@@ -547,6 +669,7 @@ private final class MockMenuBookmarksInteractor: MenuBookmarksInteracting {
     var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.mobile)
 
     func createOrToggleFavorite(title: String, url: URL) {}
+    func saveFavorite(title: String?, urlString: String) -> Bool { true }
     func createBookmark(title: String, url: URL) {}
     func favorite(for url: URL) -> BookmarkEntity? { nil }
     func bookmark(for url: URL) -> BookmarkEntity? { nil }
@@ -562,6 +685,11 @@ private extension BrowsingMenuEntry {
     static func named(_ name: String) -> BrowsingMenuEntry {
         .regular(name: name, image: UIImage(), action: {})
     }
+}
+
+private final class DeniedLocationManager: CLLocationManager {
+
+    override var authorizationStatus: CLAuthorizationStatus { .denied }
 }
 
 private final class SitePermissionsMenuURLWebView: WKWebView {

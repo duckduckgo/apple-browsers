@@ -1617,7 +1617,7 @@ private extension ErrorPageUITests {
             guard app.mainMenuUnpinTabMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence) else {
                 break
             }
-            app.mainMenuUnpinTabMenuItem.tap()
+            app.unpinCurrentTab()
         }
         app.closeAllWindows()
     }

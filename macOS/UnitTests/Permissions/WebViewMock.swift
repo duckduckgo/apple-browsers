@@ -18,7 +18,7 @@
 
 import CommonObjCExtensions
 import Foundation
-import Navigation
+import DDGNavigation
 import WebKit
 
 @testable import DuckDuckGo_Privacy_Browser

@@ -63,6 +63,15 @@ final class UTIAttachmentController {
         let isPageContextAttachable: () -> Bool?
         let pageContextAttachHandler: () -> (() -> Void)?
         let presenterViewController: () -> UIViewController?
+        var tabAttachmentSource: () -> MultiTabAttachmentSource? = { nil }
+        var tabAttachmentFeatureState: () -> AIChatContextualAttachMoreTabsState = { .unavailable }
+        var pageContextRemoveHandler: () -> (() -> Void)? = { nil }
+        var isFireTab: () -> Bool = { false }
+        var isAttachmentPasteEnabled: () -> Bool = { true }
+        var isPastedTextEnabled: () -> Bool = { false }
+        var isEditing: () -> Bool = { false }
+        var isVoiceSessionActive: () -> Bool = { false }
+        var pastedTextSheetMode: (AIChatPastedText) -> PastedTextSheetMode = { _ in .editable(limit: 0) }
     }
 
     /// Coordinator-owned effects an attachment mutation triggers.
@@ -70,6 +79,8 @@ final class UTIAttachmentController {
         let onDraftChanged: () -> Void
         let onExpandIfNeeded: () -> Void
         let updateFloatingReturnKey: () -> Void
+        var onTabAttached: () -> Void = {}
+        var onPastedTextSheetDismissed: () -> Void = {}
     }
 
     let pasteHandler = UnifiedToggleInputPasteHandler()
@@ -99,6 +110,17 @@ final class UTIAttachmentController {
     }
 
     private func wirePresenter() {
+        presenter.isFireTabProvider = { [weak self] in
+            self?.environment.isFireTab() ?? false
+        }
+        presenter.tabPickerPixelAttributionProvider = { [weak self] in
+            guard let self, canUseTabAttachments else { return nil }
+            return pixelReporter.currentTabPixelAttribution()
+        }
+        presenter.onTabPickerEvent = { [weak self] action, attribution in
+            guard let self, case .available = environment.tabAttachmentFeatureState() else { return }
+            pixelReporter.reportTabAttachment(action, source: .tabPicker, attribution: attribution)
+        }
         presenter.pixelSurfaceProvider = { [weak self] in
             self?.environment.pixelSurface() ?? .addressBar
         }
@@ -384,8 +406,24 @@ final class UTIAttachmentController {
     func makeAttachmentMenu() -> UIMenu? {
         // Disable "Ask about page" for non-attachable pages (blocklisted media / special page).
         let canAttachPageContext = environment.isContextualChatState() && (environment.isPageContextAttachable() ?? true)
-        let pageContextActionHandler = canAttachPageContext ? environment.pageContextAttachHandler() : nil
         let policy = environment.policy()
+        let tabSelectionContextIdentity = pasteContextIdentity
+        var pageContextActionHandler = canAttachPageContext ? environment.pageContextAttachHandler() : nil
+
+        if canUseTabAttachments {
+            let currentPageID = environment.tabAttachmentSource()?.currentTabID
+            let hasPageCapacity = currentPageID.map {
+                policy.selectedTabIDs.contains($0) || policy.canAttachTab(withID: $0)
+            } == true
+            if hasPageCapacity, pageContextActionHandler != nil {
+                pageContextActionHandler = { [weak self] in
+                    self?.attachCurrentPage()
+                }
+            } else {
+                pageContextActionHandler = nil
+            }
+        }
+
         return presenter.makeAttachmentMenu(
             presenterProvider: { [weak self] in
                 self?.environment.presenterViewController()
@@ -394,8 +432,93 @@ final class UTIAttachmentController {
             canAttachFile: canPresentFilePicker,
             allowedFileTypes: allowedFileUTTypes,
             showsPageContextAction: environment.isContextualChatState(),
-            pageContextActionHandler: pageContextActionHandler
+            pageContextActionHandler: pageContextActionHandler,
+            attachableTabs: tabAttachmentCandidates,
+            attachedTabIds: policy.selectedTabIDs,
+            tabAttachmentLimit: policy.maximumTabAttachmentCount ?? 0,
+            isTabSelectionAvailable: { [weak self] in
+                guard let self else { return false }
+                return self.pasteContextIdentity == tabSelectionContextIdentity
+                    && self.canUseTabAttachments && !self.view.isGenerating()
+            },
+            tabActionHandler: { [weak self] candidate, isAttached, source in
+                guard let self, self.pasteContextIdentity == tabSelectionContextIdentity else { return .rejected }
+                return self.setTabAttachment(candidate, isAttached: isAttached, attachmentSource: source)
+            }
         )
+    }
+
+    var canUseTabAttachments: Bool {
+        guard environment.inputMode() == .aiChat,
+              !environment.isEditing(), !environment.isVoiceSessionActive(),
+              environment.tabAttachmentSource() != nil,
+              case .available = environment.tabAttachmentFeatureState() else { return false }
+        return true
+    }
+
+    var tabAttachmentCandidates: [MultiTabAttachmentCandidate] {
+        guard canUseTabAttachments, let source = environment.tabAttachmentSource() else { return [] }
+        return source.candidates().filter {
+            !environment.isContextualChatState() || $0.tabId != source.currentTabID || environment.isPageContextAttachable() != false
+        }
+    }
+
+    private func attachCurrentPage() {
+        guard !view.isGenerating(), environment.isPageContextAttachable() != false else { return }
+        if canUseTabAttachments, let id = environment.tabAttachmentSource()?.currentTabID {
+            let policy = environment.policy()
+            guard policy.selectedTabIDs.contains(id) || policy.canAttachTab(withID: id) else { return }
+        }
+        environment.pageContextAttachHandler()?()
+        updateAttachButtonPresentation()
+    }
+
+    @discardableResult
+    func toggleTabAttachment(_ candidate: MultiTabAttachmentCandidate, attachmentSource: TabAttachmentOrigin) -> Bool {
+        setTabAttachment(candidate, isAttached: !environment.policy().selectedTabIDs.contains(candidate.tabId), attachmentSource: attachmentSource).isSuccessful
+    }
+
+    /// Explicit desired state makes staged picker confirmation safe if the draft changed while it was open.
+    @discardableResult
+    func setTabAttachment(_ candidate: MultiTabAttachmentCandidate, isAttached: Bool,
+                          attachmentSource: TabAttachmentOrigin) -> TabAttachmentSelectionResult {
+        guard canUseTabAttachments, !view.isGenerating(),
+              let source = environment.tabAttachmentSource() else { return .rejected }
+        let policy = environment.policy()
+        let wasAttached = policy.selectedTabIDs.contains(candidate.tabId)
+        guard wasAttached != isAttached else { return .unchanged }
+
+        if isAttached {
+            guard policy.canAttachTab(withID: candidate.tabId),
+                  let currentCandidate = tabAttachmentCandidates.first(where: { $0.tabId == candidate.tabId }) else { return .rejected }
+            if environment.isContextualChatState(), candidate.tabId == source.currentTabID {
+                guard let attach = environment.pageContextAttachHandler() else { return .rejected }
+                attach()
+            } else {
+                let favicon = FaviconsHelper.loadFaviconSync(forDomain: currentCandidate.url.host,
+                                                             usingCache: .tabs,
+                                                             useFakeFavicon: false).image
+                view.addAttachment(.tab(UnifiedToggleInputTabAttachment(tabId: currentCandidate.tabId,
+                                                                        title: currentCandidate.title,
+                                                                        url: currentCandidate.url,
+                                                                        favicon: favicon,
+                                                                        source: attachmentSource)))
+                pixelReporter.reportTabAttachment(.attached, source: attachmentSource)
+                callbacks.onTabAttached()
+            }
+        } else if environment.isContextualChatState(), candidate.tabId == source.currentTabID {
+            guard let remove = environment.pageContextRemoveHandler() else { return .rejected }
+            remove()
+        } else {
+            for attachment in view.currentAttachments() where attachment.tabAttachment?.tabId == candidate.tabId {
+                view.removeAttachment(attachment.id)
+                pixelReporter.reportAttachmentRemoved(attachment)
+            }
+        }
+        callbacks.onDraftChanged()
+        callbacks.onExpandIfNeeded()
+        updateAttachButtonPresentation()
+        return .changed
     }
 
     /// Opens the system file picker directly for the promo "add file" CTA. No-ops when files can't be
@@ -409,8 +532,9 @@ final class UTIAttachmentController {
     func updateAttachButtonPresentation() {
         let policy = environment.policy()
         let supportsPageContextAttachment = environment.isContextualChatState() && environment.pageContextAttachHandler() != nil && (environment.isPageContextAttachable() ?? true)
-        let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment
-        let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment
+        let supportsTabAttachment = !tabAttachmentCandidates.isEmpty
+        let supportsAttachments = environment.supportsImageUpload() || !allowedFileUTTypes.isEmpty || supportsPageContextAttachment || supportsTabAttachment
+        let hasAvailableAttachmentAction = policy.canAttachImages || canPresentFilePicker || supportsPageContextAttachment || supportsTabAttachment
         let canAttachMore = hasAvailableAttachmentAction && !view.isGenerating()
         let showsUnavailableAttachmentButton = environment.hasSelectedModel() && environment.keepsUnavailableAttachmentButtonVisible()
         view.setImageButtonHidden(!supportsAttachments && !showsUnavailableAttachmentButton)
@@ -429,7 +553,7 @@ final class UTIAttachmentController {
     var attachmentCount: Int {
         view.currentAttachments().filter {
             switch $0 {
-            case .image, .file: return true
+            case .image, .file, .tab, .pastedText: return true
             case .invalidFile: return false
             }
         }.count
@@ -466,6 +590,7 @@ final class UTIAttachmentController {
             return validationMessage
         }
 
+        guard !environment.isPastedTextEnabled() else { return nil }
         return policy.promptValidationMessage(for: text)
     }
 
@@ -506,12 +631,14 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
     var pasteAttachmentSupport: UnifiedToggleInputPasteSupport {
         let policy = environment.policy()
         let limits = environment.attachmentLimits()
-        let fileTypes = limits == nil ? [] : allowedFileUTTypes.filter { !$0.conforms(to: .text) }
+        let acceptsImages = environment.isAttachmentPasteEnabled() && environment.supportsImageUpload()
+        let fileTypes = limits == nil || !environment.isAttachmentPasteEnabled() ? [] : allowedFileUTTypes.filter { !$0.conforms(to: .text) }
         return UnifiedToggleInputPasteSupport(
             isEnabled: environment.inputMode() == .aiChat && !view.isGenerating(),
-            acceptsImages: environment.supportsImageUpload(),
+            acceptsImages: acceptsImages,
             fileTypes: fileTypes,
-            maxImageCount: environment.supportsImageUpload() ? policy.remainingImagesForPicker : nil,
+            acceptsPastedText: environment.isPastedTextEnabled() && !environment.isEditing(),
+            maxImageCount: acceptsImages ? policy.remainingImagesForPicker : nil,
             maxFileSizeBytes: limits.map { $0.files.maxFileSizeMB * 1_048_576 },
             remainingFileCount: fileTypes.isEmpty ? nil : policy.remainingFilesInConversation,
             remainingTotalFileBytes: fileTypes.isEmpty ? nil : policy.remainingFileSizeBytes
@@ -578,5 +705,39 @@ extension UTIAttachmentController: UnifiedToggleInputPasteDelegate {
 
     func presentPasteError(_ message: String) {
         presentTransientValidationError(message)
+    }
+
+    func addPastedText(_ text: String) {
+        callbacks.onExpandIfNeeded()
+        view.addAttachment(.pastedText(AIChatPastedText(content: text)))
+        pixelReporter.reportPastedText(.attached)
+        callbacks.onDraftChanged()
+        clearValidationErrorIfPossible()
+        updateAttachButtonPresentation()
+        callbacks.updateFloatingReturnKey()
+    }
+}
+
+extension UTIAttachmentController {
+
+    func presentPastedTextSheet(id: UUID) {
+        guard let pastedText = view.currentAttachments().first(where: { $0.id == id })?.pastedText,
+              let host = environment.presenterViewController() else { return }
+        let mode: PastedTextSheetMode = environment.isEditing() ? .viewOnly : environment.pastedTextSheetMode(pastedText)
+        pixelReporter.reportPastedText(.sheetOpened)
+        PastedTextSheetPresenter.present(pastedText, mode: mode, from: host) { [weak self] outcome in
+            guard let self else { return }
+            if case .saved(let edited) = outcome {
+                replacePastedText(id: id, with: edited)
+            }
+            callbacks.onPastedTextSheetDismissed()
+        }
+    }
+
+    private func replacePastedText(id: UUID, with pastedText: AIChatPastedText) {
+        guard view.currentAttachments().contains(where: { $0.id == id }) else { return }
+        view.replaceAttachment(id, .pastedText(pastedText))
+        pixelReporter.reportPastedText(.edited)
+        callbacks.onDraftChanged()
     }
 }

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import GameController
 import XCTest
 import BrowserServicesKitTestsUtils
 @testable import Core
@@ -270,6 +271,7 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
             ("funnel_duckai_ios__pluslimit", .userDidViewPlusLimitMessage, .userDidClickPlusLimitUpgradeLink),
             ("funnel_duckai_ios__promotioncard", .userDidViewPromotionCard, .userDidClickPromotionCardButton),
             ("funnel_duckai_ios__settings", .userDidViewSettingsSubscribeButton, .userDidClickSettingsSubscribeButton),
+            ("funnel_duckai_ios__settings", .userDidViewSettingsResubscribeButton, .userDidClickSettingsResubscribeButton),
             ("funnel_duckai_ios__disclaimerbanner", .userDidViewProUpgradeDisclaimerBanner, .userDidClickProUpgradeDisclaimerBannerButton),
             ("funnel_duckai_ios__voicechatlimit", .userDidViewVoiceChatLimitModal, .userDidClickVoiceChatLimitModalSubscribeButton),
             ("funnel_duckai_ios__voicechatdurationlimit", .userDidViewVoiceChatDurationLimitModal, .userDidClickVoiceChatDurationLimitModalSubscribeButton)
@@ -327,5 +329,111 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
         for capturedPixel in pixelKitMock.actualFireCalls {
             XCTAssertEqual(capturedPixel.additionalParameters?["delta-timestamp-minutes"], "20")
         }
+    }
+
+    // MARK: - Prompt attribution
+
+    private struct FixedUsageContextProvider: UsageContextProviding {
+        let currentContext = UsageContext(hardwareKeyboard: true, layout: .regular)
+        let currentWindowMode: UsageContext.WindowMode = .partial
+    }
+
+    private func makeAttributedHandler(_ attribution: DuckAIPromptPixelContextProviding) -> AIChatPixelMetricHandler {
+        AIChatPixelMetricHandler(pixelFiring: pixelKitMock,
+                                 featureDiscovery: Self.returningUserFeatureDiscovery(),
+                                 promptContextProvider: attribution,
+                                 usageContextProvider: FixedUsageContextProvider())
+    }
+
+    func testPagePromptCarriesTheDoorThatOpenedThePage() {
+        let attribution = DuckAIPromptAttribution()
+        attribution.pageDidCommit(isDuckAI: true, entrySource: .tabsBarButton)
+        handler = makeAttributedHandler(attribution)
+
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitFirstPrompt))
+
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
+        XCTAssertEqual(parameters?["source"], "tabs_bar_button")
+        XCTAssertEqual(parameters?["surface"], "duck_ai")
+        XCTAssertEqual(parameters?["layout"], "regular")
+        XCTAssertEqual(parameters?["hardware_keyboard"], "true")
+        XCTAssertEqual(parameters?["delta-timestamp-minutes"], "0")
+    }
+
+    func testPageLoadWithoutADoorIsUnattributed() {
+        let attribution = DuckAIPromptAttribution()
+        attribution.pageDidCommit(isDuckAI: true, entrySource: .tabsBarButton)
+        attribution.pageDidCommit(isDuckAI: true, entrySource: nil)
+        handler = makeAttributedHandler(attribution)
+
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitPrompt))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"], "unattributed")
+    }
+
+    func testAddressBarHandoverMarksOnlyTheNextPrompt() {
+        let attribution = DuckAIPromptAttribution()
+        attribution.addressBarWillHandOverPrompt()
+        attribution.pageDidCommit(isDuckAI: true, entrySource: .ipadTogglePrompt)
+        handler = makeAttributedHandler(attribution)
+
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitFirstPrompt))
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitPrompt))
+
+        let surfaces = pixelKitMock.actualFireCalls.map { $0.additionalParameters?["surface"] }
+        XCTAssertEqual(surfaces, ["address_bar", "duck_ai"])
+    }
+
+    func testHandoverLapsesWhenAnotherPageLoads() {
+        let attribution = DuckAIPromptAttribution()
+        attribution.addressBarWillHandOverPrompt()
+        attribution.pageDidCommit(isDuckAI: true, entrySource: .ipadTogglePrompt)
+        attribution.pageDidCommit(isDuckAI: true, entrySource: nil)
+
+        XCTAssertEqual(attribution.contextForSubmittedPrompt().surface, .duckAI)
+    }
+
+    func testLeavingDuckAIDropsAPendingHandover() {
+        let attribution = DuckAIPromptAttribution()
+        attribution.addressBarWillHandOverPrompt()
+        attribution.pageDidCommit(isDuckAI: false, entrySource: nil)
+
+        XCTAssertEqual(attribution.contextForSubmittedPrompt(),
+                       DuckAIPromptPixelContext(source: nil, surface: .duckAI))
+    }
+
+    func testKeyboardMonitorFollowsConnectAndDisconnectNotifications() {
+        let notificationCenter = NotificationCenter()
+        var isConnectedNow = false
+        let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: { isConnectedNow })
+        XCTAssertFalse(monitor.isConnected)
+
+        isConnectedNow = true
+        notificationCenter.post(name: .GCKeyboardDidConnect, object: nil)
+        XCTAssertTrue(monitor.isConnected)
+
+        isConnectedNow = false
+        notificationCenter.post(name: .GCKeyboardDidDisconnect, object: nil)
+        XCTAssertFalse(monitor.isConnected)
+    }
+
+    func testContextualChatPromptsReportTheSheet() {
+        handler = makeAttributedHandler(ContextualChatPromptPixelContext())
+
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidSubmitPrompt))
+
+        let parameters = pixelKitMock.actualFireCalls.last?.additionalParameters
+        XCTAssertEqual(parameters?["source"], "contextual_chat")
+        XCTAssertEqual(parameters?["surface"], "contextual_chat")
+    }
+
+    func testNonPromptMetricsCarryNoAttribution() {
+        let attribution = DuckAIPromptAttribution()
+        attribution.pageDidCommit(isDuckAI: true, entrySource: .tabsBarButton)
+        handler = makeAttributedHandler(attribution)
+
+        handler.firePixelWithMetric(AIChatMetric(metricName: .userDidOpenHistory))
+
+        XCTAssertNil(pixelKitMock.actualFireCalls.last?.additionalParameters?["source"])
     }
 }

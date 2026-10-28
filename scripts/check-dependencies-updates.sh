@@ -151,7 +151,6 @@ compare_versions() {
     fi
 }
 
-# Get latest release tag from GitHub
 get_latest_github_release() {
     local repo_url="$1"
     local repo_path
@@ -160,20 +159,21 @@ get_latest_github_release() {
 
     if [[ -z "$repo_path" ]]; then
         verbose_error "Could not extract repo path from URL: $repo_url"
-        echo ""
+        printf '%s|%s\n' "" ""
         return
     fi
 
     local api_url="https://api.github.com/repos/${repo_path}/releases/latest"
     verbose "Fetching latest release from GitHub API: $api_url"
-    local response tag
+    local response tag release_date
     response=$(curl --max-time 60 -sf -H "Accept: application/vnd.github.v3+json" "$api_url" 2>/dev/null) || true
 
     if [[ -n "$response" ]]; then
         tag=$(echo "$response" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
         if [[ -n "$tag" ]]; then
             verbose "GitHub API returned tag: $tag for $repo_path"
-            echo "$tag"
+            release_date=$(echo "$response" | sed -n 's/.*"published_at"[[:space:]]*:[[:space:]]*"\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\)T[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}Z".*/\1/p' | head -1)
+            printf '%s|%s\n' "$tag" "$release_date"
             return
         fi
     fi
@@ -198,7 +198,7 @@ get_latest_github_release() {
         verbose "git ls-remote returned tag: $tags for $repo_path"
     fi
 
-    echo "$tags"
+    printf '%s|%s\n' "$tags" ""
 }
 
 # Extract package name from URL
@@ -548,6 +548,7 @@ main() {
     fi
 
     local json_first=true
+    local outdated_packages=() up_to_date_packages=() unknown_packages=()
     rm -rf "$UPDATE_TYPES_FILE"
 
     if [[ "$JSON_OUTPUT" == true ]]; then
@@ -567,12 +568,14 @@ main() {
 
         verbose "Checking package: $name (current: $current, repo: $repo_id, used by: $projects)"
 
-        if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]]; then
+        if [[ "$JSON_OUTPUT" != true ]] && [[ "$QUIET" != true ]] && [[ -t 1 ]]; then
             printf "Checking %-40s\r" "$name..."
         fi
 
-        local latest
-        latest=$(get_latest_github_release "$url")
+        local release_info latest release_date
+        release_info=$(get_latest_github_release "$url")
+        latest=${release_info%|*}
+        release_date=${release_info##*|}
 
         local update_type="unknown"
         local latest_display="${latest:-N/A}"
@@ -590,9 +593,10 @@ main() {
             if [[ "$json_first" != true ]]; then
                 comma=","
             fi
-            local projects_json
+            local projects_json release_date_json=null
             projects_json=${projects//,/\",\"}
-            echo "    ${comma}{\"name\":\"$name\",\"url\":\"$url\",\"current\":\"$current\",\"latest\":\"$latest_display\",\"update_type\":\"$update_type\",\"projects\":[\"$projects_json\"]}"
+            [[ -n "$release_date" ]] && release_date_json="\"$release_date\""
+            echo "    ${comma}{\"name\":\"$name\",\"url\":\"$url\",\"current\":\"$current\",\"latest\":\"$latest_display\",\"release_date\":$release_date_json,\"update_type\":\"$update_type\",\"projects\":[\"$projects_json\"]}"
             json_first=false
         else
             if [[ "$QUIET" == true ]] && [[ "$update_type" == "up-to-date" || "$update_type" == "unknown" ]]; then
@@ -607,9 +611,17 @@ main() {
                     *) symbol="❓"; status_color="$CYAN" ;;
                 esac
 
-                printf "%-35s %s  ${status_color}%-12s${NC} %s → %s\n" \
-                    "$name" "$symbol" "[$update_type]" "$current" "$latest_display"
-                printf "  ${DIM}└─ %s${NC}\n" "$projects"
+                local row
+                row=$(
+                    printf "%-35s %s  ${status_color}%-12s${NC} %s → %s (released %s)\n" \
+                        "$name" "$symbol" "[$update_type]" "$current" "$latest_display" "${release_date:-unknown}"
+                    printf "  ${DIM}└─ %s${NC}\n" "$projects"
+                )
+                case "$update_type" in
+                    major|minor|patch) outdated_packages+=("$row") ;;
+                    up-to-date) up_to_date_packages+=("$row") ;;
+                    *) unknown_packages+=("$row") ;;
+                esac
             fi
         fi
 
@@ -618,6 +630,23 @@ main() {
 
     if [[ "$JSON_OUTPUT" == true ]]; then
         echo "  ],"
+    else
+        if [[ "$QUIET" != true ]] && [[ -t 1 ]]; then
+            printf "\r%-50s\r" ""
+        fi
+        local group rows
+        for group in "Out of date" "Up to date" "Unknown"; do
+            case "$group" in
+                "Out of date") rows=("${outdated_packages[@]}") ;;
+                "Up to date") rows=("${up_to_date_packages[@]}") ;;
+                "Unknown") rows=("${unknown_packages[@]}") ;;
+            esac
+            if [[ ${#rows[@]} -gt 0 ]]; then
+                printf "${BOLD}%s:${NC}\n" "$group"
+                printf '%s\n' "${rows[@]}"
+                echo ""
+            fi
+        done
     fi
 
     # Summary

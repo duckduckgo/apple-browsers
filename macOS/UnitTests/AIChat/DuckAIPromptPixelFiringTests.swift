@@ -37,8 +37,12 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.webSearchActivated, .aiChatAddressBarWebSearchActivated),
         (.webSearchDeactivated, .aiChatAddressBarWebSearchDeactivated),
         (.customizeResponsesOpened, .aiChatAddressBarCustomizeResponsesOpened),
-        (.imageAttached, .aiChatAddressBarImageAttached),
-        (.imageRemoved, .aiChatAddressBarImageRemoved),
+        (.imageAttached(source: .file), .aiChatAddressBarImageAttached(source: .file)),
+        (.imageAttached(source: .screenshot), .aiChatAddressBarImageAttached(source: .screenshot)),
+        (.imageRemoved(source: .drop), .aiChatAddressBarImageRemoved(source: .drop)),
+        (.screenshotTaken(kind: .window), .aiChatAddressBarScreenshotTaken(kind: .window)),
+        (.screenshotRemoved, .aiChatAddressBarScreenshotRemoved),
+        (.screenshotFailed(reason: .unavailable), .aiChatAddressBarScreenshotFailed(reason: .unavailable)),
         (.fileAttached, .aiChatAddressBarFileAttached),
         (.fileRemoved, .aiChatAddressBarFileRemoved),
         (.fileValidationFailed(reason: "tooLarge"), .aiChatAddressBarFileValidationFailed(reason: "tooLarge")),
@@ -50,6 +54,10 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .aiChatAddressBarReasoningEffortSelected),
         (.modelPickerShown, .aiChatAddressBarModelPickerShown(origin: "funnel_addressbar_macos__modelpicker")),
         (.reasoningPickerShown, .aiChatAddressBarReasoningPickerShown(origin: "funnel_addressbar_macos__reasoningdropdown")),
+        (.gatedRowClick(origin: "funnel_addressbar_macos__modelpicker"),
+         .aiChatAddressBarGatedRowClick(origin: "funnel_addressbar_macos__modelpicker")),
+        (.gatedRowClick(origin: "funnel_addressbar_macos__reasoningdropdown"),
+         .aiChatAddressBarGatedRowClick(origin: "funnel_addressbar_macos__reasoningdropdown")),
         (.createImageModelSwitched(fromModelId: "gpt-oss-120b",
                                    toModelId: "gpt-5.4",
                                    fromModelPrivacyPreserving: true),
@@ -82,8 +90,12 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.webSearchActivated, .webSearchActivated),
         (.webSearchDeactivated, .webSearchDeactivated),
         (.customizeResponsesOpened, nil),
-        (.imageAttached, .imageAttached),
-        (.imageRemoved, .imageRemoved),
+        (.imageAttached(source: .file), .imageAttached(source: .file)),
+        (.imageAttached(source: .screenshot), .imageAttached(source: .screenshot)),
+        (.imageRemoved(source: .drop), .imageRemoved(source: .drop)),
+        (.screenshotTaken(kind: .selection), .screenshotTaken(kind: .selection)),
+        (.screenshotRemoved, .screenshotRemoved),
+        (.screenshotFailed(reason: .failed), .screenshotFailed(reason: .failed)),
         (.fileAttached, .fileAttached),
         (.fileRemoved, .fileRemoved),
         (.fileValidationFailed(reason: "tooLarge"), .fileValidationFailed(reason: "tooLarge")),
@@ -95,6 +107,7 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.reasoningEffortSelected, .reasoningEffortSelected),
         (.modelPickerShown, .modelPickerShown(origin: "funnel_promptbar_macos__modelpicker")),
         (.reasoningPickerShown, .reasoningPickerShown(origin: "funnel_promptbar_macos__reasoningdropdown")),
+        (.gatedRowClick(origin: "x"), nil),
         (.createImageModelSwitched(fromModelId: "gpt-oss-120b",
                                    toModelId: "gpt-5.4",
                                    fromModelPrivacyPreserving: true),
@@ -116,6 +129,37 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         (.aiChatAddressBarReasoningPickerShown(origin: "x"), "aichat_addressbar_reasoning_picker_shown")
     ]
 
+    private static let gatedRowClickNames: [(AIChatPixel, String)] = [
+        (.aiChatAddressBarGatedRowClick(origin: "x"), "aichat_addressbar_gated_row_click"),
+        (.aiChatNtpGatedRowClick(origin: "x"), "aichat_ntp_gated_row_click")
+    ]
+
+    func testScreenshotPixelNamesAndParameters() {
+        let addressBar: [(AIChatPixel, String, [String: String]?)] = [
+            (.aiChatAddressBarImageAttached(source: .screenshot), "aichat_addressbar_image_attached", ["source": "screenshot"]),
+            (.aiChatAddressBarImageRemoved(source: .drop), "aichat_addressbar_image_removed", ["source": "drop"]),
+            (.aiChatAddressBarScreenshotTaken(kind: .screen), "aichat_addressbar_screenshot_taken", ["kind": "screen"]),
+            (.aiChatAddressBarScreenshotRemoved, "aichat_addressbar_screenshot_removed", nil),
+            (.aiChatAddressBarScreenshotFailed(reason: .unavailable), "aichat_addressbar_screenshot_failed", ["reason": "unavailable"])
+        ]
+        for (pixel, name, parameters) in addressBar {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.parameters, parameters, name)
+        }
+
+        let promptBar: [(PromptBarPixel, String, [String: String]?)] = [
+            (.imageAttached(source: .file), "aichat_promptbar_image_attached", ["source": "file"]),
+            (.imageRemoved(source: .screenshot), "aichat_promptbar_image_removed", ["source": "screenshot"]),
+            (.screenshotTaken(kind: .window), "aichat_promptbar_screenshot_taken", ["kind": "window"]),
+            (.screenshotRemoved, "aichat_promptbar_screenshot_removed", nil),
+            (.screenshotFailed(reason: .unavailable), "aichat_promptbar_screenshot_failed", ["reason": "unavailable"])
+        ]
+        for (pixel, name, parameters) in promptBar {
+            XCTAssertEqual(pixel.name, name)
+            XCTAssertEqual(pixel.parameters, parameters, name)
+        }
+    }
+
     func testPickerImpressionPixelNames() {
         for (pixel, expectedName) in Self.pickerImpressionNames {
             XCTAssertEqual(pixel.name, expectedName)
@@ -123,6 +167,14 @@ final class DuckAIPromptPixelFiringTests: XCTestCase {
         XCTAssertEqual(PromptBarPixel.modelPickerShown(origin: "x").name, "aichat_promptbar_model_picker_shown")
         XCTAssertEqual(PromptBarPixel.reasoningPickerShown(origin: "x").name, "aichat_promptbar_reasoning_picker_shown")
         XCTAssertEqual(PromptBarPixel.modelPickerShown(origin: "x").parameters, ["origin": "x"])
+    }
+
+    func testGatedRowClickPixelNames() {
+        for (pixel, expectedName) in Self.gatedRowClickNames {
+            XCTAssertEqual(pixel.name, expectedName)
+            XCTAssertEqual(pixel.parameters, ["origin": "x"])
+            XCTAssertEqual(pixel.namePrefix, .none)
+        }
     }
 
     func testWhenCreateImagePixelsAreMappedThenNamesAndParametersMatchDefinitions() {

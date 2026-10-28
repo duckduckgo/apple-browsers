@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Combine
 @_spi(Testing) import Persistence
 import PrivacyConfig
 import PrivacyConfigTestsUtils
@@ -146,6 +147,37 @@ final class PromoServiceFactoryTests: XCTestCase {
         XCTAssertNotNil(promo.delegate)
     }
 
+    func testFactoryCreatesVPNUpsellPromosWithCorrectConfiguration() {
+        let buttonPromo = PromoServiceFactory.vpnUpsellToolbarButton(delegate: dependencies.vpnUpsellToolbarButtonPromoDelegate)
+        let dotPromo = PromoServiceFactory.vpnUpsellDotBadge(delegate: dependencies.vpnUpsellDotBadgePromoDelegate)
+
+        for promo in [buttonPromo, dotPromo] {
+            XCTAssertEqual(promo.triggers, [.vpnUpsellBecameEligible, .appLaunched])
+            XCTAssertEqual(promo.initiated, .app)
+            XCTAssertEqual(promo.context, .global)
+            XCTAssertEqual(promo.promoType.severity, .low)
+            XCTAssertEqual(promo.promoType.timeoutResult, .ignored())
+            XCTAssertNotNil(promo.delegate)
+        }
+
+        XCTAssertEqual(buttonPromo.id, "vpn-upsell-toolbar-button")
+        XCTAssertEqual(buttonPromo.promoType.timeoutInterval, .days(7))
+        XCTAssertEqual(dotPromo.id, "vpn-upsell-dot-badge")
+        XCTAssertEqual(dotPromo.promoType.timeoutInterval, .days(3))
+    }
+
+    func testWhenVPNUpsellBecameEligibleNotificationPostedThenPromoTriggerFires() {
+        let expectation = expectation(description: "trigger fired")
+        let cancellable = PromoTrigger.triggerPublisher
+            .filter { $0 == .vpnUpsellBecameEligible }
+            .sink { _ in expectation.fulfill() }
+
+        NotificationCenter.default.post(name: .vpnUpsellBecameEligible, object: nil)
+
+        waitForExpectations(timeout: 1)
+        cancellable.cancel()
+    }
+
 }
 
 extension PromoServiceFactoryTests {
@@ -212,7 +244,66 @@ extension PromoServiceFactoryTests {
             updateController: nil,
             updateNotificationBridge: nil,
             brokenSitePromptPresentationCoordinator: BrokenSitePromptPresentationCoordinator(),
-            quitSurveyPromoObserver: QuitSurveyPromoObserver()
+            quitSurveyPromoObserver: QuitSurveyPromoObserver(),
+            vpnUpsellToolbarButtonPromoDelegate: VPNUpsellToolbarButtonPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            vpnUpsellDotBadgePromoDelegate: VPNUpsellDotBadgePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                visibilityManager: makeVPNUpsellVisibilityManager(),
+                persistor: MockVPNUpsellUserDefaultsPersistor()
+            ),
+            autofillImportPromoObserver: AutofillImportPromoObserver(loginImportStateProvider: MockAutofillLoginImportState()),
+            syncSetupBookmarksPromoManager: .makeForTesting(content: .bookmarks),
+            syncSetupAutofillPromoManager: .makeForTesting(content: .autofill),
+            bookmarksBarSyncPromoDelegate: BookmarksBarSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                isBookmarksBarSettingOn: { true },
+                notificationCenter: NotificationCenter(),
+                legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarkAddedSyncPromoDelegate: BookmarkAddedSyncPromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                syncService: nil,
+                storage: KeyedStorage(storage: InMemoryKeyValueStore()),
+                recordResult: { _, _ in }
+            ),
+            bookmarksEmptyStatePromoDelegate: BookmarksEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                hasTopLevelEntitiesProvider: { false },
+                bookmarksChangedPublisher: Empty().eraseToAnyPublisher(),
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
+            ),
+            autofillEmptyStatePromoDelegate: AutofillEmptyStatePromoDelegate(
+                featureFlagger: MockFeatureFlagger(),
+                isAnyCategoryEmptyProvider: { true },
+                dataImportCompletedPublisher: Empty().eraseToAnyPublisher(),
+                syncService: nil,
+                recordResult: { _, _ in }
+            )
+        )
+    }
+}
+
+extension SyncPromoManager {
+
+    static func makeForTesting(content: SyncPromoContent) -> SyncPromoManager {
+        SyncPromoManager(
+            content: content,
+            featureFlagger: MockFeatureFlagger(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            syncService: nil,
+            contentCountProvider: { 0 },
+            isDuckDuckGoPasswordManager: { false },
+            legacyStorage: KeyedStorage(storage: InMemoryKeyValueStore()),
+            openSyncSettings: { },
+            recordResult: { _, _ in }
         )
     }
 }

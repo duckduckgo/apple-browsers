@@ -138,7 +138,7 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionPageOrigin"]
     },
     "m_mac_direct_subscription_tier-options_failure": {
         "description": "Fired when subscription tier options fail to be retrieved (direct distribution)",
@@ -192,7 +192,7 @@
         "owners": ["SabrinaTardio"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionPageOrigin"]
     },
     "m_mac_store_subscription_tier-options_failure": {
         "description": "Fired when subscription tier options fail to be retrieved (App Store distribution)",
@@ -345,28 +345,28 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionPageOrigin"]
     },
     "m_mac_direct_privacy-pro_offer_screen_impression": {
         "description": "Fired when the subscription offer page is shown to the user (direct distribution). Mid-funnel pixel that closes the loop between an entry-point click and the purchase attempt.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionPageOrigin"]
     },
     "m_mac_store_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user clicks the Subscribe CTA on the subscription offer page (App Store distribution). Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionPageOrigin"]
     },
     "m_mac_direct_privacy-pro_terms-conditions_subscribe_click": {
         "description": "Fired when the user clicks the Subscribe CTA on the subscription offer page (direct distribution). Mid-funnel pixel preceding the purchase attempt outcome.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["user_submitted"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionPageOrigin"]
     },
 
     "m_mac_store_subscribe": {
@@ -374,14 +374,40 @@
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
     "m_mac_direct_subscribe": {
         "description": "Fired when a subscription purchase is completed successfully on direct distribution. Used for attribution tracking.",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin", "locale", "freeTrial"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "origin",
+                "type": "string",
+                "description": "Origin from the subscription page URL, sent as-is. Conversion pixel, so campaign origins are allowed in addition to the `subscriptionFunnelOrigin` values.",
+                "pattern": "^funnel_",
+                "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+            },
+            "locale",
+            "freeTrial"
+        ]
     },
 
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
@@ -679,6 +705,22 @@
                 "description": "Outcome of invalid-token recovery for this refresh: not_attempted (no recovery handler or a non-App-Store platform), or a restore ran and succeeded/failed",
                 "enum": ["not_attempted", "succeeded", "failed"]
             },
+            {
+                "key": "feature.data.ext.signed_out",
+                "type": "boolean",
+                "description": "Whether this refresh ended with the user being signed out. Always emitted; true when invalid-token recovery failed or was not attempted, or when the backend reported an unknown account"
+            },
+            {
+                "key": "feature.data.ext.subscription_status",
+                "type": "string",
+                "description": "Status of the cached subscription when the refresh started. unavailable means no subscription was cached; unknown is a status returned by the backend",
+                "enum": ["auto_renewable", "not_auto_renewable", "grace_period", "inactive", "expired", "unknown", "unavailable"]
+            },
+            {
+                "key": "feature.data.ext.netp_is_running",
+                "type": "boolean",
+                "description": "Whether the VPN tunnel was connected when the refresh started. Only emitted from the packet tunnel extension; false while the tunnel is still starting up"
+            },
             "channel"
         ]
     },
@@ -967,5 +1009,19 @@
                 "enum": ["d1", "d2_to_d7"]
             }
         ]
+    },
+    "m_mac_store_privacy-pro_app-settings_partner-benefits_click": {
+        "description": "Fires when the user clicks 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared with Android, iOS and Windows, and predates the label being renamed to 'Subscriber Offers'. App Store distribution.",
+        "owners": ["bwaresiak", "jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_direct_privacy-pro_app-settings_partner-benefits_click": {
+        "description": "Fires when the user clicks 'Subscriber Offers' in the DuckDuckGo Subscription section of Settings, which opens the Partnerships Hub. The name says 'partner-benefits' because it is shared with Android, iOS and Windows, and predates the label being renamed to 'Subscriber Offers'. Direct distribution.",
+        "owners": ["bwaresiak", "jozsef-vesza"],
+        "triggers": ["user_submitted"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
     }
 }

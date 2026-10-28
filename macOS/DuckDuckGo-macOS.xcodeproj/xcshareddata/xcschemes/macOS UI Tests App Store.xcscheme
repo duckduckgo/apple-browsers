@@ -57,8 +57,11 @@
       </PostActions>
       <TestPlans>
          <TestPlanReference
-            reference = "container:UITests/UI Tests App Store.xctestplan"
+            reference = "container:UITests/UI Tests App Store Sandbox.xctestplan"
             default = "YES">
+         </TestPlanReference>
+         <TestPlanReference
+            reference = "container:UITests/UI Tests App Store.xctestplan">
          </TestPlanReference>
       </TestPlans>
       <Testables>

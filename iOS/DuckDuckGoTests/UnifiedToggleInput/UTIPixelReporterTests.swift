@@ -22,6 +22,7 @@ import BrowserServicesKitTestsUtils
 import Core
 import Persistence
 @_spi(Testing) import PixelKit
+import UIKit
 import XCTest
 @testable import DuckDuckGo
 
@@ -57,6 +58,197 @@ final class UTIPixelReporterTests: XCTestCase {
                         isToggleVisible: isToggleVisible,
                         pageType: pageType,
                         duckAIEntrySource: duckAIEntrySource)
+    }
+
+    func testAttachmentPrivacyPixelsReportNamesKindsSurfacesAndFrequency() {
+        let cases: [(AttachmentPrivacyPixel.Action, String)] = [
+            (.shown, "aichat_unified_input_attachment_privacy_shown"),
+            (.learnMoreTapped, "aichat_unified_input_attachment_privacy_learn_more_tapped")
+        ]
+        for surface in [UnifiedToggleInputPixelSurface.addressBar, .duckAI, .contextualChat] {
+            let reporter = makeReporter { self.context(surface: surface) }
+            for kind in [AttachmentPrivacyPixel.Kind.image, .file] {
+                for (action, name) in cases {
+                    reporter.reportAttachmentPrivacy(action, kind: kind)
+                    let call = pixelKitMock.actualFireCalls.last
+                    XCTAssertEqual(call?.pixel.name, name.replacingOccurrences(of: "privacy_", with: "privacy_\(kind.rawValue)_"))
+                    XCTAssertEqual(call?.pixel.parameters, ["surface": surface.rawValue])
+                    XCTAssertEqual(call?.frequency, .dailyAndCount)
+                }
+            }
+        }
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 12)
+    }
+
+    func testWhenTabsAreSentThenCountUsesPrivacyBuckets() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        reporter.makeTabSubmissionReporter(requestedTabCount: 0)(.init(totalTabCount: 0, deliveredAttachmentCount: 0))
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+
+        for (count, bucket) in [(1, "one"), (2, "some"), (3, "some"), (4, "many"), (20, "many")] {
+            reporter.makeTabSubmissionReporter(requestedTabCount: count)(.init(totalTabCount: count, deliveredAttachmentCount: count))
+            let call = pixelKitMock.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "aichat_unified_input_tabs_sent")
+            XCTAssertEqual(call?.pixel.parameters, ["surface": "contextual_chat", "page_type": "unknown", "payload_tab_count": bucket])
+            XCTAssertEqual(call?.frequency, .dailyAndCount)
+        }
+    }
+
+    func testWhenReporterIsReleasedThenSubmissionKeepsOriginalAttribution() throws {
+        var liveContext: UTIPixelContext? = context(surface: .addressBar, pageType: .website)
+        var reporter: UTIPixelReporter? = makeReporter { liveContext }
+        weak var weakReporter = reporter
+        let report = try XCTUnwrap(reporter).makeTabSubmissionReporter(requestedTabCount: 1)
+        liveContext = context(surface: .addressBar, pageType: .ntp)
+        reporter = nil
+        XCTAssertNil(weakReporter)
+        liveContext = nil
+
+        report(.init(totalTabCount: 2, deliveredAttachmentCount: 1))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "address_bar", "page_type": "website", "payload_tab_count": "some"])
+    }
+
+    func testWhenOnlyCurrentOmnibarTabIsDeliveredThenReportsSentWithoutIncomplete() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .website) }
+
+        reporter.makeTabSubmissionReporter(requestedTabCount: 1)(.init(totalTabCount: 1, deliveredAttachmentCount: 1))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["aichat_unified_input_tabs_sent"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "address_bar", "page_type": "website", "payload_tab_count": "one"])
+    }
+
+    func testWhenSomeRequestedTabsAreMissingThenReportsPartialFailureAndSentCount() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        reporter.makeTabSubmissionReporter(requestedTabCount: 3)(.init(totalTabCount: 2, deliveredAttachmentCount: 1))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tabs_sent", "aichat_unified_input_tabs_submission_incomplete"
+        ])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters,
+                       ["surface": "contextual_chat", "page_type": "unknown", "outcome": "partial"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
+    func testWhenAllAdditionalTabsAreMissingThenCurrentPageDoesNotMaskFailure() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        reporter.makeTabSubmissionReporter(requestedTabCount: 2)(.init(totalTabCount: 1, deliveredAttachmentCount: 0))
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 1)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.name, "aichat_unified_input_tabs_submission_incomplete")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.first?.pixel.parameters,
+                       ["surface": "contextual_chat", "page_type": "unknown", "outcome": "all"])
+    }
+
+    func testWhenTabChipIsRemovedThenReportsOriginalSource() {
+        let reporter = makeReporter { self.context(surface: .contextualChat) }
+        let attachment = UnifiedToggleInputAttachment.tab(.init(
+            tabId: "private-id", title: "Private title", url: URL(string: "https://example.com/private")!, source: .mention))
+
+        reporter.reportAttachmentRemoved(attachment)
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_removed"
+        ])
+        for call in pixelKitMock.actualFireCalls {
+            XCTAssertEqual(call.pixel.parameters, ["surface": "contextual_chat", "page_type": "unknown", "source": "mention"])
+            XCTAssertEqual(call.frequency, .dailyAndCount)
+        }
+    }
+
+    func testWhenPickerSessionClosesThenReportsCancellationOnceOnlyWithoutChoice() {
+        var actions: [MultiTabAttachmentPixel.Action] = []
+        let session = MultiTabPickerPixelSession(attributionProvider: { .init(surface: .contextualChat, pageType: .contextual) }) { action, _ in
+            actions.append(action)
+        }
+        session.finish()
+        session.show()
+        session.show()
+        session.finish()
+        session.finish()
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled])
+
+        session.show()
+        session.finish(didChoose: true)
+        session.finish()
+        XCTAssertEqual(actions, [.pickerShown, .pickerCanceled, .pickerShown])
+    }
+
+    func testWhenPickerContextChangesThenCancellationKeepsShownAttributionAndNextSessionRefreshesIt() {
+        for source in [TabAttachmentOrigin.mention, .tabPicker] {
+            var liveContext: UTIPixelContext? = context(surface: .addressBar, pageType: .ntp)
+            let reporter = makeReporter { liveContext }
+            let session = MultiTabPickerPixelSession(attributionProvider: { reporter.currentTabPixelAttribution() }) {
+                reporter.reportTabAttachment($0, source: source, attribution: $1)
+            }
+            let fireCount = pixelKitMock.actualFireCalls.count
+
+            liveContext = context(surface: .contextualChat, pageType: .contextual)
+            session.show()
+            liveContext = context(surface: .duckAI, pageType: .duckAI)
+            session.show()
+            session.finish()
+            session.finish()
+
+            session.show()
+            liveContext = nil
+            session.finish()
+
+            let calls = Array(pixelKitMock.actualFireCalls.dropFirst(fireCount))
+            XCTAssertEqual(calls.map(\.pixel.name), [
+                "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled",
+                "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"
+            ])
+            XCTAssertEqual(calls.compactMap { $0.pixel.parameters?["surface"] }, ["contextual_chat", "contextual_chat", "duck_ai", "duck_ai"])
+            XCTAssertEqual(calls.compactMap { $0.pixel.parameters?["page_type"] }, ["contextual", "contextual", "duck_ai", "duck_ai"])
+            for call in calls {
+                XCTAssertEqual(call.pixel.parameters?["source"], source == .mention ? "mention" : "tab_picker")
+                XCTAssertEqual(call.frequency, .dailyAndCount)
+            }
+        }
+    }
+
+    func testWhenPickerChoiceSucceedsThenNextSessionUsesNewSurface() {
+        var surface: UnifiedToggleInputPixelSurface = .contextualChat
+        let reporter = makeReporter { self.context(surface: surface) }
+        let session = MultiTabPickerPixelSession(attributionProvider: { reporter.currentTabPixelAttribution() }) {
+            reporter.reportTabAttachment($0, source: .mention, attribution: $1)
+        }
+
+        session.show()
+        session.finish(didChoose: true)
+        surface = .addressBar
+        session.show()
+        session.finish()
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"
+        ])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.compactMap { $0.pixel.parameters?["surface"] }, ["contextual_chat", "address_bar", "address_bar"])
+    }
+
+    func testWhenPickerHasNoSurfaceAtShowThenDoesNotReportAnUnmatchedCancellation() {
+        var surface: UnifiedToggleInputPixelSurface?
+        let reporter = makeReporter { self.context(surface: .addressBar) }
+        let session = MultiTabPickerPixelSession(attributionProvider: {
+            surface.map { .init(surface: $0, pageType: .unknown) }
+        }) {
+            reporter.reportTabAttachment($0, source: .mention, attribution: $1)
+        }
+
+        session.show()
+        surface = .contextualChat
+        session.show()
+        session.finish()
+        XCTAssertTrue(pixelKitMock.actualFireCalls.isEmpty)
+
+        session.show()
+        session.finish()
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), [
+            "aichat_unified_input_tab_picker_shown", "aichat_unified_input_tab_picker_canceled"
+        ])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.compactMap { $0.pixel.parameters?["surface"] }, ["contextual_chat", "contextual_chat"])
     }
 
     // MARK: - Omnibar surface shown (toggle visibility from live context)
@@ -148,12 +340,30 @@ final class UTIPixelReporterTests: XCTestCase {
             "reasoning_effort": "none",
             "has_image_attachment": "false",
             "has_file_attachment": "false",
+            "has_tab_attachment": "false",
+            "has_pasted_text": "false",
             "has_text": "true",
             "surface": "duck_ai",
             "page_type": "duck_ai",
             "origin": "address_bar_icon",
             "default_mode": "search"
         ])
+    }
+
+    func testPromptSubmittedTabAttachmentFlagReflectsComposerAtSubmit() {
+        let reporter = makeReporter { self.context(surface: .addressBar, pageType: .website) }
+        let tab = UnifiedToggleInputAttachment.tab(.init(
+            tabId: "tab-id", title: "Page", url: URL(string: "https://example.com")!, source: .tabPicker))
+        let image = UnifiedToggleInputAttachment.image(AIChatImageAttachment(image: UIImage(), fileName: "image.png"))
+        let file = UnifiedToggleInputAttachment.file(AIChatFileAttachment(
+            data: Data([1]), fileName: "file.pdf", mimeType: "application/pdf"))
+
+        for (attachments, expected) in [([tab], "true"), ([image, file], "false"), ([], "false")] {
+            reporter.reportPromptSubmitted(hasText: true, selectedTool: nil, attachments: attachments,
+                                           reasoningMode: nil, modelId: nil, defaultOmnibarMode: .search,
+                                           isFirstPromptNewInstall: false)
+            XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_tab_attachment"], expected)
+        }
     }
 
     func testWhenFirstPromptOnNewInstallSubmittedThenParamIsTrue() {
@@ -204,13 +414,14 @@ final class UTIPixelReporterTests: XCTestCase {
     func testReportQuerySubmittedFiresDailyWithResolvedSurfacePageTypeAndToggleVisibility() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .serp) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .duckAI, queryType: .search)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputQuerySubmitted.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, [
             "surface": "address_bar",
             "page_type": "serp",
             "toggle_visible": "true",
+            "query_type": "search",
             "default_mode": "duckAI"
         ])
     }
@@ -218,7 +429,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testWhenQuerySubmittedWithToggleHiddenThenToggleVisibleIsFalse() {
         let reporter = makeReporter { self.context(isToggleVisible: false) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search, queryType: .search)
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["toggle_visible"], "false")
     }
@@ -226,7 +437,7 @@ final class UTIPixelReporterTests: XCTestCase {
     func testQueryAndPromptSubmittedShareTheKeysTheMixIsCutBy() {
         let reporter = makeReporter { self.context(surface: .addressBar, isToggleVisible: true, pageType: .ntp) }
 
-        reporter.reportQuerySubmitted(defaultOmnibarMode: .search)
+        reporter.reportQuerySubmitted(defaultOmnibarMode: .search, queryType: .search)
         let queryParams = pixelKitMock.actualFireCalls.last?.additionalParameters ?? [:]
 
         reporter.reportPromptSubmitted(hasText: true,
@@ -263,6 +474,50 @@ final class UTIPixelReporterTests: XCTestCase {
 
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.name, Pixel.Event.unifiedToggleInputFileAttached.name)
         XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters, ["surface": "address_bar", "source": "file_picker"])
+    }
+
+    func testPastedTextPixelsReportNamesSurfacesAndFrequency() {
+        let actions: [(UnifiedToggleInputPastedTextPixel.Action, String)] = [
+            (.attached, "aichat_unified_input_pasted_text_attached"),
+            (.removed, "aichat_unified_input_pasted_text_removed"),
+            (.edited, "aichat_unified_input_pasted_text_edited"),
+            (.sheetOpened, "aichat_unified_input_pasted_text_sheet_opened")
+        ]
+        for surface in [UnifiedToggleInputPixelSurface.addressBar, .duckAI, .contextualChat] {
+            let reporter = makeReporter { self.context(surface: surface) }
+            for (action, name) in actions {
+                reporter.reportPastedText(action)
+                let call = pixelKitMock.actualFireCalls.last
+                XCTAssertEqual(call?.pixel.name, name)
+                XCTAssertEqual(call?.pixel.parameters, ["surface": surface.rawValue])
+                XCTAssertEqual(call?.frequency, .dailyAndCount)
+            }
+        }
+        XCTAssertEqual(pixelKitMock.actualFireCalls.count, 12)
+    }
+
+    func testRemovingAPastedTextChipReportsThePastedTextRemovedPixel() {
+        let reporter = makeReporter { self.context(surface: .duckAI) }
+
+        reporter.reportAttachmentRemoved(.pastedText(AIChatPastedText(content: "pasted")))
+
+        XCTAssertEqual(pixelKitMock.actualFireCalls.map(\.pixel.name), ["aichat_unified_input_pasted_text_removed"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.pixel.parameters, ["surface": "duck_ai"])
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.frequency, .dailyAndCount)
+    }
+
+    func testPromptSubmittedReportsWhetherPastedTextWasPresent() {
+        let reporter = makeReporter { self.context(surface: .addressBar) }
+
+        reporter.reportPromptSubmitted(hasText: false, selectedTool: nil, attachments: [.pastedText(AIChatPastedText(content: "pasted"))],
+                                       reasoningMode: nil, modelId: nil, defaultOmnibarMode: .search, isFirstPromptNewInstall: false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_pasted_text"], "true")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_file_attachment"], "false")
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_image_attachment"], "false")
+
+        reporter.reportPromptSubmitted(hasText: true, selectedTool: nil, attachments: [], reasoningMode: nil, modelId: nil,
+                                       defaultOmnibarMode: .search, isFirstPromptNewInstall: false)
+        XCTAssertEqual(pixelKitMock.actualFireCalls.last?.additionalParameters?["has_pasted_text"], "false")
     }
 
     func testReportImageAttachedFiresDailyWithResolvedSurface() {

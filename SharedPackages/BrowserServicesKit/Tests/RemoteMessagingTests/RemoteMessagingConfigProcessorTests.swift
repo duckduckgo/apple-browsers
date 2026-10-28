@@ -264,7 +264,11 @@ private extension RemoteMessagingConfigProcessorTests {
                 enabledFeatureFlags: [],
                 isSyncEnabled: false,
                 shouldShowWinBackOfferUrgencyMessage: false,
-                isCurrentPIRUser: false
+                isCurrentPIRUser: false,
+                isReturningUser: nil,
+                isAIChatEnabled: false,
+                triedAIChatDuringOnboarding: false,
+                isAIChatBoostActive: nil
             ),
             percentileStore: MockRemoteMessagePercentileStore(),
             surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

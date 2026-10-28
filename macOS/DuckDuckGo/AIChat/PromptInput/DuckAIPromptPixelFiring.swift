@@ -19,6 +19,14 @@
 import Foundation
 import PixelKit
 
+/// Raw values match the `source` pixel parameter.
+enum AIChatImageAttachmentSource: String {
+    case file
+    case drop
+    case paste
+    case screenshot
+}
+
 /// Named after the action rather than the pixel, so each surface can report it under its own name.
 enum DuckAIPromptPixelEvent: Equatable {
     case promptSubmitted
@@ -33,8 +41,11 @@ enum DuckAIPromptPixelEvent: Equatable {
     case webSearchActivated
     case webSearchDeactivated
     case customizeResponsesOpened
-    case imageAttached
-    case imageRemoved
+    case imageAttached(source: AIChatImageAttachmentSource)
+    case imageRemoved(source: AIChatImageAttachmentSource)
+    case screenshotTaken(kind: AIChatScreenshotKind)
+    case screenshotRemoved
+    case screenshotFailed(reason: AIChatScreenshotFailureReason)
     case fileAttached
     case fileRemoved
     case fileValidationFailed(reason: String)
@@ -55,6 +66,8 @@ enum DuckAIPromptPixelEvent: Equatable {
     /// The native upsell dialog was shown after a gated pick. Carries the origin because it varies
     /// per picker within a surface.
     case subscriptionUpsellShown(origin: String)
+    /// A gated picker row was clicked. Carries the origin because it varies per picker within a surface.
+    case gatedRowClick(origin: String)
     case subscriptionUpsellTriggered(currentTier: String, requiredTier: String, flowType: String, origin: String)
     case voiceChatOpened
 }
@@ -102,8 +115,11 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
         case .webSearchActivated: .aiChatAddressBarWebSearchActivated
         case .webSearchDeactivated: .aiChatAddressBarWebSearchDeactivated
         case .customizeResponsesOpened: .aiChatAddressBarCustomizeResponsesOpened
-        case .imageAttached: .aiChatAddressBarImageAttached
-        case .imageRemoved: .aiChatAddressBarImageRemoved
+        case .imageAttached(let source): .aiChatAddressBarImageAttached(source: source)
+        case .imageRemoved(let source): .aiChatAddressBarImageRemoved(source: source)
+        case .screenshotTaken(let kind): .aiChatAddressBarScreenshotTaken(kind: kind)
+        case .screenshotRemoved: .aiChatAddressBarScreenshotRemoved
+        case .screenshotFailed(let reason): .aiChatAddressBarScreenshotFailed(reason: reason)
         case .fileAttached: .aiChatAddressBarFileAttached
         case .fileRemoved: .aiChatAddressBarFileRemoved
         case .fileValidationFailed(let reason): .aiChatAddressBarFileValidationFailed(reason: reason)
@@ -129,6 +145,8 @@ struct AddressBarPromptPixelHandler: DuckAIPromptPixelFiring {
             .aiChatAddressBarCreateImageSubmittedWithUnsupportedModel
         case .subscriptionUpsellShown(let origin):
             .aiChatAddressBarSubscriptionUpsellShown(origin: origin)
+        case .gatedRowClick(let origin):
+            .aiChatAddressBarGatedRowClick(origin: origin)
         case .subscriptionUpsellTriggered(let currentTier, let requiredTier, let flowType, let origin):
             .aiChatAddressBarSubscriptionUpsellTriggered(currentTier: currentTier,
                                                         requiredTier: requiredTier,

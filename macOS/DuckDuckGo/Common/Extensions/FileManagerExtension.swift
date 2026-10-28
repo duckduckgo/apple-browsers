@@ -23,7 +23,6 @@ import os.log
 
 extension FileManager {
 
-#if !SANDBOX_TEST_TOOL
     func configurationDirectory() -> URL {
         let fm = FileManager.default
 
@@ -46,7 +45,6 @@ extension FileManager {
         }
         return subDir
     }
-#endif
 
     @discardableResult
     func moveItem(at srcURL: URL, to destURL: URL, incrementingIndexIfExists flag: Bool, pathExtension: String? = nil) throws -> URL {

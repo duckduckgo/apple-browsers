@@ -172,20 +172,20 @@ final class BookmarksBarMenuViewController: NSViewController {
         clipView.drawsBackground = false
         scrollView.contentView = clipView
 
-        scrollUpButton = MouseOverButton(image: .condenseUp, target: nil, action: nil)
+        scrollUpButton = MouseOverButton(image: NSImage(resource: .condenseUp), target: nil, action: nil)
         scrollUpButton.translatesAutoresizingMaskIntoConstraints = false
         scrollUpButton.bezelStyle = .shadowlessSquare
         scrollUpButton.normalTintColor = .labelColor
         scrollUpButton.backgroundColor = .clear
-        scrollUpButton.mouseOverColor = .blackWhite10
+        scrollUpButton.mouseOverColor = NSColor(resource: .blackWhite10)
         scrollUpButton.delegate = self
 
-        scrollDownButton = MouseOverButton(image: .expandDown, target: nil, action: nil)
+        scrollDownButton = MouseOverButton(image: NSImage(resource: .expandDown), target: nil, action: nil)
         scrollDownButton.translatesAutoresizingMaskIntoConstraints = false
         scrollDownButton.bezelStyle = .shadowlessSquare
         scrollDownButton.normalTintColor = .labelColor
         scrollDownButton.backgroundColor = .clear
-        scrollDownButton.mouseOverColor = .blackWhite10
+        scrollDownButton.mouseOverColor = NSColor(resource: .blackWhite10)
         scrollDownButton.delegate = self
 
         view.addSubview(scrollView)

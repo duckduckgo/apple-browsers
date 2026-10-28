@@ -24,6 +24,7 @@ import Foundation
 import MaliciousSiteProtection
 import Persistence
 import PrivacyConfig
+import WebExtensions
 import WebKit
 
 final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
@@ -48,14 +49,19 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     /// Debug-only Permissions inspector served at `duck://permissions` (Debug ▸ Permissions ▸ Inspect).
     private lazy var permissionsDebugInspector = PermissionsDebugInspector(permissionManager: permissionManager)
 
+    /// Read on each request, because the manager is released and recreated when web extensions are turned off and on.
+    private let webExtensionManagerProvider: () -> WebExtensionManaging?
+
     init(
         featureFlagger: FeatureFlagger,
         faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager,
         isNTPSpecialPageSupported: Bool = false,
-        userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager
+        userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager,
+        webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { NSApp.delegateTyped.webExtensionManager }
     ) {
         self.featureFlagger = featureFlagger
+        self.webExtensionManagerProvider = webExtensionManagerProvider
         self.faviconManager = faviconManager
         self.permissionManager = permissionManager
         self.isNTPSpecialPageSupported = isNTPSpecialPageSupported
@@ -109,6 +115,10 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
                 fallthrough
             }
             faviconsDebugInspector.handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
+        case .webExtensions where featureFlagger.internalUserDecider.isInternalUser:
+            guard #available(macOS 15.4, *) else { fallthrough }
+            WebExtensionsInspector(manager: webExtensionManagerProvider() as? WebExtensionManager)
+                .handle(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         default:
             handleNativeUIPages(requestURL: requestURL, urlSchemeTask: urlSchemeTask)
         }
@@ -557,6 +567,7 @@ private extension URL {
         case favicon
         case favicons
         case permissions
+        case webExtensions
         case customBackgroundImage
         case customBackgroundImageThumbnail
         case onboarding
@@ -588,6 +599,8 @@ private extension URL {
             return .favicons
         } else if self.isPermissions {
             return .permissions
+        } else if self.isWebExtensions {
+            return .webExtensions
         } else if self.isHistory {
             return .history
         } else {

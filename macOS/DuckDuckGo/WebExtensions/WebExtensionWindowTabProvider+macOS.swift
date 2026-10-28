@@ -17,12 +17,20 @@
 //
 
 import AppKit
+import Combine
+import os.log
 import WebExtensions
 import WebKit
 
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
+
+    /// Keeps the open popover on the app's theme while it changes.
+    private var popupAppearanceObservation: NSKeyValueObservation?
+    /// Closes the open popover when its window switches tabs, since the popup is tied to the selected tab,
+    /// or when another browser window becomes active, as Chrome does.
+    private var popupDismissalCancellable: AnyCancellable?
 
     private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
@@ -47,31 +55,58 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         using configuration: WKWebExtension.WindowConfiguration,
         for context: WKWebExtensionContext
     ) async throws -> (any WKWebExtensionWindow)? {
-        let tabs = configuration.tabURLs.map {
-            Tab(content: .contentFromURL($0, source: .ui), webViewConfiguration: context.webViewConfiguration)
-        }
+        // Like Chrome, a popup window holds one page: further pages open as tabs in the last active regular window.
+        let isPopup = configuration.windowType == .popup
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
+        // Only the extension's own pages load with its web view configuration; websites get a tab of the
+        // window's kind, so a private window's websites use its own data store.
+        let tabs = configuration.tabURLs.map { url in
+            let isExtensionPage = url.scheme == context.baseURL.scheme
+            return Tab(content: .contentFromURL(url, source: .ui),
+                       webViewConfiguration: isExtensionPage ? context.webViewConfiguration : nil,
+                       burnerMode: isExtensionPage ? .regular : burnerMode)
+        }
+        // Looked up before the popup opens, since the popup becomes the last active window.
+        let regularWindowTabs = windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
         let tabCollectionViewModel = TabCollectionViewModel(
-            tabCollection: TabCollection(tabs: tabs),
-            burnerMode: burnerMode
+            tabCollection: TabCollection(tabs: isPopup ? Array(tabs.prefix(1)) : tabs, isPopup: isPopup),
+            burnerMode: burnerMode,
+            windowControllersManager: windowControllersManager
         )
 
+        // WebKit reports a position or size the extension didn't specify as NaN, which means "use the default".
+        let frame = configuration.frame
         let mainWindow = windowControllersManager.openNewWindow(
             with: tabCollectionViewModel,
             burnerMode: burnerMode,
-            droppingPoint: configuration.frame.origin,
-            contentSize: configuration.frame.size,
+            droppingPoint: frame.origin.x.isNaN || frame.origin.y.isNaN ? nil : frame.origin,
+            contentSize: frame.size.width.isNaN || frame.size.height.isNaN ? nil : frame.size,
             showWindow: configuration.shouldBeFocused,
-            popUp: configuration.windowType == .popup,
+            popUp: isPopup,
             isMiniaturized: configuration.windowState == .minimized,
             isMaximized: configuration.windowState == .maximized,
             isFullscreen: configuration.windowState == .fullscreen
         )
 
-        try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
+        if isPopup, tabs.count > 1 {
+            let extraTabs = Array(tabs.dropFirst())
+            // Each private window has its own data store, so a private popup's extra pages get a new window sharing its store.
+            if !burnerMode.isBurner, let regularWindowTabs, !regularWindowTabs.isPopup, !regularWindowTabs.burnerMode.isBurner {
+                extraTabs.forEach { regularWindowTabs.append(tab: $0) }
+            } else {
+                windowControllersManager.openNewWindow(with: TabCollectionViewModel(tabCollection: TabCollection(tabs: extraTabs),
+                                                                                    burnerMode: burnerMode),
+                                                       burnerMode: burnerMode,
+                                                       showWindow: true)
+            }
+        }
 
-        // swiftlint:disable:next force_cast
-        return mainWindow?.windowController as! MainWindowController
+        // Like Chrome, an existing tab only moves into a regular window or an empty popup.
+        if !isPopup || tabs.isEmpty {
+            try? moveExistingTabs(configuration.tabs, to: tabCollectionViewModel)
+        }
+
+        return mainWindow?.windowController as? MainWindowController
     }
 
     func openNewTab(
@@ -87,27 +122,72 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
             return tab
         }
 
-        assertionFailure("Failed to create tab based on configuration")
-        return Tab(content: .newtab)
+        return nil
+    }
+
+    func openChromePage(_ url: URL, for context: WKWebExtensionContext) -> Bool {
+        switch url.host {
+        case "password-manager":
+            windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
+            return true
+        case "extensions" where Application.appDelegate.internalUserDecider.isInternalUser:
+            windowControllersManager.show(url: .webExtensions, source: .ui, newTab: true)
+            return true
+        default:
+            return false
+        }
     }
 
     func presentPopup(
         _ action: WKWebExtension.Action,
         for context: WKWebExtensionContext
     ) async throws {
-        guard let button = buttonForContext(context) else {
+        guard let (windowController, button) = anchor(for: action, of: context) else {
+            Logger.webExtensions.error("❌ No navigation bar button for \(context.uniqueIdentifier), popup not shown")
             return
         }
 
-        guard action.presentsPopup,
-              let popupPopover = action.popupPopover,
+        guard action.presentsPopup else {
+            // The extension declares an action without a popup, so the click is its own event.
+            Logger.webExtensions.debug("🧩 Action of \(context.uniqueIdentifier) presents no popup")
+            return
+        }
+
+        guard let popupPopover = action.popupPopover,
               let popupWebView = action.popupWebView
         else {
+            Logger.webExtensions.error("❌ Action of \(context.uniqueIdentifier) has no popup popover or web view")
             return
         }
 
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        // WebKit's popover doesn't follow the app's theme on its own, so it takes the app's, also when it changes.
+        popupAppearanceObservation = NSApp.observe(\.effectiveAppearance, options: [.initial, .new]) { [weak popupPopover, weak popupWebView] app, _ in
+            MainActor.assumeMainThread {
+                popupPopover?.appearance = app.effectiveAppearance
+                popupWebView?.appearance = app.effectiveAppearance
+            }
+        }
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+
+        let selectedTabChange = windowController.mainViewController.tabCollectionViewModel
+            .$selectedTabViewModel
+            .map { $0?.tab }
+            .removeDuplicates(by: ===)
+            .dropFirst()
+            .map { _ in () }
+        // Only browser windows count, so the Web Inspector can open on the popup without closing it.
+        let otherBrowserWindowActivation = NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .compactMap { $0.object as? NSWindow }
+            .filter { [weak buttonWindow = button.window] window in
+                (window is MainWindow || window is PopUpWindow) && window !== buttonWindow
+            }
+            .map { _ in () }
+        popupDismissalCancellable = selectedTabChange.merge(with: otherBrowserWindowActivation)
+            .first()
+            .sink { _ in
+                action.closePopup()
+            }
     }
 
     // MARK: - Private Helpers
@@ -122,7 +202,6 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
                     .mainViewController.tabCollectionViewModel,
                 let currentIndex = sourceViewModel.tabCollection.firstIndex(of: tab)
             else {
-                assertionFailure("Failed to find tab collection view model for \(existingTab)")
                 continue
             }
 
@@ -130,12 +209,33 @@ final class WebExtensionWindowTabProvider: WebExtensionWindowTabProviding {
         }
     }
 
-    private func buttonForContext(_ context: WKWebExtensionContext) -> NSButton? {
-        guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
-            assertionFailure("No main window controller")
+    /// The extension's button the popup is shown from, and the window it is in.
+    ///
+    /// The button of the window that shows the action's tab comes first, so a popup asked for from a page
+    /// in a window that isn't the last active one shows there. A pop-up window has no visible navigation
+    /// bar, and the default action has no tab; both use the last active browser window.
+    private func anchor(for action: WKWebExtension.Action,
+                        of context: WKWebExtensionContext) -> (MainWindowController, NSButton)? {
+        if let tab = action.associatedTab as? Tab {
+            // A pinned tab is selected in every window that shows it, so the key one wins.
+            let showingTab = windowControllersManager.mainWindowControllers
+                .filter { $0.mainViewController.tabCollectionViewModel.selectedTab === tab }
+                .sorted { first, _ in first.window?.isKeyWindow == true }
+            for windowController in showingTab {
+                if let button = buttonForContext(context, in: windowController),
+                   button.window != nil, !button.isHiddenOrHasHiddenAncestor {
+                    return (windowController, button)
+                }
+            }
+        }
+        guard let windowController = windowControllersManager.lastKeyMainWindowController,
+              let button = buttonForContext(context, in: windowController) else {
             return nil
         }
+        return (windowController, button)
+    }
 
+    private func buttonForContext(_ context: WKWebExtensionContext, in mainWindowController: MainWindowController) -> NSButton? {
         let targetIdentifier = NSUserInterfaceItemIdentifier(context.uniqueIdentifier)
         let button = mainWindowController.mainViewController.navigationBarViewController.menuButtons.arrangedSubviews
             .compactMap { $0 as? NSButton }

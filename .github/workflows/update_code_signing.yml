@@ -20,7 +20,7 @@ on:
 
 jobs:
   update_code_signing:
-    runs-on: [image:osx-tahoe-26, general-purpose]
+    runs-on: [image:osx-tahoe-27, general-purpose]
     name: Update Code Signing Assets
 
     steps:

@@ -153,6 +153,8 @@ final class AIChatOmnibarController {
     /// warning does — activation included, which is what `cleanup()` dropped it for.
     var onUsageWarningsRefreshed: (() -> Void)?
 
+    var onPromptSubmitted: (() -> Void)?
+
     /// Turns the card's lifecycle into pixels. Lives here rather than on the container VC because
     /// submit and teardown — two of the events — are this type's to report.
     private(set) lazy var usageWarningMeasurement = DuckAiUsageWarningMeasurement(
@@ -172,6 +174,20 @@ final class AIChatOmnibarController {
     /// inert alongside the buttons.
     @Published var isInputBlockedByUsageLimit = false
 
+    let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring?
+    private(set) lazy var inputOutcomeMeasurement = DuckAiInputOutcomeMeasurement(
+        pixelFiring: inputOutcomePixelFiring ?? DuckAiInputOutcomePixelAdapter()
+    )
+
+    /// Set by the container VC from the card it renders: an Ask click accepts the terms only while it's on screen.
+    var isTermsOfServiceDisclaimerShown = false {
+        didSet {
+            guard isTermsOfServiceDisclaimerShown, !oldValue else { return }
+            inputOutcomeMeasurement.termsOfServiceDisclaimerBecameVisible()
+        }
+    }
+
     private func performUsageWarningAction(_ action: DuckAiUsageAction) {
         switch action {
         case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
@@ -182,6 +198,7 @@ final class AIChatOmnibarController {
             usageWarningMeasurement.ctaTapped(.upsell)
             onSubscriptionUpsellDialogRequested?(surface.usageLimitFunnelOrigin)
         case .startUsingWeeklyLimit(let entries):
+            usageWarningMeasurement.ctaTapped(.weeklyLimit)
             // Web reads the entry on its next hydration, so there is nothing to reload here.
             usageLimitsStore?.write(entries)
         }
@@ -295,6 +312,25 @@ final class AIChatOmnibarController {
             && featureFlagger.isFeatureOn(.aiChatOmnibarAttachMoreTabs)
     }
 
+    /// "Add Screenshot" in the attach menu.
+    var isOmnibarScreenshotEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatOmnibarScreenshot)
+    }
+
+    var isPasteImagesEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatPasteImages)
+    }
+
+    /// Fires when the active draft goes away: another tab is selected, or the active tab closes.
+    var activeDraftChangesPublisher: AnyPublisher<Void, Never> {
+        draftSource.currentDraftStorePublisher
+            .map { $0.map(ObjectIdentifier.init) }
+            .removeDuplicates()
+            .dropFirst()
+            .map { _ in () }
+            .eraseToAnyPublisher()
+    }
+
     @discardableResult
     func toggleImageGenerationMode() -> AIChatCreateImageModelSwitchNotice? {
         guard !isImageGenerationMode else {
@@ -348,7 +384,9 @@ final class AIChatOmnibarController {
         // are both @MainActor-isolated; a default *parameter value* is evaluated in a nonisolated
         // context even though this initializer's body is not, so the real default is resolved below.
         subscriptionUpsellPresenter: AIChatOmnibarSubscriptionUpselling? = nil,
-        usageLimitsStore: DuckAiUsageLimitsStore? = nil
+        usageLimitsStore: DuckAiUsageLimitsStore? = nil,
+        termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+        inputOutcomePixelFiring: DuckAiInputOutcomePixelFiring? = nil
     ) {
         self.aiChatTabOpener = aiChatTabOpener
         self.surface = surface
@@ -367,6 +405,8 @@ final class AIChatOmnibarController {
         self.subscriptionUpsellPresenter = subscriptionUpsellPresenter
             ?? AIChatOmnibarSubscriptionUpsellPresenter(coordinator: Application.appDelegate.subscriptionNavigationCoordinator)
         self.usageLimitsStore = usageLimitsStore
+        self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.inputOutcomePixelFiring = inputOutcomePixelFiring
         self.suggestionsViewModel = AIChatSuggestionsViewModel(
             maxSuggestions: suggestionsReader?.maxHistoryCount ?? AIChatSuggestionsViewModel.defaultMaxSuggestions
         )
@@ -412,6 +452,7 @@ final class AIChatOmnibarController {
     /// otherwise opens a new selected Duck.ai tab in `mode: voice-mode`.
     func openNewVoiceChat() {
         pixelHandler.fire(.voiceChatOpened)
+        inputOutcomeMeasurement.record(.voiceStarted)
 
         guard !surface.routesSubmissionThroughHost else {
             delegate?.aiChatOmnibarControllerRequestsVoiceSession(self)
@@ -482,6 +523,7 @@ final class AIChatOmnibarController {
 
         fetchModels()
         refreshUsageWarnings()
+        startInputOutcomeMeasurement()
 
         // If feature is disabled, clear any existing suggestions and don't fetch
         if !isSuggestionsEnabled {
@@ -492,6 +534,12 @@ final class AIChatOmnibarController {
         if shouldFetchSuggestions {
             fetchSuggestionsIfNeeded(query: currentText)
         }
+    }
+
+    /// After the refresh, which applies the card synchronously, so whether it shows the disclaimer is settled.
+    private func startInputOutcomeMeasurement() {
+        inputOutcomeMeasurement.inputOpened(surface: surface.inputOutcomePixelSurface,
+                                            isTermsOfServiceDisclaimerShown: isTermsOfServiceDisclaimerShown)
     }
 
     private func refreshUsageWarnings() {
@@ -1064,14 +1112,18 @@ final class AIChatOmnibarController {
         activeImageAttachments.count > maxImageAttachments
     }
 
-    /// Adds an image attachment to the active tab. No-op if at displayCap or if an attachment
-    /// with the same id is already present.
-    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) {
+    /// Adds an image attachment to the active tab. Refused at displayCap, for a duplicate id, or
+    /// with no active draft.
+    /// - Returns: whether the attachment was added.
+    @discardableResult
+    func addImageAttachmentToActiveTab(_ attachment: AIChatImageAttachment) -> Bool {
         var current = activeImageAttachments
-        guard current.count < imageAttachmentsDisplayCap else { return }
-        guard !current.contains(where: { $0.id == attachment.id }) else { return }
+        guard current.count < imageAttachmentsDisplayCap,
+              !current.contains(where: { $0.id == attachment.id }),
+              let draftStore else { return false }
         current.append(attachment)
-        draftStore?.setAIChatAttachments(current)
+        draftStore.setAIChatAttachments(current)
+        return true
     }
 
     /// Removes an image attachment from the active tab, identified by `id`. No-op if not
@@ -1197,6 +1249,7 @@ final class AIChatOmnibarController {
         hasBeenActivated = false
         // Whatever the user was going to do about the card, they have now done it.
         usageWarningMeasurement.inputSessionEnded()
+        inputOutcomeMeasurement.inputClosed()
         usageWarningViewModel?.clear()
         suggestionsViewModel.clearAllChats()
         currentFetchTask?.cancel()
@@ -1320,6 +1373,13 @@ final class AIChatOmnibarController {
         isImageGenerationMode || selectedModelSupportsImageUpload
     }
 
+    /// Attachments that would ship with a submit, so a prompt with no text can still be sent.
+    var hasSendableAttachments: Bool {
+        (canSendImages && !activeImageAttachments.isEmpty)
+            || (selectedModelSupportsFileUpload && !activeFileAttachments.isEmpty)
+            || !activeTabAttachments.isEmpty
+    }
+
     /// Each picker allows one pick past its limit as a visible cue, so submitting stays held there.
     private var hasSubmitBlockingAttachmentExcess: Bool {
         if canSendImages && activeImageAttachments.count > maxImageAttachments {
@@ -1351,8 +1411,10 @@ final class AIChatOmnibarController {
         return nil
     }
 
-    func submit() {
-        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+    /// `sentWithAsk` is a send-button click rather than Return. Only that click accepts the Terms of Service,
+    /// and only with the disclaimer on screen; the prompt carries it to the web app either way.
+    func submit(sentWithAsk: Bool = false) {
+        guard !currentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || hasSendableAttachments else {
             return
         }
 
@@ -1378,6 +1440,11 @@ final class AIChatOmnibarController {
         firePromptSubmissionPixels()
         // After the URL branch: navigating away is not a prompt spent against the allowance.
         usageWarningMeasurement.promptSubmitted()
+        inputOutcomeMeasurement.record(.promptSubmitted(sentWithAsk ? .button : .enter))
+        if sentWithAsk {
+            termsOfServiceDisclaimer.acceptIfShown(isTermsOfServiceDisclaimerShown)
+        }
+        onPromptSubmitted?()
 
         // Snapshot everything that could change between now and when the async submit Task
         // resumes. `await waitForAttachmentsReady?()` can take seconds for large images, and
@@ -1474,13 +1541,12 @@ final class AIChatOmnibarController {
                 trimmedText,
                 autoSubmit: true,
                 toolChoice: toolChoice,
-                images: images,
-                files: files,
+                attachments: AIChatPromptAttachments(images: images, files: files),
                 modelId: modelId,
                 pageContext: pageContextPayload,
                 mode: mode,
                 reasoningEffort: reasoningEffort
-            )
+            ).withTermsAccepted(sentWithAsk)
 
             if surface.routesSubmissionThroughHost {
                 delegate?.aiChatOmnibarController(self, requestsSubmissionOf: trimmedText, payload: prompt)
@@ -1699,7 +1765,11 @@ struct AIChatReasoningPickerItem {
 extension AIChatOmnibarController {
     /// Resolved picker contents (accessible first, then the gated upsell section); owns the flag, copy, and ordering so the VC just renders.
     /// `freeModelsOnly` is the free-model CTA's chevron: advanced models are what it has run out of.
-    func modelPickerItems(selectedModelId: String?, freeModelsOnly: Bool = false) -> [AIChatModelPickerItem] {
+    /// `hidesGatedModels` is the usage card's chevron: it offers a way out of a spent allowance, so a
+    /// row the user's plan can't pick has nothing to offer there.
+    func modelPickerItems(selectedModelId: String?,
+                          freeModelsOnly: Bool = false,
+                          hidesGatedModels: Bool = false) -> [AIChatModelPickerItem] {
         let source = freeModelsOnly ? models.filter { !$0.isAdvanced } : models
         let (accessible, gated) = AIChatModelSectionBuilder.groupByAccess(models: source)
         // Recommended = backend-labelled models, shown first with the label as a subtitle.
@@ -1719,7 +1789,7 @@ extension AIChatOmnibarController {
         }
         items += rest.map { item(for: $0) }
 
-        guard !gated.isEmpty, !freeModelsOnly else { return items }
+        guard !gated.isEmpty, !freeModelsOnly, !hidesGatedModels else { return items }
         items.append(.separator)
 
         if isSubscriptionUpsellEnabled {

@@ -28,9 +28,11 @@ import WebKit
 public protocol CPMMessagingDiagnosticsProviding: AnyObject {
     /// Captures native state synchronously at the failed handshake, before the context or tab can change.
     func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics
+    /// The app resumed from background or system sleep; recorded as one event in the lifecycle timeline.
+    func recordInterruption()
 }
 
-/// Collects CPM lifecycle events and WebKit state for initialization-failure and stuck-messaging pixels.
+/// Collects CPM lifecycle events and WebKit state for the first-failure snapshot in an episode report.
 /// Snapshots use native state without JavaScript probes.
 @available(macOS 15.4, iOS 18.4, *)
 @MainActor
@@ -65,8 +67,11 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             case contextError(String)
             case contextUnloadFailed(String)
             case extensionFilesRemoveFailed(String)
+            case graveyardHold
+            case graveyardRelease
             case proxyInstalled
             case proxyRemoved
+            case interruption
         }
 
         let kind: Kind
@@ -84,6 +89,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     private(set) var backgroundProcessIsUnresponsive = false
 
     private let featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)?
+    let backgroundWebViewGraveyard: CPMBackgroundWebViewGraveyard
     private var featureFlagsCancellable: AnyCancellable?
 
     private let tabResolver: TabResolver
@@ -108,13 +114,19 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     private var previousBackgroundWebProcessIdentifier: Int32?
     private var networkProcessIdentifierAtLastBackgroundViewCreation: Int32?
     private var lastBackgroundWebViewCreatedAt: Date?
+    /// First new error 6 for the latest view/load attempt, retained if WebKit deallocates that failed view.
+    private var lastBackgroundLoadError: (appState: CPMAppSessionDiagnostics.ApplicationState?, secondsAfterViewCreation: TimeInterval)?
+    /// WebKit notifications contain historical errors, and the safe getter copies them on every read.
+    /// Compare values and multiplicity so re-listing an old error cannot fail a replacement view.
+    private var lastReportedBackgroundLoadErrors: [NSError] = []
+    let backgroundReadinessObserver: CPMBackgroundReadinessObserver
     /// Every background web view WebKit created for the CPM context that has not been deallocated yet.
     private var liveBackgroundWebViews: [WeakBox<WKWebView>] = []
 
     /// - Parameters:
     ///   - tabResolver: Maps the health monitor's tab identifier to the tab's web view. Platform-specific.
     ///   - observesMemoryPressure: Disable in tests to avoid installing a dispatch source.
-    ///   - featureFlags: Delegate-proxy runtime switch; `nil` means observation is enabled.
+    ///   - featureFlags: Delegate-proxy and graveyard-treatment switches; `nil` disables graveyard retention.
     public init(tabResolver: @escaping TabResolver,
                 observesMemoryPressure: Bool = true,
                 featureFlags: (any CPMDiagnosticsFeatureFlagsProviding)? = nil,
@@ -123,7 +135,19 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         self.appSession = appSession
         self.tabResolver = tabResolver
         self.featureFlags = featureFlags
+        self.backgroundWebViewGraveyard = CPMBackgroundWebViewGraveyard(featureFlags: featureFlags)
         self.now = now
+        self.backgroundReadinessObserver = CPMBackgroundReadinessObserver(now: now) { [weak featureFlags] in
+            featureFlags?.isBackgroundDelegateProxyEnabled ?? true
+        }
+        self.backgroundWebViewGraveyard.lifecycleEventHandler = { [weak self] event in
+            switch event {
+            case .held:
+                self?.record(.graveyardHold)
+            case .released:
+                self?.record(.graveyardRelease)
+            }
+        }
         if observesMemoryPressure {
             installMemoryPressureSource()
         }
@@ -145,6 +169,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
     /// Enables observation on the current view, or removes proxies from all surviving views when disabled.
     func applyFeatureFlags() {
         guard isBackgroundDelegateProxyEnabled else {
+            backgroundReadinessObserver.stopObserving()
             pruneDeallocatedBackgroundWebViews()
             var removedProxy = false
             for webView in liveBackgroundWebViews.compactMap(\.value) where CPMBackgroundWebViewDelegateProxy.isInstalled(on: webView) {
@@ -196,9 +221,13 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         previousBackgroundWebProcessIdentifier = nil
         networkProcessIdentifierAtLastBackgroundViewCreation = nil
         lastBackgroundWebViewCreatedAt = nil
+        lastBackgroundLoadError = nil
+        lastReportedBackgroundLoadErrors = context.errors.map(NSError.webKitSafe).filter(\.isBackgroundContentLoadFailure)
+        backgroundReadinessObserver.stopObserving()
         // Preserve the latest update across context reloads, without carrying over old-context callbacks.
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
         backgroundProcessIsUnresponsive = false
+        backgroundWebViewGraveyard.resetForNewContext()
         record(.contextLoad)
         if let previousContextBaseURL,
            previousContextBaseURL.identifier == context.uniqueIdentifier,
@@ -217,7 +246,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             guard let context = notification.object as? WKWebExtensionContext else { return }
             MainActor.assumeMainThread {
                 guard let self, self.context === context, self.contextGeneration == generation else { return }
-                let errors = context.errors.map { $0 as NSError }
+                let errors = context.errors.map(NSError.webKitSafe)
                 for error in errors {
                     Logger.webExtensions.error("[CPM Diagnostics] Context error: \(error.domainAndCode, privacy: .public)")
                 }
@@ -228,12 +257,14 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     public func contextUnloadFailed(identifier: String, error: Error) {
         guard identifier == cpmContextIdentifier else { return }
-        record(.contextUnloadFailed((error as NSError).domainAndCode))
+        let descriptor = NSError.webKitSafe(error).domainAndCode
+        record(.contextUnloadFailed(descriptor))
     }
 
     public func extensionFilesRemoveFailed(identifier: String, error: Error) {
         guard identifier == cpmContextIdentifier else { return }
-        record(.extensionFilesRemoveFailed((error as NSError).domainAndCode))
+        let descriptor = NSError.webKitSafe(error).domainAndCode
+        record(.extensionFilesRemoveFailed(descriptor))
     }
 
     /// Call after the embedded extension context was unloaded; a background web view still alive afterwards is a leak.
@@ -245,6 +276,11 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         }
         context = nil
         currentBackgroundWebView = nil
+        lastBackgroundWebViewCreatedAt = nil
+        lastBackgroundLoadError = nil
+        lastReportedBackgroundLoadErrors = []
+        backgroundReadinessObserver.stopObserving()
+        backgroundWebViewGraveyard.handleContextUnload()
         pruneDeallocatedBackgroundWebViews()
         if !liveBackgroundWebViews.isEmpty {
             Logger.webExtensions.error("[CPM Diagnostics] \(self.liveBackgroundWebViews.count, privacy: .public) background web view(s) still alive after context unload")
@@ -269,6 +305,11 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
         currentBackgroundWebView = webView
         lastBackgroundWebViewCreatedAt = now()
+        lastBackgroundLoadError = nil
+        // Seed errors already on the context before this view's load; they are not failures of this attempt.
+        let existingLoadErrors = context.errors.map(NSError.webKitSafe).filter(\.isBackgroundContentLoadFailure)
+        lastReportedBackgroundLoadErrors.append(contentsOf: Self.newBackgroundLoadErrors(in: existingLoadErrors,
+                                                                                         since: lastReportedBackgroundLoadErrors))
         networkProcessIdentifierAtLastBackgroundViewCreation = networkProcessIdentifierNow
         backgroundProcessIsUnresponsive = false
         pruneDeallocatedBackgroundWebViews()
@@ -280,6 +321,13 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         if isBackgroundDelegateProxyEnabled,
            CPMBackgroundWebViewDelegateProxy.install(on: webView, delegate: self) != nil {
             record(.proxyInstalled)
+        }
+        // Observe only newly created views. Enabling the flag on an older view leaves readiness unknown
+        // until the next creation, avoiding a diagnostic call that might wake an idle background.
+        if isBackgroundDelegateProxyEnabled {
+            backgroundReadinessObserver.observe(webView, in: context)
+        } else {
+            backgroundReadinessObserver.stopObserving()
         }
         let generation = contextGeneration
         webView.onDeinit { [weak self] in
@@ -344,6 +392,15 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
 
     // MARK: - CPMMessagingDiagnosticsProviding
 
+    /// Back-to-back resumes collapse into one entry that keeps the latest time, so repeated app switches
+    /// cannot push the events this timeline exists for out of its twelve slots.
+    public func recordInterruption() {
+        if backgroundEvents.last?.kind == .interruption {
+            backgroundEvents.removeLast()
+        }
+        record(.interruption)
+    }
+
     public func collectDiagnostics(tabIdentifier: String) -> CPMMessagingDiagnostics {
         var diagnostics = snapshot()
         let resolvedTab = tabResolver(tabIdentifier)
@@ -377,6 +434,9 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         diagnostics.extensionContextLoaded = context?.isLoaded ?? false
         diagnostics.secondsSinceCriticalMemoryPressure = lastCriticalMemoryPressureAt.map { now().timeIntervalSince($0) }
         diagnostics.extensionContextErrors = currentContextErrors()
+        diagnostics.hasBackgroundLoadError = lastBackgroundLoadError != nil
+        diagnostics.backgroundLoadErrorAppState = lastBackgroundLoadError?.appState
+        diagnostics.secondsFromBackgroundViewToLoadError = lastBackgroundLoadError?.secondsAfterViewCreation
         diagnostics.backgroundWebViewCreateCount = backgroundWebViewCreateCount
         diagnostics.backgroundWebViewAlive = currentBackgroundWebView != nil
         diagnostics.leakedBackgroundWebViewCount = leakedBackgroundWebViewCount()
@@ -390,6 +450,14 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         if let backgroundWebView = currentBackgroundWebView {
             diagnostics.backgroundWebProcessAlive = Self.webProcessIdentifier(of: backgroundWebView).map { $0 != 0 }
             diagnostics.backgroundWebProcessResponsive = Self.webProcessIsResponsive(backgroundWebView)
+            diagnostics.secondsSinceBackgroundViewCreation = lastBackgroundWebViewCreatedAt.map { max(0, now().timeIntervalSince($0)) }
+            if isBackgroundDelegateProxyEnabled {
+                diagnostics.backgroundReadiness = backgroundReadinessObserver.readiness(of: backgroundWebView)
+            }
+        } else if isBackgroundDelegateProxyEnabled {
+            // A failed load may outlive its weak view. Keep the latest attempt's error evidence
+            // until a replacement view/context resets it, rather than classifying that failure as absent.
+            diagnostics.backgroundReadiness = lastBackgroundLoadError != nil ? .failed : .noBackground
         }
         let snapshotTime = now()
         diagnostics.backgroundEvents = backgroundEvents.suffix(Self.maximumEventsInPixel).map {
@@ -408,6 +476,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             [CPM Diagnostics] Background WebContent process #\(self.backgroundWebViewCreateCount, privacy: .public) died: \
             reason=\(reason?.description ?? "unknown", privacy: .public) pid=\(self.previousBackgroundWebProcessIdentifier.map(String.init) ?? "unknown", privacy: .public)
             """)
+        backgroundWebViewGraveyard.handleProcessTermination(of: webView, reason: reason)
     }
 
     public func backgroundWebViewWebProcessDidBecomeUnresponsive(_ webView: WKWebView) {
@@ -448,24 +517,45 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         memoryPressureSource = source
     }
 
-    private func recordContextErrors(_ errors: [NSError]) {
+    /// Internal for deterministic error-list notification tests.
+    func recordContextErrors(_ errors: [NSError]) {
         for domainAndCode in errors.map(\.domainAndCode) where !recordedContextErrors.contains(domainAndCode) {
             recordedContextErrors.append(domainAndCode)
         }
         // Suppress identical consecutive background-load errors reported within one second.
         // This does not distinguish new failures from repeated error-list notifications.
-        for error in errors where error.domain == WKWebExtensionContext.errorDomain
-            && error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue {
+        let loadErrors = errors.filter(\.isBackgroundContentLoadFailure)
+        if lastBackgroundLoadError == nil,
+           let createdAt = lastBackgroundWebViewCreatedAt,
+           !Self.newBackgroundLoadErrors(in: loadErrors, since: lastReportedBackgroundLoadErrors).isEmpty {
+            lastBackgroundLoadError = (appSession?.applicationState?(), max(0, now().timeIntervalSince(createdAt)))
+            backgroundReadinessObserver.backgroundLoadFailed()
+        }
+        for error in loadErrors {
             let domainAndCode = error.domainAndCode
             if backgroundEvents.last.map({ $0.kind == .contextError(domainAndCode) && now().timeIntervalSince($0.at) < 1 }) != true {
                 record(.contextError(domainAndCode))
             }
         }
+        lastReportedBackgroundLoadErrors = loadErrors
+    }
+
+    /// Equal copies are historical; an additional equal entry still represents a new observed error.
+    /// Replacing an error with an identical value at unchanged multiplicity cannot prove a new failure.
+    private static func newBackgroundLoadErrors(in errors: [NSError], since previousErrors: [NSError]) -> [NSError] {
+        var unmatchedPreviousErrors = previousErrors
+        return errors.filter { error in
+            guard let index = unmatchedPreviousErrors.firstIndex(where: { $0.isEqual(error) }) else { return true }
+            unmatchedPreviousErrors.remove(at: index)
+            return false
+        }
     }
 
     private func currentContextErrors() -> [String] {
         var errors = recordedContextErrors
-        for domainAndCode in (context?.errors ?? []).map({ ($0 as NSError).domainAndCode }) where !errors.contains(domainAndCode) {
+        let contextErrors = (context?.errors ?? []).map(NSError.webKitSafe)
+        let descriptors = contextErrors.map(\.domainAndCode)
+        for domainAndCode in descriptors where !errors.contains(domainAndCode) {
             errors.append(domainAndCode)
         }
         return errors
@@ -517,8 +607,11 @@ extension CPMMessagingDiagnosticsRecorder.BackgroundEvent.Kind: CustomStringConv
         case .contextError(let descriptor): return "error_\(descriptor)"
         case .contextUnloadFailed(let descriptor): return "context_unload_failed_\(descriptor)"
         case .extensionFilesRemoveFailed(let descriptor): return "extension_files_remove_failed_\(descriptor)"
+        case .graveyardHold: return "hold"
+        case .graveyardRelease: return "release"
         case .proxyInstalled: return "proxy_on"
         case .proxyRemoved: return "proxy_off"
+        case .interruption: return "interruption"
         }
     }
 }
@@ -529,7 +622,7 @@ private extension NSError {
     /// `domain:code`, followed by the immediate underlying domain/code; excludes error text.
     var domainAndCode: String {
         var descriptor = "\(domain):\(code)"
-        if let underlying = userInfo[NSUnderlyingErrorKey] as? NSError {
+        if let underlying = underlyingError {
             descriptor += ":\(underlying.domain):\(underlying.code)"
         }
         return descriptor

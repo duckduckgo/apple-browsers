@@ -18,7 +18,6 @@
 
 import Foundation
 import Cocoa
-import DesignResourcesKit
 
 extension NSAlert {
 
@@ -50,7 +49,7 @@ extension NSAlert {
         alert.messageText = UserText.fireproofConfirmationTitle(domain: domain)
         alert.informativeText = UserText.fireproofConfirmationMessage
         alert.alertStyle = .warning
-        alert.icon = .fireproof
+        alert.icon = NSImage(resource: .fireproof)
         alert.addButton(withTitle: UserText.fireproof)
         alert.addButton(withTitle: UserText.notNow)
         return alert
@@ -176,23 +175,19 @@ extension NSAlert {
         return alert
     }
 
-    static func syncPairingV2Confirmation(message: String) -> NSAlert {
+    static func syncCloseSetupConfirmation(isImprovedPairingFlowEnabled: Bool) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.syncPairingV2ConfirmationTitle
-        alert.informativeText = message
+        alert.informativeText = UserText.syncCloseSetupConfirmationMessage
         alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.syncPairingV2ConfirmationAction)
-        alert.addButton(withTitle: UserText.cancel)
-        return alert
-    }
-
-    static func syncCloseSetupConfirmation() -> NSAlert {
-        let alert = NSAlert()
-        alert.messageText = UserText.syncCloseSetupConfirmationTitleV2
-        alert.informativeText = UserText.syncCloseSetupConfirmationMessageV2
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.syncCloseSetupConfirmationActionV2)
-        alert.addButton(withTitle: UserText.cancel)
+        if isImprovedPairingFlowEnabled {
+            alert.messageText = UserText.syncCloseSetupConfirmationTitleImproved
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationConfirmActionImproved)
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationGoBackActionImproved)
+        } else {
+            alert.messageText = UserText.syncCloseSetupConfirmationTitle
+            alert.addButton(withTitle: UserText.syncCloseSetupConfirmationAction)
+            alert.addButton(withTitle: UserText.cancel)
+        }
         return alert
     }
 
@@ -227,7 +222,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
-        alert.icon = DesignSystemRebrand.isAppRebranded() ? .burnAlert : .burnAlertLegacy
+        alert.icon = NSImage(resource: .burnAlert)
         alert.addButton(withTitle: UserText.clearAndQuit)
         alert.addButton(withTitle: UserText.quitWithoutClearing)
         alert.addButton(withTitle: UserText.cancel)

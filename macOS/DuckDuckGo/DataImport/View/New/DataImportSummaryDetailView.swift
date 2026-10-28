@@ -176,7 +176,7 @@ struct DataImportSummaryDetailView: View {
     }
     private func failedRowText(item: ImportItem) -> Text {
         guard case .password(let title, let domain, let username, let errorMessage) = item else {
-            return Text("")
+            return Text(verbatim: "")
         }
 
         func valueOrNone(_ value: String?) -> String {
@@ -281,21 +281,6 @@ struct DataImportSummaryDetailView: View {
         static let sectionHeaderHeight: CGFloat = 44.0
         static let innerRowSpacing: CGFloat = 8.0
         static let fontSize: CGFloat = 13.0
-    }
-}
-
-private struct CloseButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 6)
-            .background(
-                configuration.isPressed
-                ? Color(designSystemColor: .buttonsPrimaryPressed)
-                : Color(designSystemColor: .buttonsPrimaryDefault)
-            )
-            .foregroundColor(.white)
-            .cornerRadius(6)
     }
 }
 

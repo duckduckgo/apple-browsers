@@ -20,7 +20,7 @@ import AppUpdaterShared
 import Cocoa
 import Combine
 import DesignResourcesKitIcons
-import Navigation
+import DDGNavigation
 import Persistence
 import PixelKit
 import UserScript

@@ -105,6 +105,8 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsOpeningSettings: Bool
     public let supportsNativePrompt: Bool
     public let supportsNativeChatInput: Bool
+    /// `true` when native wants `responseState` updates even while Duck.ai keeps its own web input.
+    public var supportsResponseStateReporting = false
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool
@@ -139,6 +141,9 @@ public struct AIChatNativeConfigValues: Codable {
     /// to native after `getUserMedia` rejects. Native surfaces the OS microphone-disabled
     /// prompt with dictation-specific copy.
     public let supportsNativeDictationPermissionHandler: Bool
+    /// `true` when clearing Duck.ai data also removes the images' blob files from IndexedDB, so the FE
+    /// can run its one-time sweep of blob files orphaned by older clears.
+    public let supportsBlobSafeDataClearing: Bool
     /// Whether this is a new or returning (reinstall) install — `unknown` when the platform
     /// can't tell. Surfaced on the `web.conversion.duckai.prompt` pixel.
     public let installType: AIChatInstallType
@@ -151,6 +156,19 @@ public struct AIChatNativeConfigValues: Codable {
     /// and discover tools. The front end must not open a session when this is false — it also
     /// serves as version-skew protection against builds that predate the bridge.
     public let supportsBrowserTools: Bool
+
+    /// `true` when native owns how often the file-upload privacy disclosure is shown, so the web
+    /// app asks before displaying it. Absent on builds that predate the handler.
+    public let supportsAttachmentPrivacyDisplay: Bool
+    /// `true` when the duckduckgo.com homepage may request the user's chats via `getAIChats`.
+    public let supportsHomePageChatSuggestions: Bool
+    /// `true` when native supports the Bonus offer messages, so Duck.ai
+    /// shows the limit extension offer. Gated by the bonus offer feature flag.
+    public let supportsBonusOffer: Bool
+    /// `true` when native's own readers of stored chats (chat history, suggestions, export) accept the
+    /// canonical chat format, so the web app may write canonical chats to native storage. Absent on
+    /// builds that predate it, which must keep receiving the legacy format.
+    public let supportsCanonicalChatFormat: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -222,10 +240,15 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativeUsageWarnings: Bool = false,
                 supportsNativeVoicePermissionHandler: Bool = false,
                 supportsNativeDictationPermissionHandler: Bool = false,
+                supportsBlobSafeDataClearing: Bool = false,
                 installType: AIChatInstallType = .new,
                 installAge: Int = 0,
                 attachmentLimits: AIChatNativeAttachmentLimits? = nil,
-                supportsBrowserTools: Bool = false) {
+                supportsBrowserTools: Bool = false,
+                supportsAttachmentPrivacyDisplay: Bool = false,
+                supportsHomePageChatSuggestions: Bool = false,
+                supportsBonusOffer: Bool = false,
+                supportsCanonicalChatFormat: Bool = false) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -251,10 +274,15 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativeUsageWarnings = supportsNativeUsageWarnings
         self.supportsNativeVoicePermissionHandler = supportsNativeVoicePermissionHandler
         self.supportsNativeDictationPermissionHandler = supportsNativeDictationPermissionHandler
+        self.supportsBlobSafeDataClearing = supportsBlobSafeDataClearing
         self.installType = installType
         self.installAge = installAge
         self.attachmentLimits = attachmentLimits
         self.supportsBrowserTools = supportsBrowserTools
+        self.supportsAttachmentPrivacyDisplay = supportsAttachmentPrivacyDisplay
+        self.supportsHomePageChatSuggestions = supportsHomePageChatSuggestions
+        self.supportsBonusOffer = supportsBonusOffer
+        self.supportsCanonicalChatFormat = supportsCanonicalChatFormat
     }
 
     /// Buckets the days between the install date and `now` into the values expected by the
@@ -324,6 +352,10 @@ public struct AIChatNativePrompt: Codable, Equatable {
     /// Text selections attached to this prompt, sent alongside `pageContext` rather than folded into it.
     public let selections: [AIChatSelectionContextData]?
 
+    /// `true` only for a prompt the user sent by tapping Ask in a native input, with the Terms of Service
+    /// accepted. `nil` omits the key, which is how a build without native Terms of Service reads to the FE.
+    public let termsAccepted: Bool?
+
     public enum Tool: Equatable {
         case query(Query)
         case summary(TextSummary)
@@ -353,24 +385,32 @@ public struct AIChatNativePrompt: Codable, Equatable {
         }
     }
 
+    public struct NativePromptPastedText: Codable, Equatable {
+        public let content: String
+
+        public init(content: String) {
+            self.content = content
+        }
+    }
+
     public struct Query: Codable, Equatable {
         public static let tool = "query"
 
         public let prompt: String
         public let autoSubmit: Bool
         public let toolChoice: [String]?
-        public let images: [NativePromptImage]?
-        public let files: [NativePromptFile]?
+        public let attachments: AIChatPromptAttachments
         public let modelId: String?
         public let mode: String?
         public let reasoningEffort: AIChatReasoningEffort?
+
+        public var images: [NativePromptImage]? { attachments.images }
+        public var files: [NativePromptFile]? { attachments.files }
 
         private enum CodingKeys: String, CodingKey {
             case prompt
             case autoSubmit
             case toolChoice
-            case images
-            case files
             case modelId
             case mode
             case reasoningEffort
@@ -380,8 +420,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             prompt: String,
             autoSubmit: Bool,
             toolChoice: [String]?,
-            images: [NativePromptImage]?,
-            files: [NativePromptFile]?,
+            attachments: AIChatPromptAttachments,
             modelId: String?,
             mode: String?,
             reasoningEffort: AIChatReasoningEffort?
@@ -389,8 +428,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
             self.prompt = prompt
             self.autoSubmit = autoSubmit
             self.toolChoice = toolChoice
-            self.images = images
-            self.files = files
+            self.attachments = attachments
             self.modelId = modelId
             self.mode = mode
             self.reasoningEffort = reasoningEffort
@@ -401,14 +439,23 @@ public struct AIChatNativePrompt: Codable, Equatable {
             prompt = try container.decode(String.self, forKey: .prompt)
             autoSubmit = try container.decode(Bool.self, forKey: .autoSubmit)
             toolChoice = try container.decodeIfPresent([String].self, forKey: .toolChoice)
-            images = try container.decodeIfPresent([NativePromptImage].self, forKey: .images)
-            files = try container.decodeIfPresent([NativePromptFile].self, forKey: .files)
+            attachments = try AIChatPromptAttachments(from: decoder)
             modelId = try container.decodeIfPresent(String.self, forKey: .modelId)
             mode = try container.decodeIfPresent(String.self, forKey: .mode)
             let rawReasoningEffort = try container.decodeIfPresent(String.self, forKey: .reasoningEffort)
             reasoningEffort = rawReasoningEffort.flatMap(AIChatReasoningEffort.init(rawValue:))
         }
 
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(prompt, forKey: .prompt)
+            try container.encode(autoSubmit, forKey: .autoSubmit)
+            try container.encodeIfPresent(toolChoice, forKey: .toolChoice)
+            try attachments.encode(to: encoder)
+            try container.encodeIfPresent(modelId, forKey: .modelId)
+            try container.encodeIfPresent(mode, forKey: .mode)
+            try container.encodeIfPresent(reasoningEffort, forKey: .reasoningEffort)
+        }
     }
 
     public struct TextSummary: Codable, Equatable {
@@ -462,16 +509,28 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case translation
         case pageContext
         case selections
+        case termsAccepted
     }
 
     public init(platform: String,
                 tool: Tool?,
                 pageContext: AIChatPageContextPayload? = nil,
-                selections: [AIChatSelectionContextData]? = nil) {
+                selections: [AIChatSelectionContextData]? = nil,
+                termsAccepted: Bool? = nil) {
         self.platform = platform
         self.tool = tool
         self.pageContext = pageContext
         self.selections = selections
+        self.termsAccepted = termsAccepted
+    }
+
+    /// The same prompt carrying `termsAccepted`.
+    public func withTermsAccepted(_ termsAccepted: Bool?) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: platform,
+                           tool: tool,
+                           pageContext: pageContext,
+                           selections: selections,
+                           termsAccepted: termsAccepted)
     }
 
     public init(from decoder: Decoder) throws {
@@ -497,6 +556,7 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
         pageContext = try container.decodeIfPresent(AIChatPageContextPayload.self, forKey: .pageContext)
         selections = try container.decodeIfPresent([AIChatSelectionContextData].self, forKey: .selections)
+        termsAccepted = try container.decodeIfPresent(Bool.self, forKey: .termsAccepted)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -520,10 +580,11 @@ public struct AIChatNativePrompt: Codable, Equatable {
 
         try container.encodeIfPresent(pageContext, forKey: .pageContext)
         try container.encodeIfPresent(selections, forKey: .selections)
+        try container.encodeIfPresent(termsAccepted, forKey: .termsAccepted)
     }
 
-    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, images: [NativePromptImage]? = nil, files: [NativePromptFile]? = nil, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
-        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, images: images, files: files, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool, toolChoice: [String]? = nil, attachments: AIChatPromptAttachments = .none, modelId: String? = nil, pageContext: AIChatPageContextPayload? = nil, selections: [AIChatSelectionContextData]? = nil, mode: String? = nil, reasoningEffort: AIChatReasoningEffort? = nil) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, tool: .query(.init(prompt: prompt, autoSubmit: autoSubmit, toolChoice: toolChoice, attachments: attachments, modelId: modelId, mode: mode, reasoningEffort: reasoningEffort)), pageContext: pageContext, selections: selections)
     }
 
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {

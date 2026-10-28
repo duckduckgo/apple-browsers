@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import XCTest
 @testable import DuckDuckGo
 
@@ -26,23 +27,47 @@ final class NewTabPageSearchInputModelTests: XCTestCase {
     func testDisablingAIChatRemovesControlsAndReturnsToSearchOnExistingInput() async {
         let notifications = NotificationCenter()
         var settings = NewTabPageSearchInputModel.Settings(
-            isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .aiChat)
+            isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .aiChat)
         let model = NewTabPageSearchInputModel(notificationCenter: notifications, readSettings: { settings })
         XCTAssertEqual(model.textEntryMode, .aiChat)
 
-        settings.isAIChatEnabled = false
+        settings.isAIChatShortcutEnabled = false
         settings.isModeToggleShown = false
         await post(.aiChatSettingsChanged, to: notifications)
 
         XCTAssertFalse(model.settings.isModeToggleShown)
-        XCTAssertFalse(model.settings.isAIChatEnabled)
+        XCTAssertFalse(model.isAIChatButtonShown)
         XCTAssertEqual(model.textEntryMode, .search)
+    }
+
+    func testDisablingAddressBarShortcutHidesAIChatButtonOnExistingInput() async {
+        let notifications = NotificationCenter()
+        var settings = NewTabPageSearchInputModel.Settings(
+            isModeToggleShown: false, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+        let model = NewTabPageSearchInputModel(notificationCenter: notifications, readSettings: { settings })
+        XCTAssertTrue(model.isAIChatButtonShown)
+
+        settings.isAIChatShortcutEnabled = false
+        await post(.aiChatSettingsChanged, to: notifications)
+        XCTAssertFalse(model.isAIChatButtonShown)
+
+        settings.isAIChatShortcutEnabled = true
+        await post(.aiChatSettingsChanged, to: notifications)
+        XCTAssertTrue(model.isAIChatButtonShown)
+    }
+
+    func testWhenModeToggleIsShownThenAIChatButtonIsHidden() {
+        let model = NewTabPageSearchInputModel(readSettings: {
+            .init(isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+        })
+
+        XCTAssertFalse(model.isAIChatButtonShown)
     }
 
     func testEnablingToggleAndChangingDefaultModeUpdatesExistingInput() async {
         let notifications = NotificationCenter()
         var settings = NewTabPageSearchInputModel.Settings(
-            isModeToggleShown: false, isAIChatEnabled: true, isVoiceSearchEnabled: false, defaultTextEntryMode: .aiChat)
+            isModeToggleShown: false, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: false, defaultTextEntryMode: .aiChat)
         let model = NewTabPageSearchInputModel(notificationCenter: notifications, readSettings: { settings })
         XCTAssertEqual(model.textEntryMode, .search)
 
@@ -59,7 +84,7 @@ final class NewTabPageSearchInputModelTests: XCTestCase {
     func testVoiceAvailabilityChangesPreserveSelectedMode() async {
         let notifications = NotificationCenter()
         var settings = NewTabPageSearchInputModel.Settings(
-            isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+            isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
         let model = NewTabPageSearchInputModel(notificationCenter: notifications, readSettings: { settings })
         model.textEntryMode = .aiChat
 
@@ -71,10 +96,50 @@ final class NewTabPageSearchInputModelTests: XCTestCase {
         }
     }
 
+    func testWhenLastUsedModeChangesThenRefreshingRetainedInputUsesLatestMode() {
+        var lastUsedMode: TextEntryMode = .search
+        let model = NewTabPageSearchInputModel(readSettings: {
+            .init(isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true,
+                  defaultTextEntryMode: DefaultOmnibarMode.lastUsed.resolvedTextEntryMode { lastUsedMode })
+        })
+        XCTAssertEqual(model.textEntryMode, .search)
+
+        lastUsedMode = .aiChat
+        model.refreshSettings()
+        XCTAssertEqual(model.textEntryMode, .aiChat)
+
+        lastUsedMode = .search
+        model.refreshSettings()
+        XCTAssertEqual(model.textEntryMode, .search)
+    }
+
+    func testWhenDefaultModeIsFixedThenRefreshingInputRestoresThatMode() {
+        for mode in [TextEntryMode.search, .aiChat] {
+            let model = NewTabPageSearchInputModel(readSettings: {
+                .init(isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: mode)
+            })
+            model.textEntryMode = mode == .search ? .aiChat : .search
+
+            model.refreshSettings()
+
+            XCTAssertEqual(model.textEntryMode, mode)
+        }
+    }
+
+    func testWhenToggleIsHiddenThenRefreshingInputKeepsSearchSelected() {
+        let model = NewTabPageSearchInputModel(readSettings: {
+            .init(isModeToggleShown: false, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .aiChat)
+        })
+
+        model.refreshSettings()
+
+        XCTAssertEqual(model.textEntryMode, .search)
+    }
+
     func testNotificationSubscriptionsDoNotRetainInput() {
         let notifications = NotificationCenter()
         var model: NewTabPageSearchInputModel? = NewTabPageSearchInputModel(notificationCenter: notifications, readSettings: {
-            .init(isModeToggleShown: false, isAIChatEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
+            .init(isModeToggleShown: false, isAIChatShortcutEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
         })
         weak var weakModel = model
         model = nil

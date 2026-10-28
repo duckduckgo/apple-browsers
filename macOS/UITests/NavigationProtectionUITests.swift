@@ -80,6 +80,9 @@ class NavigationProtectionUITests: UITestCase {
             if label == "amp. link" { continue }
             // Destination bot protection can interrupt canonical URL redirect; handled in testNavigationProtection_AMPLinks_NonStandardTLD_RedirectsToCanonical
             if label == "*Non Standard TLD (Google Domain)" { continue }
+            // Needs a third-party blog that doesn't answer within the extraction timeout from every network; covered by
+            // testNavigationProtection_AMPLinks_FirstPartyCloaked_LocalPage_RedirectsToCanonical
+            if label == "?amp link" { continue }
 
             let expectedURL = expectedTexts[index]
             let link = webView.links[label].firstMatch
@@ -102,6 +105,36 @@ class NavigationProtectionUITests: UITestCase {
             app.typeKey("[", modifierFlags: [.command])
             XCTAssertTrue(pageLoadedAnchor.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should return to AMP test page before next iteration after \(label)")
         }
+    }
+
+    /// First party cloaked AMP pages are detected by a keyword in the URL, then the canonical URL is read from the page itself.
+    /// Served by `tests-server` so the result doesn't depend on a third-party site answering within the extraction timeout.
+    func testNavigationProtection_AMPLinks_FirstPartyCloaked_LocalPage_RedirectsToCanonical() throws {
+        let canonicalTitle = UITests.randomPageTitle(length: 12)
+        let canonicalURL = UITests.simpleServedPage(titled: canonicalTitle)
+        let ampPage = """
+            <!DOCTYPE html>
+            <html amp>
+            <head>
+            <title>AMP page</title>
+            <link rel="canonical" href="\(canonicalURL.absoluteString)">
+            </head>
+            <body><p>AMP version of the page</p></body>
+            </html>
+            """
+        let ampURL = URL.testsServer.appendingPathComponent("amp").appendingTestParameters(data: Data(ampPage.utf8))
+        let linkPage = UITests.simpleServedPage(titled: UITests.randomPageTitle(length: 12),
+                                                body: "<a href=\"\(ampURL.absoluteString)\">local amp link</a>")
+        addressBarTextField.pasteURL(linkPage, pressingEnter: true)
+
+        let ampLink = webView.links["local amp link"].firstMatch
+        XCTAssertTrue(ampLink.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Local AMP test page should load")
+        ampLink.click()
+
+        // The canonical page is shown, not the AMP one
+        let canonicalText = webView.staticTexts.containing(\.value, containing: canonicalTitle).firstMatch
+        XCTAssertTrue(canonicalText.waitForExistence(timeout: UITests.Timeouts.navigation), "Canonical page should be loaded after clicking the AMP link")
+        XCTAssertFalse(webView.staticTexts["AMP version of the page"].exists, "The AMP page should not be shown")
     }
 
     func testNavigationProtection_AMPLinks_GuardianDotAmp_RedirectsToCanonical() throws {
@@ -142,7 +175,7 @@ class NavigationProtectionUITests: UITestCase {
 
         // Find the Non Standard TLD test link
         let nonStandardTLDAmpLink = webView.links["*Non Standard TLD (Google Domain)"].firstMatch
-        XCTAssertTrue(nonStandardTLDAmpLink.waitForExistence(timeout: UITests.Timeouts.elementExistence), "*Non Standard TLD (Google Domain) test link should be available")
+        XCTAssertTrue(nonStandardTLDAmpLink.waitForExistence(timeout: UITests.Timeouts.navigation), "*Non Standard TLD (Google Domain) test link should be available")
 
         // Get the expected URL from the test page instead of hardcoding
         let expectedURLElement = webView.staticTexts.containing(\.value, containing: "Expected: https://www.brookings.edu").firstMatch
@@ -160,7 +193,7 @@ class NavigationProtectionUITests: UITestCase {
 
         // Verify AMP protection redirected to the expected canonical URL.
         // Skip test if bot protection is triggered, as the canonical URL cannot be verified in that case.
-        let finalURL = app.addressBarValueActivatingIfNeeded() ?? ""
+        let finalURL = app.addressBarValueActivatingIfNeeded(waitingForPageLoad: true) ?? ""
         guard finalURL == expectedURL else {
             XCTAssertTrue(app.staticTexts["Performing security verification"].exists,
                           "Should be redirected to exact canonical URL \(expectedURL) or bot detection page; actual: \(finalURL)")
@@ -253,42 +286,42 @@ class NavigationProtectionUITests: UITestCase {
         // Wait for test completion summary and expand
         let summary = webView.staticTexts["Performed 9 tests. Click for details."].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "Referrer trimming test should complete")
-        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        summary.click()
 
-        let summaryGroup = webView.groups.containing(.keyPath(\.value, beginsWith: "1p navigation -")).firstMatch
-        // Helper to collect values in a section following a header prefix
-        func values(afterHeaderWithPrefix prefix: String) -> [String] {
-            // Locate the group that contains a static text header starting with the prefix
-            let group = summaryGroup.groups.containing(.staticText, where: .keyPath(\.value, beginsWith: prefix)).firstMatch
-            XCTAssertTrue(group.exists, "Group for header not found: \(prefix)")
+        let legacySummaryGroup = webView.groups.containing(.keyPath(\.value, beginsWith: "1p navigation -")).firstMatch
+        func legacyValues(afterHeaderWithPrefix prefix: String) -> [String] {
+            let group = legacySummaryGroup.groups.containing(.staticText, where: .keyPath(\.value, beginsWith: prefix)).firstMatch
             let texts = group.staticTexts.allElementsBoundByIndex.map { ($0.value as? String) ?? $0.label }
             return texts.filter { !$0.isEmpty && !$0.hasPrefix(prefix) }
         }
 
-        // 1p navigation
-        let nav1p = values(afterHeaderWithPrefix: "1p navigation -")
-        XCTAssertTrue(nav1p.contains("js - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected value in 1p navigation; actual: \(nav1p)")
-        XCTAssertTrue(nav1p.contains("header - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected header value in 1p navigation; actual: \(nav1p)")
+        func assertNavigationResult(_ header: String, contains expectedValues: [String]) {
+            let section = webView.groups.matching(.keyPath(\.value, equalTo: header)).firstMatch
+            for expectedValue in expectedValues {
+                let foundInGroup = section.groups.matching(.keyPath(\.value, equalTo: expectedValue)).firstMatch.exists
+                XCTAssertTrue(foundInGroup || legacyValues(afterHeaderWithPrefix: header).contains(expectedValue),
+                              "Missing \(expectedValue) in \(header)")
+            }
+        }
 
-        // 3p navigation
-        let nav3p = values(afterHeaderWithPrefix: "3p navigation -")
-        XCTAssertTrue(nav3p.contains("js - https://privacy-test-pages.site/"), "Missing expected value in 3p navigation; actual: \(nav3p)")
-        XCTAssertTrue(nav3p.contains("header - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected header value in 3p navigation; actual: \(nav3p)")
+        func assertResult(_ header: String, equals expectedValue: String) {
+            let foundInGroup = webView.groups.matching(.keyPath(\.value, equalTo: "\(header) \(expectedValue)")).firstMatch.exists
+            XCTAssertTrue(foundInGroup || legacyValues(afterHeaderWithPrefix: header).last == expectedValue,
+                          "Unexpected result for \(header)")
+        }
 
-        // 3p tracker navigation
-        let nav3pTracker = values(afterHeaderWithPrefix: "3p tracker navigation -")
-        XCTAssertTrue(nav3pTracker.contains("js - https://privacy-test-pages.site/"), "Missing expected value in 3p tracker navigation; actual: \(nav3pTracker)")
-        XCTAssertTrue(nav3pTracker.contains("header - https://privacy-test-pages.site/privacy-protections/referrer-trimming/"), "Missing expected header value in 3p tracker navigation; actual: \(nav3pTracker)")
+        let pageURL = "https://privacy-test-pages.site/privacy-protections/referrer-trimming/"
+        let siteURL = "https://privacy-test-pages.site/"
+        assertNavigationResult("1p navigation -", contains: ["js - \(pageURL)", "header - \(pageURL)"])
+        assertNavigationResult("3p navigation -", contains: ["js - \(siteURL)", "header - \(pageURL)"])
+        assertNavigationResult("3p tracker navigation -", contains: ["js - \(siteURL)", "header - \(pageURL)"])
 
-        // Requests (assert last value equals expected)
-        XCTAssertEqual(values(afterHeaderWithPrefix: "1p request -").last, "\"https://privacy-test-pages.site/privacy-protections/referrer-trimming/\"", "Unexpected 1p request value; actual: \(values(afterHeaderWithPrefix: "1p request -").last ?? "<nil>")")
-        XCTAssertEqual(values(afterHeaderWithPrefix: "3p request -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p request value; actual: \(values(afterHeaderWithPrefix: "3p request -").last ?? "<nil>")")
-        XCTAssertEqual(values(afterHeaderWithPrefix: "3p tracker request -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p tracker request value; actual: \(values(afterHeaderWithPrefix: "3p tracker request -").last ?? "<nil>")")
-
-        // Iframes (assert last value equals expected)
-        XCTAssertEqual(values(afterHeaderWithPrefix: "1p iframe -").last, "\"https://privacy-test-pages.site/privacy-protections/referrer-trimming/\"", "Unexpected 1p iframe value; actual: \(values(afterHeaderWithPrefix: "1p iframe -").last ?? "<nil>")")
-        XCTAssertEqual(values(afterHeaderWithPrefix: "3p iframe -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p iframe value; actual: \(values(afterHeaderWithPrefix: "3p iframe -").last ?? "<nil>")")
-        XCTAssertEqual(values(afterHeaderWithPrefix: "3p tracker iframe -").last, "\"https://privacy-test-pages.site/\"", "Unexpected 3p tracker iframe value; actual: \(values(afterHeaderWithPrefix: "3p tracker iframe -").last ?? "<nil>")")
+        assertResult("1p request -", equals: "\"\(pageURL)\"")
+        assertResult("3p request -", equals: "\"\(siteURL)\"")
+        assertResult("3p tracker request -", equals: "\"\(siteURL)\"")
+        assertResult("1p iframe -", equals: "\"\(pageURL)\"")
+        assertResult("3p iframe -", equals: "\"\(siteURL)\"")
+        assertResult("3p tracker iframe -", equals: "\"\(siteURL)\"")
     }
 
     // MARK: - GPC (Global Privacy Control) Tests
@@ -307,10 +340,9 @@ class NavigationProtectionUITests: UITestCase {
         // Wait for summary and expand details
         let summary = webView.staticTexts["Performed 5 tests. Click for details."].firstMatch
         XCTAssertTrue(summary.waitForExistence(timeout: UITests.Timeouts.navigation), "GPC test should complete and show summary")
-        summary.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        summary.click()
 
-        // Helper to collect values in a section following a header prefix
-        func value(afterHeaderWithPrefix prefix: String) -> String? {
+        func legacyValue(afterHeaderWithPrefix prefix: String) -> String? {
             let all = webView.staticTexts.allElementsBoundByIndex
             var inSection = false
             for element in all {
@@ -319,21 +351,27 @@ class NavigationProtectionUITests: UITestCase {
                     inSection = true
                     continue
                 }
-                if inSection {
-                    if !value.isEmpty {
-                        return value
-                    }
-                }
+                if inSection && !value.isEmpty { return value }
             }
             return nil
         }
 
-        // Expectations per section
-        XCTAssertEqual(value(afterHeaderWithPrefix: "top frame header -"), "\"1\"")
-        XCTAssertEqual(value(afterHeaderWithPrefix: "top frame JS API -"), "true")
-        XCTAssertEqual(value(afterHeaderWithPrefix: "frame header -"), "…")
-        XCTAssertEqual(value(afterHeaderWithPrefix: "frame JS API -"), "true")
-        XCTAssertEqual(value(afterHeaderWithPrefix: "subequest header -") ?? value(afterHeaderWithPrefix: "subrequest header -"), "…")
+        func assertResult(_ header: String, equals expectedValue: String, legacyAlternativeHeader: String? = nil) {
+            let foundInGroup = ([header] + [legacyAlternativeHeader].compactMap { $0 }).contains { candidate in
+                webView.groups.matching(.keyPath(\.value, equalTo: "\(candidate) \(expectedValue)")).firstMatch.exists
+            }
+            if foundInGroup { return }
+
+            let foundInLegacy = legacyValue(afterHeaderWithPrefix: header)
+                ?? legacyAlternativeHeader.flatMap { legacyValue(afterHeaderWithPrefix: $0) }
+            XCTAssertEqual(foundInLegacy, expectedValue, "Unexpected result for \(header)")
+        }
+
+        assertResult("top frame header -", equals: "\"1\"")
+        assertResult("top frame JS API -", equals: "true")
+        assertResult("frame header -", equals: "…")
+        assertResult("frame JS API -", equals: "true")
+        assertResult("subequest header -", equals: "…", legacyAlternativeHeader: "subrequest header -")
     }
 
 }

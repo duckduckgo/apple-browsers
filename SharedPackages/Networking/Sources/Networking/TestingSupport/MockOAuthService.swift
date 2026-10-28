@@ -72,12 +72,18 @@ public final class MockOAuthService: OAuthService {
     }
 
     public var refreshAccessTokenResponse: Result<Networking.OAuthTokenResponse, Error>?
+    /// Responses returned in order, one per call, before falling back to `refreshAccessTokenResponse`.
+    public var refreshAccessTokenResponses: [Result<Networking.OAuthTokenResponse, Error>] = []
+    /// The refresh tokens passed to `refreshAccessToken`, in call order.
+    public private(set) var refreshAccessTokenRequestedTokens: [String] = []
     public func refreshAccessToken(clientID: String, refreshToken: String) async throws -> Networking.OAuthTokenResponse {
         refreshAccessTokenCallCount += 1
+        refreshAccessTokenRequestedTokens.append(refreshToken)
+        let response = refreshAccessTokenResponses.isEmpty ? refreshAccessTokenResponse! : refreshAccessTokenResponses.removeFirst()
         if refreshAccessTokenDelay > 0 {
             try await Task.sleep(nanoseconds: refreshAccessTokenDelay)
         }
-        switch refreshAccessTokenResponse! {
+        switch response {
         case .success(let result):
             return result
         case .failure(let error):

@@ -252,7 +252,6 @@ final class AppearancePreferences: ObservableObject {
     struct Constants {
         static let bookmarksBarAlignmentChangedIsCenterAlignedParameter = "isCenterAligned"
         static let showTabsAndBookmarksBarOnFullScreenParameter = "showTabsAndBookmarksBarOnFullScreen"
-        static let legacyDismissNextStepsCardsAfterDays = 9
         static let maxNextStepsCardsDemonstrationDays = 14
     }
 
@@ -321,11 +320,7 @@ final class AppearancePreferences: ObservableObject {
     }
 
     var maxNextStepsCardsDemonstrationDays: Int {
-        if let featureFlagger, featureFlagger.isFeatureOn(.nextStepsListAdvancedCardOrdering) {
-            return Constants.maxNextStepsCardsDemonstrationDays
-        } else {
-            return Constants.legacyDismissNextStepsCardsAfterDays
-        }
+        Constants.maxNextStepsCardsDemonstrationDays
     }
 
     /// Number of active usage days the New Tab Page "Next Steps" cards have been shown.

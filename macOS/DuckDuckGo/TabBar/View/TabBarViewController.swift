@@ -52,36 +52,34 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabHeight: CGFloat
     private let pinnedTabWidth: CGFloat
 
-    @IBOutlet weak var visualEffectBackgroundView: NSVisualEffectView!
-    @IBOutlet weak var backgroundColorView: ColorView!
-    @IBOutlet weak var pinnedTabsContainerView: NSView!
-    @IBOutlet private weak var collectionView: TabBarCollectionView!
-    @IBOutlet private weak var scrollView: TabBarScrollView!
-    @IBOutlet weak var pinnedTabsViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var pinnedTabsWindowDraggingView: WindowDraggingView!
-    @IBOutlet weak var rightScrollButton: MouseOverButton!
-    @IBOutlet weak var leftScrollButton: MouseOverButton!
-    @IBOutlet weak var rightShadowImageView: NSImageView!
-    @IBOutlet weak var leftShadowImageView: NSImageView!
-    @IBOutlet weak var fireButton: MouseOverAnimationButton!
-    @IBOutlet weak var draggingSpace: NSView!
-    @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
-
-    private var fireWindowBackgroundView: NSImageView?
+    private(set) var visualEffectBackgroundView: NSVisualEffectView!
+    private(set) var backgroundColorView: ColorView!
+    private(set) var pinnedTabsContainerView: NSView!
+    private var collectionView: TabBarCollectionView!
+    private var scrollView: TabBarScrollView!
+    private(set) var pinnedTabsViewLeadingConstraint: NSLayoutConstraint!
+    private(set) var pinnedTabsWindowDraggingView: WindowDraggingView!
+    private(set) var rightScrollButton: MouseOverButton!
+    private(set) var leftScrollButton: MouseOverButton!
+    private(set) var rightShadowImageView: NSImageView!
+    private(set) var leftShadowImageView: NSImageView!
+    private(set) var fireButton: MouseOverAnimationButton!
+    private(set) var draggingSpace: NSView!
+    private(set) var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
 
     private var pinnedTabsCollectionView: PinnedTabsCollectionView?
 
-    @IBOutlet weak var fireButtonWidthConstraint: NSLayoutConstraint!
-    @IBOutlet weak var fireButtonHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var addTabButton: MouseOverButton!
-    @IBOutlet weak var addTabButtonWidth: NSLayoutConstraint!
-    @IBOutlet weak var addTabButtonHeight: NSLayoutConstraint!
-    @IBOutlet weak var rightScrollButtonWidth: NSLayoutConstraint!
-    @IBOutlet weak var rightScrollButtonHeight: NSLayoutConstraint!
-    @IBOutlet weak var leftScrollButtonWidth: NSLayoutConstraint!
-    @IBOutlet weak var leftScrollButtonHeight: NSLayoutConstraint!
-    @IBOutlet weak var scrollViewHeightConstraint: NSLayoutConstraint!
-    @IBOutlet weak var pinnedTabsContainerHeightConstraint: NSLayoutConstraint!
+    private(set) var fireButtonWidthConstraint: NSLayoutConstraint!
+    private(set) var fireButtonHeightConstraint: NSLayoutConstraint!
+    private(set) var addTabButton: MouseOverButton!
+    private(set) var addTabButtonWidth: NSLayoutConstraint!
+    private(set) var addTabButtonHeight: NSLayoutConstraint!
+    private(set) var rightScrollButtonWidth: NSLayoutConstraint!
+    private(set) var rightScrollButtonHeight: NSLayoutConstraint!
+    private(set) var leftScrollButtonWidth: NSLayoutConstraint!
+    private(set) var leftScrollButtonHeight: NSLayoutConstraint!
+    private(set) var scrollViewHeightConstraint: NSLayoutConstraint!
+    private(set) var pinnedTabsContainerHeightConstraint: NSLayoutConstraint!
 
     private var pinnedTabsCollectionCancellable: AnyCancellable?
     private var fireButtonMouseOverCancellable: AnyCancellable?
@@ -100,6 +98,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var tabContentCancellable: AnyCancellable?
     private let duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging
+    private let duckAIMenuButtonPixelFirer = AIChatMenuButtonPixelFirer()
+    /// The sidebar entry the menu last offered. The item's action reads it rather than the tab's state,
+    /// so it does what the item said and what the menu-shown pixel reported.
+    private var duckAIMenuSidebarEntry: AIChatMenuButtonSidebarEntry?
     private lazy var duckAIChromeContextMenu: NSMenu = {
         let menu = NSMenu()
         menu.delegate = self
@@ -182,14 +184,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     var tabBarRemoteMessagePopoverHoverTimer: Timer?
     var feedbackBarButtonHostingController: NSHostingController<TabBarRemoteMessageView>?
     var tabBarRemoteMessageCancellable: AnyCancellable?
+    var foregroundBrowserWindowObserver: ForegroundBrowserWindowObserver?
+    var foregroundBrowserWindowCancellable: AnyCancellable?
+    lazy var tabBarRemoteMessageImpressionTracker = TabBarRemoteMessageImpressionTracker { [weak self] messageID in
+        guard let self else { return }
+        self.tabBarRemoteMessageViewModel.refreshRemoteMessageForPresentation()
+        self.reconcileTabBarRemoteMessageImpression()
+        guard self.feedbackBarButtonHostingController?.rootView.model.id == messageID,
+              self.isTabBarRemoteMessageEligibleForImpression else { return }
+        self.tabBarRemoteMessageViewModel.markTabBarRemoteMessageAsShown(withID: messageID)
+    }
 
-    @IBOutlet weak var shadowView: TabShadowView!
+    private(set) var shadowView: TabShadowView!
 
-    @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var rightSideStackView: NSStackView!
+    private(set) var leftSideStackLeadingConstraint: NSLayoutConstraint!
+    private(set) var rightSideStackView: NSStackView!
     private var duckAIChromeControlContainer: ColorView?
     var duckAISplitButtonContainer: NSView? { duckAIChromeControlContainer }
-    private var duckAIChromeBlurView: NSVisualEffectView?
     private var duckAIChromeTitleButton: MouseOverButton?
     private var duckAIChromeSidebarButton: MouseOverButton?
     private var duckAIChromeDivider: ColorView?
@@ -235,9 +246,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         tabDragAndDropManager: TabDragAndDropManager,
         cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil
     ) -> TabBarViewController {
-        NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
-            self.init(
-                coder: coder,
+        self.init(
                 tabCollectionViewModel: tabCollectionViewModel,
                 bookmarkManager: bookmarkManager,
                 fireproofDomains: fireproofDomains,
@@ -249,25 +258,315 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 tabDragAndDropManager: tabDragAndDropManager,
                 cookiePopupsBlockedPromoDelegate: cookiePopupsBlockedPromoDelegate
             )
-        }!
     }
 
     required init?(coder: NSCoder) {
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder,
-          tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager,
-          fireproofDomains: FireproofDomains,
-          activeRemoteMessageModel: ActiveRemoteMessageModel,
-          featureFlagger: FeatureFlagger,
-          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          nativeStorageHandler: DuckAiNativeStorageHandling?,
-          duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
-          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
-          tabDragAndDropManager: TabDragAndDropManager,
-          cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil) {
+    // MARK: - View construction
+
+    private enum LayoutConstants {
+        static let contentSize = CGSize(width: 845, height: 38)
+        static let barHeight: CGFloat = 38
+        static let scrollViewHeight: CGFloat = 36
+        static let scrollViewSize = CGSize(width: 683, height: 36)
+        static let pinnedTabsHeight: CGFloat = 32
+        static let pinnedTabsLeading: CGFloat = 76
+        static let buttonSide: CGFloat = 28
+        static let buttonCornerRadius: CGFloat = 4
+        static let draggingSpaceSize = CGSize(width: 40, height: 28)
+        static let shadowImageWidth: CGFloat = 5
+        static let rightSideStackTrailing: CGFloat = 12
+        static let rightSideStackSpacing: CGFloat = 2
+        static let itemSize = NSSize(width: 120, height: 32)
+    }
+
+    /// Square, image-only button with no bezel: `MouseOverButton` draws the hover and pressed fills itself.
+    private func configureBarButton(_ button: MouseOverButton,
+                                    image: NSImage,
+                                    target: AnyObject?,
+                                    action: Selector?) {
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setButtonType(.momentaryPushIn)
+        button.isBordered = false
+        button.bezelStyle = .shadowlessSquare
+        button.image = image
+        button.imagePosition = .imageOnly
+        button.title = ""
+        button.alignment = .center
+        button.imageScaling = .scaleProportionallyDown
+        button.contentTintColor = NSColor(resource: .button)
+        button.normalTintColor = button.contentTintColor
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        button.cornerRadius = LayoutConstants.buttonCornerRadius
+        button.target = target
+        button.action = action
+    }
+
+    private func makeShadowImageView(image: NSImage) -> NSImageView {
+        let imageView = NSImageView()
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.isHidden = true
+        imageView.imageScaling = .scaleAxesIndependently
+        imageView.imageAlignment = .alignLeft
+        imageView.refusesFirstResponder = true
+        imageView.image = image
+        imageView.setContentHuggingPriority(.init(251), for: .horizontal)
+        imageView.setContentHuggingPriority(.init(251), for: .vertical)
+        return imageView
+    }
+
+    // swiftlint:disable:next function_body_length
+    override func loadView() {
+        let view = TabBarView(frame: NSRect(origin: .zero, size: LayoutConstants.contentSize))
+
+        backgroundColorView = ColorView(frame: .zero, backgroundColor: NSColor(resource: .windowBackground))
+        backgroundColorView.translatesAutoresizingMaskIntoConstraints = false
+
+        visualEffectBackgroundView = NSVisualEffectView()
+        visualEffectBackgroundView.translatesAutoresizingMaskIntoConstraints = false
+        visualEffectBackgroundView.blendingMode = .behindWindow
+        visualEffectBackgroundView.material = .sidebar
+        visualEffectBackgroundView.state = .active
+        visualEffectBackgroundView.addSubview(backgroundColorView)
+
+        // Full-width dragging view behind everything else.
+        let backgroundWindowDraggingView = WindowDraggingView()
+        backgroundWindowDraggingView.translatesAutoresizingMaskIntoConstraints = false
+
+        shadowView = TabShadowView()
+        shadowView.translatesAutoresizingMaskIntoConstraints = false
+
+        leftScrollButton = MouseOverButton(frame: .zero)
+        configureBarButton(leftScrollButton,
+                           image: NSImage(resource: .tabOverflowBack),
+                           target: self,
+                           action: #selector(leftScrollButtonAction(_:)))
+        leftScrollButton.isHidden = true
+        leftScrollButtonWidth = leftScrollButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        leftScrollButtonHeight = leftScrollButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+
+        let leftSideStackView = NSStackView(views: [leftScrollButton])
+        leftSideStackView.translatesAutoresizingMaskIntoConstraints = false
+        leftSideStackView.orientation = .horizontal
+        leftSideStackView.distribution = .fillEqually
+        leftSideStackView.alignment = .top
+        leftSideStackView.spacing = 0
+        leftSideStackView.detachesHiddenViews = true
+
+        pinnedTabsContainerView = NSView()
+        pinnedTabsContainerView.translatesAutoresizingMaskIntoConstraints = false
+        pinnedTabsContainerView.setContentHuggingPriority(.init(251), for: .horizontal)
+        pinnedTabsContainerView.setContentCompressionResistancePriority(.init(749), for: .horizontal)
+        pinnedTabsContainerHeightConstraint = pinnedTabsContainerView.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.pinnedTabsHeight)
+
+        collectionView = TabBarCollectionView(frame: .zero)
+        collectionView.isSelectable = true
+        collectionView.allowsEmptySelection = false
+        collectionView.autoresizingMask = [.height]
+        collectionView.backgroundColors = [.clear]
+        let flowLayout = NSCollectionViewFlowLayout()
+        flowLayout.scrollDirection = .horizontal
+        flowLayout.itemSize = LayoutConstants.itemSize
+        flowLayout.sectionInset = NSEdgeInsets(top: 2, left: 0, bottom: 0, right: 0)
+        flowLayout.minimumInteritemSpacing = 0
+        flowLayout.minimumLineSpacing = 0
+        collectionView.collectionViewLayout = flowLayout
+        // Registration has to follow the layout assignment — see `registerItemsAndDraggedTypes()`.
+        collectionView.registerItemsAndDraggedTypes()
+        collectionView.dataSource = self
+        collectionView.delegate = self
+
+        scrollView = TabBarScrollView(frame: NSRect(x: 0, y: 0,
+                                                    width: LayoutConstants.scrollViewSize.width,
+                                                    height: LayoutConstants.scrollViewSize.height))
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Sized to the scroll view and resizing with it: starting at zero would leave the collection
+        // view laid out against a collapsed container.
+        let clipView = NSClipView(frame: scrollView.frame)
+        clipView.translatesAutoresizingMaskIntoConstraints = true
+        clipView.autoresizingMask = [.width, .height]
+        clipView.drawsBackground = false
+        clipView.documentView = collectionView
+        scrollView.wantsLayer = true
+        scrollView.borderType = .noBorder
+        scrollView.hasVerticalScroller = false
+        scrollView.verticalScrollElasticity = .none
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsetsZero
+        scrollView.contentView = clipView
+        scrollViewHeightConstraint = scrollView.heightAnchor
+            .constraint(equalToConstant: LayoutConstants.scrollViewHeight)
+
+        rightScrollButton = MouseOverButton(frame: .zero)
+        configureBarButton(rightScrollButton,
+                           image: NSImage(resource: .tabOverflowForward),
+                           target: self,
+                           action: #selector(rightScrollButtonAction(_:)))
+        rightScrollButton.isHidden = true
+        rightScrollButtonWidth = rightScrollButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        rightScrollButtonHeight = rightScrollButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+
+        addTabButton = MouseOverButton(frame: .zero)
+        configureBarButton(addTabButton, image: NSImage(resource: .add), target: nil, action: nil)
+        // The Add glyph is already the right size; scaling it down blurs it.
+        addTabButton.imageScaling = .scaleNone
+        addTabButton.isHidden = true
+        addTabButtonWidth = addTabButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        addTabButtonHeight = addTabButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+
+        draggingSpace = NSView()
+        draggingSpace.translatesAutoresizingMaskIntoConstraints = false
+
+        // Sent up the responder chain rather than to this controller, which does not handle it.
+        fireButton = MouseOverAnimationButton(frame: .zero)
+        configureBarButton(fireButton,
+                           image: NSImage(resource: .burn),
+                           target: nil,
+                           action: #selector(MainViewController.fireButtonAction(_:)))
+        fireButtonWidthConstraint = fireButton.widthAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+        fireButtonHeightConstraint = fireButton.heightAnchor.constraint(equalToConstant: LayoutConstants.buttonSide)
+
+        rightSideStackView = NSStackView(views: [rightScrollButton, addTabButton, draggingSpace, fireButton])
+        rightSideStackView.translatesAutoresizingMaskIntoConstraints = false
+        rightSideStackView.orientation = .horizontal
+        rightSideStackView.distribution = .fillEqually
+        rightSideStackView.alignment = .top
+        rightSideStackView.spacing = LayoutConstants.rightSideStackSpacing
+        rightSideStackView.detachesHiddenViews = true
+
+        rightShadowImageView = makeShadowImageView(image: NSImage(resource: .tabBarShadowRight))
+        leftShadowImageView = makeShadowImageView(image: NSImage(resource: .tabBarShadowLeft))
+
+        pinnedTabsWindowDraggingView = WindowDraggingView()
+        pinnedTabsWindowDraggingView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Sits in front of the tab strip so the gaps between tabs still drag the window.
+        let scrollAreaWindowDraggingView = WindowDraggingView()
+        scrollAreaWindowDraggingView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Order matters: the backgrounds go first, the dragging views last, so they receive clicks
+        // on any area the tabs do not cover.
+        view.addSubview(visualEffectBackgroundView)
+        view.addSubview(backgroundWindowDraggingView)
+        view.addSubview(shadowView)
+        view.addSubview(leftSideStackView)
+        view.addSubview(pinnedTabsContainerView)
+        view.addSubview(scrollView)
+        view.addSubview(rightSideStackView)
+        view.addSubview(rightShadowImageView)
+        view.addSubview(leftShadowImageView)
+        view.addSubview(pinnedTabsWindowDraggingView)
+        view.addSubview(scrollAreaWindowDraggingView)
+
+        pinnedTabsViewLeadingConstraint = pinnedTabsContainerView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.pinnedTabsLeading)
+        leftSideStackLeadingConstraint = leftSideStackView.leadingAnchor
+            .constraint(equalTo: pinnedTabsContainerView.trailingAnchor)
+        windowDraggingViewLeadingConstraint = scrollAreaWindowDraggingView.leadingAnchor
+            .constraint(equalTo: scrollView.leadingAnchor)
+        windowDraggingViewLeadingConstraint.priority = .init(250)
+
+        let leftSideStackFallbackLeading = leftSideStackView.leadingAnchor
+            .constraint(equalTo: view.leadingAnchor, constant: LayoutConstants.pinnedTabsLeading)
+        leftSideStackFallbackLeading.priority = .init(600)
+
+        let draggingViewTrailing = scrollView.trailingAnchor
+            .constraint(equalTo: scrollAreaWindowDraggingView.trailingAnchor, constant: -4)
+        draggingViewTrailing.priority = .init(250)
+        let draggingViewTop = scrollAreaWindowDraggingView.topAnchor.constraint(equalTo: view.topAnchor)
+        draggingViewTop.priority = .init(750)
+        let draggingViewBottom = view.bottomAnchor.constraint(equalTo: scrollAreaWindowDraggingView.bottomAnchor)
+        draggingViewBottom.priority = .init(750)
+
+        NSLayoutConstraint.activate([
+            visualEffectBackgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: visualEffectBackgroundView.trailingAnchor),
+            visualEffectBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: visualEffectBackgroundView.bottomAnchor),
+
+            backgroundColorView.leadingAnchor.constraint(equalTo: visualEffectBackgroundView.leadingAnchor),
+            visualEffectBackgroundView.trailingAnchor.constraint(equalTo: backgroundColorView.trailingAnchor),
+            backgroundColorView.topAnchor.constraint(equalTo: visualEffectBackgroundView.topAnchor),
+            visualEffectBackgroundView.bottomAnchor.constraint(equalTo: backgroundColorView.bottomAnchor),
+
+            backgroundWindowDraggingView.heightAnchor.constraint(equalToConstant: LayoutConstants.barHeight),
+            backgroundWindowDraggingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: backgroundWindowDraggingView.trailingAnchor),
+            backgroundWindowDraggingView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: backgroundWindowDraggingView.bottomAnchor),
+
+            shadowView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: shadowView.trailingAnchor),
+            shadowView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: shadowView.bottomAnchor),
+
+            leftScrollButtonWidth,
+            leftScrollButtonHeight,
+            leftSideStackView.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            leftSideStackLeadingConstraint,
+            leftSideStackFallbackLeading,
+
+            pinnedTabsContainerHeightConstraint,
+            pinnedTabsViewLeadingConstraint,
+            scrollView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
+
+            scrollViewHeightConstraint,
+            scrollView.leadingAnchor.constraint(equalTo: leftSideStackView.trailingAnchor),
+            view.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+
+            rightScrollButtonWidth,
+            rightScrollButtonHeight,
+            addTabButtonWidth,
+            addTabButtonHeight,
+            draggingSpace.widthAnchor.constraint(equalToConstant: LayoutConstants.draggingSpaceSize.width),
+            draggingSpace.heightAnchor.constraint(equalToConstant: LayoutConstants.draggingSpaceSize.height),
+            fireButtonWidthConstraint,
+            fireButtonHeightConstraint,
+            rightSideStackView.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
+            view.trailingAnchor.constraint(equalTo: rightSideStackView.trailingAnchor,
+                                           constant: LayoutConstants.rightSideStackTrailing),
+            rightSideStackView.leadingAnchor.constraint(equalTo: scrollAreaWindowDraggingView.trailingAnchor),
+
+            rightShadowImageView.widthAnchor.constraint(equalToConstant: LayoutConstants.shadowImageWidth),
+            rightShadowImageView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
+            rightShadowImageView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: rightShadowImageView.bottomAnchor),
+
+            leftShadowImageView.widthAnchor.constraint(equalToConstant: LayoutConstants.shadowImageWidth),
+            scrollView.leadingAnchor.constraint(equalTo: leftShadowImageView.leadingAnchor),
+            leftShadowImageView.topAnchor.constraint(equalTo: view.topAnchor),
+            view.bottomAnchor.constraint(equalTo: leftShadowImageView.bottomAnchor),
+
+            pinnedTabsWindowDraggingView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
+            pinnedTabsWindowDraggingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor),
+            pinnedTabsWindowDraggingView.topAnchor.constraint(equalTo: pinnedTabsContainerView.topAnchor),
+            pinnedTabsWindowDraggingView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
+
+            windowDraggingViewLeadingConstraint,
+            draggingViewTrailing,
+            draggingViewTop,
+            draggingViewBottom,
+        ])
+
+        self.view = view
+    }
+
+    init(tabCollectionViewModel: TabCollectionViewModel,
+         bookmarkManager: BookmarkManager,
+         fireproofDomains: FireproofDomains,
+         activeRemoteMessageModel: ActiveRemoteMessageModel,
+         featureFlagger: FeatureFlagger,
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         nativeStorageHandler: DuckAiNativeStorageHandling?,
+         duckAIChromeButtonsVisibilityManager: DuckAIChromeButtonsVisibilityManaging,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
+         tabDragAndDropManager: TabDragAndDropManager,
+         cookiePopupsBlockedPromoDelegate: CookiePopupsBlockedPromoDelegate? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
@@ -288,7 +587,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
         pinnedTabWidth = themeManager.theme.tabStyleProvider.pinnedTabWidth
 
-        super.init(coder: coder)
+        super.init(nibName: nil, bundle: nil)
 
         initializePinnedTabs()
     }
@@ -340,7 +639,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupPinnedTabsView()
         subscribeToTabModeChanges()
         setupAddTabButton()
-        setupAsBurnerWindowIfNeeded(theme: theme)
+        setupAsBurnerWindowIfNeeded()
         subscribeToPinnedTabsSettingChanged()
         setupScrollButtons()
         setupScrollInsets()
@@ -363,7 +662,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     override func viewDidAppear() {
         // Running tests or moving Tab Bar from Title to main view on burn (animateBurningIfNeededAndClose)?
-        guard view.window != nil else { return }
+        guard let window = view.window else { return }
+
+        let observer = ForegroundBrowserWindowObserver(window: window)
+        foregroundBrowserWindowObserver = observer
+        foregroundBrowserWindowCancellable = observer.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.reconcileTabBarRemoteMessageImpression() }
+        reconcileTabBarRemoteMessageImpression()
 
         enableScrollButtons()
         subscribeToChildWindows()
@@ -404,6 +710,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     override func viewWillDisappear() {
         mouseDownCancellable = nil
         tabBarRemoteMessageCancellable = nil
+        foregroundBrowserWindowCancellable = nil
+        foregroundBrowserWindowObserver = nil
+        tabBarRemoteMessageImpressionTracker.update(isEligible: false, messageID: nil)
         disableChromeSidebarObservers()
         dismissAIChatCloseWarningPresenter()
     }
@@ -626,7 +935,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             sidebarButton.isHidden = true
             divider.isHidden = true
             container.isHidden = true
-            updateDuckAIChromeVibrancyBackground()
             return
         }
 
@@ -644,8 +952,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             divider.isHidden = true
             container.isHidden = duckAIHidden
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
-            updateDuckAIChromeVibrancyBackground()
+            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
             return
         }
 
@@ -660,16 +967,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         if !duckAIHidden && !sidebarHidden {
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner]
             sidebarButton.layer?.maskedCorners = [.layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
+            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
         } else if !duckAIHidden {
             titleButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
-            container.backgroundColor = isFireWindow ? .clear : theme.colorsProvider.buttonMouseOverColor
+            container.backgroundColor = theme.colorsProvider.buttonMouseOverColor
         } else if !sidebarHidden {
             sidebarButton.layer?.maskedCorners = [.layerMinXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMinYCorner, .layerMaxXMaxYCorner]
             container.backgroundColor = .clear
         }
-
-        updateDuckAIChromeVibrancyBackground()
     }
 
     func refreshDuckAIChromeButtonsVisibility() {
@@ -690,12 +995,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         let colorsProvider = theme.colorsProvider
         let cornerRadius = theme.toolbarButtonsCornerRadius
-        duckAIChromeControlContainer.backgroundColor = isFireWindow ? .clear : colorsProvider.buttonMouseOverColor
+        duckAIChromeControlContainer.backgroundColor = colorsProvider.buttonMouseOverColor
         duckAIChromeControlContainer.cornerRadius = cornerRadius
         duckAIChromeControlContainer.borderColor = nil
         duckAIChromeControlContainer.borderWidth = 0
-
-        updateDuckAIChromeVibrancyBackground()
 
         let titleFont = NSFont.systemFont(ofSize: 13)
         if isMenuButtonLayout {
@@ -773,49 +1076,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             colorsProvider.separatorActiveColor : colorsProvider.separatorColor
     }
 
-    private func updateDuckAIChromeVibrancyBackground() {
-        guard let duckAIChromeControlContainer else { return }
-
-        if isFireWindow {
-            if duckAIChromeBlurView == nil {
-                let vibrancyView = NSVisualEffectView()
-                vibrancyView.translatesAutoresizingMaskIntoConstraints = false
-                vibrancyView.material = .hudWindow
-                vibrancyView.blendingMode = .withinWindow
-                vibrancyView.state = .active
-                vibrancyView.wantsLayer = true
-                vibrancyView.layer?.cornerRadius = theme.toolbarButtonsCornerRadius
-                vibrancyView.layer?.masksToBounds = true
-
-                duckAIChromeControlContainer.addSubview(vibrancyView, positioned: .below, relativeTo: duckAIChromeControlContainer.subviews.first)
-
-                NSLayoutConstraint.activate([
-                    vibrancyView.leadingAnchor.constraint(equalTo: duckAIChromeControlContainer.leadingAnchor),
-                    vibrancyView.trailingAnchor.constraint(equalTo: duckAIChromeControlContainer.trailingAnchor),
-                    vibrancyView.topAnchor.constraint(equalTo: duckAIChromeControlContainer.topAnchor),
-                    vibrancyView.bottomAnchor.constraint(equalTo: duckAIChromeControlContainer.bottomAnchor)
-                ])
-                duckAIChromeBlurView = vibrancyView
-            }
-
-            let shadow = NSShadow()
-            shadow.shadowColor = NSColor.black.withAlphaComponent(0.12)
-            shadow.shadowOffset = CGSize(width: 0, height: -0.5)
-            shadow.shadowBlurRadius = 1.5
-            duckAIChromeControlContainer.shadow = shadow
-            duckAIChromeControlContainer.wantsLayer = true
-            duckAIChromeControlContainer.layer?.masksToBounds = false
-        } else {
-            duckAIChromeBlurView?.removeFromSuperview()
-            duckAIChromeBlurView = nil
-            duckAIChromeControlContainer.shadow = nil
-        }
-    }
-
     private func removeDuckAIChromeSegmentedControl() {
-        duckAIChromeBlurView?.removeFromSuperview()
-        duckAIChromeBlurView = nil
-
         guard let duckAIChromeControlContainer else { return }
         rightSideStackView.removeArrangedSubview(duckAIChromeControlContainer)
         duckAIChromeControlContainer.removeFromSuperview()
@@ -1017,8 +1278,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // Menu-button layout: left-click opens the dropdown; middle-click and ⌘-click skip it and start a
         // new chat right away, preserving the one-click access the split button used to offer.
         if isMenuButtonLayout {
-            if NSApp.currentEvent?.type == .otherMouseUp || NSApp.isCommandPressed {
-                duckAIMenuNewChatAction()
+            if let gesture = AIChatMenuButtonPixelFirer.NewChatGesture(clickEventType: NSApp.currentEvent?.type,
+                                                                       isCommandPressed: NSApp.isCommandPressed) {
+                openNewDuckAIChatTabFromMenuButton(via: gesture)
             } else {
                 presentDuckAIMenuButtonMenu(from: sender)
             }
@@ -1037,9 +1299,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Duck.ai menu button (single-pill layout)
 
     private func presentDuckAIMenuButtonMenu(from sender: NSButton) {
-        let menu = makeDuckAIMenuButtonMenu()
+        let sidebarEntry = AIChatMenuButtonSidebarEntry(isChatPresented: isDuckAIChatPresented,
+                                                        isPageAttachable: isCurrentPageAttachableForAIChat)
+        duckAIMenuSidebarEntry = sidebarEntry
+        let menu = makeDuckAIMenuButtonMenu(sidebarEntry: sidebarEntry)
         // Right-align: anchor the menu's top-right corner to the button's bottom-right.
         let origin = NSPoint(x: sender.bounds.width - menu.size.width, y: sender.bounds.height + 4)
+        duckAIMenuButtonPixelFirer.fireMenuShown(sidebarEntry: sidebarEntry)
         menu.popUp(positioning: nil, at: origin, in: sender)
     }
 
@@ -1057,7 +1323,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     /// The pill's dropdown, rebuilt per press so the sidebar item's title/icon reflect the current
     /// tab and chat state.
-    private func makeDuckAIMenuButtonMenu() -> NSMenu {
+    private func makeDuckAIMenuButtonMenu(sidebarEntry: AIChatMenuButtonSidebarEntry) -> NSMenu {
         let menu = NSMenu()
         menu.autoenablesItems = false
 
@@ -1069,16 +1335,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         newChatItem.keyEquivalentModifierMask = [.command, .option]
         menu.addItem(newChatItem)
 
-        // Chat presented → "Close Sidebar" (close icon); otherwise "Ask About Page" (attachable page)
-        // or "Open Sidebar" (nothing to attach), both with the sidebar-open icon.
         let sidebarItem = NSMenuItem(title: "", action: #selector(duckAIMenuSidebarAction), keyEquivalent: "")
         sidebarItem.target = self
-        if isDuckAIChatPresented {
+        switch sidebarEntry {
+        case .askAboutPage:
+            sidebarItem.title = UserText.aiChatMenuAskAboutPage
+            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
+        case .openSidebar:
+            sidebarItem.title = UserText.aiChatMenuOpenSidebar
+            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
+        case .closeSidebar:
             sidebarItem.title = UserText.aiChatMenuCloseSidebar
             sidebarItem.withImage(Self.closeSidebarMenuIcon(), visibleOnMacOS27: true)
-        } else {
-            sidebarItem.title = isCurrentPageAttachableForAIChat ? UserText.aiChatMenuAskAboutPage : UserText.aiChatMenuOpenSidebar
-            sidebarItem.withImage(Self.openSidebarMenuIcon(), visibleOnMacOS27: true)
         }
         // Display-only: mirror the main menu's ⌥⌘L. This transient popup doesn't register the shortcut
         // globally (the main-menu item owns handling); it just shows the glyph for discoverability.
@@ -1149,7 +1417,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     @objc private func duckAIMenuNewChatAction() {
-        PixelKit.fire(AIChatPixel.aiChatNewChatTitleBarMenu, frequency: .dailyAndStandard)
+        openNewDuckAIChatTabFromMenuButton(via: .menuItem)
+    }
+
+    private func openNewDuckAIChatTabFromMenuButton(via gesture: AIChatMenuButtonPixelFirer.NewChatGesture) {
+        duckAIMenuButtonPixelFirer.fireNewChat(via: gesture)
         guard let mainViewController = parent as? MainViewController else {
             Logger.general.error("TabBarViewController: Failed to find MainViewController to open Duck.ai")
             return
@@ -1166,13 +1438,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         mainViewController.openDuckAIChatHistory()
     }
 
-    /// Toggles the sidebar: closes an open chat (sidebar or floating), otherwise opens it with the
-    /// current page attached.
+    /// Closes an open chat (sidebar or floating), otherwise opens the sidebar with the current page
+    /// attached. Takes no sender: UI tests find the item by this selector's name.
     @objc private func duckAIMenuSidebarAction() {
-        if isDuckAIChatPresented {
+        guard let duckAIMenuSidebarEntry else {
+            assertionFailure("The Duck.ai menu's sidebar item was picked before the menu resolved its entry")
+            return
+        }
+        switch duckAIMenuSidebarEntry.action {
+        case .close:
             closeDuckAIChat()
-        } else {
-            openDuckAISidebarWithPageAttachment()
+        case .open(let sidebarOpenSource):
+            openDuckAISidebarWithPageAttachment(sidebarOpenSource: sidebarOpenSource)
         }
     }
 
@@ -1190,7 +1467,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     /// Opens the sidebar and force-attaches the current page regardless of the auto-send preference.
-    func openDuckAISidebarWithPageAttachment() {
+    func openDuckAISidebarWithPageAttachment(conversationSource: AIChatConversationSource = .askAboutPage,
+                                             sidebarOpenSource: AIChatSidebarOpenSource = .askAboutPage) {
         guard let tab = tabCollectionViewModel.selectedTabViewModel?.tab else { return }
         let tabID = tab.uuid
 
@@ -1200,13 +1478,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             if aiChatCoordinator?.isSidebarOpen(for: tabID) == false {
                 PixelKit.fire(
                     AIChatPixel.aiChatSidebarOpened(
-                        source: .askAboutPage,
+                        source: sidebarOpenSource,
                         shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
                         minutesSinceSidebarHidden: aiChatCoordinator?.sidebarHiddenAt(for: tabID)?.minutesSinceNow()
                     ),
                     frequency: .dailyAndStandard
                 )
-                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(.askAboutPage)
+                NSApp.delegateTyped.aiChatConversationSourceHandler.setData(conversationSource)
             }
             aiChatCoordinator?.revealChat()
         }
@@ -1290,43 +1568,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsContainerHeightConstraint.constant = theme.tabStyleProvider.pinnedTabsContainerViewHeight
     }
 
-    private func addFireWindowBackgroundViewIfNeeded() {
-        guard !tabCollectionViewModel.isPopup else { return }
-
-        if fireWindowBackgroundView == nil {
-            let imageView = NSImageView()
-            imageView.translatesAutoresizingMaskIntoConstraints = false
-            imageView.imageScaling = .scaleAxesIndependently
-            imageView.imageAlignment = .alignBottom
-            imageView.isHidden = true
-            fireWindowBackgroundView = imageView
-        }
-
-        guard let fireWindowBackgroundView, fireWindowBackgroundView.superview == nil else { return }
-
-        view.addSubview(fireWindowBackgroundView, positioned: .above, relativeTo: visualEffectBackgroundView)
-
-        NSLayoutConstraint.activate([
-            fireWindowBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -2),
-            fireWindowBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
-            fireWindowBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            fireWindowBackgroundView.widthAnchor.constraint(equalToConstant: 96)
-        ])
-    }
-
-    private func setupAsBurnerWindowIfNeeded(theme: (any ThemeStyleProviding)? = nil) {
+    private func setupAsBurnerWindowIfNeeded() {
         guard tabCollectionViewModel.isBurner,
               !tabCollectionViewModel.isPopup else { return }
 
-        if themeManager.isAppRebranded {
-            rebrandingSetupAsBurnerWindow(theme: theme)
-            return
-        }
-
-        legacySetupAsBurnerWindow(theme: theme)
-    }
-
-    private func rebrandingSetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
         fireButton.isAnimationEnabled = false
         fireButton.backgroundColor = NSColor(designSystemColor: .accentFireGlowPrimary)
         fireButton.mouseOverColor = NSColor(designSystemColor: .accentFireGlowSecondary)
@@ -1334,23 +1579,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fireButton.normalTintColor = NSColor(designSystemColor: .accentFirePrimary)
         fireButton.mouseDownTintColor = NSColor(designSystemColor: .accentFireSecondary)
         fireButton.mouseOverTintColor = NSColor(designSystemColor: .accentFireSecondary)
-    }
-
-    private func legacySetupAsBurnerWindow(theme: (any ThemeStyleProviding)? = nil) {
-        fireButton.isAnimationEnabled = false
-        fireButton.backgroundColor = NSColor.fireButtonRedBackground
-        fireButton.mouseOverColor = NSColor.fireButtonRedHover
-        fireButton.mouseDownColor = NSColor.fireButtonRedPressed
-        fireButton.normalTintColor = NSColor.white
-        fireButton.mouseDownTintColor = NSColor.white
-        fireButton.mouseOverTintColor = NSColor.white
-
-        addFireWindowBackgroundViewIfNeeded()
-
-        let currentTheme = theme ?? self.theme
-        guard let fireWindowBackgroundView else { return }
-        fireWindowBackgroundView.image = currentTheme.fireWindowGraphic
-        fireWindowBackgroundView.isHidden = false
     }
 
     private func setupAccessibility() {
@@ -1434,11 +1662,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
-    @IBAction func rightScrollButtonAction(_ sender: NSButton) {
+    @objc func rightScrollButtonAction(_ sender: NSButton) {
         collectionView.scrollToEnd()
     }
 
-    @IBAction func leftScrollButtonAction(_ sender: NSButton) {
+    @objc func leftScrollButtonAction(_ sender: NSButton) {
         collectionView.scrollToBeginning()
     }
 
@@ -1761,17 +1989,23 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func enableScrollButtons() {
         rightScrollButton.isEnabled = !collectionView.isAtEndScrollPosition
         leftScrollButton.isEnabled = !collectionView.isAtStartScrollPosition
+        refreshScrollShadowsVisibility()
     }
 
     private func displayScrollButtons() {
         let scrollViewsAreHidden = tabMode == .divided
         rightScrollButton.isHidden = scrollViewsAreHidden
         leftScrollButton.isHidden = scrollViewsAreHidden
-        rightShadowImageView.isHidden = scrollViewsAreHidden
-        leftShadowImageView.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
 
+        refreshScrollShadowsVisibility()
         adjustStandardTabPosition()
+    }
+
+    private func refreshScrollShadowsVisibility() {
+        let isOverflowing = tabMode == .overflow
+        leftShadowImageView.isHidden = !isOverflowing || collectionView.isAtStartScrollPosition
+        rightShadowImageView.isHidden = !isOverflowing || collectionView.isAtEndScrollPosition
     }
 
     private func adjustStandardTabPosition() {
@@ -1972,14 +2206,14 @@ extension TabBarViewController: MouseOverButtonDelegate {
 extension TabBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: any ThemeStyleProviding) {
-        setupAsBurnerWindowIfNeeded(theme: theme)
+        setupAsBurnerWindowIfNeeded()
 
         let colorsProvider = theme.colorsProvider
         let isFireWindow = tabCollectionViewModel.isBurner
 
         backgroundColorView.backgroundColor = colorsProvider.baseBackgroundColor
 
-        let fireWindowHoverColor = themeManager.isAppRebranded ? NSColor(designSystemColor: .accentFireGlowSecondary) : .fireButtonRedHover
+        let fireWindowHoverColor = NSColor(designSystemColor: .accentFireGlowSecondary)
         fireButton.normalTintColor = isFireWindow ? NSColor(designSystemColor: .accentFirePrimary) : colorsProvider.iconsColor
         fireButton.mouseOverColor = isFireWindow ? fireWindowHoverColor : colorsProvider.buttonMouseOverColor
 

@@ -153,6 +153,132 @@ final class WKWebExtensionContextExtensionTests: XCTestCase {
         XCTAssertNil(context.duckDuckGoWebExtensionType)
     }
 
+    // MARK: - declaresPermission
+
+    @MainActor
+    func testWhenManifestAsksForPrivacy_ThenItDeclaresIt() async throws {
+        let required = try await makeContext(manifest: manifest(permissions: #"["storage", "privacy"]"#))
+        let optional = try await makeContext(manifest: manifest(optionalPermissions: #"["privacy"]"#))
+
+        XCTAssertTrue(required.webExtension.declaresPermission("privacy"))
+        XCTAssertTrue(optional.webExtension.declaresPermission("privacy"))
+    }
+
+    @MainActor
+    func testWhenManifestDoesNotAskForPrivacy_ThenItDoesNotDeclareIt() async throws {
+        let context = try await makeContext(manifest: manifest(permissions: #"["storage"]"#))
+
+        XCTAssertFalse(context.webExtension.declaresPermission("privacy"))
+    }
+
+    private func manifest(permissions: String = "[]", optionalPermissions: String = "[]") -> String {
+        """
+        {
+            "manifest_version": 3,
+            "name": "Test",
+            "version": "1.0",
+            "permissions": \(permissions),
+            "optional_permissions": \(optionalPermissions)
+        }
+        """
+    }
+
+    // MARK: - declaresToolbarAction
+
+    @MainActor
+    func testWhenManifestHasDDGDarkReaderId_ThenDoesNotDeclareToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Dark Reader",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "org.duckduckgo.web-extension.darkreader"
+                }
+            },
+            "action": {
+                "default_title": "Dark Reader",
+                "default_popup": "ui/popup/index.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertFalse(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasAction_ThenDeclaresToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "Dark Reader",
+            "version": "1.0",
+            "action": {
+                "default_title": "Dark Reader",
+                "default_popup": "ui/popup/index.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasBrowserAction_ThenDeclaresToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 2,
+            "name": "Test",
+            "version": "1.0",
+            "browser_action": {
+                "default_popup": "popup.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasPageAction_ThenDeclaresToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 2,
+            "name": "Test",
+            "version": "1.0",
+            "page_action": {
+                "default_popup": "popup.html"
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertTrue(context.declaresToolbarAction)
+    }
+
+    @MainActor
+    func testWhenManifestHasNoAction_ThenDeclaresNoToolbarAction() async throws {
+        let manifest = """
+        {
+            "manifest_version": 3,
+            "name": "DuckDuckGo Embedded Extension",
+            "version": "1.0",
+            "browser_specific_settings": {
+                "duckduckgo": {
+                    "id": "com.duckduckgo.web-extension.embedded"
+                }
+            }
+        }
+        """
+        let context = try await makeContext(manifest: manifest)
+
+        XCTAssertFalse(context.declaresToolbarAction)
+    }
+
     // MARK: - Helpers
 
     @MainActor

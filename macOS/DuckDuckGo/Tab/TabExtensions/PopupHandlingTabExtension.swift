@@ -23,7 +23,7 @@ import ConcurrencyExtensions
 import ContentBlocking
 import FeatureFlags_macOS
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import OSLog
 import PrivacyConfig
 import TrackerRadarKit
@@ -128,6 +128,14 @@ final class PopupHandlingTabExtension {
                 }
             }
             .store(in: &cancellables)
+
+        permissionModel.popupDecisionRemoved
+            .sink { [weak self] in
+                MainActor.assumeMainThread {
+                    self?.popupsTemporarilyAllowedForCurrentPage = false
+                }
+            }
+            .store(in: &cancellables)
     }
 
     /// Handles WKUIDelegate createWebViewWithConfiguration:forNavigationAction:windowFeatures: callback
@@ -191,7 +199,7 @@ final class PopupHandlingTabExtension {
         var resultWebView: WKWebView?
         var isCalledSynchronously = true
         defer { isCalledSynchronously = false } // whether the callback was called synchronously or asynchronously
-        permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
+        permissionModel.request([.popups], forDomain: permissionModel.permissionDomain(for: sourceSecurityOrigin), url: url)
             .receive { [weak self] result in
                 self?.handlePermissionRequestResult(result,
                                                     from: webView,
@@ -276,6 +284,9 @@ final class PopupHandlingTabExtension {
 
         let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
         guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }
+        if isUserInitiated {
+            childTab.aiChat?.noteOpenedForLink(from: navigationAction.safeSourceFrame?.safeRequest?.url)
+        }
 
         presentTab(childTab, kind)
 
@@ -312,7 +323,8 @@ final class PopupHandlingTabExtension {
         if let sourceFrame = navigationAction.safeSourceFrame {
             let allowlist = popupBlockingConfig.allowlist
             let sourceHost = sourceFrame.securityOrigin.host
-            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist),
+               !permissionModel.isPopupBlockedByDefault(forDomain: sourceHost) {
                 Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
                 return .allowlistedDomain(sourceHost)
             }

@@ -1,0 +1,274 @@
+//
+//  BrokenSiteReportingTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import XCTest
+import os.log
+import BrowserServicesKit
+import OHHTTPStubs
+import OHHTTPStubsSwift
+@testable import Core
+import PrivacyDashboard
+import FeatureFlags_iOS
+@testable import DuckDuckGo
+@_spi(Testing) import Persistence
+
+final class BrokenSiteReportingTests: XCTestCase {
+    private let data = JsonTestDataLoader()
+    private let host = "improving.duckduckgo.com"
+    private let testAgent = "Test Agent"
+    private let userAgentName = "User-Agent"
+    private var referenceTests = [Test]()
+
+    private enum Resource {
+        static let tests = "privacy-reference-tests/broken-site-reporting/tests.json"
+    }
+
+    struct MockError: LocalizedError {
+        let description: String
+
+        init(_ description: String) {
+            self.description = description
+        }
+
+        var errorDescription: String? {
+            description
+        }
+
+        var localizedDescription: String? {
+            description
+        }
+    }
+
+    override func tearDown() {
+        HTTPStubs.removeAllStubs()
+        super.tearDown()
+    }
+
+    func testBrokenSiteReporting() throws {
+        let testJSON = data.fromJsonFile(Resource.tests)
+        let testData = try JSONDecoder().decode(BrokenSiteReportingTestData.self, from: testJSON)
+
+        referenceTests = testData.reportURL.tests.filter {
+            $0.exceptPlatforms.contains("ios-browser") == false
+        }
+
+        let testsExecuted = expectation(description: "tests executed")
+        testsExecuted.expectedFulfillmentCount = referenceTests.count
+
+        try runReferenceTests(onTestExecuted: testsExecuted)
+        waitForExpectations(timeout: 10, handler: nil)
+    }
+
+    func testBrokenSiteReportAppFeatureFlagsIncludesOnlyEnabledAllowlistedFlags() {
+        let scenarios: [(enabled: [FeatureFlag], expected: [String: String])] = [
+            ([], [:]),
+            ([.floatingUIiOS26], ["appFeatureFlags_floatingUIiOS26": "true"]),
+            ([.floatingUIiOS27], ["appFeatureFlags_floatingUIiOS27": "true"]),
+            ([.floatingUIiOS27, .floatingUIiOS26], ["appFeatureFlags_floatingUIiOS26": "true", "appFeatureFlags_floatingUIiOS27": "true"]),
+            ([.newTabPageRedesign], [:]),
+            ([.floatingUIiOS26, .newTabPageRedesign], ["appFeatureFlags_floatingUIiOS26": "true"])
+        ]
+
+        for scenario in scenarios {
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: scenario.enabled)
+            let parameters = BrokenSiteReportAppFeatureFlags.adding(to: ["siteUrl": "https://example.com"], featureFlagger: featureFlagger)
+
+            var expectedParameters = scenario.expected
+            expectedParameters["siteUrl"] = "https://example.com"
+            XCTAssertEqual(parameters, expectedParameters)
+        }
+    }
+
+    func testBrokenSiteReportAppFeatureFlagsReflectsChangesBetweenReports() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+        let firstReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(firstReport, ["appFeatureFlags_floatingUIiOS26": "true"])
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        let secondReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertEqual(secondReport, ["appFeatureFlags_floatingUIiOS27": "true"])
+
+        featureFlagger.enabledFeatureFlags = []
+        let thirdReport = BrokenSiteReportAppFeatureFlags.adding(to: [:], featureFlagger: featureFlagger)
+        XCTAssertTrue(thirdReport.isEmpty)
+    }
+
+    func testBrokenSiteReportIncludesCPMDiagnostics() {
+        let report = BrokenSiteReport(siteUrl: URL(string: "https://example.com")!,
+                                      category: "test",
+                                      description: nil,
+                                      osVersion: "18",
+                                      manufacturer: "Apple",
+                                      upgradedHttps: false,
+                                      tdsETag: "abc123",
+                                      configVersion: "123456789",
+                                      blockedTrackerDomains: [],
+                                      installedSurrogates: [],
+                                      isGPCEnabled: false,
+                                      ampURL: "",
+                                      urlParametersRemoved: false,
+                                      protectionsState: true,
+                                      reportFlow: .dashboard,
+                                      siteType: .mobile,
+                                      model: "iPhone",
+                                      errors: nil,
+                                      httpStatusCodes: nil,
+                                      openerContext: nil,
+                                      vpnOn: false,
+                                      jsPerformance: nil,
+                                      userRefreshCount: 0,
+                                      variant: "",
+                                      cookieConsentInfo: CookieConsentInfo(
+                                        consentManaged: true,
+                                        cosmetic: true,
+                                        optoutFailed: false,
+                                        selftestFailed: false,
+                                        consentReloadLoop: false,
+                                        consentRule: "test-cmp",
+                                        consentHeuristicEnabled: true,
+                                        cpmExtensionDroppedCallbacks: 3,
+                                        cpmExtensionLoaded: true,
+                                        cpmDashboardState: .applied,
+                                        cpmStage: .popupFound,
+                                        cpmErrors: "multiple_cmps,tab_refreshDashboardState",
+                                        cpmQueueSize: 2,
+                                        cpmConfigVersion: "123"),
+                                      debugFlags: "",
+                                      privacyExperiments: "",
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
+
+        let params = report.requestParameters
+        XCTAssertEqual(params["cpmExtensionDroppedCallbacks"], "3")
+        XCTAssertEqual(params["cpmExtensionLoaded"], "1")
+        XCTAssertEqual(params["cpmDashboardState"], "applied")
+        XCTAssertEqual(params["cpmStage"], "popup_found")
+        XCTAssertEqual(params["cpmErrors"], "multiple_cmps,tab_refreshDashboardState")
+        XCTAssertEqual(params["cpmQueueSize"], "2")
+        XCTAssertEqual(params["cpmConfigVersion"], "123")
+    }
+
+    private func runReferenceTests(onTestExecuted: XCTestExpectation) throws {
+
+        guard let test = referenceTests.popLast() else {
+            return
+        }
+
+        print("Testing [%s]", test.name)
+
+        var errors: [Error]?
+        if let errs = test.errorDescriptions {
+            errors = errs.map { MockError($0) }
+        }
+
+        let report = BrokenSiteReport(siteUrl: URL(string: test.siteURL)!,
+                                      category: test.category,
+                                      description: test.providedDescription,
+                                      osVersion: test.os ?? "",
+                                      manufacturer: test.manufacturer ?? "",
+                                      upgradedHttps: test.wasUpgraded,
+                                      tdsETag: test.blocklistVersion,
+                                      configVersion: test.remoteConfigVersion,
+                                      blockedTrackerDomains: test.blockedTrackers,
+                                      installedSurrogates: test.surrogates,
+                                      isGPCEnabled: test.gpcEnabled ?? false,
+                                      ampURL: "",
+                                      urlParametersRemoved: false,
+                                      protectionsState: test.protectionsEnabled,
+                                      reportFlow: .dashboard,
+                                      siteType: .mobile,
+                                      model: test.model ?? "",
+                                      errors: errors,
+                                      httpStatusCodes: test.httpErrorCodes ?? [],
+                                      openerContext: nil,
+                                      vpnOn: false,
+                                      jsPerformance: nil,
+                                      userRefreshCount: 0,
+                                      variant: "",
+                                      cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: nil, consentRule: "test-cmp", consentHeuristicEnabled: nil),
+                                      debugFlags: "",
+                                      privacyExperiments: "",
+                                      isPirEnabled: nil,
+                                      isForceDarkModeEnabled: nil)
+
+        let reporter = BrokenSiteReporter(pixelHandler: { params in
+
+            for expectedParam in test.expectReportURLParams {
+
+                if let actualValue = params[expectedParam.name],
+                   let expectedCleanValue = expectedParam.value.removingPercentEncoding {
+                    if expectedParam.name == "errorDescriptions" {
+                        // This will be fixed once the privacy ref tests contain error code and error domain so we can construct right MockError
+
+                        // `localizedDescription` includes class information. This format is likely to differ per platform
+                        // anyway. So we'll just check if the value contains an array of strings
+//                        XCTAssert(actualValue.split(separator: ",").count > 1,
+//                                  "Param \(expectedParam.name) expected to be an array of strings. Received: \(actualValue)")
+                    } else if actualValue != expectedCleanValue {
+                        XCTFail("Mismatching param: \(expectedParam.name) => \(expectedCleanValue) != \(actualValue)")
+                    }
+                } else {
+                    XCTFail("Missing param: \(expectedParam.name)")
+                }
+            }
+            onTestExecuted.fulfill()
+            try? self.runReferenceTests(onTestExecuted: onTestExecuted)
+        }, keyValueStoring: MockKeyValueStore())
+        try reporter.report(report, reportMode: .regular)
+    }
+}
+
+// MARK: - BrokenSiteReportingTestData
+
+private struct BrokenSiteReportingTestData: Codable {
+    let reportURL: ReportURL
+}
+
+// MARK: - ReportURL
+
+private struct ReportURL: Codable {
+    let name: String
+    let tests: [Test]
+}
+
+// MARK: - Test
+private struct Test: Codable {
+    let name: String
+    let siteURL: String
+    let wasUpgraded: Bool
+    let category: String
+    let providedDescription: String?
+    let blockedTrackers, surrogates: [String]
+    let atb, blocklistVersion: String
+    let remoteConfigVersion: String?
+    let expectReportURLPrefix: String
+    let expectReportURLParams: [ExpectReportURLParam]
+    let exceptPlatforms: [String]
+    let manufacturer, model, os: String?
+    let gpcEnabled: Bool?
+    let protectionsEnabled: Bool
+    let errorDescriptions: [String]?
+    let httpErrorCodes: [Int]?
+}
+
+// MARK: - ExpectReportURLParam
+
+private struct ExpectReportURLParam: Codable {
+    let name, value: String
+}

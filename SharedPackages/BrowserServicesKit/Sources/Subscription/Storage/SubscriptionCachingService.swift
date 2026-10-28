@@ -27,6 +27,9 @@ public protocol SubscriptionCachingService {
     /// Returns `true` if a non-expired cached subscription exists. Safe to call synchronously.
     var isPresent: Bool { get }
 
+    /// Returns the cached subscription's status, or `nil` if no non-expired subscription is cached. Safe to call synchronously.
+    var cachedSubscriptionStatus: DuckDuckGoSubscription.Status? { get }
+
     /// Returns the cached subscription if it exists and has not expired.
     func get() async -> DuckDuckGoSubscription?
 
@@ -57,6 +60,8 @@ public actor DefaultSubscriptionCachingService: SubscriptionCachingService {
     nonisolated(unsafe) private let subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription>
 
     public nonisolated var isPresent: Bool { subscriptionCache.get() != nil }
+
+    public nonisolated var cachedSubscriptionStatus: DuckDuckGoSubscription.Status? { subscriptionCache.get()?.status }
 
     public init(subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription> = UserDefaultsCache<DuckDuckGoSubscription>(
         key: UserDefaultsCacheKey.subscription,

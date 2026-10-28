@@ -23,7 +23,7 @@ import Common
 import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
-import Navigation
+import DDGNavigation
 import WebKit
 
 public struct ReleaseNotesValues: Codable {

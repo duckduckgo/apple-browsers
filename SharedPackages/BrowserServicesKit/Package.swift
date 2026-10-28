@@ -1,4 +1,4 @@
-// swift-tools-version: 5.10
+        // swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import Foundation
@@ -29,7 +29,7 @@ let package = Package(
         .library(name: "Configuration", targets: ["Configuration"]),
         .library(name: "RemoteMessaging", targets: ["RemoteMessaging"]),
         .library(name: "RemoteMessagingTestsUtils", targets: ["RemoteMessagingTestsUtils"]),
-        .library(name: "Navigation", targets: ["Navigation"]),
+        .library(name: "DDGNavigation", targets: ["DDGNavigation"]),
         .library(name: "SyncDataProviders", targets: ["SyncDataProviders"]),
         .library(name: "SecureStorage", targets: ["SecureStorage"]),
         .library(name: "Subscription", targets: ["Subscription"]),
@@ -49,15 +49,15 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../WideEvent"),
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "19.2.1"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "4.0.0"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.10.2"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.11.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.9.0"),
+        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.29.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -95,7 +95,7 @@ let package = Package(
                 "SecureStorage",
                 "Subscription",
                 .product(name: "PixelKit", package: "PixelKit"),
-                "Navigation"
+                "DDGNavigation"
             ],
             resources: [
                 .process("SmarterEncryption/Store/HTTPSUpgrade.xcdatamodeld"),
@@ -109,7 +109,7 @@ let package = Package(
             name: "BrowserServicesKitTestsUtils",
             dependencies: [
                 "BrowserServicesKit",
-                "Navigation",
+                "DDGNavigation",
                 "WKAbstractions",
             ],
             swiftSettings: [
@@ -174,6 +174,7 @@ let package = Package(
         .target(
             name: "History",
             dependencies: [
+                .product(name: "DDGError", package: "DDGError"),
                 .product(name: "Persistence", package: "Persistence"),
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
@@ -283,13 +284,14 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Navigation",
+            name: "DDGNavigation",
             dependencies: [
                 .product(name: "Common", package: "Common"),
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
+            path: "Sources/Navigation",
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug)),
                 .define("_IS_USER_INITIATED_ENABLED", .when(platforms: [.macOS])),
@@ -299,6 +301,7 @@ let package = Package(
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_PAGE_SIGNALS_ENABLED", .when(platforms: [.macOS, .iOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
@@ -331,7 +334,7 @@ let package = Package(
                 "PrivacyConfig",
                 "MaliciousSiteProtection",
                 .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
-                "Navigation",
+                "DDGNavigation",
             ],
             path: "Sources/PrivacyDashboard",
             swiftSettings: [
@@ -405,6 +408,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "PixelKit"),
                 "GRDB",
             ],
+            exclude: ["README.md"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -672,7 +676,7 @@ let package = Package(
             name: "NavigationTests",
             dependencies: [
                 "SharedObjCTestsUtils",
-                "Navigation",
+                "DDGNavigation",
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "Swifter", package: "swifter"),
             ],
@@ -691,6 +695,7 @@ let package = Package(
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_PAGE_SIGNALS_ENABLED", .when(platforms: [.macOS, .iOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
@@ -841,7 +846,7 @@ let package = Package(
                 "PixelExperimentKit",
                 "Configuration",
                 .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
-                "Navigation",
+                "DDGNavigation",
                 "SecureStorage",
                 "Subscription",
                 "UserScript",

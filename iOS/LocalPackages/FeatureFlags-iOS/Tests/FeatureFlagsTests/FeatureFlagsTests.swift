@@ -25,6 +25,53 @@ import XCTest
 
 final class FeatureFlagsTests: XCTestCase {
 
+    func testAttachmentPrivacyUsesRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.unifiedToggleInputAttachmentPrivacy
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputAttachmentPrivacy)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testPastedTextUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.unifiedToggleInputPastedText
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .unifiedToggleInputPastedText)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "unifiedToggleInputPastedText")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testIPadAttachmentPrivacyUsesItsOwnRemoteKillSwitchAndInternalOnlyDefault() {
+        let flag = FeatureFlag.aiChatAttachmentPrivacyIPad
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .iPadAttachmentPrivacy)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "iPadAttachmentPrivacy")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
     func testAddressBarRecentChatsUsesItsOwnRemoteKillSwitchAndIsEnabledByDefault() {
         let flag = FeatureFlag.aiChatAddressBarRecentChats
         guard case let .remoteReleasable(subfeature) = flag.source else {
@@ -50,6 +97,22 @@ final class FeatureFlagsTests: XCTestCase {
         XCTAssertEqual(subfeature as? AIChatSubfeature, .iPadChromeMenuButton)
         XCTAssertEqual(subfeature.parent, .aiChat)
         XCTAssertEqual(subfeature.rawValue, "iPadChromeMenuButton")
+        guard case .internalOnly = flag.defaultValue else {
+            XCTFail("Expected internal-only default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testContextualSidebarIPadUsesItsOwnRemoteFlagAndIsInternalOnlyByDefault() {
+        let flag = FeatureFlag.ipadAIChatContextSidebar
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? AIChatSubfeature, .iPadContextualSidebar)
+        XCTAssertEqual(subfeature.parent, .aiChat)
+        XCTAssertEqual(subfeature.rawValue, "iPadContextualSidebar")
         guard case .internalOnly = flag.defaultValue else {
             XCTFail("Expected internal-only default")
             return
@@ -116,22 +179,6 @@ final class FeatureFlagsTests: XCTestCase {
         }
     }
 
-    func testSuppressShowBarsGestureRecogniserDelayIsDefaultEnabledRemoteReleasableAndLocallyOverridable() {
-        let flag = FeatureFlag.suppressShowBarsGestureRecogniserDelay
-
-        guard case let .remoteReleasable(subfeature) = flag.source else {
-            XCTFail("Expected remote-releasable source")
-            return
-        }
-        XCTAssertEqual((subfeature as? iOSBrowserConfigSubfeature)?.rawValue,
-                       iOSBrowserConfigSubfeature.suppressShowBarsGestureRecogniserDelay.rawValue)
-        guard case .enabled = flag.defaultValue else {
-            XCTFail("Expected enabled default")
-            return
-        }
-        XCTAssertTrue(flag.supportsLocalOverriding)
-    }
-
     func testLegacyDeviceRenamePatchFlagIsDefaultEnabledAndRemoteReleasable() {
         let flag = FeatureFlag.syncCanUsePatchEndpointForLegacyDeviceRename
         guard case let .remoteReleasable(subfeature) = flag.source else {
@@ -143,6 +190,22 @@ final class FeatureFlagsTests: XCTestCase {
                        SyncSubfeature.canUsePatchEndpointForLegacyDeviceRename.rawValue)
         guard case .enabled = flag.defaultValue else {
             XCTFail("Expected enabled default")
+            return
+        }
+        XCTAssertTrue(flag.supportsLocalOverriding)
+    }
+
+    func testAlwaysShowKeyboardOnNewTabPageIsDefaultDisabledRemoteReleasableAndLocallyOverridable() {
+        let flag = FeatureFlag.alwaysShowKeyboardOnNewTabPage
+        guard case let .remoteReleasable(subfeature) = flag.source else {
+            XCTFail("Expected remote-releasable source")
+            return
+        }
+        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .alwaysShowKeyboardOnNewTabPage)
+        XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
+        XCTAssertEqual(subfeature.rawValue, "alwaysShowKeyboardOnNewTabPage")
+        guard case .disabled = flag.defaultValue else {
+            XCTFail("Expected disabled default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)

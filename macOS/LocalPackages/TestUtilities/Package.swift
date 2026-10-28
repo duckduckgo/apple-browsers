@@ -28,7 +28,6 @@ let package = Package(
     products: [
         .library(name: "NoARCObjCTestUtilities", targets: ["NoARCObjCTestUtilities"]),
         .library(name: "SharedTestUtilities", targets: ["SharedTestUtilities"]),
-        .library(name: "SharedSandboxTestUtilities", targets: ["SharedSandboxTestUtilities"]),
     ],
     dependencies: [
         .package(path: "../Utilities"),
@@ -62,7 +61,7 @@ let package = Package(
                 .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "CombineExtensions", package: "SystemFrameworksExtensions"),
                 .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
-                .product(name: "Navigation", package: "BrowserServicesKit"),
+                .product(name: "DDGNavigation", package: "BrowserServicesKit"),
                 .product(name: "Suggestions", package: "BrowserServicesKit"),
                 .product(name: "SharedObjCTestsUtils", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "Persistence"),
@@ -70,11 +69,6 @@ let package = Package(
                 .product(name: "Utilities", package: "Utilities"),
             ]
         ),
-        .target(
-            name: "SharedSandboxTestUtilities",
-            dependencies: [
-            ]
-        )
     ],
     swiftLanguageVersions: [.v5]
 )

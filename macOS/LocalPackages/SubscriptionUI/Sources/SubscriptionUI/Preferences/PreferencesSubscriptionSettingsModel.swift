@@ -547,7 +547,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     private var dateFormatter = {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .long
-#if DEBUG || ALPHA
+#if DEBUG
         dateFormatter.timeStyle = .medium
 #else
         dateFormatter.timeStyle = .none

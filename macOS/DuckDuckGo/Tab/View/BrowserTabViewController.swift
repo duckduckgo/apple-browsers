@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import BrowserServicesKit
 import Cocoa
@@ -46,15 +48,22 @@ protocol BrowserTabViewControllerDelegate: AnyObject {
 
 final class BrowserTabViewController: NSViewController {
 
-    private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: .browserTabBackground)
-    private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
+    private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground))
+    private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
     private lazy var hoverLabel = NSTextField(string: URL.duckDuckGo.absoluteString)
-    private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
+    private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager
 
     private var _newTabPageWebViewModel: NewTabPageWebViewModel?
+    private lazy var newTabPageRemoteMessageImpressionReporter = NewTabPageRemoteMessageImpressionReporter { [weak self] messageID in
+        guard let self else { return }
+        Task { await self.activeRemoteMessageModel.markRemoteMessageAsShown(withID: messageID, on: .newTabPage) }
+    }
+    private var preflightedNewTabPageRemoteMessageTabID: String?
+    private var remoteMessageWindowStateCancellable: AnyCancellable?
+    private var foregroundBrowserWindowObserver: ForegroundBrowserWindowObserver?
     var newTabPageWebViewModel: NewTabPageWebViewModel {
         if let newTabPageWebViewModel = _newTabPageWebViewModel {
             return newTabPageWebViewModel
@@ -63,7 +72,6 @@ final class BrowserTabViewController: NSViewController {
         let newTabPageWebViewModel = NewTabPageWebViewModel(
             featureFlagger: featureFlagger,
             actionsManager: newTabPageActionsManager(),
-            activeRemoteMessageModel: activeRemoteMessageModel,
             newTabPageLoadMetrics: newTabPageLoadMetrics
         )
         _newTabPageWebViewModel = newTabPageWebViewModel
@@ -328,6 +336,13 @@ final class BrowserTabViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
 
+        activeRemoteMessageModel.$newTabPageRemoteMessage
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] message in
+                self?.newTabPageRemoteMessageImpressionReporter.updateMessage(message)
+            }
+            .store(in: &cancellables)
+
         subscribeToTabs()
         subscribeToSelectedTabViewModel()
         addMouseMonitors()
@@ -336,6 +351,10 @@ final class BrowserTabViewController: NSViewController {
     override func viewWillDisappear() {
         super.viewWillDisappear()
 
+        remoteMessageWindowStateCancellable?.cancel()
+        remoteMessageWindowStateCancellable = nil
+        foregroundBrowserWindowObserver = nil
+        newTabPageRemoteMessageImpressionReporter.updateVisibleTab(nil, message: nil)
         cancellables.removeAll()
     }
 
@@ -374,6 +393,17 @@ final class BrowserTabViewController: NSViewController {
         super.viewDidAppear()
 
         subscribeToNotifications()
+        guard let window = view.window else { return }
+        let foregroundBrowserWindowObserver = ForegroundBrowserWindowObserver(window: window)
+        self.foregroundBrowserWindowObserver = foregroundBrowserWindowObserver
+        remoteMessageWindowStateCancellable?.cancel()
+        remoteMessageWindowStateCancellable = foregroundBrowserWindowObserver.changes
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                reconcileNewTabPageRemoteMessagePresentation(for: tabViewModel)
+            }
+        reconcileNewTabPageRemoteMessagePresentation(for: tabViewModel)
     }
 
     @objc
@@ -428,7 +458,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func onDBPFeatureDisabled(_ notification: Notification) {
         Task { @MainActor in
-            tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
+            tabCollectionViewModel.removeAll(matching: { $0.isDataBrokerProtection })
         }
     }
 
@@ -481,7 +511,7 @@ final class BrowserTabViewController: NSViewController {
     @objc
     private func onSubscriptionUpgradeFromFreemium(_ notification: Notification) {
         Task { @MainActor in
-            tabCollectionViewModel.removeAll(with: .dataBrokerProtection)
+            tabCollectionViewModel.removeAll(matching: { $0.isDataBrokerProtection })
         }
     }
 
@@ -601,7 +631,7 @@ final class BrowserTabViewController: NSViewController {
 
     private func removeDataBrokerViewIfNecessary(for tabs: [AnyTab]) {
         if let dataBrokerProtectionHomeViewController,
-           !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
+           !tabs.contains(where: { $0.content.isDataBrokerProtection }) {
             dataBrokerProtectionHomeViewController.removeCompletely()
             self.dataBrokerProtectionHomeViewController = nil
         }
@@ -996,6 +1026,9 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             return newTabPageWebViewModel.webView
         case .webExtensionUrl(let url):
+            if let webView = tabViewModel.tab.webExtensionPageWebView {
+                return webView
+            }
             if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager,
                let context = webExtensionManager.extensionContext(for: url),
                let configuration = context.webViewConfiguration {
@@ -1004,9 +1037,18 @@ final class BrowserTabViewController: NSViewController {
                 let webView = WebView(frame: .zero,
                                       configuration: configuration,
                                       featureFlagger: featureFlagger,
-                                      privacyConfig: privacyConfigurationManager.privacyConfig)
+                                      privacyConfig: privacyConfigurationManager.privacyConfig,
+                                      sharesUserScripts: true)
+                // The tab handles the page's `window.close()`, alerts and new windows, as for its own web view.
+                webView.uiDelegate = tabViewModel.tab
+                // Route navigation out of extension pages through the browser tab.
+                if let manager = webExtensionManager as? WebExtensionManager,
+                   let handler = manager.internalSiteHandler as? WebExtensionInternalSiteHandler {
+                    webView.navigationDelegate = handler.navigationDelegate
+                }
                 let request = URLRequest(url: url)
                 webView.load(request)
+                tabViewModel.tab.webExtensionPageWebView = webView
                 return webView
             }
             return tabViewModel.tab.webView
@@ -1170,6 +1212,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .historyEntry),
              .url(_, _, source: .bookmark),
              .url(_, _, source: .ui),
+             .url(_, _, source: .attributedUI),
              .url(_, _, source: .link),
              .url(_, _, source: .appOpenUrl),
              .url(_, _, source: .switchToOpenTab),
@@ -1332,23 +1375,64 @@ final class BrowserTabViewController: NSViewController {
                 }
                 addAndLayoutChildBesideSidebar(burnerHomePage)
             } else {
+                if newTabPageRemoteMessageImpressionReporter.visibleTabID != tabViewModel?.tab.uuid,
+                   isWindowEligibleForRemoteMessageImpression {
+                    activeRemoteMessageModel.refreshRemoteMessageForPresentation()
+                    preflightedNewTabPageRemoteMessageTabID = tabViewModel?.tab.uuid
+                }
                 updateTabIfNeeded(tabViewModel: tabViewModel)
             }
 
         case .history:
             updateTabIfNeeded(tabViewModel: tabViewModel)
 
-        case .dataBrokerProtection:
-            removeAllTabContent()
-            let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
-            self.previouslySelectedTab = tabCollectionViewModel.selectedTab
-            addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
+        case let .dataBrokerProtection(context):
+            showDataBrokerProtection(freemiumEntryPoint: context.freemiumEntryPoint)
 
         case .webExtensionUrl:
             updateTabIfNeeded(tabViewModel: tabViewModel)
         default:
             removeAllTabContent()
         }
+
+        reconcileNewTabPageRemoteMessagePresentation(for: tabViewModel)
+    }
+
+    private var isWindowEligibleForRemoteMessageImpression: Bool {
+        if let foregroundBrowserWindowObserver {
+            return foregroundBrowserWindowObserver.isEligible
+        }
+        guard let window = view.window else { return false }
+        return ForegroundBrowserWindowObserver.isEligible(window: window)
+    }
+
+    private func reconcileNewTabPageRemoteMessagePresentation(for tabViewModel: TabViewModel?) {
+        let isVisibleNewTabPage = isWindowEligibleForRemoteMessageImpression
+            && !tabCollectionViewModel.isBurner
+            && tabViewModel?.tabContent == .newtab
+            && webView === newTabPageWebViewModel.webView
+            && webView?.tabContentView.superview != nil
+        let visibleTabID = isVisibleNewTabPage ? tabViewModel?.tab.uuid : nil
+        if visibleTabID != nil,
+           visibleTabID != newTabPageRemoteMessageImpressionReporter.visibleTabID,
+           visibleTabID != preflightedNewTabPageRemoteMessageTabID {
+            activeRemoteMessageModel.refreshRemoteMessageForPresentation()
+        }
+        if visibleTabID == preflightedNewTabPageRemoteMessageTabID {
+            preflightedNewTabPageRemoteMessageTabID = nil
+        }
+        newTabPageRemoteMessageImpressionReporter.updateVisibleTab(
+            visibleTabID,
+            message: activeRemoteMessageModel.newTabPageRemoteMessage
+        )
+    }
+
+    private func showDataBrokerProtection(freemiumEntryPoint: FreemiumDBPEntryPoint?) {
+        removeAllTabContent()
+        let dataBrokerProtectionViewController = dataBrokerProtectionHomeViewControllerCreatingIfNeeded()
+        dataBrokerProtectionViewController.setFreemiumEntryPointIfKnown(freemiumEntryPoint)
+        self.previouslySelectedTab = tabCollectionViewModel.selectedTab
+        addAndLayoutChildBesideSidebar(dataBrokerProtectionViewController)
     }
 
     func updateTabIfNeeded(tabViewModel: TabViewModel?) {

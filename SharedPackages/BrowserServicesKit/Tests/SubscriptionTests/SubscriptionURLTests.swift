@@ -57,6 +57,7 @@ final class SubscriptionURLTests: XCTestCase {
                                               .plans,
                                               .addEmail,
                                               .addEmailSuccess,
+                                              .partnershipsHub,
                                               .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
@@ -82,6 +83,7 @@ final class SubscriptionURLTests: XCTestCase {
                                               .plans,
                                               .addEmail,
                                               .addEmailSuccess,
+                                              .partnershipsHub,
                                               .upgradeToTier("pro")]
 
         for urlType in allURLTypes {
@@ -92,6 +94,19 @@ final class SubscriptionURLTests: XCTestCase {
             let environmentParameter = url.getParameter(named: "environment")
             XCTAssertEqual (environmentParameter, "staging", "Wrong environment parameter for \(url.absoluteString)")
         }
+    }
+
+    func testPartnershipsHubURLForProduction() throws {
+        // Given
+        // A top-level page rather than a subscription page, and the same URL the other platforms
+        // compile in.
+        let expectedURL = URL(string: "https://duckduckgo.com/partner-benefits")!
+
+        // When
+        let url = SubscriptionURL.partnershipsHub.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
     }
 
     func testIdentityTheftRestorationURLForProduction() throws {
@@ -268,6 +283,19 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let url = SubscriptionURL.activationFlow.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForPartnershipsHubURL() throws {
+        // Given
+        // What makes the flow testable before the production route is live.
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = URL(string: "https://dax.duck.co/partner-benefits")!
+
+        // When
+        let url = SubscriptionURL.partnershipsHub.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
 
         // Then
         XCTAssertEqual(url, expectedURL)

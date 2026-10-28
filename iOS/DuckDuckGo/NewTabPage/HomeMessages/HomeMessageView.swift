@@ -29,6 +29,7 @@ import PixelKit
 struct HomeMessageView: View {
 
     let viewModel: HomeMessageViewModel
+    var usesMaterialBackground = false
 
     @State var activityItem: TitleValueShareItem?
     @State private var loadedImage: UIImage?
@@ -64,7 +65,7 @@ struct HomeMessageView: View {
                         buttons
                     }
                     .padding(.top, Const.Spacing.subtitleAndButtons)
-                    .padding([.horizontal, .bottom], AppRebrand.isAppRebranded() ? ButtonStackMetrics.containerPadding : 16)
+                    .padding([.horizontal, .bottom], ButtonStackMetrics.containerPadding)
                 }
             }
             .multilineTextAlignment(.center)
@@ -72,14 +73,26 @@ struct HomeMessageView: View {
             closeButton
                 .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
         }
-        .background(RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-            .fill(Color.background)
-            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
-            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
-        )
+        .background {
+            if usesMaterialBackground {
+                RedesignedNewTabPageModuleBackground()
+            } else {
+                legacyBackground
+            }
+        }
         .onAppear {
             viewModel.onDidAppear()
         }
+        .onDisappear {
+            viewModel.onDidDisappear()
+        }
+    }
+
+    private var legacyBackground: some View {
+        RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
+            .fill(Color.background)
+            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
+            .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
     }
 
     private var closeButton: some View {
@@ -99,11 +112,11 @@ struct HomeMessageView: View {
             Image(uiImage: displayImage)
                 .resizable()
                 .scaledToFit()
-                .modifier(PictogramSize(legacyMaxHeight: Const.Size.imageMaxHeight))
+                .frame(width: Const.Size.pictogram, height: Const.Size.pictogram)
         } else if let placeholderName = viewModel.image {
-            Image(rebrandable: placeholderName)
+            Image(placeholderName)
                 .scaledToFit()
-                .modifier(PictogramSize(legacyMaxHeight: nil))
+                .frame(width: Const.Size.pictogram, height: Const.Size.pictogram)
                 .task {
                     loadedImage = await viewModel.loadRemoteImage?()
                 }
@@ -116,29 +129,18 @@ struct HomeMessageView: View {
             .frame(maxWidth: .infinity)
    }
 
-    private var subtitleColor: Color? {
-        AppRebrand.isAppRebranded() ? Color(designSystemColor: .textSecondary) : nil
-    }
-
-    @ViewBuilder
-    private func subtitleFont(_ text: Text) -> some View {
-        if AppRebrand.isAppRebranded() {
-            text.daxSubheadRegular()
-        } else {
-            text.daxBodyRegular()
-        }
-    }
-
     @ViewBuilder
     private var subtitle: some View {
         if let attributed = try? AttributedString(markdown: viewModel.subtitle) {
-            subtitleFont(Text(attributed))
+            Text(attributed)
+                .daxSubheadRegular()
                 .fixedSize(horizontal: false, vertical: true)
-                .foregroundColor(subtitleColor)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         } else {
-            subtitleFont(Text(viewModel.subtitle))
+            Text(viewModel.subtitle)
+                .daxSubheadRegular()
                 .fixedSize(horizontal: false, vertical: true)
-                .foregroundColor(subtitleColor)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
     }
 
@@ -155,7 +157,7 @@ struct HomeMessageView: View {
                             .resizable()
                             .frame(width: 24, height: 24)
                     }
-                    buttonTitleView(for: buttonModel.title)
+                    Text(buttonModel.title)
                 }
             }
             .modifier(HomeMessageButtonStyleModifier(actionStyle: buttonModel.actionStyle))
@@ -173,16 +175,6 @@ struct HomeMessageView: View {
 
         }
     }
-
-    @ViewBuilder
-    private func buttonTitleView(for title: String) -> some View {
-        if AppRebrand.isAppRebranded() {
-            Text(title)
-        } else {
-            Text(title)
-                .daxButton()
-        }
-    }
 }
 
 private struct HomeMessageButtonStyleModifier: ViewModifier {
@@ -192,25 +184,8 @@ private struct HomeMessageButtonStyleModifier: ViewModifier {
     func body(content: Content) -> some View {
         if case .cancel = actionStyle {
             content.buttonStyle(SecondaryFillButtonStyle(compact: true))
-        } else if AppRebrand.isAppRebranded() {
+        } else {
             content.buttonStyle(BrandButtonStyle(compact: true))
-        } else {
-            content.buttonStyle(PrimaryButtonStyle(compact: true))
-        }
-    }
-}
-
-private struct PictogramSize: ViewModifier {
-    let legacyMaxHeight: CGFloat?
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if AppRebrand.isAppRebranded() {
-            content.frame(width: Const.Size.rebrandedPictogram, height: Const.Size.rebrandedPictogram)
-        } else if let legacyMaxHeight {
-            content.frame(maxHeight: legacyMaxHeight)
-        } else {
-            content
         }
     }
 }
@@ -260,8 +235,7 @@ private enum Const {
     }
 
     enum Size {
-        static let imageMaxHeight: CGFloat = 48.0
-        static let rebrandedPictogram: CGFloat = 96
+        static let pictogram: CGFloat = 96
     }
 
     enum Offset {
@@ -271,11 +245,6 @@ private enum Const {
 }
 
 // MARK: - Previews
-//
-// Two providers render the same five message variants under each `AppRebrand` state. Since
-// `AppRebrand.isAppRebranded` is a process-wide closure, the most recently invoked provider's
-// getter wins for any subsequent style lookup — switch between the previews one at a time
-// rather than pinning both in the canvas.
 
 private enum HomeMessagePreviewSamples {
 
@@ -323,6 +292,7 @@ private enum HomeMessagePreviewSamples {
                                                         loadRemoteImage: nil,
                                                         onDidClose: { _ in },
                                                         onDidAppear: {},
+                                                        onDidDisappear: {},
                                                         onAttachAdditionalParameters: { _, params in params }))
     }
 
@@ -342,18 +312,8 @@ private enum HomeMessagePreviewSamples {
     }
 }
 
-struct HomeMessageView_LegacyPreviews: PreviewProvider {
+struct HomeMessageView_Previews: PreviewProvider {
     static var previews: some View {
-        AppRebrand.isAppRebranded = { false }
-        return HomeMessagePreviewSamples.allMessages
-            .previewDisplayName("Legacy")
-    }
-}
-
-struct HomeMessageView_RebrandedPreviews: PreviewProvider {
-    static var previews: some View {
-        AppRebrand.isAppRebranded = { true }
-        return HomeMessagePreviewSamples.allMessages
-            .previewDisplayName("Rebranded")
+        HomeMessagePreviewSamples.allMessages
     }
 }

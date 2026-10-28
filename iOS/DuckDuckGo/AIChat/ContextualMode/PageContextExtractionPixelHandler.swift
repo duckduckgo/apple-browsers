@@ -26,7 +26,8 @@ import PixelKit
 protocol PageContextExtractionPixelFiring {
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?)
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType)
 }
 
 final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring {
@@ -39,18 +40,19 @@ final class PageContextExtractionPixelHandler: PageContextExtractionPixelFiring 
 
     func fire(_ outcome: PageContextExtractionOutcome,
               trigger: PageContextExtractionTrigger,
-              latency: PageContextExtractionLatencyBucket?) {
+              latency: PageContextExtractionLatencyBucket?,
+              contextType: PageContextType) {
         switch outcome {
         case .success:
-            // success carries no discriminating params
-            firePixel(.aiChatPageContextExtractionSuccess, [:])
+            firePixel(.aiChatPageContextExtractionSuccess, ["context_type": contextType.rawValue])
         case .failure(let reason):
-            var params = ["reason": reason.rawValue, "trigger": trigger.rawValue]
+            var params = ["reason": reason.rawValue, "trigger": trigger.rawValue, "context_type": contextType.rawValue]
             if let latency {
                 params["latency"] = latency.rawValue
             }
             firePixel(.aiChatPageContextExtractionFailed, params)
         case .prevented(let category):
+            // `category` already names the page kind, so no context_type here.
             firePixel(.aiChatPageContextExtractionPrevented,
                       ["category": category, "reason": "non_attachable", "trigger": trigger.rawValue])
         }

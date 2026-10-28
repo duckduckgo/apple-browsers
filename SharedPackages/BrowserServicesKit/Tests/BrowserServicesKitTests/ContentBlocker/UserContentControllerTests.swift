@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKitTestsUtils
 import Combine
 import Common
 import Foundation
@@ -29,11 +30,13 @@ import XCTest
 final class UserContentControllerTests: XCTestCase {
 
     struct MockScriptSourceProvider {
+        var scriptProvider: MockScriptProvider?
     }
     class MockScriptProvider: UserScriptsProvider {
         var userScripts: [UserScript] { [] }
+        var loadScripts: (() async -> [WKUserScript])?
         func loadWKUserScripts() async -> [WKUserScript] {
-            []
+            await loadScripts?() ?? []
         }
     }
 
@@ -43,7 +46,7 @@ final class UserContentControllerTests: XCTestCase {
 
         var makeUserScripts: @MainActor (MockScriptSourceProvider) -> MockScriptProvider {
             { sourceProvider in
-                MockScriptProvider()
+                sourceProvider.scriptProvider ?? MockScriptProvider()
             }
         }
     }
@@ -72,6 +75,31 @@ final class UserContentControllerTests: XCTestCase {
 
     // MARK: - Tests
     @MainActor
+    func testWhenClosedDuringAssetsBuildThenCompletedAssetsAreNotInstalled() async throws {
+        let scripts = MockScriptProvider()
+        let buildStarted = expectation(description: "build started")
+        var finishBuild: CheckedContinuation<[WKUserScript], Never>?
+        scripts.loadScripts = {
+            await withCheckedContinuation {
+                finishBuild = $0
+                buildStarted.fulfill()
+            }
+        }
+        let update = ContentBlockerRulesManager.UpdateEvent(rules: [], changes: [:], completionTokens: [])
+        assetsSubject.send(NewContent(rulesUpdate: update, sourceProvider: .init(scriptProvider: scripts)))
+        await fulfillment(of: [buildStarted], timeout: 1)
+
+        let assetsInstalled = expectation(description: "closed controller must not install assets")
+        assetsInstalled.isInverted = true
+        onAssetsInstalled = { _ in assetsInstalled.fulfill() }
+        ucc.cleanUpBeforeClosing()
+        finishBuild?.resume(returning: [])
+        await fulfillment(of: [assetsInstalled], timeout: 0.1)
+        XCTAssertNil(ucc.contentBlockingAssets)
+        XCTAssertTrue(ucc.userScripts.isEmpty)
+    }
+
+    @MainActor
     func testWhenUserContentControllerInitialisedWithEarlyAccessScriptsThenHandlersAreRegistered() async throws {
         let script1 = MockUserScript(messageNames: ["message1"])
         let script2 = MockUserScript(messageNames: ["message2"])
@@ -80,6 +108,40 @@ final class UserContentControllerTests: XCTestCase {
 
         XCTAssertTrue(ucc.registeredScriptHandlerNames.contains("message1"))
         XCTAssertTrue(ucc.registeredScriptHandlerNames.contains("message2"))
+    }
+
+    @MainActor
+    func testWhenReplyHandlerTargetIsDeallocatedThenReplyReturnsAnError() async throws {
+        let messageName = UUID().uuidString
+        let permanentHandler = PermanentScriptMessageHandler(replyToUnavailableHandlers: true)
+        permanentHandler.register(MockReplyUserScript(messageNames: [messageName]), for: messageName)
+        XCTAssertNil(permanentHandler.messageHandler(for: messageName))
+
+        var reply: (result: Any?, error: String?)?
+        permanentHandler.userContentController(ucc, didReceive: .mock(name: messageName)) { result, error in
+            reply = (result, error)
+        }
+
+        XCTAssertNil(reply?.result)
+        XCTAssertEqual(reply?.error, "Script message handler is unavailable")
+    }
+
+    @MainActor
+    func testRegisteredReplyHandlerWorksWithAndWithoutUnavailableHandlerReplies() {
+        for repliesEnabled in [false, true] {
+            let messageName = UUID().uuidString
+            let permanentHandler = PermanentScriptMessageHandler(replyToUnavailableHandlers: repliesEnabled)
+            let script = MockReplyUserScript(messageNames: [messageName])
+            permanentHandler.register(script, for: messageName)
+            var replyCount = 0
+            permanentHandler.userContentController(ucc, didReceive: .mock(name: messageName)) { result, error in
+                replyCount += 1
+                XCTAssertNil(result)
+                XCTAssertNil(error)
+            }
+            XCTAssertEqual(replyCount, 1)
+            withExtendedLifetime(script) {}
+        }
     }
 
     @MainActor
@@ -375,5 +437,14 @@ class MockUserScript: NSObject, UserScript {
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+    }
+}
+
+final class MockReplyUserScript: MockUserScript, WKScriptMessageHandlerWithReply {
+
+    func userContentController(_ userContentController: WKUserContentController,
+                               didReceive message: WKScriptMessage,
+                               replyHandler: @escaping (Any?, String?) -> Void) {
+        replyHandler(nil, nil)
     }
 }

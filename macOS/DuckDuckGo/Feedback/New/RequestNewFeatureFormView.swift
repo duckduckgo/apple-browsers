@@ -45,7 +45,6 @@ final class RequestNewFeatureFormViewController: NSHostingController<RequestNewF
 
 struct RequestNewFeatureFormFlowView: View {
     @State private var showThankYou = false
-    let isAppRebranded: Bool
     var onClose: () -> Void
     var onSeeWhatsNew: () -> Void
     var onResize: (CGFloat, CGFloat) -> Void
@@ -67,7 +66,6 @@ struct RequestNewFeatureFormFlowView: View {
                 }
             } else {
                 RequestNewFeatureFormView(
-                    isAppRebranded: isAppRebranded,
                     onSubmit: {
                         showThankYou = true
                     },
@@ -89,8 +87,6 @@ struct RequestNewFeatureFormFlowView: View {
 
 struct RequestNewFeatureFormView: View {
     @ObservedObject var viewModel: RequestNewFeatureViewModel = .init()
-
-    let isAppRebranded: Bool
 
     var onSubmit: () -> Void
     var onClose: () -> Void
@@ -156,7 +152,7 @@ struct RequestNewFeatureFormView: View {
 
     private func header() -> some View {
         HStack(spacing: 12) {
-            Image(isAppRebranded ? .feedbackPositive56 : .feedbackAsk)
+            Image(.feedbackPositive56)
 
             VStack(alignment: .leading, spacing: 8) {
 
@@ -209,7 +205,7 @@ struct RequestNewFeatureFormView: View {
         }
 
     private func incognitoInfoSection() -> some View {
-        IncognitoInfoBox(isAppRebranded: isAppRebranded)
+        IncognitoInfoBox()
             .padding([.leading, .trailing], AppVersion.isLiquidGlassSupported ? 20 : 24)
             .padding(.bottom, 16)
             .transition(.opacity)
@@ -239,9 +235,9 @@ struct RequestNewFeatureFormView: View {
                 .frame(minHeight: 80)
                 .padding(8)
                 .background(Color(.textBackgroundColor))
-                .cornerRadius(isAppRebranded ? 16 : 6)
+                .cornerRadius(16)
                 .overlay(
-                    RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 6)
+                    RoundedRectangle(cornerRadius: 16)
                         .stroke(viewModel.customFeatureText.isEmpty ? Color(.separatorColor) : Color(baseColor: .blue50),
                                 lineWidth: 1)
                 )
@@ -252,7 +248,7 @@ struct RequestNewFeatureFormView: View {
                                 VStack {
                                     HStack {
                                         Text(UserText.requestNewFeatureFormPlaceholder)
-                                            .systemLabel(color: .textTertiary)
+                                            .systemLabel(color: Color(.textTertiary))
                                         Spacer()
                                     }
                                     Spacer()
@@ -306,7 +302,6 @@ struct RequestNewFeatureFormView: View {
 }
 
 private struct IncognitoInfoBox: View {
-    let isAppRebranded: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -317,7 +312,7 @@ private struct IncognitoInfoBox: View {
                     .body()
 
                 Text(UserText.incognitoInfoBoxDescription)
-                    .systemLabel(color: .textSecondary)
+                    .systemLabel(color: Color(.textSecondary))
                     .multilineTextAlignment(.leading)
             }
 
@@ -325,11 +320,11 @@ private struct IncognitoInfoBox: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 4)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.controlBackgroundColor))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: isAppRebranded ? 16 : 8)
+            RoundedRectangle(cornerRadius: 16)
                 .stroke(Color(.toneShade), lineWidth: 1)
         )
     }

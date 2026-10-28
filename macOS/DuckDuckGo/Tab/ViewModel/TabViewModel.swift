@@ -27,7 +27,6 @@ import MaliciousSiteProtection
 import PrivacyConfig
 import PrivacyDashboard
 import WebKit
-import DesignResourcesKit
 import DesignResourcesKitIcons
 import WebExtensions
 
@@ -219,6 +218,7 @@ final class TabViewModel: NSObject {
                      .url(_, _, source: .historyEntry),
                      .url(_, _, source: .bookmark),
                      .url(_, _, source: .ui),
+                     .url(_, _, source: .attributedUI),
                      .url(_, _, source: .appOpenUrl),
                      .url(_, _, source: .switchToOpenTab),
                      .url(_, _, source: .reload),
@@ -339,10 +339,6 @@ final class TabViewModel: NSObject {
     }
 
     private func subscribeToAddressBarDuckAIState() {
-        guard DesignSystemRebrand.isAppRebranded() else {
-            return
-        }
-
         tab.addressBarSharedTextState.$isInDuckAIMode
             .removeDuplicates()
             .dropFirst()
@@ -435,10 +431,6 @@ final class TabViewModel: NSObject {
     }
 
     private func placeholder(tabContent: TabContent, inDuckAIMode: Bool) -> NSAttributedString? {
-        guard DesignSystemRebrand.isAppRebranded() else {
-            return nil
-        }
-
         if inDuckAIMode {
             return .addressBarPlaceholderForDuckAI
         }
@@ -512,6 +504,11 @@ final class TabViewModel: NSObject {
             }
         } else if case .newtab = tab.content, tab.burnerMode.isBurner {
             title = UserText.burnerTabHomeTitle
+        } else if #available(macOS 15.4, *),
+                  case .webExtensionUrl(let url) = tab.content,
+                  let name = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension.displayName,
+                  !name.isEmpty {
+            title = name
         } else {
             title = tab.content.displayTitle(pageTitle: tab.title, pageURL: tab.url)
         }
@@ -522,9 +519,18 @@ final class TabViewModel: NSObject {
     }
 
     private func updateFavicon(_ tabFavicon: NSImage?? = .none /* provided from .sink or taken from tab.favicon (optional) if .none */) {
+        let extensionIcon: NSImage?
+        if #available(macOS 15.4, *),
+           case .webExtensionUrl(let url) = tab.content,
+           let webExtension = NSApp.delegateTyped.webExtensionManager?.extensionContext(for: url)?.webExtension {
+            let size = NSSize(width: 16, height: 16)
+            extensionIcon = webExtension.icon(for: size) ?? webExtension.actionIcon(for: size)
+        } else {
+            extensionIcon = nil
+        }
         favicon = tab.content.displayedFavicon(
             error: isShowingErrorPage ? tab.error : nil,
-            actualFavicon: tabFavicon ?? tab.favicon,
+            actualFavicon: extensionIcon ?? tabFavicon ?? tab.favicon,
             isBurner: tab.burnerMode.isBurner,
             featureFlagger: featureFlagger
         )
@@ -667,7 +673,7 @@ private extension NSAttributedString {
 
     private static let duckDuckGoWithChevronAttributedString = NSAttributedString {
         // logo
-        Component(image: .homeFavicon, rect: CGRect(x: 0, y: iconBaselineOffset, width: iconSize, height: iconSize))
+        Component(image: NSImage(resource: .homeFavicon), rect: CGRect(x: 0, y: iconBaselineOffset, width: iconSize, height: iconSize))
         // spacing
         Component(image: spacer, rect: CGRect(x: 0, y: 0, width: iconSpacing, height: 1))
         // DuckDuckGo
@@ -676,7 +682,7 @@ private extension NSAttributedString {
         // spacing (wide)
         Component(image: spacer, rect: CGRect(x: 0, y: 0, width: chevronSpacing, height: 1))
         // chevron
-        Component(image: .chevronRight12, rect: CGRect(x: 0, y: -1, width: chevronSize, height: chevronSize))
+        Component(image: NSImage(resource: .chevronRight12), rect: CGRect(x: 0, y: -1, width: chevronSize, height: chevronSize))
         // spacing (wide)
         Component(image: spacer, rect: CGRect(x: 0, y: 0, width: chevronSpacing, height: 1))
     }
@@ -707,23 +713,23 @@ private extension NSAttributedString {
 
     static let onboardingTrustedIndicator = NSAttributedString(string: UserText.tabOnboardingTitle)
 
-    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.settings : .settingsMulticolor16Legacy,
+    static let settingsTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.settings,
                                                                            title: UserText.settings)
-    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.bookmarksNew : .bookmarksFolder,
+    static let bookmarksTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.bookmarksNew,
                                                                             title: UserText.bookmarks)
-    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.history : .historyFaviconLegacy,
+    static let historyTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.history,
                                                                           title: UserText.mainMenuHistory)
-    static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: .personalInformationRemovalMulticolor16,
+    static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .personalInformationRemovalMulticolor16),
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.subscription : .privacyProLegacy,
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.subscription,
                                                                                title: UserText.subscriptionName)
-    static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: .identityTheftRestorationMulticolor16,
+    static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .identityTheftRestorationMulticolor16),
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
-    static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: .duckPlayerSettings,
+    static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .duckPlayerSettings),
                                                                              title: UserText.duckPlayer)
-    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemRebrand.isAppRebranded() ? DesignSystemImages.Color.Size16.emailProtection : .emailProtectionIconLegacy,
+    static let emailProtectionTrustedIndicator = trustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.emailProtection,
                                                                                   title: UserText.emailProtectionPreferences)
-    static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: .releaseNotesIndicator,
+    static let releaseNotesTrustedIndicator = trustedIndicatorAttributedString(with: NSImage(resource: .releaseNotesIndicator),
                                                                                title: UserText.releaseNotesTitle)
     static let aiChatTrustedIndicator = singlePartTrustedIndicatorAttributedString(with: DesignSystemImages.Color.Size16.duckAI,
                                                                                    title: UserText.aiChatAddressBarTrustedIndicator)

@@ -24,6 +24,7 @@ import FoundationExtensions
 import os.log
 import PixelKit
 import PrivacyConfig
+import WebKit
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -167,15 +168,12 @@ final class MainWindowController: NSWindowController {
         startOnboardingIfNeeded()
     }
 
-    /// Automation runs and overridden onboarding would enrol without being real first runs, and a
-    /// reinstalling user is not a new user.
+    /// Automation runs and overridden onboarding would enrol without being real first runs.
     private var isEligibleForNonBlockingExperiment: Bool {
         let launchOptions = LaunchOptionsHandler()
         guard !launchOptions.isAutomationSession,
               case .notOverridden = launchOptions.onboardingStatus else { return false }
-
-        let reinstallDetector = DefaultReinstallUserDetection(keyValueStore: Application.appDelegate.keyValueStore)
-        return !reinstallDetector.isReinstallingUser
+        return true
     }
 
     private func startOnboardingIfNeeded() {
@@ -318,7 +316,7 @@ final class MainWindowController: NSWindowController {
     private var burningDataCancellable: AnyCancellable?
     private var delayedBlockingWorkItem: DispatchWorkItem?
     private var didMoveTabBarForFireAnimation = false
-    private var isClosingAndBurning = false
+    private(set) var isClosingAndBurning = false
 
     private func subscribeToBurningData() {
         burningDataCancellable = fireViewModel.fire.burningDataPublisher
@@ -611,32 +609,14 @@ extension MainWindowController: NSWindowDelegate {
         // Push the Window Controller into current autorelease pool so it‘s released when the event loop pass ends
         _=Unmanaged.passRetained(self).autorelease()
 
-        let windowControllersManager = Application.appDelegate.windowControllersManager
+        let windowControllersManager = self.windowControllersManager ?? Application.appDelegate.windowControllersManager
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            // Shared pinned tabs remain open when another window still contains the same Tab instance.
-            let tabsInRemainingWindows = windowControllersManager.mainWindowControllers
-                .filter { $0 !== self }
-                .flatMap { windowController in
-                    windowController.mainViewController.tabCollectionViewModel.loadedPinnedTabs
-                        + windowController.mainViewController.tabCollectionViewModel.loadedTabs
-                }
-            // Shared pinned tabs are owned by the app-level manager and survive even when the last
-            // window closes. They must stay registered with WebKit until they are actually removed.
-            let sharedPinnedTabs = windowControllersManager.pinnedTabsManagerProvider.pinnedTabsMode == .shared
-                ? windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap(\.tabCollection.loadedTabs)
-                : []
-            let tabsInClosingWindow = mainViewController.tabCollectionViewModel.loadedPinnedTabs
-                + mainViewController.tabCollectionViewModel.loadedTabs
-
-            for tab in Self.tabsToCloseForWebExtensions(
-                in: tabsInClosingWindow,
-                retainedByOpenWindows: tabsInRemainingWindows,
-                retainedBySharedPinnedTabs: sharedPinnedTabs
-            ) {
+            for tab in webExtensionTabsClosing(with: windowControllersManager) {
                 webExtensionManager.eventsListener.didCloseTab(tab, windowIsClosing: true)
             }
         }
 
+        // Unregister before didCloseWindow so WebKit's tab queries recognize this window as closing.
         windowControllersManager.unregister(self)
 
         if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
@@ -653,6 +633,37 @@ extension MainWindowController: NSWindowDelegate {
 
         burnAndClose(window)
         return false
+    }
+
+    @available(macOS 15.4, *)
+    func webExtensionTabsForClosingWindow(in context: WKWebExtensionContext) -> [Tab]? {
+        // WebKit removes the window from openWindows before querying its tabs in didCloseWindow.
+        // On opening, it adds the window first, even before our window manager registers it.
+        let windowControllersManager = self.windowControllersManager ?? Application.appDelegate.windowControllersManager
+        var isWindowClosing: Bool {
+            // windowWillClose unregisters this controller before notifying WebKit via didCloseWindow.
+            !windowControllersManager.mainWindowControllers.contains(where: { $0 === self })
+        }
+        guard isWindowClosing,
+              (featureFlagger ?? Application.appDelegate.featureFlagger).isFeatureOn(.webExtensionSharedPinnedTabWindowClose),
+              !context.openWindows.contains(where: { $0 === self }) else { return nil }
+
+        return webExtensionTabsClosing(with: windowControllersManager)
+    }
+
+    /// Tabs that genuinely close with this window; shared pins and tabs retained by another window survive.
+    private func webExtensionTabsClosing(with windowControllersManager: WindowControllersManager) -> [Tab] {
+        let tabsInRemainingWindows = windowControllersManager.mainWindowControllers
+            .filter { $0 !== self }
+            .flatMap { $0.mainViewController.tabCollectionViewModel.loadedPinnedTabs + $0.mainViewController.tabCollectionViewModel.loadedTabs }
+        // App-level shared pins survive even when the last window closes.
+        let sharedPinnedTabs = windowControllersManager.pinnedTabsManagerProvider.pinnedTabsMode == .shared
+            ? windowControllersManager.pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap(\.tabCollection.loadedTabs)
+            : []
+        return Self.tabsToCloseForWebExtensions(
+            in: mainViewController.tabCollectionViewModel.loadedPinnedTabs + mainViewController.tabCollectionViewModel.loadedTabs,
+            retainedByOpenWindows: tabsInRemainingWindows,
+            retainedBySharedPinnedTabs: sharedPinnedTabs)
     }
 
     static func tabsToCloseForWebExtensions(in closingWindow: [Tab],

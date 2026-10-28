@@ -49,11 +49,16 @@ enum BookmarksEmptyStateContent {
         }
     }
 
-    func image(isAppRebranded: Bool) -> NSImage? {
+    var image: NSImage? {
         switch self {
-        case .noBookmarks: isAppRebranded ? .bookmarksImport128 : .bookmarksImport128Legacy
-        case .noSearchResults: .bookmarkEmptySearch
+        case .noBookmarks: NSImage(resource: .bookmarksImport128)
+        case .noSearchResults: NSImage(resource: .bookmarkEmptySearch)
         }
+    }
+
+    /// Whether the promo queue controls this state's message and CTAs.
+    var isPromo: Bool {
+        self == .noBookmarks
     }
 
     var shouldHideImportButton: Bool {

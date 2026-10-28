@@ -459,6 +459,7 @@ extension BrowsingMenuViewController: UITableViewDataSource {
             }
             
             cell.configure(image: image, label: name, accessibilityLabel: accessibilityLabel, showNotificationDot: showNotificationDot, customDotColor: customDotColor)
+            cell.accessibilityIdentifier = menuEntries[indexPath.row].tag == .sitePermissions ? "BrowsingMenu.SitePermissions" : nil
             return cell
         case .separator:
             guard let cell = tableView.dequeueReusableCell(withIdentifier: Contants.separatorCellReuseIdentifier,

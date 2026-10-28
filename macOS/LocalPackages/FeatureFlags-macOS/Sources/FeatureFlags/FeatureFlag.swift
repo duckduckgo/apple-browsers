@@ -32,9 +32,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470686549
     case contextualOnboarding
 
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1216081727196784
-    case appRebranding
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216394295428096?focus=true
     case newTabPageRebranding
 
@@ -90,18 +87,75 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474376005
     case webExtensions
 
+    /// Controls permission prompts and persistence when the extension manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219054712997074?focus=true
+    case webExtensionsPermissions
+
     /// Failsafe kill switch for the lightweight web-extension reload on data clear (fire). On by
     /// default; disable remotely to fall back to the full reload (`loadInstalledExtensions()`).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215451266423288
     case webExtensionLightweightReload
 
-    /// Failsafe for Web Extensions background-process diagnostics observation.
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218931841045393
+    case webExtensionStateRestorationGate
+
+    /// Failsafe for Web Extensions background-process diagnostics observation: the forwarding delegate and the
+    /// background-load readiness observation.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218785444683902
     case cpmBackgroundDelegateProxy
+
+    /// Lets web extensions talk to native messaging hosts (`runtime.sendNativeMessage` and `runtime.connectNative`).
+    case webExtensionNativeMessaging
+
+    /// Turns Bitwarden on or off. While off, an installed Bitwarden is disabled but kept with its data, and the
+    /// Debug menu hides Install Bitwarden. Turning the flag back on doesn't re-enable Bitwarden; the user does.
+    /// Follows Bitwarden's extensions catalog entry, which also controls installing Bitwarden.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219519018819111
+    case webExtensionBitwarden
+
+    /// Turns 1Password on or off. While off, an installed 1Password is disabled but kept with its data.
+    /// Turning the flag back on doesn't re-enable 1Password; the user does.
+    /// Follows 1Password's extensions catalog entry, which also controls installing 1Password.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219743179155238
+    case webExtensionOnePassword
+
+    /// Turns iCloud Passwords on or off. While off, an installed iCloud Passwords is disabled but kept with its data.
+    /// Turning the flag back on doesn't re-enable iCloud Passwords; the user does.
+    /// Follows iCloud Passwords' extensions catalog entry, which also controls installing iCloud Passwords.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219792476428276?focus=true
+    case webExtensionICloudPasswords
 
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218781680888931
     case cpmDiagnosticsRecorder
+
+    /// Opt-in one-document GET recovery after the five-second background-readiness wait expires.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219588497257482
+    case cpmLateBackgroundDocumentRecovery
+
+    /// Retries a failed embedded background load in the same context, independently of hang recovery.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
+
+    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    /// https://app.asana.com/0/0/1218855001685906
+    case cpmMessagingHangRecovery
+
+    /// Preserve surviving shared pinned tabs when WebKit processes a window close.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
+    case webExtensionSharedPinnedTabWindowClose
+
+    /// Restarts the embedded background after a confirmed Network process replacement.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183695
+    case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
+
+    /// Remotely activated Web Extension background Web View graveyard treatment.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
+    case cpmBackgroundGraveyardTreatment
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213380159275576
     case embeddedExtension
@@ -145,9 +199,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214232292928824
-    case allowSingleDeviceOnConnectScreen
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615684438
     case exchangeKeysToSyncWithAnotherDevice
 
@@ -186,6 +237,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1215330116840129?focus=true
     case osSupportWarning
 
+    /// Remote kill switch for cancelling WebKit's pending passkey request before WebKit starts the next one.
+    /// WebKit replaces a pending request without cancelling it, and the system passkey agent then rejects every
+    /// later passkey request from the app. Disable via privacy config (`macOSBrowserConfig.passkeyRequestCancellation`).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219508943990182
+    case passkeyRequestCancellation
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
@@ -217,6 +274,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1203108348835387/task/1213741383383740
     case skipReleaseNotesUpdateCheck
 
+    /// Makes updates more prominent, such as in the address bar and browser menu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219579052808597?focus=true
+    case moreProminentUpdates
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
@@ -230,6 +291,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211969496845106?focus=true
     case blackFridayCampaign
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218699650746481
+    case partnershipsHub
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866477844148
     case syncCreditCards
 
@@ -239,15 +303,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721266209
     case dataImportNewSafariFilePicker
 
+    /// Imports browsing history from third-party browsers.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219685718776840
+    case dataImportHistory
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
 
     /// Prevents IME composition-confirm Return from submitting the address bar.
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1214960575971803?focus=true
     case addressBarIMEConfirmFix
-
-    /// https://app.asana.com/1/137249556945/project/1211150618152277/task/1217589459874947
-    case dataImportDataDirectoryAccess
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
@@ -267,7 +332,12 @@ public enum FeatureFlag: String, CaseIterable {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
+
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
+    case websitePermissionsPrompts
 
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
@@ -315,15 +385,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216209826654872?focus=true
     case cookiePopupOptInDialog
 
-    /// A/B experiment cohorts for the Cookie Pop-up Protection opt-in dialog
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216573422000546?focus=true
-    case cookiePopupOptInDialogExperiment
-
-    /// Enables advanced card ordering for the Next Steps List widget
-    /// This flag is disabled by default to allow testing the new widget design with current ordering logic
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213076052926663?focus=true
-    case nextStepsListAdvancedCardOrdering
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213037858764817
     case crashCollectionLimitCallStackTreeDepth
 
@@ -339,6 +400,11 @@ public enum FeatureFlag: String, CaseIterable {
     /// Hands a PDF tab to Duck.ai as page context — the document's bytes instead of page markdown.
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1217621296618559
     case aiChatPdfPageContext
+
+    /// Attaches page context to the sidebar by default, replacing the auto-send setting. A manual
+    /// remove lasts across navigation until the user attaches again or reopens the sidebar.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
+    case aiChatPageContextAutoAttach
 
     /// Enables the image generation mode toggle in the Duck.ai omnibar
     case aiChatOmnibarImageGeneration
@@ -394,6 +460,22 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables attaching content from multiple open tabs (and files) to the New Tab Page omnibar Duck.ai chat.
     case aiChatNtpAttachMoreTabs
 
+    /// Duck.ai "Add Screenshot" in the address bar and prompt bar attach menus.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatOmnibarScreenshot
+
+    /// Duck.ai "Add Screenshot" in the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatNtpScreenshot
+
+    /// Duck.ai: pasting images and copied files into the address bar and prompt bar prompt.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatPasteImages
+
+    /// Duck.ai: pasting images and copied files into the New Tab Page omnibar.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215994572643392
+    case aiChatNtpPasteImages
+
     /// Enables deleting recent AI chats from the New Tab Page omnibar
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1216469223760067
     case aiChatNtpSuggestionsDeletion
@@ -416,14 +498,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enable Look Up (three-finger click) while keeping link preview disabled
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213489080183740
     case webViewLookUpAction
-
-    /// Autoplay policy control via WKWebpagePreferences
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213734484627619
-    case autoplayPolicy
-
-    /// Enables the promo service to coordinate promos/calls to action
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213431687119179?focus=true
-    case promoQueue
 
     /// Enables the Bookmark Toolbar ("Show Bookmarks Bar?") promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218028792667616?focus=true
@@ -452,6 +526,34 @@ public enum FeatureFlag: String, CaseIterable {
     /// Enables the "Browser updated" promo in the promo queue.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218311516923091?focus=true
     case promoQueueBrowserUpdatedPromo
+
+    /// Enables the VPN toolbar upsell button and dot badge promos in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218984711436968?focus=true
+    case promoQueueVPNUpsellPromo
+
+    /// Enables the "Sync your bookmarks" promo (Bookmarks panel and Manage Bookmarks) in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218734?focus=true
+    case promoQueueSyncSetupBookmarksPromo
+
+    /// Enables the "Sync your autofill data" promo (Passwords & Autofill panel and settings) in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219214632218741?focus=true
+    case promoQueueSyncSetupAutofillPromo
+
+    /// Enables the Bookmarks Bar "Sync Bookmarks" button promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598749?focus=true
+    case promoQueueBookmarksBarSyncPromo
+
+    /// Enables the Bookmark Added "Sync Bookmarks Across Devices" button promo in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219308785598756?focus=true
+    case promoQueueBookmarkAddedSyncPromo
+
+    /// Enables the import/sync promo on the "No bookmarks yet" empty state in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570477?focus=true
+    case promoQueueBookmarksEmptyStatePromo
+
+    /// Enables the import/sync promo on the Passwords panel empty states in the promo queue.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219459128570484?focus=true
+    case promoQueueAutofillEmptyStatePromo
 
     /// Enables showing browsing history domains in the first-time quit survey
     case websitesHistoryFirstTimeQuitSurvey
@@ -492,6 +594,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1214025222413375
     case aiChatNativeDataAccess
 
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats under its chat box.
+    case aiChatHomepageChatSuggestions
+
     /// Gates the macOS "Customize Responses" native UI (omnibar + New Tab Page entry points).
     /// Internal-only while in development.
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1216299435808476
@@ -525,6 +630,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115683?focus=true
     case syncCanUseExchangeV2Point1
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218374779115690?focus=true
+    case syncCanSendExchangeChannelSecret
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064249?focus=true
     case syncCanWriteUnifiedDeviceList
 
@@ -534,9 +642,12 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217191536064261?focus=true
     case syncCanReadUnifiedDeviceList
 
-    /// Gates the Simplified Sync Setup follow-up screens.
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217243916693082?focus=true
-    case simplifiedSyncSetupV2
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219191518131269
+    case syncImprovedPairingFlow
+
+    /// Kill switch for the privacy disclosure shown while a file or image attachment is staged in
+    /// a Duck.ai input.
+    case aiChatAttachmentPrivacyDisclosure
 
     /// Gates the bookmarks "Sort by name permanently" action, which permanently reorders the target
     /// folder's direct children alphabetically and persists the new order.
@@ -546,6 +657,18 @@ public enum FeatureFlag: String, CaseIterable {
     /// Gates reading the Duck.ai usage-limit snapshot from native storage on Duck.ai input activation,
     /// and the warnings that will be built on top of it. Internal-only while the UI is in development.
     case aiChatUsageWarnings
+
+    /// Promotes the Duck.ai launcher in the New Tab Page AI-mode drawer, then hints at its shortcut.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
+    case aiChatLauncherPromo
+
+    /// Shows the Duck.ai Terms of Service disclaimer under the native Duck.ai input, where clicking Ask accepts them.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218934499511209?focus=true
+    case aiChatNativeTermsOfService
+
+    /// Lets the user drag the prompt bar and remembers where it was left.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219360966399299?focus=true
+    case aiChatDragPromptBar
 
     /// Parent kill switch for the Duck.ai browser tools bridge — with it off there are no tools.
     /// Internal-only while the front end is in development.
@@ -579,17 +702,15 @@ public enum FeatureFlag: String, CaseIterable {
     /// Makes onboarding non-blocking (tabs, address bar remain usable; closing the onboarding tab skips it).
     case onboardingAsync
 
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
 
     /// Cohorts for the autoconsent heuristic action experiment
     public enum HeuristicActionCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case treatment
-    }
-
-    public enum CookiePopupOptInDialogCohort: String, FeatureFlagCohortDescribing {
         case control
         case treatment
     }
@@ -644,14 +765,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(DBPSubfeature.freemium), supportsLocalOverriding: false)
         case .contextualOnboarding:
             Config(defaultValue: .enabled, source: .remoteReleasable(ContextualOnboardingSubfeature.featureEnabled), supportsLocalOverriding: false)
-        case .appRebranding:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .newTabPageRebranding:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.appRebranding))
         case .onboardingChromeExtension:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingChromeExtension), cohortType: OnboardingChromeExtensionCohort.self)
         case .onboardingNonBlocking:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlocking), cohortType: OnboardingNonBlockingCohort.self)
+            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingNonBlockingV2), cohortType: OnboardingNonBlockingCohort.self)
         case .onboardingSubscriptionUpsell:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(PrivacyProSubfeature.onboardingSubscriptionUpsellExperiment),
@@ -681,12 +800,40 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+        case .webExtensionsPermissions:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionLightweightReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.lightweightReloadOnDataClear), category: .webExtensions)
+        case .webExtensionStateRestorationGate:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.stateRestorationGate), category: .webExtensions)
         case .cpmBackgroundDelegateProxy:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundDelegateProxy), category: .webExtensions)
         case .cpmDiagnosticsRecorder:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmDiagnosticsRecorder), category: .webExtensions)
+        case .cpmLateBackgroundDocumentRecovery:
+            Config(defaultValue: .disabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmLateBackgroundDocumentRecovery), category: .webExtensions)
+        case .cpmBackgroundLoadRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundLoadRecovery), category: .webExtensions)
+        case .cpmMessagingHangRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmMessagingHangRecovery), category: .webExtensions)
+        case .webExtensionSharedPinnedTabWindowClose:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.sharedPinnedTabWindowClose), category: .webExtensions)
+        case .cpmNetworkProcessRecovery:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
+        case .cpmStableBaseURL:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
+        case .cpmBackgroundGraveyardTreatment:
+            Config(defaultValue: .disabled,
+                   source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
+                   category: .webExtensions)
+        case .webExtensionNativeMessaging:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.nativeMessaging), category: .webExtensions)
+        case .webExtensionBitwarden:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.bitwarden), category: .webExtensions)
+        case .webExtensionOnePassword:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.onePassword), category: .webExtensions)
+        case .webExtensionICloudPasswords:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(ExtensionsCatalogSubfeature.iCloudPasswords), category: .webExtensions)
         case .embeddedExtension:
             Config(source: .remoteReleasable(WebExtensionsSubfeature.embeddedExtension), category: .webExtensions)
         case .adBlockingExtension:
@@ -715,8 +862,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DBPSubfeature.schedulerDeferralHandling), supportsLocalOverriding: true, category: .dbp)
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased), category: .sync)
-        case .allowSingleDeviceOnConnectScreen:
-            Config(source: .remoteReleasable(SyncSubfeature.allowSingleDeviceOnConnectScreen), category: .sync)
         case .exchangeKeysToSyncWithAnotherDevice:
             Config(source: .remoteReleasable(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice), category: .sync)
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -741,6 +886,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled, category: .osSupportWarnings)
         case .osSupportWarning:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.osSupportWarning), category: .osSupportWarnings)
+        case .passkeyRequestCancellation:
+            Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.passkeyRequestCancellation))
         case .hangReporting:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.hangReporting))
         case .newTabPageOmnibar:
@@ -759,6 +906,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.automaticUpdatesOnly), category: .updates)
         case .skipReleaseNotesUpdateCheck:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.skipReleaseNotesUpdateCheck), category: .updates)
+        case .moreProminentUpdates:
+            Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.moreProminentUpdates), category: .updates)
         case .unifiedURLPredictor:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
         case .addressBarPerformanceInstrumentation:
@@ -767,18 +916,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.winBackOffer), category: .vpn)
         case .blackFridayCampaign:
             Config(source: .remoteReleasable(PrivacyProSubfeature.blackFridayCampaign), category: .subscription)
+        case .partnershipsHub:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.partnershipsHub), category: .subscription)
         case .syncCreditCards:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncCreditCards))
         case .syncIdentities:
             Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.syncIdentities))
         case .dataImportNewSafariFilePicker:
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
+        case .dataImportHistory:
+            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.addressBarIMEConfirmFix))
-        case .dataImportDataDirectoryAccess:
-            Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.dataDirectoryAccess))
         case .attributedMetrics:
             Config(defaultValue: .enabled, source: .remoteReleasable(AttributedMetricsSubfeature.featureEnabled))
         case .standaloneMigration:
@@ -790,7 +941,13 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .webNotifications:
             Config(source: .remoteReleasable(MacOSBrowserConfigSubfeature.webNotifications), category: .webNotifications)
         case .websitePermissionsSettings:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings))
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsSettings),
+                   supportsLocalOverriding: true)
+        case .websitePermissionsPrompts:
+            Config(defaultValue: .enabled,
+                   source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitePermissionsPrompts),
+                   supportsLocalOverriding: true)
         case .firstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .firstTimeQuitSurveySkipNonUserQuit:
@@ -815,10 +972,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AutoconsentSubfeature.heuristicAction), cohortType: HeuristicActionCohort.self)
         case .cookiePopupOptInDialog:
             Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialog), category: .popupBlocking)
-        case .cookiePopupOptInDialogExperiment:
-            Config(source: .remoteReleasable(AutoconsentSubfeature.cookiePopupOptInDialogExperiment), cohortType: CookiePopupOptInDialogCohort.self, category: .popupBlocking)
-        case .nextStepsListAdvancedCardOrdering:
-            Config(defaultValue: .enabled, source: .remoteReleasable(HtmlNewTabPageSubfeature.nextStepsListAdvancedCardOrdering))
         case .crashCollectionLimitCallStackTreeDepth:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.crashCollectionLimitCallStackTreeDepth), supportsLocalOverriding: false)
         case .freeTrialConversionWideEvent:
@@ -829,10 +982,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.multiplePageContexts), category: .duckAI)
         case .aiChatPdfPageContext:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext), category: .duckAI)
+        case .aiChatPageContextAutoAttach:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pageContextAutoAttach), category: .duckAI)
         case .aiChatOmnibarImageGeneration:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarImageGeneration), category: .duckAI)
         case .updatedCreateImage:
-            Config(source: .remoteReleasable(AIChatSubfeature.updatedCreateImage), category: .duckAI)
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.updatedCreateImage), category: .duckAI)
         case .aiChatOmnibarWebSearch:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarWebSearch), category: .duckAI)
         case .aiChatOmnibarReasoningEffort:
@@ -861,6 +1016,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpWebSearch), category: .duckAI)
         case .aiChatNtpAttachMoreTabs:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpAttachMoreTabs), category: .duckAI)
+        case .aiChatOmnibarScreenshot:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.omnibarScreenshot), category: .duckAI)
+        case .aiChatNtpScreenshot:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpScreenshot), category: .duckAI)
+        case .aiChatPasteImages:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pasteImages), category: .duckAI)
+        case .aiChatNtpPasteImages:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.ntpPasteImages), category: .duckAI)
         case .aiChatNtpSuggestionsDeletion:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.ntpSuggestionsDeletion), category: .duckAI)
         case .aiChatSidebarFloating:
@@ -875,8 +1038,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.addressBarRecentChats), category: .duckAI)
         case .webViewLookUpAction:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.webViewLookUpAction))
-        case .promoQueue:
-            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.featureEnabled))
         case .promoQueueBookmarkToolbarPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkToolbarPromo))
         case .promoQueueSyncFaviconsPromo:
@@ -891,6 +1052,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.updateAvailablePromo))
         case .promoQueueBrowserUpdatedPromo:
             Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.browserUpdatedPromo))
+        case .promoQueueVPNUpsellPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.vpnUpsellPromo))
+        case .promoQueueSyncSetupBookmarksPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupBookmarksPromo))
+        case .promoQueueSyncSetupAutofillPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.syncSetupAutofillPromo))
+        case .promoQueueBookmarksBarSyncPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksBarSyncPromo))
+        case .promoQueueBookmarkAddedSyncPromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarkAddedSyncPromo))
+        case .promoQueueBookmarksEmptyStatePromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.bookmarksEmptyStatePromo))
+        case .promoQueueAutofillEmptyStatePromo:
+            Config(defaultValue: .enabled, source: .remoteReleasable(PromoQueueSubfeature.autofillEmptyStatePromo))
         case .websitesHistoryFirstTimeQuitSurvey:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.websitesHistoryFirstTimeQuitSurvey))
         case .lazyMenuRebuild:
@@ -917,6 +1092,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(AIChatSubfeature.nativeStorage), category: .duckAI)
         case .aiChatNativeDataAccess:
             Config(source: .remoteReleasable(AIChatSubfeature.nativeDataAccess), category: .duckAI)
+        case .aiChatHomepageChatSuggestions:
+            Config(source: .remoteReleasable(AIChatSubfeature.homepageChatSuggestions), category: .duckAI)
         case .aiChatCustomizeResponses:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.customizeResponses), category: .duckAI)
         case .aiChatNativeVoicePermissionFlow:
@@ -924,8 +1101,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                    source: .remoteReleasable(AIChatSubfeature.nativeVoicePermissionFlow),
                    supportsLocalOverriding: true,
                    category: .duckAI)
-        case .autoplayPolicy:
-            Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.autoplayPolicy), supportsLocalOverriding: true)
         case .newErrorPageReload:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.newErrorPageReload))
         case .aiChatSettingsLinkInAiFeatures:
@@ -937,7 +1112,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncCanShowV2ConnectCode:
             Config(source: .remoteReleasable(SyncSubfeature.canShowV2ConnectCode), category: .sync)
         case .syncCanUseExchangeV2Point1:
-            Config(source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(SyncSubfeature.canUseExchangeV2Point1), category: .sync)
+        case .syncCanSendExchangeChannelSecret:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.canSendExchangeChannelSecret), category: .sync)
         case .syncCanWriteUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canWriteUnifiedDeviceList), category: .sync)
         case .syncCanUsePatchEndpointForLegacyDeviceRename:
@@ -946,12 +1123,20 @@ extension FeatureFlag: FeatureFlagDescribing {
                    category: .sync)
         case .syncCanReadUnifiedDeviceList:
             Config(source: .remoteReleasable(SyncSubfeature.canReadUnifiedDeviceList), category: .sync)
-        case .simplifiedSyncSetupV2:
-            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.simplifiedSyncSetupV2), category: .sync)
+        case .syncImprovedPairingFlow:
+            Config(defaultValue: .enabled, source: .remoteReleasable(SyncSubfeature.improvedPairingFlow), category: .sync)
         case .bookmarksReorderByName:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.bookmarksReorderByName))
         case .aiChatUsageWarnings:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.usageWarnings), category: .duckAI)
+        case .aiChatLauncherPromo:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.launcherPromo), category: .duckAI)
+        case .aiChatNativeTermsOfService:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.nativeTermsOfService), category: .duckAI)
+        case .aiChatDragPromptBar:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.dragPromptBar), category: .duckAI)
+        case .aiChatAttachmentPrivacyDisclosure:
+            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.attachmentPrivacyDisclosure), category: .duckAI)
         case .aiChatBrowserTools:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatBrowserToolsSubfeature.featureEnabled), category: .duckAI)
         case .aiChatBrowserToolListOpenTabs:
@@ -969,6 +1154,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
         case .onboardingAsync:
             Config(defaultValue: .disabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.onboardingAsync))
+        case .pageSignals:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(MacOSBrowserConfigSubfeature.pageSignals))
         }
     }
 

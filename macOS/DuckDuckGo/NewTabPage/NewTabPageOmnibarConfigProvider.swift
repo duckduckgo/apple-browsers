@@ -99,15 +99,22 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private let searchPreferences: SearchPreferences
     private let windowControllersManager: WindowControllersManagerProtocol?
     private let duckAiStorageHandlerProvider: (BurnerMode) -> DuckAiNativeStorageHandling?
+    private let termsOfServiceDisclaimer: DuckAiTermsOfServiceDisclaimer
+    private let notificationCenter: NotificationCenter
+    private let attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring?
+    private let duckAiLauncherPromo: DuckAiLauncherPromo?
     private let userTierProvider: () -> AIChatUserTier
     private let availableModelsProvider: () -> [AIChatModel]
     private let isTrialEligibleProvider: () -> Bool
     private let showCustomizePopoverSubject = PassthroughSubject<Bool, Never>()
     private let modeSubject = PassthroughSubject<NewTabPageDataModel.OmnibarMode, Never>()
     private let customizeResponsesChangedSubject = PassthroughSubject<Void, Never>()
+    private let usageLimitsChangedSubject = PassthroughSubject<Void, Never>()
+    private let attachmentPrivacyChangedSubject = PassthroughSubject<Void, Never>()
     @Published private var hasExcessChats = false
     private var aiChatsProviderCancellable: AnyCancellable?
     private var customizeResponsesChangeObserver: NSObjectProtocol?
+    private var attachmentPrivacyChangeObserver: NSObjectProtocol?
 
     init(keyValueStore: ThrowingKeyValueStoring,
          aiChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
@@ -116,6 +123,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
          searchPreferences: SearchPreferences,
          windowControllersManager: WindowControllersManagerProtocol? = nil,
          duckAiStorageHandlerProvider: @escaping (BurnerMode) -> DuckAiNativeStorageHandling? = { _ in nil },
+         termsOfServiceStore: DuckAiTermsOfServiceStore = DuckAiTermsOfServiceStore(),
+         notificationCenter: NotificationCenter = .default,
+         attachmentPrivacyDisclosureStore: AttachmentPrivacyDisclosureStoring? = nil,
+         duckAiLauncherPromo: DuckAiLauncherPromo? = nil,
          userTierProvider: @escaping () -> AIChatUserTier = { .free },
          availableModelsProvider: @escaping () -> [AIChatModel] = { [] },
          isTrialEligibleProvider: @escaping () -> Bool = { false },
@@ -127,6 +138,10 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         self.searchPreferences = searchPreferences
         self.windowControllersManager = windowControllersManager
         self.duckAiStorageHandlerProvider = duckAiStorageHandlerProvider
+        self.termsOfServiceDisclaimer = DuckAiTermsOfServiceDisclaimer(featureFlagger: featureFlagger, store: termsOfServiceStore)
+        self.notificationCenter = notificationCenter
+        self.attachmentPrivacyDisclosureStore = attachmentPrivacyDisclosureStore
+        self.duckAiLauncherPromo = duckAiLauncherPromo
         self.userTierProvider = userTierProvider
         self.availableModelsProvider = availableModelsProvider
         self.isTrialEligibleProvider = isTrialEligibleProvider
@@ -143,11 +158,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         ) { [weak self] _ in
             self?.notifyCustomizeResponsesChanged()
         }
+
+        // Any surface spending the display moves shared state, so an open NTP has to re-read it.
+        attachmentPrivacyChangeObserver = NotificationCenter.default.addObserver(
+            forName: .attachmentPrivacyDisclosureDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.attachmentPrivacyChangedSubject.send(())
+        }
     }
 
     deinit {
         if let customizeResponsesChangeObserver {
             NotificationCenter.default.removeObserver(customizeResponsesChangeObserver)
+        }
+        if let attachmentPrivacyChangeObserver {
+            NotificationCenter.default.removeObserver(attachmentPrivacyChangeObserver)
         }
     }
 
@@ -157,15 +184,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             guard isAIChatShortcutEnabled && isAIChatSettingVisible else {
                 return .search
             }
-            do {
-                if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
-                   let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
-                    return mode
-                }
-            } catch {
-                Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
-            }
-            return .search
+            return Self.storedMode(in: keyValueStore)
         }
         set {
             firePixel(NewTabPagePixel.omnibarModeChanged(mode: newValue == .search ? .search : .duckAI))
@@ -176,6 +195,20 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             }
             modeSubject.send(newValue)
         }
+    }
+
+    /// The mode last picked on the New Tab Page, whether or not Duck.ai is currently offered there.
+    /// Static so it can be read without building a provider.
+    static func storedMode(in keyValueStore: ThrowingKeyValueStoring) -> NewTabPageDataModel.OmnibarMode {
+        do {
+            if let rawValue = try keyValueStore.object(forKey: Key.newTabPageOmnibarMode.rawValue) as? String,
+               let mode = NewTabPageDataModel.OmnibarMode(rawValue: rawValue) {
+                return mode
+            }
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to retrieve omnibar mode from keyValueStore: \(error.localizedDescription)")
+        }
+        return .search
     }
 
     var isAIChatShortcutEnabled: Bool {
@@ -217,6 +250,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         }
         set {
             guard newValue != aiChatPreferencesPersistor.selectedModelId else { return }
+            // The drawer's CTA by another route, so it settles the message too. Before the write:
+            // it needs the model we were on.
+            if let newValue {
+                usageWarningViewModel?.userSwitchedModel(from: aiChatPreferencesPersistor.selectedModelId, to: newValue)
+            }
             aiChatPreferencesPersistor.selectedModelId = newValue
             if newValue != nil {
                 PixelKit.fire(AIChatPixel.aiChatNtpModelSelected, frequency: .dailyAndCount, includeAppVersionParameter: true)
@@ -341,6 +379,12 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     /// Rebuilt per refresh because the burner mode depends on the requesting webview.
     private(set) var usageWarningViewModel: DuckAiUsageWarningViewModel?
+    private var highUsageNoticeSource: AIChatHighUsageNoticeSource?
+    private var usageLimitsCancellables = Set<AnyCancellable>()
+
+    var usageLimitsPublisher: AnyPublisher<Void, Never> {
+        usageLimitsChangedSubject.eraseToAnyPublisher()
+    }
 
     @MainActor
     func refreshUsageLimits(requestingWebView: WKWebView?) {
@@ -348,6 +392,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         let burnerMode = AIChatTabPickerSource.originTabCollectionViewModel(for: requestingWebView, in: windowControllersManager)?.burnerMode ?? .regular
         let store = DuckAiUsageLimitsStore(storageHandler: duckAiStorageHandlerProvider(burnerMode),
                                            featureFlagger: featureFlagger)
+        usageLimitsCancellables.removeAll()
         usageWarningViewModel = store.makeWarningViewModel(
             modelSuggester: DuckAiModelSuggester(
                 modelsProvider: availableModelsProvider,
@@ -356,25 +401,170 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             isTrialEligible: isTrialEligibleProvider,
             isFireMode: { burnerMode.isBurner }
         )
+        highUsageNoticeSource = store.makeHighUsageNoticeSource(modelProvider: { [aiChatPreferencesPersistor] in
+            (aiChatPreferencesPersistor.selectedModelId, aiChatPreferencesPersistor.selectedModelShortName)
+        })
         usageWarningViewModel?.onAction = { [weak self, store] action in
             switch action {
             case .switchToModel(let suggestion), .switchToFreeModel(let suggestion):
-                // Both, or the picker label keeps showing the model we just switched away from.
-                self?.aiChatPreferencesPersistor.selectedModelId = suggestion.modelId
-                self?.aiChatPreferencesPersistor.selectedModelShortName = suggestion.modelShortName
+                self?.applyModelSwitch(toModelId: suggestion.modelId, shortName: suggestion.modelShortName)
             case .startUsingWeeklyLimit(let entries):
                 // The captured store carries this refresh's burner-aware handler.
                 store.write(entries)
             case .tryForFree:
-                // The NTP omnibar is web-rendered, so there is no native card to route an upsell from.
+                // The client raises this off `selectUsageLimitsCta`'s outcome instead.
                 break
             }
         }
         usageWarningViewModel?.refresh()
+
+        store.snapshotUpdates?
+            .sink { [weak self] in self?.usageWarningViewModel?.refresh() }
+            .store(in: &usageLimitsCancellables)
+        // After the first resolve, so entering Duck.ai mode doesn't push an update on top of the
+        // `getConfig` response that triggered it.
+        usageWarningViewModel?.$warning
+            .dropFirst()
+            .removeDuplicates()
+            .sink { [weak self] _ in self?.usageLimitsChangedSubject.send(()) }
+            .store(in: &usageLimitsCancellables)
+    }
+
+    @MainActor
+    func usageLimits() -> NewTabPageDataModel.OmnibarUsageLimits? {
+        if let warning = usageWarningViewModel?.warning {
+            return NewTabPageDataModel.OmnibarUsageLimits(warning: warning,
+                                                          alternatives: modelPickerAlternatives(for: warning))
+        }
+        highUsageNoticeSource?.refresh()
+        guard let notice = highUsageNoticeSource?.notice else { return nil }
+        return NewTabPageDataModel.OmnibarUsageLimits(notice: notice)
+    }
+
+    @MainActor
+    func dismissUsageLimits() {
+        if usageWarningViewModel?.warning != nil {
+            usageWarningViewModel?.dismiss()
+            return
+        }
+        // Re-resolved first: dismissing a notice that hasn't been read since the model changed
+        // records nothing and lets it come back.
+        highUsageNoticeSource?.refresh()
+        highUsageNoticeSource?.dismissCurrent()
+    }
+
+    @MainActor
+    func selectUsageLimitsCta(modelId: String?) -> NewTabPageDataModel.OmnibarUsageLimitsCtaOutcome {
+        guard let viewModel = usageWarningViewModel, let action = viewModel.warning?.action else { return .handled }
+
+        guard let modelId, modelId != action.suggestedModelId else {
+            viewModel.performAction()
+            if case .tryForFree = action { return .requiresSubscriptionUpsell }
+            return .handled
+        }
+
+        // The chevron menu is the message's own affordance, so any pick from it settles it.
+        guard let model = availableModelsProvider().first(where: { $0.id == modelId && $0.entityHasAccess }) else {
+            return .handled
+        }
+        applyModelSwitch(toModelId: model.id, shortName: model.shortName)
+        viewModel.modelSwitchedFromMessage()
+        return .handled
+    }
+
+    /// Mirrors `modelPickerItems` rather than offering the step-down models web named, because web
+    /// can't see this surface's picker. Gated rows and the selection go because web can't render them.
+    private func modelPickerAlternatives(for warning: DuckAiUsageWarning) -> [AIChatModel] {
+        guard warning.actionSwapsModel else { return [] }
+
+        let models = warning.modelPickerOffersFreeModelsOnly
+            ? availableModelsProvider().filter { !$0.isAdvanced }
+            : availableModelsProvider()
+        let accessible = AIChatModelSectionBuilder.groupByAccess(models: models).accessible
+            .filter { $0.id != aiChatPreferencesPersistor.selectedModelId }
+        let byLabel = AIChatModelSectionBuilder.groupByRecommendationLabel(models: accessible)
+        return byLabel.withLabel + byLabel.withoutLabel
+    }
+
+    private func applyModelSwitch(toModelId modelId: String, shortName: String?) {
+        // Both, or the picker label keeps showing the model we just switched away from.
+        aiChatPreferencesPersistor.selectedModelId = modelId
+        aiChatPreferencesPersistor.selectedModelShortName = shortName
+        guard let model = availableModelsProvider().first(where: { $0.id == modelId }) else { return }
+        clearReasoningEffortIfUnsupported(by: model)
     }
 
     func notifyCustomizeResponsesChanged() {
         customizeResponsesChangedSubject.send(())
+    }
+
+    /// The kill switch needs its own leg: every other config publisher dedupes on its own flag,
+    /// so a flip of this one alone would never reach an open NTP.
+    var attachmentPrivacyDisclaimerPublisher: AnyPublisher<Void, Never> {
+        Publishers.Merge(
+            attachmentPrivacyChangedSubject,
+            featureFlagger.updatesPublisher
+                .compactMap { [weak self] in self?.isAttachmentPrivacyDisclosureEnabled }
+                .prepend(isAttachmentPrivacyDisclosureEnabled)
+                .removeDuplicates()
+                .dropFirst()
+                .map { _ in () }
+        ).eraseToAnyPublisher()
+    }
+
+    private var isAttachmentPrivacyDisclosureEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyDisclosure)
+    }
+
+    @MainActor
+    func launcherPromo() -> NewTabPageDataModel.OmnibarLauncherPromo? {
+        duckAiLauncherPromo?.presentation()
+    }
+
+    @MainActor
+    func launcherPromoShown() {
+        duckAiLauncherPromo?.shown(on: .newTab)
+    }
+
+    @MainActor
+    func selectLauncherPromoCta() {
+        duckAiLauncherPromo?.tryNow(on: .newTab)
+    }
+
+    @MainActor
+    func dismissLauncherPromo() {
+        duckAiLauncherPromo?.dismiss(on: .newTab)
+    }
+
+    @MainActor
+    func launcherPromoIgnored() {
+        duckAiLauncherPromo?.ignore(on: .newTab)
+    }
+
+    var launcherPromoPublisher: AnyPublisher<Void, Never> {
+        duckAiLauncherPromo?.changesPublisher ?? Empty().eraseToAnyPublisher()
+    }
+
+    @MainActor
+    var showAttachmentPrivacyDisclaimer: Bool {
+        attachmentPrivacyDisclosure?.canShow ?? false
+    }
+
+    @MainActor
+    func attachmentPrivacyDisclaimerShown(kind: NewTabPageDataModel.OmnibarAttachmentPrivacyKind) {
+        attachmentPrivacyDisclosure?.claim()
+        // Reported whatever the claim answers: the page has already rendered it, so it is an
+        // impression either way.
+        AttachmentPrivacyDisclosurePixelFirer(surface: .newTabPage).fireShown(kind: .init(kind))
+    }
+
+    @MainActor
+    private var attachmentPrivacyDisclosure: AttachmentPrivacyDisclosure? {
+        guard let attachmentPrivacyDisclosureStore else { return nil }
+
+        return AttachmentPrivacyDisclosure(store: attachmentPrivacyDisclosureStore,
+                                           webKeySource: duckAiStorageHandlerProvider(.regular),
+                                           featureFlagger: featureFlagger)
     }
 
     var isAttachTabsEnabled: Bool {
@@ -442,6 +632,23 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
         featureFlagger.updatesPublisher
             .compactMap { [weak self] in self?.isSearchSuggestionDeletionEnabled }
             .prepend(isSearchSuggestionDeletionEnabled)
+            .removeDuplicates()
+            .eraseToAnyPublisher()
+    }
+
+    var requiresAiTermsAcceptance: Bool {
+        termsOfServiceDisclaimer.isRequired
+    }
+
+    /// The store posts on every acceptance, so open NTPs drop the disclaimer wherever the user accepted.
+    /// The chats observer records acceptance off the main thread, hence the hop.
+    var requiresAiTermsAcceptancePublisher: AnyPublisher<Bool, Never> {
+        featureFlagger.updatesPublisher
+            .merge(with: notificationCenter.publisher(for: .duckAiTermsOfServiceDidChange)
+                .receive(on: DispatchQueue.main)
+                .map { _ in () })
+            .compactMap { [weak self] in self?.requiresAiTermsAcceptance }
+            .prepend(requiresAiTermsAcceptance)
             .removeDuplicates()
             .eraseToAnyPublisher()
     }

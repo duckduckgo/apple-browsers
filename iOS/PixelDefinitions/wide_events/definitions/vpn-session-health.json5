@@ -4,7 +4,7 @@
         "owners": ["jleandroperez"],
         "meta": {
             "type": "ios-vpn-session-health",
-            "version": "0.0"
+            "version": "0.1"
         },
         "feature": {
             "name": "vpn-session-health",
@@ -60,6 +60,28 @@
                         "type": "string",
                         "description": "Wall-clock length of the event, bucketed (lower end of bucket, in seconds). Includes paused periods.",
                         "enum": ["0", "60", "300", "1800", "7200", "28800", "86400"]
+                    },
+                    "event_duration_exceeds_process_lifetime": {
+                        "type": "boolean",
+                        "description": "Whether the unbucketed wall-clock event duration is strictly greater than elapsed wall-clock time since the current tunnel provider initialized, captured at completion or orphan recovery. Both durations include sleep. Recovered sessions may legitimately exceed the current process lifetime."
+                    },
+                    "current_process_start_reason": {
+                        "type": "string",
+                        "description": "Start reason of the process that recovered this orphaned event. Present only on orphan recovery.",
+                        "enum": ["physical_tunnel_manual_start", "physical_tunnel_on_demand_start"]
+                    },
+                    "process_restart_gap_seconds_bucketed": {
+                        "type": "string",
+                        "description": "Wall-clock time from the orphaned event's last observation to the start of the process that recovered it, bucketed (lower end of bucket, in seconds). An upper bound: observations are not written while paused. Present only on orphan recovery.",
+                        "enum": ["0", "60", "300", "900", "1800", "3600", "43200"]
+                    },
+                    "process_id_changed": {
+                        "type": "boolean",
+                        "description": "Present only as true when the PID at session start differs from the completing or orphan-recovering process PID. Omitted when PIDs match or the starting PID is unavailable. Equal PIDs do not guarantee the same process instance because PIDs can be reused."
+                    },
+                    "app_version_changed": {
+                        "type": "boolean",
+                        "description": "Present only as true when the app version at session start differs from the completing or orphan-recovering process app version. Omitted when versions match."
                     },
                     "time_to_first_error_seconds_bucketed": {
                         "type": "string",

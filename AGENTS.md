@@ -1,32 +1,23 @@
-This file configures AI coding assistants for the Apple monorepo.
-Development rules are maintained in `.cursor/rules/` as the single source of truth.
+# DuckDuckGo Apple browsers
 
-**Personal preferences** (workflow, communication style, tool settings) belong in
-your tool's user-level config, not here:
-- Claude Code: `~/.claude/CLAUDE.md`
-- Cursor: User-level settings
+Loaded into every agent session. Add a line only when agents demonstrably get
+something wrong and nothing catches it during the task. Procedures live in
+`.claude/skills/`; personal preferences live in your user-level config.
 
-This repo-level file is for **team-shared conventions only**.
-
-## Mandatory Rules
-
-Detailed rules live in `.cursor/rules/`. Read from the list below when the request is relevant. **Do not read any other files in `.cursor/rules` unless requested explicitly.**
-
-| File | Covers |
-|------|--------|
-| `general.mdc` | Project overview, architecture summary, rule index, quick-start checklists |
-| `code-style.mdc` | Full Swift style guide: naming, formatting, closures, optionals, memory management |
-| `anti-patterns.mdc` | What NOT to do: singletons, async mistakes, SwiftUI pitfalls, testing mistakes |
-| `user-defaults-storage.mdc` | Storing settings or preferences via `KeyValueStore` |
-| `pixels.mdc` | Defining, naming, or firing pixel events |
-| `project-structure.mdc` | Adding files or directories to the iOS project; buildable folders and Xcode groups |
-
-## Testing against the Privacy Configuration
-
-Do not write unit tests that assert the current state of the Privacy Configuration, such as whether a particular feature or flag is present, absent, enabled, or disabled. The Privacy Configuration is controlled remotely, so tests that rely on it too strongly may be affected.
-
-Instead, arrange each relevant configuration state explicitly and verify the app's behavior in that state. Where applicable, verify behavior when flags are added or removed, enabled or disabled, or changed while the app is running.
-
-## Opening a PR with snapshot changes
-
-Before opening a monorepo PR, if the working tree has changes under the `SnapshotReferences` submodule, run `./scripts/open-snapshot-submodule-pr.sh` first, then add the submodule PR link it prints to the monorepo PR description.
+- Before finishing, run `mint run swiftlint lint --strict --force-exclude` on
+  the files you changed. CI uses `--strict`, so any warning, including the
+  file-header check, fails the PR; `--force-exclude` skips files CI doesn't
+  lint, such as `Package.swift`.
+- Every new Swift Testing `@Test` needs `.timeLimit(.minutes(1))`, which
+  requires `@available(iOS 16, macOS 13, *)`.
+- Adding, moving or deleting files in the Xcode projects: use the
+  `ddg-xcode-add-file` skill.
+- Adding or changing a pixel or wide event: use the `ddg-add-pixel` skill.
+- Tests that depend on the remote Privacy Configuration arrange each flag
+  state explicitly and assert the app's behavior in that state, including
+  flags changing while the app runs. They never assert what the live
+  configuration currently contains.
+- Pull requests: fill in `.github/PULL_REQUEST_TEMPLATE.md`. If the
+  `SnapshotReferences` submodule changed, run
+  `./scripts/open-snapshot-submodule-pr.sh` first and add the PR link it
+  prints to the description.

@@ -20,14 +20,19 @@ import Cocoa
 
 final class SuggestionTableRowView: NSTableRowView {
 
-    static let identifier = "SuggestionTableRowView"
+    static let identifier = NSUserInterfaceItemIdentifier(rawValue: "SuggestionTableRowView")
 
     var theme: ThemeStyleProviding?
 
-    override func awakeFromNib() {
-        super.awakeFromNib()
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        self.identifier = Self.identifier
 
         setupView()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("\(Self.self): Bad initializer")
     }
 
     override var isEmphasized: Bool {
@@ -43,7 +48,6 @@ final class SuggestionTableRowView: NSTableRowView {
     }
 
     var isBurner: Bool = false
-    var isAppRebranded: Bool = false
 
     private func setupView() {
         selectionHighlightStyle = .none
@@ -58,14 +62,7 @@ final class SuggestionTableRowView: NSTableRowView {
         let styleProvider = theme.addressBarStyleProvider
         let colorsProvider = theme.colorsProvider
 
-        let fillColor: NSColor = {
-            if isAppRebranded {
-                return colorsProvider.suggestionsHighlightBackgroundColor
-            }
-
-            return isBurner ? .burnerAccent : theme.palette.accentPrimary
-        }()
-
+        let fillColor: NSColor = colorsProvider.suggestionsHighlightBackgroundColor
         let cornerRadius = styleProvider.suggestionHighlightCornerRadius
         let horizontalPadding = styleProvider.suggestionHighlightHorizontalPadding
 

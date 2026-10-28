@@ -30,6 +30,21 @@ struct UTIFooterMessageMapper {
         self.resetDescriber = resetDescriber
     }
 
+    /// Required, so it carries no close button: sending the prompt is what retires it.
+    func termsOfServiceMessage(sendButton: DuckAiTermsOfServiceSendButton = .ask) -> UTIFooterMessage {
+        let linkText = UserText.duckAITermsOfServiceDisclaimerLink
+        return UTIFooterMessage(
+            icon: .shield,
+            title: String(format: sendButton.disclaimerFormat, linkText),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: false,
+            link: UTIFooterMessage.Link(text: linkText, url: Self.privacyTermsURL)
+        )
+    }
+
+    static let privacyTermsURL = URL(string: "https://duckduckgo.com/duckai/privacy-terms")!
+
     func message(for notice: CreateImageModelSwitchNotice) -> UTIFooterMessage {
         let subtitleFormat = notice.previousModelHasExtraPrivacyProtections
             ? UserText.utiCreateImageModelSwitchPrivacyPreservingSubtitle
@@ -40,9 +55,54 @@ struct UTIFooterMessageMapper {
             title: String(format: UserText.utiCreateImageModelSwitchTitle, notice.newModelShortName),
             subtitle: String(format: subtitleFormat, notice.previousModelShortName),
             primaryAction: nil,
-            isDismissible: true
+            isDismissible: true,
+            link: nil
         )
     }
+
+    func attachmentPrivacyMessage(format: String = UserText.aiChatAttachmentPrivacyNoticeFormat,
+                                  learnMoreText: String = UserText.aiChatAttachmentPrivacyNoticeLearnMore) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .info,
+            title: String(format: format, learnMoreText),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: false,
+            link: URL(string: Self.attachmentPrivacyLearnMoreURL).map {
+                .init(text: learnMoreText, url: $0)
+            }
+        )
+    }
+
+    func promptTooLongMessage(count: Int, limit: Int) -> UTIFooterMessage {
+        UTIFooterMessage(
+            icon: .alert,
+            title: PromptLengthText.format(UserText.aiChatPromptTooLongFormat, count, limit),
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: false,
+            titleStyle: .error
+        )
+    }
+
+    func multiTabPromotionMessage(title: String = UserText.aiChatMultiTabPromotion) -> UTIFooterMessage {
+        let emphasizedText = title.range(of: "·").map {
+            String(title[..<$0.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+        } ?? ""
+
+        return UTIFooterMessage(
+            icon: .gift,
+            title: title,
+            subtitle: nil,
+            primaryAction: nil,
+            isDismissible: true,
+            titleFormatting: .init(emphasizedText: emphasizedText,
+                                   attachmentPlaceholder: "{attachment}",
+                                   attachmentAccessibilityLabel: UserText.aiChatMultiTabPromotionAttachment)
+        )
+    }
+
+    private static let attachmentPrivacyLearnMoreURL = "https://duckduckgo.com/duckduckgo-help-pages/duckai/ai-chat-privacy#how-we-moderate-uploaded-images-and-files"
 
     func message(for warning: DuckAiUsageWarning, allowsSubscriptionUpsell: Bool = true) -> UTIFooterMessage {
         UTIFooterMessage(
@@ -50,7 +110,8 @@ struct UTIFooterMessageMapper {
             title: Self.title(for: warning),
             subtitle: String(format: UserText.utiDuckAIWarningsResetsIn, resetDescriber.describe(warning.resetsIn)),
             primaryAction: Self.primaryAction(for: warning, allowsSubscriptionUpsell: allowsSubscriptionUpsell),
-            isDismissible: warning.isDismissible
+            isDismissible: warning.isDismissible && !warning.blocksInput,
+            link: nil
         )
     }
 
@@ -60,7 +121,8 @@ struct UTIFooterMessageMapper {
             title: String(format: UserText.utiDuckAIWarningsHighUsageModel, notice.modelShortName),
             subtitle: nil,
             primaryAction: nil,
-            isDismissible: true
+            isDismissible: true,
+            link: nil
         )
     }
 
@@ -114,5 +176,28 @@ struct UTIFooterMessageMapper {
         case .startUsingWeeklyLimit:
             return UserText.utiDuckAIWarningsStartUsingWeeklyLimit
         }
+    }
+}
+
+/// Writes character counts in the locale's digits without grouping separators, as the design writes them (16000, not 16,000).
+enum PromptLengthText {
+    static func number(_ value: Int, locale: Locale = .current) -> String {
+        value.formatted(.number.grouping(.never).locale(locale))
+    }
+
+    /// Fills a `%1$d`/`%2$d` format with the count and the limit.
+    static func format(_ format: String, _ count: Int, _ limit: Int, locale: Locale = .current) -> String {
+        let objectFormat = positional(format).replacingOccurrences(of: "%1$d", with: "%1$@").replacingOccurrences(of: "%2$d", with: "%2$@")
+        return String(format: objectFormat, number(count, locale: locale), number(limit, locale: locale))
+    }
+
+    /// A translation may use plain `%d`s; numbers them in order so the first is the count and the second the limit.
+    static func positional(_ format: String) -> String {
+        var result = format
+        for index in 1...2 {
+            guard let range = result.range(of: "(?<!%)%d", options: .regularExpression) else { break }
+            result.replaceSubrange(range, with: "%\(index)$d")
+        }
+        return result
     }
 }

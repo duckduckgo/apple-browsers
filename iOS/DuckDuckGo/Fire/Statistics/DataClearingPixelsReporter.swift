@@ -21,7 +21,19 @@ import Foundation
 import PixelKit
 import QuartzCore
 
-final class DataClearingPixelsReporter {
+protocol DataClearingInstrumentation {
+    @MainActor func fireRetriggerPixelIfNeeded(request: FireRequest)
+    @MainActor func burnDidStart()
+    @MainActor func fireDroppedBurnPixel(request: FireRequest)
+    func fireUserActionBeforeCompletionPixel()
+    func fireSingleTabBurnRequested(optimized: Bool, dropped: Bool)
+    func fireSingleTabBurnFinished(optimized: Bool, measurement: DataClearingPixelsReporter.Measurement, tabClosure: TimeInterval?)
+    func beginMeasurement() -> DataClearingPixelsReporter.Measurement
+    func duration(of measurement: DataClearingPixelsReporter.Measurement) -> TimeInterval
+    func fireDataClearingCompletionPixel(_ pixel: DataClearingCompletionPixels)
+}
+
+final class DataClearingPixelsReporter: DataClearingInstrumentation {
 
     var timeProvider: () -> CFTimeInterval
     private let pixelFiring: PixelFiring?
@@ -29,6 +41,10 @@ final class DataClearingPixelsReporter {
     @MainActor
     private var lastFireTime: CFTimeInterval?
     private let retriggerWindow: TimeInterval = 20.0
+
+    /// Start of the burn for the burn currently in progress
+    @MainActor
+    private var currentBurnMeasurement: Measurement?
 
     // MARK: - Initialization
 
@@ -55,8 +71,35 @@ final class DataClearingPixelsReporter {
         lastFireTime = now
     }
 
+    /// Marks the start of a burn, so `fireDroppedBurnPixel` can report how long it had been running.
+    @MainActor
+    func burnDidStart() {
+        currentBurnMeasurement = beginMeasurement()
+    }
+
+    /// Fires when a burn request is dropped because another burn is still in progress.
+    @MainActor
+    func fireDroppedBurnPixel(request: FireRequest) {
+        let elapsed = currentBurnMeasurement.map { duration(of: $0) } ?? 0
+        let pixel = DataClearingPixels.burnDropped(trigger: request.trigger.pixelValue,
+                                                   scope: request.scope.pixelValue,
+                                                   elapsed: .init(seconds: elapsed))
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
+    }
+
     func fireUserActionBeforeCompletionPixel() {
         pixelFiring?.fire(DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+    }
+
+    func fireSingleTabBurnRequested(optimized: Bool, dropped: Bool) {
+        pixelFiring?.fire(SingleTabBurnPixels.requested(optimized: optimized, dropped: dropped), frequency: .standard)
+    }
+
+    func fireSingleTabBurnFinished(optimized: Bool, measurement: Measurement, tabClosure: TimeInterval?) {
+        pixelFiring?.fire(SingleTabBurnPixels.finished(optimized: optimized,
+                                                     duration: .init(seconds: duration(of: measurement)),
+                                                     tabClosure: tabClosure.map { .init(seconds: $0) }),
+                          frequency: .standard)
     }
 
     // MARK: - Data Clearing Completion
@@ -78,5 +121,31 @@ final class DataClearingPixelsReporter {
 
     func fireDataClearingCompletionPixel(_ pixel: DataClearingCompletionPixels) {
         pixelFiring?.fire(pixel, frequency: .standard)
+    }
+}
+
+// MARK: - Pixel Parameter Values
+
+private extension FireRequest.Trigger {
+
+    var pixelValue: String {
+        switch self {
+        case .manualFire: return "manual_fire"
+        case .autoClearOnLaunch: return "auto_clear_on_launch"
+        case .autoClearOnForeground: return "auto_clear_on_foreground"
+        case .fireModeAutoClear: return "fire_mode_auto_clear"
+        }
+    }
+}
+
+private extension FireRequest.Scope {
+
+    var pixelValue: String {
+        switch self {
+        case .tab: return "tab"
+        case .fireMode: return "fire_mode"
+        case .normalMode: return "normal_mode"
+        case .all: return "all"
+        }
     }
 }

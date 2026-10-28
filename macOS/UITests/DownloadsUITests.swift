@@ -532,7 +532,7 @@ class DownloadsUITests: UITestCase {
 
         let link = webView.links["Download via Data URL"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
-        link.tap()
+        link.click()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let cancel = saveSheet.buttons["Cancel"].firstMatch
@@ -572,7 +572,7 @@ class DownloadsUITests: UITestCase {
         app.pasteURL(url, pressingEnter: true)
         let link = webView.links["Download via Blob"].firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: UITests.Timeouts.navigation))
-        link.tap()
+        link.click()
         let saveSheet = app.sheets.firstMatch
         XCTAssertTrue(saveSheet.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         let cancel = saveSheet.buttons["Cancel"].firstMatch
@@ -735,7 +735,7 @@ class DownloadsUITests: UITestCase {
             .firstMatch
         XCTAssertTrue(startedIndicator.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
-        // Close the popup tab with the "x" button
+        // Close the popup tab
         let tabGroup = app.windows.firstMatch
             .tabGroups["Tabs"]
         let popupTab = tabGroup
@@ -897,8 +897,8 @@ class DownloadsUITests: UITestCase {
         let linkB = webView.links["File B"].firstMatch
         XCTAssertTrue(linkA.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         XCTAssertTrue(linkB.waitForExistence(timeout: UITests.Timeouts.elementExistence))
-        linkA.tap()
-        linkB.tap()
+        linkA.click()
+        linkB.click()
 
         // Verify both files appear with correct sizes
         assertDownloadListed(filename: fileNameA, sizeLabelRegex: "1.0 MB")
@@ -934,13 +934,14 @@ class DownloadsUITests: UITestCase {
             XCTAssertTrue(webView.popUpButtons["Customize"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
         }
 
-        // Larger file to keep download in-progress reliably
-        let url = "https://mmatechnical.com/Download/Download-Test-File/(MMA)-10GB.zip"
-        openSiteForDownloadingFile(url: url)
+        // Serve a larger file locally to keep the download in progress without an external connection.
+        // Throttled because an unthrottled local transfer takes seconds on a fast machine, finishing before the test closes the window.
+        let filename = "(MMA)-10GB.zip"
+        let url = URL.testsDownload(size: "10GB", filename: filename, throttle: "20MB")
+        openSiteForDownloadingFile(url: url.absoluteString)
 
         // Track both the final file and the temporary .duckload file
         let downloadsDir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
-        let filename = url.components(separatedBy: "/").last ?? "(MMA)-10GB.zip"
         let finalPath = downloadsDir.appendingPathComponent(filename).path
         let tempPath = downloadsDir.appendingPathComponent(filename + ".duckload").path
         trackForCleanup(finalPath)

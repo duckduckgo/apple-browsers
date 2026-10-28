@@ -32,6 +32,69 @@ struct CreateImageModelSwitchNotice: Equatable {
     }
 }
 
+struct UTIFooterItem: Equatable, Identifiable {
+    enum ID: Int, CaseIterable {
+        case termsConsent
+        case outOfUsage
+        case attachmentPrivacy
+        case promptTooLong
+        case modelSwitch
+        case usageWarning
+        case highUsage
+        case multiTabPromotion
+
+        var type: MessageType {
+            switch self {
+            case .termsConsent, .attachmentPrivacy: return .required(blocksSend: false)
+            case .outOfUsage: return .required(blocksSend: true)
+            case .promptTooLong: return .error(.persistent)
+            case .modelSwitch: return .action
+            case .usageWarning, .highUsage, .multiTabPromotion: return .informational
+            }
+        }
+    }
+
+    enum ErrorDuration: Equatable {
+        case persistent
+        case temporary
+    }
+
+    enum MessageType: Equatable {
+        case required(blocksSend: Bool)
+        case error(ErrorDuration)
+        case action
+        case informational
+
+        var rank: Int {
+            switch self {
+            case .required: return 0
+            case .error: return 1
+            case .action: return 2
+            case .informational: return 3
+            }
+        }
+    }
+
+    var type: MessageType { id.type }
+
+    let id: ID
+    let message: UTIFooterMessage
+
+    static func visible(from items: [Self], isEditing: Bool) -> [Self] {
+        visible(from: items, isEditing: isEditing, type: \.type)
+    }
+
+    static func visible(from items: [Self], isEditing: Bool, type: (Self) -> MessageType) -> [Self] {
+        let ordered = items.sorted { (type($0).rank, $0.id.rawValue) < (type($1).rank, $1.id.rawValue) }
+        let blocksSend = ordered.contains { type($0) == .required(blocksSend: true) }
+        let persistentError = blocksSend ? nil : ordered.first { type($0) == .error(.persistent) }
+        if let persistentError { return [persistentError] }
+        guard !isEditing else { return [] }
+        let required = ordered.filter { if case .required = type($0) { true } else { false } }
+        return required.isEmpty ? Array(ordered.prefix(1)) : Array(required.prefix(2))
+    }
+}
+
 struct UTIFooterMessage: Equatable {
 
     enum Icon: Equatable {
@@ -40,10 +103,30 @@ struct UTIFooterMessage: Equatable {
         case alert
         case info
         case modelSwitch
+        case shield
+        case gift
+    }
+
+    struct TitleFormatting: Equatable {
+        let emphasizedText: String
+        let attachmentPlaceholder: String
+        let attachmentAccessibilityLabel: String
+    }
+
+    /// `.error` sets the title in the subtitle's size and in red, so it reads as the error line above its explanation.
+    enum TitleStyle: Equatable {
+        case standard
+        case error
     }
 
     struct PrimaryAction: Equatable {
         let title: String
+    }
+
+    /// A tappable run within `title`. The card styles this substring and reports taps on it.
+    struct Link: Equatable {
+        let text: String
+        let url: URL
     }
 
     let icon: Icon
@@ -51,6 +134,27 @@ struct UTIFooterMessage: Equatable {
     let subtitle: String?
     let primaryAction: PrimaryAction?
     let isDismissible: Bool
+    let link: Link?
+    let titleFormatting: TitleFormatting?
+    let titleStyle: TitleStyle
+
+    init(icon: Icon,
+         title: String,
+         subtitle: String?,
+         primaryAction: PrimaryAction?,
+         isDismissible: Bool,
+         link: Link? = nil,
+         titleFormatting: TitleFormatting? = nil,
+         titleStyle: TitleStyle = .standard) {
+        self.icon = icon
+        self.title = title
+        self.subtitle = subtitle
+        self.primaryAction = primaryAction
+        self.isDismissible = isDismissible
+        self.link = link
+        self.titleFormatting = titleFormatting
+        self.titleStyle = titleStyle
+    }
 }
 
 /// Localizes the interval the shared resolver already bucketed, so "Resets in" reads as

@@ -100,10 +100,31 @@ final class ImportSourceDetailViewController: UIViewController {
 
     private func handlePrimaryAction() {
         guard source == .safari else { return }
+        guard Self.isBrowserKitImportSupportedByBuild else {
+            presentBrowserKitImportUnsupportedAlert()
+            return
+        }
         didProgressFromDetails = true
         PixelKit.fire(Pixel.Event.importHubSourcePrimaryTapped, options: .parameters(entryPoint.importHubEntryPointParameters))
         simulatedCompletionPersistor.setSafariFileFlowStart(entryPoint: entryPoint)
         presentSafariExportInterstitial()
+    }
+
+    private static var isBrowserKitImportSupportedByBuild: Bool {
+#if ALPHA
+        return false
+#else
+        return true
+#endif
+    }
+
+    private func presentBrowserKitImportUnsupportedAlert() {
+        let alert = UIAlertController(
+            title: UserText.dataImportSafariUnavailableInBuildTitle,
+            message: UserText.dataImportSafariUnavailableInBuildMessage,
+            preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: UserText.actionOK, style: .default))
+        present(alert, animated: true)
     }
 
     private func presentSafariExportInterstitial() {

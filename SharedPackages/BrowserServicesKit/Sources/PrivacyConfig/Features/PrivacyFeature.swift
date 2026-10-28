@@ -84,6 +84,9 @@ public enum PrivacyFeature: String {
     case popupBlocking
     case pageContext
     case webExtensions
+    case chromeWebstorePatching
+    case extensionManagement
+    case extensionsCatalog
     case forceDarkModeOnWebsites
     case promoQueue
     case adBlockingExtension
@@ -113,6 +116,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// Hang reporting feature flag
     case hangReporting
+
+    /// Cancels WebKit's pending passkey request before WebKit starts the next one
+    case passkeyRequestCancellation
 
     /// App rebranding feature flag
     case appRebranding
@@ -153,6 +159,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Skip the automatic update check triggered when the release notes page loads
     case skipReleaseNotesUpdateCheck
 
+    /// Makes updates more prominent, such as in the address bar and browser menu
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219579052808597?focus=true
+    case moreProminentUpdates
+
     /// Warn before quit confirmation overlay
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212444166689969
     case warnBeforeQuit
@@ -177,7 +187,12 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case webNotifications
 
     /// Enables the Website Permissions entry point in Settings.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218235979978094?focus=true
     case websitePermissionsSettings
+
+    /// Enables the new website permission prompts (Allow this visit / Always allow / Never allow).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218983616151303?focus=true
+    case websitePermissionsPrompts
 
     /// Memory Pressure Reporter
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1212762049862427?focus=true
@@ -215,7 +230,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case onboardingAsync
 
     /// Non-blocking onboarding experiment: treatment users can browse before completing onboarding
-    case onboardingNonBlocking
+    case onboardingNonBlockingV2
 
     /// Routes reload-after-error through `_evaluateJavaScriptWithoutUserGesture` instead of the
     /// legacy `javascript:` URL trampoline. Kill switch — disable remotely to revert to the
@@ -225,6 +240,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// "Sort by name permanently" — permanently reorders a bookmark folder's direct children alphabetically.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217076881156357?focus=true
     case bookmarksReorderByName
+
+    /// Page Signals: Extended Site Breakage Diagostics
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219073365875860
+    case pageSignals
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -281,7 +300,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case webViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
-    case deferredSecureVaultInit
     case performanceMetrics
     case extractedProfileRefresh
     case schedulerDeferralHandling
@@ -312,6 +330,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to disable all AI Chat related functionality
     case globalToggle
+
+    /// Kill switch for the privacy disclosure shown while a file or image attachment is staged.
+    case attachmentPrivacyDisclosure
 
     /// Adds support for passing currently visible website context to the sidebar
     case pageContext
@@ -374,6 +395,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables Unified Toggle Input inside the iOS contextual AI chat sheet.
     case contextualUnifiedToggleInput
 
+    /// Enables attaching content from multiple open tabs in the iOS contextual AI chat sheet.
+    case contextualAttachMoreTabs
+
     /// Enables the address-bar Duck.ai menu and the floating contextual input that replaces the
     /// pre-submit contextual sheet on iPhone.
     case contextualFloatingInput
@@ -386,6 +410,16 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Kill switch for routing native image/file paste into the unified input attachment strip.
     case unifiedToggleInputAttachmentPaste
+
+    /// Kill switch for the native input attachment privacy disclosure.
+    case unifiedToggleInputAttachmentPrivacy
+
+    /// Turns long pastes in the native Duck.ai inputs into pasted-text attachments.
+    /// https://app.asana.com/0/0/1219207880593588/f
+    case unifiedToggleInputPastedText
+
+    /// Controls the attachment privacy disclosure in Duck.ai on iPad.
+    case iPadAttachmentPrivacy
 
     /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
     case contextualDuckAIMode
@@ -433,6 +467,10 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables handing a PDF tab to Duck.ai as page context (bytes instead of markdown)
     case pdfPageContext
 
+    /// Attaches page context to the sidebar by default; a manual remove lasts across navigation.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219574855267767?focus=true
+    case pageContextAutoAttach
+
     /// Enables attaching content from multiple open tabs to the Duck.ai sidebar chat.
     case sidebarAttachMoreTabs
 
@@ -441,6 +479,22 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables attaching content from multiple open tabs to the New Tab Page omnibar Duck.ai chat.
     case ntpAttachMoreTabs
+
+    /// Enables "Add Screenshot" in the Duck.ai omnibar attach menu (address bar and prompt bar).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case omnibarScreenshot
+
+    /// Enables "Add Screenshot" in the New Tab Page omnibar (`screenshotModes` and `omnibar_captureScreenshot`).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case ntpScreenshot
+
+    /// Enables pasting images and copied image or PDF files into the Duck.ai omnibar prompt (address bar and prompt bar).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case pasteImages
+
+    /// Enables pasting images and copied files into the New Tab Page omnibar (`enablePastedAttachments`).
+    /// https://app.asana.com/1/137249556945/task/1215994572643392
+    case ntpPasteImages
 
     /// Enables the cap on how many open tabs can be attached (native omnibar and NTP). Kill switch.
     case tabAttachmentLimit
@@ -486,6 +540,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables querying AI Chat data directly from local storage instead of via webview
     case nativeDataAccess
 
+    /// Lets the duckduckgo.com homepage list the user's Duck.ai chats under its chat box.
+    case homepageChatSuggestions
+
     /// macOS only. Routes duck.ai voice-chat microphone permission entirely through native:
     /// auto-grants per-site mic permission at launch, locks the Permission Center row,
     /// surfaces a "System microphone disabled" warning when the OS has denied access, and
@@ -497,6 +554,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Single Duck.ai menu button in the iPad tabs bar.
     case iPadChromeMenuButton
+
+    /// Contextual Duck.ai chat shown as a sidebar beside the page on iPad, instead of a sheet.
+    case iPadContextualSidebar
 
     /// Enables moving the AI Chat native-storage container from the shared App
     /// Group into the app's Application Support directory on iOS. Off keeps the
@@ -527,6 +587,19 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Warns users as they approach their daily/weekly Duck.ai limits, using the usage snapshot the
     /// web app writes into the reserved `usageLimits` native-storage entry.
     case usageWarnings
+
+    /// Promotes the Duck.ai launcher (prompt bar) to users who chat often but haven't turned it on.
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1219171139940839
+    case launcherPromo
+
+    /// Shows the Duck.ai Terms of Service disclaimer in the native input, where sending accepts them.
+    case nativeTermsOfService
+
+    case dragPromptBar
+
+    /// Enables the Duck.ai limit extension promo (Boost bonus)
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1217224457965768?focus=true
+    case chatLimitExtensionPromo
 }
 
 /// Native capabilities Duck.ai can discover and invoke. The parent is the kill switch; each tool
@@ -568,9 +641,6 @@ public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Global switch to control managing state of NTP in frontend using tab IDs
     case newTabPageTabIDs
-
-    /// Global switch to disable advanced card ordering for the Next Steps List widget
-    case nextStepsListAdvancedCardOrdering
 
     /// Enables deleting history-based search suggestions from the New Tab Page omnibar
     case searchSuggestionsDeletion
@@ -643,15 +713,17 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case syncCreditCards
     case syncIdentities
     case aiChatSync
-    case allowSingleDeviceOnConnectScreen
     case scopedAccessCredentials
     case canUseV2ConnectFlow
     case canShowV2ConnectCode
     case canUseExchangeV2Point1
+    case canSendExchangeChannelSecret
     case canWriteUnifiedDeviceList
     case canUsePatchEndpointForLegacyDeviceRename
     case canReadUnifiedDeviceList
-    case simplifiedSyncSetupV2
+
+    /// https://app.asana.com/1/137249556945/project/1214200115953388/task/1219096435922095?focus=true
+    case improvedPairingFlow
 }
 
 public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
@@ -663,7 +735,6 @@ public enum AutoconsentSubfeature: String, CaseIterable, PrivacySubfeature {
     case filterlist
     case heuristicAction
     case cookiePopupOptInDialog
-    case cookiePopupOptInDialogExperiment
 }
 
 public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
@@ -685,12 +756,17 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case subscriptionPromoForExistingUsers
     case subscriptionConcurrentExperiments
     case monthlyFreeTrialExperiment2
-    case subscriptionOnboardingFreeTrialsSep2026
-    case subscriptionOnboardingPaidSubsSep2026
+    case subscriptionOnboardingFreeTrialsOct2026
+    case subscriptionOnboardingPaidSubsOct2026
     case onboardingSubscriptionUpsellExperiment
 
     /// Gates the server-rendered first paywall.
     case performanceOptimizedPaywalls
+
+    /// Gates the Subscriber Offers settings entry point; its settings carry the Partnerships Hub URL
+    /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
+    /// change covers every platform.
+    case partnershipsHub
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -805,7 +881,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newSafariFilePicker
     case newDataImportExperience
     case dataImportSummarySyncPromotion
-    case dataDirectoryAccess
+    case historyImport
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {
@@ -823,14 +899,39 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     case featureEnabled
     case embeddedExtension = "embedded"
     case embeddedRollout
+    /// Controls permission prompts and persistence on macOS.
+    case permissions
     /// Failsafe for the lightweight reload on data clear (fire). Disable to fall back to the full reload.
     case lightweightReloadOnDataClear
     /// Failsafe for deferring web-extension load/install until protected data is available. Disable to load immediately.
     case protectedDataLoadGate
-    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health.
+    /// Failsafe for waiting on embedded background content before restoring web pages.
+    case stateRestorationGate
+    /// Failsafe for the forwarding delegate used to observe Web Extensions background process health, and for the
+    /// background-load readiness observation, which asks the context to join the load already in progress to learn how it ended.
     case cpmBackgroundDelegateProxy
     /// Failsafe for CPM diagnostics collection, evaluated when the extension manager is created.
     case cpmDiagnosticsRecorder
+    /// Controls reloading an unchanged GET document after a late background startup loses its first response.
+    case cpmLateBackgroundDocumentRecovery
+    /// Controls retrying failed embedded background content without replacing its context (P2).
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
+    case cpmBackgroundLoadRecovery
+    /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
+    case cpmMessagingHangRecovery
+    /// Preserve surviving shared pinned tabs when WebKit processes a macOS window close.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219660990760563
+    case sharedPinnedTabWindowClose
+    /// Restarts the embedded background after a confirmed Network process replacement.
+    /// https://app.asana.com/1/137249556945/project/1202406491309510/task/1219531810004073
+    case cpmNetworkProcessRecovery
+    /// Failsafe for keeping the embedded CPM origin stable across context reloads.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
+    case cpmStableBaseURL
+    /// Failsafe kill switch for the CPM background-view graveyard treatment.
+    case cpmBackgroundGraveyardTreatment
+    /// Controls native messaging between web extensions and host apps on macOS.
+    case nativeMessaging
 }
 
 public enum AdBlockingExtensionSubfeature: String, PrivacySubfeature {
@@ -868,8 +969,6 @@ public enum DuckAiChatHistorySubfeature: String, PrivacySubfeature {
 public enum PromoQueueSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .promoQueue }
 
-    case featureEnabled
-
     /// Kill switch for the Bookmark Toolbar ("Show Bookmarks Bar?") promo.
     case bookmarkToolbarPromo
 
@@ -890,6 +989,27 @@ public enum PromoQueueSubfeature: String, PrivacySubfeature {
 
     /// Kill switch for the "Browser updated" promo.
     case browserUpdatedPromo
+
+    /// Kill switch for the VPN toolbar upsell button and dot badge promos.
+    case vpnUpsellPromo
+
+    /// Kill switch for the "Sync your bookmarks" promo.
+    case syncSetupBookmarksPromo
+
+    /// Kill switch for the "Sync your autofill data" promo.
+    case syncSetupAutofillPromo
+
+    /// Kill switch for the Bookmarks Bar "Sync Bookmarks" button promo.
+    case bookmarksBarSyncPromo
+
+    /// Kill switch for the Bookmark Added "Sync Bookmarks Across Devices" button promo.
+    case bookmarkAddedSyncPromo
+
+    /// Kill switch for the import/sync promo on the Bookmarks "No bookmarks yet" empty state.
+    case bookmarksEmptyStatePromo
+
+    /// Kill switch for the import/sync promo on the Passwords panel empty states.
+    case autofillEmptyStatePromo
 }
 
 public enum AutofillBreakageReporterSubfeature: String, PrivacySubfeature {
@@ -938,4 +1058,20 @@ public enum TabSwitcherTrackerCountSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .tabSwitcherTrackerCount }
 
     case featureEnabled
+}
+
+public enum ExtensionManagementSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionManagement }
+
+    case isLaunchedExtensions
+}
+
+public enum ExtensionsCatalogSubfeature: String, CaseIterable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .extensionsCatalog }
+
+    case bitwarden
+    case onePassword
+    case lastPass
+    case iCloudPasswords
+    case darkReader
 }

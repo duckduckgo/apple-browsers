@@ -20,6 +20,7 @@ import AppKit
 import BrowserServicesKit
 import AIChat
 import Combine
+import PrivacyConfig
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -79,6 +80,7 @@ final class AIChatViewController: NSViewController {
     var themeUpdateCancellable: AnyCancellable?
 
     private let burnerMode: BurnerMode
+    private let featureFlagger: FeatureFlagger
 
     private var openInNewTabButton: MouseOverButton!
     private var detachButton: MouseOverButton!
@@ -99,10 +101,12 @@ final class AIChatViewController: NSViewController {
 
     init(currentAIChatURL: URL,
          burnerMode: BurnerMode,
-         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager) {
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.currentAIChatURL = currentAIChatURL
         self.burnerMode = burnerMode
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -130,6 +134,10 @@ final class AIChatViewController: NSViewController {
         aiTab.aiChat?.setAIChatRestorationData(restorationData)
     }
 
+    func noteRestoredFromPreviousSession() {
+        aiTab.aiChat?.noteRecreated(as: .sessionRestore)
+    }
+
     public var pageContextRequestedPublisher: AnyPublisher<Void, Never>? {
         aiTab.aiChat?.pageContextRequestedPublisher
     }
@@ -140,6 +148,10 @@ final class AIChatViewController: NSViewController {
 
     public var pageContextRemovedPublisher: AnyPublisher<Void, Never>? {
         aiTab.aiChat?.pageContextRemovedPublisher
+    }
+
+    public var pageContextAddedPublisher: AnyPublisher<Void, Never>? {
+        aiTab.aiChat?.pageContextAddedPublisher
     }
 
     public var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>? {
@@ -198,12 +210,12 @@ final class AIChatViewController: NSViewController {
         topBar.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(topBar)
 
-        openInNewTabButton = makeBarButton(image: .expand, action: #selector(openInNewTabButtonClicked),
+        openInNewTabButton = makeBarButton(image: NSImage(resource: .expand), action: #selector(openInNewTabButtonClicked),
                                            toolTip: UserText.aiChatSidebarExpandButtonTooltip)
         openInNewTabButton.setAccessibilityIdentifier("AIChatViewController.openInNewTabButton")
         topBar.addSubview(openInNewTabButton)
 
-        attachButton = makeBarButton(image: .aiChatAttach, action: #selector(attachButtonClicked),
+        attachButton = makeBarButton(image: NSImage(resource: .aiChatAttach), action: #selector(attachButtonClicked),
                                      toolTip: UserText.aiChatSidebarAttachButtonTooltip)
         attachButton.setAccessibilityIdentifier("AIChatViewController.attachButton")
         attachButton.isHidden = true
@@ -214,12 +226,12 @@ final class AIChatViewController: NSViewController {
         titleButton.isHidden = true
         topBar.addSubview(titleButton)
 
-        detachButton = makeBarButton(image: .aiChatDetach, action: #selector(detachButtonClicked),
+        detachButton = makeBarButton(image: NSImage(resource: .aiChatDetach), action: #selector(detachButtonClicked),
                                      toolTip: UserText.aiChatSidebarDetachButtonTooltip)
         detachButton.setAccessibilityIdentifier("AIChatViewController.detachButton")
         topBar.addSubview(detachButton)
 
-        closeButton = makeBarButton(image: .closeLarge, action: #selector(closeButtonClicked),
+        closeButton = makeBarButton(image: NSImage(resource: .closeLarge), action: #selector(closeButtonClicked),
                                     toolTip: UserText.aiChatSidebarCloseButtonTooltip)
         closeButton.setAccessibilityIdentifier("AIChatViewController.closeButton")
         topBar.addSubview(closeButton)
@@ -264,8 +276,8 @@ final class AIChatViewController: NSViewController {
         button.title = ""
         button.imagePosition = .noImage
         button.cornerRadius = 9
-        button.mouseOverColor = .buttonMouseOver
-        button.mouseDownColor = .buttonMouseDown
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
         button.clipsToBounds = false
         button.target = self
         button.action = #selector(titleButtonClicked)
@@ -286,7 +298,7 @@ final class AIChatViewController: NSViewController {
         titleTextLabel.lineBreakMode = .byTruncatingTail
         titleTextLabel.setContentCompressionResistancePriority(.init(rawValue: 500), for: .horizontal)
 
-        titleArrowView = NSImageView(image: .arrowUpRight12)
+        titleArrowView = NSImageView(image: NSImage(resource: .arrowUpRight12))
         titleArrowView.translatesAutoresizingMaskIntoConstraints = false
         titleArrowView.contentTintColor = themeManager.theme.colorsProvider.iconsColor
         titleArrowView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -317,7 +329,7 @@ final class AIChatViewController: NSViewController {
     }
 
     func updateFloatingTitle(_ title: String, favicon: NSImage?) {
-        titleFaviconView.image = favicon ?? .homeFavicon
+        titleFaviconView.image = favicon ?? NSImage(resource: .homeFavicon)
         titleTextLabel.stringValue = title
     }
 
@@ -328,8 +340,8 @@ final class AIChatViewController: NSViewController {
         button.bezelStyle = .shadowlessSquare
         button.cornerRadius = 9
         button.normalTintColor = themeManager.theme.colorsProvider.iconsColor
-        button.mouseDownColor = .buttonMouseDown
-        button.mouseOverColor = .buttonMouseOver
+        button.mouseDownColor = NSColor(resource: .buttonMouseDown)
+        button.mouseOverColor = NSColor(resource: .buttonMouseOver)
         button.isBordered = false
         button.refusesFirstResponder = true
         return button
@@ -362,7 +374,7 @@ final class AIChatViewController: NSViewController {
         webViewContainer.translatesAutoresizingMaskIntoConstraints = false
         webViewContainer.wantsLayer = true
         webViewContainer.layer?.masksToBounds = true
-        webViewContainer.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
+        webViewContainer.layer?.backgroundColor = NSColor(resource: .navigationBarBackground).cgColor
         container.addSubview(webViewContainer)
 
         // Pinch zoom does not make sense in the AI Chat sidebar.
@@ -501,7 +513,7 @@ final class AIChatViewController: NSViewController {
 
     private func showPermissionAuthorizationPopover(for query: PermissionAuthorizationQuery) {
         let popover = permissionAuthorizationPopover ?? {
-            let popover = PermissionAuthorizationPopover()
+            let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
             self.permissionAuthorizationPopover = popover
             return popover
         }()
@@ -653,3 +665,35 @@ private final class FloatingWindowTitleDragButton: MouseOverButton {
         isMouseDown = false
     }
 }
+
+#if DEBUG || REVIEW
+// MARK: - Browser tools debug panel in the sidebar
+
+extension AIChatViewController {
+
+    /// Replaces the chat with the browser tools panel, owned by this sidebar's host tab, so tool
+    /// calls, prompts and pushes resolve exactly as they would for a real chat docked here.
+    func showBrowserToolsDebugPanel() {
+        guard !children.contains(where: { $0 is BrowserToolsDebugViewController }) else { return }
+
+        let windowControllersManager = NSApp.delegateTyped.windowControllersManager
+        // Resolved through this sidebar's window: a pinned host tab is in every window's collection.
+        let panel = BrowserToolsDebugViewController(windowControllersManager: windowControllersManager) { [weak self] in
+            guard let self, let tabID,
+                  let collection = AIChatTabPickerSource.ownerCollection(for: aiTab.webView, ownerTabID: tabID, in: windowControllersManager),
+                  let index = collection.indexInAllTabs(where: { $0.uuid == tabID }) else { return nil }
+            return collection.materialize(at: index)
+        }
+        addChild(panel)
+        panel.view.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(panel.view)
+        webViewContainer.isHidden = true
+        NSLayoutConstraint.activate([
+            panel.view.topAnchor.constraint(equalTo: webViewContainer.topAnchor),
+            panel.view.leadingAnchor.constraint(equalTo: webViewContainer.leadingAnchor),
+            panel.view.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor),
+            panel.view.bottomAnchor.constraint(equalTo: webViewContainer.bottomAnchor)
+        ])
+    }
+}
+#endif

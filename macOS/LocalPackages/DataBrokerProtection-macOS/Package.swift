@@ -41,7 +41,7 @@ let package = Package(
         .package(path: "../Freemium"),
         .package(path: "../NetworkProtectionMac"),
         .package(path: "../FeatureFlags-macOS"),
-        .package(path: "../VPN"),
+        .package(path: "../../../SharedPackages/VPN"),
         .package(path: "../LoginItems"),
     ],
     targets: [
@@ -50,6 +50,7 @@ let package = Package(
             dependencies: [
                 .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "Subscription", package: "BrowserServicesKit"),
                 .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "DataBrokerProtectionDebugServer", package: "DataBrokerProtectionCore"),
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
@@ -65,6 +66,8 @@ let package = Package(
                 .product(name: "NetworkProtectionProxy", package: "NetworkProtectionMac"),
                 .product(name: "LoginItems", package: "LoginItems"),
                 .product(name: "PrivacyConfig", package: "BrowserServicesKit"),
+                .product(name: "FoundationExtensions", package: "SystemFrameworksExtensions"),
+                .product(name: "ConcurrencyExtensions", package: "SystemFrameworksExtensions"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

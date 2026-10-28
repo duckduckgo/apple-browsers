@@ -1,0 +1,138 @@
+/* Button that temporarily grants a website permission for the current page. */
+"sitePermissions.dialog.allow-once" = "Povoliť raz";
+
+/* Button that saves approval for this website. DuckDuckGo's iOS app permission is separate. */
+"sitePermissions.dialog.allow-while-using-site" = "Povoliť pri používaní lokality";
+
+/* Combined website camera and microphone permission prompt title. %@ is the website domain; iOS app permissions are separate. */
+"sitePermissions.dialog.camera-and-microphone.title" = "Webová stránka „%@“ chce získať prístup k tvojmu fotoaparátu a mikrofónu";
+
+/* Website camera permission prompt title. %@ is the website domain; this is separate from iOS camera permission. */
+"sitePermissions.dialog.camera.title" = "Webová stránka „%@“ chce získať prístup k tvojmu fotoaparátu";
+
+/* Fire-tab button that denies a website permission for this tab session without saving it. */
+"sitePermissions.dialog.deny" = "Odmietnuť";
+
+/* Explanation shown when DuckDuckGo search results ask to use location. Copy requires review. */
+"sitePermissions.dialog.location.duckduckgo-serp.body" = "Anonymizujeme tvoju polohu a použijeme ju na poskytovanie lepších výsledkov z tvojho okolia.";
+
+/* Title shown when DuckDuckGo search results ask to use location. The missing word 'website' requires copy review. */
+"sitePermissions.dialog.location.duckduckgo-serp.title" = "„duckduckgo.com” chce získať prístup k tvojej polohe";
+
+/* Website location permission prompt title. %@ is the website domain; this is separate from iOS location permission. */
+"sitePermissions.dialog.location.title" = "Webová stránka „%@“ chce získať prístup k tvojej polohe";
+
+/* Website microphone permission prompt title. %@ is the website domain; this is separate from iOS microphone permission. */
+"sitePermissions.dialog.microphone.title" = "Webová stránka „%@” chce získať prístup k tvojmu mikrofónu";
+
+/* Button that saves denial for this website until the user changes it. */
+"sitePermissions.dialog.never-allow" = "Nikdy nepovoliť";
+
+/* VoiceOver value for a website permission currently in use. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.in-use" = "%@, používa sa";
+
+/* VoiceOver value for a paused website permission. %@ is its selected option, such as Always Allow. */
+"sitePermissions.management.accessibility.paused" = "%@, pozastavené";
+
+/* Website permission picker option that saves approval for this site; iOS app permission is separate. */
+"sitePermissions.management.always-allow" = "Vždy povoliť";
+
+/* Permission picker option that asks again when a site requests access. */
+"sitePermissions.management.ask-each-time" = "Vždy sa opýtať";
+
+/* Camera permission row label. */
+"sitePermissions.management.camera" = "Kamera";
+
+/* Accessibility label for the on-site permission sheet close button. */
+"sitePermissions.management.close" = "Zatvoriť";
+
+/* Action that opens DuckDuckGo's page in iOS Settings. */
+"sitePermissions.management.go-to-system-settings" = "Prejsť do Systémových nastavení";
+
+/* Location permission row label. */
+"sitePermissions.management.location" = "Poloha";
+
+/* Microphone permission row label. */
+"sitePermissions.management.microphone" = "Mikrofón";
+
+/* Website permission picker option that saves denial for this site until the user changes it. */
+"sitePermissions.management.never-allow" = "Nikdy nepovoliť";
+
+/* Caption below on-site permission rows explaining when changes apply. */
+"sitePermissions.management.reload-caption" = "Znova načítaj stránku, aby sa prejavili zmeny.";
+
+/* Reminder shown when iOS blocks permissions a website is allowed to use. %@ is a localized list of camera, location, or microphone names. Copy requires review. */
+"sitePermissions.management.reminder" = "Ak chceš na tejto stránke používať súvisiace funkcie, DuckDuckGo potrebuje prístup k %@.";
+
+/* Lowercase camera name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.camera" = "Kamera";
+
+/* Lowercase location name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.location" = "Poloha";
+
+/* Lowercase microphone name in a localized list of iOS permissions blocked for a website. */
+"sitePermissions.management.reminder.microphone" = "Mikrofón";
+
+/* Action that removes all stored permissions for the current site. */
+"sitePermissions.management.remove-permissions" = "Odstrániť povolenia";
+
+/* Visible and VoiceOver title of the website permission sheet. %@ is the website domain; translators may move it within the sentence. */
+"sitePermissions.management.title" = "Povolenia pre „%@”";
+
+/* Body of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.body" = "Ak chceš na tejto stránke používať súvisiace funkcie, je potrebné udeliť povolenia pre fotoaparát a mikrofón.";
+
+/* Title of the reminder shown when both iOS camera and microphone access are blocked. The combined wording requires copy review. */
+"sitePermissions.recovery.reminder.camera-and-microphone.title" = "DuckDuckGo potrebuje prístup k tvojmu fotoaparátu a mikrofónu";
+
+/* Body of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.body" = "Ak chceš na tejto stránke používať funkcie fotoaparátu, je potrebné udeliť povolenia pre fotoaparát.";
+
+/* Title of the reminder shown when iOS camera access is blocked. */
+"sitePermissions.recovery.reminder.camera.title" = "DuckDuckGo potrebuje prístup k tvojmu fotoaparátu";
+
+/* Button that closes a permission reminder without changing anything. */
+"sitePermissions.recovery.reminder.cancel" = "Zrušiť";
+
+/* Button that opens the DuckDuckGo page in iOS Settings. */
+"sitePermissions.recovery.reminder.change-permissions" = "Zmeniť oprávnenia";
+
+/* Body of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.body" = "Ak chceš na tejto stránke používať funkcie polohy, je potrebné udeliť povolenia pre polohu.";
+
+/* Title of the reminder shown when iOS location access is blocked. */
+"sitePermissions.recovery.reminder.location.title" = "DuckDuckGo potrebuje prístup k tvojej polohe";
+
+/* Body of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.body" = "Ak chceš na tejto stránke používať funkcie mikrofónu, je potrebné udeliť povolenia pre mikrofón.";
+
+/* Title of the reminder shown when iOS microphone access is blocked. */
+"sitePermissions.recovery.reminder.microphone.title" = "DuckDuckGo potrebuje prístup k tvojmu mikrofónu";
+
+/* Toast shown when a website was allowed camera access but the iOS camera prompt was denied. */
+"sitePermissions.recovery.toast.camera" = "DuckDuckGo nemohol tejto lokalite udeliť prístup k fotoaparátu";
+
+/* Toast shown when both fresh iOS permission prompts were denied. The combined wording requires copy review. */
+"sitePermissions.recovery.toast.camera-and-microphone" = "DuckDuckGo nemohol udeliť prístup k fotoaparátu a mikrofónu tejto stránke";
+
+/* Toast shown when a website was allowed location access but the iOS location prompt was denied. */
+"sitePermissions.recovery.toast.location" = "DuckDuckGo nemohol zdieľať polohu s touto lokalitou";
+
+/* Toast shown when a website was allowed microphone access but the iOS microphone prompt was denied. */
+"sitePermissions.recovery.toast.microphone" = "DuckDuckGo nemohol udeliť prístup k mikrofónu tejto lokalite";
+
+/* Body of the reminder shown when iOS microphone access for Duck.ai Voice Chat is blocked. */
+"sitePermissions.voice-chat.reminder.body" = "Ak chceš v Duck.ai použivať hlasový čet, je potrebné udeliť povolenia pre mikrofón.";
+
+/* Body of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.body" = "Ak chceš používať naše súkromné hlasové vyhľadávanie, je potrebné udeliť povolenia pre mikrofón.";
+
+/* Button that turns off Voice Search in DuckDuckGo. */
+"sitePermissions.voice-search.reminder.hide" = "Skryť hlasové vyhľadávanie";
+
+/* Title of the reminder shown when iOS microphone access for Voice Search is blocked. */
+"sitePermissions.voice-search.reminder.title" = "DuckDuckGo potrebuje prístup k tvojmu mikrofónu";
+
+/* Body of the reminder shown when enabling Private Voice Search in Settings while iOS microphone access is blocked. */
+"sitePermissions.voice-search.settings-reminder.body" = "Ak chceš používať naše súkromné hlasové funkcie, je potrebné udeliť povolenia pre mikrofón.";
+

@@ -1,0 +1,1013 @@
+//
+//  AutofillLoginListViewModelTests.swift
+//  DuckDuckGo
+//
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+
+import XCTest
+import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+@testable import DuckDuckGo
+@testable import Core
+import BrowserServicesKit
+@testable import Common
+@_spi(Testing) import Persistence
+import PrivacyDashboard
+
+class AutofillLoginListViewModelTests: XCTestCase {
+
+    private let tld = TLD()
+    private let appSettings = AppSettingsMock()
+    private let vault = (try? MockSecureVaultFactory.makeVault(reporter: nil))!
+    private var cancellables: Set<AnyCancellable> = []
+    private var syncService: MockDDGSyncing!
+    private var mockStore: ThrowingKeyValueStoring!
+
+    private let configEnabled = """
+    {
+        "features": {
+            "autofillBreakageReporter": {
+                "state": "enabled",
+                "settings": {
+                    "monitorIntervalDays": 42
+                },
+                "exceptions": [
+                    {
+                        "domain": "exception.com"
+                    }
+                ]
+            },
+            "autofillSurveys": {
+                "state": "enabled",
+                "settings": {
+                    "surveys": [
+                      {
+                        "id": "123",
+                        "url": "https://asurveyurl.com"
+                      }
+                    ]
+                },
+            },
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    private let configDisabled = """
+    {
+        "features": {
+            "autofillBreakageReporter": {
+                "state": "disabled",
+                "settings": {
+                    "monitorIntervalDays": 42
+                },
+                "exceptions": []
+            },
+             "autofillSurveys": {
+                 "state": "disabled",
+                 "settings": {
+                     "surveys": [
+                       {
+                         "id": "240900",
+                         "url": "https://asurveyurl.com"
+                       }
+                     ]
+                 },
+             },
+        },
+        "unprotectedTemporary": []
+    }
+    """.data(using: .utf8)!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        setupUserDefault(with: #file)
+        syncService = MockDDGSyncing(authState: .inactive, scheduler: CapturingScheduler(), isSyncInProgress: false)
+        mockStore = try MockKeyValueFileStore(throwOnInit: nil)
+    }
+
+    override func tearDownWithError() throws {
+        cancellables.removeAll()
+        syncService = nil
+        mockStore = nil
+
+        try super.tearDownWithError()
+    }
+
+    func makePrivacyConfig(from rawConfig: Data) -> PrivacyConfiguration {
+        let mockEmbeddedData = MockEmbeddedDataProvider(data: rawConfig, etag: "test")
+        let mockProtectionStore = MockDomainsProtectionStore()
+
+        let manager = PrivacyConfigurationManager(fetchedETag: nil,
+                                                  fetchedData: nil,
+                                                  embeddedDataProvider: mockEmbeddedData,
+                                                  localProtection: mockProtectionStore,
+                                                  internalUserDecider: MockInternalUserDecider())
+        return manager.privacyConfig
+    }
+
+    func testWhenOneLoginDeletedWithNoSuggestionsThenAlphabeticalSectionIsDeleted() {
+        let accountIdToDelete = "1"
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
+        XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 1)
+        XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 0)
+    }
+
+    func testWhenOneLoginDeletedWithNoSuggestionsThenAlphabeticalRowIsDeleted() {
+        let accountIdToDelete = "1"
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
+        XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 0)
+        XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 1)
+    }
+
+    func testWhenOneSuggestionDeletedThenSuggestedSectionAndAlphabeticalSectionDeleted() {
+        let accountIdToDelete = "1"
+        let testDomain = "testsite.com"
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService, keyValueStore: mockStore)
+        let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
+        XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 2)
+        XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 0)
+    }
+
+    func testWhenOneSuggestionDeletedThenSuggestedSectionAndAlphabeticalRowDeleted() {
+        let accountIdToDelete = "1"
+        let testDomain = "testsite.com"
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService, keyValueStore: mockStore)
+        let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
+        XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 1)
+        XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 1)
+    }
+
+    func testWhenOneSuggestionDeletedThenSuggestionRowAndAlphabeticalRowDeleted() {
+        let accountIdToDelete = "1"
+        let testDomain = "testsite.com"
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: accountIdToDelete, title: nil, username: "a@b.com", domain: testDomain, created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "b@c.com", domain: testDomain, created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), syncService: syncService, keyValueStore: mockStore)
+        let tableContentsToDelete = model.tableContentsToDelete(accountId: accountIdToDelete)
+        XCTAssertEqual(tableContentsToDelete.sectionsToDelete.count, 0)
+        XCTAssertEqual(tableContentsToDelete.rowsToDelete.count, 2)
+    }
+
+    func testWhenMultipleAccountsSavedAndClearAllThenNoAccountsAreShown() {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 3)
+
+        model.clearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 0)
+    }
+
+    func testWhenMultipleAccountsSavedAndClearAllThenUndoThenAccountsAreShownAgain() {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 3)
+
+        model.clearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 0)
+
+        model.undoClearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 3)
+    }
+
+    func testWhenOneAccountSavedAndClearAllThenUndoThenAccountIsShownAgain() {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 1)
+
+        model.clearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 0)
+
+        model.undoClearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 1)
+    }
+
+    func testWhenMultipleAccountsSavedAndOneSuggestionAndClearAllThenUndoThenAccountsAndSuggestionsAreShown() {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+        let testDomain = "testsite.com"
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, currentTabUrl: URL(string: "https://\(testDomain)"), privacyConfig: makePrivacyConfig(from: configDisabled), syncService: syncService, keyValueStore: mockStore)
+        XCTAssertEqual(model.sections.count, 2)
+        XCTAssertEqual(model.rowsInSection(0), 1)
+        XCTAssertEqual(model.rowsInSection(1), 3)
+
+        model.clearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 0)
+
+        model.undoClearAllAccounts()
+
+        XCTAssertEqual(model.sections.count, 2)
+        XCTAssertEqual(model.rowsInSection(0), 1)
+        XCTAssertEqual(model.rowsInSection(1), 3)
+    }
+
+    func testWhenInEditModeThenEnableAutofillSectionIsNotDisplayed() {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+
+        XCTAssertEqual(model.sections.count, 1)
+
+        model.isEditing = true
+
+        XCTAssertEqual(model.sections.count, 1)
+    }
+
+    func testWhenSearchingThenEnableAutofillSectionIsNotDisplayed() {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+
+        XCTAssertEqual(model.sections.count, 1)
+
+        model.isSearching = true
+        model.filterData(with: "z")
+
+        XCTAssertEqual(model.sections.count, 0)
+
+        model.filterData(with: "t")
+
+        XCTAssertEqual(model.sections.count, 1)
+    }
+
+    func testWhenOneAccountDeletedInEditModeThenAccountsCountPublisherUpdatesCorrectly() {
+        let expectation = XCTestExpectation(description: "accountsCountPublisher emits an updated count")
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+        ]
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+
+        model.isEditing = true
+        model.accountsCountPublisher.sink { count in
+            XCTAssertEqual(count, model.accountsCount, "The published count should match the number accounts count")
+            expectation.fulfill()
+        }
+        .store(in: &cancellables)
+
+        _ = model.delete(at: IndexPath(row: 1, section: 0))
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testWhenDeletingLoginThenUndoRestoresCredentialContentsWithNewIdentity() throws {
+        let vault = MockSecureVault(providers: try MockSecureVaultFactory.makeSecureStorageProviders(reporter: nil))
+        let account = SecureVaultModels.WebsiteAccount(id: "1",
+                                                       title: "Example login",
+                                                       username: "user@example.com",
+                                                       domain: "example.com",
+                                                       signature: "original-signature",
+                                                       notes: "Recovery codes:\n1234-5678\nKeep these safe 🔐",
+                                                       created: Date(timeIntervalSince1970: 1_700_000_000),
+                                                       lastUpdated: Date(timeIntervalSince1970: 1_700_000_100),
+                                                       lastUsed: Date(timeIntervalSince1970: 1_700_000_200))
+        let password = Data("saved-password".utf8)
+        vault.storedAccounts = [account]
+        vault.storedCredentials[1] = .init(account: account, password: password)
+
+        var storedCredentials: [SecureVaultModels.WebsiteCredentials] = []
+        vault.storeWebsiteCredentialsHandler = { [unowned vault] credentials in
+            storedCredentials.append(credentials)
+            var restoredCredentials = credentials
+            restoredCredentials.account.id = "2"
+            vault.storedCredentials[2] = restoredCredentials
+            vault.storedAccounts = [restoredCredentials.account]
+            return 2
+        }
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                  tld: tld,
+                                                  secureVault: vault,
+                                                  privacyConfig: makePrivacyConfig(from: configDisabled),
+                                                  syncService: syncService,
+                                                  keyValueStore: mockStore,
+                                                  featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []))
+
+        XCTAssertTrue(model.delete(account))
+        XCTAssertNil(try vault.websiteCredentialsFor(accountId: 1))
+
+        model.undoLastDelete()
+
+        XCTAssertEqual(storedCredentials.count, 1)
+        let credentialsToRestore = try XCTUnwrap(storedCredentials.first)
+        XCTAssertNil(credentialsToRestore.account.id)
+        XCTAssertEqual(credentialsToRestore.account.title, account.title)
+        XCTAssertEqual(credentialsToRestore.account.username, account.username)
+        XCTAssertEqual(credentialsToRestore.account.domain, account.domain)
+        XCTAssertEqual(credentialsToRestore.account.notes, account.notes)
+        XCTAssertEqual(credentialsToRestore.account.lastUsed, account.lastUsed)
+        XCTAssertEqual(credentialsToRestore.password, password)
+
+        let restoredCredentials = try XCTUnwrap(vault.websiteCredentialsFor(accountId: 2))
+        var expectedAccount = credentialsToRestore.account
+        expectedAccount.id = "2"
+        XCTAssertEqual(restoredCredentials.account, expectedAccount)
+        XCTAssertEqual(restoredCredentials.password, password)
+        XCTAssertEqual(model.sections.count, 1)
+        guard case .credentials(_, let items) = try XCTUnwrap(model.sections.first) else {
+            return XCTFail("Expected a credentials section after undo")
+        }
+        XCTAssertEqual(items.map(\.account), [expectedAccount])
+
+        model.undoLastDelete()
+
+        XCTAssertEqual(storedCredentials.count, 1)
+    }
+
+    func testWhenOneAccountSavedAndDeleteAllThenNoAccountsAreShownAndVaultIsEmpty() throws {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+        for account in vault.storedAccounts {
+            _ = try vault.storeWebsiteCredentials(SecureVaultModels.WebsiteCredentials(account: account, password: nil))
+        }
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 1)
+        XCTAssertEqual(vault.storedAccounts.count, 1)
+
+        model.isEditing = true
+        let result = model.deleteAllCredentials()
+        if result {
+            model.updateData()
+        }
+
+        XCTAssertEqual(model.sections.count, 0)
+        XCTAssertEqual(vault.storedAccounts.count, 0)
+    }
+
+    func testWhenMultipleAccountsSavedAndDeleteAllThenNoAccountsAreShownAndVaultIsEmpty() throws {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite2.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "", domain: "testsite3.com", created: Date(), lastUpdated: Date())
+        ]
+        for account in vault.storedAccounts {
+            _ = try vault.storeWebsiteCredentials(SecureVaultModels.WebsiteCredentials(account: account, password: nil))
+        }
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        XCTAssertEqual(model.sections.count, 1)
+        XCTAssertEqual(model.rowsInSection(0), 3)
+        XCTAssertEqual(vault.storedAccounts.count, 3)
+
+        model.isEditing = true
+        let result = model.deleteAllCredentials()
+        if result {
+            model.updateData()
+        }
+
+        XCTAssertEqual(model.sections.count, 0)
+        XCTAssertEqual(vault.storedAccounts.count, 0)
+    }
+
+    func testWhenBreakageReporterConfigDisabledThenShowBreakageReporterIsFalse() {
+        let testDomain = "testsite.com"
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://\(testDomain)"),
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configDisabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        XCTAssertFalse(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenBreakageReporterConfigEnabledAndCurrentTabUrlIsNilThenShowBreakageReporterIsFalse() {
+        let testDomain = "testsite.com"
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: nil,
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        XCTAssertFalse(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenBreakageReporterConfigEnabledAndNoSuggestionsThenShowBreakageReporterIsFalse() {
+        let testDomain = "testsite.com"
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "not-testsites.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://\(testDomain)"),
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        XCTAssertFalse(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenBreakageReporterConfigEnabledAndCurrentTabUrlIsInExceptionListThenShowBreakageReporterIsFalse() {
+        let testDomain = "exception.com"
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://\(testDomain)"),
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        XCTAssertFalse(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenBreakageReporterConfigEnabledAndReportAlreadyRecentlySavedThenShowBreakageReporterIsFalse() throws {
+        throw XCTSkip("Flakey test")
+
+        let testDomain = "testDomain.com"
+        let currentTabUrl = URL(string: "https://\(testDomain)")
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://\(testDomain)"),
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        let identifier = currentTabUrl!.privacySafeDomainIdentifier
+        model.breakageReporter.persistencyManager.set(value: "2024-07-16", forKey: identifier!, expiryDate: Date())
+
+        XCTAssertFalse(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenBreakageReporterConfigEnabledAndNoReportsSavedThenShowBreakageReporterIsTrue() {
+        let testDomain = "testDomain.com"
+        let currentTabUrl = URL(string: "https://\(testDomain)")
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: currentTabUrl,
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        XCTAssertTrue(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenBreakageReporterConfigEnabledAndNoReportsRecentlySavedThenShowBreakageReporterIsTrue() {
+        let testDomain = "testDomain.com"
+        let currentTabUrl = URL(string: "https://\(testDomain)")
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: testDomain, created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://\(testDomain)"),
+                                                   currentTabUid: "1",
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        let identifier = currentTabUrl!.privacySafeDomainIdentifier
+        model.breakageReporter.persistencyManager.set(value: "2024-01-01", forKey: identifier!, expiryDate: Date())
+
+        XCTAssertEqual(model.sections.count, 2)
+        XCTAssertEqual(model.rowsInSection(0), 2)
+        XCTAssertEqual(model.rowsInSection(1), 1)
+
+        XCTAssertTrue(model.shouldShowBreakageReporter())
+    }
+
+    func testWhenLocaleIsNotEnglishThenNoSurveyIsReturned() {
+        let nonEnglishLocale = Locale(identifier: "es")
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore, locale: nonEnglishLocale)
+
+        XCTAssertNil(model.getSurveyToPresent())
+    }
+
+    func testWhenViewStateIsIneligibleThenNoSurveyIsReturned() throws {
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "", domain: "testsite.com", created: Date(), lastUpdated: Date())
+        ]
+        for account in vault.storedAccounts {
+            _ = try vault.storeWebsiteCredentials(SecureVaultModels.WebsiteCredentials(account: account, password: nil))
+        }
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+
+        XCTAssertNil(model.getSurveyToPresent())
+    }
+
+    func testWhenIsEditingThenNoSurveyIsReturned() {
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: vault, syncService: syncService, keyValueStore: mockStore)
+        model.isEditing = true
+
+        XCTAssertNil(model.getSurveyToPresent())
+    }
+
+    func testWhenSurveyConfigIsDisabledThenNoSurveyIsReturned() {
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   privacyConfig: makePrivacyConfig(from: configDisabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+
+        XCTAssertNil(model.getSurveyToPresent())
+    }
+
+    func testDismissSyncPromo_DismissesPasswordPromoWithUserTappedReason() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   syncPromoManager: syncPromoManager)
+
+        model.dismissSyncPromo()
+
+        XCTAssertEqual(syncPromoManager.dismissedTouchpoint, .passwords)
+        XCTAssertEqual(syncPromoManager.dismissalReason, .userTapped)
+    }
+
+    func testWhenAllConditionsAreMetThenSurveyIsReturnedAndWhenDismissedNotSurveyIsReturned() {
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore)
+        let survey = model.getSurveyToPresent()
+        XCTAssertNotNil(survey)
+        XCTAssertEqual(survey?.id, "123")
+        XCTAssertEqual(survey?.url, "https://asurveyurl.com")
+
+        model.dismissSurvey(id: "123")
+
+        XCTAssertNil(model.getSurveyToPresent())
+    }
+
+    func testWhenFeatureFlagEnabledAndQueryMatchesDomain_ThenDomainMatchesAreInSuggestionsSection() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "example", domain: "test.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "user3", domain: "example.org", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = true
+        model.filterData(with: "example")
+
+        let suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should have a suggestions section when feature flag is enabled and query matches domains")
+
+        if case .suggestions(_, let items) = suggestionsSection! {
+            let domainMatches = items.filter { $0.account.domain?.lowercased().contains("example") == true }
+            XCTAssertEqual(domainMatches.count, 2, "Should have 2 domain matches (example.com and example.org)")
+        }
+
+        let credentialsDomainMatches = countDomainMatches(in: model.sections, query: "example")
+        XCTAssertEqual(credentialsDomainMatches, 2, "Credentials section should still contain domain matches")
+    }
+
+    func testWhenFeatureFlagEnabledAndCurrentTabUrlSet_ThenSuggestionsTransitionFromTabUrlToSearchQuery() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "user3", domain: "example.org", created: Date(), lastUpdated: Date())
+        ]
+
+        let currentTabUrl = URL(string: "https://example.com")
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: currentTabUrl,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = false
+
+        // Initial state: should have suggestions based on currentTabUrl
+        var suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should have suggestions section based on currentTabUrl before searching")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "example.com", message: "Suggestions should contain account matching currentTabUrl")
+
+        // Start searching with query that matches a different domain
+        model.isSearching = true
+        model.filterData(with: "test")
+
+        suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should have suggestions section based on search query domain matches")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "test.com", message: "Suggestions should contain account matching search query domain")
+        assertSuggestionsDoesNotContainDomain(suggestionsSection, domain: "example.com", message: "Suggestions should not contain account that matched currentTabUrl when searching")
+
+        // Search with query that has no domain matches
+        model.filterData(with: "user")
+        XCTAssertNil(findSuggestionsSection(in: model.sections), "Should have no suggestions section when search query doesn't match any domains")
+
+        // Clear search - should restore suggestions based on currentTabUrl
+        model.isSearching = false
+        model.filterData(with: nil)
+        suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should restore suggestions based on currentTabUrl when search is cleared")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "example.com", message: "Suggestions should be restored to currentTabUrl matches when search is cleared")
+    }
+
+    func testWhenSearchSuggestionsNoLongerContainCurrentTabDomainThenBreakageReporterPromptIsHidden() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: URL(string: "https://example.com"),
+                                                   privacyConfig: makePrivacyConfig(from: configEnabled),
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        XCTAssertEqual(model.rowsInSection(0), 2, "Should show one suggested credential row and one breakage reporter row for current tab domain")
+
+        model.isSearching = true
+        model.filterData(with: "test")
+
+        let suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should still have suggestions section for search query domain matches")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "test.com", message: "Suggestions should contain account matching the search query")
+        assertSuggestionsDoesNotContainDomain(suggestionsSection, domain: "example.com", message: "Suggestions should not contain account that matched current tab URL")
+        XCTAssertEqual(model.rowsInSection(0), 1, "Should hide breakage reporter row when current tab domain is not in suggested results")
+    }
+
+    func testWhenFeatureFlagEnabledAndSearchCleared_ThenSuggestionsAreCleared() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = true
+        model.filterData(with: "example")
+
+        XCTAssertTrue(hasSuggestionsSection(in: model.sections), "Should have suggestions section when query matches domain")
+
+        model.isSearching = false
+        model.filterData(with: nil)
+
+        XCTAssertFalse(hasSuggestionsSection(in: model.sections), "Suggestions section should be cleared when search is cleared")
+    }
+
+    func testWhenFeatureFlagDisabledAndQueryMatchesDomain_ThenDomainMatchesNotPrioritized() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "example", domain: "test.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "user3", domain: "example.org", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = true
+        model.filterData(with: "example")
+
+        XCTAssertNil(findSuggestionsSection(in: model.sections), "Should not have suggestions section when feature flag is disabled")
+        XCTAssertEqual(countCredentialsItems(in: model.sections), 3, "All 3 matching items should be in credentials sections when feature flag is disabled")
+    }
+
+}
+
+class AutofillLoginListSectionTypeTests: XCTestCase {
+
+    func testWhenComparedThenSortedCorrectly() {
+        let testData = [AutofillLoginListSectionType.credentials(title: "e", items: []),
+                        AutofillLoginListSectionType.credentials(title: "E", items: []),
+                        AutofillLoginListSectionType.credentials(title: "è", items: []),
+                        AutofillLoginListSectionType.credentials(title: "f", items: [])]
+
+        let result = testData.sorted()
+        XCTAssertEqual(testData, result)
+    }
+
+    func testWhenComparedThenSymbolsAreAtTheEnd() {
+        func testWhenComparedThenSortedCorrectly() {
+            let testData = [AutofillLoginListSectionType.credentials(title: "e", items: []),
+                            AutofillLoginListSectionType.credentials(title: "è", items: []),
+                            AutofillLoginListSectionType.credentials(title: "#", items: []),
+                            AutofillLoginListSectionType.credentials(title: "f", items: [])]
+
+            let result = testData.sorted()
+            XCTAssertEqual(testData, result)
+        }
+    }
+}
+
+class AutofillLoginListItemViewModelTests: XCTestCase {
+
+    let tld = TLD()
+    let autofillUrlMatcher = AutofillDomainNameUrlMatcher()
+    let autofillDomainNameUrlSort = AutofillDomainNameUrlSort()
+
+    func testWhenCreatingViewModelsThenDiacriticsGroupedCorrectly() {
+        let domain = "whateverNotImportantForThisTest"
+        let testData = [SecureVaultModels.WebsiteAccount(title: nil, username: "c", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "ç", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "C", domain: domain)]
+        let result = testData.groupedByFirstLetter(tld: tld,
+                                                   autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                                                   autofillDomainNameUrlSort: autofillDomainNameUrlSort)
+        // Diacritics should be grouped with the root letter (in most cases), and grouping should be case insensative
+        XCTAssertEqual(result.count, 1)
+    }
+
+    func testWhenCreatingViewModelsThenNumbersAndSymbolsGroupedCorrectly() {
+        let domain = "whateverNotImportantForThisTest"
+        let testData = [SecureVaultModels.WebsiteAccount(title: nil, username: "1", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "0", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "#", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "9", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "3asdasfd", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "~", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "?????", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "&%$£$%", domain: domain),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "99999", domain: domain)]
+        let result = testData.groupedByFirstLetter(tld: tld,
+                                                   autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                                                   autofillDomainNameUrlSort: autofillDomainNameUrlSort)
+        // All non letters should be grouped together
+        XCTAssertEqual(result.count, 1)
+    }
+
+    func testWhenCreatingSectionsThenTitlesWithinASectionAreSortedCorrectly() {
+        let domain = "whateverNotImportantForThisTest"
+        let testData = ["e": [
+            AutofillLoginItem(account: SecureVaultModels.WebsiteAccount(title: "elephant", username: "1", domain: domain),
+                              tld: tld,
+                              autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                              autofillDomainNameUrlSort: autofillDomainNameUrlSort),
+            AutofillLoginItem(account: SecureVaultModels.WebsiteAccount(title: "elephants", username: "2", domain: domain),
+                              tld: tld,
+                              autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                              autofillDomainNameUrlSort: autofillDomainNameUrlSort),
+            AutofillLoginItem(account: SecureVaultModels.WebsiteAccount(title: "Elephant", username: "3", domain: domain),
+                              tld: tld,
+                              autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                              autofillDomainNameUrlSort: autofillDomainNameUrlSort),
+            AutofillLoginItem(account: SecureVaultModels.WebsiteAccount(title: "èlephant", username: "4", domain: domain),
+                              tld: tld,
+                              autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                              autofillDomainNameUrlSort: autofillDomainNameUrlSort),
+            AutofillLoginItem(account: SecureVaultModels.WebsiteAccount(title: "è", username: "5", domain: domain),
+                              tld: tld,
+                              autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                              autofillDomainNameUrlSort: autofillDomainNameUrlSort),
+            AutofillLoginItem(account: SecureVaultModels.WebsiteAccount(title: nil, username: "ezy", domain: domain),
+                              tld: tld,
+                              autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                              autofillDomainNameUrlSort: autofillDomainNameUrlSort)]]
+        let result = testData.sortedIntoSections(autofillDomainNameUrlSort,
+                                                 tld: tld)
+        if case .credentials(_, let viewModels) = result[0] {
+            XCTAssertEqual(viewModels[0].title, "è")
+            XCTAssertEqual(viewModels[1].title, "elephant")
+            XCTAssertEqual(viewModels[2].title, "Elephant")
+            XCTAssertEqual(viewModels[3].title, "èlephant")
+            XCTAssertEqual(viewModels[4].title, "elephants")
+        } else {
+            XCTFail("Expected section did not exist")
+        }
+    }
+
+    func testWhenCreatingSectionsWithoutTitlesThenDomainsGroupedCorrectly() {
+        let testData = [SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "example.com"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "sub.example.com"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "example.co.uk"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "example.fr"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "auth.example.fr"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "mylogin.example.co.uk"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "auth.test.example.com"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "https://www.auth.example.com"),
+                        SecureVaultModels.WebsiteAccount(title: nil, username: "test", domain: "https://www.example.com")]
+        let result = testData.groupedByFirstLetter(tld: tld,
+                                                   autofillDomainNameUrlMatcher: autofillUrlMatcher,
+                                                   autofillDomainNameUrlSort: autofillDomainNameUrlSort)
+        // Diacritics should be grouped with the root letter (in most cases), and grouping should be case insensative
+        XCTAssertEqual(result.count, 1)
+    }
+}
+
+// MARK: - Test Helpers
+
+extension AutofillLoginListViewModelTests {
+    func findSuggestionsSection(in sections: [AutofillLoginListSectionType]) -> AutofillLoginListSectionType? {
+        sections.first {
+            if case .suggestions = $0 {
+                return true
+            }
+            
+            return false
+        }
+    }
+
+    func hasSuggestionsSection(in sections: [AutofillLoginListSectionType]) -> Bool {
+        findSuggestionsSection(in: sections) != nil
+    }
+
+    func assertSuggestionsContainsDomain(_ section: AutofillLoginListSectionType?, domain: String, message: String) {
+        guard case .suggestions(_, let items) = section else {
+            XCTFail("Expected suggestions section")
+            return
+        }
+        XCTAssertNotNil(items.first { $0.account.domain == domain }, message)
+    }
+
+    func assertSuggestionsDoesNotContainDomain(_ section: AutofillLoginListSectionType?, domain: String, message: String) {
+        guard case .suggestions(_, let items) = section else {
+            XCTFail("Expected suggestions section")
+            return
+        }
+        XCTAssertNil(items.first { $0.account.domain == domain }, message)
+    }
+
+    func countDomainMatches(in sections: [AutofillLoginListSectionType], query: String) -> Int {
+        var count = 0
+        for section in sections {
+            if case .credentials(_, let items) = section {
+                count += items.filter { $0.account.domain?.lowercased().contains(query.lowercased()) == true }.count
+            }
+        }
+        return count
+    }
+
+    func countCredentialsItems(in sections: [AutofillLoginListSectionType]) -> Int {
+        sections.reduce(0) { total, section in
+            if case .credentials(_, let items) = section {
+                return total + items.count
+            }
+            return total
+        }
+    }
+}
+
+class MockAutofillLoginListViewModel: AutofillLoginListViewModel {
+
+    override func createBreakageReporter() -> BrokenSiteReporter {
+        return BrokenSiteReporter(
+            pixelHandler: { _ in },
+            keyValueStoring: MockKeyValueStore(),
+            storageConfiguration: .autofillConfig
+        )
+    }
+}
+
+private final class MockSyncPromoManager: SyncPromoManaging {
+    private(set) var dismissedTouchpoint: SyncPromoManager.Touchpoint?
+    private(set) var dismissalReason: SyncPromoManager.DismissalReason?
+
+    func shouldPresentPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, count: Int) -> Bool {
+        false
+    }
+
+    func markPromoHandledFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func recordImpressionFor(_ touchpoint: SyncPromoManager.Touchpoint) {}
+
+    func dismissPromoFor(_ touchpoint: SyncPromoManager.Touchpoint, reason: SyncPromoManager.DismissalReason) {
+        dismissedTouchpoint = touchpoint
+        dismissalReason = reason
+    }
+
+    func resetPromos() {}
+}

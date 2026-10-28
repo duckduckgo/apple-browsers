@@ -54,8 +54,8 @@ jobs:
   atb-ui-tests:
     name: ATB UI Tests${{ matrix.user-mode == 'internal' && ' (internal)' || '' }}
     needs: setup-user-modes
-    runs-on: macos-26
-    timeout-minutes: 45
+    runs-on: [image:osx-tahoe-27, ui-tests]
+    timeout-minutes: 75
 
     strategy:
       fail-fast: false
@@ -104,7 +104,7 @@ jobs:
       id: select-simulator
       uses: ./.github/actions/select-ios-simulator
       with:
-        preferred-versions: "26.5"
+        preferred-versions: "27.0"
 
     - name: Boot iOS Simulator for log collection
       id: boot-simulator
@@ -123,6 +123,8 @@ jobs:
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
+          -test-iterations 2 \
+          -retry-tests-on-failure \
           OTHER_CODE_SIGN_FLAGS=--timestamp=none \
           "TEST_RUNNER_INTERNAL_USER_MODE=${{ matrix.user-mode == 'internal' && 'true' || 'false' }}" \
           | tee xcodebuild.log \

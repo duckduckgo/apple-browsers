@@ -23,7 +23,7 @@ import FoundationExtensions
 import ContentBlocking
 import Foundation
 import MaliciousSiteProtection
-import Navigation
+import DDGNavigation
 import PrivacyConfig
 import PrivacyDashboard
 import SpecialErrorPages
@@ -37,6 +37,12 @@ final class PrivacyDashboardTabExtension {
     private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private let tabIdentifier: String
     private let webExtensionManagerProvider: @MainActor () -> WebExtensionManaging?
+    private let webExtensionInitialLoadWaiterProvider: @MainActor () -> WebExtensionInitialLoadWaiter?
+    private let webExtensionNavigationGate: WebExtensionNavigationGate
+    private weak var recoveryWebView: WKWebView?
+
+    var shouldDisableLongDecisionMakingChecks: Bool { true }
+
     private var maliciousSiteProtectionStateProvider: MaliciousSiteProtectionStateProvider
 
     @Published private(set) var privacyInfo: PrivacyInfo?
@@ -49,6 +55,7 @@ final class PrivacyDashboardTabExtension {
 
     init(tabIdentifier: String,
          webExtensionManagerProvider: @escaping @MainActor () -> WebExtensionManaging?,
+         webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter?,
          contentBlocking: some ContentBlockingProtocol,
          certificateTrustEvaluator: CertificateTrustEvaluating,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -62,6 +69,8 @@ final class PrivacyDashboardTabExtension {
 
         self.tabIdentifier = tabIdentifier
         self.webExtensionManagerProvider = webExtensionManagerProvider
+        self.webExtensionInitialLoadWaiterProvider = webExtensionInitialLoadWaiterProvider
+        self.webExtensionNavigationGate = WebExtensionNavigationGate()
         self.contentBlocking = contentBlocking
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
@@ -99,6 +108,7 @@ final class PrivacyDashboardTabExtension {
             }
         }.store(in: &cancellables)
 
+        webViewPublisher.sink { [weak self] in self?.recoveryWebView = $0 }.store(in: &cancellables)
         webViewPublisher.map {
             $0.publisher(for: \.serverTrust)
         }
@@ -229,12 +239,33 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
         webExtensionManagerProvider()?.cpmMessagingHealthMonitor.handle(
             .navigationStarted(tabIdentifier: tabIdentifier, navigationKind: navigation.cpmMessagingNavigationKind)
         )
+        webExtensionManagerProvider()?.cpmMessagingHealthMonitor.matchReadinessRecoveryNavigation(tabIdentifier: tabIdentifier) {
+            navigation.matches($0)
+        }
     }
 
     @MainActor
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        if #available(macOS 15.4, *), navigationAction.isForMainFrame,
+           navigationAction.url.isHttpOrHttps {
+            // Hold restored web content until the embedded extension's background listeners are
+            // ready, matching the existing startup gates for user scripts and Content Blocking.
+            await webExtensionNavigationGate.waitIfNeeded(isMainFrame: navigationAction.isForMainFrame,
+                                                          url: navigationAction.url,
+                                                          initialLoadWaiter: webExtensionInitialLoadWaiterProvider())
+        }
         resetConnectionUpgradedTo(navigationAction: navigationAction)
         updateMaliciousSiteInfo(for: navigationAction.url)
+        return .next
+    }
+
+    @MainActor
+    func decidePolicy(for navigationResponse: NavigationResponse) async -> NavigationResponsePolicy? {
+        if #available(macOS 15.4, *), navigationResponse.isForMainFrame,
+           [.http, .https].contains(navigationResponse.url.navigationalScheme) {
+            // The Network process can change after action policy. Repair before document-start scripts run.
+            webExtensionManagerProvider()?.recoverEmbeddedBackgroundAfterNetworkProcessReplacement()
+        }
         return .next
     }
 
@@ -251,6 +282,12 @@ extension PrivacyDashboardTabExtension: NavigationResponder {
             resetDashboardInfo(for: navigation.url, didGoBackForward: navigation.navigationAction.navigationType.isBackForward)
         }
         guard #available(macOS 15.4, *), let webExtensionManager = webExtensionManagerProvider() else { return }
+        if let webView = recoveryWebView {
+            let action = navigation.redirectHistory.first ?? navigation.navigationAction
+            webExtensionManager.cpmMessagingHealthMonitor.registerReadinessRecoveryDocument(
+                tabIdentifier: tabIdentifier, webView: webView, isGET: action.request.httpMethod == "GET"
+            )
+        }
         webExtensionManager.cpmMessagingHealthMonitor.handle(.navigationFinished(
             tabIdentifier: tabIdentifier,
             url: navigation.url,

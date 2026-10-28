@@ -359,7 +359,8 @@ final class MainViewController: NSViewController {
             themeManager: themeManager,
             omnibarController: aiChatOmnibarController,
             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
-            burnerMode: tabCollectionViewModel.burnerMode
+            burnerMode: tabCollectionViewModel.burnerMode,
+            launcherPromo: NSApp.delegateTyped.duckAiLauncherPromo
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
@@ -454,9 +455,6 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
-        if !featureFlagger.isFeatureOn(.promoQueue) {
-            showSetAsDefaultAndAddToDockIfNeeded()
-        }
         showWinBackOfferIfNeeded()
     }
 
@@ -585,6 +583,8 @@ final class MainViewController: NSViewController {
 
         aiChatOmnibarContainerViewController.setShadowVisible(false)
         aiChatOmnibarContainerViewController.omnibarController.suggestionsViewModel.clearSelection()
+        // Esc, a click outside and a switch to another Duck.ai tab close the input without `cleanup()`.
+        aiChatOmnibarContainerViewController.omnibarController.inputOutcomeMeasurement.inputClosed()
         mainView.updateAIChatOmnibarContainerHeight(0, animated: true)
         mainView.isAIChatOmnibarContainerShown = false
         aiChatOmnibarTextContainerViewController.stopEventMonitoring()
@@ -746,6 +746,9 @@ final class MainViewController: NSViewController {
         }
     }
 
+    // `loadView()` attaches the bar before its visibility is known, so attachment alone can't tell when it first shows.
+    private var wasBookmarksBarShown = false
+
     // Can be updated via keyboard shortcut so needs to be internal visibility
     func updateBookmarksBarViewVisibility(visible showBookmarksBar: Bool) {
         if showBookmarksBar {
@@ -759,6 +762,11 @@ final class MainViewController: NSViewController {
             bookmarksBarViewController.removeFromParent()
             bookmarksBarViewController.view.removeFromSuperview()
         }
+
+        if showBookmarksBar, !wasBookmarksBarShown {
+            NotificationCenter.default.post(name: .bookmarksBarShown, object: self)
+        }
+        wasBookmarksBarShown = showBookmarksBar
 
         mainView.isBookmarksBarShown = showBookmarksBar
         mainView.layoutSubtreeIfNeeded()
@@ -776,16 +784,16 @@ final class MainViewController: NSViewController {
         NSAppearance.withAppAppearance {
             if theme.addToolbarShadow {
                 if mainView.isBannerViewShown {
-                    mainView.divider.backgroundColor = .bannerViewDivider
+                    mainView.divider.backgroundColor = NSColor(resource: .bannerViewDivider)
                 } else {
                     mainView.divider.backgroundColor = theme.palette.unifiedInputFieldFillSecondary
                 }
             } else {
                 let backgroundColor: NSColor = {
                     if mainView.isBannerViewShown {
-                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return bookmarksBarIsVisible ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     } else {
-                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                        return (bookmarksBarIsVisible || isHomePage) ? NSColor(resource: .bookmarkBarBackground) : NSColor(resource: .addressBarSolidSeparator)
                     }
                 }()
 
@@ -978,34 +986,6 @@ final class MainViewController: NSViewController {
             .sink { [weak self] in
                 self?.hideBanner()
             }
-    }
-
-    /// **ENTRY POINT for Default Browser & Dock Prompts**
-    ///
-    /// This is called when a main window becomes key (see `windowDidBecomeKey()`).
-    /// It triggers the prompt system to evaluate if any prompt should be shown.
-    ///
-    /// **Flow:**
-    /// 1. Calls `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()`
-    /// 2. Presenter asks `DefaultBrowserAndDockPromptCoordinator.getPromptType()` to determine eligibility
-    /// 3. Coordinator checks: onboarding status, default browser/dock status, and timing rules
-    /// 4. If eligible, shows one of three prompt types:
-    ///    - **Popover**: Small popup anchored to address bar (first prompt, shown once)
-    ///    - **Banner**: Persistent bar at top of window (shown after popover, can repeat)
-    ///    - **Inactive User Modal**: Sheet for users who haven't used the app in 7+ days
-    ///
-    /// **See also:**
-    /// - `DefaultBrowserAndDockPromptPresenter.tryToShowPrompt()` - orchestrates prompt display
-    /// - `DefaultBrowserAndDockPromptCoordinator.getPromptType()` - determines which prompt to show
-    /// - `DefaultBrowserAndDockPromptTypeDecider` - implements timing logic
-    @objc private func showSetAsDefaultAndAddToDockIfNeeded() {
-        guard !isInPopUpWindow else { return }
-
-        defaultBrowserAndDockPromptPresenting.tryToShowPrompt(
-            popoverAnchorProvider: getSourceViewToShowSetAsDefaultAndAddToDockPopover,
-            bannerViewHandler: showMessageBanner,
-            inactiveUserModalWindowProvider: getSourceWindowToShowInactiveUserModal
-        )
     }
 
     func getSourceViewToShowSetAsDefaultAndAddToDockPopover() -> NSView? {

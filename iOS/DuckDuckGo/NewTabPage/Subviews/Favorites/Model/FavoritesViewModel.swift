@@ -42,14 +42,24 @@ protocol NewTabPageFavoriteDataSource {
 private enum NewTabPageFavoritesPixel: PixelKit.Event {
     /// A drag gesture that reordered the grid, fired once when the gesture finishes.
     case reorder
+    case expansionChanged(isExpanded: Bool, isFocussedState: Bool)
 
     var name: String {
         switch self {
         case .reorder: return "new-tab-page_favorites_reorder"
+        case .expansionChanged: return "new-tab-page_favorites_expansion_changed"
         }
     }
 
-    var parameters: [String: String]? { nil }
+    var parameters: [String: String]? {
+        switch self {
+        case .reorder:
+            return nil
+        case .expansionChanged(let isExpanded, let isFocussedState):
+            return ["expanded": String(isExpanded),
+                    "is_autocomplete": String(isFocussedState)]
+        }
+    }
     var standardParameters: [PixelKitStandardParameter]? { nil }
     var namePrefix: PixelKitNamePrefix { .none }
 }
@@ -62,6 +72,7 @@ class FavoritesViewModel: ObservableObject {
 
     @Published private(set) var allFavorites: [Favorite] = []
     @Published var canEditFavorites = true
+    @Published var expansionState = FavoritesExpansionState()
 
     // In memory only so that when settings is dismissed we can show the prompt.
     //  Missing icons will trigger the prompt from elsewhere too so we don't need to persist this.
@@ -146,6 +157,15 @@ class FavoritesViewModel: ObservableObject {
         updateData()
 
         onFavoriteDeleted?(entity)
+    }
+
+    /// Expands or collapses the favorites at the user's request, as opposed to restoring the tab's state.
+    func changeExpansion(to isExpanded: Bool) {
+        guard expansionState.isExpanded != isExpanded else { return }
+
+        expansionState.isExpanded = isExpanded
+        pixelFiring?.fire(NewTabPageFavoritesPixel.expansionChanged(isExpanded: isExpanded, isFocussedState: isFocussedState),
+                          frequency: .dailyAndCount)
     }
 
     var onFavoriteEdit: ((BookmarkEntity) -> Void)?

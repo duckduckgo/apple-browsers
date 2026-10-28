@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import Navigation
+import DDGNavigation
 import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import WebKit
@@ -37,7 +37,7 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
     ]
 
     let nonDdgUrls = [
-        URL(string: "https://duckduckgo.com.local/")!,
+        URL(string: "https://duckduckgo.com.test/")!,
         URL(string: "https://my.duckduckgo.com/")!,
         URL(string: "https://youtube.com/")!,
 

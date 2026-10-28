@@ -102,7 +102,7 @@ struct CookiePopupProtectionOptInView: View {
     private var titlebar: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Image("Logo-Horizontal-Registered")
+                Image(.logoHorizontalRegistered)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 102, height: 28)
@@ -114,7 +114,7 @@ struct CookiePopupProtectionOptInView: View {
                     .font(.system(size: 11, weight: .bold))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(Color(designSystemColor: .alertYellow))
+                    .background(Color(designSystemColor: .statusYellowPrimary))
                     .foregroundColor(.black)
                     .cornerRadius(8)
             }

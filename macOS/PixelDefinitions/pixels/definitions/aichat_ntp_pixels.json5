@@ -15,6 +15,81 @@
             }
         ]
     },
+    "m_mac_aichat_ntp_screenshot_taken": {
+        "description": "Fired when the New Tab Page omnibar adds a screenshot from Add Screenshot as an image chip (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "kind",
+                "type": "string",
+                "description": "What was captured: a dragged region, a whole display, or a window",
+                "enum": ["selection", "screen", "window"]
+            }
+        ]
+    },
+    "m_mac_aichat_ntp_screenshot_removed": {
+        "description": "Fired when the user removes a screenshot chip from the New Tab Page omnibar (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "m_mac_aichat_ntp_screenshot_failed": {
+        "description": "Fired when an Add Screenshot capture for the New Tab Page omnibar fails, or when the page can't process the returned image. Not fired when the user cancels or Screen Recording is off, which aichat_screenshot_permission_needed_macos_u reports",
+        "owners": ["jotaemepereira"],
+        "triggers": ["exception"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "reason",
+                "type": "string",
+                "description": "unavailable: capture could not start; failed: the capture or its processing failed",
+                "enum": ["unavailable", "failed"]
+            }
+        ]
+    },
+    "m_mac_aichat_ntp_image_attached": {
+        "description": "Fired for every image chip added to the New Tab Page omnibar (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "How the image was added: the file picker, a paste, or Add Screenshot",
+                "enum": ["file", "paste", "screenshot"]
+            }
+        ]
+    },
+    "m_mac_aichat_ntp_image_removed": {
+        "description": "Fired for every image chip the user removes from the New Tab Page omnibar (reported by the page)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "type": "string",
+                "description": "How the removed image was added",
+                "enum": ["file", "paste", "screenshot"]
+            }
+        ]
+    },
     "m_mac_aichat_ntp_model_selected": {
         "description": "Fired when user selects a model from the New Tab Page model picker",
         "owners": ["tomasstrba"],
@@ -28,6 +103,13 @@
         "triggers": ["other"],
         "suffixes": ["daily_count"],
         "parameters": ["appVersion", "pixelSource", "channel"]
+    },
+    "aichat_ntp_gated_row_click": {
+        "description": "Fired when the user taps a gated (Plus/Pro-only) model or reasoning effort in the New Tab Page omnibar. Origin distinguishes the model picker (funnel_newtab_macos__modelpicker) from the reasoning dropdown (funnel_newtab_macos__reasoningdropdown). See https://app.asana.com/1/137249556945/task/1216424447885172",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily_count"],
+        "parameters": ["appVersion", "pixelSource", "channel", "subscriptionFunnelOrigin"]
     },
     "m_mac_aichat_ntp_subscription_upsell_shown": {
         "description": "Fired when the native subscription upsell dialog is shown after the user taps a gated model or reasoning effort in the New Tab Page omnibar. Pairs with m_mac_aichat_ntp_subscription_upsell_triggered for a view-to-click rate. See https://app.asana.com/1/137249556945/task/1216395339071571",
@@ -54,8 +136,8 @@
             {
                 "key": "source",
                 "type": "string",
-                "description": "Which omnibar picker triggered the upsell",
-                "enum": ["model", "reasoning"]
+                "description": "What triggered the upsell: the model picker, the reasoning-effort picker, or the usage-limit warning",
+                "enum": ["model", "reasoning", "usageLimit"]
             },
             "subscriptionFunnelOrigin"
         ]
@@ -86,7 +168,7 @@
         "owners": ["tomasstrba"],
         "triggers": ["other"],
         "suffixes": ["daily_count"],
-        "parameters": ["appVersion", "pixelSource"]
+        "parameters": ["appVersion", "pixelSource", "channel"]
     },
     "m_mac_aichat_ntp_customize_responses_opened": {
         "description": "Fired when the user opens Customize Responses from the New Tab Page omnibar Tools menu",

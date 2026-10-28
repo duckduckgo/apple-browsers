@@ -45,6 +45,44 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         super.tearDown()
     }
 
+    func testSingleTabMetricsIncludeBothFlagStatesAndDroppedRequests() {
+        for optimized in [false, true] {
+            for dropped in [false, true] {
+                sut.fireSingleTabBurnRequested(optimized: optimized, dropped: dropped)
+                let call = mockPixelFiring.actualFireCalls.last
+                XCTAssertEqual(call?.pixel.name, "fire_single-tab-burn_requested")
+                XCTAssertEqual(call?.pixel.parameters, ["optimization_enabled": String(optimized), "dropped": String(dropped)])
+                XCTAssertEqual(call?.frequency, .standard)
+            }
+        }
+    }
+
+    func testSingleTabCompletionMeasuresWholeBurnAndOptionalTabClosure() {
+        for optimized in [false, true] {
+            let measurement = sut.beginMeasurement()
+            currentTime += 1.5
+            sut.fireSingleTabBurnFinished(optimized: optimized, measurement: measurement, tabClosure: 0.2)
+            let call = mockPixelFiring.actualFireCalls.last
+            XCTAssertEqual(call?.pixel.name, "fire_single-tab-burn_finished")
+            XCTAssertEqual(call?.pixel.parameters, [
+                "optimization_enabled": String(optimized), "duration_ms": "2000", "tab_closure_ms": "250"
+            ])
+            XCTAssertEqual(call?.frequency, .standard)
+        }
+        let measurement = sut.beginMeasurement()
+        sut.fireSingleTabBurnFinished(optimized: false, measurement: measurement, tabClosure: nil)
+        XCTAssertNil(mockPixelFiring.actualFireCalls.last?.pixel.parameters?["tab_closure_ms"])
+    }
+
+    func testSingleTabDurationBucketsIncludeBoundariesAndLongBurns() {
+        for bound in [100, 250, 500, 1_000, 2_000, 5_000, 10_000, 30_000, 60_000, 120_000, 300_000] {
+            XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: Double(bound) / 1_000).value, String(bound))
+        }
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 0).value, "100")
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 0.101).value, "250")
+        XCTAssertEqual(SingleTabBurnPixels.DurationBucket(seconds: 301).value, "more")
+    }
+
     // MARK: - fireRetriggerPixelIfNeeded Tests
     
     @MainActor
@@ -288,6 +326,78 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         wait(for: [fired], timeout: 1)
     }
 
+    // MARK: - fireDroppedBurnPixel Tests
+
+    @MainActor
+    func testWhenBurnIsDroppedThenPixelReportsTriggerScopeAndElapsedTime() {
+        // Given
+        sut.burnDidStart()
+
+        // When - the drop happens 12 seconds into the in-progress burn
+        currentTime += 12
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .manualFire,
+                                                      scope: .all,
+                                                      source: .browsing))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "manual_fire", scope: "all", elapsed: .lessThan30),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenBurnHasHungThenDroppedPixelReportsAHighElapsedBucket() {
+        // Given
+        sut.burnDidStart()
+
+        // When - a stuck `burnInProgress` keeps dropping presses long after the burn started
+        currentTime += 1_800
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .manualFire,
+                                                      scope: .all,
+                                                      source: .browsing))
+
+        // Then
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "manual_fire", scope: "all", elapsed: .more),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    @MainActor
+    func testWhenDroppedBurnIsAnAutoClearThenPixelReportsThatTrigger() {
+        // Given - auto-clear has no `burnInProgress` gate of its own, so it reaches the same drop path
+        sut.burnDidStart()
+
+        // When
+        currentTime += 3
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all,
+                                                      trigger: .autoClearOnForeground,
+                                                      scope: .all,
+                                                      source: .autoClear))
+
+        // Then - reported separately so auto-clear drops don't inflate the user-visible count
+        mockPixelFiring.expectedFireCalls = [
+            .init(pixel: DataClearingPixels.burnDropped(trigger: "auto_clear_on_foreground", scope: "all", elapsed: .lessThan5),
+                  frequency: .dailyAndCount)
+        ]
+        mockPixelFiring.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testElapsedBucketBoundaries() {
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 0), .lessThan1)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 1), .lessThan1)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 1.1), .lessThan5)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 30), .lessThan30)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 31), .lessThan60)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 300), .lessThan300)
+        XCTAssertEqual(DataClearingPixels.ElapsedBucket(seconds: 301), .more)
+    }
+
     // MARK: - Nil PixelFiring Tests
     
     @MainActor
@@ -299,6 +409,8 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         sut.fireRetriggerPixelIfNeeded(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
         sut.fireUserActionBeforeCompletionPixel()
         sut.fireDataClearingCompletionPixel(.allDataCleared(duration: 0, tabCount: 0))
+        sut.burnDidStart()
+        sut.fireDroppedBurnPixel(request: FireRequest(options: .all, trigger: .manualFire, scope: .all, source: .settings))
 
         // Then - no crash occurred
     }

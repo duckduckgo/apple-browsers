@@ -60,6 +60,8 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
         guard #available(iOS 17.0, *) else {
             return .success(())
         }
+        // A running cleanup keeps the old store in use, and WebKit can't remove a store that's in use.
+        await websiteDataManager.cancelMemoryCacheCleanup(isFireMode: true)
         idManager.invalidateCurrentFireModeID()
         return await removeAllPendingFireModeDataStores()
     }
@@ -89,7 +91,9 @@ struct WebsiteDataFireWorker: FireExecutorWorker {
         let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current(fireMode: tabViewModel.tab.fireTab)
 
         // Async tasks
-        let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse, forDomains: domains)
+        let websiteDataResult = await websiteDataManager.clear(dataStore: storeToUse,
+                                                               forDomains: domains,
+                                                               isFireMode: tabViewModel.tab.fireTab)
         updateWideEventWithWebsiteDataResults(websiteDataResult)
 
     }

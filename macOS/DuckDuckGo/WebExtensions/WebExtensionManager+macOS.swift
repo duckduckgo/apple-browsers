@@ -20,6 +20,7 @@ import AppKit
 import AppKitExtensions
 import Combine
 import FeatureFlags_macOS
+import Persistence
 import PrivacyConfig
 import WebExtensions
 
@@ -36,6 +37,10 @@ private final class MacOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsP
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -49,6 +54,34 @@ extension WebExtensionManager {
     /// Whether web extensions are enabled in the app.
     static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
+    }
+
+    /// Start after installed extensions load, so enforcement can't race the initial load.
+    @MainActor
+    func startRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        guard remoteDisableEnforcer == nil else { return }
+        let enforcer = WebExtensionRemoteDisableEnforcer(
+            manager: self,
+            configurationManager: configurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+        )
+        remoteDisableEnforcer = enforcer
+        enforcer.start()
+    }
+
+    /// Catalog extensions that a feature flag turns on or off.
+    static let flaggedCatalogExtensions: [(flag: FeatureFlag, id: ChromeWebStoreID)] = [
+        (.webExtensionBitwarden, .bitwarden),
+        (.webExtensionOnePassword, .onePassword),
+        (.webExtensionICloudPasswords, .iCloudPasswords),
+    ]
+
+    /// The catalog extensions whose feature flag is off.
+    static func flagDisabledExtensionIDs(featureFlagger: FeatureFlagger) -> Set<String> {
+        Set(flaggedCatalogExtensions.filter { !featureFlagger.isFeatureOn($0.flag) }.map(\.id.rawValue))
     }
 }
 
@@ -64,8 +97,10 @@ enum WebExtensionManagerFactory {
     /// Creates a fully configured WebExtensionManager with all macOS-specific providers.
     @MainActor
     static func makeManager(
+        keyValueStore: any ThrowingKeyValueStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         autoconsentPreferences: AutoconsentPreferencesProviding,
+        buildType: ApplicationBuildType = StandardApplicationBuildType(),
         darkReaderExcludedDomainsProvider: DarkReaderExcludedDomainsProviding? = nil,
         scriptletConfiguration: ScriptletConfiguration? = nil
     ) -> WebExtensionManager {
@@ -86,24 +121,61 @@ enum WebExtensionManagerFactory {
             appSession: Application.appDelegate.cpmAppSessionDiagnostics
         ) : nil
 
+        let installationStore = InstalledWebExtensionStore()
+        let permissionController = Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionsPermissions) ? WebExtensionPermissionController(
+            store: WebExtensionPermissionStore(keyValueStore: keyValueStore),
+            installationStore: installationStore,
+            prompter: WebExtensionPermissionPrompt(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+        ) : nil
+        // The App Store sandbox cannot launch another app's host, so only Sparkle builds offer native messaging.
+        let nativeMessagingHandler = buildType.isSparkleBuild && Application.appDelegate.featureFlagger.isFeatureOn(.webExtensionNativeMessaging)
+            ? NativeMessagingHandler(installationStore: installationStore)
+            : nil
         let manager = WebExtensionManager(
             configuration: WebExtensionConfigurationProvider(),
             windowTabProvider: WebExtensionWindowTabProvider(),
             storageProvider: WebExtensionStorageProvider(extensionsDirectory: extensionsDirectory),
+            installationStore: installationStore,
+            permissionController: permissionController,
             internalSiteHandler: internalSiteHandler,
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
+            isCPMMessagingHangRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
+            isCPMNetworkProcessRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: Application.appDelegate.featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
+            isCPMStableBaseURLEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
                 darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
             ),
+            nativeMessagingHandler: nativeMessagingHandler,
+            keyValueStore: keyValueStore,
             scriptletConfiguration: scriptletConfiguration
         )
 
         internalSiteHandler.dataSource = manager
+        if buildType.isSparkleBuild {
+            manager.chromeWebStore = ChromeWebStoreService(
+                manager: manager,
+                catalog: ChromeWebStoreCatalog(configurationManager: privacyConfigurationManager),
+                presenter: ChromeWebStorePresenter(windowProvider: { NSApp.keyWindow ?? NSApp.mainWindow })
+            )
+        }
 
         return manager
     }

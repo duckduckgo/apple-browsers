@@ -39,6 +39,9 @@ protocol WindowControllersManagerProtocol: AnyObject {
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
 
+    /// The loaded tab whose own web view is `webView`, in any main window, pinned tabs included.
+    func tab(for webView: WKWebView?) -> Tab?
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
     var didChangeKeyWindowController: PassthroughSubject<MainWindowController?, Never> { get }
@@ -239,7 +242,7 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
 extension WindowControllersManager {
 
     func showDataBrokerProtectionTab() {
-        showTab(with: .dataBrokerProtection)
+        showTab(with: .dataBrokerProtection(.subscribed))
     }
 
     func showBookmarksTab() {
@@ -330,7 +333,7 @@ extension WindowControllersManager {
     /// - Parameters:
     ///   - url: The URL to open. If `nil`, New Tab page will be open (`.newtab`).
     ///   - tabId: An optional identifier for an existing tab to switch to.
-    ///            If provided along with the `source` matching `.appOpenUrl` or `.switchToOpenTab`,
+    ///            If provided along with a `source` that `switchesToOpenTab`,
     ///            the function will attempt to activate the tab with this ID.
     ///   - source: The origin of the URL being opened, which can indicate whether it is from a bookmark, history record, external link, etc.
     ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
@@ -354,7 +357,7 @@ extension WindowControllersManager {
             let selectionIndex = tabCollectionViewModel.selectionIndex
 
             // Switch to already open tab if present
-            if [.appOpenUrl, .switchToOpenTab].contains(source),
+            if source.switchesToOpenTab,
                let url, switchToOpenTab(withId: tabId, url: url, preferring: windowController) == true {
 
                 if let selectedTabViewModel, let selectionIndex,
@@ -600,6 +603,18 @@ extension WindowControllersManagerProtocol {
         return mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab
     }
 
+    func tab(for webView: WKWebView?) -> Tab? {
+        guard let webView else { return nil }
+        for windowController in mainWindowControllers {
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
+            for case .loaded(let tab) in tabs where tab.webView === webView {
+                return tab
+            }
+        }
+        return nil
+    }
+
     var allTabCollectionViewModels: [TabCollectionViewModel] {
         return mainWindowControllers.map {
             $0.mainViewController.tabCollectionViewModel
@@ -737,16 +752,8 @@ extension WindowControllersManager: OnboardingNavigating {
 
     /// Resolve the sender, never the selected tab: the user may have switched tabs or windows.
     func onboardingTab(for webView: WKWebView?) -> Tab? {
-        guard let webView else { return nil }
-        for windowController in mainWindowControllers {
-            let viewModel = windowController.mainViewController.tabCollectionViewModel
-            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
-            for case .loaded(let tab) in tabs where tab.webView === webView {
-                guard case .onboarding = tab.content else { return nil }
-                return tab
-            }
-        }
-        return nil
+        guard let tab = tab(for: webView), case .onboarding = tab.content else { return nil }
+        return tab
     }
 
     func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {

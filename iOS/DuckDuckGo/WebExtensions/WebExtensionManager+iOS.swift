@@ -38,6 +38,10 @@ private final class IOSCPMDiagnosticsFeatureFlags: CPMDiagnosticsFeatureFlagsPro
         featureFlagger.isFeatureOn(.cpmBackgroundDelegateProxy)
     }
 
+    var isBackgroundGraveyardTreatmentEnabled: Bool {
+        featureFlagger.isFeatureOn(.cpmBackgroundGraveyardTreatment)
+    }
+
     var updatesPublisher: AnyPublisher<Void, Never> {
         featureFlagger.updatesPublisher
     }
@@ -100,7 +104,14 @@ public enum WebExtensionManagerFactory {
                 case .downgraded: change = .downgraded
                 case nil: change = nil
                 }
-                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate)
+                return CPMAppSessionDiagnostics(appVersionChange: change, launchDate: session.launchDate) {
+                    switch UIApplication.shared.applicationState {
+                    case .active: return .active
+                    case .inactive: return .inactive
+                    case .background: return .background
+                    @unknown default: return .inactive
+                    }
+                }
             }
         ) : nil
 
@@ -111,6 +122,23 @@ public enum WebExtensionManagerFactory {
             pixelFiring: pixelFiring,
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             cpmDiagnosticsRecorder: cpmDiagnosticsRecorder,
+            isCPMMessagingHangRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmMessagingHangRecovery)
+            },
+            isCPMNetworkProcessRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmNetworkProcessRecovery)
+            },
+            cpmNetworkProcessRecoveryFeatureFlagUpdates: featureFlagger.updatesPublisher,
+            isCPMBackgroundLoadRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmBackgroundLoadRecovery)
+            },
+            isApplicationInBackground: { UIApplication.shared.applicationState == .background },
+            isCPMLateBackgroundDocumentRecoveryEnabled: {
+                featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
+            isCPMStableBaseURLEnabled: {
+                featureFlagger.isFeatureOn(.cpmStableBaseURL)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

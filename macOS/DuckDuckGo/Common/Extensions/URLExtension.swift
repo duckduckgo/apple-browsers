@@ -26,9 +26,7 @@ import os.log
 import Persistence
 import URLPredictor
 
-#if !SANDBOX_TEST_TOOL
 import PixelKit
-#endif
 
 extension URL.NavigationalScheme {
 
@@ -87,7 +85,6 @@ extension URL {
 
     // MARK: - Factory
 
-#if !SANDBOX_TEST_TOOL
     static func makeSearchUrl(from searchQuery: String) -> URL? {
         let trimmedQuery = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
 
@@ -161,7 +158,6 @@ extension URL {
         }
         return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
-#endif
 
     static let newtab = URL(string: "duck://newtab")!
     static let welcome = URL(string: "duck://welcome")!
@@ -172,13 +168,14 @@ extension URL {
     static let favicons = URL(string: "duck://favicons")!
     /// Debug-only permissions inspector page (Debug ▸ Permissions ▸ Inspect). Served by `DuckURLSchemeHandler`.
     static let permissions = URL(string: "duck://permissions")!
+    /// Internal extensions page with their keyboard shortcuts. Served by `DuckURLSchemeHandler`.
+    static let webExtensions = URL(string: "duck://extensions")!
     // base url for Error Page Alternate HTML loaded into Web View
     static let error = URL(string: "duck://error")!
     static let errorPageReportBrokenSite = URL(string: "duck://error/report-broken-site")!
 
     static let dataBrokerProtection = URL(string: "duck://personal-information-removal")!
 
-#if !SANDBOX_TEST_TOOL
     static func settingsPane(_ pane: PreferencePaneIdentifier) -> URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
@@ -213,7 +210,10 @@ extension URL {
         return navigationalScheme == .duck && host == URL.permissions.host
     }
 
-#endif
+    /// `duck://extensions` (and its sub-paths) — the internal extensions page.
+    var isWebExtensions: Bool {
+        return navigationalScheme == .duck && host == URL.webExtensions.host
+    }
 
     enum Invalid {
         static let aboutNewtab = URL(string: "about:newtab")!
@@ -370,7 +370,6 @@ extension URL {
         return "\(host):\(port)"
     }
 
-#if !SANDBOX_TEST_TOOL
     func toString(forUserInput input: String, decodePunycode: Bool = true) -> String {
         let hasInputScheme = input.hasOrIsPrefix(of: self.separatedScheme ?? "")
         let hasInputWww = input.dropping(prefix: self.separatedScheme ?? "").hasOrIsPrefix(of: URL.HostPrefix.www.rawValue)
@@ -381,7 +380,6 @@ extension URL {
                              needsWWW: !input.dropping(prefix: self.separatedScheme ?? "").isEmpty && hasInputWww,
                              dropTrailingSlash: !input.hasSuffix("/"))
     }
-#endif
 
     /// Tries to use the file name part of the URL, if available, adjusting for content type, if available.
     var suggestedFilename: String? {
@@ -689,6 +687,18 @@ extension URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai/access-subscriber-AI-models")!
     }
 
+    static var aiChatPrivacy: URL {
+        return URL(string: "\(base)/duckduckgo-help-pages/duckai/ai-chat-privacy")!
+    }
+
+    static var aiChatUploadFilesAndImagesPrivacy: URL {
+        return URL(string: "\(aiChatPrivacy.absoluteString)#how-we-moderate-uploaded-images-and-files")!
+    }
+
+    static var aiChatPrivacyTerms: URL {
+        return URL(string: "\(base)/duckai/privacy-terms")!
+    }
+
     static var aiChatHelpPages: URL {
         return URL(string: "\(base)/duckduckgo-help-pages/duckai")!
     }
@@ -920,6 +930,8 @@ extension URL {
     // MARK: - System Settings
 
     static var fullDiskAccess = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
+
+    static var screenRecordingSystemSettings = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture")!
 
     static var touchIDAndPassword = URL(string: "x-apple.systempreferences:com.apple.preferences.password")!
 

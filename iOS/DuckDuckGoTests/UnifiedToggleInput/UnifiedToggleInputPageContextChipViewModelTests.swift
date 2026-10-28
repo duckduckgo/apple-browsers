@@ -490,22 +490,6 @@ final class UnifiedToggleInputPageContextChipViewModelTests: XCTestCase {
         XCTAssertEqual(attachCalls, 0)
     }
 
-    func test_tapToRemove_onASuggestion_dismissesIt() {
-        let url = "https://en.wikipedia.org/wiki/Tokamak"
-        originatingURL.send(URL(string: url))
-        makeSUT()
-        sut.setSuggested(makeContext(title: "Tokamak", url: url))
-        var dismissed = 0
-        sut.onSuggestionDismissed = { dismissed += 1 }
-
-        sut.tapToRemove()
-
-        XCTAssertEqual(dismissed, 1)
-        XCTAssertEqual(removeCalls, 0)
-        XCTAssertNil(sut.state)
-        XCTAssertNil(sut.suggestedContext)
-    }
-
     func test_beginLoading_takesPrecedenceOverASuggestion() {
         let url = "https://en.wikipedia.org/wiki/Tokamak"
         originatingURL.send(URL(string: url))

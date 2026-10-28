@@ -46,7 +46,7 @@ protocol EscapeHatchActionRouter: AnyObject {
     func escapeHatchDidRequestBurnWithConfirmation(_ tab: Tab, sourceRect: CGRect)
     func escapeHatchDidRequestBurnImmediately(_ tab: Tab)
     func escapeHatchDidRequestTabSwitcher()
-    func escapeHatchDidChangeOpeningScreenOption(to option: AfterInactivityOption)
+    func escapeHatchDidRequestAfterInactivitySettings()
 }
 
 /// Model for the NTP "Return to..." escape hatch card that navigates to the most recently used tab.
@@ -74,6 +74,7 @@ final class EscapeHatchModel: ObservableObject {
     let tabType: TabType
     let domain: String?
     let targetTab: Tab
+    let thumbnail: UIImage?
     /// `false` for tab-switcher-only hatches, so the card never appears (it would be empty: no tab to return to).
     let hasReturnToTabCard: Bool
     let onCardTap: () -> Void
@@ -81,7 +82,7 @@ final class EscapeHatchModel: ObservableObject {
     let onCloseTab: () -> Void
     let onBurnTabWithConfirmation: (CGRect) -> Void
     let onBurnTabImmediately: () -> Void
-    let onOpeningScreenOptionChanged: (AfterInactivityOption) -> Void
+    let onAfterInactivitySettingsTap: () -> Void
     let onShortcutHidden: () -> Void
     /// Fires the menu / impression / swipe telemetry that the router can't attribute (it can't tell which surface triggered an action).
     private let instrumentation: NTPAfterIdleInstrumentation?
@@ -91,6 +92,7 @@ final class EscapeHatchModel: ObservableObject {
          tabType: TabType,
          domain: String?,
          targetTab: Tab,
+         thumbnail: UIImage? = nil,
          tabsSource: some EscapeHatchTabsSource,
          hasReturnToTabCard: Bool = true,
          afterInactivityOptionAdapter: AfterInactivityOptionAdapter,
@@ -100,7 +102,7 @@ final class EscapeHatchModel: ObservableObject {
          onCloseTab: @escaping () -> Void,
          onBurnTabWithConfirmation: @escaping (CGRect) -> Void,
          onBurnTabImmediately: @escaping () -> Void,
-         onOpeningScreenOptionChanged: @escaping (AfterInactivityOption) -> Void = { _ in },
+         onAfterInactivitySettingsTap: @escaping () -> Void = {},
          onShortcutHidden: @escaping () -> Void = {},
          instrumentation: NTPAfterIdleInstrumentation? = nil) {
         self.title = title
@@ -108,6 +110,7 @@ final class EscapeHatchModel: ObservableObject {
         self.tabType = tabType
         self.domain = domain
         self.targetTab = targetTab
+        self.thumbnail = thumbnail
         self.hasReturnToTabCard = hasReturnToTabCard
         self.afterInactivityOptionAdapter = afterInactivityOptionAdapter
         self.lastTabShortcutAdapter = lastTabShortcutAdapter
@@ -116,7 +119,7 @@ final class EscapeHatchModel: ObservableObject {
         self.onCloseTab = onCloseTab
         self.onBurnTabWithConfirmation = onBurnTabWithConfirmation
         self.onBurnTabImmediately = onBurnTabImmediately
-        self.onOpeningScreenOptionChanged = onOpeningScreenOptionChanged
+        self.onAfterInactivitySettingsTap = onAfterInactivitySettingsTap
         self.onShortcutHidden = onShortcutHidden
         self.instrumentation = instrumentation
 
@@ -127,13 +130,14 @@ final class EscapeHatchModel: ObservableObject {
 
     /// Builds the model with action closures wired to a router. The router is captured weakly so holders of `EscapeHatchModel` don't pin its owner's lifecycle.
     ///
-    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, tabsSource: some EscapeHatchTabsSource, hasReturnToTabCard: Bool = true, router: EscapeHatchActionRouter, afterInactivityOptionAdapter: AfterInactivityOptionAdapter, lastTabShortcutAdapter: LastTabShortcutAdapter, onShortcutHidden: @escaping () -> Void = {}, instrumentation: NTPAfterIdleInstrumentation? = nil) {
+    convenience init(title: String, subtitle: String, tabType: TabType, domain: String?, targetTab: Tab, thumbnail: UIImage? = nil, tabsSource: some EscapeHatchTabsSource, hasReturnToTabCard: Bool = true, router: EscapeHatchActionRouter, afterInactivityOptionAdapter: AfterInactivityOptionAdapter, lastTabShortcutAdapter: LastTabShortcutAdapter, onShortcutHidden: @escaping () -> Void = {}, instrumentation: NTPAfterIdleInstrumentation? = nil) {
         self.init(
             title: title,
             subtitle: subtitle,
             tabType: tabType,
             domain: domain,
             targetTab: targetTab,
+            thumbnail: thumbnail,
             tabsSource: tabsSource,
             hasReturnToTabCard: hasReturnToTabCard,
             afterInactivityOptionAdapter: afterInactivityOptionAdapter,
@@ -153,8 +157,8 @@ final class EscapeHatchModel: ObservableObject {
             onBurnTabImmediately: { [weak router] in
                 router?.escapeHatchDidRequestBurnImmediately(targetTab)
             },
-            onOpeningScreenOptionChanged: { [weak router] option in
-                router?.escapeHatchDidChangeOpeningScreenOption(to: option)
+            onAfterInactivitySettingsTap: { [weak router] in
+                router?.escapeHatchDidRequestAfterInactivitySettings()
             },
             onShortcutHidden: onShortcutHidden,
             instrumentation: instrumentation
@@ -192,18 +196,9 @@ extension EscapeHatchModel {
         let perform: () -> Void
     }
 
-    /// Wraps the adapter's binding so writes from the Escape Hatch UI fire `onOpeningScreenOptionChanged`.
-    /// Mirrors `SettingsViewModel.afterInactivityOptionBinding` — each surface owns its own pixel via its own binding,
-    /// so observing the adapter's `@Published` would conflate sources.
-    var afterInactivityOptionBinding: Binding<AfterInactivityOption> {
-        let upstream = afterInactivityOptionAdapter.afterInactivityOptionBinding
-        return Binding<AfterInactivityOption>(
-            get: { upstream.wrappedValue },
-            set: { [weak self] newValue in
-                upstream.wrappedValue = newValue
-                self?.onOpeningScreenOptionChanged(newValue)
-            }
-        )
+    /// Current "After Inactivity" option, shown as the menu row's subtitle. Changing it happens in Settings.
+    var afterInactivityOption: AfterInactivityOption {
+        afterInactivityOptionAdapter.afterInactivityOption
     }
 
     var isFireTab: Bool {
@@ -254,6 +249,11 @@ extension EscapeHatchModel {
     func closeTabFromMenu() {
         instrumentation?.escapeHatchCloseTabTappedFromMenu()
         onCloseTab()
+    }
+
+    func openAfterInactivitySettingsFromMenu() {
+        instrumentation?.escapeHatchAfterInactivitySettingsTappedFromMenu()
+        onAfterInactivitySettingsTap()
     }
 
     func burnImmediatelyFromMenu() {
@@ -313,7 +313,7 @@ private extension EscapeHatchModel {
         }
     }
 
-    /// Forward an adapter's `objectWillChange` events so derived values (e.g. `afterInactivityOptionBinding`,
+    /// Forward an adapter's `objectWillChange` events so derived values (e.g. `afterInactivityOption`,
     /// `isReturnToTabCardVisible`) react to changes the adapter makes to the shared settings storage.
     func startForwardingAdapterWillChangeEvents(_ adapter: some ObservableObject) {
         adapter.objectWillChange

@@ -26,7 +26,7 @@ public enum OAuthServiceError: DDGError {
     case apiServiceError(Error)
     case invalidRequest
     case invalidResponseCode(HTTPStatusCode)
-    case missingResponseValue(String)
+    case missingResponseValue(OAuthMissingResponseValue)
 
     public var description: String {
         switch self {
@@ -39,7 +39,7 @@ public enum OAuthServiceError: DDGError {
         case .invalidResponseCode(let code):
             "Invalid API request response code: \(code.rawValue) - \(code.description)"
         case .missingResponseValue(let value):
-            "The API response is missing \(value)"
+            "The API response is missing \(value.description)"
         }
     }
 
@@ -68,8 +68,9 @@ public enum OAuthServiceError: DDGError {
             return error
         case .invalidResponseCode(let httpStatusCode):
             return NSError(domain: "com.duckduckgo.networking.HTTPStatusCode", code: httpStatusCode.rawValue)
-        case .invalidRequest,
-            .missingResponseValue:
+        case .missingResponseValue(let value):
+            return value
+        case .invalidRequest:
             return nil
         }
     }
@@ -90,4 +91,36 @@ public enum OAuthServiceError: DDGError {
             return false
         }
     }
+}
+
+/// The values the Auth API response can be missing, reported as the underlying error of `OAuthServiceError.missingResponseValue`
+/// so the specific missing value is identifiable from the error code in pixels.
+public enum OAuthMissingResponseValue: Int, DDGError, CaseIterable {
+    case locationHeader = 11210
+    case bodyError = 11211
+    case authSessionIDCookie = 11212
+    case authorizationCodeInRedirectURI = 11213
+    case authCodeInLoginRedirect = 11214
+    case logoutStatus = 11215
+
+    public var description: String {
+        switch self {
+        case .locationHeader:
+            "Location header"
+        case .bodyError:
+            "Body error"
+        case .authSessionIDCookie:
+            "ddg_auth_session_id cookie"
+        case .authorizationCodeInRedirectURI:
+            "Authorization Code in redirect URI"
+        case .authCodeInLoginRedirect:
+            "Auth code"
+        case .logoutStatus:
+            "LogoutResponse.status"
+        }
+    }
+
+    public static var errorDomain: String { "com.duckduckgo.networking.OAuthMissingResponseValue" }
+
+    public var errorCode: Int { rawValue }
 }

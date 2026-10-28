@@ -40,7 +40,7 @@ final class AIChatHistoryNoResultsCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = UIColor(singleUseColor: .groupedListContentBackground)
+        backgroundColor = UIColor(designSystemColor: .surfaceTertiary)
         selectionStyle = .none
         contentView.addSubview(label)
         NSLayoutConstraint.activate([

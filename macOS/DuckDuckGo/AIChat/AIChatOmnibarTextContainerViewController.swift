@@ -35,12 +35,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         static let dividerTrailingOffset: CGFloat = 77.0
         static let dividerTopOffset: CGFloat = -10.0
         static let placeholderLeadingOffset: CGFloat = 10
-        static let placeholderLegacyLeadingOffset: CGFloat = 9
         static let textLeadingOffset: CGFloat = 10
         static let duckAILogoSize: CGFloat = 24
         static let duckAILogoToTextSpacing: CGFloat = 12
         static let duckAILogoLeadingOffset: CGFloat = 5
-        static let duckAILogoLegacyLeadingOffset: CGFloat = 3
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -209,8 +207,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         placeholderLabel.hitTestForwardingTarget = textView
         containerView.addSubview(placeholderLabel)
 
-        let placeholderLeadingConstant = themeManager.isAppRebranded ? Constants.placeholderLeadingOffset : Constants.placeholderLegacyLeadingOffset
-
         let showsDuckAILogo = omnibarController.surface.showsDuckAILogo
         if showsDuckAILogo {
             setUpDuckAILogo()
@@ -243,7 +239,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.dividerTopOffset),
             dividerView.heightAnchor.constraint(equalToConstant: 1),
 
-            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: placeholderLeadingConstant),
+            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: Constants.placeholderLeadingOffset),
             placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
     }
@@ -257,10 +253,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         duckAILogoView.setAccessibilityElement(false)
         containerView.addSubview(duckAILogoView)
 
-        let leadingConstant = themeManager.isAppRebranded ? Constants.duckAILogoLeadingOffset : Constants.duckAILogoLegacyLeadingOffset
-
         NSLayoutConstraint.activate([
-            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: leadingConstant),
+            duckAILogoView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: Constants.duckAILogoLeadingOffset),
             duckAILogoView.centerYAnchor.constraint(equalTo: placeholderLabel.centerYAnchor),
             duckAILogoView.widthAnchor.constraint(equalToConstant: Constants.duckAILogoSize),
             duckAILogoView.heightAnchor.constraint(equalToConstant: Constants.duckAILogoSize)
@@ -461,8 +455,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     // MARK: - NSTextViewDelegate
 
     func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
-        // Mention picker takes first crack at arrow up/down/Enter/Esc when it's on screen.
-        // The arrow / Enter cases need a real (non-empty-state) selection, so they're gated
+        // Mention picker takes first crack at arrow up/down/Enter/Tab/Esc when it's on screen.
+        // Tab accepts like Enter, as in most autocomplete UIs; otherwise it would move focus
+        // away and close the picker.
+        // The arrow / Enter / Tab cases need a real (non-empty-state) selection, so they're gated
         // on `canHandleKeyCommands`; Esc dismisses regardless so the user can keep typing
         // without the panel covering content. The picker only matters when it has already
         // been instantiated and presented — bind once via `if let` so we don't lazy-allocate
@@ -478,11 +474,11 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             case #selector(NSResponder.moveUp(_:)) where coordinator.canHandleKeyCommands:
                 coordinator.moveHighlightUp()
                 return true
-            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)):
+            case #selector(insertNewline(_:)), #selector(insertNewlineIgnoringFieldEditor(_:)), #selector(NSResponder.insertTab(_:)):
                 if coordinator.canHandleKeyCommands, coordinator.acceptHighlighted() {
                     return true
                 }
-                // No real selection — fall through to the normal Enter path below.
+                // No real selection — fall through to the normal Enter / Tab path below.
             default:
                 break
             }
@@ -696,6 +692,18 @@ extension AIChatOmnibarTextContainerViewController: FocusableTextViewNavigationD
         guard let containerVC = containerViewController, omnibarController.isOmnibarToolsEnabled else { return false }
         return containerVC.addAttachmentsFromDrop(fileURLs)
     }
+
+    var canAttachPastedContent: Bool {
+        containerViewController != nil && omnibarController.isOmnibarToolsEnabled && omnibarController.isPasteImagesEnabled
+    }
+
+    func textViewDidReceiveAttachmentPaste(_ content: AIChatPastedContent) -> Bool {
+        guard let containerVC = containerViewController, canAttachPastedContent else { return false }
+        switch content {
+        case .files(let urls): return containerVC.addAttachmentsFromDrop(urls, source: .paste)
+        case .image(let image): return containerVC.attachPastedImage(image)
+        }
+    }
 }
 
 /// Delegate protocol for handling navigation events from FocusableTextView
@@ -714,6 +722,11 @@ protocol FocusableTextViewNavigationDelegate: AnyObject {
     /// Called when the user drops files onto the text view
     /// - Returns: `true` if any were accepted, `false` otherwise
     func textViewDidReceiveAttachmentDrop(_ fileURLs: [URL]) -> Bool
+    /// Whether ⌘V may attach images and files right now.
+    var canAttachPastedContent: Bool { get }
+    /// Called when the user pastes images or copied files into the text view
+    /// - Returns: `true` if the paste was consumed
+    func textViewDidReceiveAttachmentPaste(_ content: AIChatPastedContent) -> Bool
 }
 
 /// NSTextField label that forwards mouse hits to a configured target view.
@@ -732,6 +745,39 @@ private final class ClickThroughImageView: NSImageView {
 
     override func hitTest(_ point: NSPoint) -> NSView? {
         return hitTestForwardingTarget ?? nil
+    }
+}
+
+/// What ⌘V in the Duck.ai prompt attaches; `nil` means a normal paste.
+enum AIChatPastedContent {
+    case files([URL])
+    case image(CGImage)
+
+    /// Copied files first: Finder also puts each file's icon and name on the pasteboard. Then text, since Office
+    /// apps and Notes put a picture of the copied content next to it; but a web view's Copy Image also writes the
+    /// image's URL as text, and that alone isn't text to paste. Image data last.
+    static func read(from pasteboard: NSPasteboard) -> AIChatPastedContent? {
+        let fileURLs = attachableFileURLs(on: pasteboard)
+        if !fileURLs.isEmpty { return .files(fileURLs) }
+        if let text = trimmedString(on: pasteboard, forType: .string), !text.isEmpty,
+           text != trimmedString(on: pasteboard, forType: .URL) {
+            return nil
+        }
+        guard let image = NSImage(pasteboard: pasteboard)?.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
+        return .image(image)
+    }
+
+    private static func trimmedString(on pasteboard: NSPasteboard, forType type: NSPasteboard.PasteboardType) -> String? {
+        pasteboard.string(forType: type)?.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Images and PDFs, matching what the attach menu offers.
+    static func attachableFileURLs(on pasteboard: NSPasteboard) -> [URL] {
+        let urls = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+        return urls.filter { url in
+            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+            return type.conforms(to: .image) || type.conforms(to: .pdf)
+        }
     }
 }
 
@@ -767,21 +813,21 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.attachableFileURLs(from: sender).isEmpty {
+        if !AIChatPastedContent.attachableFileURLs(on: sender.draggingPasteboard).isEmpty {
             return .copy
         }
         return super.draggingEntered(sender)
     }
 
     override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
-        if !Self.attachableFileURLs(from: sender).isEmpty {
+        if !AIChatPastedContent.attachableFileURLs(on: sender.draggingPasteboard).isEmpty {
             return .copy
         }
         return super.draggingUpdated(sender)
     }
 
     override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-        let fileURLs = Self.attachableFileURLs(from: sender)
+        let fileURLs = AIChatPastedContent.attachableFileURLs(on: sender.draggingPasteboard)
         if !fileURLs.isEmpty,
            navigationDelegate?.textViewDidReceiveAttachmentDrop(fileURLs) == true {
             return true
@@ -789,18 +835,22 @@ private final class FocusableTextView: NSTextView {
         return super.performDragOperation(sender)
     }
 
-    /// Images and PDFs, matching what the attach menu offers. Anything else falls through to the
-    /// text view, which drops a file path into the prompt.
-    private static func attachableFileURLs(from draggingInfo: NSDraggingInfo) -> [URL] {
-        guard let urls = draggingInfo.draggingPasteboard.readObjects(forClasses: [NSURL.self], options: [
-            .urlReadingFileURLsOnly: true
-        ]) as? [URL] else {
-            return []
+    override func paste(_ sender: Any?) {
+        if navigationDelegate?.canAttachPastedContent == true,
+           let content = AIChatPastedContent.read(from: .general),
+           navigationDelegate?.textViewDidReceiveAttachmentPaste(content) == true {
+            return
         }
-        return urls.filter { url in
-            guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
-            return type.conforms(to: .image) || type.conforms(to: .pdf)
+        super.paste(sender)
+    }
+
+    /// NSTextView disables Paste when nothing on the pasteboard is text, which is the case for a copied image.
+    override func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        if menuItem.action == #selector(paste(_:)), navigationDelegate?.canAttachPastedContent == true,
+           NSPasteboard.general.canReadObject(forClasses: [NSImage.self], options: nil) {
+            return true
         }
+        return super.validateMenuItem(menuItem)
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -812,6 +862,16 @@ private final class FocusableTextView: NSTextView {
     }
 
     override func mouseDown(with event: NSEvent) {
+        guard event.clickCount == 1, let window, window.isMovableByWindowBackground else {
+            handleMouseDown(event)
+            return
+        }
+        window.dragOrClick {
+            handleMouseDown(event)
+        }
+    }
+
+    private func handleMouseDown(_ event: NSEvent) {
         if window?.firstResponder != self {
             /// Refocus click: make this the first responder so the refocus flow (via `becomeFirstResponder` →
             /// `onDidBecomeFirstResponder` callback → `focusTextViewRestoringCursorPosition`) can restore the

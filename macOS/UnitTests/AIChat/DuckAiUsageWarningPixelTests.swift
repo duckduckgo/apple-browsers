@@ -85,10 +85,12 @@ final class DuckAiUsageWarningPixelTests: XCTestCase {
     func testTheCTAsAreOneSeriesAcrossTheStatesOfferingThem() {
         sut.fire(.switchModelTapped(approaching))
         sut.fire(.upsellTapped(reached))
+        sut.fire(.weeklyLimitTapped(reached))
 
         XCTAssertEqual(fired.map(\.name), [
             "aichat_usage_warning_switch_model_tapped",
-            "aichat_usage_warning_upsell_tapped"
+            "aichat_usage_warning_upsell_tapped",
+            "aichat_usage_warning_weekly_limit_tapped"
         ])
         XCTAssertEqual(fired.first?.parameters?["percent_bucket"], "75")
     }

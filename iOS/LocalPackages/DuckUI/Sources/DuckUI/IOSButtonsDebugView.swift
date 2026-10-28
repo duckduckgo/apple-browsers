@@ -26,11 +26,7 @@ import DesignResourcesKit
 /// rendered statically (SwiftUI doesn't let us synthesize a pressed
 /// `ButtonStyleConfiguration` from outside).
 public struct IOSButtonsDebugView: View {
-    @StateObject private var override: RebrandPreviewOverride
-
-    public init() {
-        _override = StateObject(wrappedValue: RebrandPreviewOverride(isRebranded: true))
-    }
+    public init() {}
 
     private let iconName = "face.smiling"
 

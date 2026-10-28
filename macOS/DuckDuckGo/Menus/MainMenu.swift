@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
+
 import AIChat
 import BrowserServicesKit
 import Cocoa
@@ -677,7 +679,10 @@ final class MainMenu: NSMenu {
                     webExtensionsMenuItem = NSMenuItem(title: "Web Extensions")
                         .submenu(WebExtensionsDebugMenu(
                             webExtensionManager: webExtensionManager,
-                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor
+                            cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
+                            isBitwardenEnabled: { [featureFlagger] in
+                                featureFlagger.isFeatureOn(.webExtensionBitwarden)
+                            }
                         ))
                 }
                 if let webExtensionsMenuItem, webExtensionsMenuItem.parent == nil {
@@ -1031,6 +1036,7 @@ final class MainMenu: NSMenu {
                     NSMenuItem(title: "500 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 500)
                     NSMenuItem(title: "1000 Tabs", action: #selector(MainViewController.addDebugTabs(_:)), representedObject: 1000)
                 }
+                NSMenuItem(title: "Show Feedback Form", action: #selector(MainViewController.showFeedbackForm))
                 NSMenuItem(title: "Show Save Credentials Popover", action: #selector(MainViewController.showSaveCredentialsPopover))
                 NSMenuItem(title: "Show Credentials Saved Popover", action: #selector(MainViewController.showCredentialsSavedPopover))
                 NSMenuItem(title: "Show Pop Up Window", action: #selector(MainViewController.showPopUpWindow))
@@ -1087,6 +1093,7 @@ final class MainMenu: NSMenu {
             SubscriptionPromoDebugMenu()
             AdBlockingDebugMenu()
             FireDialogDebugMenu()
+            SiteBreakageDebugMenu(networkSignalsProvider: Application.appDelegate.networkSignalsProvider)
 
             if case .normal = AppVersion.runType {
                 NSMenuItem(title: "VPN")

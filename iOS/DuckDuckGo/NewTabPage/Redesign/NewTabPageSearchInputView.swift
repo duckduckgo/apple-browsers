@@ -37,29 +37,14 @@ struct NewTabPageSearchInputView: View {
                     .padding(.horizontal, Metrics.cardPadding)
             }
             NewTabPageRestingSearchField(textEntryMode: model.textEntryMode,
-                                        isAIChatButtonShown: model.settings.isAIChatEnabled && !model.settings.isModeToggleShown,
+                                        isAIChatButtonShown: model.isAIChatButtonShown,
                                         isVoiceSearchEnabled: model.settings.isVoiceSearchEnabled,
                                         onActivate: onActivate,
                                         onVoiceSearch: onVoiceSearch)
                 .frame(height: Metrics.fieldHeight)
         }
-        .background(cardBackground)
+        .background(RedesignedNewTabPageCardBackground())
         .padding(.horizontal, Metrics.horizontalMargin)
-    }
-
-    private var cardBackground: some View {
-        let shape = RoundedRectangle(cornerRadius: Metrics.cardCornerRadius, style: .continuous)
-        return shape
-            .fill(Color(designSystemColor: .surfaceSecondary))
-            .overlay(shape.strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 1))
-            .overlay(
-                shape
-                    .inset(by: 0.5)
-                    .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: 1)
-                    .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center))
-            )
-            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, y: 2)
-            .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 16, y: 8)
     }
 }
 
@@ -105,11 +90,13 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 
         // Give the non-editable placeholder a VoiceOver action without intercepting trailing buttons.
         let activateButton = context.coordinator.activateButton
+        activateButton.searchView = view
+        activateButton.accessibilityIdentifier = "searchEntry"
         view.addSubview(activateButton)
         activateButton.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
             activateButton.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            activateButton.trailingAnchor.constraint(equalTo: view.textField.trailingAnchor),
+            activateButton.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             activateButton.topAnchor.constraint(equalTo: view.topAnchor),
             activateButton.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
@@ -117,6 +104,7 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         view.aiChatButton.addTarget(context.coordinator, action: #selector(Coordinator.activateAIChat), for: .touchUpInside)
         view.voiceSearchButton.addTarget(context.coordinator, action: #selector(Coordinator.activateVoiceSearch), for: .touchUpInside)
         view.aiChatButton.accessibilityLabel = UserText.duckAiFeatureName
+        view.aiChatButton.accessibilityIdentifier = "Browser.OmniBar.Button.AIChat"
         view.voiceSearchButton.accessibilityLabel = UserText.settingsVoiceSearch
         return view
     }
@@ -132,9 +120,25 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
         view.voiceSearchButton.isHidden = !isVoiceSearchEnabled
     }
 
+    final class ActivationButton: UIButton {
+        weak var searchView: DefaultOmniBarSearchView?
+
+        override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+            if let searchView {
+                // Let visible trailing controls handle their own taps beneath this full-width button.
+                for button in [searchView.aiChatButton, searchView.voiceSearchButton] where !button.isHidden {
+                    if button.point(inside: convert(point, to: button), with: event) {
+                        return false
+                    }
+                }
+            }
+            return super.point(inside: point, with: event)
+        }
+    }
+
     final class Coordinator: NSObject {
         var field: NewTabPageRestingSearchField
-        let activateButton = UIButton(type: .custom)
+        let activateButton = ActivationButton(type: .custom)
 
         init(field: NewTabPageRestingSearchField) {
             self.field = field
@@ -157,14 +161,13 @@ private struct NewTabPageRestingSearchField: UIViewRepresentable {
 private enum Metrics {
     static let horizontalMargin: CGFloat = 16
     static let cardPadding: CGFloat = 8
-    static let cardCornerRadius: CGFloat = 28
     static let fieldHeight: CGFloat = 64
     static let toggleHeight: CGFloat = 40
 }
 
 #Preview("Toggle shown") {
     NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
-        .init(isModeToggleShown: true, isAIChatEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
+        .init(isModeToggleShown: true, isAIChatShortcutEnabled: true, isVoiceSearchEnabled: true, defaultTextEntryMode: .search)
     }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })
@@ -174,7 +177,7 @@ private enum Metrics {
 
 #Preview("Search only") {
     NewTabPageSearchInputView(model: NewTabPageSearchInputModel(readSettings: {
-        .init(isModeToggleShown: false, isAIChatEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
+        .init(isModeToggleShown: false, isAIChatShortcutEnabled: false, isVoiceSearchEnabled: false, defaultTextEntryMode: .search)
     }),
                              onActivate: { _ in },
                              onVoiceSearch: { _ in })

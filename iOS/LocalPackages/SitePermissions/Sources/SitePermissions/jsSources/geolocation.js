@@ -99,9 +99,9 @@
             if (typeof nativePolicyAllowsFeature === "function") {
                 return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
             }
-            // Native code checks the top-level response policy. Without this API,
-            // subframe response policies cannot be verified, so deny subframes.
-            return globalThis.top === globalThis;
+            // Without this API, the isolated policy script checks each embedding
+            // frame's allow attribute and native code checks the top-level response policy.
+            return true;
         } catch (_) {
             return false;
         }
@@ -187,6 +187,7 @@
         let pendingState = null;
         const status = new NativeEventTarget();
         Object.defineProperties(status, {
+            name: { configurable: false, enumerable: true, value: "geolocation" },
             state: { configurable: false, enumerable: true, get: () => state },
             onchange: { configurable: true, enumerable: true, writable: true, value: null }
         });
@@ -259,8 +260,9 @@
             return watchID;
         }
 
+        // A watch cleared during registration must not start native location updates.
         callThen(
-            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform()
+            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform() && apply(mapHas, activeWatches, [requestID])
                 ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
                 : deniedResult()),
             (result) => {

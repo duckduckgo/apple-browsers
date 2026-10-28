@@ -29,7 +29,7 @@ struct Pill: View {
     var body: some View {
         Button(action: action) {
             Text(text)
-                .systemLabel(color: isSelected || isHovered ? textColor : .textPrimary)
+                .systemLabel(color: isSelected || isHovered ? textColor : Color(.textPrimary))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
         }
@@ -46,7 +46,7 @@ struct Pill: View {
         } else if isHovered {
             return colorScheme == .light ? .init(baseColor: .blue60) : .white.opacity(0.84)
         } else {
-            return .textPrimary.opacity(0.84)
+            return Color(.textPrimary).opacity(0.84)
         }
     }
 }

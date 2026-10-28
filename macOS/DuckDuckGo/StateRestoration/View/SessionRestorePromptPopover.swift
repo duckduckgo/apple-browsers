@@ -21,11 +21,9 @@ import Persistence
 import SwiftUIExtensions
 
 final class SessionRestorePromptPopover: NSPopover {
-    let isAppRebranded: Bool
     let ctaCallback: (Bool) -> Void
 
-    init(isAppRebranded: Bool, ctaCallback: @escaping (Bool) -> Void) {
-        self.isAppRebranded = isAppRebranded
+    init(ctaCallback: @escaping (Bool) -> Void) {
         self.ctaCallback = ctaCallback
         super.init()
         self.behavior = .applicationDefined
@@ -46,10 +44,10 @@ final class SessionRestorePromptPopover: NSPopover {
     private func setupContentController() {
         /// Popover frame used for positioning is 26px wider than `contentSize.width`.
         /// Adjust the width to get the expected positioning.
-        let metrics = SessionRestorePromptView.Metrics.current(isAppRebranded: isAppRebranded)
+        let metrics = SessionRestorePromptView.Metrics.current
 
         contentSize = metrics.popoverSize
-        contentViewController = SessionRestorePromptViewController(isAppRebranded: isAppRebranded, ctaCallback: ctaCallback) { [weak self] in
+        contentViewController = SessionRestorePromptViewController(ctaCallback: ctaCallback) { [weak self] in
             self?.close()
         }
     }
@@ -59,10 +57,10 @@ final class SessionRestorePromptViewController: NSHostingController<SessionResto
     private let viewModel: SessionRestorePromptViewModel
     private let dismiss: () -> Void
 
-    init(isAppRebranded: Bool, ctaCallback: @escaping (Bool) -> Void, dismiss: @escaping () -> Void) {
+    init(ctaCallback: @escaping (Bool) -> Void, dismiss: @escaping () -> Void) {
         self.viewModel = SessionRestorePromptViewModel(ctaCallback: ctaCallback)
         self.dismiss = dismiss
-        let view = SessionRestorePromptView(model: viewModel, isAppRebranded: isAppRebranded, dismiss: dismiss)
+        let view = SessionRestorePromptView(model: viewModel, dismiss: dismiss)
         super.init(rootView: view)
     }
 

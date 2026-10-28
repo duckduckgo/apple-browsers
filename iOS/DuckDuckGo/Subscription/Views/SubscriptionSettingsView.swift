@@ -67,6 +67,7 @@ struct SubscriptionSettingsViewV2: View {
     // MARK: - Onboarding state
 
     @State private var onboardingFlow: SubscriptionOnboardingFlowViewModel?
+    @State private var onboardingViewCoordinator = SubscriptionOnboardingViewCoordinator()
     /// Guards against a double-tap starting a second entitlement fetch before the first resolves.
     @State private var isStartingOnboarding = false
 
@@ -128,7 +129,7 @@ struct SubscriptionSettingsViewV2: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
             }
-            .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+            .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
             // Row 2: Upgrade button with chevron
             if let tierName = viewModel.firstAvailableUpgradeTier {
@@ -427,7 +428,8 @@ struct SubscriptionSettingsViewV2: View {
         // View All Plans navigation
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue),
+                // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
+                redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue),
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
@@ -443,7 +445,8 @@ struct SubscriptionSettingsViewV2: View {
         // Upgrade navigation - uses pendingUpgradeTier captured at button click to avoid race conditions
         NavigationLink(
             destination: SubscriptionContainerViewFactory.makePlansFlowV2(
-                redirectURLComponents: SubscriptionURL.plansURLComponents(SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.state.pendingUpgradeTier),
+                // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
+                redirectURLComponents: SubscriptionURL.plansURLComponents(planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue, tier: viewModel.state.pendingUpgradeTier),
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
@@ -462,7 +465,7 @@ struct SubscriptionSettingsViewV2: View {
                 .padding(.vertical, -10)
             if viewModel.state.cancelPendingDowngradeDetails != nil {
                 downgradeBanner
-                    .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                    .listRowBackground(Color(designSystemColor: .surfaceTertiary))
             }
             if case .setup(let onboardingProgress) = viewModel.onboardingSetupState {
                 onboardingSetupSection(progress: onboardingProgress)
@@ -480,7 +483,7 @@ struct SubscriptionSettingsViewV2: View {
         .padding(.top, -20)
         .navigationTitle(UserText.settingsPProManageSubscription)
         .applyInsetGroupedListStyle()
-        .sheet(item: $onboardingFlow, onDismiss: {
+        .subscriptionOnboardingCover(item: $onboardingFlow, viewCoordinator: onboardingViewCoordinator, onDismiss: {
             Task { await viewModel.refreshOnboardingState(hasActiveSubscription: hasActiveSubscription, isPIRAvailable: isPIRAvailable) }
         }) { flow in
             SubscriptionOnboardingLauncher.launch(flow: flow)
@@ -630,7 +633,7 @@ struct SubscriptionSettingsViewV2: View {
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                 }
-                .listRowBackground(Color(singleUseColor: .groupedListContentBackground))
+                .listRowBackground(Color(designSystemColor: .surfaceTertiary))
 
                 // Row 2: Cancel downgrade button
                 SettingsCustomCell(content: {
@@ -696,7 +699,10 @@ extension SubscriptionSettingsViewV2 {
                 persistor: viewModel.onboardingPersistor,
                 isPIRAvailable: isPIRAvailable,
                 subscriptionManager: settingsViewModel.subscriptionManager,
-                onFinish: { onboardingFlow = nil },
+                onFinish: {
+                    onboardingFlow = nil
+                    onboardingViewCoordinator.finish()
+                },
                 onRequestDuckAIChat: settingsViewModel.onRequestOnboardingDuckAIChat,
                 pirScreen: { pirDestination }) else { return }
             onboardingFlow = flow

@@ -64,7 +64,7 @@ final class RoundedSelectionRowView: NSTableRowView {
         selectionRect.size.height -= (insets.top + insets.bottom)
 
         let path = NSBezierPath(roundedRect: selectionRect, xRadius: selectionCornerRadius, yRadius: selectionCornerRadius)
-        NSColor.rowDragDrop.setFill()
+        NSColor(resource: .rowDragDrop).setFill()
         path.fill()
     }
 

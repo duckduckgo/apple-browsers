@@ -22,25 +22,26 @@ enum FeedbackPresenter {
 
     @MainActor
     static func presentFeedbackForm(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
-        // swiftlint:disable:next force_cast
-        let windowController = NSStoryboard.feedback.instantiateController(withIdentifier: "FeedbackWindowController") as! NSWindowController
-
-        guard let feedbackWindow = windowController.window as? FeedbackWindow,
-              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("FeedbackPresenter: Failed to present FeedbackWindow")
             return
         }
+
+        let contentRect = NSRect(x: 0, y: 0, width: FeedbackWindow.Size.width, height: FeedbackWindow.Size.height)
+        let feedbackWindow = FeedbackWindow(contentRect: contentRect,
+                                            styleMask: [.titled, .closable, .fullSizeContentView],
+                                            backing: .buffered,
+                                            defer: true)
+        feedbackWindow.titleVisibility = .hidden
+        feedbackWindow.titlebarAppearsTransparent = true
+        feedbackWindow.autorecalculatesKeyViewLoop = false
+        feedbackWindow.isReleasedWhenClosed = false
+        feedbackWindow.contentViewController = FeedbackViewController(nibName: nil, bundle: nil)
 
         feedbackWindow.feedbackViewController.preselectedFormOption = preselectedFormOption
         feedbackWindow.feedbackViewController.currentTab =
             parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel?.tab
         parentWindowController.window?.beginSheet(feedbackWindow) { _ in }
     }
-
-}
-
-fileprivate extension NSStoryboard {
-
-    static let feedback = NSStoryboard(name: "Feedback", bundle: .main)
 
 }

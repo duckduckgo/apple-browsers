@@ -24,8 +24,8 @@ import SetDefaultBrowserCore
 
 @MainActor
 public protocol DefaultBrowserPromptPresenting: AnyObject {
-    /// Returns a view controller if the prompt is eligible to show to the user. Nil, otherwise.
-    func makePresentDefaultModalPrompt() -> UIViewController?
+    /// Returns a view controller and its prompt type when eligible, or nil otherwise.
+    func makePresentDefaultModalPrompt() -> (viewController: UIViewController, type: DefaultBrowserPromptPresentationType)?
 }
 
 @MainActor
@@ -38,16 +38,16 @@ final class DefaultBrowserModalPresenter: NSObject, DefaultBrowserPromptPresenti
         self.uiProvider = uiProvider
     }
 
-    func makePresentDefaultModalPrompt() -> UIViewController? {
+    func makePresentDefaultModalPrompt() -> (viewController: UIViewController, type: DefaultBrowserPromptPresentationType)? {
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Attempting To Present Default Browser Prompt.")
 
         guard let prompt = coordinator.getPrompt() else { return nil }
 
         switch prompt {
         case .activeUserModal:
-            return makeDefaultDefaultBrowserPromptForActiveUser()
+            return (makeDefaultDefaultBrowserPromptForActiveUser(), .activeUserModal)
         case .inactiveUserModal:
-            return makeDefaultBrowserPromptForInactiveUser()
+            return (makeDefaultBrowserPromptForInactiveUser(), .inactiveUserModal)
         }
     }
 

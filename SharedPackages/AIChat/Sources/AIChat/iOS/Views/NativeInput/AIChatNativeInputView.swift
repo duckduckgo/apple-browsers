@@ -93,6 +93,14 @@ public final class AIChatNativeInputView: UIView {
         didSet { updateButtonStates() }
     }
 
+    /// Shown in place of the arrow when set, e.g. "Ask" while a disclaimer asks for an explicit tap.
+    public var submitButtonTitle: String? {
+        didSet {
+            guard submitButtonTitle != oldValue else { return }
+            updateSubmitButtonContent()
+        }
+    }
+
     /// Whether a context chip is currently visible.
     public private(set) var isContextChipVisible = false
 
@@ -176,6 +184,7 @@ public final class AIChatNativeInputView: UIView {
         button.setImage(DesignSystemImages.Glyphs.Size24.arrowUp, for: .normal)
         button.tintColor = UIColor(designSystemColor: .accentPrimary)
         button.accessibilityIdentifier = "AIChatNativeInputView.submitButton"
+        button.titleLabel?.font = AIChatSubmitButtonTitle.font
         button.translatesAutoresizingMaskIntoConstraints = false
         button.addTarget(self, action: #selector(submitButtonTapped), for: .touchUpInside)
         button.isEnabled = false
@@ -186,6 +195,7 @@ public final class AIChatNativeInputView: UIView {
 
     private var isShowingClearButton = false
     private var chipHeightConstraint: NSLayoutConstraint?
+    private var submitButtonContainerWidthConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -296,6 +306,7 @@ private extension AIChatNativeInputView {
 
     func setupConstraints() {
         chipHeightConstraint = chipContainer.heightAnchor.constraint(equalToConstant: 0)
+        submitButtonContainerWidthConstraint = submitButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize)
 
         // Vertical layout chain: textView → chipContainer → bottomBar
         // Using inequality constraints allows textView to flex between min/max height
@@ -335,18 +346,28 @@ private extension AIChatNativeInputView {
 
             submitButtonContainer.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
             submitButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
-            submitButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            submitButtonContainerWidthConstraint!,
             submitButtonContainer.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
             submitButton.centerXAnchor.constraint(equalTo: submitButtonContainer.centerXAnchor),
             submitButton.centerYAnchor.constraint(equalTo: submitButtonContainer.centerYAnchor),
-            submitButton.widthAnchor.constraint(equalToConstant: Constants.minimumButtonHitSize),
+            submitButton.widthAnchor.constraint(equalTo: submitButtonContainer.widthAnchor,
+                                                constant: Constants.minimumButtonHitSize - Constants.buttonSize),
             submitButton.heightAnchor.constraint(equalToConstant: Constants.minimumButtonHitSize),
         ])
     }
 
     func updatePlaceholderVisibility() {
         placeholderLabel.isHidden = !text.isEmpty
+    }
+
+    func updateSubmitButtonContent() {
+        submitButton.setImage(submitButtonTitle == nil ? DesignSystemImages.Glyphs.Size24.arrowUp : nil, for: .normal)
+        submitButton.setTitle(submitButtonTitle, for: .normal)
+        submitButton.accessibilityLabel = submitButtonTitle
+        submitButtonContainerWidthConstraint?.constant = submitButtonTitle.map {
+            AIChatSubmitButtonTitle.buttonWidth(for: $0, minimumWidth: Constants.buttonSize)
+        } ?? Constants.buttonSize
     }
 
     func updateTextViewScrolling() {

@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import FeatureFlags_iOS
 import Bookmarks
 import Core
@@ -183,10 +184,11 @@ struct MainMenuTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test(.timeLimit(.minutes(1)))
-    func builtStaticMenuCommandsHaveUniqueUIKitIdentities() {
+    @Test(.timeLimit(.minutes(1)), arguments: [26, 27])
+    func builtStaticMenuCommandsHaveUniqueUIKitIdentities(iOSMajorVersion: Int) {
         let spec = MainMenuSpec(isEnabled: true, context: .init(voiceSearchEnabled: true, fireModeEnabled: true,
-                                                               aiChatEnabled: true, nativeChatsAvailable: true))
+                                                               aiChatEnabled: true, nativeChatsAvailable: true,
+                                                               iOSMajorVersion: iOSMajorVersion))
         let builder = MainMenuBuilderSpy()
         MainMenuBuilder().build(spec, with: builder)
         func collectCommands(in elements: [UIMenuElement]) -> [UICommand] {
@@ -517,6 +519,117 @@ struct MainMenuTests {
         #expect(controller.spec.allItems.filter { $0.command == .openBookmark }.map(\.title) == ["Changed"])
     }
 
+}
+
+extension MainMenuTests {
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [26, 27])
+    func menuIconsMatchTheOSPolicy(iOSMajorVersion: Int) throws {
+        typealias Glyphs = DesignSystemImages.Glyphs.Size16
+        let designImages: [MainMenuCommand: UIImage] = [
+            .settings: Glyphs.settings, .newTab: Glyphs.add, .newFireTab: Glyphs.fireWindow,
+            .voiceSearch: Glyphs.permissionMicrophone, .share: Glyphs.shareApple, .printPage: Glyphs.print,
+            .find: Glyphs.findInPage, .openRecentChat: Glyphs.chat, .deleteAllChats: Glyphs.fire,
+            .about: Glyphs.info, .feedback: Glyphs.feedback
+        ]
+        let systemImages: [MainMenuCommand: String] = [
+            .settings: "gear", .newTab: "plus", .location: "location", .closeTab: "xmark",
+            .share: "square.and.arrow.up", .printPage: "printer", .find: "doc.text.magnifyingglass",
+            .stop: "xmark", .reload: "arrow.clockwise", .zoomIn: "plus.magnifyingglass",
+            .zoomOut: "minus.magnifyingglass", .actualSize: "1.magnifyingglass"
+        ]
+        let spec = MainMenuSpec(isEnabled: true, context: .init(iOSMajorVersion: iOSMajorVersion))
+        let builder = MainMenuBuilder(iconPolicy: spec.iconPolicy)
+        for command in MainMenuCommand.allCases where command != .openBookmark {
+            let item = MainMenuSpec.Item(command: command, title: "Command", shortcut: nil)
+            let result = builder.makeCommand(for: item)
+            if iOSMajorVersion == 26, let symbol = systemImages[command] {
+                let expected = try #require(UIImage(systemName: symbol))
+                #expect(result.image == expected)
+                #expect(result.image?.isSymbolImage == true)
+            } else if let expected = designImages[command] {
+                #expect(result.image == expected)
+                #expect(result.image?.size == CGSize(width: 16, height: 16))
+            } else {
+                #expect(result.image == nil)
+            }
+            if #available(iOS 27.0, *) {
+                #expect(result.preferredImageVisibility == (iOSMajorVersion == 26 ? .automatic : result.image == nil ? .hidden : .visible))
+            }
+        }
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [26, 27], [false, true])
+    func builderUsesContextPolicyAndPreservesLegacySettings(iOSMajorVersion: Int, enabled: Bool) throws {
+        let spec = MainMenuSpec(isEnabled: enabled, context: .init(iOSMajorVersion: iOSMajorVersion))
+        let builder = MainMenuBuilderSpy()
+        MainMenuBuilder().build(spec, with: builder)
+        let settings = try #require(builder.children[.preferences]?.first as? UIKeyCommand)
+        let expected = enabled ? (iOSMajorVersion == 26 ? UIImage(systemName: "gear") : DesignSystemImages.Glyphs.Size16.settings) : nil
+        #expect(settings.image == expected)
+        #expect(settings.title == (enabled ? UserText.menuSettings : UserText.settingsTitle))
+        #expect(settings.action == MainMenuCommand.settings.action)
+        #expect(settings.input == ",")
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [26, 27])
+    func bookmarkIconsPreserveFaviconsAndUseTheBlueDesignFolder(iOSMajorVersion: Int) throws {
+        let spec = MainMenuSpec(isEnabled: true, context: .init(iOSMajorVersion: iOSMajorVersion))
+        let builder = MainMenuBuilder(iconPolicy: spec.iconPolicy)
+        let domain = "menu-icons-\(iOSMajorVersion).example"
+        let url = try #require(URL(string: "https://" + domain))
+        let cache = try #require(Favicons.Constants.caches[.fireproof])
+        let resource = try #require(Favicons().defaultResource(forDomain: domain))
+        let expected = try #require(UIImage(named: "duckduckgo-favicon-128x128"))
+        cache.store(expected, forKey: resource.cacheKey, toDisk: false)
+        defer { cache.memoryStorage.remove(forKey: resource.cacheKey) }
+        for shortcut in [MainMenuSpec.Shortcut(input: "1", modifiers: [.alternate, .command]), nil] {
+            let item = MainMenuSpec.Item(command: .openBookmark, title: "Bookmark", shortcut: shortcut, url: url)
+            #expect(builder.makeCommand(for: item).image == expected)
+        }
+        let folder = builder.makeBookmarkSubmenu(title: "Travel", id: "folder")
+        #expect(folder.image == DesignSystemImages.Color.Size16.folder)
+        #expect(folder.image?.renderingMode != .alwaysTemplate)
+        #expect(folder.children.first is UIDeferredMenuElement)
+        if #available(iOS 27.0, *) {
+            #expect(folder.preferredImageVisibility == (iOSMajorVersion == 26 ? .automatic : .visible))
+        }
+    }
+
+    @available(iOS 27, macOS 13, *)
+    @Test(.timeLimit(.minutes(1)), arguments: [26, 27])
+    func systemItemsKeepBehaviorWhileTheirImagesFollowDesign(iOSMajorVersion: Int) throws {
+        let image = try #require(UIImage(systemName: "pencil"))
+        let undo = UIKeyCommand(title: "Localized Undo", image: image, action: #selector(UndoManager.undo),
+                                input: "z", modifierFlags: .command, propertyList: "payload", attributes: .disabled, state: .on)
+        let autofill = UIMenu(title: "Localized AutoFill", image: image, children: [undo])
+        let minimize = UICommand(title: "Localized Minimize", image: image, action: #selector(UndoManager.undo))
+        let hide = UICommand(title: "Localized Hide", image: image, action: #selector(UndoManager.undo))
+        let search = UICommand(title: "Localized Search", image: image, action: #selector(UndoManager.undo))
+        let builder = MainMenuBuilderSpy()
+        builder.children = [.edit: [autofill], .window: [minimize], .application: [hide], .help: [search]]
+        MainMenuBuilder().build(MainMenuSpec(isEnabled: true, context: .init(iOSMajorVersion: iOSMajorVersion)), with: builder)
+        let retainedAutofill = try #require(builder.children[.edit]?.first as? UIMenu)
+        let retainedUndo = try #require(retainedAutofill.children.first as? UIKeyCommand)
+        #expect(retainedUndo.title == undo.title)
+        #expect(retainedUndo.action == undo.action)
+        #expect(retainedUndo.input == "z")
+        #expect(retainedUndo.modifierFlags == .command)
+        #expect(retainedUndo.propertyList as? String == "payload")
+        #expect(retainedUndo.attributes == .disabled)
+        #expect(retainedUndo.state == .on)
+        #expect(retainedAutofill.title == autofill.title)
+        #expect(builder.children[.window]?.first === minimize)
+        #expect(builder.children[.application]?.first === hide)
+        #expect(builder.children[.help]?.first === search)
+        for element in [retainedAutofill, retainedUndo, minimize, hide] {
+            #expect(element.image == image)
+            #expect(element.preferredImageVisibility == (iOSMajorVersion == 26 ? .automatic : .hidden))
+        }
+        #expect(search.preferredImageVisibility == .automatic)
+    }
 }
 
 @MainActor

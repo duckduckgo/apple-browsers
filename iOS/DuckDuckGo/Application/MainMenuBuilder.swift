@@ -17,25 +17,35 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKitIcons
 import UIKit
 
 struct MainMenuBuilder {
     var chatHistory: (@escaping ([MainMenuSpec.Menu]) -> Void) -> Void = { $0([]) }
     var bookmarkChildren: (String?) -> [MainMenuBookmarkEntry] = { _ in [] }
+    var iconPolicy: MainMenuSpec.IconPolicy = .legacy
 
     func build(_ spec: MainMenuSpec, with builder: UIMenuBuilder) {
         guard builder.system == .main else { return }
+        var configured = self
+        configured.iconPolicy = spec.iconPolicy
+        if spec.iconPolicy == .design {
+            builder.replaceChildren(ofMenu: .application) { existing in
+                configured.hidingSystemImages(in: existing)
+            }
+        }
         for identifier in spec.removedMenus {
             builder.remove(menu: identifier)
         }
         for menu in spec.menus {
-            let elements = makeElements(for: menu)
+            let elements = configured.makeElements(for: menu)
             if case .insertBefore(let sibling) = menu.placement {
                 builder.insertSibling(UIMenu(title: menu.title, identifier: menu.identifier, children: elements), beforeMenu: sibling)
                 continue
             }
             builder.replaceChildren(ofMenu: menu.identifier) { existing in
-                let retained = menu.identifier == .window && spec.ownsKeyCommands ? removingCloseShortcut(from: existing) : existing
+                let windowItems = menu.identifier == .window && spec.ownsKeyCommands ? removingCloseShortcut(from: existing) : existing
+                let retained = [.edit, .window].contains(menu.identifier) ? configured.hidingSystemImages(in: windowItems) : windowItems
                 if menu.identifier == .edit, spec.ownsKeyCommands {
                     var replacedFind = false
                     let updated = replacingFind(in: retained, with: elements[0], replaced: &replacedFind)
@@ -50,18 +60,14 @@ struct MainMenuBuilder {
     private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
         let deferred: [UIMenuElement] = menu.loadsBookmarks ? [makeBookmarkFolder()] : []
         let chats: [UIMenuElement] = menu.loadsChats ? [makeChatHistory()] : []
-        return menu.items.map(makeCommand) + deferred + chats + menu.submenus.map { submenu in
-            UIMenu(title: submenu.title, identifier: submenu.identifier,
-                   options: submenu.inline ? .displayInline : [], children: makeElements(for: submenu))
-        }
+        return menu.items.map(makeCommand) + deferred + chats + menu.submenus.map(makeMenu)
     }
 
     func makeChatHistory() -> UIDeferredMenuElement {
         UIDeferredMenuElement.uncached { completion in
             chatHistory { menus in
                 completion(menus.map { menu in
-                    UIMenu(title: menu.title, identifier: menu.identifier,
-                           options: menu.inline ? .displayInline : [], children: makeElements(for: menu))
+                    makeMenu(menu)
                 })
             }
         }
@@ -75,11 +81,42 @@ struct MainMenuBuilder {
                     case .bookmark(let bookmark):
                         return makeCommand(for: .init(command: .openBookmark, title: bookmark.title, shortcut: nil, url: bookmark.url))
                     case .folder(let title, let folderID):
-                        return UIMenu(title: title, children: [makeBookmarkFolder(id: folderID)])
+                        return makeBookmarkSubmenu(title: title, id: folderID)
                     }
                 }
                 completion(elements)
             }
+        }
+    }
+
+    private func makeMenu(_ menu: MainMenuSpec.Menu) -> UIMenu {
+        let result = UIMenu(title: menu.title, identifier: menu.identifier,
+                            options: menu.inline ? .displayInline : [], children: makeElements(for: menu))
+        applyImageVisibility(to: result)
+        return result
+    }
+
+    func makeBookmarkSubmenu(title: String, id: String) -> UIMenu {
+        let menu = UIMenu(title: title, image: DesignSystemImages.Color.Size16.folder,
+                          children: [makeBookmarkFolder(id: id)])
+        applyImageVisibility(to: menu)
+        return menu
+    }
+
+    private func hidingSystemImages(in elements: [UIMenuElement]) -> [UIMenuElement] {
+        guard iconPolicy == .design else { return elements }
+        return elements.map { element in
+            let result = (element as? UIMenu).map { $0.replacingChildren(hidingSystemImages(in: $0.children)) } ?? element
+            if #available(iOS 27.0, *) {
+                result.preferredImageVisibility = .hidden
+            }
+            return result
+        }
+    }
+
+    private func applyImageVisibility(to element: UIMenuElement) {
+        if iconPolicy == .design, #available(iOS 27.0, *) {
+            element.preferredImageVisibility = element.image == nil ? .hidden : .visible
         }
     }
 
@@ -125,17 +162,63 @@ struct MainMenuBuilder {
         } else {
             propertyList = nil
         }
-        guard let shortcut = item.shortcut else {
-            return UICommand(title: item.title, image: favicon(for: item), action: item.command.action, propertyList: propertyList)
+        let image = item.command == .openBookmark ? favicon(for: item) : image(for: item.command)
+        let command: UICommand
+        if let shortcut = item.shortcut {
+            let keyCommand = UIKeyCommand(title: item.title, image: image, action: item.command.action,
+                                         input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
+            keyCommand.wantsPriorityOverSystemBehavior = true
+            command = keyCommand
+        } else {
+            command = UICommand(title: item.title, image: image, action: item.command.action, propertyList: propertyList)
         }
-        let command = UIKeyCommand(title: item.title, image: favicon(for: item), action: item.command.action,
-                                   input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
-        command.wantsPriorityOverSystemBehavior = true
+        applyImageVisibility(to: command)
         return command
     }
+
+    private func image(for command: MainMenuCommand) -> UIImage? {
+        typealias Glyphs = DesignSystemImages.Glyphs.Size16
+        if iconPolicy == .legacy { return nil }
+        if iconPolicy == .system, let symbol = command.standardSymbol {
+            return UIImage(systemName: symbol)
+        }
+        switch command {
+        case .settings: return Glyphs.settings
+        case .newTab: return Glyphs.add
+        case .newFireTab: return Glyphs.fireWindow
+        case .voiceSearch: return Glyphs.permissionMicrophone
+        case .share: return Glyphs.shareApple
+        case .printPage: return Glyphs.print
+        case .find: return Glyphs.findInPage
+        case .openRecentChat: return Glyphs.chat
+        case .deleteAllChats: return Glyphs.fire
+        case .about: return Glyphs.info
+        case .feedback: return Glyphs.feedback
+        default: return nil
+        }
+    }
+
 }
 
 extension MainMenuCommand {
+    fileprivate var standardSymbol: String? {
+        switch self {
+        case .settings: return "gear"
+        case .newTab: return "plus"
+        case .location: return "location"
+        case .closeTab: return "xmark"
+        case .share: return "square.and.arrow.up"
+        case .printPage: return "printer"
+        case .find: return "doc.text.magnifyingglass"
+        case .stop: return "xmark"
+        case .reload: return "arrow.clockwise"
+        case .zoomIn: return "plus.magnifyingglass"
+        case .zoomOut: return "minus.magnifyingglass"
+        case .actualSize: return "1.magnifyingglass"
+        default: return nil
+        }
+    }
+
     var action: Selector {
         switch self {
         case .openDuckAI: return #selector(MainViewController.menuOpenDuckAI)

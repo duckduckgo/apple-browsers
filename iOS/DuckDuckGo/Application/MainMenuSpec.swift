@@ -30,12 +30,17 @@ enum MainMenuCommand: CaseIterable {
 }
 
 struct MainMenuSpec {
+    enum IconPolicy {
+        case legacy, system, design
+    }
+
     struct Context: Equatable {
         var voiceSearchEnabled = false
         var fireModeEnabled = false
         var favorites: [MainMenuBookmark] = []
         var aiChatEnabled = false
         var nativeChatsAvailable = false
+        var iOSMajorVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
     }
 
     struct Shortcut: Equatable {
@@ -73,9 +78,11 @@ struct MainMenuSpec {
     let menus: [Menu]
     let removedMenus: [UIMenu.Identifier]
     let ownsKeyCommands: Bool
+    let iconPolicy: IconPolicy
 
     init(isEnabled: Bool, context: Context = Context()) {
         ownsKeyCommands = isEnabled
+        iconPolicy = isEnabled ? (context.iOSMajorVersion >= 27 ? .design : .system) : .legacy
         let settings = Menu(identifier: .preferences, items: [
             Self.item(.settings, isEnabled ? UserText.menuSettings : UserText.settingsTitle, ",", .command)
         ])

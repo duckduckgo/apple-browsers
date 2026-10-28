@@ -32,26 +32,20 @@ import WebKit
 @MainActor
 enum AIChatTabPickerSource {
 
-    /// Resolves the tab collection of the window that owns `webView`.
+    /// Resolves the tab collection of the window that owns `webView`; `nil` when it can't be placed.
+    ///
+    /// Never falls back to the key window: a background tab's web view has no window, and the key
+    /// window may be a Fire Window — guessing would hand its tabs to someone else's chat.
     static func originTabCollectionViewModel(for webView: WKWebView?,
                                              in windowControllersManager: WindowControllersManagerProtocol) -> TabCollectionViewModel? {
-        guard let webView else {
-            return windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-        }
+        guard let webView else { return nil }
         if let window = webView.window,
            let controller = windowControllersManager.mainWindowControllers.first(where: { $0.window === window }) {
             return controller.mainViewController.tabCollectionViewModel
         }
-        // A detached Duck.ai window belongs to the tab it was opened from, which is not necessarily
-        // in the key window — resolving to that one would hand a Fire Window chat regular tabs.
-        guard let tabID = hostingAIChatViewController(of: webView)?.tabID else {
-            return webView.window == nil
-                ? windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-                : nil
-        }
-        return windowControllersManager.allTabCollectionViewModels.first { collection in
-            collection.indexInAllTabs(where: { $0.uuid == tabID }) != nil
-        }
+        // A detached Duck.ai window belongs to the tab it was opened from, so the owner tab decides there too.
+        guard let ownerTabID = ownerTabID(for: webView, in: windowControllersManager) else { return nil }
+        return collection(containingTabID: ownerTabID, in: windowControllersManager)
     }
 
     /// Opaque handle for the window a call is scoped to. A tab id is not enough — pinned tabs are

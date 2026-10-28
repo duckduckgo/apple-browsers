@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import WebKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -97,6 +98,30 @@ final class AIChatTabPickerSourceTests: XCTestCase {
         let second = collection([.unloaded(shared())])
 
         XCTAssertNil(AIChatTabPickerSource.ownerCollection(for: nil, ownerTabID: "shared", in: manager(with: [first, second])))
+    }
+
+    // MARK: - originTabCollectionViewModel (picker scoping)
+
+    /// A background tab's web view has no window. Its own tab decides, never the key window —
+    /// which here is a Fire Window the caller has nothing to do with.
+    func testWhenCallerIsInABackgroundTabThenOriginIsItsOwnWindow() {
+        let fireWindow = burnerCollection()
+        let callerWindow = regularCollection(urls: ["https://a.example"])
+        guard case .loaded(let callerTab) = callerWindow.tabCollection.tabs[0] else { return XCTFail("Expected a loaded tab") }
+        XCTAssertNil(callerTab.webView.window)
+
+        let resolved = AIChatTabPickerSource.originTabCollectionViewModel(for: callerTab.webView, in: manager(with: [fireWindow, callerWindow]))
+
+        XCTAssertTrue(resolved === callerWindow)
+    }
+
+    func testWhenCallerCannotBePlacedThenNoOriginIsResolved() {
+        let fireWindow = burnerCollection()
+        let regular = regularCollection(urls: ["https://a.example"])
+        let manager = manager(with: [fireWindow, regular])
+
+        XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: WKWebView(), in: manager))
+        XCTAssertNil(AIChatTabPickerSource.originTabCollectionViewModel(for: nil, in: manager))
     }
 
     // MARK: - materializeAttachableTab (wake suspended tabs)

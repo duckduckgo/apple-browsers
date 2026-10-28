@@ -1642,6 +1642,51 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         XCTAssertNil(host.chipViewModel.suggestedContext)
     }
 
+    // MARK: - Recent chats storage
+
+    @MainActor
+    func testRecentChatsInFireModeComeFromFireStorageOnly() async throws {
+        let fireStorage = MockDuckAiChatStorage()
+        try mockNativeStorage.putChat(chatId: "regular", data: makeChatData(chatId: "regular"))
+        try fireStorage.putChat(chatId: "fire", data: makeChatData(chatId: "fire"))
+
+        let reader = makeRecentChatsReader(isFireMode: true, fireModeStorage: fireStorage)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
+
+        XCTAssertEqual((result.pinned + result.recent).map { $0.chatId }, ["fire"])
+    }
+
+    @MainActor
+    func testRecentChatsInFireModeWithoutFireStorageAreEmpty() async throws {
+        try mockNativeStorage.putChat(chatId: "regular", data: makeChatData(chatId: "regular"))
+
+        let reader = makeRecentChatsReader(isFireMode: true, fireModeStorage: nil)
+        let result = await reader.fetchSuggestions(query: nil, maxChats: 5)
+
+        XCTAssertTrue((result.pinned + result.recent).isEmpty)
+    }
+
+    @MainActor
+    private func makeRecentChatsReader(isFireMode: Bool, fireModeStorage: DuckAiNativeStorageHandling?) -> AIChatSuggestionsReading {
+        AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: isFireMode,
+                                                      nativeStorageHandler: mockNativeStorage,
+                                                      fireModeStorageHandler: fireModeStorage,
+                                                      featureFlagger: mockFeatureFlagger,
+                                                      privacyConfig: MockPrivacyConfigurationManager())
+    }
+
+    private func makeChatData(chatId: String) throws -> Data {
+        let lastEdit = AIChatSuggestion.formatISO8601Date(Date()) ?? ""
+        return try JSONSerialization.data(withJSONObject: [
+            "chatId": chatId,
+            "title": chatId,
+            "model": "gpt-4o-mini",
+            "lastEdit": lastEdit,
+            "pinned": false,
+            "messages": [["role": "user", "content": "Hello"]]
+        ] as [String: Any])
+    }
+
     // MARK: - Open Duck.ai
 
     /// Rebuilt because the host snapshots availability, so it must be on before the coordinator exists.

@@ -77,6 +77,35 @@ final class AIChatSuggestionsReader: AIChatSuggestionsReading {
     }
 }
 
+// MARK: - Recent chats
+
+extension AIChatSuggestionsReader {
+
+    /// Fire mode reads Fire storage only: the webview fallback would surface regular chats.
+    static func makeRecentChatsReader(isFireMode: Bool,
+                                      nativeStorageHandler: DuckAiNativeStorageHandling?,
+                                      fireModeStorageHandler: DuckAiNativeStorageHandling?,
+                                      featureFlagger: FeatureFlagger,
+                                      privacyConfig: PrivacyConfigurationManaging) -> AIChatSuggestionsReading {
+        let historySettings = AIChatHistorySettings(privacyConfig: privacyConfig)
+        guard isFireMode else {
+            let reader = SuggestionsReader(featureFlagger: featureFlagger,
+                                           privacyConfig: privacyConfig,
+                                           nativeStorageHandler: nativeStorageHandler,
+                                           featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
+            return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: historySettings)
+        }
+        return makeFireModeReader(storageHandler: fireModeStorageHandler, historySettings: historySettings)
+    }
+
+    private static func makeFireModeReader(storageHandler: DuckAiNativeStorageHandling?,
+                                           historySettings: AIChatHistorySettings) -> AIChatSuggestionsReading {
+        guard let storageHandler else { return NilSuggestionsReader() }
+        return AIChatSuggestionsReader(suggestionsReader: LocalSuggestionsReader(storageHandler: storageHandler),
+                                       historySettings: historySettings)
+    }
+}
+
 // MARK: - NilSuggestionsReader
 
 @MainActor

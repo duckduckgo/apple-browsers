@@ -102,6 +102,7 @@ final class WebExtensionManagerTests: XCTestCase {
                              pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                              isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                              isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                             isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
                              isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                              isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
@@ -123,6 +124,7 @@ final class WebExtensionManagerTests: XCTestCase {
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             isCPMMessagingHangRecoveryEnabled: isCPMMessagingHangRecoveryEnabled,
             isCPMBackgroundLoadRecoveryEnabled: isCPMBackgroundLoadRecoveryEnabled,
+            isCPMBackgroundLoadRestartEnabled: isCPMBackgroundLoadRestartEnabled,
             isApplicationInBackground: isApplicationInBackground,
             isCPMLateBackgroundDocumentRecoveryEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
             isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
@@ -401,7 +403,8 @@ final class WebExtensionManagerTests: XCTestCase {
     @MainActor
     func testRetainedFailedBackgroundViewRestartsContextInsteadOfRetrying() async throws {
         let manager = makeManager(controllerConfiguration: .nonPersistent(),
-                                  isCPMBackgroundLoadRecoveryEnabled: { true })
+                                  isCPMBackgroundLoadRecoveryEnabled: { true },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
         let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
         defer { manager.unloadAllExtensions() }
         context.retainedBackgroundWebView = WKWebView()
@@ -420,16 +423,37 @@ final class WebExtensionManagerTests: XCTestCase {
 
         XCTAssertTrue(scheduled)
         await fulfillment(of: [reloaded], timeout: 3)
-        XCTAssertTrue(context.completions.isEmpty, "A retry cannot replace a retained failed view")
-        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled, "The failed view is replaced by unloading its context")
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["embedded"])
         observer.cancel()
         await observer.value
     }
 
     @MainActor
+    func testRetainedFailedBackgroundViewKeepsPlainRetryWhenRestartFlagIsOff() async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { true },
+                                  isCPMBackgroundLoadRestartEnabled: { false })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let retried = expectation(description: "With the restart flag off the plain retry is kept")
+        context.onBackgroundLoad = { retried.fulfill() }
+
+        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
+
+        XCTAssertTrue(scheduled)
+        await fulfillment(of: [retried], timeout: 2)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled, "The restart flag must veto the context reload")
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
     func testReleasedFailedBackgroundViewStillRetriesWithoutRestartingContext() async throws {
         let manager = makeManager(controllerConfiguration: .nonPersistent(),
-                                  isCPMBackgroundLoadRecoveryEnabled: { true })
+                                  isCPMBackgroundLoadRecoveryEnabled: { true },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
         let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
         defer { manager.unloadAllExtensions() }
         XCTAssertNil(context.retainedBackgroundWebView)

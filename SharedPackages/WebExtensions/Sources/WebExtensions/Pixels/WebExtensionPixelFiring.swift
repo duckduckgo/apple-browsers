@@ -250,6 +250,7 @@ private extension WebExtensionReloadTrigger {
         case .scriptletUpdate: return "scriptlet_update"
         case .explicit: return "explicit"
         case .cpmMessagingHang: return "cpm_messaging_hung"
+        case .cpmBackgroundLoadFailure: return "cpm_background_load_failed"
         }
     }
 }

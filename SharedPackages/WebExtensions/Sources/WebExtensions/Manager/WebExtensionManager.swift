@@ -178,6 +178,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private let isCPMMessagingHangRecoveryEnabled: @MainActor () -> Bool
     /// Independent kill switch for retrying a failed background load in its current context.
     private let isCPMBackgroundLoadRecoveryEnabled: @MainActor () -> Bool
+    /// Independent kill switch for restarting the context when a failed background view is still retained.
+    private let isCPMBackgroundLoadRestartEnabled: @MainActor () -> Bool
     /// Platform lifecycle state must remain available when diagnostics are disabled.
     private let isApplicationInBackground: @MainActor () -> Bool
 
@@ -234,6 +236,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isCPMNetworkProcessRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 cpmNetworkProcessRecoveryFeatureFlagUpdates: AnyPublisher<Void, Never>? = nil,
                 isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                 isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                 isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
@@ -299,6 +302,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             pixelFiring: pixelFiring
         )
         self.isCPMBackgroundLoadRecoveryEnabled = isCPMBackgroundLoadRecoveryEnabled
+        self.isCPMBackgroundLoadRestartEnabled = isCPMBackgroundLoadRestartEnabled
         self.isApplicationInBackground = isApplicationInBackground
         self.messageRouter = messageRouter ?? WebExtensionMessageRouter()
         self.handlerProvider = handlerProvider
@@ -1041,12 +1045,38 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         // Retry only the failed background first. Replacing the whole context invalidates
         // in-flight content-script replies; keeping it preserves the failed document's init.
         // The existing confirmed-hang recovery remains the fallback if messaging stays stuck.
+        // A retained failed view is the exception: WebKit returns early from loading while it exists,
+        // so the retry could never replace it and only a restarted context gets out of that state.
         Task { @MainActor [weak self] in
             guard let self, self.isCPMBackgroundLoadRecoveryEnabled(), !self.isApplicationInBackground() else { return }
+            if self.isCPMBackgroundLoadRestartEnabled(), self.hasRetainedBackgroundWebView(context) {
+                await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
+                return
+            }
             self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
         }
         return true
+    }
+
+    @MainActor
+    private func hasRetainedBackgroundWebView(_ context: WKWebExtensionContext) -> Bool {
+        guard context.responds(to: Selector.backgroundWebView) else { return false }
+        return context.value(forKey: NSStringFromSelector(Selector.backgroundWebView)) is WKWebView
+    }
+
+    @MainActor
+    private func restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(_ context: WKWebExtensionContext) async {
+        guard !isCPMMessagingRecoveryInProgress, self.context(for: context.uniqueIdentifier) === context else { return }
+        isCPMMessagingRecoveryInProgress = true
+        defer { isCPMMessagingRecoveryInProgress = false }
+        do {
+            try await reloadExtension(identifier: context.uniqueIdentifier, trigger: .cpmBackgroundLoadFailure)
+            // A missing WebKit completion must not hold the recovery guard forever.
+            Task { @MainActor [weak self] in await self?.loadEmbeddedExtensionBackgroundContent() }
+        } catch {
+            Logger.webExtensions.error("[CPM Background] Failed to restart the embedded extension after a retained background load failure: \(error.localizedDescription)")
+        }
     }
 
     @MainActor

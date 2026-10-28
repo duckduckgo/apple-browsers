@@ -42,13 +42,15 @@ enum AIChatEntryPointPixel: PixelKit.Event {
                      duckAIEnabled: Bool,
                      toggleEnabled: Bool,
                      opensNewTab: Bool,
-                     hasPrompt: Bool) {
+                     hasPrompt: Bool,
+                     voice: Bool) {
         PixelKit.fire(AIChatEntryPointPixel.entryPoint, frequency: .dailyAndCount, withAdditionalParameters: [
             PixelParameters.source: source.rawValue,
             "duckai_enabled": String(duckAIEnabled),
             "toggle_enabled": String(toggleEnabled),
             "opens_new_tab": String(opensNewTab),
-            "has_prompt": String(hasPrompt)
+            "has_prompt": String(hasPrompt),
+            "voice": String(voice)
         ])
     }
 }

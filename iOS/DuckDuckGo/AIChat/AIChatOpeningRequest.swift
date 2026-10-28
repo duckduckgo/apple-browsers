@@ -113,6 +113,8 @@ struct AIChatOpeningRequest {
     let source: AIChatEntryPointSource
     let opensNewTab: Bool
     let prompt: Prompt
+    /// The user started by speaking, e.g. voice search sent to Duck.ai.
+    var isVoice = false
 
     var promptInfo: AIChatOpeningPromptInfo {
         switch prompt {

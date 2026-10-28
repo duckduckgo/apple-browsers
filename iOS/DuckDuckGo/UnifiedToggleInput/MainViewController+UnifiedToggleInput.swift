@@ -1659,7 +1659,7 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
     }
 
     func aiChatTabChatHeaderDidTapNewVoiceChat() {
-        startDuckAIVoiceMode(from: .duckAI)
+        startDuckAIVoiceMode(from: .duckAI, entrySource: .duckAINewChat)
     }
 
     func aiChatTabChatHeaderDidTapNewImage() {

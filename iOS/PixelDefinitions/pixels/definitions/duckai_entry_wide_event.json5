@@ -102,6 +102,11 @@
                 "description": "Whether the user arrived with a prompt already."
             },
             {
+                "key": "feature.data.ext.voice",
+                "type": "boolean",
+                "description": "Whether the user started by speaking: a voice chat, or voice search sent to Duck.ai."
+            },
+            {
                 "key": "feature.data.ext.chat_state",
                 "type": "string",
                 "description": "Whether the entry starts a new chat or opens an existing one. Absent when the entry ended before its Duck.ai tab was shown.",

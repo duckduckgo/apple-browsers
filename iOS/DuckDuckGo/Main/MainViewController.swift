@@ -4942,13 +4942,14 @@ class MainViewController: UIViewController {
                     forcesNewTab: Bool = false,
                     fromDeepLink: Bool = false,
                     termsAccepted: Bool = false,
-                    nativePromptFlow: DuckAIPromptFlowStart? = nil) {
+                    nativePromptFlow: DuckAIPromptFlowStart? = nil,
+                    voice: Bool = false) {
 
         openAIChat(source: source, query, autoSend: autoSend, payload: payload, flowType: flowType,
                    tools: tools, modelId: modelId, reasoningEffort: reasoningEffort,
                    attachments: attachments, reportsNewTab: reportsNewTab, forcesNewTab: forcesNewTab,
                    fromDeepLink: fromDeepLink, termsAccepted: termsAccepted, nativePromptFlow: nativePromptFlow,
-                   tabAttachmentRequest: nil)
+                   tabAttachmentRequest: nil, voice: voice)
     }
 
     func openAIChat(source: AIChatEntryPointSource,
@@ -4965,7 +4966,8 @@ class MainViewController: UIViewController {
                     fromDeepLink: Bool = false,
                     termsAccepted: Bool = false,
                     nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                    tabAttachmentRequest: MultiTabAttachmentRequest?) {
+                    tabAttachmentRequest: MultiTabAttachmentRequest?,
+                    voice: Bool = false) {
 
         // A query means the user asked something and a response is what they are waiting for;
         // without one they are only opening the chat surface.
@@ -4986,22 +4988,24 @@ class MainViewController: UIViewController {
             fromDeepLink: fromDeepLink,
             termsAccepted: termsAccepted,
             nativePromptFlow: nativePromptFlow,
-            tabAttachmentRequest: tabAttachmentRequest
+            tabAttachmentRequest: tabAttachmentRequest,
+            voice: voice
         )
     }
 
-    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+    func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false) {
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
-                                   hasPrompt: hasPrompt)
+                                   hasPrompt: hasPrompt,
+                                   voice: voice)
         let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
         // A tab entry reads its chat state once its Duck.ai tab is shown.
         let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
             ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
             : nil
-        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, surface: surface, chatState: sheetChatState)
+        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, voice: voice, surface: surface, chatState: sheetChatState)
         if surface == .contextualSheet {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
@@ -5024,25 +5028,24 @@ class MainViewController: UIViewController {
 
     /// Voice requested from the address bar (iPad) or Unified Input.
     func onDuckAIVoiceModeRequested() {
-        startDuckAIVoiceMode(from: .addressBar)
+        startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    func startDuckAIVoiceMode(from source: VoiceEntryPointSource) {
+    /// `entrySource` is where the user started; the entry pixel reports it with `voice=true`.
+    func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)
         }
         postIdleSessionInstrumentation.duckAIOpenedWithoutPrompt()
-        openAIChatInVoiceMode()
+        openAIChatInVoiceMode(source: entrySource, fromDeepLink: false)
     }
 
     func openAIVoiceChatFromDeepLink(source: AIChatEntryPointSource) {
-        openAIChatInVoiceMode(deepLinkSource: source)
+        openAIChatInVoiceMode(source: source, fromDeepLink: true)
     }
 
-    /// `deepLinkSource` is nil when voice was started in-app, so a widget voice entry is
-    /// attributed to the widget; `m_aichat_voice_entry_point_tapped` separates voice from text.
-    private func openAIChatInVoiceMode(deepLinkSource: AIChatEntryPointSource? = nil) {
+    private func openAIChatInVoiceMode(source: AIChatEntryPointSource, fromDeepLink: Bool) {
         if let reminder = NoMicPermissionAlert.buildVoiceChatReminderIfNeeded(
             isSitePermissionsEnabled: tabManager.isSitePermissionsEnabled,
             microphoneAuthorization: AVCaptureDevice.authorizationStatus(for: .audio),
@@ -5058,8 +5061,6 @@ class MainViewController: UIViewController {
         }
 
         // Voice mode bypasses `openAIChat`, so fire the entry pixel directly.
-        let source = deepLinkSource ?? .voice
-        let fromDeepLink = deepLinkSource != nil
         openAIChatVoiceModeInTab(source: source, fromDeepLink: fromDeepLink)
     }
 
@@ -5077,7 +5078,7 @@ class MainViewController: UIViewController {
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
-        fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false)
+        fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -5121,7 +5122,8 @@ class MainViewController: UIViewController {
                                  fromDeepLink: Bool = false,
                                  termsAccepted: Bool = false,
                                  nativePromptFlow: DuckAIPromptFlowStart? = nil,
-                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil) {
+                                 tabAttachmentRequest: MultiTabAttachmentRequest? = nil,
+                                 voice: Bool = false) {
         guard tabManager.current(createIfNeeded: true) != nil else {
             assertionFailure("openAIChatInTab: no current tab available")
             tabAttachmentRequest?.cancel()
@@ -5145,12 +5147,14 @@ class MainViewController: UIViewController {
         let opening = AIChatOpeningRequest(url: openingQuery.url(using: currentTab.aiChatContentHandler),
                                            payload: payload, source: source,
                                            opensNewTab: shouldOpenInNewTab,
-                                           prompt: .sharedHandler(openingQuery, reportsNewTab: reportsNewTab, fromDeepLink: fromDeepLink))
+                                           prompt: .sharedHandler(openingQuery, reportsNewTab: reportsNewTab, fromDeepLink: fromDeepLink),
+                                           isVoice: voice)
         openAIChat(opening, from: currentTab)
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
-        fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt)
+        fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt,
+                                  voice: request.isVoice)
         // Record NTP use before ending the idle session.
         if !request.opensNewTab {
             measureAIChatUseFromNewTabPage(originatingTab)
@@ -7839,10 +7843,9 @@ extension MainViewController: TabDelegate {
         newTab()
     }
 
-    func tabDidRequestNewVoiceChat(_ tab: TabViewController) {
+    func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource) {
         endNewTabPageSessionWithMenuItem()
-        // Same as the Duck.ai header Plus-menu "New Voice Chat".
-        aiChatTabChatHeaderDidTapNewVoiceChat()
+        startDuckAIVoiceMode(from: .duckAI, entrySource: source)
     }
 
     private func presentChatPathOnboardingCompletionIfNeeded() {
@@ -9422,7 +9425,7 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()
-                openAIChat(source: .voice, query, autoSend: true)
+                openAIChat(source: isPad ? .ipadTogglePrompt : .addressBarPrompt, query, autoSend: true, voice: true)
             }
         }
     }

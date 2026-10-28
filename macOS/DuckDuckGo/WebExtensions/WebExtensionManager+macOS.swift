@@ -161,7 +161,8 @@ enum WebExtensionManagerFactory {
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: autoconsentPreferences,
                 cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
-                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider
+                darkReaderExcludedDomainsProvider: darkReaderExcludedDomainsProvider,
+                eventHub: Application.appDelegate.eventHubIntegration.eventHub
             ),
             nativeMessagingHandler: nativeMessagingHandler,
             keyValueStore: keyValueStore,

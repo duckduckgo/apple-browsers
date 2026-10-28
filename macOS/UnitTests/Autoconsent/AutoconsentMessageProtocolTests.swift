@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import Common
+import EventHub
 import FeatureFlags_macOS
 import FoundationExtensions
 import History
@@ -144,6 +145,43 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         _ = sendInit(url: "https://example.com/")
 
         XCTAssertEqual(management.pixelCounter, [CPMSiteRank.top10k: ["init": 1], CPMSiteRank.other: ["init": 1]])
+    }
+
+    @MainActor
+    func testWhenSummaryPixelsFireThenCPMCoverageIsReportedToEventHub() {
+        let eventHub = RecordingEventHub()
+        let management = AutoconsentManagement()
+        management.eventHub = eventHub
+        management.pixelCounter = [
+            CPMSiteRank.top10k: ["init": 2, "detected-by-patterns": 2, "detected-by-both": 1],
+            CPMSiteRank.other: ["init": 3, "detected-by-patterns": 1, "detected-by-both": 3],
+        ]
+
+        management.fireSummaryPixels(additionalParameters: [:])
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_page": 5, "autoconsent_page_top10k": 2,
+            "autoconsent_unhandled": 1, "autoconsent_unhandled_top10k": 1,
+        ])
+        XCTAssertTrue(management.pixelCounter.isEmpty)
+    }
+
+    func testWhenEmbeddedExtensionSendsSummaryThenCPMCoverageIsReportedToEventHub() throws {
+        guard #available(macOS 15.4, *) else { throw XCTSkip("Embedded extension requires macOS 15.4") }
+        let eventHub = RecordingEventHub()
+        let delegate = MacOSAutoconsentMessageHandlerDelegate(eventHub: eventHub)
+
+        delegate.sendPixel(PixelInfo(name: "autoconsent_init", type: "daily"))
+        delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: [
+            "init": "4", "detected-by-patterns": 3, "detected-by-both": "1", "siteRank": "top10k",
+        ]))
+        // Older extension versions don't send siteRank
+        delegate.sendPixel(PixelInfo(name: "autoconsent_summary", type: "standard", params: ["init": 1, "detected-by-patterns": 1]))
+
+        XCTAssertEqual(eventHub.nativeEventCounts, [
+            "autoconsent_page": 5, "autoconsent_page_top10k": 4,
+            "autoconsent_unhandled": 3, "autoconsent_unhandled_top10k": 2,
+        ])
     }
 
     @MainActor
@@ -393,6 +431,20 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         let data = try JSONEncoder().encode(cookieConsentInfo)
         return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
+}
+
+private final class RecordingEventHub: EventHubManaging {
+    private(set) var nativeEventCounts: [String: Int] = [:]
+
+    func handleWebEvent(_ webEventData: [String: Any], tabID: EventHubTabID) {}
+    func handleNativeEvent(_ type: String, data: Encodable?) {
+        nativeEventCounts[type, default: 0] += 1
+    }
+    func onNavigationStarted(tabID: EventHubTabID, url: String) {}
+    func onTabClosed(tabID: EventHubTabID) {}
+    func onConfigChanged() {}
+    func onAppForegrounded() {}
+    func onAppBackgrounded() {}
 }
 
 final class MockAutoconsentUserScriptDelegate: AutoconsentUserScriptDelegate {

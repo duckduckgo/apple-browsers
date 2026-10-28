@@ -10,6 +10,7 @@ self-hosted-runner:
     - apple
     - xcode-27
     - image:osx-tahoe-27
+    - image:osx-27-edge
     - general-purpose
     - ui-tests
     - m4pro

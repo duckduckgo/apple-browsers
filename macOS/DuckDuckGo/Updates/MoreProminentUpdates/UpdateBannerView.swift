@@ -36,12 +36,16 @@ struct UpdateBannerView: View {
     let action: () -> Void
 
     var body: some View {
-        switch style {
-        case .row:
-            row
-        case .card:
-            card
+        Group {
+            switch style {
+            case .row:
+                row
+            case .card:
+                card
+            }
         }
+        // The design keeps the banner's light appearance in dark mode too.
+        .environment(\.colorScheme, .light)
     }
 
     private var row: some View {
@@ -170,8 +174,7 @@ private struct UpdateBannerButtonBody: View {
             .padding(.horizontal, 12)
             .frame(height: 28)
             .background(
-                // The design uses the dark appearance's secondary accent so the button
-                // stands out against the primary accent fill in both appearances.
+                // The design uses the dark appearance's secondary accent, which is lighter than the light one.
                 Capsule()
                     .fill(Color(designSystemColor: .accentSecondary))
                     .environment(\.colorScheme, .dark)

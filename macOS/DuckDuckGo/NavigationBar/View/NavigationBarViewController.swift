@@ -2360,7 +2360,7 @@ extension NavigationBarViewController: NSMenuDelegate {
         let index = menuButtons.arrangedSubviews.firstIndex(of: optionsButton) ?? menuButtons.arrangedSubviews.count
         menuButtons.insertArrangedSubview(button, at: index)
         menuButtons.setCustomSpacing(8, after: button)
-        
+
         addressBarUpdateButton = button
     }
 

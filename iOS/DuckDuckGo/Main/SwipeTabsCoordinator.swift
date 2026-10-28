@@ -125,8 +125,8 @@ class SwipeTabsCoordinator: NSObject {
         return generator
     }()
 
-    private let edgeFeedbackGenerator = UIImpactFeedbackGenerator(style: .light)
-    private var hasSignalledEdgeThisDrag = false
+    private let edgeFeedbackGenerator = UIImpactFeedbackGenerator(style: .rigid)
+    private var lastEdgeTickOverscroll: CGFloat = 0
     private var isExternalPanDragging = false
 
     /// Drags past the first or last tab give way and spring back instead of stopping dead.
@@ -225,6 +225,8 @@ class SwipeTabsCoordinator: NSObject {
     /// blur and exposes nested shadow/card layers as "stacked screens." See
     /// `prepareAuxiliarySwipeSnapshots` for the snapshot path.
     var auxiliarySwipeViews: [UIView] = []
+    /// The live views of `auxiliarySwipeViews`, moved in place while a drag bounces past the first or last tab.
+    private var edgePulledChromeViews: [UIView] = []
     var liveSwipeChromeViews: [UIView] = []
 
     /// Active snapshot views of `auxiliarySwipeViews` during a swipe, parked in the superview
@@ -328,6 +330,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                         prepareLiveDestinationChrome(offset: offset)
                     }
                     prepareLiveOutgoingChrome()
+                } else if !hasDestination(offset: offset) {
+                    // Same tab, nothing to swap in: the chrome outside the strip just rides along.
+                    edgePulledChromeViews = auxiliarySwipeViews.filter { !$0.isHidden }
                 }
                 prepareFloatingBottomOmnibarSwipe(offset: offset)
             } else if !activateSwipeOverlay() {
@@ -358,6 +363,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                     snapshot.transform.tx = offset
                 }
                 liveSourceChromeView?.transform.tx = offset
+                edgePulledChromeViews.forEach { $0.transform.tx = offset }
                 updateFloatingBottomOmnibarSwipe(offset: offset)
             } else {
                 cleanUpViews()
@@ -928,18 +934,36 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
     }
 
-    /// A soft tap the moment a drag pulls past the first or last tab, once per drag.
+    /// Ticks while a finger pulls past the first or last tab, firmer the further it pulls; none on release.
     private func signalEdgeIfDraggedPastIt(_ scrollView: UIScrollView) {
-        guard scrollView.isDragging || isExternalPanDragging, !hasSignalledEdgeThisDrag, bouncesAtEdges else { return }
+        guard scrollView.isDragging || isExternalPanDragging, bouncesAtEdges else { return }
         let maxOffsetX = scrollView.contentSize.width - scrollView.bounds.width
-        guard scrollView.contentOffset.x < 0 || scrollView.contentOffset.x > maxOffsetX else { return }
-        hasSignalledEdgeThisDrag = true
-        edgeFeedbackGenerator.impactOccurred(intensity: 0.6)
+        let overscroll = max(-scrollView.contentOffset.x, scrollView.contentOffset.x - maxOffsetX, 0)
+        guard abs(overscroll - lastEdgeTickOverscroll) >= EdgeHaptics.tickSpacing else { return }
+        lastEdgeTickOverscroll = overscroll
+        guard overscroll > 0 else { return }
+        let tension = min(overscroll / max(scrollView.bounds.width, 1) * EdgeHaptics.tensionGain, 1)
+        edgeFeedbackGenerator.impactOccurred(intensity: EdgeHaptics.minimumIntensity + (1 - EdgeHaptics.minimumIntensity) * tension)
+        edgeFeedbackGenerator.prepare()
+    }
+
+    private enum EdgeHaptics {
+        static let tickSpacing: CGFloat = 4
+        static let minimumIntensity: CGFloat = 0.35
+        static let tensionGain: CGFloat = 4
     }
 
     /// Swiping past a last tab with content opens a new tab, unless the swipe should bounce there instead.
     private func hasNewTabDestination(after tabs: [Tab]) -> Bool {
         tabs.last?.link != nil && !omnibarDependencies.featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements)
+    }
+
+    /// False past the first or last tab, where a swipe can only bounce.
+    private func hasDestination(offset: CGFloat) -> Bool {
+        guard let currentIndex = tabsModel.currentIndex else { return false }
+        let destinationIndex = currentIndex + (offset > 0 ? -1 : 1)
+        return tabsModel.tabs.indices.contains(destinationIndex)
+            || (destinationIndex == tabsModel.count && hasNewTabDestination(after: tabsModel.tabs))
     }
 
     private func isCrossingChromeBoundary(offset: CGFloat) -> Bool {
@@ -996,7 +1020,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
-        hasSignalledEdgeThisDrag = false
+        lastEdgeTickOverscroll = 0
         edgeFeedbackGenerator.prepare()
         switch state {
         case .idle:
@@ -1073,6 +1097,8 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         cleanUpFloatingBottomOmnibarSwipe()
         currentView?.transform = .identity
         currentView = nil
+        edgePulledChromeViews.forEach { $0.transform.tx = 0 }
+        edgePulledChromeViews = []
         preview?.removeFromSuperview()
         chromePreview?.removeFromSuperview()
         chromePreview = nil

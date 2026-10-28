@@ -600,6 +600,28 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     }
 
     @MainActor
+    func testAIChatMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: MockAIChatDebugSettingsForTests())
+
+        XCTAssertEqual(script.messageFramePolicy, .secureMainFrame)
+    }
+
+    @MainActor
+    func testWhenDebugHostnameIsSetThenAIChatAcceptsHTTPMainFrame() {
+        let debugSettings = MockAIChatDebugSettingsForTests()
+        debugSettings.messagePolicyHostname = "localhost"
+
+        let script = AIChatUserScript(handler: aiChatUserScriptHandler, debugSettings: debugSettings)
+
+        XCTAssertEqual(script.messageFramePolicy, .mainFrame)
+    }
+
+    @MainActor
+    func testPageContextIsOnlyAcceptedFromMainFrame() {
+        XCTAssertEqual(PageContextUserScript().messageFramePolicy, .mainFrame)
+    }
+
+    @MainActor
     func testAttachmentPrivacyBridgeHandlerRemainsAbsentOnIPhone() {
         let script = AIChatUserScript(handler: aiChatUserScriptHandler,
                                      debugSettings: MockAIChatDebugSettingsForTests(),

@@ -152,7 +152,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         if isNativeStorageBridgeAvailable,
            let duckAiNativeStorageHandler {
             var originRules: [HostnameMatchingRule] = [
-                .exactOrSubdomain(hostname: "duck.ai"),
+                .exact(hostname: "duck.ai"),
             ]
             if let customHostname = aiChatDebugURLSettings.customURLHostname {
                 originRules.append(.exact(hostname: customHostname))
@@ -160,6 +160,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
             duckAiNativeStorageUserScript = DuckAiNativeStorageUserScript(
                 handler: duckAiNativeStorageHandler,
                 originRules: originRules,
+                framePolicy: aiChatDebugURLSettings.customURLHostname == nil ? .secureMainFrame : .mainFrame,
                 pixelFiring: DuckAiNativeStoragePixelAdapter()
             )
         } else {

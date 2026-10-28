@@ -44,6 +44,23 @@ final class AIChatUserScriptTests: XCTestCase {
         super.tearDown()
     }
 
+    func testMessagesAreOnlyAcceptedFromHTTPSMainFrame() {
+        XCTAssertEqual(userScript.messageFramePolicy, .secureMainFrame)
+    }
+
+    func testWhenCustomURLIsSetThenHTTPMainFrameIsAccepted() {
+        var urlSettings = AIChatMockDebugSettings()
+        urlSettings.customURL = "http://localhost:3000"
+
+        let script = AIChatUserScript(handler: mockHandler, urlSettings: urlSettings)
+
+        XCTAssertEqual(script.messageFramePolicy, .mainFrame)
+    }
+
+    func testPageContextIsOnlyAcceptedFromMainFrame() {
+        XCTAssertEqual(PageContextUserScript().messageFramePolicy, .mainFrame)
+    }
+
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
         let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChatSettings.rawValue))
         _ = try await handler([""], WKScriptMessage.mock())

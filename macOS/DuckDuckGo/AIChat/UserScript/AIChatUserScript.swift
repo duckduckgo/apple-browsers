@@ -33,6 +33,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     weak var webView: WKWebView?
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
+    let messageFramePolicy: MessageFramePolicy
 
     private var cancellables: Set<AnyCancellable> = []
     private let additionalClientToolPermissionSources = NSHashTable<AnyObject>.weakObjects()
@@ -101,6 +102,8 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         self.messageOriginPolicy = .only(rules: originRules)
         self.messageDestinationPolicy = .only(rules: destinationRules)
+        // A custom hostname may be a local http server, so only the main-frame part applies then.
+        self.messageFramePolicy = urlSettings.customURLHostname == nil ? .secureMainFrame : .mainFrame
         super.init()
 
         handler.aiChatNativePromptPublisher

@@ -616,7 +616,7 @@ extension AIChatTabExtension {
         aiChatDebugURLSettings: any KeyedStoring<AIChatDebugURLSettings>
     ) -> DuckAiNativeStorageBootstrapScriptRefresher? {
         guard featureFlagger.isFeatureOn(.aiChatNativeStorage), let handler else { return nil }
-        var originRules: [HostnameMatchingRule] = [.exactOrSubdomain(hostname: "duck.ai")]
+        var originRules: [HostnameMatchingRule] = [.exact(hostname: "duck.ai")]
         if let customHostname = aiChatDebugURLSettings.customURLHostname {
             originRules.append(.exact(hostname: customHostname))
         }

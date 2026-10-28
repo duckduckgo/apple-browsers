@@ -242,6 +242,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     private var localTaskForSubmission: AIChatLocalModelTask?
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
+    let messageFramePolicy: MessageFramePolicy
     private var inputBoxCancellables = Set<AnyCancellable>()
     /// Returns the page context currently attached to the chat session, queried at submit time
     /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
@@ -286,6 +287,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.localModelAccessPrompt = localModelAccessPrompt
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
+        // A debug hostname may be a local http server, so only the main-frame part applies then.
+        self.messageFramePolicy = debugSettings.messagePolicyHostname == nil ? .secureMainFrame : .mainFrame
         super.init()
 
         // Set self as the metric reporting handler

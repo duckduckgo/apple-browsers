@@ -1271,6 +1271,10 @@ class MainViewController: UIViewController {
                 newTabPageSessionInstrumentation.visitEnded(terminalAction: .swipeToOtherTab)
                 postIdleSessionInstrumentation.sessionEnded(reason: .tabSwiped)
                 currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
+                if tab.isAITab {
+                    // Before selecting, so the entry attaches to this tab when it is shown.
+                    fireAIChatEntryPointPixel(source: .tabSwipe, opensNewTab: false, hasPrompt: false)
+                }
                 selectTab(tab)
             }
             if shouldRestoreFocus {

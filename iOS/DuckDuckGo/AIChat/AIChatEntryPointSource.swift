@@ -97,6 +97,8 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case returnToChatCard = "return_to_chat_card"
     /// The app opened, or came back from the background, onto a tab already showing Duck.ai.
     case appOpen = "app_open"
+    /// Swiping on the address bar onto a tab already showing Duck.ai.
+    case tabSwipe = "tab_swipe"
     case ddgHomepage = "ddg_homepage"
 }
 

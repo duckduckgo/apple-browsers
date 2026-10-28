@@ -176,6 +176,7 @@ class MainViewController: UIViewController {
     var newTabPageViewController: (any NewTabPage)?
     var isAddressBarHandOffInProgress = false
     var isPerformingOnboardingInputHandoff = false
+    var isPresentingNewTabInputDirectly = false
     var restingNewTabPageSnapshot: (image: UIImage, frame: CGRect, viewportSize: CGSize, favoritesState: (expanded: Bool, visible: Bool))?
 
     private let daxGreetingActivity: DaxGreetingActivityStore?
@@ -229,6 +230,10 @@ class MainViewController: UIViewController {
     private weak var sitePermissionAnimationTab: TabViewController?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
+    }
+
+    var hasInlineNewTabPageInput: Bool {
+        newTabPageViewController?.hasInlineSearchInput == true
     }
 
     /// Allows delayed keyboard callbacks to detect cancellation.
@@ -1249,6 +1254,9 @@ class MainViewController: UIViewController {
                                                             return false
                                                         }
                                                         return NewTabPageRedesignFeature(featureFlagger: self.featureFlagger).isAvailable
+                                                    },
+                                                    usesMinimalChromeForWebPages: { [weak self] in
+                                                        self?.usesMinimalChromeForWebPages() ?? false
                                                     }) { [weak self] tab in
 
             guard let self else { return }
@@ -2553,6 +2561,14 @@ class MainViewController: UIViewController {
             return
         }
 
+        // Normal mode should always have a current tab, but `bulkRemoveTabs` leaves the model empty until
+        // the tab switcher inserts a replacement in its delete animation's completion. Backgrounding or a
+        // late `webViewDidClose` from a removed tab can land in that window, so add a tab instead of crashing.
+        if tabManager.currentTabsModel.currentTab == nil {
+            pixelFiring?.fire(HomeScreenAttachPixel.missingCurrentTabRecovered, frequency: .dailyAndCount)
+            tabManager.addHomeTab()
+        }
+
         pageBackgroundColorObservation = nil
         siteThemeColorObservation = nil
         pageContentBackgroundColorObservation = nil
@@ -2578,7 +2594,8 @@ class MainViewController: UIViewController {
 
         // Access the tab model directly as we don't want to create a new tab controller here
         guard let tabModel = tabManager.currentTabsModel.currentTab else {
-            fatalError("No tab model")
+            assertionFailure("No current tab after recovery")
+            return
         }
         // Focus remembered for a swipe back is stale once the page is attached by any other arrival.
         tabModel.wasInputFocusedBeforeTabSwitch = false
@@ -2614,6 +2631,7 @@ class MainViewController: UIViewController {
         controller.chromeDelegate = self
 
         newTabPageViewController = controller
+        updateCompactToolbarForNewTabPage()
 
         controller.setEscapeHatch(hatch)
         controller.setChromeLayoutContext(isBorderSuppressed: isInMinimalChromeLayout)
@@ -2647,6 +2665,30 @@ class MainViewController: UIViewController {
         refreshControls()
         updateScrollInteractionIfNeeded()
         presentContextualOnboardingDialogIfNeeded()
+
+        if willBeginEditing,
+           let switcher = tabSwitcherController, presentedViewController === switcher, switcher.isBeingDismissed,
+           let defaultOmniBar = omniBar as? DefaultOmniBarViewController {
+            let requestID = appOpenKeyboardRequestID
+            let tabID = tabModel.uid
+            let isRequestValid = { [weak self, weak controller, weak switcher] in
+                guard let self, let controller else { return false }
+                let isDismissingOriginalSwitcher = switcher?.isBeingDismissed == true && presentedViewController === switcher
+                return appOpenKeyboardRequestID == requestID && isAppOpenKeyboardWindowVisible
+                    && tabManager.currentTabsModel.currentTab?.uid == tabID && newTabPageViewController === controller
+                    && KeyboardSettings().onNewTab && !isNewTabPageKeyboardBlockedByDialog
+                    && !(featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage) && isNewTabPageKeyboardHeldForOnboarding)
+                    && !daxDialogsManager.isShowingContextualOnboardingDialog
+                    && (presentedViewController == nil || isDismissingOriginalSwitcher)
+            }
+            let beginEditing = featureFlagger.isFeatureOn(.alwaysShowKeyboardOnNewTabPage)
+                ? defaultOmniBar.beginEditingOnNewTabPageAppOpen
+                : defaultOmniBar.beginEditingAutomatically
+            let wasPresentingDirectly = isPresentingNewTabInputDirectly
+            isPresentingNewTabInputDirectly = controller.hasInlineSearchInput
+            defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
+            beginEditing(isRequestValid) { _ in }
+        }
 
         scheduleAttachedNewTabPagePresentation(for: controller, trigger: sessionTrigger,
                                                startsVisit: startsNewTabPageSessionVisit,
@@ -2747,6 +2789,7 @@ class MainViewController: UIViewController {
         newTabPageViewController?.willMove(toParent: nil)
         newTabPageViewController?.dismiss()
         newTabPageViewController = nil
+        updateCompactToolbarForNewTabPage()
         isAddressBarHandOffInProgress = false
         clearEscapeHatch()
         updateAddressBarSuppressionForNewTabPage()
@@ -3140,6 +3183,12 @@ class MainViewController: UIViewController {
             }
             completion(true)
         }
+        if let coordinator = unifiedToggleInputCoordinator, coordinator.isOmnibarSession {
+            coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: focusCompleted)
+            return
+        }
+        isPresentingNewTabInputDirectly = hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true
+        defer { isPresentingNewTabInputDirectly = false }
         showBars()
         if let defaultOmniBar = viewCoordinator.omniBar as? DefaultOmniBarViewController {
             defaultOmniBar.beginEditingAutomatically(isRequestValid: isRequestValid, completion: focusCompleted)
@@ -3771,12 +3820,25 @@ class MainViewController: UIViewController {
         // The redesigned NTP hides the resting address bar. Keep the normal toolbar rather than
         // moving its controls into the hidden minimal-chrome bar, for either floating UI setting.
         guard newTabPageViewController?.hasInlineSearchInput != true else { return false }
-        let size = size ?? view.bounds.size
-        return MinimalChromeModeDecision.isActive(
-            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: currentTab?.isAITab ?? false),
+        return minimalChromeDecision(isAITab: currentTab?.isAITab ?? false, size: size ?? view.bounds.size)
+    }
+
+    /// Whether a web page tab would use minimal chrome at `size`, even while the NTP keeps its regular chrome.
+    private func usesMinimalChromeForWebPages(in size: CGSize? = nil) -> Bool {
+        minimalChromeDecision(isAITab: false, size: size ?? view.bounds.size)
+    }
+
+    private func minimalChromeDecision(isAITab: Bool, size: CGSize) -> Bool {
+        MinimalChromeModeDecision.isActive(
+            minimalChromeEnabled: minimalChromeSettings.shouldApplyMinimalChrome(isCurrentTabAITab: isAITab),
             isPad: AppWidthObserver.shared.isPad,
             isLandscape: size.width > size.height
         )
+    }
+
+    private func updateCompactToolbarForNewTabPage(for size: CGSize? = nil) {
+        let isCompact = newTabPageViewController?.hasInlineSearchInput == true && usesMinimalChromeForWebPages(in: size)
+        viewCoordinator.setCompactStandaloneToolbar(isCompact)
     }
 
     private var isApplyingWidth = false
@@ -3797,6 +3859,7 @@ class MainViewController: UIViewController {
         }
         closeContextualSidebarIfItNoLongerFits()
 
+        updateCompactToolbarForNewTabPage(for: size)
         updateNewTabPageLayoutForCurrentChromeMode()
 
         DispatchQueue.main.async {

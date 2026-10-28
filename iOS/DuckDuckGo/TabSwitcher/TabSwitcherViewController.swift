@@ -160,6 +160,7 @@ class TabSwitcherViewController: UIViewController {
     let daxDialogsManager: DaxDialogsManaging
     private let duckAIGridContentProvider: DuckAIGridContentProviding?
     private let duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?
+    let pixelFiring: (any PixelKitFiring)?
     var tabsModel: TabsModelManaging {
         tabManager.tabsModel(for: selectedBrowsingMode)
     }
@@ -200,7 +201,8 @@ class TabSwitcherViewController: UIViewController {
          initialTrackerCountState: TabSwitcherTrackerCountViewModel.State,
          duckAIGridContentProvider: DuckAIGridContentProviding?,
          duckAIVoiceSessionTracker: DuckAIVoiceSessionTracking?,
-         floatingUIManager: FloatingUIManaging? = nil) {
+         floatingUIManager: FloatingUIManaging? = nil,
+         pixelFiring: (any PixelKitFiring)? = PixelKit.shared) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -221,6 +223,7 @@ class TabSwitcherViewController: UIViewController {
         self.initialTrackerCountState = initialTrackerCountState
         self.duckAIGridContentProvider = duckAIGridContentProvider
         self.duckAIVoiceSessionTracker = duckAIVoiceSessionTracker
+        self.pixelFiring = pixelFiring
         let tabCountModel = TabCountModel()
         self.tabCountModel = tabCountModel
         self.pickerItems = BrowsingMode.allCases.map { $0.segmentedPickerItem(tabCountModel: tabCountModel) }

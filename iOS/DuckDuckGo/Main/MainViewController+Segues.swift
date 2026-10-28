@@ -286,7 +286,8 @@ extension MainViewController {
                                                    initialTrackerCountState: initialTrackerCountState,
                                                    duckAIGridContentProvider: duckAIGridContentProvider,
                                                    duckAIVoiceSessionTracker: self.duckAIVoiceSessionTracker,
-                                                   floatingUIManager: floatingUIManager)
+                                                   floatingUIManager: floatingUIManager,
+                                                   pixelFiring: self.pixelFiring)
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self

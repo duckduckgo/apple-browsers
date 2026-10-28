@@ -678,7 +678,7 @@ final class DataImportViewModelTests: XCTestCase {
     func testDataTypeFilter_dataTypesToImport_keepsTypesTheFilterDoesNotCover() {
         let filter = DataImportViewModel.DataTypeFilter(enabledTypes: [.bookmarks])
 
-        let dataTypes = filter.dataTypesToImport(from: [.bookmarks, .passwords, .creditCards])
+        let dataTypes = filter.dataTypesToImport(from: [.bookmarks, .passwords, .creditCards, .history])
 
         XCTAssertEqual(dataTypes, [.bookmarks, .creditCards])
     }
@@ -2124,6 +2124,44 @@ final class DataImportViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    @MainActor
+    func testWhenChromeProfileHasNoBookmarksFile_ThenImportFiresSourceFileMissingPixel() {
+        let pixelKit = PixelKitMock()
+        model = chromeModel(profileFiles: ["Login Data"], pixelFiring: pixelKit)
+
+        model.importButtonPressed()
+
+        XCTAssertEqual(pixelKit.actualFireCalls.map(\.pixel.name), ["dataimport_bookmarks_source-file-missing_macos"])
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.pixel.parameters?["source"], "chrome")
+        XCTAssertEqual(pixelKit.actualFireCalls.first?.frequency, .dailyAndCount)
+    }
+
+    @MainActor
+    func testWhenChromeProfileHasAccountBookmarksFile_ThenImportDoesNotFireSourceFileMissingPixel() {
+        let pixelKit = PixelKitMock()
+        model = chromeModel(profileFiles: ["Login Data", "AccountBookmarks"], pixelFiring: pixelKit)
+
+        model.importButtonPressed()
+
+        XCTAssertTrue(pixelKit.actualFireCalls.isEmpty)
+    }
+
+    private func chromeModel(profileFiles: [String], pixelFiring: PixelKitMock) -> DataImportViewModel {
+        DataImportViewModel(
+            importSource: .chrome,
+            availableImportSources: [.chrome],
+            syncFeatureVisibility: .hide,
+            loadProfiles: { browser in
+                let profile = BrowserProfile.test(fileStore: self.fileStore)(browser)
+                self.fileStore.directoryStorage[profile.profileURL.path] = profileFiles
+                return .init(browser: browser, profiles: [profile])
+            },
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importTask: { _, _ in [:] }) },
+            directoryAccessAvailability: .mockUnavailable(),
+            pixelFiring: pixelFiring
+        )
     }
 
     // MARK: - Import Task Lifecycle Tests

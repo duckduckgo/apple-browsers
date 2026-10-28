@@ -16,26 +16,24 @@
 //  limitations under the License.
 //
 
-import Common
 import Foundation
-import Security
-import SecureStorage
+import FoundationExtensions
 
 /// Represent a store operation failure.
 public enum AIChatBonusStoreError: Error, Equatable {
-    /// The Keychain read failed for a reason other than a missing item, e.g. the device is locked before its first unlock.
-    case readFailed(OSStatus)
-    /// The Keychain refused to add or update the item.
-    case writeFailed(OSStatus)
-    /// The Keychain refused to delete the item. A missing item is not a failure.
-    case deleteFailed(OSStatus)
-    /// The Keychain returned something other than `Data` for the item.
-    case unexpectedItemType
+    /// The file exists but couldn't be read, e.g. the device is locked before its first unlock.
+    case readFailed(domain: String, code: Int)
+    /// The file couldn't be written.
+    case writeFailed(domain: String, code: Int)
+    /// The file couldn't be deleted. A missing file is not a failure.
+    case deleteFailed(domain: String, code: Int)
+    /// The record's directory couldn't be created or excluded from backup, so nothing was written.
+    case prepareDirectoryFailed(domain: String, code: Int)
     /// The stored bytes aren't valid JSON, or don't match the layout of their schema version.
     case decodingFailed
     /// The record couldn't be turned into JSON.
     case encodingFailed
-    /// The item was written in a layout this build doesn't know, by a newer build.
+    /// The record was written in a layout this build doesn't know, by a newer build.
     case unsupportedSchemaVersion(Int)
     /// The record breaks `AIChatBonusRecord.breaksInvariant`. Raised before a write and after a read.
     case invariantViolated
@@ -43,50 +41,63 @@ public enum AIChatBonusStoreError: Error, Equatable {
 
 /// A type that can persist AI Chat Bonus data.
 public protocol AIChatBonusStoring {
-    /// The stored record, or `nil` only when the Keychain confirms there's no item.
+    /// The stored record, or `nil` only when there's no stored record.
     ///
     /// Any other failure throws, e.g. the device is locked or the stored data can't be decoded.
-    /// If read fails do not attempt to write or delete the record and and don't push anything to Duck.ai, not even `record: null`.
+    /// If read fails do not attempt to write or delete the record and don't push anything to Duck.ai, not even `record: null`.
     func read() throws -> AIChatBonusRecord?
 
     /// Saves `record` in the current layout, replacing whatever is stored.
     ///
-    /// Throws `invariantViolated` without touching the Keychain if `record` is one Duck.ai would reject.
+    /// Throws `invariantViolated` without storing anything if `record` is one Duck.ai would reject.
     func write(_ record: AIChatBonusRecord) throws
 
     /// Removes the record. Succeeds when there was nothing to remove.
     func delete() throws
 }
 
-/// Storage for AI Chat Offer data backed up by the Keychain.
+/// Storage for AI Chat Offer data, kept as one JSON file in the app's own Application Support directory.
 ///
-/// Not thread-safe on its own. `AIChatBonusService` serialises every read-check-write.
+/// The `AIChatBonus` directory is excluded from backup. Each write replaces the file atomically.
 public struct AIChatBonusStore: AIChatBonusStoring {
-    private let keychainService: KeychainService
+    // The help page explaining the Bonus ID, saved next to the record so anyone who opens the file can find it.
+    // To be updated: ASANA https://app.asana.com/1/137249556945/project/72649045549333/task/1219865286901981?focus=true
+    static let helpPage = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/placeholder/")!
 
-    public init(keychainService: KeychainService = DefaultKeychainService()) {
-        self.keychainService = keychainService
+    private let directoryURL: URL
+    private let fileSystem: AIChatBonusFileStoring
+    private let helpPage: URL
+
+    private var fileURL: URL {
+        directoryURL.appendingPathComponent("record.json")
+    }
+
+    public init() {
+        self.init(
+            directoryURL: FileManager.default.applicationSupportDirectoryForComponent(named: "AIChatBonus"),
+            fileSystem: AIChatBonusFileSystem()
+        )
+    }
+
+    init(directoryURL: URL, fileSystem: AIChatBonusFileStoring, helpPage: URL = Self.helpPage) {
+        self.directoryURL = directoryURL
+        self.fileSystem = fileSystem
+        self.helpPage = helpPage
     }
 
     public func read() throws -> AIChatBonusRecord? {
-        var query = baseQuery(for: .record)
-        query[kSecMatchLimit as String] = kSecMatchLimitOne
-        query[kSecReturnData as String] = true
-
-        var item: CFTypeRef?
-        let status = keychainService.itemMatching(query, &item)
-
-        switch status {
-        case errSecSuccess:
-            guard let data = item as? Data else {
-                throw AIChatBonusStoreError.unexpectedItemType
+        let data: Data
+        do {
+            data = try fileSystem.read(fileURL)
+        } catch {
+            if error.isFileNotFound {
+                return nil
             }
-            return try decode(data)
-        case errSecItemNotFound:
-            return nil
-        default:
-            throw AIChatBonusStoreError.readFailed(status)
+            let error = error as NSError
+            throw AIChatBonusStoreError.readFailed(domain: error.domain, code: error.code)
         }
+
+        return try decode(data)
     }
 
     public func write(_ record: AIChatBonusRecord) throws {
@@ -96,72 +107,91 @@ public struct AIChatBonusStore: AIChatBonusStoring {
         }
 
         let data = try encode(record)
-        let attributes: [String: Any] = [
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        ]
 
-        // Add the record, or replace it if it already exists.
-        var status = keychainService.add(baseQuery(for: .record).merging(attributes) { $1 }, nil)
-        if status == errSecDuplicateItem {
-            status = keychainService.update(baseQuery(for: .record), attributes)
+        // Exclude the directory on every write, so a recreated directory is never backed up.
+        do {
+            try fileSystem.prepareDirectory(directoryURL)
+        } catch let error as NSError  {
+            throw AIChatBonusStoreError.prepareDirectoryFailed(domain: error.domain, code: error.code)
         }
 
-        // Throw an error in case we could not write it
-        guard status == errSecSuccess else {
-            throw AIChatBonusStoreError.writeFailed(status)
+        do {
+            try fileSystem.write(data, to: fileURL)
+        } catch let error as NSError {
+            throw AIChatBonusStoreError.writeFailed(domain: error.domain, code: error.code)
         }
     }
 
     public func delete() throws {
-        let status = keychainService.delete(baseQuery(for: .record))
-        guard status == errSecSuccess || status == errSecItemNotFound else {
-            throw AIChatBonusStoreError.deleteFailed(status)
+        do {
+            try fileSystem.remove(fileURL)
+        } catch {
+            if error.isFileNotFound {
+                return
+            }
+            let error = error as NSError
+            throw AIChatBonusStoreError.deleteFailed(domain: error.domain, code: error.code)
         }
     }
 }
 
-// MARK: - Keychain Helpers
+// MARK: - File System
 
-private extension AIChatBonusStore {
+/// The file operations `AIChatBonusStore` needs, injectable for tests.
+protocol AIChatBonusFileStoring {
+    func read(_ url: URL) throws -> Data
+    /// Replaces the file atomically. The file can't be read until the device is first unlocked.
+    func write(_ data: Data, to url: URL) throws
+    func remove(_ url: URL) throws
+    /// Creates the directory if missing and excludes it from backup.
+    func prepareDirectory(_ url: URL) throws
+}
 
-    /// One Keychain item per case, all under the same service. Store something new by adding a case.
-    enum AIChatBonusKeychainField: String {
-        /// The bonus record. One record per device, not one per campaign.
-        case record
+struct AIChatBonusFileSystem: AIChatBonusFileStoring {
+    private let fileManager = FileManager.default
 
-        /// `<bundleID>.aichat.bonus-offer`, so each build (debug, review, release) keeps its own items.
-        var serviceName: String {
-            (Bundle.main.bundleIdentifier ?? "com.duckduckgo") + ".aichat.bonus-offer.\(rawValue)"
-        }
+    func read(_ url: URL) throws -> Data {
+        try Data(contentsOf: url)
     }
 
-    /// The attributes that identify `field`'s Keychain item, shared by every read, write and delete.
-    ///
-    /// - Not synchronised, so the item never leaves this device through iCloud Keychain.
-    /// - No access group, so the item goes to the app's own default group and other apps can't read it.
-    /// - Data protection keychain: on macOS this picks it over the older file-based keychain, which is the default there. iOS always uses it, so the attribute changes nothing there.
-    func baseQuery(for field: AIChatBonusKeychainField) -> [String: Any] {
-        var query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: field.serviceName,
-            kSecAttrAccount as String: field.rawValue,
-            kSecAttrSynchronizable as String: false
-        ]
-        // Adds kSecUseDataProtectionKeychain: true
-        for (key, value) in KeychainType.dataProtection(.unspecified).queryAttributes() {
-            query[key as String] = value
-        }
-        return query
+    func write(_ data: Data, to url: URL) throws {
+        // Set explicitly so an app-wide default protection can't change it.
+        try data.write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
     }
 
+    func remove(_ url: URL) throws {
+        try fileManager.removeItem(at: url)
+    }
+
+    func prepareDirectory(_ url: URL) throws {
+        try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+        // Set on the directory: an atomic write replaces the file, which would drop a flag set on the file.
+        var url = url
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try url.setResourceValues(values)
+    }
+}
+
+private extension Error {
+    var isFileNotFound: Bool {
+        let error = self as NSError
+        switch error.domain {
+        case NSCocoaErrorDomain:
+            return error.code == NSFileReadNoSuchFileError || error.code == NSFileNoSuchFileError
+        case NSPOSIXErrorDomain:
+            return error.code == Int(ENOENT)
+        default:
+            return false
+        }
+    }
 }
 
 // MARK: - Encoding / Decoding
 
 private extension AIChatBonusStore {
 
-    // The record's Keychain format. For storage only.
+    // The record's storage format
     struct StoredRecord: Codable {
         /// The version of the current model layout.
         /// Bump it only for a change an older build would misread: a field renamed, removed, made required or given a new meaning or unit.
@@ -175,10 +205,13 @@ private extension AIChatBonusStore {
         let schemaVersion: Int
         /// The AI Chat Bonus record
         let record: AIChatBonusRecord
+        /// The help page explaining the Bonus ID. Optional so files written before it was added still decode.
+        let helpPage: URL?
 
-        init(record: AIChatBonusRecord) {
+        init(record: AIChatBonusRecord, helpPage: URL) {
             self.schemaVersion = Self.currentSchemaVersion
             self.record = record
+            self.helpPage = helpPage
         }
     }
 
@@ -188,7 +221,9 @@ private extension AIChatBonusStore {
 
     func encode(_ record: AIChatBonusRecord) throws -> Data {
         do {
-            return try JSONEncoder().encode(StoredRecord(record: record))
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes] // Put `helpPage` first, with readable slashes.
+            return try encoder.encode(StoredRecord(record: record, helpPage: helpPage))
         } catch {
             throw AIChatBonusStoreError.encodingFailed
         }

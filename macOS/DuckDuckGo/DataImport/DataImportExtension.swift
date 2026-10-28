@@ -201,7 +201,10 @@ extension DataImport {
                 if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
-            case .creditCards, .history:
+            case .history:
+                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                return profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
+            case .creditCards:
                 return false
             }
         }
@@ -249,7 +252,7 @@ extension DataImport {
         private func validateBookmarksData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
-                let hasChromiumBookmarks = profileDirectoryContents.contains(ChromiumBookmarksReader.Constants.defaultBookmarksFileName)
+                let hasChromiumBookmarks = !profileDirectoryContents.isDisjoint(with: ChromiumBookmarksReader.Constants.bookmarksFileNames)
 
                 return hasChromiumBookmarks ? .available
                 : .unavailable(path: profileURL.appendingPathComponent(ChromiumBookmarksReader.Constants.defaultBookmarksFileName).path)

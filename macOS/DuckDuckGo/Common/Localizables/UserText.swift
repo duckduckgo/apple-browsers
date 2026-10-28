@@ -2155,6 +2155,15 @@ struct UserText {
         }
     }
 
+    static func importingHistory(_ numberOfVisits: Int?) -> String {
+        if let numberOfVisits, numberOfVisits > 0 {
+            let localized = NotLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
+            return String(format: localized, numberOfVisits)
+        } else {
+            return NotLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
+        }
+    }
+
     static let moreOrLessCollapse = NSLocalizedString("more.or.less.collapse", value: "Show Less", comment: "For collapsing views to show less.")
     static let moreOrLessExpand = NSLocalizedString("more.or.less.expand", value: "Show More", comment: "For expanding views to show more.")
 

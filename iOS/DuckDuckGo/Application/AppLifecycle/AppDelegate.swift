@@ -19,19 +19,24 @@
 
 import UIKit
 import Common
+import PrivacyConfig
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
 
     let appStateMachine: AppStateMachine = AppStateMachine(initialState: .initializing(Initializing()))
 
+    private var mainMenuController: MainMenuController?
+
+    func configureMainMenu(featureFlagger: FeatureFlagger) {
+        mainMenuController = MainMenuController(featureFlagger: featureFlagger)
+        mainMenuController?.requestRebuild()
+    }
+
     override func buildMenu(with builder: UIMenuBuilder) {
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(MainViewController.keyboardSettings),
-                                          input: ",", modifierFlags: .command)
-        settingsCommand.wantsPriorityOverSystemBehavior = true
-        builder.replaceChildren(ofMenu: .preferences) { _ in [settingsCommand] }
+        MainMenuBuilder().build(mainMenuController?.spec ?? MainMenuSpec(isEnabled: false), with: builder)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

@@ -23,6 +23,7 @@ import FeatureFlags_iOS
 extension MainViewController {
     
     override var keyCommands: [UIKeyCommand]? {
+        let menuSpec = MainMenuSpec(isEnabled: featureFlagger.isIPadMenuBarEnabled())
         let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(keyboardSettings),
                                           input: ",", modifierFlags: .command)
         settingsCommand.wantsPriorityOverSystemBehavior = true
@@ -34,7 +35,7 @@ extension MainViewController {
         ]
         
         guard tabSwitcherController == nil else {
-            return alwaysAvailable
+            return menuSpec.remainingKeyCommands(from: alwaysAvailable)
         }
         
         var browsingCommands = [UIKeyCommand]()
@@ -144,7 +145,34 @@ extension MainViewController {
         commands.forEach {
             $0.wantsPriorityOverSystemBehavior = true
         }
-        return commands
+        return menuSpec.remainingKeyCommands(from: commands)
+    }
+
+    override func validate(_ command: UICommand) {
+        super.validate(command)
+        guard featureFlagger.isIPadMenuBarEnabled(), let menuCommand = MainMenuCommand(action: command.action) else { return }
+        if menuCommandAvailability.isEnabled(menuCommand) {
+            command.attributes.remove(.disabled)
+        } else {
+            command.attributes.insert(.disabled)
+        }
+    }
+
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        guard featureFlagger.isIPadMenuBarEnabled(), let command = MainMenuCommand(action: action) else {
+            return super.canPerformAction(action, withSender: sender)
+        }
+        return menuCommandAvailability.isEnabled(command)
+    }
+
+    private var menuCommandAvailability: MenuCommandAvailability {
+        let presentation: MenuCommandAvailability.State.Presentation
+        if let tabSwitcherController {
+            presentation = tabSwitcherController.presentedViewController == nil ? .tabSwitcher : .blockingModal
+        } else {
+            presentation = presentedViewController == nil ? .browser : .blockingModal
+        }
+        return MenuCommandAvailability(state: .init(shortcutsEnabled: isShortcutEnabled(), presentation: presentation))
     }
 
     @objc func keyboardMoveSelectionUp() {

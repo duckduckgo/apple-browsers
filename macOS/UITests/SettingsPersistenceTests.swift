@@ -27,6 +27,9 @@ class SettingsPersistenceTests: UITestCase {
     }
 
     func testFavoritesVisibilityIsPersistedThroughWindowCloseAndRestart() {
+        restoreOnTeardown {
+            self.favoritesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: self.app.ensureHittable)
+        }
         openAppearanceSettings()
         favoritesToggle.toggleCheckboxIfNeeded(to: false, validate: true, ensureHittable: app.ensureHittable)
 
@@ -40,11 +43,14 @@ class SettingsPersistenceTests: UITestCase {
         app.enforceSingleWindow()
         openAppearanceSettings()
         XCTAssertEqual(favoritesToggle.value as? Bool, false, "Hidden Favorites should stay hidden after restarting the browser")
-
-        favoritesToggle.toggleCheckboxIfNeeded(to: true, validate: true, ensureHittable: app.ensureHittable)
     }
 
     func testThemeAppearanceIsPersistedThroughRestart() {
+        restoreOnTeardown {
+            self.themeAppearanceOption("System").clickAfterExistenceTestSucceeds()
+            XCTAssertTrue(self.themeAppearanceOption("System").wait(for: \.isSelected, equals: true, timeout: UITests.Timeouts.elementExistence),
+                          "System should be selected again after the test")
+        }
         for appearance in ["Dark", "Light"] {
             openAppearanceSettings()
             themeAppearanceOption(appearance).clickAfterExistenceTestSucceeds()
@@ -57,11 +63,22 @@ class SettingsPersistenceTests: UITestCase {
             XCTAssertTrue(themeAppearanceOption(appearance).wait(for: \.isSelected, equals: true, timeout: UITests.Timeouts.elementExistence),
                           "\(appearance) should still be selected after restarting the browser")
         }
-
-        themeAppearanceOption("System").click()
     }
 
     // MARK: - Utilities
+
+    /// The settings persist across launches, so they're restored on every exit path, failed assertions included,
+    /// to keep later test classes from inheriting them.
+    private func restoreOnTeardown(_ restore: @escaping () -> Void) {
+        addTeardownBlock {
+            if self.app.state != .runningForeground {
+                self.app.restart(forceTerminate: true)
+            }
+            self.app.enforceSingleWindow()
+            self.openAppearanceSettings()
+            restore()
+        }
+    }
 
     private var favoritesToggle: XCUIElement {
         app.preferencesWindow.checkBoxes["Preferences.AppearanceView.showFavoritesToggle"]

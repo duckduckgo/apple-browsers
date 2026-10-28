@@ -29,6 +29,7 @@ internal class ChromiumDataImporter: DataImporter {
     private let faviconManager: FaviconManagement
     private let historyReader: ChromiumHistoryReaderProtocol
     private let historyImporter: HistoryImporterProtocol
+    private let pixelFiring: PixelFiring?
     private let profile: DataImport.BrowserProfile
     private var source: DataImport.Source {
         profile.browser.importSource
@@ -40,7 +41,8 @@ internal class ChromiumDataImporter: DataImporter {
         bookmarkImporter: BookmarkImporter,
         faviconManager: FaviconManagement,
         historyReader: ChromiumHistoryReaderProtocol,
-        historyImporter: HistoryImporterProtocol
+        historyImporter: HistoryImporterProtocol,
+        pixelFiring: PixelFiring? = PixelKit.shared
     ) {
         self.profile = profile
         self.loginImporter = loginImporter
@@ -48,6 +50,7 @@ internal class ChromiumDataImporter: DataImporter {
         self.faviconManager = faviconManager
         self.historyReader = historyReader
         self.historyImporter = historyImporter
+        self.pixelFiring = pixelFiring
     }
 
     convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter) {
@@ -157,6 +160,7 @@ internal class ChromiumDataImporter: DataImporter {
         case .success(let result):
             parseResult = result
         case .failure(let error):
+            fireHistorySourceFileMissingPixelIfNeeded()
             return .failure(error)
         }
         // reading a large database can take a while: don't add visits to history after the import was cancelled
@@ -168,6 +172,17 @@ internal class ChromiumDataImporter: DataImporter {
         } catch {
             return .failure(ChromiumHistoryReader.ImportError(type: .importVisits, underlyingError: error))
         }
+    }
+
+    /// The profile folder could be read, but it has no history database where the importer looks for it.
+    private func fireHistorySourceFileMissingPixelIfNeeded() {
+        guard profile.validateProfileData() != nil, !profile.hasValidProfileData(for: .history) else { return }
+
+        let pixel = DataImportHistoryPixel.sourceFileMissing(
+            source: source.pixelSourceParameterName,
+            sourceVersion: profile.installedAppsMajorVersionDescription()
+        )
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private func importFavicons() async {

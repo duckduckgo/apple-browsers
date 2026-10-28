@@ -56,6 +56,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
     func testWhenPageIsAWebsite_ThenScriptDoesNothing() throws {
         context.evaluateScript("""
         var location = { protocol: "https:" };
+        var navigator = {};
         chrome = { runtime: {} };
         """)
         try assertNoExceptions()
@@ -65,6 +66,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try assertTrue("chrome.notifications === undefined")
         try assertTrue("globalThis['\(WebExtensionAPIStubScript.retentionPropertyName)'] === undefined")
         try assertTrue("consoleMessages.length === 0")
+        try assertTrue("navigator.userAgentData === undefined")
     }
 
     func testWhenPageIsAnExtensionPage_ThenScriptInstallsStubs() throws {
@@ -76,6 +78,110 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
         try evaluateStubScript()
 
         try assertTrue("chrome.notifications !== undefined")
+    }
+
+    // MARK: - Client Hints
+
+    func testWhenClientHintsAreMissing_ThenExtensionsCanDetectDuckDuckGo() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Mozilla/5.0 Chrome/140.0.0.0 Safari/605.1.15 Ddg/18.0' };")
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData.brands.some(function(item) { return item.brand === 'DuckDuckGo'; })")
+        try assertTrue("navigator.userAgentData.brands[0].version === '140'")
+        try assertTrue("navigator.userAgentData.platform === 'macOS'")
+        try assertTrue("navigator.userAgentData.mobile === false")
+        try assertTrue("JSON.stringify(navigator.userAgentData) === JSON.stringify(navigator.userAgentData.toJSON())")
+        try assertTrue("navigator.userAgent.indexOf('Chrome/140.0.0.0') !== -1")
+
+        context.evaluateScript("navigator.userAgentData.brands[0].brand = 'Changed';")
+        try assertTrue("navigator.userAgentData.brands[0].brand === 'DuckDuckGo'")
+    }
+
+    func testWhenFullVersionListIsRequested_ThenItIncludesDuckDuckGo() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(['fullVersionList', 'architecture']).then(function(value) { hintsResult = value; });
+        """)
+        try assertTrue("hintsResult.fullVersionList[0].brand === 'DuckDuckGo'")
+        try assertTrue("hintsResult.fullVersionList[0].version === '140.0.0.0'")
+        try assertTrue("hintsResult.brands[0].version === '140'")
+        try assertTrue("hintsResult.architecture === undefined")
+
+        context.evaluateScript("navigator.userAgentData.getHighEntropyValues([]).then(function(value) { hintsResult = value; });")
+        try assertTrue("hintsResult.fullVersionList === undefined")
+    }
+
+    func testWhenNativeClientHintsExist_ThenTheirValuesAndReceiverArePreserved() throws {
+        context.evaluateScript("""
+        var nativeUAData = {
+            brands: [{ brand: 'AppleWebKit', version: '605' }],
+            mobile: false,
+            platform: 'native platform',
+            getHighEntropyValues: function(hints) {
+                if (this !== nativeUAData) { throw new Error('Wrong receiver'); }
+                return Promise.resolve({ architecture: 'native architecture', fullVersionList: [{ brand: 'AppleWebKit', version: '605.1.15' }] });
+            }
+        };
+        var navigator = { userAgent: 'Chrome/140.0.0.0', userAgentData: nativeUAData };
+        """)
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData.brands.length === 2")
+        try assertTrue("navigator.userAgentData.brands[0].brand === 'AppleWebKit'")
+        try assertTrue("navigator.userAgentData.platform === 'native platform'")
+        context.evaluateScript("""
+        var hintsResult;
+        navigator.userAgentData.getHighEntropyValues(['fullVersionList', 'architecture']).then(function(value) { hintsResult = value; });
+        """)
+        try assertTrue("hintsResult.architecture === 'native architecture'")
+        try assertTrue("hintsResult.fullVersionList[0].version === '605.1.15'")
+        try assertTrue("hintsResult.fullVersionList[1].brand === 'DuckDuckGo'")
+        try assertTrue("nativeUAData.brands.length === 1")
+    }
+
+    func testWhenNativeClientHintsReject_ThenTheErrorIsPreserved() throws {
+        context.evaluateScript("""
+        var expectedError = new Error('Native failure');
+        var navigator = { userAgentData: {
+            brands: [], mobile: false, platform: 'macOS',
+            getHighEntropyValues: function() { return Promise.reject(expectedError); }
+        } };
+        """)
+
+        try evaluateStubScript()
+
+        context.evaluateScript("""
+        var hintsError;
+        navigator.userAgentData.getHighEntropyValues([]).catch(function(error) { hintsError = error; });
+        """)
+        try assertTrue("hintsError === expectedError")
+    }
+
+    func testWhenBrandingRunsTwice_ThenTheBrandAndObjectAreNotDuplicated() throws {
+        context.evaluateScript("var navigator = { userAgent: 'Chrome/140.0.0.0' };")
+        try evaluateStubScript()
+        context.evaluateScript("var firstUAData = navigator.userAgentData;")
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData === firstUAData")
+        try assertTrue("navigator.userAgentData.brands.length === 1")
+    }
+
+    func testWhenNativeClientHintsAlreadyIdentifyDuckDuckGo_ThenTheyAreKept() throws {
+        context.evaluateScript("""
+        var nativeUAData = { brands: [{ brand: 'DuckDuckGo', version: '140' }] };
+        var navigator = { userAgentData: nativeUAData };
+        """)
+
+        try evaluateStubScript()
+
+        try assertTrue("navigator.userAgentData === nativeUAData")
     }
 
     // MARK: - Extension Fixes
@@ -116,6 +222,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
     func testWhenManifestIsADuckDuckGoExtension_ThenScriptDoesNothing() throws {
         context.evaluateScript("""
+        var navigator = {};
         chrome.runtime.getManifest = function() {
             return { browser_specific_settings: { duckduckgo: { id: "com.duckduckgo.web-extension.embedded" } } };
         };
@@ -126,6 +233,7 @@ final class WebExtensionAPIStubScriptTests: XCTestCase {
 
         try assertTrue("chrome.notifications === undefined")
         try assertTrue("globalThis['\(WebExtensionAPIStubScript.retentionPropertyName)'] === undefined")
+        try assertTrue("navigator.userAgentData === undefined")
     }
 
     func testWhenManifestIsThirdParty_ThenScriptInstallsStubs() throws {

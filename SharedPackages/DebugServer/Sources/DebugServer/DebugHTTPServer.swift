@@ -59,6 +59,7 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
 
     private let port: UInt16
     private let loopbackOnly: Bool
+    private let lanAddressProvider: () -> String?
     private let queue: DispatchQueue
     private var listener: NWListener?
     private var activeConnections: [NWConnection] = []
@@ -78,9 +79,18 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
     ///   - loopbackOnly: When `true`, the listener binds to `127.0.0.1` only, so the server is
     ///     unreachable from the LAN. Defaults to `false`, preserving the original all-interfaces
     ///     behavior for existing callers.
-    public init(port: UInt16 = 8473, loopbackOnly: Bool = false) {
+    public convenience init(port: UInt16 = 8473, loopbackOnly: Bool = false) {
+        self.init(
+            port: port,
+            loopbackOnly: loopbackOnly,
+            lanAddressProvider: loopbackOnly ? { nil } : DebugServerNetworkInterface.wiFiAddress
+        )
+    }
+
+    init(port: UInt16, loopbackOnly: Bool = false, lanAddressProvider: @escaping () -> String?) {
         self.port = port
         self.loopbackOnly = loopbackOnly
+        self.lanAddressProvider = lanAddressProvider
         self.queue = DispatchQueue(label: "com.debugserver.listener", qos: .userInitiated)
     }
 
@@ -259,6 +269,10 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
         do {
             let request = try parser.parse(data)
 
+            guard isRequestFromAllowedOrigin(request) else {
+                return .text("Forbidden", status: .forbidden)
+            }
+
             let key = RouteKey(method: request.method, path: request.path)
 
             let handler = lock.withLock { routes[key] ?? findPrefixHandler(for: request) }
@@ -272,6 +286,24 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
         } catch {
             return .text("Internal Server Error: \(error.localizedDescription)", status: .internalServerError)
         }
+    }
+
+    /// Guards against DNS rebinding: a remote page whose hostname resolves to this device would otherwise be same-origin with the server.
+    private func isRequestFromAllowedOrigin(_ request: HTTPRequest) -> Bool {
+        // The bound port, not the configured one: port 0 asks the system to pick.
+        guard case .running(let listeningPort) = state else { return false }
+        let lanAddress = lanAddressProvider()
+        let host = Self.headerValue("Host", in: request.headers)
+        guard Self.isAllowedHost(host, port: listeningPort, lanAddress: lanAddress) else {
+            logger.error("Rejected request with disallowed Host header")
+            return false
+        }
+        if let origin = Self.headerValue("Origin", in: request.headers),
+           !Self.isAllowedOrigin(origin, port: listeningPort, lanAddress: lanAddress) {
+            logger.error("Rejected request with disallowed Origin header")
+            return false
+        }
+        return true
     }
 
     private func findPrefixHandler(for request: HTTPRequest) -> RouteHandler? {
@@ -302,6 +334,37 @@ public final class DebugHTTPServer: HTTPServerProtocol, @unchecked Sendable {
     private func removeConnection(_ connection: NWConnection) {
         connection.cancel()
         activeConnections.removeAll { $0 === connection }
+    }
+}
+
+// MARK: - Host Validation
+
+extension DebugHTTPServer {
+
+    /// Returns `true` if `host` (a `Host` header value) is loopback or the advertised LAN address, with the server's port.
+    static func isAllowedHost(_ host: String?, port: UInt16, lanAddress: String?) -> Bool {
+        guard let host else { return false }
+        return allowedAuthorities(port: port, lanAddress: lanAddress).contains(host.lowercased())
+    }
+
+    /// Returns `true` if `origin` (an `Origin` header value) is `http://` plus an allowed host.
+    static func isAllowedOrigin(_ origin: String, port: UInt16, lanAddress: String?) -> Bool {
+        let scheme = "http://"
+        let lowercased = origin.lowercased()
+        guard lowercased.hasPrefix(scheme) else { return false }
+        return isAllowedHost(String(lowercased.dropFirst(scheme.count)), port: port, lanAddress: lanAddress)
+    }
+
+    private static func allowedAuthorities(port: UInt16, lanAddress: String?) -> Set<String> {
+        var hosts = ["127.0.0.1", "localhost", "[::1]"]
+        if let lanAddress, !lanAddress.isEmpty {
+            hosts.append(lanAddress.lowercased())
+        }
+        return Set(hosts.map { "\($0):\(port)" })
+    }
+
+    private static func headerValue(_ name: String, in headers: [String: String]) -> String? {
+        headers.first { $0.key.caseInsensitiveCompare(name) == .orderedSame }?.value
     }
 }
 

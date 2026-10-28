@@ -206,7 +206,96 @@ final class DebugHTTPServerTests: XCTestCase {
         XCTAssertEqual(statusCode, 500)
     }
 
+    func testWhenRequestHasForeignOriginThenReturns403() async throws {
+        server = DebugHTTPServer(port: 0)
+        let handlerCalled = expectation(description: "Handler called")
+        handlerCalled.isInverted = true
+        server.addRoute("/data", method: .POST) { _ in
+            handlerCalled.fulfill()
+            return .text("ok")
+        }
+
+        let started = expectation(description: "Server started")
+        server.stateDidChange = { state in
+            if case .running = state { started.fulfill() }
+        }
+
+        try server.start()
+        await fulfillment(of: [started], timeout: 5)
+        let port = try XCTUnwrap(runningPort)
+
+        let (statusCode, _) = try await performRequestWithStatus(path: "/data", method: "POST", body: "x", headers: ["Origin": "http://attacker.example:\(port)"])
+        XCTAssertEqual(statusCode, 403)
+        await fulfillment(of: [handlerCalled], timeout: 0.1)
+    }
+
+    func testWhenRequestHasLocalOriginThenHandlerIsCalled() async throws {
+        server = DebugHTTPServer(port: 0)
+        server.addRoute("/data", method: .POST) { _ in
+            .text("ok")
+        }
+
+        let started = expectation(description: "Server started")
+        server.stateDidChange = { state in
+            if case .running = state { started.fulfill() }
+        }
+
+        try server.start()
+        await fulfillment(of: [started], timeout: 5)
+        let port = try XCTUnwrap(runningPort)
+
+        let (statusCode, body) = try await performRequestWithStatus(path: "/data", method: "POST", body: "x", headers: ["Origin": "http://localhost:\(port)"])
+        XCTAssertEqual(statusCode, 200)
+        XCTAssertEqual(body, "ok")
+    }
+
+    // MARK: - Host Validation
+
+    func testWhenHostIsLoopbackWithServerPortThenItIsAllowed() {
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("127.0.0.1:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("localhost:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("LOCALHOST:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("[::1]:8473", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenHostIsLANAddressWithServerPortThenItIsAllowed() {
+        XCTAssertTrue(DebugHTTPServer.isAllowedHost("192.168.1.20:8474", port: 8474, lanAddress: "192.168.1.20"))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("192.168.1.20:8474", port: 8474, lanAddress: nil))
+    }
+
+    func testWhenHostIsForeignThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("attacker.example:8473", port: 8473, lanAddress: "192.168.1.20"))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("localhost.attacker.example:8473", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenHostHasWrongOrMissingPortThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("localhost:9999", port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("localhost", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenHostIsMissingThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost(nil, port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedHost("", port: 8473, lanAddress: nil))
+    }
+
+    func testWhenOriginIsLocalThenItIsAllowed() {
+        XCTAssertTrue(DebugHTTPServer.isAllowedOrigin("http://127.0.0.1:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedOrigin("http://localhost:8473", port: 8473, lanAddress: nil))
+        XCTAssertTrue(DebugHTTPServer.isAllowedOrigin("http://192.168.1.20:8473", port: 8473, lanAddress: "192.168.1.20"))
+    }
+
+    func testWhenOriginIsForeignThenItIsRejected() {
+        XCTAssertFalse(DebugHTTPServer.isAllowedOrigin("http://attacker.example:8473", port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedOrigin("https://localhost:8473", port: 8473, lanAddress: nil))
+        XCTAssertFalse(DebugHTTPServer.isAllowedOrigin("null", port: 8473, lanAddress: nil))
+    }
+
     // MARK: - Helpers
+
+    private var runningPort: UInt16? {
+        guard case .running(let port) = server.state else { return nil }
+        return port
+    }
 
     private func performRequest(
         path: String,
@@ -220,7 +309,8 @@ final class DebugHTTPServerTests: XCTestCase {
     private func performRequestWithStatus(
         path: String,
         method: String = "GET",
-        body: String? = nil
+        body: String? = nil,
+        headers: [String: String] = [:]
     ) async throws -> (Int, String) {
         guard case .running(let port) = server.state else {
             throw URLError(.cannotConnectToHost)
@@ -230,6 +320,9 @@ final class DebugHTTPServerTests: XCTestCase {
         request.httpMethod = method
         if let body {
             request.httpBody = body.data(using: .utf8)
+        }
+        for (name, value) in headers {
+            request.setValue(value, forHTTPHeaderField: name)
         }
 
         request.timeoutInterval = 5

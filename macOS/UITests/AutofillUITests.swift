@@ -62,8 +62,10 @@ class AutofillUITests: UITestCase {
 
         let filledPassword = app.autofillPasswordTextField.value as? String ?? ""
         app.autofillPasswordTextField.click()
-        // Focusing the field reopens the autofill dropdown, which would take the typed password
+        // Focusing the field reopens the autofill dropdown, which would take the typed password; closing it with Escape
+        // can also take the focus off the field on some macOS versions, so focus it again
         app.typeKey(.escape, modifierFlags: [])
+        app.autofillPasswordTextField.click()
         // Select All doesn't reach a secure web field on every macOS version, so delete the filled password key by key
         app.typeKey(.rightArrow, modifierFlags: .command)
         for _ in 0..<(filledPassword.count + 4) {

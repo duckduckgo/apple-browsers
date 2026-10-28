@@ -243,6 +243,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     private(set) var messageOriginPolicy: MessageOriginPolicy
     private(set) var messageDestinationPolicy: MessageOriginPolicy
     let messageFramePolicy: MessageFramePolicy
+    private let debugHostname: String?
     private var inputBoxCancellables = Set<AnyCancellable>()
     /// Returns the page context currently attached to the chat session, queried at submit time
     /// and inlined into the `submitPrompt` payload so the FE always sees it. Set by the host that
@@ -289,6 +290,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.messageDestinationPolicy = .only(rules: Self.buildMessageDestinationRules(debugSettings: debugSettings))
         // A debug hostname may be a local http server, so only the main-frame part applies then.
         self.messageFramePolicy = debugSettings.messagePolicyHostname == nil ? .secureMainFrame : .mainFrame
+        self.debugHostname = debugSettings.messagePolicyHostname
         super.init()
 
         // Set self as the metric reporting handler
@@ -425,19 +427,19 @@ final class AIChatUserScript: NSObject, Subfeature {
         case .clearMigrationData:
             return handler.clearMigrationData
         case .getSyncStatus:
-            return handler.getSyncStatus
+            return duckAIMainFrameOnly(handler.getSyncStatus)
         case .getScopedSyncAuthToken:
-            return handler.getScopedSyncAuthToken
+            return duckAIMainFrameOnly(handler.getScopedSyncAuthToken)
         case .encryptWithSyncMasterKey:
-            return handler.encryptWithSyncMasterKey
+            return duckAIMainFrameOnly(handler.encryptWithSyncMasterKey)
         case .decryptWithSyncMasterKey:
-            return handler.decryptWithSyncMasterKey
+            return duckAIMainFrameOnly(handler.decryptWithSyncMasterKey)
         case .sendToSetupSync:
-            return handler.sendToSetupSync
+            return duckAIMainFrameOnly(handler.sendToSetupSync)
         case .sendToSyncSettings:
-            return handler.sendToSyncSettings
+            return duckAIMainFrameOnly(handler.sendToSyncSettings)
         case .setAIChatHistoryEnabled:
-            return handler.setAIChatHistoryEnabled
+            return duckAIMainFrameOnly(handler.setAIChatHistoryEnabled)
         case .voiceSessionStarted:
             return handler.voiceSessionStarted
         case .voiceSessionEnded:
@@ -513,6 +515,17 @@ final class AIChatUserScript: NSObject, Subfeature {
             configValues.clientTools = isBrowserToolsMessage(message) ? browserToolsService?.configuration(for: self) : nil
         }
         return configValues
+    }
+
+    /// Sync handlers expose sync secrets, so only Duck.ai's own main frame may call them,
+    /// not any page that passes the duckduckgo.com origin policy.
+    private func duckAIMainFrameOnly(_ handler: @escaping Subfeature.Handler) -> Subfeature.Handler {
+        return { [debugHostname] params, message in
+            guard await message.isFromDuckAIMainFrame(customHostname: debugHostname) else {
+                return AIChatErrorResponse(reason: "sync unavailable")
+            }
+            return try await handler(params, message)
+        }
     }
 
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {

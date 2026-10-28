@@ -1000,6 +1000,35 @@ class MainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        SheetPresentationsDebugView.makeSubscribeFlow = { [weak self] in
+            guard let self else { return AnyView(Text("MainViewController is gone")) }
+            let performanceOptimizedPaywallsProvider = DefaultPerformanceOptimizedPaywallsProvider(
+                privacyConfigurationManager: userScriptsDependencies.privacyConfigurationManager,
+                featureFlagger: featureFlagger
+            )
+            let subscriptionDebugSettings = SubscriptionDebugSettingsUserDefaultsPersistor(keyValueStore: keyValueStore)
+            return AnyView(SubscriptionContainerViewFactory.makeSubscribeFlowV2(
+                redirectURLComponents: nil,
+                navigationCoordinator: SubscriptionNavigationCoordinator(),
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                subscriptionDataReporter: subscriptionDataReporter,
+                userScriptsDependencies: userScriptsDependencies,
+                tld: AppDependencyProvider.shared.storageCache.tld,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
+                wideEvent: AppDependencyProvider.shared.wideEvent,
+                featureFlagger: featureFlagger,
+                isDebugOverlayEnabled: subscriptionDebugSettings.isDebugOverlayEnabled,
+                performanceOptimizedPaywallsProvider: performanceOptimizedPaywallsProvider,
+                onboardingKeyValueStore: keyValueStore,
+                meetsPIRLocaleRequirement: { [weak dbpIOSPublicInterface] in
+                    dbpIOSPublicInterface?.meetsLocaleRequirement ?? false
+                },
+                onRequestDuckAIChat: { [weak self] modelID in self?.requestOnboardingDuckAIChat(modelID: modelID) ?? false }
+            ))
+        }
+
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               aiChatSyncCleaner: aiChatSyncCleaner,

@@ -411,6 +411,8 @@ private struct CPMDebugScreensView: View {
 
 struct SheetPresentationsDebugView: View {
 
+    static var makeSubscribeFlow: (() -> AnyView)?
+
     enum SwiftUISheet: String, Identifiable {
         case plain, page, form, fitted, custom
         var id: String { rawValue }
@@ -476,13 +478,23 @@ private struct SheetPresentationsDemoContent: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text(title).font(.title2)
-            Text("Some content to see how the sheet sizes itself.")
-            Button("Dismiss") { dismiss() }
+        NavigationView {
+            subscribeFlow
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button("Dismiss (\(title))") { dismiss() }
+                    }
+                }
         }
-        .padding()
+        .navigationViewStyle(.stack)
         .frame(maxWidth: fillsSheet ? .infinity : nil, maxHeight: fillsSheet ? .infinity : nil)
-        .background(Color.yellow.opacity(0.2))
+    }
+
+    @ViewBuilder private var subscribeFlow: some View {
+        if let makeSubscribeFlow = SheetPresentationsDebugView.makeSubscribeFlow {
+            makeSubscribeFlow()
+        } else {
+            Text("MainViewController hasn't set up the subscribe flow")
+        }
     }
 }

@@ -455,22 +455,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         case .starting(let startPosition):
             let offset = startPosition.x - scrollView.contentOffset.x
             if floatingUIManager.isFloatingUIEnabled {
-                chromeCrossFade = makeChromeCrossFade(offset: offset)
-                prepareCurrentView()
-                let didPrepareLiveDestination = prepareLiveDestination(offset: offset)
-                if !didPrepareLiveDestination {
-                    preparePreview(offset)
-                }
-                if isCrossingChromeBoundary(offset: offset) {
-                    if !didPrepareLiveDestination {
-                        prepareLiveDestinationChrome(offset: offset)
-                    }
-                    prepareLiveOutgoingChrome()
-                } else if destinationIndex(offset: offset) == nil {
-                    // Same tab, nothing to swap in: the chrome outside the strip just rides along.
-                    edgePulledChromeViews = auxiliarySwipeViews.filter { !$0.isHidden }
-                }
-                prepareFloatingBottomOmnibarSwipe(offset: offset)
+                prepareFloatingSwipe(offset: offset)
             } else if !activateSwipeOverlay() {
                 // Fallback: legacy visual prep when the overlay isn't installed yet.
                 prepareCurrentView()
@@ -512,6 +497,25 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 state = .starting(startPosition)
             }
         }
+    }
+
+    private func prepareFloatingSwipe(offset: CGFloat) {
+        chromeCrossFade = makeChromeCrossFade(offset: offset)
+        prepareCurrentView()
+        let didPrepareLiveDestination = prepareLiveDestination(offset: offset)
+        if !didPrepareLiveDestination {
+            preparePreview(offset)
+        }
+        if isCrossingChromeBoundary(offset: offset) {
+            if !didPrepareLiveDestination {
+                prepareLiveDestinationChrome(offset: offset)
+            }
+            prepareLiveOutgoingChrome()
+        } else if destinationIndex(offset: offset) == nil {
+            // Same tab, nothing to swap in: the chrome outside the strip just rides along.
+            edgePulledChromeViews = auxiliarySwipeViews.filter { !$0.isHidden }
+        }
+        prepareFloatingBottomOmnibarSwipe(offset: offset)
     }
 
     /// Sets up `swipeOverlayView` with per-tab snapshots and shows it on top of the live views.

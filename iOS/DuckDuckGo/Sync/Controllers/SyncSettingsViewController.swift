@@ -171,6 +171,7 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
         setUpSyncInvalidObjectsInfo(viewModel)
         setUpSyncFeatureFlags(viewModel)
         setUpAIChatSyncFeatureFlag(viewModel)
+        setUpDeviceActivityFeatureFlag(viewModel)
         refreshForState(syncService.authState)
 
         syncService.authStatePublisher
@@ -223,6 +224,17 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
             .sink { [weak self] in
                 guard let self else { return }
                 viewModel.isAIChatSyncEnabled = self.featureFlagger.isFeatureOn(.aiChatSync)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func setUpDeviceActivityFeatureFlag(_ viewModel: SyncSettingsViewModel) {
+        featureFlagger.updatesPublisher
+            .prepend(())
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                viewModel.isDeviceActivityAvailable = self.featureFlagger.isFeatureOn(.syncLoginAuditLog)
             }
             .store(in: &cancellables)
     }

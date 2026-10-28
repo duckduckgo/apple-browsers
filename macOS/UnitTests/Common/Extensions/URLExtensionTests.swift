@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Combine
 import Foundation
 import Testing
@@ -24,6 +25,25 @@ import Testing
 
 @MainActor
 final class URLExtensionTests {
+
+    @available(iOS 16, macOS 13, *)
+    @Test("ATB request URLs use the production traffic policy", .timeLimit(.minutes(1)), arguments: [
+        URL.initialAtb,
+        URL.exti(forAtb: "v123-1"),
+        URL.searchAtb(atbWithVariant: "v123-1", setAtb: "v123-2", isSignedIntoEmailProtection: false),
+        URL.appRetentionAtb(atbWithVariant: "v123-1", setAtb: "v123-2"),
+        URL.duckAIAtb(atbWithVariant: "v123-1", setAtb: "v123-2")
+    ])
+    func atbRequestsUseTestTrafficParameter(url: URL) throws {
+        let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        let testParameters = components.queryItems?.filter { $0.name == "test" } ?? []
+
+        if BuildFlags.isProductionBuild {
+            #expect(testParameters.isEmpty)
+        } else {
+            #expect(testParameters == [URLQueryItem(name: "test", value: "1")])
+        }
+    }
 
     @available(iOS 16, macOS 13, *)
     @Test("Verifying non-sandbox library directory URL returns consistent value regardless of sandbox", .timeLimit(.minutes(1)))

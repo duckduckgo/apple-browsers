@@ -155,7 +155,9 @@ enum WebExtensionManagerFactory {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
             isCPMStableBaseURLEnabled: {
-                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
+                // On macOS 15, CPM content scripts get no responses from a background with a custom base URL.
+                guard #available(macOS 26, *) else { return false }
+                return Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,

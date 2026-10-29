@@ -527,8 +527,6 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenSwitchingBetweenTabsWithTypedValue_typedValueIsPreserved() async throws {
-        throw XCTSkip("Flaky test")
-
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [
             Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
             Tab(content: .settings(pane: .about), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),

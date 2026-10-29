@@ -120,6 +120,7 @@ final class BrowserTabViewController: NSViewController {
     private let permissionManager: PermissionManagerProtocol
     private let pinningManager: PinningManager
     private let adBlockingAvailability: AdBlockingAvailabilityProviding
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding
 
     private let tld: TLD
     private let onContentOverlayDismissalRequested: @MainActor () -> Void
@@ -204,6 +205,7 @@ final class BrowserTabViewController: NSViewController {
          permissionManager: PermissionManagerProtocol,
          pinningManager: PinningManager,
          adBlockingAvailability: AdBlockingAvailabilityProviding = NSApp.delegateTyped.adBlockingAvailability,
+         webExtensionAvailability: WebExtensionAvailabilityProviding = NSApp.delegateTyped.webExtensionAvailability,
          tld: TLD = NSApp.delegateTyped.tld,
          onContentOverlayDismissalRequested: @escaping @MainActor () -> Void = {}
     ) {
@@ -237,6 +239,7 @@ final class BrowserTabViewController: NSViewController {
         self.permissionManager = permissionManager
         self.pinningManager = pinningManager
         self.adBlockingAvailability = adBlockingAvailability
+        self.webExtensionAvailability = webExtensionAvailability
 
         self.tld = tld
         self.onContentOverlayDismissalRequested = onContentOverlayDismissalRequested
@@ -1619,7 +1622,8 @@ final class BrowserTabViewController: NSViewController {
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                 pinningManager: pinningManager,
-                adBlockingAvailability: adBlockingAvailability
+                adBlockingAvailability: adBlockingAvailability,
+                webExtensionAvailability: webExtensionAvailability
             )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController

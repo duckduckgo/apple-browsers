@@ -109,6 +109,7 @@ final class PreferencesSidebarModel: ObservableObject {
     private let featureFlagger: FeatureFlagger
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let partnershipsHubProvider: any PartnershipsHubProviding
+    private let webExtensionAvailability: WebExtensionAvailabilityProviding?
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -140,7 +141,8 @@ final class PreferencesSidebarModel: ObservableObject {
         duckPlayerPreferences: DuckPlayerPreferences,
         youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        partnershipsHubProvider: (any PartnershipsHubProviding)? = nil
+        partnershipsHubProvider: (any PartnershipsHubProviding)? = nil,
+        webExtensionAvailability: WebExtensionAvailabilityProviding? = nil
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
@@ -163,6 +165,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.duckPlayerPreferences = duckPlayerPreferences
         self.youTubeAdBlockingPreferences = youTubeAdBlockingPreferences
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.webExtensionAvailability = webExtensionAvailability
         // Built here rather than taken from every call site: it composes dependencies this
         // initializer already has. Tests inject their own.
         self.partnershipsHubProvider = partnershipsHubProvider ?? DefaultPartnershipsHubProvider(
@@ -212,7 +215,8 @@ final class PreferencesSidebarModel: ObservableObject {
         duckPlayerPreferences: DuckPlayerPreferences,
         youTubeAdBlockingPreferences: YouTubeAdBlockingPreferences,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-        adBlockingAvailability: AdBlockingAvailabilityProviding
+        adBlockingAvailability: AdBlockingAvailabilityProviding,
+        webExtensionAvailability: WebExtensionAvailabilityProviding
     ) {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
@@ -221,6 +225,7 @@ final class PreferencesSidebarModel: ObservableObject {
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: adBlockingAvailability.isFeatureSupported,
                 includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
+                includingExtensions: webExtensionAvailability.isExtensionManagementAvailable,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -244,7 +249,8 @@ final class PreferencesSidebarModel: ObservableObject {
                   accessibilityPreferences: accessibilityPreferences,
                   duckPlayerPreferences: duckPlayerPreferences,
                   youTubeAdBlockingPreferences: youTubeAdBlockingPreferences,
-                  winBackOfferVisibilityManager: winBackOfferVisibilityManager
+                  winBackOfferVisibilityManager: winBackOfferVisibilityManager,
+                  webExtensionAvailability: webExtensionAvailability
         )
     }
 
@@ -271,6 +277,12 @@ final class PreferencesSidebarModel: ObservableObject {
             .removeDuplicates()
             .dropFirst()
             .asVoid()
+        let extensionsFeatureFlagDidChange = featureFlagger.updatesPublisher
+            .map { [webExtensionAvailability] in webExtensionAvailability?.isExtensionManagementAvailable == true }
+            .prepend(webExtensionAvailability?.isExtensionManagementAvailable == true)
+            .removeDuplicates()
+            .dropFirst()
+            .asVoid()
 
         let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
             .removeDuplicates()
@@ -280,6 +292,7 @@ final class PreferencesSidebarModel: ObservableObject {
             .merge(with: aiChatFeatureFlagDidChange)
             .merge(with: youTubeAdBlockingFeatureFlagDidChange)
             .merge(with: websitePermissionsFeatureFlagDidChange)
+            .merge(with: extensionsFeatureFlagDidChange)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 self?.refreshSections()
@@ -696,6 +709,16 @@ final class PreferencesSidebarModel: ObservableObject {
             true
         case .partnershipsHub:
             partnershipsHubProvider.showsNewBadge
+        default:
+            false
+        }
+    }
+
+    /// Determines which preference panes display "Beta" badges.
+    func isPaneBeta(pane: PreferencePaneIdentifier) -> Bool {
+        switch pane {
+        case .extensions:
+            true
         default:
             false
         }

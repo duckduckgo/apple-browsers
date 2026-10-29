@@ -31,6 +31,8 @@ import os.log
 import DataBrokerProtection_iOS
 import VPN
 import PixelKit
+import AIChat
+import FeatureFlags_iOS
 
 struct VPNEntryPoint {
     let screenSource: VPNConnectionWideEventData.ScreenSource
@@ -290,6 +292,7 @@ extension MainViewController {
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
         controller.previewsSource = previewsSource
+        controller.recentChatsReaderProvider = makeTabSwitcherRecentChatsReaderProvider()
         controller.modalPresentationStyle = .overCurrentContext
 
         tabSwitcherController = controller
@@ -773,4 +776,22 @@ final class DataBrokerProtectionSubscriptionFlowNavigationController: UINavigati
 
 extension NSNotification.Name {
     static let settingsDidDisappear: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.settings.didDisappear")
+}
+
+extension MainViewController {
+
+    /// Fire mode lists Fire chats only.
+    func makeTabSwitcherRecentChatsReaderProvider() -> ((BrowsingMode) -> AIChatSuggestionsReading)? {
+        // iPhone only: "View all chats" opens the native history, which iPad doesn't have.
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), aiChatSettings.isAIChatEnabled,
+              !isPad else { return nil }
+        return { [weak self] mode in
+            guard let self else { return NilSuggestionsReader() }
+            return AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: mode == .fire,
+                                                                 nativeStorageHandler: self.duckAiNativeStorageHandler,
+                                                                 fireModeStorageHandler: self.duckAiFireModeStorageHandler,
+                                                                 featureFlagger: self.featureFlagger,
+                                                                 privacyConfig: self.privacyConfigurationManager)
+        }
+    }
 }

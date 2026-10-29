@@ -24,7 +24,7 @@ name: test_search_only_website_active_ai_shortcut_prompt
 - runFlow:
     file: ../shared/set_search_only.yaml
 
-# New tab page: Search Only hides the toggle, but the focused shortcut opens full Duck.ai.
+# New tab page: Search Only hides the toggle; the focused shortcut opens full Duck.ai, via New Chat when it offers the menu.
 - tapOn:
     id: "searchEntry"
 - assertNotVisible:
@@ -35,6 +35,13 @@ name: test_search_only_website_active_ai_shortcut_prompt
     id: "Browser.OmniBar.Button.AIChat"
 - tapOn:
     id: "Browser.OmniBar.Button.AIChat"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    when:
+        visible: "New Chat"
+    commands:
+        - tapOn: "New Chat"
 
 - runFlow:
     file: ../shared/dismiss_chat_open_modals.yaml

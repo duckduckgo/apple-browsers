@@ -19,6 +19,8 @@
 
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import FeatureFlags_iOS
+import PrivacyConfig
 import UIKit
 
 protocol AIChatTabChatHeaderViewDelegate: AnyObject {
@@ -36,6 +38,19 @@ protocol AIChatTabChatHeaderViewDelegate: AnyObject {
 }
 
 final class AIChatTabChatHeaderView: UIView {
+
+    enum Layout {
+        /// Close button, and a Plus menu that starts chats in this tab or opens new tabs.
+        case standard
+        /// No close button; every Plus menu row opens a new tab.
+        case newTabActions
+
+        var showsCloseButton: Bool { self == .standard }
+
+        init(featureFlagger: FeatureFlagger) {
+            self = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? .newTabActions : .standard
+        }
+    }
 
     private enum Constants {
         static let headerHeight: CGFloat = 60
@@ -58,6 +73,8 @@ final class AIChatTabChatHeaderView: UIView {
     weak var delegate: AIChatTabChatHeaderViewDelegate?
 
     private let isFireModeEnabled: Bool
+
+    private let layout: Layout
 
     private let shouldShowImageGeneration: Bool
 
@@ -187,7 +204,39 @@ final class AIChatTabChatHeaderView: UIView {
         return button
     }()
 
+    var plusMenu: UIMenu? { newChatButton.menu }
+
     private func makeNewChatPlusMenu() -> UIMenu {
+        switch layout {
+        case .standard: makeStandardPlusMenu()
+        case .newTabActions: makeNewTabActionsPlusMenu()
+        }
+    }
+
+    private func makeNewTabActionsPlusMenu() -> UIMenu {
+        var chatActions: [UIAction] = [
+            UIAction(title: UserText.aiChatHeaderNewTabChatTitle, image: DesignSystemImages.Glyphs.Size24.compose) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewChat()
+            },
+            UIAction(title: UserText.aiChatHeaderNewTabVoiceChatTitle, image: DesignSystemImages.Glyphs.Size24.voice) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewVoiceChat()
+            },
+        ]
+        if shouldShowImageGeneration {
+            chatActions.append(UIAction(title: UserText.aiChatHeaderNewTabImageTitle, image: DesignSystemImages.Glyphs.Size24.image) { [weak self] _ in
+                self?.delegate?.aiChatTabChatHeaderDidTapNewImage()
+            })
+        }
+        let search = UIAction(title: UserText.aiChatHeaderNewTabSearchTitle, image: DesignSystemImages.Glyphs.Size24.findSearchSmall) { [weak self] _ in
+            self?.delegate?.aiChatTabChatHeaderDidTapNewSearch()
+        }
+        return UIMenu(children: [
+            UIMenu(title: UserText.aiChatHeaderNewTabSectionTitle, options: .displayInline, children: chatActions),
+            UIMenu(options: .displayInline, children: [search]),
+        ])
+    }
+
+    private func makeStandardPlusMenu() -> UIMenu {
         let newChat = UIAction(
             title: UserText.actionNewAIChat,
             image: DesignSystemImages.Glyphs.Size24.compose
@@ -366,9 +415,10 @@ final class AIChatTabChatHeaderView: UIView {
         return stack
     }()
 
-    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool) {
+    init(isFireModeEnabled: Bool, shouldShowImageGeneration: Bool, layout: Layout = .standard) {
         self.isFireModeEnabled = isFireModeEnabled
         self.shouldShowImageGeneration = shouldShowImageGeneration
+        self.layout = layout
         super.init(frame: .zero)
         setupUI()
     }
@@ -376,6 +426,7 @@ final class AIChatTabChatHeaderView: UIView {
     override init(frame: CGRect) {
         self.isFireModeEnabled = false
         self.shouldShowImageGeneration = false
+        self.layout = .standard
         super.init(frame: frame)
         setupUI()
     }
@@ -472,7 +523,9 @@ final class AIChatTabChatHeaderView: UIView {
         titleHolder.addSubview(titleContainer)
         addSubview(bottomSeparator)
 
-        leftStack.addArrangedSubview(closeButtonPill)
+        if layout.showsCloseButton {
+            leftStack.addArrangedSubview(closeButtonPill)
+        }
         leftStack.addArrangedSubview(chatListButtonPill)
         closeButtonPill.contentView.addSubview(closeButton)
         chatListButtonPill.contentView.addSubview(chatListButton)

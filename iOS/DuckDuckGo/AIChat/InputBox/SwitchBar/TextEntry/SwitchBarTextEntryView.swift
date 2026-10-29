@@ -149,6 +149,11 @@ class SwitchBarTextEntryView: UIView {
         set { buttonsView.buttonState = newValue }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { buttonsView.aiChatShortcutEmptyInputMenu }
+        set { buttonsView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     private var currentMode: TextEntryMode {
         handler.currentToggleState
     }

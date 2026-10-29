@@ -91,6 +91,9 @@ struct NewTabPageBuilder {
             },
             onVoiceSearch: { textEntryMode in
                 newTabPage?.beginVoiceSearch(textEntryMode: textEntryMode)
+            },
+            aiChatMenu: {
+                newTabPage?.duckAIMenu()
             })
 
         let pageModel = NewTabPageViewModel(fireTab: false)

@@ -329,6 +329,10 @@ final class RedesignedNewTabPageViewController: UIViewController, NewTabPage, Re
         delegate?.newTabPageDidRequestVoiceSearch(self, textEntryMode: textEntryMode)
     }
 
+    func duckAIMenu() -> UIMenu? {
+        delegate?.newTabPageDuckAIMenu(self)
+    }
+
     func dismiss() {
         detachedContentOffset = scrollView.contentOffset
         onboardingCoordinator?.detach()

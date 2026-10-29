@@ -3282,8 +3282,15 @@ class MainViewController: UIViewController {
         transitionTo(tab: tab, from: nil)
     }
 
+    /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
+    private func captureForSwipeBack(_ outgoingTab: Tab?) {
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), let outgoingTab else { return }
+        swipeTabsCoordinator?.updateFullScreenSnapshot(forTab: outgoingTab)
+    }
+
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
@@ -4309,6 +4316,7 @@ class MainViewController: UIViewController {
         recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
@@ -7961,10 +7969,12 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController,
              didRequestNewDuckAITabForUrl url: URL,
-             entrySource: AIChatEntryPointSource?) {
+             entrySource: AIChatEntryPointSource?,
+             newChatInputRequest: DuckAINewChatInputRequest?) {
         recordUserOpenedTab()
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: nil) {
             $0.duckAIEntrySource = entrySource
+            $0.newChatInputRequest = newChatInputRequest
         }
     }
 
@@ -8111,9 +8121,12 @@ extension MainViewController: TabDelegate {
 
     /// The new chat continues the visit to Duck.ai, so its tab keeps this page's entry source;
     /// `source` names only the control, on the entry pixel.
-    func openNewChatFromDuckAIPage(_ tab: TabViewController, source: AIChatEntryPointSource) {
+    func openNewChatFromDuckAIPage(_ tab: TabViewController,
+                                   source: AIChatEntryPointSource,
+                                   inputRequest: DuckAINewChatInputRequest = DuckAINewChatInputRequest()) {
         fireAIChatEntryPointPixel(source: source, opensNewTab: true, hasPrompt: false)
-        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource)
+        let focusRequest = featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) ? inputRequest : nil
+        tab.openNewChatInNewTab(source: tab.tabModel.duckAIEntrySource, inputRequest: focusRequest)
     }
 
     func tab(_ tab: TabViewController, didRequestAIChatForSelectedText text: String) {
@@ -8672,6 +8685,18 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestNewChatFromLongPressMenu(tabSwitcher: TabSwitcherViewController) {
         newChatLongPressMenuAction()
+    }
+
+    func tabSwitcher(_ tabSwitcher: TabSwitcherViewController, didRequestAIChat chatID: String) {
+        fireAIChatUsagePixelAndSetFeatureUsed(.openAIChatFromTabManager)
+        fireAIChatEntryPointPixel(source: .tabSwitcher, opensNewTab: true, hasPrompt: false)
+        loadUrlInNewTab(aiChatSettings.aiChatURL.withChatID(chatID), inheritedAttribution: nil) {
+            $0.duckAIEntrySource = .tabSwitcher
+        }
+    }
+
+    func tabSwitcherDidRequestAIChatHistory(_ tabSwitcher: TabSwitcherViewController) {
+        openAIChatHistory(source: .tabSwitcher)
     }
 
     private func tabSwitcherNewTabWithAnimation() {

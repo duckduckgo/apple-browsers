@@ -159,6 +159,8 @@ public class Tab: NSObject, NSCoding {
 
     @MainActor lazy var iPadOmnibarDraft = IPadOmnibarDraft()
 
+    var newChatInputRequest: DuckAINewChatInputRequest?
+
     var duckAIEntrySource: AIChatEntryPointSource? {
         didSet { isDuckAIEntrySourceAwaitingPageLoad = duckAIEntrySource != nil }
     }

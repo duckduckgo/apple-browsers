@@ -71,6 +71,10 @@ final class LegacyTabSwitcherChrome: TabSwitcherChrome {
         barsHandler.configurePlusButtonLongPressMenu(isFireModeEnabled: isFireModeEnabled)
     }
 
+    func configureDuckChatMenu(_ menu: UIMenu?) {
+        barsHandler.configureDuckChatMenu(menu)
+    }
+
     func decorate(theme: Theme) {
         titleBarView.tintColor = theme.barTintColor
         bottomToolbar.setLegacyBackgroundTransparent(true)

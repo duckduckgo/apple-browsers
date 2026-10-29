@@ -392,6 +392,11 @@ final class UnifiedToggleInputView: UIView {
         didSet { handler.isVoiceSearchEnabled = isVoiceSearchAvailable }
     }
 
+    var aiChatShortcutEmptyInputMenu: UIMenu? {
+        get { textEntryView.aiChatShortcutEmptyInputMenu }
+        set { textEntryView.aiChatShortcutEmptyInputMenu = newValue }
+    }
+
     var usesOmnibarMargins: Bool = false
     private(set) var isToggleEnabled: Bool
 
@@ -883,7 +888,7 @@ final class UnifiedToggleInputView: UIView {
             cardView.layer.shadowColor = cardShadowColor
             // Resync the stored shadows so `CompositeShadowView`'s own trait handler doesn't
             // revert dynamic colors to the init-time config.
-            expandedShadowView.shadows = currentLayout == .flanked ? flankedShadows : expandedShadows
+            expandedShadowView.shadows = currentLayout.isFlanked ? flankedShadows : expandedShadows
             // The disclaimer card's shadowColor is a snapshotted cgColor; re-resolve it here.
             editReplaceDisclaimerCard.layer.shadowColor = UIColor(designSystemColor: .shadowSecondary).cgColor
             if cardView.layer.borderWidth > 0 {
@@ -1163,35 +1168,46 @@ final class UnifiedToggleInputView: UIView {
         }
     }
 
-    func setAITabCollapsedFooterPoseActive(_ active: Bool) {
-        guard aiTabCollapsedFireButton.isHidden == active else { return }
+    private var flankingButtons: [(accessory: UnifiedToggleInputFlankingAccessories, button: UIButton)] {
+        [(.fire, aiTabCollapsedFireButton), (.menu, aiTabCollapsedMenuButton)]
+    }
 
-        if active {
+    private var visibleFlankingAccessories: UnifiedToggleInputFlankingAccessories {
+        UnifiedToggleInputFlankingAccessories(flankingButtons.filter { !$0.button.isHidden }.map(\.accessory))
+    }
+
+    func setFlankingAccessoriesVisible(_ accessories: UnifiedToggleInputFlankingAccessories) {
+        let previous = visibleFlankingAccessories
+        guard previous != accessories else { return }
+        let appearing = accessories.subtracting(previous)
+
+        for (accessory, button) in flankingButtons {
             // alpha-0 before unhide avoids a 1-frame flash on top of the still-wide pill.
-            aiTabCollapsedFireButton.alpha = 0
-            aiTabCollapsedMenuButton.alpha = 0
+            if appearing.contains(accessory) { button.alpha = 0 }
+            button.isHidden = !accessories.contains(accessory)
         }
-        aiTabCollapsedFireButton.isHidden = !active
-        aiTabCollapsedMenuButton.isHidden = !active
-        textEntryView.placeholderTextAlignment = active ? .center : .natural
+        textEntryView.placeholderTextAlignment = accessories.isEmpty ? .natural : .center
 
-        guard active else { return }
+        guard !appearing.isEmpty else { return }
         // Clear transient state left by the omnibar dismiss (color + horizontal shift).
         textEntryView.placeholderTextColor = textEntryView.defaultPlaceholderColor
         textEntryView.setTextHorizontalShift(0)
         UIView.animate(withDuration: Constants.aiTabCollapsedAccessoryFadeDuration,
                        delay: Constants.aiTabCollapsedAccessoryFadeDelay,
                        options: .curveEaseOut) {
-            self.aiTabCollapsedFireButton.alpha = 1
-            self.aiTabCollapsedMenuButton.alpha = 1
+            for (accessory, button) in self.flankingButtons where appearing.contains(accessory) {
+                button.alpha = 1
+            }
         }
     }
 
-    private func setCardFlanked(_ flanked: Bool) {
-        cardLeadingConstraint.isActive = !flanked
-        cardLeadingFlankedConstraint.isActive = flanked
-        cardTrailingConstraint.isActive = !flanked
-        cardTrailingFlankedConstraint.isActive = flanked
+    private func setCardFlanked(by accessories: UnifiedToggleInputFlankingAccessories) {
+        let flanksLeading = accessories.contains(.fire)
+        let flanksTrailing = accessories.contains(.menu)
+        cardLeadingConstraint.isActive = !flanksLeading
+        cardLeadingFlankedConstraint.isActive = flanksLeading
+        cardTrailingConstraint.isActive = !flanksTrailing
+        cardTrailingFlankedConstraint.isActive = flanksTrailing
     }
 
     private struct CardDimensions {
@@ -1225,11 +1241,12 @@ final class UnifiedToggleInputView: UIView {
         // Flanked: hide the in-pill voice icon (external accessories flank the pill, voice is in the Plus menu).
         // Snap synchronously so the focus animation drives the transition — animating here would snapshot at the old layout and drift.
         let collapsedVoice: SwitchBarTextEntryView.VoiceButtonAppearance = handler.prefersDictationOverVoiceChat ? .microphone : .aiVoicePlain
-        textEntryView.setVoiceButtonAppearance(layout == .flanked ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
-        if layout != .flanked {
-            // Non-flanked: card spans full width, so external fire/menu must hide. The reverse is `setAITabCollapsedFooterPoseActive` (fades in).
-            aiTabCollapsedFireButton.isHidden = true
-            aiTabCollapsedMenuButton.isHidden = true
+        // Duck.ai tabs offer voice from the Plus menu; elsewhere the pill keeps its own voice button.
+        let hidesPillVoice = layout.isFlanked && isAITab
+        textEntryView.setVoiceButtonAppearance(hidesPillVoice ? .hidden : (expanded ? .microphone : collapsedVoice), animated: false)
+        // Accessories the layout doesn't flank must hide; the reverse is `setFlankingAccessoriesVisible` (fades in).
+        for (accessory, button) in flankingButtons where !layout.flankingAccessories.contains(accessory) {
+            button.isHidden = true
         }
         guard layout != currentLayout else {
             updateExpandedBorderVisibility(expanded && (layout.showsToggle || layout.showsToolbar))
@@ -1283,9 +1300,9 @@ final class UnifiedToggleInputView: UIView {
 
         textEntryView.isExpandable = expanded
 
-        let useCompositeShadow = expanded || layout == .flanked
+        let useCompositeShadow = expanded || layout.isFlanked
         // In-place mutation preserves the in-flight cornerRadius CAAnimation.
-        expandedShadowView.updateShadows(layout == .flanked ? flankedShadows : expandedShadows)
+        expandedShadowView.updateShadows(layout.isFlanked ? flankedShadows : expandedShadows)
         expandedShadowView.isHidden = !useCompositeShadow
         cardView.layer.shadowOpacity = useCompositeShadow ? 0 : 1.0
         let dimensions = Self.cardDimensions(for: layout)
@@ -1302,7 +1319,7 @@ final class UnifiedToggleInputView: UIView {
 
         updateExpandedBorderVisibility(expanded && (showsToggle || showToolbar))
         let changes = {
-            self.setCardFlanked(layout == .flanked)
+            self.setCardFlanked(by: layout.flankingAccessories)
             // Bottom collapsed pose is a capsule to match the floating omnibar pill; everything
             // else uses the layout's own radius.
             self.cardView.layer.cornerRadius = (layout == .collapsed) ? self.collapsedCornerRadius : dimensions.cornerRadius

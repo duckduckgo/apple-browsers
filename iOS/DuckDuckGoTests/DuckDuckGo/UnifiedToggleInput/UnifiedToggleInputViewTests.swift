@@ -324,11 +324,38 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         sut.layoutIfNeeded()
         XCTAssertEqual(buttons.center.y, 22, accuracy: 0.5)
 
-        sut.applyCardLayout(.flanked, animated: false)
+        sut.applyCardLayout(.flanked(.all), animated: false)
         sut.layoutIfNeeded()
         textEntry.setNeedsLayout()
         textEntry.layoutIfNeeded()
         XCTAssertEqual(buttons.center.y, 24, accuracy: 0.5)
+    }
+
+    func test_fireOnlyFlankedPose_showsFire() {
+        let sut = makeFlankedPoseSUT()
+
+        sut.applyCardLayout(.flanked(.fire), animated: false)
+        sut.setFlankingAccessoriesVisible(.fire)
+
+        XCTAssertFalse(sut.aiTabFireButton.isHidden)
+    }
+
+    func test_leavingTheFlankedPose_hidesFire() {
+        let sut = makeFlankedPoseSUT()
+        sut.applyCardLayout(.flanked(.fire), animated: false)
+        sut.setFlankingAccessoriesVisible(.fire)
+
+        sut.applyCardLayout(.collapsed, animated: false)
+
+        XCTAssertTrue(sut.aiTabFireButton.isHidden)
+    }
+
+    private func makeFlankedPoseSUT() -> UnifiedToggleInputView {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.frame = CGRect(x: 0, y: 0, width: 402, height: UnifiedToggleInputView.aiTabCollapsedFooterHeight)
+        sut.applyCardLayout(.collapsed, animated: false)
+        sut.layoutIfNeeded()
+        return sut
     }
 
     func test_dismissPoseFadesAttachmentsStripOutSoItAnimatesWithTheCollapse() throws {
@@ -1161,7 +1188,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)
         sut.overrideUserInterfaceStyle = .dark
-        sut.applyCardLayout(.flanked, animated: false)
+        sut.applyCardLayout(.flanked(.all), animated: false)
         prepareForFitting(sut, width: 402, height: 80)
 
         let shadowView = try XCTUnwrap(firstDescendant(of: CompositeShadowView.self, in: sut))

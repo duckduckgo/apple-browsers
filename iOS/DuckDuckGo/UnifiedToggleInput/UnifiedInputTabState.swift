@@ -38,6 +38,12 @@ public struct UnifiedInputTabState: Equatable {
     }
 }
 
+/// One-shot: a Duck.ai tab opened for a new chat starts with its input focused, optionally with a tool picked.
+struct DuckAINewChatInputRequest: Equatable {
+    var tool: AIChatRAGTool?
+    var createImageEntryPoint: CreateImageEntryPoint?
+}
+
 protocol UnifiedInputTabStateProviding: AnyObject {
     var uid: String { get }
     var unifiedInputState: UnifiedInputTabState { get set }

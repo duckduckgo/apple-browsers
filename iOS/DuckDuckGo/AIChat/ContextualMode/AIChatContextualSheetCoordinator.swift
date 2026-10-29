@@ -1034,14 +1034,11 @@ private extension AIChatContextualSheetCoordinator {
     }
 
     func makeSuggestionsReaderIfEnabled() -> AIChatSuggestionsReading? {
-        let reader = SuggestionsReader(
-            featureFlagger: featureFlagger,
-            privacyConfig: privacyConfigurationManager,
-            nativeStorageHandler: duckAiNativeStorageHandler,
-            featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger)
-        )
-        let settings = AIChatHistorySettings(privacyConfig: privacyConfigurationManager)
-        return AIChatSuggestionsReader(suggestionsReader: reader, historySettings: settings)
+        AIChatSuggestionsReader.makeRecentChatsReader(isFireMode: isFireTab,
+                                                      nativeStorageHandler: duckAiNativeStorageHandler,
+                                                      fireModeStorageHandler: duckAiFireModeStorageHandler,
+                                                      featureFlagger: featureFlagger,
+                                                      privacyConfig: privacyConfigurationManager)
     }
 
     func makePersistentUTIHostIfNeeded(start: ContextualInputStart) -> AIChatContextualUTIHost? {

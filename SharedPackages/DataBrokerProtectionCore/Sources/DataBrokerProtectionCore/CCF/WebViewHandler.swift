@@ -230,8 +230,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             dataBrokerFeature?.pushAssistMessage(.setAssistMode, params: PIRAssistModeParams(enabled: false), webView: webView)
         }
         unregisterAssistSession()
-#endif
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
+#endif
         Logger.action.log("WebViewHandler finished")
         webView?.stopLoading()
         userContentController?.cleanUpBeforeClosing()
@@ -325,7 +325,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         }
         manualDeadline?.cancel()
         manualDeadline = Task { @MainActor [weak self] in
-            do { try await Task.sleep(nanoseconds: 600_000_000_000) } catch { return }
+            do { try await Task.sleep(nanoseconds: UInt64(PIRManualControl.userTurnLimit) * 1_000_000_000) } catch { return }
             guard let self, self.manualControl.isPaused else { return }
             self.stopAssistedJob()
         }
@@ -389,16 +389,13 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     private func isExpectedManagedChallengeDestination(_ url: URL?) -> Bool {
-        func normalizedHost(_ host: String?) -> String? {
-            guard let host else { return nil }
-            return host.lowercased().hasPrefix("www.") ? String(host.dropFirst(4)).lowercased() : host.lowercased()
-        }
-        guard let expectedHost = normalizedHost(expectedManagedChallengeURL?.host),
-              let responseHost = normalizedHost(url?.host) else { return false }
+        guard let expectedHost = expectedManagedChallengeURL.flatMap({ BrokerJobExecutionConfig.domain(of: $0.absoluteString) }),
+              let responseHost = url.flatMap({ BrokerJobExecutionConfig.domain(of: $0.absoluteString) }) else { return false }
         return responseHost == expectedHost || responseHost.hasSuffix(".\(expectedHost)") || expectedHost.hasSuffix(".\(responseHost)")
     }
 
     func updateManagedChallengeState(response: HTTPURLResponse) {
+        guard assistSession != nil || window != nil else { return }
         isManagedChallengeResponse = response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame
         if isManagedChallengeResponse {
             if !isAwaitingManagedChallengeDestination {
@@ -423,19 +420,13 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         }
     }
 
-    func updateAssistTarget(for action: Action?) {
-        watchForEmbeddedChallenge(during: action)
-    }
-
-    private static let turnstileTokenField = "cf-turnstile-response"
-
     /// Brokers such as PeopleFinders wait for a Turnstile token in their own form. Turnstile often clears by
     /// itself; when it does not, hand the widget to the user before the wait times out.
-    private func watchForEmbeddedChallenge(during action: Action?) {
+    func watchForEmbeddedChallenge(during action: Action?) {
         embeddedChallengeTask?.cancel()
         embeddedChallengeTask = nil
         guard assistSession != nil, let action, action.actionType == .expectation, let json = action.json,
-              String(bytes: json, encoding: .utf8)?.contains(Self.turnstileTokenField) == true else { return }
+              String(bytes: json, encoding: .utf8)?.contains(PIRAssistUserTurnKind.turnstileTokenField) == true else { return }
         embeddedChallengeTask = Task { @MainActor [weak self] in
             do { try await Task.sleep(nanoseconds: 4_000_000_000) } catch { return }
             guard let self, !(await self.hasToken(for: .turnstile)), !self.manualControl.isPaused else { return }

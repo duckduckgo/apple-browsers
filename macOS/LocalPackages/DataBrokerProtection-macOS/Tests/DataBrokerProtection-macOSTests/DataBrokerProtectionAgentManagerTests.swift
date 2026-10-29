@@ -198,6 +198,15 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertEqual(list.items.map(\.id), ["optOut-1-1-10"])
     }
 
+    func testWhenTheDashboardOpensAnItemThatIsNoLongerHeld_thenNothingStarts() async throws {
+        sut = makeAgentManagerWithAHeldOptOut()
+        mockAuthenticationManager.hasValidEntitlementValue = true
+
+        let opened = try await sut.openNeedsYouItem(id: "optOut-1-1-11")
+
+        XCTAssertFalse(opened)
+    }
+
     private func makeAgentManagerWithAHeldOptOut() -> DataBrokerProtectionAgentManager {
         let database = MockDatabase()
         database.brokerProfileQueryDataToReturn = [

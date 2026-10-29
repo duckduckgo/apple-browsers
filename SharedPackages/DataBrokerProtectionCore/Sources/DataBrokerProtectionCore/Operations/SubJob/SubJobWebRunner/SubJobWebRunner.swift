@@ -187,7 +187,7 @@ public extension SubJobWebRunning {
 
         #if os(macOS) && DEBUG
         if let handler = webViewHandler as? DataBrokerProtectionWebViewHandler {
-            await handler.updateAssistTarget(for: action)
+            await handler.watchForEmbeddedChallenge(during: action)
             if let actionsHandler {
                 await handler.updateAssistChecklist(actionsHandler, profileQuery: context.profileQuery)
             }

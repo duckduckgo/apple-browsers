@@ -22,7 +22,7 @@ import Foundation
 import WebKit
 
 /// Identifies a held opt-out, or a held scan when `extractedProfileId` is nil.
-public struct PIRAssistItemID: Hashable, Codable, Sendable {
+public struct PIRAssistItemID: Hashable, Sendable {
     public let brokerId: Int64
     public let profileQueryId: Int64
     public let extractedProfileId: Int64?
@@ -44,9 +44,11 @@ public enum PIRAssistUserTurnKind: String, Codable, Sendable {
     case managedChallenge
     case generic
 
+    static let turnstileTokenField = "cf-turnstile-response"
+
     var tokenSelector: String? {
         switch self {
-        case .turnstile: return "input[name='cf-turnstile-response']"
+        case .turnstile: return "input[name='\(Self.turnstileTokenField)']"
         case .recaptcha: return "textarea[name='g-recaptcha-response']"
         case .managedChallenge, .generic: return nil
         }
@@ -155,7 +157,7 @@ public final class PIRAssistSession: ObservableObject, Identifiable {
     public func setUserTurn(_ kind: PIRAssistUserTurnKind?) {
         guard kind != userTurn else { return }
         userTurn = kind
-        PIRAssistCenter.shared.sessionStateDidChange()
+        PIRAssistCenter.shared.userTurnDidChange(in: self)
     }
 }
 
@@ -171,16 +173,12 @@ public protocol PIRAssistPresenting: AnyObject {
 public final class PIRAssistCenter {
     public static let shared = PIRAssistCenter()
 
-    public enum State: String, Codable, Sendable {
-        /// Running on its own; the user doesn't need to do anything.
+    public enum State: String, Sendable {
         case running
-        /// Paused until the user solves a challenge.
         case needsYou
     }
 
     public weak var presenter: PIRAssistPresenting?
-    /// Called whenever a session starts, ends or changes whether it needs the user.
-    public var onChange: (() -> Void)?
     /// Called with true while any session is paused for the user, so the queue can make room for other jobs.
     public var onUserTurnChange: ((PIRAssistItemID, Bool) -> Void)?
 
@@ -215,7 +213,6 @@ public final class PIRAssistCenter {
         if openRequests.remove(session.id) != nil {
             presenter?.present(session)
         }
-        onChange?()
     }
 
     func unregister(_ session: PIRAssistSession) {
@@ -223,14 +220,10 @@ public final class PIRAssistCenter {
         sessions[session.id] = nil
         presenter?.dismiss(session)
         onUserTurnChange?(session.id, false)
-        onChange?()
     }
 
-    func sessionStateDidChange() {
-        for session in sessions.values {
-            onUserTurnChange?(session.id, session.userTurn != nil)
-        }
-        onChange?()
+    func userTurnDidChange(in session: PIRAssistSession) {
+        onUserTurnChange?(session.id, session.userTurn != nil)
     }
 }
 #endif

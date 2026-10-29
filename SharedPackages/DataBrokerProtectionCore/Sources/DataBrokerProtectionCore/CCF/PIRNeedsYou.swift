@@ -107,23 +107,17 @@ public enum PIRNeedsYou {
             let active = ids.first { runningByID[$0]?.state == .needsYou } ?? ids.first { runningByID[$0] != nil }
             let activeItem = active.flatMap { runningByID[$0] }
             let state: DBPUINeedsYouItem.State = activeItem.map { $0.state == .needsYou ? .needsYou : .running } ?? .waiting
-            return DBPUINeedsYouItem(id: (active ?? ids[0]).needsYouID, brokerName: first.brokerName, brokerUrl: bareDomain(first.brokerURL),
+            return DBPUINeedsYouItem(id: (active ?? ids[0]).needsYouID, brokerName: first.brokerName, brokerUrl: BrokerJobExecutionConfig.domain(of: first.brokerURL) ?? first.brokerURL,
                                      kind: first.extractedProfileId == nil ? .scan : .optOut,
                                      recordCount: first.extractedProfileId == nil ? 0 : row.items.count, state: state,
                                      detail: activeItem?.detail)
         }
         for item in running where item.state == .needsYou && !covered.contains(item.id) {
-            result.append(DBPUINeedsYouItem(id: item.id.needsYouID, brokerName: item.brokerName, brokerUrl: bareDomain(item.brokerURL),
+            result.append(DBPUINeedsYouItem(id: item.id.needsYouID, brokerName: item.brokerName, brokerUrl: BrokerJobExecutionConfig.domain(of: item.brokerURL) ?? item.brokerURL,
                                             kind: item.id.extractedProfileId == nil ? .scan : .optOut,
                                             recordCount: item.id.extractedProfileId == nil ? 0 : 1, state: .needsYou, detail: item.detail))
         }
         return result
-    }
-
-    static func bareDomain(_ url: String) -> String {
-        let absoluteURL = url.contains("://") ? url : "https://\(url)"
-        guard let host = URL(string: absoluteURL)?.host?.lowercased() else { return url }
-        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 }
 #endif

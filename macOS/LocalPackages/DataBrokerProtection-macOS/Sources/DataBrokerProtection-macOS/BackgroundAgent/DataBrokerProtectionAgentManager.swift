@@ -216,7 +216,7 @@ public final class DataBrokerProtectionAgentManager {
     private let resourceMonitor: ResourceMonitoring?
     private let wideEventSweeper: DBPWideEventSweeper?
     #if DEBUG
-    private var assistPresenter: AnyObject?
+    private var assistPresenter: PIRAssistWindowPresenter?
     #endif
 
     // Used for debug functions only, so not injected
@@ -576,7 +576,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
 #if DEBUG
     public func getNeedsYou() async throws -> DBPUINeedsYouList {
-        // Needs you is only on the paid dashboard.
         guard await hasPIREntitlement() else { return DBPUINeedsYouList(items: []) }
         let pending = try PIRAssistedOptOuts.pending(in: jobDependencies.database, config: jobDependencies.executionConfig)
         let running = await MainActor.run { PIRAssistCenter.shared.runningItems }
@@ -585,15 +584,18 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
     public func openNeedsYouItem(id: String) async throws -> Bool {
         guard let itemID = PIRAssistItemID(needsYouID: id), await hasPIREntitlement() else { return false }
-        let isRunning = await MainActor.run { () -> Bool in
-            let isRunning = PIRAssistCenter.shared.state(of: itemID) != nil
-            PIRAssistCenter.shared.open(itemID)
-            return isRunning
+        let isRunning = await MainActor.run { PIRAssistCenter.shared.state(of: itemID) != nil }
+        if !isRunning {
+            // The dashboard's list can be a poll behind, and starting a job that is no longer held would run it again.
+            let pending = try PIRAssistedOptOuts.pending(in: jobDependencies.database, config: jobDependencies.executionConfig)
+            guard pending.contains(where: { PIRAssistItemID($0) == itemID }) else { return false }
+            try PIRAssistedOptOuts.start(brokerId: itemID.brokerId, profileQueryId: itemID.profileQueryId,
+                                         extractedProfileId: itemID.extractedProfileId, in: jobDependencies.database)
         }
-        guard !isRunning else { return true }
-        try PIRAssistedOptOuts.start(brokerId: itemID.brokerId, profileQueryId: itemID.profileQueryId,
-                                     extractedProfileId: itemID.extractedProfileId, in: jobDependencies.database)
-        startScheduledOperations(showWebView: false)
+        await MainActor.run { PIRAssistCenter.shared.open(itemID) }
+        if !isRunning {
+            startScheduledOperations(showWebView: false)
+        }
         return true
     }
 

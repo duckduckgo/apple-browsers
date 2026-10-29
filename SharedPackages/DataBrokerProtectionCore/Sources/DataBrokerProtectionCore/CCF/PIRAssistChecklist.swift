@@ -20,15 +20,10 @@
 import Foundation
 
 public struct PIRAssistChecklist: Sendable, Equatable {
-    public let isOptOut: Bool
-    /// The second half of an opt-out, after the broker's confirmation email arrived.
-    public let isConfirmation: Bool
     public let items: [String]
     public let currentIndex: Int
 
-    public init(isOptOut: Bool, isConfirmation: Bool = false, items: [String], currentIndex: Int) {
-        self.isOptOut = isOptOut
-        self.isConfirmation = isConfirmation
+    public init(items: [String], currentIndex: Int) {
         self.items = items
         self.currentIndex = currentIndex
     }
@@ -57,8 +52,6 @@ public struct PIRAssistChecklist: Sendable, Equatable {
             }
             itemIndexForAction.append(max(items.count - 1, 0))
         }
-        self.isOptOut = isOptOut
-        self.isConfirmation = isConfirmation
         self.items = items
         self.currentIndex = currentIndex.flatMap { itemIndexForAction.indices.contains($0) ? itemIndexForAction[$0] : nil } ?? 0
     }
@@ -116,7 +109,7 @@ public struct PIRAssistChecklist: Sendable, Equatable {
         case .emailConfirmation: return "Confirm the request from your email"
         case .expectation:
             // A wait for a Turnstile token is the moment a person may have to prove they are human.
-            let waitsForTurnstile = action.json.flatMap { String(bytes: $0, encoding: .utf8) }?.contains("cf-turnstile-response") == true
+            let waitsForTurnstile = action.json.flatMap { String(bytes: $0, encoding: .utf8) }?.contains(PIRAssistUserTurnKind.turnstileTokenField) == true
             return waitsForTurnstile ? proveHumanLabel : nil
         case .condition, .executeScript: return nil
         }

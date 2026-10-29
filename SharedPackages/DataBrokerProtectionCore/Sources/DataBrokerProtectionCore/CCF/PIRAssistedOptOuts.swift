@@ -27,7 +27,6 @@ public struct PIRAssistedOptOut: Sendable, Hashable {
     public let extractedProfileId: Int64?
     public let brokerName: String
     public let brokerURL: String
-    public let recordName: String?
 }
 
 /// Opt-outs for brokers that need a person run only when the user starts them, once per start.
@@ -39,30 +38,30 @@ public enum PIRAssistedOptOuts {
         extractedProfileId.map { "opt-out-\($0)" } ?? "scan-\(brokerId)-\(profileQueryId)"
     }
 
+    /// Everything the job filter holds back that the user can start: first runs, and reruns once they are due.
     public static func pending(in database: DataBrokerProtectionRepository,
-                               config: BrokerJobExecutionConfig = BrokerJobExecutionConfig()) throws -> [PIRAssistedOptOut] {
-        try database.fetchActiveBrokerProfileQueryData()
+                               config: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
+                               now: Date = Date()) throws -> [PIRAssistedOptOut] {
+        func isDue(_ job: BrokerJobData) -> Bool { job.preferredRunDate.map { $0 <= now } ?? false }
+        return try database.fetchActiveBrokerProfileQueryData()
             .filter { config.needsUser(forBrokerAt: $0.dataBroker.url) && !$0.dataBroker.performsOptOutWithinParent() }
             .flatMap { data -> [PIRAssistedOptOut] in
                 guard let brokerId = data.dataBroker.id, let profileQueryId = data.profileQuery.id else { return [] }
-                let scan = config.holdsScan(forBrokerAt: data.dataBroker.url) && data.scanJobData.lastRunDate == nil
+                let holdsScan = config.holdsScan(forBrokerAt: data.dataBroker.url)
+                let scan = holdsScan && (data.scanJobData.lastRunDate == nil || isDue(data.scanJobData))
                     ? [PIRAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: nil,
-                                         brokerName: data.dataBroker.name, brokerURL: data.dataBroker.url, recordName: nil)]
+                                         brokerName: data.dataBroker.name, brokerURL: data.dataBroker.url)]
                     : []
                 return scan + data.optOutJobData
-                    .filter { $0.submittedSuccessfullyDate == nil && $0.extractedProfile.removedDate == nil && !$0.isAwaitingEmailConfirmation }
+                    .filter { $0.extractedProfile.removedDate == nil && !$0.isAwaitingEmailConfirmation }
+                    .filter { $0.submittedSuccessfullyDate == nil || isDue($0) }
                     .compactMap { job in
                         job.extractedProfile.id.map {
                             PIRAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: $0,
-                                              brokerName: data.dataBroker.name, brokerURL: data.dataBroker.url,
-                                              recordName: job.extractedProfile.name)
+                                              brokerName: data.dataBroker.name, brokerURL: data.dataBroker.url)
                         }
                     }
             }
-    }
-
-    public static func start(_ optOut: PIRAssistedOptOut, in database: DataBrokerProtectionRepository) throws {
-        try start(brokerId: optOut.brokerId, profileQueryId: optOut.profileQueryId, extractedProfileId: optOut.extractedProfileId, in: database)
     }
 
     public static func start(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?,

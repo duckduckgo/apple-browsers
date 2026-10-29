@@ -28,13 +28,11 @@ public struct BrokerJobExecutionConfig {
     public static let assistantDemoAssistedScanBrokerDomains: Set<String> = ["spyfly.com"]
     public var allowedBrokerDomains: Set<String>?
 
-    /// Opt-outs that need a person partway through. They wait in the preview until the user starts them.
-    public static let assistantDemoNeedsUserBrokerDomains: Set<String> = assistantDemoBrokerDomains
     /// The user solves these brokers' captcha instead of the backend solver.
     public static let assistantDemoUserCaptchaBrokerDomains: Set<String> = ["gladiknow.com"]
 
     public func needsUser(forBrokerAt url: String) -> Bool {
-        Self.domain(of: url).map(Self.assistantDemoNeedsUserBrokerDomains.contains) ?? false
+        Self.domain(of: url).map(Self.assistantDemoBrokerDomains.contains) ?? false
     }
 
     public func holdsScan(forBrokerAt url: String) -> Bool {
@@ -50,7 +48,7 @@ public struct BrokerJobExecutionConfig {
         return Self.domain(of: url).map(allowedBrokerDomains.contains) ?? false
     }
 
-    private static func domain(of url: String) -> String? {
+    static func domain(of url: String) -> String? {
         let absoluteURL = url.contains("://") ? url : "https://\(url)"
         guard let host = URL(string: absoluteURL)?.host?.lowercased() else { return nil }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
@@ -82,7 +80,7 @@ public struct BrokerJobExecutionConfig {
         /// Interval for checking if a CSS action should be cancelled
         public static let defaultCssActionCancellationCheckInterval: TimeInterval = .seconds(1)
         #if os(macOS) && DEBUG
-        // Keep one broker page active for the assisted PIR preview prototype.
+        // One broker page at a time, so an assisted job's window is never competing with another job's.
         public static let defaultConcurrentJobsDifferentBrokers: Int = 1
         public static let defaultConcurrentJobsOnManualScans: Int = 1
         #else

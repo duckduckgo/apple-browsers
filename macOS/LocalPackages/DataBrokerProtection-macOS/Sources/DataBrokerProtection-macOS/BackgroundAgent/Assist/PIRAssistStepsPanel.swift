@@ -282,7 +282,7 @@ private struct PIRAssistStepRow: View {
             Text(userTurnMessage)
                 .font(.system(size: 12))
                 .lineSpacing(3)
-                // The prototype's body is a step lighter than primary text, between the two text tokens.
+                // The design sits between textPrimary and textSecondary, and no token matches it.
                 .foregroundColor(Color(designSystemColor: .textPrimary).opacity(0.875))
                 .fixedSize(horizontal: false, vertical: true)
             Button(action: userConfirmedDone) {

@@ -22,6 +22,8 @@ import Foundation
 /// One operation's manual handoff. Challenge handoffs invalidate older automated work.
 @MainActor
 final class PIRManualControl {
+    nonisolated static let userTurnLimit: TimeInterval = 600
+
     var epoch = UUID()
     var isPaused = false
     var isManagedChallenge = false {
@@ -92,7 +94,7 @@ enum PIRManualControlContext {
                         let elapsed = now - previous
                         previous = now
                         if await budget.isPaused { manualTime += elapsed } else { automaticTime += elapsed }
-                        if automaticTime >= seconds || manualTime >= 600 { throw error }
+                        if automaticTime >= seconds || manualTime >= PIRManualControl.userTurnLimit { throw error }
                     }
                 }
                 defer { group.cancelAll() }

@@ -161,10 +161,13 @@ extension DBPUIViewModel: DBPUINeedsYouDelegate {
         needsYouUpdates?.cancel()
         needsYouUpdates = Task { @MainActor [weak self, weak webView] in
             while !Task.isCancelled {
-                guard let self, let webView else { return }
-                if webView.window != nil, let list = await self.getNeedsYou(), list != self.lastNeedsYou {
-                    self.lastNeedsYou = list
-                    self.communicationLayer?.sendNeedsYouDidChange(list, into: webView)
+                // Strong references only for one poll, so closing the dashboard frees the view model and ends the loop.
+                do {
+                    guard let self, let webView else { return }
+                    if webView.window != nil, let list = await self.getNeedsYou(), list != self.lastNeedsYou {
+                        self.lastNeedsYou = list
+                        self.communicationLayer?.sendNeedsYouDidChange(list, into: webView)
+                    }
                 }
                 try? await Task.sleep(nanoseconds: 2_000_000_000)
             }

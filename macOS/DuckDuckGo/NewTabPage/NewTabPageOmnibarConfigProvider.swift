@@ -80,6 +80,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
     private enum Key: String {
         case newTabPageOmnibarMode
         case newTabPageSuggestedPromptsPromptCount
+        case newTabPageSuggestedPromptsHidden
     }
 
     private enum LegacyKey: String {
@@ -182,6 +183,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] count in
                 self?.existingChatCount = count
+                self?.hideSuggestedPromptsIfLimitReached()
                 self?.suggestedPromptsChangedSubject.send(())
             }
     }
@@ -670,10 +672,30 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
-    /// Not the sum: every NTP prompt also starts a chat.
     var showSuggestedPrompts: Bool {
         featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts)
-            && max(suggestedPromptsPromptCount, existingChatCount) < suggestedPromptsPromptLimit
+            && !suggestedPromptsHidden
+            && !isSuggestedPromptsLimitReached
+    }
+
+    /// Not the sum: every NTP prompt also starts a chat.
+    private var isSuggestedPromptsLimitReached: Bool {
+        max(suggestedPromptsPromptCount, existingChatCount) >= suggestedPromptsPromptLimit
+    }
+
+    /// Set once the limit is reached, so deleting chats doesn't bring the chips back.
+    private var suggestedPromptsHidden: Bool {
+        (try? keyValueStore.object(forKey: Key.newTabPageSuggestedPromptsHidden.rawValue) as? Bool) ?? false
+    }
+
+    /// Only while the feature is on, so the chips aren't used up before the user could see them.
+    private func hideSuggestedPromptsIfLimitReached() {
+        guard featureFlagger.isFeatureOn(.aiChatNtpSuggestedPrompts), !suggestedPromptsHidden, isSuggestedPromptsLimitReached else { return }
+        do {
+            try keyValueStore.set(true, forKey: Key.newTabPageSuggestedPromptsHidden.rawValue)
+        } catch {
+            Logger.newTabPageOmnibar.error("Failed to hide suggested prompts in keyValueStore: \(error.localizedDescription)")
+        }
     }
 
     var suggestedPromptsPromptLimit: Int {
@@ -690,6 +712,7 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             } catch {
                 Logger.newTabPageOmnibar.error("Failed to set suggested prompts submit count in keyValueStore: \(error.localizedDescription)")
             }
+            hideSuggestedPromptsIfLimitReached()
             suggestedPromptsChangedSubject.send(())
         }
     }
@@ -702,11 +725,12 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             .eraseToAnyPublisher()
     }
 
-    /// Debug menu: brings the suggested-prompt chips back by clearing the submit count.
+    /// Debug menu: brings the suggested-prompt chips back by clearing the submit count and the hidden state.
     /// Static so it can run without a provider; open NTPs pick it up through the notification.
     static func resetSuggestedPrompts(in keyValueStore: ThrowingKeyValueStoring, notificationCenter: NotificationCenter = .default) {
         do {
             try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsPromptCount.rawValue)
+            try keyValueStore.removeObject(forKey: Key.newTabPageSuggestedPromptsHidden.rawValue)
         } catch {
             Logger.newTabPageOmnibar.error("Failed to reset suggested prompts in keyValueStore: \(error.localizedDescription)")
         }

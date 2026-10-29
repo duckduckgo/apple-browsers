@@ -1086,23 +1086,53 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
         let storage = ObservableChatStorage()
-        let chats = { (count: Int) in (0..<count).map { DuckAiChatRecord(chatId: "chat-\($0)", data: Data("{}".utf8)) } }
-        storage.chats.send(chats(3))
         let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: featureFlagger, duckAiStorageHandler: storage)
         provider.suggestedPromptsPromptCount = 3
 
-        // The count is read on the main queue, so wait for the change the provider announces.
-        var changed = expectation(description: "3 chats applied")
-        var cancellable = provider.suggestedPromptsPublisher.first().sink { changed.fulfill() }
-        wait(for: [changed], timeout: 1)
+        sendChats(3, through: storage)
         XCTAssertTrue(provider.showSuggestedPrompts, "3 prompts and 3 chats aren't added together")
 
-        changed = expectation(description: "5 chats applied")
-        cancellable = provider.suggestedPromptsPublisher.first().sink { changed.fulfill() }
-        storage.chats.send(chats(5))
-        wait(for: [changed], timeout: 1)
-        cancellable.cancel()
+        sendChats(5, through: storage)
         XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_staysFalseOnceChatsAreDeleted() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let storage = ObservableChatStorage()
+        let store = try makeStore()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), keyValueStore: store, featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+
+        sendChats(5, through: storage)
+        sendChats(2, through: storage)
+        XCTAssertFalse(provider.showSuggestedPrompts)
+
+        let relaunched = try makeProvider(persistor: MockAIChatPreferencesPersisting(), keyValueStore: store, featureFlagger: featureFlagger)
+        XCTAssertFalse(relaunched.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_isNotHiddenByChatsReachingTheLimitWhileTheFeatureIsOff() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": false]
+        let storage = ObservableChatStorage()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+
+        sendChats(5, through: storage)
+        sendChats(2, through: storage)
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+
+        XCTAssertTrue(provider.showSuggestedPrompts)
+    }
+
+    /// The provider reads the chat count on the main queue, so wait for the queue to reach past it.
+    @MainActor
+    private func sendChats(_ count: Int, through storage: ObservableChatStorage) {
+        storage.chats.send((0..<count).map { DuckAiChatRecord(chatId: "chat-\($0)", data: Data("{}".utf8)) })
+        let applied = expectation(description: "\(count) chats applied")
+        DispatchQueue.main.async { applied.fulfill() }
+        wait(for: [applied], timeout: 1)
     }
 
     @MainActor

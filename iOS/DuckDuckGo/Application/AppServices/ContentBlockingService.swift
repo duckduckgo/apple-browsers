@@ -47,7 +47,7 @@ final class ContentBlockingService {
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
          fireModeStorageController: FireModeNativeStorageController? = nil,
          adBlockingAvailability: AdBlockingAvailabilityProviding,
-         aiChatBonusService: AIChatBonusService) {
+         aiChatBonusOffer: AIChatBonusOfferDependencies) {
 
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
         self.fireModeStorageController = fireModeStorageController
@@ -63,7 +63,7 @@ final class ContentBlockingService {
                                                                            internalUserDecider: internalUserDecider,
                                                                            syncErrorHandler: syncErrorHandler,
                                                                            webExtensionAvailability: webExtensionAvailability,
-                                                                           aiChatBonusService: aiChatBonusService)
+                                                                           aiChatBonusOffer: aiChatBonusOffer)
 
         updating = ContentBlockingUpdating(userScriptsDependencies: userScriptsDependencies,
                                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)

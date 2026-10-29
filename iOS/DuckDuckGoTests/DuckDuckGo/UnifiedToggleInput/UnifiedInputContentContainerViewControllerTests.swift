@@ -30,7 +30,7 @@ import XCTest
 @MainActor
 final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
 
-    func testScrollableEscapeHatchFlagUsesDefaultOnRemoteSubfeatureAndLocalOverride() {
+    func testScrollableEscapeHatchFlagUsesDefaultOffRemoteSubfeatureAndLocalOverride() {
         let flag = FeatureFlag.scrollableEscapeHatch
         guard case let .remoteReleasable(subfeature) = flag.source else {
             XCTFail("Expected remote-releasable source")
@@ -39,27 +39,33 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
         XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .scrollableEscapeHatch)
         XCTAssertEqual(subfeature.parent, .iOSBrowserConfig)
         XCTAssertEqual(subfeature.rawValue, "scrollableEscapeHatch")
-        guard case .enabled = flag.defaultValue else {
-            XCTFail("Expected enabled default")
+        guard case .disabled = flag.defaultValue else {
+            XCTFail("Expected disabled default")
             return
         }
         XCTAssertTrue(flag.supportsLocalOverriding)
     }
 
     func testScrollableEscapeHatchKeepsItsImplementationUntilTheContainerIsRecreated() {
+        let isIOS16OrLater: Bool
+        if #available(iOS 16.0, *) {
+            isIOS16OrLater = true
+        } else {
+            isIOS16OrLater = false
+        }
         for initiallyEnabled in [false, true] {
             let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: initiallyEnabled ? [.scrollableEscapeHatch] : [])
             let controller = UnifiedInputContentContainerViewController(
                 switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
-            XCTAssertEqual(controller.usesScrollableEscapeHatch, initiallyEnabled)
+            XCTAssertEqual(controller.usesScrollableEscapeHatch, isIOS16OrLater && initiallyEnabled)
 
             featureFlagger.enabledFeatureFlags = initiallyEnabled ? [] : [.scrollableEscapeHatch]
             featureFlagger.triggerUpdate()
-            XCTAssertEqual(controller.usesScrollableEscapeHatch, initiallyEnabled)
+            XCTAssertEqual(controller.usesScrollableEscapeHatch, isIOS16OrLater && initiallyEnabled)
 
             let nextController = UnifiedInputContentContainerViewController(
                 switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
-            XCTAssertEqual(nextController.usesScrollableEscapeHatch, !initiallyEnabled)
+            XCTAssertEqual(nextController.usesScrollableEscapeHatch, isIOS16OrLater && !initiallyEnabled)
         }
     }
 

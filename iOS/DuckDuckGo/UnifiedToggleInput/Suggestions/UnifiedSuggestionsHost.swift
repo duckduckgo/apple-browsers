@@ -20,7 +20,6 @@
 import Combine
 import SwiftUI
 import UIKit
-import os.log
 
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. The empty-state logo and fire
@@ -67,9 +66,6 @@ final class UnifiedSuggestionsHost {
     }
 
     func setFocusedContent(mode: TextEntryMode, escapeHatch: EscapeHatchModel?, syncPromo: AnyView?) {
-        if focusedMode != mode || (self.syncPromo == nil) != (syncPromo == nil) {
-            Logger.unifiedInputState.debug("[EHScrollDiag] event=content.selection mode=\(String(describing: mode), privacy: .public) promo=\(syncPromo != nil, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
-        }
         focusedMode = mode
         if usesScrollableEscapeHatch {
             self.escapeHatch = escapeHatch
@@ -127,14 +123,6 @@ final class UnifiedSuggestionsHost {
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.onContentChanged?() }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification))
-            .sink { [weak self] notification in
-                let event = notification.name == UIResponder.keyboardWillHideNotification ? "keyboard.will-hide" : "keyboard.did-hide"
-                self?.logScrollDiagnostics(event)
-            }
             .store(in: &cancellables)
 
         let view = UnifiedSuggestionsView(
@@ -259,7 +247,6 @@ final class UnifiedSuggestionsHost {
     private func applyCombinedInsets() {
         let top = escapeHatchTopInset + contentInsets.top
         viewModel.chromeInsetTop = top + embeddedHatchInset
-        logScrollDiagnostics("insets.before")
         let contentTopInset = usesScrollableEscapeHatch ? top : 0
         let duration = UIView.inheritedAnimationDuration
         let animation: Animation? = duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil
@@ -279,23 +266,6 @@ final class UnifiedSuggestionsHost {
             right: contentInsets.right
         )
         hostingController?.view.layoutIfNeeded()
-        logScrollDiagnostics("insets.after")
-        DispatchQueue.main.async { [weak self] in
-            self?.logScrollDiagnostics("insets.nextRunLoop")
-        }
-    }
-
-    func logScrollDiagnostics(_ event: String) {
-        let hostIdentity = String(describing: ObjectIdentifier(self))
-        let modelIdentity = escapeHatch.map { String(describing: ObjectIdentifier($0)) } ?? "nil"
-        let content = String(describing: viewModel.content)
-        let requested = String(describing: contentInsets)
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) mode=\(String(describing: self.focusedMode), privacy: .public) scrolling=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.redesignedSearchPresentation != nil, privacy: .public) modules=\(self.showsRedesignedSearchModules, privacy: .public) content=\(content, privacy: .public) hatch=\(modelIdentity, privacy: .public) returnCard=\(self.escapeHatch?.isReturnToTabCardVisible ?? false, privacy: .public) requested=\(requested, privacy: .public) extraTop=\(self.escapeHatchTopInset, privacy: .public) embeddedHatch=\(self.embeddedHatchInset, privacy: .public) contentPaddingTop=\(self.viewModel.contentTopInset, privacy: .public) promo=\(self.syncPromo != nil, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
-        guard let view = hostingController?.viewIfLoaded else { return }
-        let frame = String(describing: view.convert(view.bounds, to: nil))
-        let safeArea = String(describing: view.safeAreaInsets)
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) frame=\(frame, privacy: .public) safeArea=\(safeArea, privacy: .public) alpha=\(view.alpha, privacy: .public) hidden=\(view.isHidden, privacy: .public) window=\(view.window != nil, privacy: .public) bounds=\(String(describing: view.bounds), privacy: .public) presentation=\(String(describing: view.layer.presentation()?.frame), privacy: .public) parentBounds=\(String(describing: view.superview?.bounds), privacy: .public) keyboardGuide=\(String(describing: view.superview?.keyboardLayoutGuide.layoutFrame), privacy: .public)")
-        Logger.logEscapeHatchScrollViews(in: view, event: event)
     }
 
     // MARK: - Duck.ai surface (single-host path)

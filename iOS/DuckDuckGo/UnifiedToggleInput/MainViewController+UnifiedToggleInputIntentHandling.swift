@@ -351,7 +351,6 @@ private extension MainViewController {
     }
 
     func handleHideOmnibarEditingIntent(animated: Bool, reattachingOmnibar: Bool) {
-        logEscapeHatchTransition("dismiss.intent.begin")
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput,
            let coordinator = unifiedToggleInputCoordinator {
             dismissInlineNewTabPageInput(coordinator: coordinator, animated: animated)
@@ -360,7 +359,6 @@ private extension MainViewController {
         let coordinator = unifiedToggleInputCoordinator
         let duration = Constants.omnibarTransitionDuration(isBottom: viewCoordinator.addressBarPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
         resetLegacyScrollForDismiss(coordinator: coordinator, duration: animated ? duration : 0)
-        logEscapeHatchTransition("dismiss.intent.after-reset")
         let fadesForFloatingBottom = animated && viewCoordinator.addressBarPosition.isBottom && isFloatingUIEnabled
         let defersContentCleanup = fadesForFloatingBottom || (animated && coordinator?.contentViewController.usesScrollableEscapeHatch == true
             && coordinator?.contentViewController.usesRedesignedNewTabPageLayout == false)
@@ -371,7 +369,6 @@ private extension MainViewController {
             && newTabPageViewController?.restingContentIsFavorites == true
         let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
-            self?.logEscapeHatchTransition("dismiss.intent.before-handoff")
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
             coordinator?.clearText()
@@ -387,10 +384,6 @@ private extension MainViewController {
                 self?.viewCoordinator.hideUnifiedInputContent()
             }
             self?.refreshFloatingToolbarBackdrop()
-            self?.logEscapeHatchTransition("dismiss.intent.after-handoff")
-            DispatchQueue.main.async { [weak self] in
-                self?.logEscapeHatchTransition("dismiss.intent.next-runloop")
-            }
         }
         let restoreNTPChromeIfNeeded: () -> Void = { [weak self] in
             coordinator?.contentViewController.cancelContentInsetDismissal()

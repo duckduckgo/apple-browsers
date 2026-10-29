@@ -19,30 +19,8 @@
 
 import Foundation
 import os.log
-import UIKit
 
 extension Logger {
     static let unifiedInputState = Logger(subsystem: "UnifiedInputState", category: "PerTab")
     static let duckAIUsageWarnings = Logger(subsystem: "UsageWarnings", category: "UTIFooter")
-
-    @MainActor
-    static func logEscapeHatchScrollViews(in view: UIView, event: String) {
-        func visit(_ view: UIView, ancestorAlpha: CGFloat, ancestorHidden: Bool) {
-            let alpha = ancestorAlpha * view.alpha
-            let hidden = ancestorHidden || view.isHidden
-            if let scrollView = view as? UIScrollView {
-                let identity = String(describing: ObjectIdentifier(scrollView))
-                let frame = String(describing: scrollView.convert(scrollView.bounds, to: nil))
-                let offset = String(describing: scrollView.contentOffset)
-                let size = String(describing: scrollView.contentSize)
-                let insets = String(describing: scrollView.adjustedContentInset)
-                let rawInsets = String(describing: scrollView.contentInset)
-                let safeArea = String(describing: scrollView.safeAreaInsets)
-                let translation = String(describing: scrollView.panGestureRecognizer.translation(in: scrollView))
-                unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) scroll=\(identity, privacy: .public) class=\(String(describing: type(of: scrollView)), privacy: .public) frame=\(frame, privacy: .public) offset=\(offset, privacy: .public) size=\(size, privacy: .public) adjusted=\(insets, privacy: .public) raw=\(rawInsets, privacy: .public) scrollSafeArea=\(safeArea, privacy: .public) alpha=\(alpha, privacy: .public) hidden=\(hidden, privacy: .public) dragging=\(scrollView.isDragging, privacy: .public) tracking=\(scrollView.isTracking, privacy: .public) decelerating=\(scrollView.isDecelerating, privacy: .public) pan=\(scrollView.panGestureRecognizer.state.rawValue, privacy: .public) translation=\(translation, privacy: .public)")
-            }
-            view.subviews.forEach { visit($0, ancestorAlpha: alpha, ancestorHidden: hidden) }
-        }
-        visit(view, ancestorAlpha: 1, ancestorHidden: false)
-    }
 }

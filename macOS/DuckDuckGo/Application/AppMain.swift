@@ -22,10 +22,6 @@ import AppKit
 struct AppMain {
 
     static func main() {
-#if DEBUG
-        // Integration tests run the whole app: keep them off the developer's own app settings.
-        UserDefaults.isolateStandardDefaultsForIntegrationTests()
-#endif
         _=Application.shared
         Application.shared.run()
     }

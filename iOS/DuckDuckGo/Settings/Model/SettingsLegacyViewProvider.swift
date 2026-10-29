@@ -62,6 +62,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let webExtensionManager: WebExtensionManaging?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     let duckAiNativeStorageHandler: DuckAiNativeStorageHandling?
+    let aiChatBonusMessageLog: AIChatBonusMessageLog?
     let freemiumPIRDebugSettings: FreemiumPIRDebugSettings
     let freemiumDBPUserStateManager: FreemiumDBPUserStateManaging
     let promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding?
@@ -91,6 +92,7 @@ class SettingsLegacyViewProvider: ObservableObject {
          freemiumDBPUserStateManager: FreemiumDBPUserStateManaging,
          daxGreetingDebugging: DaxGreetingDebugging,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
+         aiChatBonusMessageLog: AIChatBonusMessageLog? = nil,
          promoCoordinationDiagnosticsProvider: PromoCoordinationDiagnosticsProviding? = nil,
          promoCoordinationCooldownResetter: PromoCoordinationCooldownResetting? = nil) {
         self.syncService = syncService
@@ -113,6 +115,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.webExtensionManager = webExtensionManager
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
         self.duckAiNativeStorageHandler = duckAiNativeStorageHandler
+        self.aiChatBonusMessageLog = aiChatBonusMessageLog
         self.freemiumPIRDebugSettings = freemiumPIRDebugSettings
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.promoCoordinationDiagnosticsProvider = promoCoordinationDiagnosticsProvider
@@ -174,6 +177,7 @@ class SettingsLegacyViewProvider: ObservableObject {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            aiChatBonusMessageLog: self.aiChatBonusMessageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationDiagnosticsProvider,
             promoCoordinationCooldownResetter: self.promoCoordinationCooldownResetter,
             daxGreetingDebugging: self.daxGreetingDebugging))

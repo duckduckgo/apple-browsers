@@ -903,7 +903,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     private func logIgnoredBonusMessage(_ kind: AIChatBonusMessageLog.Kind, method: String, params: Any) {
-        bonusMessageLog?.record(kind, method: method, params: params, note: "Dropped: aiChatLimitExtensionPromo is off")
+        bonusMessageLog?.record(
+            kind,
+            method: method,
+            params: params,
+            note: "Dropped: aiChatLimitExtensionPromo is off"
+        )
     }
 
     // MARK: - Sync

@@ -61,6 +61,11 @@ final class HistoryDebugMenu: NSMenu {
                 action: #selector(importFromChrome),
                 target: self
             ).withAccessibilityIdentifier("HistoryDebugMenu.importFromChrome")
+            NSMenuItem(
+                title: "Import from Firefox",
+                action: #selector(importFromFirefox),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromFirefox")
         }
     }
 
@@ -91,14 +96,37 @@ final class HistoryDebugMenu: NSMenu {
                                             faviconManager: NSApp.delegateTyped.faviconManager,
                                             historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
+        importHistory(with: importer, browserName: "Chrome")
+    }
+
+    /// Imports the last month of history from Firefox's default profile through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromFirefox(_ sender: NSMenuItem) {
+        guard let profile = ThirdPartyBrowser.firefox.browserProfiles().defaultProfile else {
+            showAlert(title: "Firefox History Import Failed", message: "No Firefox profile found")
+            return
+        }
+
+        let importer = FirefoxDataImporter(profile: profile,
+                                           primaryPassword: nil,
+                                           loginImporter: SecureVaultLoginImporter(),
+                                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                           faviconManager: NSApp.delegateTyped.faviconManager,
+                                           historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
+                                           historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
+        importHistory(with: importer, browserName: "Firefox")
+    }
+
+    @MainActor
+    private func importHistory(with importer: DataImporter, browserName: String) {
         Task { @MainActor in
             switch await importer.importData(types: [.history]).task.value[.history] {
             case .success(let summary):
-                showAlert(title: "Chrome History Imported", message: "Imported: \(summary.successful)\nAlready in history: \(summary.duplicate)")
+                showAlert(title: "\(browserName) History Imported", message: "Imported: \(summary.successful)\nAlready in history: \(summary.duplicate)")
             case .failure(let error):
-                showAlert(title: "Chrome History Import Failed", message: "\(error)")
+                showAlert(title: "\(browserName) History Import Failed", message: "\(error)")
             case nil:
-                showAlert(title: "Chrome History Import Failed", message: "History wasn't imported")
+                showAlert(title: "\(browserName) History Import Failed", message: "History wasn't imported")
             }
         }
     }

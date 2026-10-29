@@ -107,6 +107,50 @@ final class PasswordManagementItemListModelTests: XCTestCase {
         XCTAssertNotNil(model.selected)
     }
 
+    func testWhenSyncPromoBecomesActiveAfterFirstItemWasSelectedAutomaticallyThenPromoRowIsSelected() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    syncPromoManager: syncPromoManager)
+        model.update(items: [makeAccount(id: 1), makeAccount(id: 2)])
+        model.selectFirst()
+        XCTAssertNotNil(model.selected)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertTrue(model.syncPromoSelected)
+        XCTAssertNil(model.selected)
+    }
+
+    func testWhenSyncPromoBecomesActiveAfterUserSelectedTheAutomaticallySelectedItemThenSelectionIsKept() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    syncPromoManager: syncPromoManager)
+        model.update(items: [makeAccount(id: 1), makeAccount(id: 2)])
+        model.selectFirst()
+        let automaticallySelectedItem = model.selected
+        model.selected(item: automaticallySelectedItem)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertFalse(model.syncPromoSelected)
+        XCTAssertEqual(model.selected, automaticallySelectedItem)
+    }
+
+    func testWhenSyncPromoBecomesActiveAfterDomainMatchWasSelectedThenSelectionIsKept() {
+        let syncPromoManager = MockSyncPromoManager()
+        let model = PasswordManagementItemListModel(onItemSelected: onItemSelected, onAddItemSelected: onAddItemSelected,
+                                                    syncPromoManager: syncPromoManager)
+        let match = makeAccount(id: 2, domain: "example.com")
+        model.update(items: [makeAccount(id: 1, domain: "another.com"), match])
+        model.selectLoginWithDomainOrFirst(domain: "example.com")
+        XCTAssertEqual(model.selected, match)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+
+        XCTAssertFalse(model.syncPromoSelected)
+        XCTAssertEqual(model.selected, match)
+    }
+
     func testWhenSelectedSyncPromoIsRetractedThenFirstItemIsSelected() {
         let syncPromoManager = MockSyncPromoManager()
         syncPromoManager.isPromoActiveSubject.send(true)

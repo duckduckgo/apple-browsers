@@ -203,7 +203,7 @@ final class DataClearingPixelsReporterTests: XCTestCase {
 
         // Then
         mockPixelFiring.expectedFireCalls = [
-            .init(pixel: DataClearingPixels.userActionBeforeCompletion, frequency: .standard)
+            .init(pixel: DataClearingPixels.userActionBeforeCompletion, frequency: .dailyAndStandard)
         ]
         mockPixelFiring.verifyExpectations(file: #file, line: #line)
     }
@@ -281,9 +281,9 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         XCTAssertEqual(pixel.parameters, ["dur": "2.0", "tc": "4"])
     }
 
-    /// The names already carry their own `m_` prefix, so the custom-prefix conformance exists only
-    /// to suppress the default one. The `_ios_phone` / `_ios_tablet` marker comes from
-    /// `platformSuffixPolicy`, not from this conformance.
+    /// The names already carry their own `m_` prefix, so `namePrefix` is `.none` only to suppress
+    /// the default one. The `_ios_phone` / `_ios_tablet` marker comes from `platformSuffixPolicy`,
+    /// not from `namePrefix`.
     func testCompletionPixelsAddNoNamePrefix() {
         XCTAssertEqual(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).namePrefix, .none)
     }
@@ -293,37 +293,68 @@ final class DataClearingPixelsReporterTests: XCTestCase {
         XCTAssertNil(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0).standardParameters)
     }
 
-    /// The reason these events conform to `PixelKitEventWithCustomPrefix`: without it PixelKit sends
-    /// the name verbatim on iOS (`PixelKit.swift:887`), dropping the form-factor suffix these four
-    /// have carried since they were fired through `Pixel.fire`. Pins the wire contract that the
-    /// migration to PixelKit had to preserve.
+    /// These four have carried the form-factor suffix since they were fired through `Pixel.fire`,
+    /// placed before any frequency suffix. `.legacyBeforeFrequencySuffix` keeps that ordering. Pins
+    /// the wire contract that the migration to PixelKit had to preserve.
     func testWhenCompletionPixelIsFiredThenNameKeepsTheFormFactorSuffix() {
-        assertFiredPixelName(source: .iOS, equals: "mf_dc_ios_phone")
-        assertFiredPixelName(source: .iPadOS, equals: "mf_dc_ios_tablet")
+        let pixel = DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0)
+
+        assertFiredPixelNames(pixel, source: .iOS, equal: ["mf_dc_ios_phone"])
+        assertFiredPixelNames(pixel, source: .iPadOS, equal: ["mf_dc_ios_tablet"])
     }
 
-    private func assertFiredPixelName(source: PixelKit.Source,
-                                      equals expectedName: String,
-                                      file: StaticString = #file,
-                                      line: UInt = #line) {
-        let suiteName = "DataClearingCompletionPixelsTests.\(source.rawValue)"
+    /// `m_fire_retrigger_in_20s` and `m_fire_user_action_before_completion` use the `.standard`
+    /// policy, so the form-factor suffix follows the frequency suffix as declared in
+    /// `data_clearing_pixels.json5`.
+    func testWhenRetriggerPixelIsFiredThenNameCarriesTheFormFactorSuffix() {
+        assertFiredPixelNames(DataClearingPixels.retriggerIn20s,
+                              frequency: .dailyAndStandard,
+                              source: .iOS,
+                              equal: ["m_fire_retrigger_in_20s_daily_ios_phone", "m_fire_retrigger_in_20s_ios_phone"])
+        assertFiredPixelNames(DataClearingPixels.retriggerIn20s,
+                              frequency: .dailyAndStandard,
+                              source: .iPadOS,
+                              equal: ["m_fire_retrigger_in_20s_daily_ios_tablet", "m_fire_retrigger_in_20s_ios_tablet"])
+    }
+
+    func testWhenUserActionBeforeCompletionPixelIsFiredThenNameCarriesTheFormFactorSuffix() {
+        assertFiredPixelNames(DataClearingPixels.userActionBeforeCompletion,
+                              frequency: .dailyAndStandard,
+                              source: .iOS,
+                              equal: ["m_fire_user_action_before_completion_daily_ios_phone", "m_fire_user_action_before_completion_ios_phone"])
+        assertFiredPixelNames(DataClearingPixels.userActionBeforeCompletion,
+                              frequency: .dailyAndStandard,
+                              source: .iPadOS,
+                              equal: ["m_fire_user_action_before_completion_daily_ios_tablet", "m_fire_user_action_before_completion_ios_tablet"])
+    }
+
+    private func assertFiredPixelNames(_ pixel: PixelKit.Event,
+                                       frequency: PixelKit.Frequency = .standard,
+                                       source: PixelKit.Source,
+                                       equal expectedNames: Set<String>,
+                                       file: StaticString = #file,
+                                       line: UInt = #line) {
+        let suiteName = "DataClearingPixelsReporterTests.\(source.rawValue)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
+        var firedNames = Set<String>()
         let fired = expectation(description: "pixel fired")
+        fired.expectedFulfillmentCount = expectedNames.count
         let pixelKit = PixelKit(dryRun: false,
                                 appVersion: "1.0.0",
                                 source: source.rawValue,
                                 defaultHeaders: [:],
                                 defaults: defaults) { firedName, _, _, _, _, _ in
-            XCTAssertEqual(firedName, expectedName, file: file, line: line)
+            firedNames.insert(firedName)
             fired.fulfill()
         }
 
-        pixelKit.fire(DataClearingCompletionPixels.allDataCleared(duration: 0, tabCount: 0))
+        pixelKit.fire(pixel, frequency: frequency)
 
         wait(for: [fired], timeout: 1)
+        XCTAssertEqual(firedNames, expectedNames, file: file, line: line)
     }
 
     // MARK: - fireDroppedBurnPixel Tests

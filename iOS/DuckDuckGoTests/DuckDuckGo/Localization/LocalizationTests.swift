@@ -23,20 +23,19 @@ final class LocalizationTests: XCTestCase {
 
 #if targetEnvironment(simulator)
     func testNoDuplicateLocalizationKeys() throws {
-        // 1. Extract Root URL
-        let testFileURL = URL(fileURLWithPath: #file)
+        let testFileURL = URL(fileURLWithPath: #filePath)
         let projectRoot = testFileURL
-            .deletingLastPathComponent() // …/LocalizationTests
-            .deletingLastPathComponent() // …/UnitTests
-            .deletingLastPathComponent() // …/iOS
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
 
-        // 2. Regex for NSLocalizedString key
         let regex = try NSRegularExpression(pattern: #"NSLocalizedString\("([^"\\]+)"#, options: [])
 
-        // 3. Gather relevant files
         let fileManager = FileManager.default
         let allPaths = try fileManager.subpathsOfDirectory(atPath: projectRoot.path)
         let targetPaths = allPaths.filter { $0.hasSuffix("UserText.swift") }
+        XCTAssertFalse(targetPaths.isEmpty, "Expected to find UserText.swift files under \(projectRoot.path)")
 
         var failures: [(file: String, duplicates: [String])] = []
 
@@ -44,7 +43,6 @@ final class LocalizationTests: XCTestCase {
             let fileURL = projectRoot.appendingPathComponent(relativePath)
             let content = try String(contentsOf: fileURL)
 
-            // 4. Extract keys
             let matches = regex.matches(
                 in: content, options: [],
                 range: NSRange(content.startIndex..<content.endIndex, in: content)
@@ -52,7 +50,6 @@ final class LocalizationTests: XCTestCase {
                 Range(match.range(at: 1), in: content).map { String(content[$0]) }
             }
 
-            // 5. Detect duplicates
             let dupKeys = Dictionary(grouping: matches, by: { $0 })
                 .filter { $1.count > 1 }
                 .keys.sorted()
@@ -62,7 +59,6 @@ final class LocalizationTests: XCTestCase {
             }
         }
 
-        // 6. Assert
         if !failures.isEmpty {
             let report = failures.map { file, dups in
                         """

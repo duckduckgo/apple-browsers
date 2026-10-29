@@ -28,6 +28,7 @@ import FeatureFlags_iOS
 @MainActor
 private final class MockAppOpenKeyboardHandler: AppOpenKeyboardHandling {
     var isNewTabPageVisible = true
+    var hasInlineNewTabPageInput = false
     var appOpenKeyboardRequestID = UUID()
     var dismissalCompletion: (() -> Void)?
     var closeScreensCallCount = 0
@@ -76,6 +77,7 @@ final class KeyboardPresenterTests {
     private let pixelFiring = PixelKitMock()
     private var onAppLaunch = false
     private var scheduledActions: [() -> Void] = []
+    private var inlinePageActions: [() -> Void] = []
     private var afterPromptActions: [() -> Void] = []
     private var promptPending = false
     private var promptRequestIsValid: (@MainActor () -> Bool)?
@@ -91,6 +93,7 @@ final class KeyboardPresenterTests {
         },
         pixelFiring: pixelFiring,
         onAppLaunch: { [unowned self] in onAppLaunch },
+        scheduleForInlinePage: { [unowned self] in inlinePageActions.append($0) },
         scheduleAfterPrompt: { [unowned self] in afterPromptActions.append($0) },
         schedule: { [unowned self] in scheduledActions.append($0) })
 
@@ -308,18 +311,94 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
+    @Test("A newly created inline page uses the next-turn focus schedule", .timeLimit(.minutes(1)), arguments: [false, true])
+    func createdNewTabPageFocusTiming(inlineInput: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.hasInlineNewTabPageInput = inlineInput
+
+        presenter.showKeyboardOnNewTabPageCreated()
+
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(inlinePageActions.count == (inlineInput ? 1 : 0))
+        #expect(scheduledActions.count == (inlineInput ? 0 : 1))
+        inlinePageActions.forEach { $0() }
+        scheduledActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
+        #expect(pixelFiring.actualFireCalls.isEmpty)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Inline focus waits for a launch prompt registered after page creation", .timeLimit(.minutes(1)))
+    func createdInlinePageWaitsForNewLaunchPrompt() {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.hasInlineNewTabPageInput = true
+        presenter.showKeyboardOnNewTabPageCreated()
+
+        promptPending = true
+        inlinePageActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 0)
+        #expect(promptRequestIsValid?() == true)
+        promptCloseHandler?()
+        #expect(target.allowedKeyboardCallCount == 0)
+        afterPromptActions.forEach { $0() }
+        #expect(target.allowedKeyboardCallCount == 1)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Queued inline focus respects request cancellation and flag changes", .timeLimit(.minutes(1)), arguments: [false, true])
+    func createdInlinePageCancelsBeforeNextTurn(disableFlag: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.hasInlineNewTabPageInput = true
+        presenter.showKeyboardOnNewTabPageCreated()
+        #expect(inlinePageActions.count == 1)
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        inlinePageActions.forEach { $0() }
+
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("An inline page cannot focus after its pending unlock request changes", .timeLimit(.minutes(1)), arguments: [false, true])
+    func createdInlinePageCancelsBeforeUnlock(disableFlag: Bool) {
+        featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.hasInlineNewTabPageInput = true
+        target.isWindowVisible = false
+        presenter.showKeyboardOnNewTabPageCreated()
+
+        if disableFlag {
+            featureFlagger.enabledFeatureFlags = []
+        } else {
+            target.appOpenKeyboardRequestID = UUID()
+        }
+        target.isWindowVisible = true
+        target.windowVisibleHandler?()
+
+        #expect(inlinePageActions.isEmpty)
+        #expect(scheduledActions.isEmpty)
+        #expect(target.allowedKeyboardCallCount == 0)
+    }
+
+    @available(iOS 16, macOS 13, *)
     @Test("A newly created page waits for a prompt without using the App Launch setting", .timeLimit(.minutes(1)),
-          arguments: [false, true], [false, true])
-    func createdNewTabPageWaitsForPrompt(flagOn: Bool, launchSetting: Bool) {
+          arguments: [false, true], [(false, false), (false, true), (true, false), (true, true)])
+    func createdNewTabPageWaitsForPrompt(flagOn: Bool, settings: (launch: Bool, inlineInput: Bool)) {
         featureFlagger.enabledFeatureFlags = flagOn ? [.alwaysShowKeyboardOnNewTabPage] : []
-        onAppLaunch = launchSetting
+        onAppLaunch = settings.launch
+        target.hasInlineNewTabPageInput = settings.inlineInput
         promptPending = true
 
         presenter.showKeyboardOnNewTabPageCreated()
 
         #expect(target.closeScreensCallCount == 0)
         #expect(target.allowedKeyboardCallCount == 0)
-        #expect(scheduledActions.count == (flagOn ? 1 : 0))
+        #expect(scheduledActions.count == (flagOn && !settings.inlineInput ? 1 : 0))
+        inlinePageActions.forEach { $0() }
         scheduledActions.forEach { $0() }
         #expect(target.allowedKeyboardCallCount == 0)
         #expect(promptRequestIsValid?() == (flagOn ? true : nil))
@@ -333,19 +412,22 @@ final class KeyboardPresenterTests {
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("A page created behind App Lock holds its keyboard until unlock", .timeLimit(.minutes(1)))
-    func createdNewTabPageWaitsForUnlock() {
+    @Test("A page created behind App Lock holds its keyboard until unlock", .timeLimit(.minutes(1)), arguments: [false, true])
+    func createdNewTabPageWaitsForUnlock(inlineInput: Bool) {
         featureFlagger.enabledFeatureFlags = [.alwaysShowKeyboardOnNewTabPage]
+        target.hasInlineNewTabPageInput = inlineInput
         target.isWindowVisible = false
 
         presenter.showKeyboardOnNewTabPageCreated()
         scheduledActions.forEach { $0() }
 
+        #expect(inlinePageActions.isEmpty)
         #expect(scheduledActions.isEmpty)
         #expect(target.allowedKeyboardCallCount == 0)
 
         target.isWindowVisible = true
         target.windowVisibleHandler?()
+        inlinePageActions.forEach { $0() }
         scheduledActions.forEach { $0() }
 
         #expect(target.closeScreensCallCount == 0)

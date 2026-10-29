@@ -43,12 +43,10 @@ final class CPMExtensionBaseURLPolicy {
 
     /// The stable origin is only used on macOS and iOS 26.6 and later. Older releases use WebKit's random origin.
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
-        // An OS update restarts WebKit, so its non-persistent extension worker registration cannot survive it.
-        guard isSupportedOS() else { return nil }
         guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
-        guard isEnabled() else {
+        guard isSupportedOS(), isEnabled() else {
             // Moving to WebKit's random origin leaves this origin's service-worker registration behind.
-            // Re-enabling must use a fresh origin, never that abandoned registration.
+            // Re-enabling or updating the OS must use a fresh origin, never that abandoned registration.
             if let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) {
                 rotateOrigin(of: installed)
             }

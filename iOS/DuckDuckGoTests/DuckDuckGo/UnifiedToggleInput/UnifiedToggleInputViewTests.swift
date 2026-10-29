@@ -74,6 +74,8 @@ final class UnifiedToggleInputViewTests: XCTestCase {
             !existingEffects.contains(ObjectIdentifier($0))
         })
         let initialTint = try XCTUnwrap((glass.effect as? UIGlassEffect)?.tintColor)
+        let expectedTint = UIColor(singleUseColor: .fireModeBackground).resolvedColor(with: sut.traitCollection)
+        XCTAssertEqual(initialTint.resolvedColor(with: sut.traitCollection), expectedTint)
 
         UIView.performWithoutAnimation {
             sut.applyOmnibarEditingShowPose()
@@ -81,7 +83,7 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         }
 
         let dismissedTint = try XCTUnwrap((glass.effect as? UIGlassEffect)?.tintColor)
-        XCTAssertEqual(dismissedTint.resolvedColor(with: sut.traitCollection), initialTint.resolvedColor(with: sut.traitCollection))
+        XCTAssertEqual(dismissedTint.resolvedColor(with: sut.traitCollection), expectedTint)
         sut.finalizeOmnibarEditingDismiss()
     }
 

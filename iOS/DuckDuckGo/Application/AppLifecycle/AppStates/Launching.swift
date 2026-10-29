@@ -81,12 +81,13 @@ struct Launching: LaunchingHandling {
 
         // The app's single owner of the Duck.ai bonus record, shared by every consumer.
         let aiChatBonusService = AIChatBonusService()
-        let aiChatBonusHandler = AIChatBonusHandler(
-            service: aiChatBonusService,
-            factsProvider: AIChatBonusFactsProvider(
-                statisticsStore: StatisticsUserDefaults(),
-                aiChatSettings: AIChatSettings()
-            )
+        // One bridge handler for every Duck.ai tab: it holds no per-tab state and builds one payload per record change.
+        let aiChatBonusOffer = AIChatBonusOfferDependencies(
+            handler: AIChatBonusHandler(
+                service: aiChatBonusService,
+                factsProvider: AIChatBonusFactsProvider(statisticsStore: StatisticsUserDefaults(), aiChatSettings: AIChatSettings())
+            ),
+            messageLog: AIChatBonusMessageLog()
         )
 
         // Initialize configuration with the key-value store
@@ -178,7 +179,7 @@ struct Launching: LaunchingHandling {
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
                                                             fireModeStorageController: fireModeStorageController,
                                                             adBlockingAvailability: adBlockingAvailability,
-                                                            aiChatBonusHandler: aiChatBonusHandler)
+                                                            aiChatBonusOffer: aiChatBonusOffer)
         launchBreadcrumb.mark(.contentBlocking)
 
         // Constructed before MainCoordinator: its `eventHub` is threaded down to every tab.

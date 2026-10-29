@@ -976,8 +976,14 @@ final class UnifiedInputContentContainerViewController: UIViewController {
             && (duckAISurface?.isAttached ?? false)
             && promoViewModel.shouldShowPromo(isQueryActive: isTyping, chatCount: duckAISurface?.recentsCount ?? 0)
 
+        let wasVisible = isSyncPromoCardVisible
         isSyncPromoCardVisible = shouldShow
         updateFocusedContent()
+        if wasVisible && !shouldShow {
+            chromeHeightConstraint?.constant = currentChromeReservedHeight
+            applyHostContentInsets()
+            contentContainerView.layoutIfNeeded()
+        }
         promoViewModel.recordImpressionIfNeeded(isVisibleContent: isContentActive, isPromoVisible: shouldShow)
     }
 

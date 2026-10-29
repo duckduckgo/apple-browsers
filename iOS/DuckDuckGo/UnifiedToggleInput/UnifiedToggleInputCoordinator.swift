@@ -1488,9 +1488,6 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         let needsViewSync = viewController.inputMode != effectiveMode
         guard didModeChange || needsViewSync else { return }
 
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=mode.request from=\(String(describing: self.inputMode), privacy: .public) to=\(String(describing: effectiveMode), privacy: .public) animated=\(animated, privacy: .public) card=\(String(describing: self.cardPosition), privacy: .public) editing=\(self.isInputEditing, privacy: .public)")
-        contentViewController.logEscapeHatchDiagnostics("mode.before")
-
         let isDismissingOmnibarNewPromptToolbar = isOmnibarNewAIChatPrompt && effectiveMode == .search
         if isDismissingOmnibarNewPromptToolbar {
             viewController.prepareToolbarSubmitStyleForDismissal()
@@ -1523,15 +1520,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 // Push the new mode's content inset here (target height) so the suggestions content and
                 // the logo move in the same pass as the bar — not reactively after the height callback.
                 if didModeChange { self.pushContentInsets() }
-            } completion: { [weak self] finished in
-                self?.contentViewController.logEscapeHatchDiagnostics("mode.animationCompleted.\(finished)")
             }
         } else {
             applyModeChange()
             if didModeChange { pushContentInsets() }
         }
-
-        contentViewController.logEscapeHatchDiagnostics("mode.after")
 
         applyToolbarPresentation()
         if didModeChange {
@@ -2485,7 +2478,6 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didChangeMode mode: TextEntryMode) {
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=mode.pill target=\(String(describing: mode), privacy: .public)")
         updateInputMode(mode, animated: true)
     }
 

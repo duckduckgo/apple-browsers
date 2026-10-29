@@ -33,7 +33,6 @@ import AIChat
 import RemoteMessaging
 import FeatureFlags_iOS
 import PixelKit
-import os.log
 
 protocol UnifiedInputContentContainerViewControllerDelegate: AnyObject {
     func unifiedInputEditingStateDidSubmitQuery(_ query: String)
@@ -181,7 +180,12 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         self.switchBarHandler = switchBarHandler
         self.appSettings = appSettings
         self.featureFlagger = featureFlagger
-        self.usesScrollableEscapeHatch = featureFlagger.isFeatureOn(.scrollableEscapeHatch)
+        // The minimum OS version is independent of the rollout flag.
+        if #available(iOS 16.0, *) {
+            self.usesScrollableEscapeHatch = featureFlagger.isFeatureOn(.scrollableEscapeHatch)
+        } else {
+            self.usesScrollableEscapeHatch = false
+        }
         self.floatingUIManager = floatingUIManager
         self.isFloatingUIEnabled = floatingUIManager.isFloatingUIEnabled
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -350,11 +354,6 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     func scrollLegacyContentToTop(duration: TimeInterval) {
         guard usesScrollableEscapeHatch else { return }
         unifiedSuggestionsHost?.scrollLegacyContentToTop(duration: duration)
-    }
-
-    func logEscapeHatchDiagnostics(_ event: String) {
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) container active=\(self.isContentActive, privacy: .public) scrollable=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.usesRedesignedNewTabPageLayout, privacy: .public) topBar=\(self.isUsingTopBarPosition, privacy: .public) hatchPresent=\(self.escapeHatchModel != nil, privacy: .public) requestedTop=\(self.requestedContentInset.top, privacy: .public) effectiveTop=\(self.effectiveContentInset.top, privacy: .public) dismissing=\(self.dismissalContentInset != nil, privacy: .public)")
-        unifiedSuggestionsHost?.logScrollDiagnostics(event)
     }
 
     /// Logo→logo collapse: morph the focused logo to the Dax mark and keep it visible, so it hands
@@ -1037,7 +1036,6 @@ private extension UnifiedInputContentContainerViewController {
         }
 
         let usesSpring = animateContentUpdates && !usesScrollableEscapeHatch
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=content.refresh animated=\(animateContentUpdates, privacy: .public) usesSpring=\(usesSpring, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
         if usesSpring {
             scheduleAnimation(applyContentUpdates)
         } else {

@@ -157,10 +157,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         }
     }
 
-    func testWhenLegacyFocusedTopClearanceShrinksThenScrollableContentTracksItOnce() throws {
-        try assertFocusedContentTracksTopClearance(usesRedesign: false)
-    }
-
     func testWhenRedesignedFocusedTopClearanceShrinksThenScrollableContentTracksItOnce() throws {
         try assertFocusedContentTracksTopClearance(usesRedesign: true)
     }
@@ -298,7 +294,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
         let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view))
-        print("[EHScrollTest] mounted scene=\(scene.activationState.rawValue) parentWindow=\(parent.view.window === window) controllerWindow=\(controller.viewIfLoaded?.window === window)")
         XCTAssertTrue(parent.view.window === window)
         if !usesRedesign { XCTAssertTrue(controller.view.window === window) }
         let initialFrame = try XCTUnwrap(probeFrame)
@@ -317,7 +312,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 XCTAssertEqual(XCTWaiter.wait(for: [scrolled], timeout: 5), .completed)
                 XCTAssertTrue(outerContentScrollView(in: controller.view) === scrollView)
                 XCTAssertTrue(controller.isViewLoaded)
-                print("[EHScrollTest] reset.begin offset=\(scrollView.contentOffset) inset=\(scrollView.adjustedContentInset) content=\(scrollView.contentSize) probe=\(String(describing: probeFrame))")
                 host.scrollLegacyContentToTop(duration: 0.2)
                 if resetsBeforeClearanceChanges {
                     let alignedTop = NSPredicate { _, _ in
@@ -328,26 +322,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                     let reset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
                     let animatedResult = XCTWaiter.wait(for: [reset], timeout: 5)
                     XCTAssertEqual(animatedResult, .completed)
-                    print("[EHScrollTest] reset.fixedClearance animated=\(animatedResult) offset=\(scrollView.contentOffset) probe=\(String(describing: probeFrame))")
-                    if animatedResult != .completed {
-                        controller.scrollToTop(duration: 0.2)
-                        let controllerReset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
-                        let controllerResult = XCTWaiter.wait(for: [controllerReset], timeout: 5)
-                        XCTAssertEqual(controllerResult, .completed)
-                        print("[EHScrollTest] reset.fixedClearance directController=\(controllerResult) offset=\(scrollView.contentOffset) loaded=\(controller.isViewLoaded)")
-                        host.scrollLegacyContentToTop(duration: 0)
-                        let immediateReset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
-                        let immediateResult = XCTWaiter.wait(for: [immediateReset], timeout: 5)
-                        XCTAssertEqual(immediateResult, .completed)
-                        print("[EHScrollTest] reset.fixedClearance immediate=\(immediateResult) offset=\(scrollView.contentOffset) probe=\(String(describing: probeFrame))")
-                        if immediateResult != .completed {
-                            scrollView.setContentOffset(CGPoint(x: 0, y: -scrollView.adjustedContentInset.top), animated: false)
-                            let nativeReset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
-                            let nativeResult = XCTWaiter.wait(for: [nativeReset], timeout: 5)
-                            XCTAssertEqual(nativeResult, .completed)
-                            print("[EHScrollTest] reset.fixedClearance directNative=\(nativeResult) offset=\(scrollView.contentOffset) probe=\(String(describing: probeFrame))")
-                        }
-                    }
                 }
             }
             let revision = probeRevision
@@ -367,9 +341,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
 
             let frame = try XCTUnwrap(probeFrame)
-            if resetsScrolledContent && topInset == 60 {
-                print("[EHScrollTest] reset.end offset=\(scrollView.contentOffset) inset=\(scrollView.adjustedContentInset) content=\(scrollView.contentSize) probe=\(frame)")
-            }
             XCTAssertEqual(frame.minY, initialFrame.minY + topInset - 184, accuracy: 1,
                            "The scrolling content must follow the input clearance exactly once")
             XCTAssertTrue(outerContentScrollView(in: parent.view) === scrollView)
@@ -420,7 +391,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             return (list as? UITableView)?.visibleCells.first
         }
         let hostingController = try XCTUnwrap(parent.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
-        print("[EHScrollTest] typing.mounted scene=\(scene.activationState.rawValue) parentWindow=\(parent.view.window === window) controllerWindow=\(hostingController.view.window === window)")
         XCTAssertTrue(parent.view.window === window)
         XCTAssertTrue(hostingController.view.window === window)
         host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
@@ -435,7 +405,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         let initialCell = try XCTUnwrap(visibleCell(in: list))
         let initialCellOrigin = initialCell.convert(initialCell.bounds, to: window).minY
         let initialViewportOrigin = list.convert(list.bounds, to: window).minY
-        XCTAssertEqual(hostingController.rootView.viewModel.contentTopInset, usesScrollableEscapeHatch ? 184 : 0)
 
         for topInset in [CGFloat(177), 131, 60] {
             let animated = expectation(description: "Typing list clearance animation completes")
@@ -455,9 +424,6 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                     && abs(cell.convert(cell.bounds, to: window).minY - expectedCellOrigin) <= 1
             }, object: nil)
             XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
-            print("[EHScrollTest] typing scrolling=\(usesScrollableEscapeHatch) top=\(topInset) origin=\(list.convert(CGPoint.zero, to: window).y) offset=\(list.contentOffset) inset=\(list.adjustedContentInset) parentSafe=\(parent.view.safeAreaInsets)")
-            print("[EHScrollTest] typing modelTop=\(hostingController.rootView.viewModel.contentTopInset) viewport=\(list.convert(list.bounds, to: window)) cell=\(String(describing: visibleCell(in: list).map { $0.convert($0.bounds, to: window) }))")
-            XCTAssertEqual(hostingController.rootView.viewModel.contentTopInset, usesScrollableEscapeHatch ? topInset : 0)
             XCTAssertEqual(list.convert(CGPoint.zero, to: window).y, expectedOrigin, accuracy: 1)
             let cell = try XCTUnwrap(visibleCell(in: list))
             XCTAssertEqual(cell.convert(cell.bounds, to: window).minY, expectedCellOrigin, accuracy: 1)

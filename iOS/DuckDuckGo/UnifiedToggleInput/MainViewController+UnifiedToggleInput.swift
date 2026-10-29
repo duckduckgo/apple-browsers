@@ -28,7 +28,6 @@ import UIKit
 import WebKit
 import FeatureFlags_iOS
 import PixelKit
-import os.log
 
 // MARK: - Unified Toggle Input Setup
 
@@ -1149,18 +1148,6 @@ extension MainViewController {
 
 extension MainViewController {
 
-    func logEscapeHatchTransition(_ event: String) {
-        let background = viewCoordinator.focusedStateBackground
-        let content = viewCoordinator.unifiedInputContentContainer
-        let inputFrame = unifiedToggleInputCoordinator?.viewController.viewIfLoaded?.convert(
-            unifiedToggleInputCoordinator?.viewController.viewIfLoaded?.bounds ?? .zero, to: nil) ?? .zero
-        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) transition backgroundHidden=\(background?.isHidden ?? true, privacy: .public) backgroundAlpha=\(background?.alpha ?? 0, privacy: .public) focusedHidden=\(content?.isHidden ?? true, privacy: .public) focusedAlpha=\(content?.alpha ?? 0, privacy: .public) restingFavorites=\(self.newTabPageViewController?.isShowingFavorites ?? false, privacy: .public) inputFrame=\(String(describing: inputFrame), privacy: .public) keyboardGuide=\(String(describing: self.view.keyboardLayoutGuide.layoutFrame), privacy: .public) focusedPresentation=\(String(describing: content?.layer.presentation()?.frame), privacy: .public)")
-        unifiedToggleInputCoordinator?.contentViewController.logEscapeHatchDiagnostics(event)
-        if let restingView = newTabPageViewController?.viewIfLoaded {
-            Logger.logEscapeHatchScrollViews(in: restingView, event: "\(event).resting")
-        }
-    }
-
     func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {
         guard let coordinator, coordinator.contentViewController.usesScrollableEscapeHatch,
               !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
@@ -1176,7 +1163,6 @@ extension MainViewController {
 
     func dismissUnifiedToggleInputToOmnibar(coordinator: UnifiedToggleInputCoordinator,
                                             completion: (() -> Void)? = nil) {
-        logEscapeHatchTransition("dismiss.back.begin")
         if viewCoordinator.newTabPageInputPresentation.transition == .inlineInput {
             dismissInlineNewTabPageInput(coordinator: coordinator, animated: true, completion: completion)
             return
@@ -1188,7 +1174,6 @@ extension MainViewController {
         let duration = Constants.omnibarTransitionDuration(isBottom: coordinator.cardPosition.isBottom, isFloatingUIEnabled: isFloatingUIEnabled)
 
         resetLegacyScrollForDismiss(coordinator: coordinator, duration: duration)
-        logEscapeHatchTransition("dismiss.back.after-reset")
         let isLogoToLogo = coordinator.contentViewController.isShowingLogoContent
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
@@ -1240,7 +1225,6 @@ extension MainViewController {
                 self?.finishUnifiedToggleInputToOmnibarDismiss(completion: completion)
             }
         )
-        logEscapeHatchTransition("dismiss.back.after-start")
 
         if let omnibarPlaceholderColor {
             coordinator.viewController.animatePlaceholderColorTransition(
@@ -1275,7 +1259,6 @@ extension MainViewController {
 
     func finishUnifiedToggleInputToOmnibarDismiss(completion: (() -> Void)?) {
         guard let coordinator = unifiedToggleInputCoordinator else { return }
-        logEscapeHatchTransition("dismiss.complete.before-handoff")
         applyUnifiedInputChromeBackground(.standardChrome)
         applyFloatingUIIfNeeded()
         coordinator.contentViewController.setActive(false)
@@ -1292,10 +1275,6 @@ extension MainViewController {
         coordinator.clearText()
         reconcileToolbarVisibilityForCurrentTab()
         reconcileFloatingLayoutAfterUTIExit()
-        logEscapeHatchTransition("dismiss.complete.after-handoff")
-        DispatchQueue.main.async { [weak self] in
-            self?.logEscapeHatchTransition("dismiss.complete.next-runloop")
-        }
         // The unified input dismisses on its own path, apart from `dismissOmniBar`.
         updateAddressBarSuppressionForNewTabPage()
         completion?()

@@ -26,6 +26,50 @@ import WebKit
 final class CPMExtensionBaseURLTests: XCTestCase {
     private let identifier = "A4D1228D-90A2-4B27-B7ED-D7A493B9B54E"
 
+    func testUnsupportedOSPreservesOriginForOSUpgrade() async throws {
+        let webExtension = try await webExtension()
+        // Earlier builds used either the installation UUID or a previously rotated origin on old OS versions.
+        for savedOrigin: UUID? in [nil, UUID()] {
+            let store = registry()
+            var installed = installed()
+            installed.cpmOriginIdentifier = savedOrigin
+            store.update(installed)
+            let expectedOrigin = savedOrigin ?? UUID(uuidString: identifier)!
+            let oldOSPolicy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true }, isSupportedOS: { false })
+
+            XCTAssertNil(oldOSPolicy.baseURL(for: identifier, webExtension: webExtension))
+            XCTAssertEqual(store.installedExtensions.first?.cpmOriginIdentifier, savedOrigin)
+
+            // Recreate the store and policy as on a later launch after updating the OS.
+            let restoredStore = InstalledWebExtensionStoringMock()
+            restoredStore.add(try JSONDecoder().decode(InstalledWebExtension.self, from: JSONEncoder().encode(store.installedExtensions[0])))
+            let upgradedPolicy = CPMExtensionBaseURLPolicy(installationStore: restoredStore, isEnabled: { true }, isSupportedOS: { true })
+            let restoredURL = try XCTUnwrap(upgradedPolicy.baseURL(for: identifier, webExtension: webExtension))
+            XCTAssertEqual(restoredURL.host, expectedOrigin.uuidString.lowercased())
+            XCTAssertEqual(upgradedPolicy.baseURL(for: identifier, webExtension: webExtension), restoredURL)
+        }
+    }
+
+    func testUnsupportedOSDoesNotRotateUntrustedInstallation() async throws {
+        let store = registry(type: nil)
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true }, isSupportedOS: { false })
+        let webExtension = try await webExtension()
+
+        XCTAssertNil(policy.baseURL(for: identifier, webExtension: webExtension))
+        XCTAssertNil(store.installedExtensions.first?.cpmOriginIdentifier)
+    }
+
+    func testUnsupportedOSBackgroundFailureDoesNotRotateOrigin() async throws {
+        let store = registry()
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true }, isSupportedOS: { false })
+        let context = WKWebExtensionContext(for: try await webExtension())
+        context.uniqueIdentifier = identifier
+
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+
+        XCTAssertNil(store.installedExtensions.first?.cpmOriginIdentifier)
+    }
+
     func testReloadAndNewLoaderKeepInstalledCPMOrigin() async throws {
         let store = registry()
         let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })

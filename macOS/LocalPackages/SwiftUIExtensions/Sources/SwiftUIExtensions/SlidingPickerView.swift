@@ -68,6 +68,7 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
     private let settings: SlidingPickerSettings
     private let allValues: [SelectionValue]
     private let displayContentBuilder: (SelectionValue) -> AnyView
+    private let accessibilityLabel: ((SelectionValue) -> String)?
 
     // MARK: - State
     @Binding private var selectedValue: SelectionValue
@@ -79,10 +80,17 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
 
     /// Designated Initializer
     ///
-    public init(settings: SlidingPickerSettings, allValues: [SelectionValue], selectedValue: Binding<SelectionValue>, displayContentBuilder: @escaping (SelectionValue) -> AnyView) {
+    /// - Parameter accessibilityLabel: Names each option for assistive tech, which then sees the options as buttons with a selected state.
+    ///   Without it, the options stay hidden from assistive tech.
+    public init(settings: SlidingPickerSettings,
+                allValues: [SelectionValue],
+                selectedValue: Binding<SelectionValue>,
+                accessibilityLabel: ((SelectionValue) -> String)? = nil,
+                displayContentBuilder: @escaping (SelectionValue) -> AnyView) {
         self.settings = settings
         self.allValues = allValues
         self._selectedValue = selectedValue
+        self.accessibilityLabel = accessibilityLabel
         self.displayContentBuilder = displayContentBuilder
     }
 
@@ -121,6 +129,9 @@ public struct SlidingPickerView<SelectionValue>: View where SelectionValue: Hash
                         .onTapGesture {
                             selectedValue = appearance
                         }
+                        .modifier(OptionAccessibility(label: accessibilityLabel?(appearance), isSelected: selectedValue == appearance) {
+                            selectedValue = appearance
+                        })
                         .readFrame(coordinateSpace: .named(pickerCoordinateSpaceName)) { frame in
                             buttonFrames[index] = frame
                         }
@@ -190,5 +201,25 @@ private extension SlidingPickerView {
         let shouldSkipDivider = [selectedIndex, selectedIndex - 1].contains(index)
 
         return shouldSkipDivider ? .zero : 1
+    }
+}
+
+/// Without this, assistive tech and UI tests see a static label and can't tell which option is picked.
+private struct OptionAccessibility: ViewModifier {
+    let label: String?
+    let isSelected: Bool
+    let select: () -> Void
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let label {
+            content
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(label))
+                .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+                .accessibilityAction { select() }
+        } else {
+            content
+        }
     }
 }

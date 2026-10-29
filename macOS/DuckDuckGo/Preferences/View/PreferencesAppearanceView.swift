@@ -52,7 +52,10 @@ extension Preferences {
         var theme: ThemeStyleProviding
 
         var body: some View {
-            SlidingPickerView(settings: .buildAppearancePickerSetting(theme: theme), allValues: ThemeAppearance.allCases, selectedValue: $model.themeAppearance) { appearance in
+            SlidingPickerView(settings: .buildAppearancePickerSetting(theme: theme),
+                              allValues: ThemeAppearance.allCases,
+                              selectedValue: $model.themeAppearance,
+                              accessibilityLabel: { $0.displayName }) { appearance in
                 AnyView(
                     ThemeAppearanceViewV2(appearance: appearance)
                 )

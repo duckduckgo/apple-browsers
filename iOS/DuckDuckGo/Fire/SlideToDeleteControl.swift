@@ -90,11 +90,7 @@ enum SlideToDeleteStyle: String, CaseIterable, Identifiable {
         return false
     }
 
-    static var defaultValue: Self { defaultValue(isGlassAvailable: isGlassAvailable) }
-
-    static func defaultValue(isGlassAvailable: Bool) -> Self {
-        isGlassAvailable ? .glass : .original
-    }
+    static let defaultValue: Self = .original
 
     func resolved(isGlassAvailable: Bool) -> Self {
         self == .glass && !isGlassAvailable ? .original : self
@@ -103,6 +99,7 @@ enum SlideToDeleteStyle: String, CaseIterable, Identifiable {
 
 enum SlideToDeleteVariant: String, CaseIterable, Identifiable {
     static let preferenceKey = "slideToDeleteVariant"
+    static let defaultValue: Self = .shimmer
 
     case basic
     case flameBurst
@@ -123,7 +120,7 @@ enum SlideToDeleteVariant: String, CaseIterable, Identifiable {
 
 struct SlideToDeleteControl: View {
     let title: String
-    var variant: SlideToDeleteVariant = .basic
+    var variant: SlideToDeleteVariant = .defaultValue
     var style: SlideToDeleteStyle = .defaultValue
     var onHapticRequest: () -> Void = { }
     var onTouchHapticRequest: () -> Void = { }
@@ -144,7 +141,7 @@ struct SlideToDeleteControl: View {
     @State private var state = SlideToDeleteState()
     @StateObject private var feedback = SlideToDeleteFeedback()
 
-    private let minimumHeight: CGFloat = 50
+    private let minimumHeight: CGFloat = 60
     private let handleInset: CGFloat = 4
     private var effectiveStyle: SlideToDeleteStyle { style.resolved(isGlassAvailable: SlideToDeleteStyle.isGlassAvailable) }
     private var direction: CGFloat { layoutDirection == .rightToLeft ? -1 : 1 }
@@ -279,7 +276,7 @@ struct SlideToDeleteControl: View {
                 .opacity(isOriginal || (showsCompletion && variant != .basic) ? 1 : 0)
                 .allowsHitTesting(false)
             thumb(diameter: diameter)
-                .contentShape(Circle())
+                .contentShape(Circle().inset(by: -diameter * 0.05))
                 .opacity(state.isComplete || (isOriginal && showsCompletion) ? 0 : 1)
                 .offset(x: direction * offset)
                 .gesture(dragGesture(travel: travel))

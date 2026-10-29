@@ -29,7 +29,7 @@ struct ScopedFireConfirmationView: View {
     
     @ObservedObject var viewModel: ScopedFireConfirmationViewModel
     @State private var isAnimating = false
-    @AppStorage(SlideToDeleteVariant.preferenceKey) private var slideVariant = SlideToDeleteVariant.basic
+    @AppStorage(SlideToDeleteVariant.preferenceKey) private var slideVariant = SlideToDeleteVariant.defaultValue
     @AppStorage(SlideToDeleteStyle.preferenceKey) private var slideStyle = SlideToDeleteStyle.defaultValue
 
     /// Presenting context's size class; the built-in one reports `.compact` inside a popover even on a wide iPad.
@@ -40,7 +40,11 @@ struct ScopedFireConfirmationView: View {
     }
 
     private var contentPadding: EdgeInsets {
-        presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
+        var padding = presentationSizeClass == .compact ? Constants.sheetViewPadding : Constants.popoverViewPadding
+        if viewModel.buttons.contains(where: { $0.style == .slide }) {
+            padding.bottom = 48
+        }
+        return padding
     }
     
     var body: some View {

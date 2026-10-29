@@ -780,9 +780,9 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         feedback.endTouch()
     }
 
-    func testSlideStyleDefaultsToGlassOnlyWhenAvailable() {
-        XCTAssertEqual(SlideToDeleteStyle.defaultValue(isGlassAvailable: true), .glass)
-        XCTAssertEqual(SlideToDeleteStyle.defaultValue(isGlassAvailable: false), .original)
+    func testSlideDefaultsToOriginalWithShimmer() {
+        XCTAssertEqual(SlideToDeleteStyle.defaultValue, .original)
+        XCTAssertEqual(SlideToDeleteVariant.defaultValue, .shimmer)
     }
 
     func testSlideStyleHonorsOriginalAndFallsBackForUnsupportedGlass() {

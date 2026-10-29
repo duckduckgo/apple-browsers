@@ -22,7 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 
 struct SlideToDeleteDebugView: View {
-    @AppStorage(SlideToDeleteVariant.preferenceKey) private var variant = SlideToDeleteVariant.basic
+    @AppStorage(SlideToDeleteVariant.preferenceKey) private var variant = SlideToDeleteVariant.defaultValue
     @AppStorage(SlideToDeleteStyle.preferenceKey) private var style = SlideToDeleteStyle.defaultValue
     @State private var doubleLength = false
     @State private var previewID = UUID()

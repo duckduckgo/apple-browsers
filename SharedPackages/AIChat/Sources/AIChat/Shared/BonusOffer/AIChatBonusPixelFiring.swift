@@ -20,7 +20,7 @@ import Foundation
 
 /// Events the bonus offer reports. Each platform maps them to its own pixels.
 public enum AIChatBonusEvent {
-    /// The store couldn't read or write the record, e.g. a Keychain failure.
+    /// The store couldn't read or write the record, e.g. a store read/write failure.
     case storeFailed(Error)
 }
 

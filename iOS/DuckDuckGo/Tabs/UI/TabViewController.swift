@@ -1982,6 +1982,11 @@ class TabViewController: UIViewController {
     
     func updateContentMode() {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = tabModel.isDesktop ? .desktop : .mobile
+
+        // Desktop sites expect the Fullscreen API that iPhone Safari's mobile mode doesn't expose.
+        if #available(iOS 16.0, *), UIDevice.current.userInterfaceIdiom == .phone {
+            webView.configuration.preferences.isElementFullscreenEnabled = tabModel.isDesktop && featureFlagger.isFeatureOn(.elementFullscreen)
+        }
     }
 
     func goBack() {
@@ -4817,7 +4822,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4837,7 +4842,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4856,9 +4861,9 @@ extension TabViewController: WKUIDelegate {
             return
         }
         
-        let alert = WebJSAlert(domain: frame.request.url?.host
+        let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: prompt,

@@ -119,10 +119,6 @@ public final class WebExtensionLifecycleCoordinator {
         for await _ in completion { }
     }
 
-    /// Bumped by `cancelAll()`; every queued op captures the generation at enqueue time and bails if
-    /// it changed, so a single cancel stops the whole chain (not just the tail).
-    private var generation = 0
-
     public init(manager: WebExtensionManaging,
                 initialLoadTimeout: TimeInterval = 5,
                 initialLoadGateEnabledProvider: @escaping @MainActor () -> Bool = { true },
@@ -222,20 +218,6 @@ public final class WebExtensionLifecycleCoordinator {
         enqueue { [weak self] in self?.reportConsistency() }
     }
 
-    /// Cancels the in-flight tail and prevents every queued operation from running. Used on
-    /// feature-flag disable / teardown.
-    public func cancelAll() {
-        generation += 1
-        backgroundNavigationReadiness?.wait.cancel()
-        backgroundNavigationReadiness = nil
-        initialLoadAndSync?.cancel()
-        tail?.cancel()
-        tail = nil
-        pendingSync = nil
-        pendingLoadAndSync = nil
-        initialLoadAndSyncDidComplete()
-    }
-
     /// Compares enabled embedded types against loaded ones and fires pixels. Runs on the chain.
     private func reportConsistency() {
         let expected = enabledTypesProvider()
@@ -263,12 +245,11 @@ public final class WebExtensionLifecycleCoordinator {
                          onCompletion: (@MainActor () -> Void)? = nil,
                          _ body: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
         let previous = tail
-        let enqueuedGeneration = generation
-        let task = Task { @MainActor [weak self] in
+        let task = Task { @MainActor in
             defer { onCompletion?() }
             await previous?.value
             clearPendingOnStart?()
-            guard !Task.isCancelled, self?.generation == enqueuedGeneration else { return }
+            guard !Task.isCancelled else { return }
             await body()
         }
         tail = task

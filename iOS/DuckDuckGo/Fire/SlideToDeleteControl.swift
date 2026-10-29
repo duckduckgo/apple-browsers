@@ -135,7 +135,6 @@ struct SlideToDeleteControl: View {
     @State private var translation: CGFloat = 0
     @State private var isDragging = false
     @State private var isThumbExpanded = false
-    @State private var hasSlid = false
     @State private var returnID = 0
     @State private var state = SlideToDeleteState()
     @StateObject private var feedback = SlideToDeleteFeedback()
@@ -209,7 +208,6 @@ struct SlideToDeleteControl: View {
                     }
                 }
                 guard !Task.isCancelled else { return }
-                hasSlid = false
                 withAnimation(reduceMotion ? nil : .spring(response: 0.18, dampingFraction: 0.8)) {
                     isThumbExpanded = false
                 }
@@ -245,7 +243,7 @@ struct SlideToDeleteControl: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.4)
                 .allowsTightening(true)
-                .foregroundColor(Color(designSystemColor: hasSlid ? .textPrimary : .destructivePrimary))
+                .foregroundColor(Color(designSystemColor: .destructivePrimary))
                 .padding(.horizontal, max(minimumHeight + 8, size.height))
                 .frame(width: size.width, height: size.height)
                 .opacity(showsCompletion ? 0 : 1)
@@ -305,8 +303,6 @@ struct SlideToDeleteControl: View {
                     if feedback.beginTouch() { onTouchHapticRequest() }
                 }
                 translation = direction * value.translation.width
-                let progress = state.progress(translation: translation, travel: travel)
-                if progress > 0 { hasSlid = true }
                 if state.updateDrag(translation: translation, travel: travel) { requestHaptic() }
             }
             .onEnded { value in

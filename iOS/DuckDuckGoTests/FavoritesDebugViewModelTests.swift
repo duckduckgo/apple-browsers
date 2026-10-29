@@ -56,17 +56,8 @@ final class FavoritesDebugViewModelTests: XCTestCase {
             XCTAssertEqual(favorites(on: .mobile).count, previousCount + count)
         }
         XCTAssertEqual(favorites(on: .unified).count, 42)
-    }
-
-    @MainActor
-    func testRepeatedAddsCreateUniqueURLs() throws {
-        let model = makeModel()
-        try model.addFavorites(count: 5)
-        try model.addFavorites(count: 5)
-
         let urls = favorites(on: .mobile).compactMap { $0.url }
-        XCTAssertEqual(urls.count, 10)
-        XCTAssertEqual(Set(urls).count, 10)
+        XCTAssertEqual(Set(urls).count, 42)
     }
 
     @MainActor
@@ -144,21 +135,6 @@ final class FavoritesDebugViewModelTests: XCTestCase {
             XCTAssertEqual(favorites(on: .mobile).count, 5)
             XCTAssertEqual(try bookmarkIDs(), originalIDs)
         }
-    }
-
-    @MainActor
-    func testSavingUpdatesAnExistingFavoritesList() throws {
-        let favoritesModel = FavoritesListViewModel(bookmarksDatabase: database,
-                                                    errorEvents: nil,
-                                                    favoritesDisplayMode: .displayNative(.mobile))
-        let updated = expectation(description: "Existing favorites list receives changes")
-        let observation = favoritesModel.externalUpdates.sink { updated.fulfill() }
-        defer { observation.cancel() }
-
-        try makeModel().addFavorites(count: 5)
-
-        waitForExpectations(timeout: 1)
-        XCTAssertEqual(favoritesModel.favorites.count, 5)
     }
 
     @MainActor

@@ -232,7 +232,7 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
 
     /// A page without IndexedDB (Lockdown Mode) has cleared all it can reach, so it counts as a success:
     /// reporting it separately would single out those devices in telemetry.
-    static func result(forScriptFailure failure: ScriptFailure) -> Result<Void, Error> {
+    private static func result(forScriptFailure failure: ScriptFailure) -> Result<Void, Error> {
         failure.isIndexedDBDisabled ? .success(()) : .failure(ClearError.failedFromScript(failure))
     }
 

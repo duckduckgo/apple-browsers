@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKitTestsUtils
+import UserScript
 import WebKit
 import XCTest
 @testable import AIChat
@@ -109,21 +110,32 @@ final class AIChatDataClearingUserScriptTests: XCTestCase {
         XCTAssertEqual(error.underlyingError as? ScriptFailure, failure)
     }
 
-    func testWhenScriptReportsIndexedDBDisabledThenTheClearSucceeds() {
-        let failure = ScriptFailure(payload: ["stage": "indexedDB", "errorName": "IndexedDBDisabled"])
+    // MARK: - Clearing
 
-        guard case .success = AIChatDataClearingUserScript.result(forScriptFailure: failure) else {
-            return XCTFail("A page without IndexedDB should count as a successful clear")
+    func testWhenScriptReportsIndexedDBDisabledWhileClearingThenTheClearSucceeds() async {
+        let result = await clear(whileScriptFails: ["stage": "indexedDB", "errorName": "IndexedDBDisabled"])
+
+        XCTAssertNoThrow(try result.get())
+    }
+
+    func testWhenScriptReportsAnyOtherFailureWhileClearingThenTheClearFailsWithIt() async {
+        let result = await clear(whileScriptFails: ["stage": "indexedDB", "errorName": "TypeError"])
+
+        XCTAssertThrowsError(try result.get()) { error in
+            XCTAssertEqual((error as? ClearError)?.errorCode, 3)
+            XCTAssertEqual(((error as? ClearError)?.underlyingError as? ScriptFailure)?.errorCode, 210)
         }
     }
 
-    func testWhenScriptReportsAnyOtherFailureThenTheClearFails() {
-        let failure = ScriptFailure(payload: ["stage": "indexedDB", "errorName": "TypeError"])
-
-        guard case .failure(let error) = AIChatDataClearingUserScript.result(forScriptFailure: failure) else {
-            return XCTFail("Expected a failure")
+    private func clear(whileScriptFails payload: [String: String]) async -> Result<Void, Error> {
+        let webView = WKWebView()
+        let broker = UserScriptMessageBroker(context: "test")
+        script.webView = webView
+        script.broker = broker
+        Task { @MainActor in
+            let failed = script.handler(forMethodNamed: AIChatDataClearingUserScript.MessageName.duckAiClearDataFailed.rawValue)
+            _ = try? await failed?(payload, WKScriptMessage.mock())
         }
-        XCTAssertEqual((error as? ClearError)?.errorCode, 3)
-        XCTAssertEqual((error as? ClearError)?.underlyingError as? ScriptFailure, failure)
+        return await script.clearAIChatDataAsync(chatID: nil)
     }
 }

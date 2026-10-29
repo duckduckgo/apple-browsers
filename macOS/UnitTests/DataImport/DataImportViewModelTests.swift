@@ -634,6 +634,18 @@ final class DataImportViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testImportButtonPressed_safariTechnologyPreviewWithHistoryOnly_asksForArchive() throws {
+        try setHistoryImportFlag(true)
+        model = sourceFilterModel(importSource: .safariTechnologyPreview, isFilterOn: true, dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: [.bookmarks]) })
+        model.selectDataTypes([.history])
+
+        model.importButtonPressed()
+
+        guard case .archiveImport(let dataTypes, _) = model.screen else { return XCTFail("Expected archive import") }
+        XCTAssertTrue(dataTypes.contains(.history))
+    }
+
+    @MainActor
     func testUpdateWithSource_filterOn_keepsFilterAndImportsItsTypesTheSourceSupports() {
         model = sourceFilterModel(importSource: .chrome, isFilterOn: true)
 

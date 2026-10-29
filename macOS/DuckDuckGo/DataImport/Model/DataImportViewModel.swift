@@ -19,6 +19,7 @@
 import AppKit
 import Common
 import FoundationExtensions
+import History
 import UniformTypeIdentifiers
 import PixelKit
 import WideEvent
@@ -691,14 +692,14 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
         FirefoxDataImporter(profile: profile,
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager)
+                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     case .safari, .safariTechnologyPreview:
         if #available(macOS 15.2, *), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,
                                   bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
                                   loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                                   faviconManager: NSApp.delegateTyped.faviconManager,
+                                  historyImporter: HistoryImporter(historyCoordinator: NSApp.delegateTyped.historyCoordinator),
                                   featureFlagger: Application.appDelegate.featureFlagger,
                                   secureVaultReporter: SecureVaultReporter.shared,
                                   tld: Application.appDelegate.tld)

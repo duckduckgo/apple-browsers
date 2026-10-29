@@ -1561,6 +1561,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* sizi burada izlemeye çalışıyordu. Onları engelledik!\n\n☝️ Daha fazla bilgi için kalkana dokunun.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Sohbetler anonimleştirilir, hesap gerekmez. Üstelik ücretsiz!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Duck.ai'ı dene";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Atla";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Duck.ai'da popüler yapay zekalarla özel olarak sohbet et";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Duck.ai ile gizli bir yapay zeka sohbeti başlat veya korumalı gezinme için Arama moduna geç.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Çak Bir Beşlik!";
 
@@ -3700,8 +3715,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Anladım";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Hızlı erişim için kolayca ulaşabileceğin bir yere yerleşeceğim.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Tarayıcınızı Seçin";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Reklamları\nve açılır pencereleri engelle";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Gizliliğini koruyarak ara\nve web'de gezin";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Yapay zekayla\nözel olarak sohbet et";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Doğru yerdesin!\nKorumalar etkinleştirildi.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Doğru yerdesin!\nReklam engelleme\netkinleştirildi.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Doğru yerdesin!\nYapay zeka özellikleri devre dışı.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Sonraki";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "En çok ilgini çekeni seç, oradan başlayalım.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "AI özelliklerini\ndevre dışı bırak";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Her şeyi kendi istediğin gibi ayarla";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Tüm günlük yapay zeka sohbetleri ve internette gezinme için kolay erişilebilir bir yerde olacağım.";
@@ -3855,6 +3903,102 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Daha önce buradaydım";
+
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Reddedilemeyen çerezleri kabul ederek daha fazla açılır pencereyi gizler";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Bazı çerezleri kabul et";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Sonraki";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "Bunu daha sonra Ayarlar'dan dilediğin zaman değiştirebilirsin.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Gizliliği en üst düzeye çıkarır ve çerez açılır pencerelerini kapatır";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "İsteğe bağlı çerezleri reddet";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Gürültüsüz internet.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "YouTube'daki video reklamlarını engelle";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Yapay zeka sohbeti için sekmeler aç";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Şimdi Değil";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Tek dokunuşla Ara'ya geçebilirsin";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Yeni sekmeler yapay zeka sohbetiyle açılsın mı?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Sonraki";
+
+/* Message of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.message" = "Varsayılan yapay zekanı şimdi, ya da sohbet sırasında istediğin zaman değiştir.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Sohbetlerin tam istediğin gibi.";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Sonraki";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Görsel arama sonuçlarında bilinen yapay zeka spam sitelerini filtrele";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Yapay zeka tarafından oluşturulan görselleri gizle";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Arama sonuçlarına yapay zeka tarafından oluşturulan yanıtları dahil et";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Yapay zeka olmadan ara";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Duck.ai'ı Aç";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Duck.ai'ı kapalı tut";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "Duck.ai'da sohbetlerini biz anonimleştiririz ve yapay zekayı eğitmek için asla kullanmayız.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Popüler yapay zekalarla özel olarak sohbet etme seçeneği ister misin?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Şimdi, gizli aramayı dene!";
+
+/* Button to continue to the next onboarding screen from the search personalization screen. */
+"onboarding.personalization.search.cta" = "Sonraki";
+
+/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Son ziyaret edilen siteleri arama önerilerinde göster. Gizli, yalnızca cihazında.";
+
+/* Title for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.title" = "Arama Geçmişi";
+
+/* Subtitle for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.subtitle" = "Sonuçlarda sakıncalı (çoğunlukla yetişkinlere yönelik) içerikleri gösterme.";
+
+/* Title for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.title" = "Güvenli Arama";
+
+/* Title of the onboarding search personalization screen. */
+"onboarding.personalization.search.title" = "Aramaların tam istediğin gibi.";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Daha Fazla Bilgi";

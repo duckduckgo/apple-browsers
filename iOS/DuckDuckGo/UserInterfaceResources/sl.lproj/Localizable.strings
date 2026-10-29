@@ -1561,6 +1561,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Domena *%1$@* vam je tukaj poskušala slediti. Blokiral sem jo!\n\n☝️ Tapnite ščit za več informacij.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Klepeti so anonimizirani, račun ni potreben. In brezplačno je!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Preizkusi Duck.ai";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Preskoči";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Klepetajte zasebno s priljubljenimi umetnimi inteligencami v Duck.ai";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Začnite zasebni klepet z umetno inteligenco z Duck.ai ali preklopite na iskanje za zaščiteno brskanje.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Petka!";
 
@@ -3700,8 +3715,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Razumem";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Čakal bom na dosegu roke za hiter dostop.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izberite brskalnik";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Blokirajte oglase\nin pojavna okna";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Iščite in\nbrskajte zasebno";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Klepetajte zasebno\nz umetno inteligenco";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Na pravem mestu ste!\nZaščite so aktivirane.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Na pravem mestu ste!\nBlokiranje oglasov je aktivirano.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Na pravem mestu ste!\nFunkcije umetne inteligence so onemogočene.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Naprej";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Izberite, kaj vas najbolj zanima, in začeli bomo tam.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Onemogoči\nfunkcije umetne inteligence";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Prilagodite si po svoje";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Čakal bom skrit na dosegu roke, če boste želeli klepetati in brskati z umetno inteligenco.";
@@ -3855,6 +3903,102 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Tukaj sem že bil/-a";
+
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Skrije več pojavnih oken s sprejemanjem piškotkov, ki jih ni mogoče zavrniti";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Sprejmi nekatere piškotke";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Naprej";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "To lahko pozneje kadar koli prilagodite v nastavitvah.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Poveča zasebnost in zapira pojavna okna s piškotki";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Zavrni izbirne piškotke";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Internet, brez hrupa.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Blokirajte videooglase na YouTubu";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Odpri zavihke s klepetom z umetno inteligenco";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Ne zdaj";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Z enim dotikom lahko preklopite na Iskanje";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Želite, da se novi zavihki odprejo s klepetom z umetno inteligenco?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Naprej";
+
+/* Message of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.message" = "Spremenite privzeti model umetne inteligence zdaj ali kadar koli med klepetom.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Vaši klepeti, po vaši meri.";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Naprej";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Iz rezultatov iskanja slik izloči znana spletna mesta z neželeno vsebino, ustvarjena z umetno inteligenco.";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Skrij slike, ki jih ustvari umetna inteligenca";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Vključi odgovore, ustvarjene z umetno inteligenco, med rezultate iskanja";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Iskanje brez umetne inteligence";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Vklopi Duck.ai";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Pusti Duck.ai izklopljen";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "V Duck.ai vaše klepete anonimiziramo in jih nikoli ne uporabljamo za učenje UI.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Želite možnost zasebnega klepeta s priljubljenimi umetnimi inteligencami?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Zdaj pa preizkusite zasebno iskanje!";
+
+/* Button to continue to the next onboarding screen from the search personalization screen. */
+"onboarding.personalization.search.cta" = "Naprej";
+
+/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Prikaži nedavno obiskana spletna mesta v predlogih za iskanje. Zasebno, samo v vaši napravi.";
+
+/* Title for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.title" = "Zgodovina iskanja";
+
+/* Subtitle for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.subtitle" = "Skrij vprašljivo vsebino (večinoma za odrasle) med rezultati.";
+
+/* Title for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.title" = "Varno iskanje";
+
+/* Title of the onboarding search personalization screen. */
+"onboarding.personalization.search.title" = "Vaše iskanje, po vaši meri.";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Več";

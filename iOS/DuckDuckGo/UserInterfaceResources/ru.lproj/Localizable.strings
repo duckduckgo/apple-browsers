@@ -1561,6 +1561,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "Сайт *%1$@* пытался вести за вами слежку, но мы его заблокировали.\n\n☝️ Нажмите на щит, чтобы узнать подробности.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Чаты анонимны, учетная запись не требуется. И это бесплатно!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Попробовать Duck.ai";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Пропустить";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Приватный чат с популярными ИИ в Duck.ai";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Начните приватный чат с ИИ через Duck.ai или переключитесь на поиск для защищенного просмотра веб-страниц.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "Дай пять!";
 
@@ -3700,8 +3715,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Я устроюсь в удобном месте для быстрого доступа.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Выбрать браузер";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Блокировать рекламу\nи всплывающие окна";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Конфиденциальный\nпоиск и просмотр веб-страниц";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Конфиденциальный\nчат с ИИ";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Ты в нужном месте!\nЗащита включена.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Всё для вас!\nБлокировка рекламы включена.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Всё для вас!\nФункции ИИ отключены.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Далее";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Выбери, что тебя интересует больше всего, и начнём с этого.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Отключить\nфункции ИИ";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Настрой всё по-своему";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Я устроюсь в удобном месте для всех ваших ежедневных чатов с ИИ и просмотра веб-страниц.";
@@ -3855,6 +3903,102 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Мы уже это проходили";
+
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Скрывает больше всплывающих окон, принимая файлы cookie, от которых нельзя отказаться";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Принять некоторые файлы cookie";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Далее";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "Эту настройку всегда можно изменить позже в настройках.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Обеспечивает максимальную конфиденциальность и закрывает всплывающие окна согласия на использование файлов cookie";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Отклонять дополнительные файлы cookie";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Интернет без лишнего шума.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Блокировать видеорекламу на YouTube";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Открыть вкладки с ИИ-чатом";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Не сейчас";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Переключайтесь в режим поиска одним касанием";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Хочешь, чтобы в новых вкладках открывался чат с ИИ?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Далее";
+
+/* Message of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.message" = "Смени ИИ по умолчанию сейчас или в любой момент во время чата.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Твои чаты — по-твоему.";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Далее";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Исключает из результатов поиска изображений известные сайты с ИИ-спамом";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Скрыть изображения, сгенерированные ИИ";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Включать ответы, сгенерированные ИИ, в результаты поиска";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Поиск без ИИ";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Включить Duck.ai";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "Оставить Duck.ai отключённым";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "С Duck.ai ваши чаты анонимны и никогда не используются для обучения ИИ.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Хочешь иметь возможность приватно общаться с популярными ИИ?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Теперь попробуй конфидециальный поиск!";
+
+/* Button to continue to the next onboarding screen from the search personalization screen. */
+"onboarding.personalization.search.cta" = "Далее";
+
+/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Показывать в рекомендациях поиска недавно посещенные сайты. Конфиденциально и только на вашем устройстве.";
+
+/* Title for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.title" = "История поиска";
+
+/* Subtitle for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.subtitle" = "Исключает из результатов сомнительные материалы (в основном — материалы для взрослых).";
+
+/* Title for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.title" = "Безопасный поиск";
+
+/* Title of the onboarding search personalization screen. */
+"onboarding.personalization.search.title" = "Ваш поиск — ваши правила.";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Узнать больше";

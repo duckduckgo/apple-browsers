@@ -1561,6 +1561,21 @@
 /* Parameter is domain name (string) */
 "contextual.onboarding.browsing.one.tracker" = "*%1$@* prøvde å spore deg her. Jeg blokkerte dem!\n\n☝️ Trykk på skjoldet for å få mer informasjon.";
 
+/* Body of the alternative onboarding end-of-journey dialog promoting Duck.ai. */
+"contextual.onboarding.eoj-try-ai.message" = "Chatter anonymiseres, uten at du behøver en konto. Og det er gratis!";
+
+/* Primary button on the alternative onboarding end-of-journey dialog; opens Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.primary-button" = "Prøv Duck.ai";
+
+/* Secondary button on the alternative onboarding end-of-journey dialog; skips to the new tab page. */
+"contextual.onboarding.eoj-try-ai.secondary-button" = "Hopp over";
+
+/* Title of the alternative onboarding end-of-journey dialog promoting Duck.ai. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj-try-ai.title" = "Chat privat med populære AI-modeller på Duck.ai";
+
+/* Body of the onboarding end-of-journey dialog for users who chose the AI-chat download reason. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. 'Duck.ai' is a brand name and should not be translated. */
+"contextual.onboarding.eoj.private-ai-chat.message" = "Start en privat AI-chat med Duck.ai eller bytt til Søk for beskyttet surfing.";
+
 /* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
 "contextual.onboarding.final-screen.button" = "High five!";
 
@@ -3700,8 +3715,41 @@
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Den er grei";
 
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"onboarding.addToDock.promo.intro.message" = "Jeg ligger rede for lett tilgang.";
+
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Velg nettleseren din";
+
+/* Label for the option to set up the app to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.blockAds" = "Blokker annonser\nog popup-vinduer";
+
+/* Label for the option to set up the app for private searching and browsing. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.browsePrivately" = "Søk og\nsurf privat";
+
+/* Label for the option to set up the app for private AI chat. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.chatWithAI" = "Chat privat\nmed AI";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to search and browse privately or to chat with AI privately. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-generic" = "Du er på rett sted!\nBeskyttelsene er aktivert.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to block ads and pop-ups. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ads" = "Du er på rett sted!\nAnnonseblokkering er aktivert.";
+
+/* Heading shown above the browser comparison chart during onboarding for users who chose to disable AI features. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.comparison.title-no-ai" = "Du er på rett sted!\nAI-funksjoner er deaktivert.";
+
+/* Button to continue to the next onboarding screen after choosing a reason. */
+"onboarding.downloadReason.cta" = "Neste";
+
+/* Subtitle of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.message" = "Velg det som interesserer deg mest, så begynner vi der.";
+
+/* Label for the option to set up the app without AI features in search results. The text is split over two lines; keep a line break at a natural position in the translation. */
+"onboarding.downloadReason.removeAI" = "Deaktiver\nAI-funksjoner";
+
+/* Title of the onboarding screen asking why the user downloaded the app. */
+"onboarding.downloadReason.title" = "Tilpass alt akkurat som du vil ha det";
 
 /* Message in the onboarding dialog popup that promotes adding the DuckDuckGo browser icon to the iPhone dock, shown during the Duck.ai onboarding flow. */
 "onboarding.duckai.addToDock.promo.message" = "Jeg er rede for alle dine daglige AI-chatter og surfing.";
@@ -3855,6 +3903,102 @@
 
 /* Button to skip the onboarding process */
 "onboarding.intro.cta.skip" = "Jeg har vært her før";
+
+/* Subtitle for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.subtitle" = "Skjuler flere popup-vinduer ved å godta informasjonskapsler som ikke kan avvises";
+
+/* Title for the accept-other-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.acceptOtherCookies.title" = "Godta noen informasjonskapsler";
+
+/* Button to continue to the next onboarding screen from the ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.cta" = "Neste";
+
+/* Footer text shown above the button on the ad-blocking personalization screen, reassuring the user the choices can be changed later. */
+"onboarding.personalization.adBlocking.footer" = "Du kan når som helst gjøre endringer senere i Innstillinger.";
+
+/* Subtitle for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.subtitle" = "Maksimerer personvernet og lukker popup-vinduer for informasjonskapsler";
+
+/* Title for the reject-optional-cookies option on the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.rejectOptionalCookies.title" = "Avvis valgfrie informasjonskapsler";
+
+/* Title of the onboarding ad-blocking personalization screen. */
+"onboarding.personalization.adBlocking.title" = "Internett, uten støyen.";
+
+/* Title for the YouTube ad blocking option on the onboarding ad-blocking personalization screen. 'YouTube' is a brand name and should not be translated. */
+"onboarding.personalization.adBlocking.youTubeAdBlocking.title" = "Blokker videoannonser på YouTube";
+
+/* Primary button to open new tabs with AI chat on the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.primary" = "Åpne faner med AI-chat";
+
+/* Secondary button to dismiss the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.cta.secondary" = "Ikke nå";
+
+/* Footer of the onboarding address bar toggle mode personalization screen. 'Search' refers to the Search option of the address bar Search/Duck.ai toggle and should match its translation. */
+"onboarding.personalization.addressBarToggle.footer" = "Du kan bytte til Søk med ett trykk";
+
+/* Title of the onboarding address bar toggle mode personalization screen. */
+"onboarding.personalization.addressBarToggle.title" = "Vil du at nye faner skal åpnes med AI-chat?";
+
+/* Button to continue to the next onboarding screen from the AI model personalization screen. */
+"onboarding.personalization.aiModel.cta" = "Neste";
+
+/* Message of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.message" = "Bytt standard-AI nå, eller når som helst mens du chatter.";
+
+/* Title of the onboarding AI model personalization screen. */
+"onboarding.personalization.aiModel.title" = "Dine chatter, på din måte.";
+
+/* Button to continue to the next onboarding screen from the AI search personalization screen. */
+"onboarding.personalization.aiSearch.cta" = "Neste";
+
+/* Subtitle for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.subtitle" = "Filtrer ut kjente AI-søppelnettsteder fra bildesøkresultater";
+
+/* Title for the hide AI-generated images option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.hideAIGeneratedImages.title" = "Skjul AI-genererte bilder";
+
+/* Subtitle for the Search Assist option on the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.searchAssist.subtitle" = "Inkluder AI-genererte svar i søkeresultatene";
+
+/* Title for the Search Assist option on the onboarding AI search personalization screen. 'Search Assist' is a DuckDuckGo product name and should not be translated. */
+"onboarding.personalization.aiSearch.searchAssist.title" = "Search Assist";
+
+/* Title of the onboarding AI search personalization screen. */
+"onboarding.personalization.aiSearch.title" = "Søk uten AI";
+
+/* Primary button to turn Duck.ai on from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.primary" = "Slå på Duck.ai";
+
+/* Secondary button to keep Duck.ai off from the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.cta.secondary" = "La Duck.ai være av";
+
+/* Message of the onboarding Duck.ai enabled personalization screen. 'Duck.ai' is a brand name and should not be translated. */
+"onboarding.personalization.duckAIEnabled.message" = "I Duck.ai blir chattene dine anonymisert av oss og brukes aldri til å trene AI.";
+
+/* Title of the onboarding Duck.ai enabled personalization screen. */
+"onboarding.personalization.duckAIEnabled.title" = "Vil du ha muligheten til å chatte privat med populære AI-modeller?";
+
+/* Title for the private search Duck.ai query onboarding screen. */
+"onboarding.personalization.duckAIQuery.privateSearch.title" = "Nå kan du prøve et privat søk!";
+
+/* Button to continue to the next onboarding screen from the search personalization screen. */
+"onboarding.personalization.search.cta" = "Neste";
+
+/* Subtitle for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.subtitle" = "Vis nylig besøkte nettsteder i søkeforslag. Privat, bare på enheten din.";
+
+/* Title for the recently visited sites option on the onboarding search personalization screen. */
+"onboarding.personalization.search.recentlyVisitedSites.title" = "Søkehistorikk";
+
+/* Subtitle for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.subtitle" = "Utelat tvilsomt (for det meste seksuelt) innhold i resultatene.";
+
+/* Title for the safe search option on the onboarding search personalization screen. */
+"onboarding.personalization.search.safeSearch.title" = "Sikkert søk";
+
+/* Title of the onboarding search personalization screen. */
+"onboarding.personalization.search.title" = "Ditt søk, på din måte.";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Finn ut mer";

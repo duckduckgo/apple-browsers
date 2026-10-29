@@ -23,6 +23,16 @@ import PrivacyConfig
 import UniformTypeIdentifiers
 import WebKit
 
+protocol NewTabPageCustomBackgroundPublishing {
+    var customBackgroundPublisher: Published<CustomBackground?>.Publisher { get }
+}
+
+extension NewTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing {
+    var customBackgroundPublisher: Published<CustomBackground?>.Publisher {
+        $customBackground
+    }
+}
+
 /**
  * This class manages a dedicated web view for displaying New Tab Page.
  *
@@ -40,7 +50,13 @@ final class NewTabPageWebViewModel: NSObject {
     private let newTabPageLoadMetrics: NewTabPageLoadMetrics
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, newTabPageLoadMetrics: NewTabPageLoadMetrics) {
+    init(
+        featureFlagger: FeatureFlagger,
+        actionsManager: NewTabPageActionsManager,
+        newTabPageLoadMetrics: NewTabPageLoadMetrics,
+        customizationModel: NewTabPageCustomBackgroundPublishing,
+        themeManager: ThemeManaging
+    ) {
         newTabPageUserScript = NewTabPageUserScript()
         actionsManager.registerUserScript(newTabPageUserScript)
 
@@ -72,10 +88,9 @@ final class NewTabPageWebViewModel: NSObject {
             .store(in: &cancellables)
 
         // Each attach gets a new container, so other tab content never inherits this colour.
-        let app = NSApp.delegateTyped
         Publishers.CombineLatest3(
-            app.newTabPageCustomizationModel.$customBackground,
-            app.themeManager.$theme.map(\.palette.surfaceCanvas),
+            customizationModel.customBackgroundPublisher,
+            themeManager.themePublisher.map(\.palette.surfaceCanvas),
             webView.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
         )
         .map { NewTabPageBackgroundColor.color(customBackground: $0, canvas: $1, isDark: $2) }

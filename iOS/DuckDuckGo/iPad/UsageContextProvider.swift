@@ -54,7 +54,7 @@ struct UsageContextProvider: UsageContextProviding {
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
     init(isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-         keyboardMonitor: HardwareKeyboardMonitor = .shared,
+         keyboardMonitor: HardwareKeyboardMonitor = AppDependencyProvider.shared.hardwareKeyboardMonitor,
          isLargeWidth: @escaping () -> Bool = { AppWidthObserver.shared.isLargeWidth },
          windowAndScreenWidths: @escaping @MainActor () -> (window: CGFloat, screen: CGFloat)? = Self.keyWindowWidths) {
         self.isPad = isPad
@@ -105,11 +105,8 @@ extension UsageContext {
 /// read this copy, refreshed on each app activation and on keyboard connect and disconnect notifications.
 ///
 /// The first read waits until the app becomes active: it starts GameController's device session, which can
-/// block a background launch past the launch watchdog. Until then the keyboard reports as disconnected, so
-/// touch `shared` before the app first becomes active (Launching does).
+/// block a background launch past the launch watchdog. Until then the keyboard reports as disconnected.
 final class HardwareKeyboardMonitor {
-
-    static let shared = HardwareKeyboardMonitor()
 
     private let lock = NSLock()
     private let isConnectedNow: () -> Bool

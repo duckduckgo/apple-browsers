@@ -80,6 +80,7 @@ extension XCUIApplication {
 
         static let settingsScrollView = "Settings.ScrollView"
         static let preferencesSidebarScrollView = "PreferencesSidebar.scrollView"
+        static let preferencesPrivacyProButton = "PreferencesSidebar.privacyProButton"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
         static let preferencesDataClearingButton = "PreferencesSidebar.dataClearingButton"
         static let switchToNewTabWhenOpenedCheckbox = "PreferencesGeneralView.switchToNewTabWhenOpened"
@@ -665,6 +666,11 @@ extension XCUIApplication {
     /// Returns the Preferences/Settings window element
     var preferencesWindow: XCUIElement {
         windows.containing(\.title, equalTo: "Settings").firstMatch
+    }
+
+    /// Selects the Privacy Pro (subscription) pane in Preferences
+    func preferencesGoToPrivacyProPane() {
+        preferencesClickSidebarButton(AccessibilityIdentifiers.preferencesPrivacyProButton)
     }
 
     /// Selects the General pane in Preferences

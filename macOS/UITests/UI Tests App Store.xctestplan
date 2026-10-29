@@ -67,7 +67,8 @@
         "PrintingTests\/test_pdf_keyboardShortcutPrint_opensPrintDialog()",
         "PrintingTests\/test_pdf_keyboardShortcutSaveAs_opensDialogAndSavesPDF()",
         "PrintingTests\/test_pdf_saveToPDF_createsValidPDFFile()",
-        "PrintingTests\/test_pinnedTab_printingBehaviorAcrossWindows()"
+        "PrintingTests\/test_pinnedTab_printingBehaviorAcrossWindows()",
+        "SubscriptionEntryPointsTests"
       ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",

@@ -103,7 +103,7 @@ class AutoconsentUITests: UITestCase {
         // makes the startup race deterministic enough to catch without introducing multiple tabs.
         for reproductionIndex in 1...reproductionCount {
             XCTContext.runActivity(named: "Reproduce initial background load race \(reproductionIndex)") { _ in
-                app.menuItems[XCUIApplication.AccessibilityIdentifiers.quitMenuItem].tap()
+                app.typeKey("q", modifierFlags: [.command])
                 guard app.wait(for: .notRunning, timeout: UITests.Timeouts.elementExistence) else {
                     XCTFail("App should quit before reproduction \(reproductionIndex)")
                     return

@@ -28,16 +28,20 @@ struct PIRAssistStepsPanel: View {
     let close: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 0) {
             topRow
+                .padding(.top, -4)
+                .padding(.trailing, -4)
             header
+                .padding(.top, 8)
             steps
+                .padding(.top, 16)
             Spacer(minLength: 0)
             footer
         }
         .padding(16)
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(Color(designSystemColor: .surfacePrimary))
+        .background(Color(designSystemColor: .surfaceTertiary))
     }
 
     private var topRow: some View {
@@ -45,7 +49,7 @@ struct PIRAssistStepsPanel: View {
             Spacer()
             Text("Keeps running if you close")
                 .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textTertiary))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
             Button(action: close) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
                     .renderingMode(.template)
@@ -58,19 +62,24 @@ struct PIRAssistStepsPanel: View {
         }
     }
 
+    private var isCompact: Bool { session.userTurn != nil }
+
     private var header: some View {
-        VStack(spacing: session.userTurn == nil ? 12 : 8) {
+        VStack(spacing: isCompact ? 8 : 12) {
+            PIRAssistBrokerAvatar(name: session.brokerName, size: isCompact ? 40 : 56)
             Text("Removing you from \(session.brokerName)")
                 .font(.system(size: 22))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(subtitle)
                 .font(.system(size: 15))
-                .foregroundColor(Color(designSystemColor: .textTertiary))
+                .lineSpacing(3)
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
-        .padding(session.userTurn == nil ? 24 : 18)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color(designSystemColor: .surfaceSecondary)))
+        .padding(.vertical, isCompact ? 18 : 24)
+        .padding(.horizontal, isCompact ? 20 : 24)
+        .background(RoundedRectangle(cornerRadius: 20).fill(Color(designSystemColor: .containerFillPrimary)))
     }
 
     private var subtitle: String {
@@ -83,9 +92,10 @@ struct PIRAssistStepsPanel: View {
     private var steps: some View {
         let steps = session.steps
         return ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: PIRAssistStepRow.spacing) {
                 ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                     PIRAssistStepRow(step: step, isLast: index == steps.count - 1,
+                                     showsNeedsUserNote: session.userTurn == nil,
                                      userTurnMessage: userTurnMessage,
                                      userConfirmedDone: session.userConfirmedDone)
                 }
@@ -124,30 +134,49 @@ struct PIRAssistStepsPanel: View {
     }
 }
 
+/// Stands in for the broker's logo, which the agent doesn't have.
+private struct PIRAssistBrokerAvatar: View {
+    let name: String
+    let size: CGFloat
+
+    var body: some View {
+        Text(name.first.map(String.init) ?? "")
+            .font(.system(size: size * 0.45, weight: .medium))
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .frame(width: size, height: size)
+            .background(Circle().fill(Color(designSystemColor: .controlsFillPrimary)))
+    }
+}
+
 private struct PIRAssistStepRow: View {
+    static let spacing: CGFloat = 14
+    private static let markerSize: CGFloat = 18
+    private static let connectorInset: CGFloat = 4
+
     let step: PIRAssistStep
     let isLast: Bool
+    let showsNeedsUserNote: Bool
     let userTurnMessage: String
     let userConfirmedDone: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            PIRAssistStepMarker(state: step.state)
-                .frame(width: 18, height: 18)
-                .overlay(alignment: .top) {
-                    if !isLast {
-                        Capsule()
-                            .fill(Color(designSystemColor: step.state == .done ? .statusGreen : .containerBorderPrimary))
-                            .frame(width: 2)
-                            .frame(maxHeight: .infinity)
-                            .offset(y: 22)
-                    }
+            VStack(spacing: 0) {
+                PIRAssistStepMarker(state: step.state)
+                    .frame(width: Self.markerSize, height: Self.markerSize)
+                if !isLast {
+                    connector
                 }
+            }
+            // The connector runs on through the gap between rows, so it ends exactly at the next row's marker.
+            .padding(.bottom, isLast ? 0 : -Self.spacing)
+            .frame(maxHeight: .infinity, alignment: .top)
             VStack(alignment: .leading, spacing: 8) {
                 Text(step.title)
                     .font(.system(size: 14, weight: isEmphasized ? .medium : .regular))
-                    .foregroundColor(Color(designSystemColor: step.state == .upcoming ? .textTertiary : .textPrimary))
-                if step.state == .needsUserLater {
+                    .foregroundColor(Color(designSystemColor: step.state == .upcoming ? .textSecondary : .textPrimary))
+                    .frame(minHeight: Self.markerSize)
+                if step.state == .needsUserLater && showsNeedsUserNote {
                     needsUserNote
                 }
                 if step.state == .userTurn {
@@ -155,6 +184,15 @@ private struct PIRAssistStepRow: View {
                 }
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var connector: some View {
+        RoundedRectangle(cornerRadius: 1)
+            .fill(Color(designSystemColor: step.state == .done ? .statusGreen : .containerBorderPrimary))
+            .frame(width: 2)
+            .frame(maxHeight: .infinity)
+            .padding(.top, Self.connectorInset)
     }
 
     private var isEmphasized: Bool {
@@ -162,13 +200,17 @@ private struct PIRAssistStepRow: View {
     }
 
     private var needsUserNote: some View {
-        Text("You\u{2019}ll prove you\u{2019}re human here")
-            .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color(designSystemColor: .statusWarningFillPrimary)))
-            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(designSystemColor: .statusYellowPrimary), lineWidth: 1))
+        HStack(spacing: 6) {
+            Image(nsImage: DesignSystemImages.Glyphs.Size12.profile)
+                .renderingMode(.template)
+            Text("You\u{2019}ll prove you\u{2019}re human here")
+                .font(.system(size: 12))
+        }
+        .foregroundColor(Color(designSystemColor: .textPrimary))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color(designSystemColor: .statusWarningFillPrimary)))
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color(designSystemColor: .statusYellowPrimary), lineWidth: 1))
     }
 
     private var yourTurnCard: some View {
@@ -178,15 +220,16 @@ private struct PIRAssistStepRow: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(userTurnMessage)
                 .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .lineSpacing(2)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
                 .fixedSize(horizontal: false, vertical: true)
             Button(action: userConfirmedDone) {
                 Text("I\u{2019}ve done it")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(Color(designSystemColor: .accentContentPrimary))
+                    .foregroundColor(Color(designSystemColor: .surfaceTertiary))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Capsule().fill(Color(designSystemColor: .accentPrimary)))
+                    .background(Capsule().fill(Color(designSystemColor: .controlsBase)))
             }
             .buttonStyle(.plain)
         }
@@ -198,6 +241,7 @@ private struct PIRAssistStepRow: View {
     }
 }
 
+/// Markers are filled with the panel background, so the connector from the row above never shows through them.
 private struct PIRAssistStepMarker: View {
     let state: PIRAssistStepState
     @State private var isSpinning = false
@@ -213,8 +257,7 @@ private struct PIRAssistStepMarker: View {
                         .foregroundColor(Color(designSystemColor: .accentContentPrimary))
                 )
         case .running:
-            Circle()
-                .strokeBorder(Color(designSystemColor: .containerBorderPrimary), lineWidth: 2)
+            ring(.containerBorderSecondary)
                 .overlay(
                     Circle()
                         .trim(from: 0, to: 0.25)
@@ -226,14 +269,19 @@ private struct PIRAssistStepMarker: View {
                     withAnimation(.linear(duration: 0.9).repeatForever(autoreverses: false)) { isSpinning = true }
                 }
         case .upcoming:
-            Circle().strokeBorder(Color(designSystemColor: .containerBorderPrimary), lineWidth: 2)
+            ring(.containerBorderSecondary)
         case .needsUserLater:
-            Circle().strokeBorder(Color(designSystemColor: .statusYellowPrimary), lineWidth: 2)
+            ring(.statusYellowPrimary)
         case .userTurn:
-            Circle()
-                .strokeBorder(Color(designSystemColor: .statusYellowPrimary), lineWidth: 2)
+            ring(.statusYellowPrimary)
                 .overlay(Circle().fill(Color(designSystemColor: .statusYellowPrimary)).frame(width: 8, height: 8))
         }
+    }
+
+    private func ring(_ color: DesignSystemColor) -> some View {
+        Circle()
+            .fill(Color(designSystemColor: .surfaceTertiary))
+            .overlay(Circle().strokeBorder(Color(designSystemColor: color), lineWidth: 2))
     }
 }
 #endif

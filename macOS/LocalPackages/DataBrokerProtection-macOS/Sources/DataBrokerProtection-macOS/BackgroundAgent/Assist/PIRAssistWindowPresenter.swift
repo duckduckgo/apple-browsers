@@ -62,9 +62,10 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
         let content = NSView()
         let bar = NSHostingView(rootView: PIRAssistAddressBar(session: session))
         let panel = NSHostingView(rootView: PIRAssistStepsPanel(session: session, close: { [weak window] in window?.performClose(nil) }))
+        let divider = NSHostingView(rootView: Color(designSystemColor: .containerBorderPrimary))
         let webView = session.webView
         webView.removeFromSuperview()
-        for view in [bar, webView, panel] as [NSView] {
+        for view in [bar, webView, divider, panel] as [NSView] {
             view.translatesAutoresizingMaskIntoConstraints = false
             content.addSubview(view)
         }
@@ -75,7 +76,11 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
             webView.topAnchor.constraint(equalTo: bar.bottomAnchor),
             webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
             webView.bottomAnchor.constraint(equalTo: content.bottomAnchor),
-            panel.leadingAnchor.constraint(equalTo: webView.trailingAnchor),
+            divider.leadingAnchor.constraint(equalTo: webView.trailingAnchor),
+            divider.topAnchor.constraint(equalTo: content.topAnchor),
+            divider.bottomAnchor.constraint(equalTo: content.bottomAnchor),
+            divider.widthAnchor.constraint(equalToConstant: 1),
+            panel.leadingAnchor.constraint(equalTo: divider.trailingAnchor),
             panel.topAnchor.constraint(equalTo: content.topAnchor),
             panel.bottomAnchor.constraint(equalTo: content.bottomAnchor),
             panel.trailingAnchor.constraint(equalTo: content.trailingAnchor),
@@ -93,28 +98,43 @@ private final class HideOnCloseDelegate: NSObject, NSWindowDelegate {
     }
 }
 
-/// Shows where the page is. The address can't be changed.
+/// Shows where the page is and whose turn it is. The address can't be changed.
 private struct PIRAssistAddressBar: View {
     @ObservedObject var session: PIRAssistSession
-    @State private var host = ""
+    @State private var url: URL?
 
     var body: some View {
         HStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
                 .renderingMode(.template)
                 .foregroundColor(Color(designSystemColor: .iconsSecondary))
-            Text(host)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+            (Text(host).foregroundColor(Color(designSystemColor: .textPrimary))
+             + Text(path).foregroundColor(Color(designSystemColor: .textSecondary)))
+                .font(.system(size: 13))
                 .lineLimit(1)
-            Spacer()
+                .truncationMode(.middle)
+            Spacer(minLength: 16)
+            Text(session.userTurn == nil ? "Filling in" : "Waiting for you")
+                .font(.system(size: 13))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         }
-        .padding(.horizontal, 14)
-        .frame(height: 40)
-        .background(Color(designSystemColor: .surfaceSecondary))
-        .onReceive(session.webView.publisher(for: \.url)) { url in
-            host = url?.host ?? ""
+        .padding(.horizontal, 20)
+        .frame(height: 46)
+        .background(Color(designSystemColor: .surfaceTertiary))
+        .overlay(alignment: .bottom) {
+            Color(designSystemColor: .containerBorderPrimary).frame(height: 1)
         }
+        .onReceive(session.webView.publisher(for: \.url)) { url = $0 }
+    }
+
+    private var host: String {
+        guard let host = url?.host else { return "" }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    private var path: String {
+        guard let path = url?.path, path.count > 1 else { return "" }
+        return " / " + path.dropFirst().replacingOccurrences(of: "/", with: " / ")
     }
 }
 #endif

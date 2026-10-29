@@ -102,7 +102,7 @@ public final class PIRAssistSession: ObservableObject, Identifiable {
     var onUserConfirmedDone: (() -> Void)?
     var onStop: (() -> Void)?
 
-    init(id: PIRAssistItemID, brokerName: String, brokerURL: String, webView: WKWebView) {
+    public init(id: PIRAssistItemID, brokerName: String, brokerURL: String, webView: WKWebView) {
         self.id = id
         self.brokerName = brokerName
         self.brokerURL = brokerURL
@@ -117,12 +117,12 @@ public final class PIRAssistSession: ObservableObject, Identifiable {
         onStop?()
     }
 
-    func update(checklist: PIRAssistChecklist) {
+    public func update(checklist: PIRAssistChecklist) {
         guard checklist != self.checklist else { return }
         self.checklist = checklist
     }
 
-    func setUserTurn(_ kind: PIRAssistUserTurnKind?) {
+    public func setUserTurn(_ kind: PIRAssistUserTurnKind?) {
         guard kind != userTurn else { return }
         userTurn = kind
         PIRAssistCenter.shared.sessionStateDidChange()

@@ -81,6 +81,6 @@ struct RedesignedFocusedSearchModulesView: View {
 
     private var hatchTopPadding: CGFloat {
         guard !showsSearchModules else { return 0 }
-        return usesScrollableEscapeHatch ? RedesignedNewTabPageModulesView.topPadding : 6
+        return RedesignedNewTabPageModulesView.topPadding
     }
 }

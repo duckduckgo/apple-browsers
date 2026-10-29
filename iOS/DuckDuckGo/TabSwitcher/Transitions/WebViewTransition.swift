@@ -91,8 +91,9 @@ class FromWebViewTransition: WebViewTransition {
         return snapshot
     }
 
-    /// Over the preview's empty-state logo. With the keyboard up the page centres it above the input,
-    /// and the preview isn't laid out over the live page, so follow the image.
+    /// Start point for the cell snapshot, so its logo covers the logo in the preview image.
+    /// With the keyboard up, the page centres its logo above the input rather than in the card, and the
+    /// preview image doesn't line up with the live page, so the logo's position on the page is mapped onto the image.
     private func aiTabCellSnapshotStartCenter() -> CGPoint {
         let bounds = imageContainer.bounds
         let cardCenter = CGPoint(x: bounds.midX, y: bounds.midY)

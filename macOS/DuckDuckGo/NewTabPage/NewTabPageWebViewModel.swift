@@ -59,9 +59,7 @@ final class NewTabPageWebViewModel: NSObject {
         webView.load(URLRequest(url: URL.newtab))
         newTabPageUserScript.webView = webView
 
-        let window = webView.publisher(for: \.window).share()
-
-        window
+        webView.publisher(for: \.window)
             .map { $0 != nil }
             .sink { isOnScreen in
                 if isOnScreen && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
@@ -73,16 +71,16 @@ final class NewTabPageWebViewModel: NSObject {
             }
             .store(in: &cancellables)
 
-        // The web view is transparent, so whatever it's attached to shows until the page paints.
         // Each attach gets a new container, so other tab content never inherits this colour.
         let app = NSApp.delegateTyped
-        NewTabPageBackgroundColor.publisher(
-            customBackground: app.newTabPageCustomizationModel.$customBackground,
-            canvas: app.themeManager.$theme.map(\.palette.surfaceCanvas),
-            isDark: webView.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
+        Publishers.CombineLatest3(
+            app.newTabPageCustomizationModel.$customBackground,
+            app.themeManager.$theme.map(\.palette.surfaceCanvas),
+            webView.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
         )
+        .map { NewTabPageBackgroundColor.color(customBackground: $0, canvas: $1, isDark: $2) }
         .removeDuplicates()
-        .combineLatest(window.map { [weak webView] window in window == nil ? nil : webView?.superview })
+        .combineLatest(webView.publisher(for: \.superview))
         .sink { color, container in
             guard let container else { return }
             container.wantsLayer = true

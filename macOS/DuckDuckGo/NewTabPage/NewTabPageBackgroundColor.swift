@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Combine
 
 /// Mirrors the colour the New Tab Page's scripts give `body`, so it can be shown before the page paints.
 enum NewTabPageBackgroundColor {
@@ -33,16 +32,6 @@ enum NewTabPageBackgroundColor {
         case .none:
             return canvas.resolved(isDark: isDark)
         }
-    }
-
-    static func publisher(
-        customBackground: some Publisher<CustomBackground?, Never>,
-        canvas: some Publisher<NSColor, Never>,
-        isDark: some Publisher<Bool, Never>
-    ) -> AnyPublisher<NSColor, Never> {
-        Publishers.CombineLatest3(customBackground, canvas, isDark)
-            .map { color(customBackground: $0, canvas: $1, isDark: $2) }
-            .eraseToAnyPublisher()
     }
 }
 

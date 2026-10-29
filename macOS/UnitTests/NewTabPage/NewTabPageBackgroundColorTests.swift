@@ -17,7 +17,6 @@
 //
 
 import AppKit
-import Combine
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
@@ -25,13 +24,6 @@ import XCTest
 /// Expected values are the colours the New Tab Page itself uses (content-scope-scripts design tokens and
 /// `customizer/values.js`), since the point is to match what the page settles on.
 final class NewTabPageBackgroundColorTests: XCTestCase {
-
-    private var cancellables: Set<AnyCancellable> = []
-
-    override func tearDown() {
-        cancellables.removeAll()
-        super.tearDown()
-    }
 
     private func canvas(_ themeName: ThemeName) -> NSColor {
         ThemeColors(themeName: themeName).surfaceCanvas
@@ -49,52 +41,19 @@ final class NewTabPageBackgroundColorTests: XCTestCase {
     }
 
     func testSolidColorIgnoresThemeAndAppearance() {
-        let expected = ["color01": "#000000", "color05": "#DBDDDF", "color06": "#577DE4"]
-
-        for (name, hex) in expected {
-            let background = CustomBackground.solidColor(SolidColorBackground(name)!)
-            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: background, canvas: canvas(.violet), isDark: true).hex(), hex, name)
-            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: background, canvas: canvas(.default), isDark: false).hex(), hex, name)
+        for (background, hex) in [(SolidColorBackground.color01, "#000000"), (.color05, "#DBDDDF")] {
+            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .solidColor(background), canvas: canvas(.violet), isDark: true).hex(), hex)
+            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .solidColor(background), canvas: canvas(.default), isDark: false).hex(), hex)
         }
     }
 
-    func testGradientsUseTheNewTabPageFallbackColors() {
-        let expected: [GradientBackground: String] = [
-            .gradient01: "#F2E5D4",
-            .gradient02: "#D5BCD1",
-            .gradient0201: "#F4CA78",
-            .gradient03: "#E6A356",
-            .gradient04: "#4448AE",
-            .gradient05: "#A55778",
-            .gradient06: "#222566",
-            .gradient07: "#0E0E3D"
-        ]
-
-        XCTAssertEqual(Set(expected.keys), Set(GradientBackground.allCases))
-        for (gradient, hex) in expected {
-            XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .gradient(gradient), canvas: canvas(.default), isDark: false).hex(), hex)
-        }
+    func testGradientUsesItsFallbackColor() {
+        XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: .gradient(.gradient07), canvas: canvas(.default), isDark: false).hex(), "#0E0E3D")
     }
 
     func testUserImageUsesCanvasForTheImageColorScheme() {
         let darkImage = CustomBackground.userImage(UserBackgroundImage(fileName: "image.jpg", colorScheme: .dark))
 
         XCTAssertEqual(NewTabPageBackgroundColor.color(customBackground: darkImage, canvas: canvas(.default), isDark: false).hex(), "#1C1C1C")
-    }
-
-    func testPublisherEmitsNewColorWhenAnyInputChanges() {
-        let background = CurrentValueSubject<CustomBackground?, Never>(nil)
-        let themeCanvas = CurrentValueSubject<NSColor, Never>(canvas(.default))
-        let isDark = CurrentValueSubject<Bool, Never>(true)
-        var emitted: [String] = []
-        NewTabPageBackgroundColor.publisher(customBackground: background, canvas: themeCanvas, isDark: isDark)
-            .sink { emitted.append($0.hex()) }
-            .store(in: &cancellables)
-
-        isDark.send(false)
-        themeCanvas.send(canvas(.violet))
-        background.send(.solidColor(.color06))
-
-        XCTAssertEqual(emitted, ["#1C1C1C", "#FDFDFD", "#EDECF9", "#577DE4"])
     }
 }

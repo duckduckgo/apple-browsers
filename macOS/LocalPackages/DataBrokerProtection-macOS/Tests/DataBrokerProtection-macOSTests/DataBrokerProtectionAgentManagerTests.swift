@@ -177,6 +177,57 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         XCTAssertEqual(resourceMonitor.stopCallCount, 1)
     }
 
+#if DEBUG
+    func testWhenTheUserHasNoPIREntitlement_thenNeedsYouIsEmpty() async throws {
+        sut = makeAgentManagerWithAHeldOptOut()
+        mockAuthenticationManager.hasValidEntitlementValue = false
+
+        let list = try await sut.getNeedsYou()
+        let opened = try await sut.openNeedsYouItem(id: "optOut-1-1-10")
+
+        XCTAssertEqual(list.items, [])
+        XCTAssertFalse(opened)
+    }
+
+    func testWhenTheUserHasThePIREntitlement_thenHeldOptOutsAreListed() async throws {
+        sut = makeAgentManagerWithAHeldOptOut()
+        mockAuthenticationManager.hasValidEntitlementValue = true
+
+        let list = try await sut.getNeedsYou()
+
+        XCTAssertEqual(list.items.map(\.id), ["optOut-1-1-10"])
+    }
+
+    private func makeAgentManagerWithAHeldOptOut() -> DataBrokerProtectionAgentManager {
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = [
+            BrokerProfileQueryData(dataBroker: .mock(id: 1, name: "PeopleFinders", url: "peoplefinders.com"),
+                                   profileQuery: .mock, scanJobData: .mock,
+                                   optOutJobData: [.mock(with: ExtractedProfile(id: 10, name: "A", profileUrl: "a", identifier: "a"))])
+        ]
+        mockDependencies.database = database
+        return DataBrokerProtectionAgentManager(
+            eventsHandler: mockEventsHandler,
+            activityScheduler: mockActivityScheduler,
+            ipcServer: mockIPCServer,
+            queueManager: mockQueueManager,
+            dataManager: mockDataManager,
+            emailConfirmationDataService: mockEmailConfirmationDataService,
+            jobDependencies: mockDependencies,
+            sharedPixelsHandler: mockSharedPixelsHandler,
+            pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
+            statsPixelRepository: mockStatsPixelRepository,
+            agentStopper: mockAgentStopper,
+            configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
+            privacyConfigurationManager: mockPrivacyConfigurationManager,
+            authenticationManager: mockAuthenticationManager,
+            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
+    }
+#endif
+
     func testWhenAgentStart_andProfileExists_andUserIsFreemium_thenActivityIsScheduled_andScheduledScanOperationsRun() async throws {
         // Given
         sut = DataBrokerProtectionAgentManager(

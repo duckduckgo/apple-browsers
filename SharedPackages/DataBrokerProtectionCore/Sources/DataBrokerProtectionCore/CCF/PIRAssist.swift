@@ -51,6 +51,14 @@ public enum PIRAssistUserTurnKind: String, Codable, Sendable {
         case .managedChallenge, .generic: return nil
         }
     }
+
+    /// What the dashboard says the user has to do.
+    var shortInstruction: String {
+        switch self {
+        case .recaptcha: return "Check \u{201C}I\u{2019}m not a robot\u{201D} to continue"
+        case .turnstile, .managedChallenge, .generic: return "Complete the security check to continue"
+        }
+    }
 }
 
 struct PIRAssistModeParams: Encodable {
@@ -109,6 +117,13 @@ public final class PIRAssistSession: ObservableObject, Identifiable {
     @Published public private(set) var submission: PIRAssistSubmission?
 
     public var steps: [PIRAssistStep] { checklist?.steps(userTurn: userTurn) ?? [] }
+
+    /// One line for the dashboard: what the user has to do, or how far the request has got.
+    public var needsYouDetail: String? {
+        if let userTurn { return userTurn.shortInstruction }
+        guard let checklist, checklist.items.indices.contains(checklist.currentIndex) else { return nil }
+        return "Step \(checklist.currentIndex + 1) of \(checklist.items.count) \u{00B7} \(checklist.items[checklist.currentIndex])"
+    }
 
     var onUserConfirmedDone: (() -> Void)?
     var onStop: (() -> Void)?
@@ -182,7 +197,7 @@ public final class PIRAssistCenter {
     public var runningItems: [PIRNeedsYou.RunningItem] {
         sessions.values.map {
             PIRNeedsYou.RunningItem(id: $0.id, brokerName: $0.brokerName, brokerURL: $0.brokerURL,
-                                    state: $0.userTurn == nil ? .running : .needsYou)
+                                    state: $0.userTurn == nil ? .running : .needsYou, detail: $0.needsYouDetail)
         }
     }
 

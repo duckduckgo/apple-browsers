@@ -39,6 +39,8 @@ public struct DBPUINeedsYouItem: Codable, Equatable, Sendable {
     public let kind: Kind
     public let recordCount: Int
     public let state: State
+    /// While running, the current step; while it's the user's turn, what to do. Nil while waiting.
+    public var detail: String?
 }
 
 public struct DBPUINeedsYouList: Codable, Equatable, Sendable {
@@ -74,12 +76,14 @@ public enum PIRNeedsYou {
         public let brokerName: String
         public let brokerURL: String
         public let state: PIRAssistCenter.State
+        public let detail: String?
 
-        public init(id: PIRAssistItemID, brokerName: String, brokerURL: String, state: PIRAssistCenter.State) {
+        public init(id: PIRAssistItemID, brokerName: String, brokerURL: String, state: PIRAssistCenter.State, detail: String? = nil) {
             self.id = id
             self.brokerName = brokerName
             self.brokerURL = brokerURL
             self.state = state
+            self.detail = detail
         }
     }
 
@@ -101,15 +105,17 @@ public enum PIRNeedsYou {
             let ids = row.items.map(PIRAssistItemID.init)
             covered.formUnion(ids)
             let active = ids.first { runningByID[$0]?.state == .needsYou } ?? ids.first { runningByID[$0] != nil }
-            let state: DBPUINeedsYouItem.State = active.flatMap { runningByID[$0] }.map { $0.state == .needsYou ? .needsYou : .running } ?? .waiting
+            let activeItem = active.flatMap { runningByID[$0] }
+            let state: DBPUINeedsYouItem.State = activeItem.map { $0.state == .needsYou ? .needsYou : .running } ?? .waiting
             return DBPUINeedsYouItem(id: (active ?? ids[0]).needsYouID, brokerName: first.brokerName, brokerUrl: bareDomain(first.brokerURL),
                                      kind: first.extractedProfileId == nil ? .scan : .optOut,
-                                     recordCount: first.extractedProfileId == nil ? 0 : row.items.count, state: state)
+                                     recordCount: first.extractedProfileId == nil ? 0 : row.items.count, state: state,
+                                     detail: activeItem?.detail)
         }
         for item in running where item.state == .needsYou && !covered.contains(item.id) {
             result.append(DBPUINeedsYouItem(id: item.id.needsYouID, brokerName: item.brokerName, brokerUrl: bareDomain(item.brokerURL),
                                             kind: item.id.extractedProfileId == nil ? .scan : .optOut,
-                                            recordCount: item.id.extractedProfileId == nil ? 0 : 1, state: .needsYou))
+                                            recordCount: item.id.extractedProfileId == nil ? 0 : 1, state: .needsYou, detail: item.detail))
         }
         return result
     }

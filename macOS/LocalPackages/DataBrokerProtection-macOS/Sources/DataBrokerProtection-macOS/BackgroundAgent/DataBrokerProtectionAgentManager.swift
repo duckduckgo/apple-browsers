@@ -576,13 +576,15 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
 
 #if DEBUG
     public func getNeedsYou() async throws -> DBPUINeedsYouList {
+        // Needs you is only on the paid dashboard.
+        guard await hasPIREntitlement() else { return DBPUINeedsYouList(items: []) }
         let pending = try PIRAssistedOptOuts.pending(in: jobDependencies.database, config: jobDependencies.executionConfig)
         let running = await MainActor.run { PIRAssistCenter.shared.runningItems }
         return DBPUINeedsYouList(items: PIRNeedsYou.items(pending: pending, running: running))
     }
 
     public func openNeedsYouItem(id: String) async throws -> Bool {
-        guard let itemID = PIRAssistItemID(needsYouID: id) else { return false }
+        guard let itemID = PIRAssistItemID(needsYouID: id), await hasPIREntitlement() else { return false }
         let isRunning = await MainActor.run { () -> Bool in
             let isRunning = PIRAssistCenter.shared.state(of: itemID) != nil
             PIRAssistCenter.shared.open(itemID)
@@ -593,6 +595,10 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
                                      extractedProfileId: itemID.extractedProfileId, in: jobDependencies.database)
         startScheduledOperations(showWebView: false)
         return true
+    }
+
+    private func hasPIREntitlement() async -> Bool {
+        (try? await authenticationManager.hasValidEntitlement()) == true
     }
 
     private func setUpAssist() {

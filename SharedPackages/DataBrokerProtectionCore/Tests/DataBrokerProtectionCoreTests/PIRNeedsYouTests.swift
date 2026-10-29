@@ -17,6 +17,7 @@
 //
 
 #if os(macOS) && DEBUG
+import WebKit
 import XCTest
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
@@ -65,6 +66,20 @@ final class PIRNeedsYouTests: XCTestCase {
                                                  kind: .optOut, recordCount: 1, state: .needsYou)])
     }
 
+    func testARunningRowCarriesItsDetail_andAWaitingRowHasNone() throws {
+        let running = PIRNeedsYou.RunningItem(id: PIRAssistItemID(brokerId: 1, profileQueryId: 1, extractedProfileId: 10),
+                                              brokerName: "PeopleFinders", brokerURL: "peoplefinders.com", state: .running,
+                                              detail: "Step 2 of 5 \u{00B7} Entering your name")
+
+        let items = PIRNeedsYou.items(pending: [optOut(broker: 1, record: 10),
+                                                optOut(broker: 2, record: 20, url: "gladiknow.com", name: "Glad I Know")],
+                                      running: [running])
+
+        XCTAssertEqual(items.map(\.detail), ["Step 2 of 5 \u{00B7} Entering your name", nil])
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(items[1])) as? [String: Any])
+        XCTAssertNil(json["detail"])
+    }
+
     func testWhenNothingIsHeldOrWaiting_thenTheListIsEmpty() {
         XCTAssertEqual(PIRNeedsYou.items(pending: [], running: []), [])
     }
@@ -97,6 +112,28 @@ final class PIRNeedsYouTests: XCTestCase {
         XCTAssertEqual(item["kind"] as? String, "scan")
         XCTAssertEqual(item["recordCount"] as? Int, 0)
         XCTAssertEqual(item["state"] as? String, "running")
+    }
+}
+
+@MainActor
+final class PIRAssistSessionDetailTests: XCTestCase {
+
+    private func session(currentIndex: Int, turn: PIRAssistUserTurnKind?) -> PIRAssistSession {
+        let session = PIRAssistSession(id: PIRAssistItemID(brokerId: 1, profileQueryId: 1, extractedProfileId: 1),
+                                       brokerName: "Glad I Know", brokerURL: "gladiknow.com", webView: WKWebView())
+        session.update(checklist: PIRAssistChecklist(isOptOut: true, items: ["Open the form", "Entering your name", "Submit request"],
+                                                     currentIndex: currentIndex))
+        session.setUserTurn(turn)
+        return session
+    }
+
+    func testWhileRunning_thenTheDetailIsTheCurrentStep() {
+        XCTAssertEqual(session(currentIndex: 1, turn: nil).needsYouDetail, "Step 2 of 3 \u{00B7} Entering your name")
+    }
+
+    func testDuringTheUsersTurn_thenTheDetailSaysWhatToDo() {
+        XCTAssertEqual(session(currentIndex: 1, turn: .recaptcha).needsYouDetail, "Check \u{201C}I\u{2019}m not a robot\u{201D} to continue")
+        XCTAssertEqual(session(currentIndex: 1, turn: .turnstile).needsYouDetail, "Complete the security check to continue")
     }
 }
 

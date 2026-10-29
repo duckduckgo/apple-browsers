@@ -225,6 +225,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         window = nil
         manualControl.resume = nil
         manualControl.cancel = nil
+        if assistSession != nil, let webView {
+            // The page can stay on screen in the done state, so its cursor and labels have to go.
+            dataBrokerFeature?.pushAssistMessage(.setAssistMode, params: PIRAssistModeParams(enabled: false), webView: webView)
+        }
         unregisterAssistSession()
 #endif
         resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))

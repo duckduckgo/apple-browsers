@@ -72,6 +72,11 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
         let bar = NSHostingView(rootView: PIRAssistAddressBar(session: session))
         let panel = NSHostingView(rootView: PIRAssistStepsPanel(session: session, close: { [weak window] in window?.performClose(nil) }))
         let divider = NSHostingView(rootView: Color(designSystemColor: .containerBorderPrimary))
+        if #available(macOS 13.0, *) {
+            // The window keeps the size the user gave it, whatever the panel shows.
+            bar.sizingOptions = []
+            panel.sizingOptions = []
+        }
         let webView = session.webView
         webView.removeFromSuperview()
         for view in [bar, webView, divider, panel] as [NSView] {
@@ -81,6 +86,7 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
         NSLayoutConstraint.activate([
             bar.topAnchor.constraint(equalTo: content.topAnchor),
             bar.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            bar.heightAnchor.constraint(equalToConstant: 46),
             bar.trailingAnchor.constraint(equalTo: webView.trailingAnchor),
             webView.topAnchor.constraint(equalTo: bar.bottomAnchor),
             webView.leadingAnchor.constraint(equalTo: content.leadingAnchor),
@@ -136,7 +142,8 @@ private struct PIRAssistAddressBar: View {
         .overlay(alignment: .bottom) {
             Color(designSystemColor: .containerBorderPrimary).frame(height: 1)
         }
-        .onReceive(session.webView.publisher(for: \.url)) { url = $0 }
+        // The agent's own placeholder page isn't somewhere the user is.
+        .onReceive(session.webView.publisher(for: \.url)) { url = ["http", "https"].contains($0?.scheme) ? $0 : nil }
     }
 
     private var status: String {

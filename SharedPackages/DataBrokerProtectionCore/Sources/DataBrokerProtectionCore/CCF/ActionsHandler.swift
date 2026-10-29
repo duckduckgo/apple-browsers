@@ -55,8 +55,9 @@ public class ActionsHandler {
     /// The final check to run before `action`, if it would click or fill on the opt-out page.
     func submissionCheck(before action: Action) -> Action? {
         guard stepType == .optOut, action is ClickAction || action is FillFormAction,
-              let index = lastExecutedActionIndex, index < actions.count else { return nil }
-        return actions[(index + 1)...].last { $0 is ExpectationAction }
+              let index = lastExecutedActionIndex, index < actions.count,
+              let check = actions[(index + 1)...].last(where: { $0 is ExpectationAction }) as? ExpectationAction else { return nil }
+        return check.checkingOnce()
     }
 #endif
 

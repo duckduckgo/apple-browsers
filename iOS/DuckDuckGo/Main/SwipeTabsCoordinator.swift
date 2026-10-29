@@ -511,7 +511,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
                 prepareLiveDestinationChrome(offset: offset)
             }
             prepareLiveOutgoingChrome()
-        } else if destinationIndex(offset: offset) == nil {
+        } else if bouncesAtEdges, destinationIndex(offset: offset) == nil {
             // Same tab, nothing to swap in: the chrome outside the strip just rides along.
             edgePulledChromeViews = auxiliarySwipeViews.filter { !$0.isHidden }
         }
@@ -577,8 +577,13 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     }
 
     func updateFullScreenSnapshotForCurrentTab() {
-        guard !floatingUIManager.isFloatingUIEnabled,
-              let tab = tabsModel.currentTab else { return }
+        guard let tab = tabsModel.currentTab else { return }
+        updateFullScreenSnapshot(forTab: tab)
+    }
+
+    /// Captures the screen as `tab`'s swipe-back snapshot; call while `tab` is still the one on screen.
+    func updateFullScreenSnapshot(forTab tab: Tab) {
+        guard !floatingUIManager.isFloatingUIEnabled else { return }
         // Tab-switcher entry can dismiss editing synchronously in the same run loop.
         // Capture the restored layout rather than the last rendered focused frame.
         coordinator.superview.layoutIfNeeded()
@@ -1287,7 +1292,9 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
     
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         lastEdgeTickOverscroll = 0
-        edgeFeedbackGenerator.prepare()
+        if bouncesAtEdges {
+            edgeFeedbackGenerator.prepare()
+        }
         switch state {
         case .idle:
             if floatingUIManager.isFloatingUIEnabled {

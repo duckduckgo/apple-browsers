@@ -3281,14 +3281,14 @@ class MainViewController: UIViewController {
     }
 
     /// Swiping back shows a tab's full-screen snapshot; without one it falls back to the tab switcher thumbnail.
-    private func captureCurrentTabForSwipeBack() {
-        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements) else { return }
-        swipeTabsCoordinator?.updateFullScreenSnapshotForCurrentTab()
+    private func captureForSwipeBack(_ outgoingTab: Tab?) {
+        guard featureFlagger.isFeatureOn(.aiChatTabHandoffImprovements), let outgoingTab else { return }
+        swipeTabsCoordinator?.updateFullScreenSnapshot(forTab: outgoingTab)
     }
 
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
-        captureCurrentTabForSwipeBack()
+        let outgoingTab = tabManager.currentTabsModel.currentTab
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
@@ -3303,6 +3303,7 @@ class MainViewController: UIViewController {
 
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
+        captureForSwipeBack(outgoingTab)
         resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
         return tab.tabModel
@@ -4311,8 +4312,8 @@ class MainViewController: UIViewController {
         recordDuckAISessionPendingExit(.newTabOpened)
         let previousTab = tabManager.current()
         dismissSystemFindNavigator(for: previousTab)
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         currentTab?.dismiss()
-        captureCurrentTabForSwipeBack()
 
         if reuseExisting, let existing = tabManager.firstHomeTab() {
             tabManager.select(existing, dismissCurrent: false)

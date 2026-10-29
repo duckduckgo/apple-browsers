@@ -70,6 +70,7 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     @MainActor
     func pushAssistMessage(_ method: CCFSubscribeActionName, params: Encodable, webView: WKWebView) {
+        Logger.action.log("Assist push: \(method.rawValue, privacy: .public)")
         broker?.push(method: method.rawValue, params: params, for: self, into: webView)
     }
 

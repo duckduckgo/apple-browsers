@@ -1,0 +1,24 @@
+{
+    "dataimport_history_source-file-missing_macos": {
+        "description": "Fired when history import fails and the selected browser profile's folder can be read but has no history database ('History' for Chromium browsers, 'places.sqlite' for Firefox). Tells us when a browser renames or moves its history database.",
+        "owners": ["andremartingo"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": ["brave", "chrome", "edge", "firefox", "opera", "other"]
+            },
+            {
+                "key": "source_browser_version",
+                "description": "Major version of the browser the user is importing from, when known",
+                "type": "string"
+            }
+        ]
+    }
+}

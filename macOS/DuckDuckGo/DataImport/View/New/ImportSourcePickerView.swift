@@ -27,6 +27,8 @@ import UIComponents
 struct ImportSourcePickerView: View {
     @StateObject private var viewModel: ImportSourcePickerViewModel
 
+    let availableSources: [DataImport.Source]
+    let selectedSource: DataImport.Source
     let selectedImportTypes: [DataImport.DataType]
     let selectableImportTypes: [DataImport.DataType]
 
@@ -37,11 +39,14 @@ struct ImportSourcePickerView: View {
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncFeature: Bool,
+         isSourceFilterEnabled: Bool,
          isPickerExpanded: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
-         onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
+         onTypesSelected: @escaping (Set<DataImport.DataType>) -> Void,
          onSyncSelected: @escaping () -> Void,
          onExpandedStateChanged: @escaping (Bool) -> Void) {
+        self.availableSources = availableSources
+        self.selectedSource = selectedSource
         self.selectedImportTypes = selectedImportTypes
         self.selectableImportTypes = selectableImportTypes
         self.onExpandedStateChanged = onExpandedStateChanged
@@ -51,9 +56,10 @@ struct ImportSourcePickerView: View {
             selectedImportTypes: selectedImportTypes,
             selectableImportTypes: selectableImportTypes,
             shouldShowSyncButton: shouldShowSyncFeature,
+            isSourceFilterEnabled: isSourceFilterEnabled,
             initialPickerExpanded: isPickerExpanded,
             onSourceSelected: onSourceSelected,
-            onTypeSelected: onTypeSelected,
+            onTypesSelected: onTypesSelected,
             onSyncSelected: onSyncSelected
         ))
     }
@@ -67,7 +73,8 @@ struct ImportSourcePickerView: View {
                             items: $viewModel.importTypeItems,
                             doneAction: viewModel.typeSelectionDone,
                             cancelAction: viewModel.typeSelectionCancelled,
-                            isDoneDisabled: $viewModel.isDoneButtonDisabled
+                            isDoneDisabled: $viewModel.isDoneButtonDisabled,
+                            keepsOneTypeSelected: viewModel.isSourceFilterEnabled
                         )
                     }
                     .padding(.top, 20)
@@ -83,6 +90,12 @@ struct ImportSourcePickerView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+        .onChange(of: availableSources) { newValue in
+            viewModel.updateAvailableImportSources(newValue)
+        }
+        .onChange(of: selectedSource) { newValue in
+            viewModel.updateSelectedSource(newValue)
+        }
         .onChange(of: selectableImportTypes) { newValue in
             viewModel.updateSelectableImportTypes(newValue)
         }
@@ -100,12 +113,12 @@ struct ImportSourcePickerView: View {
             Text(UserText.importChooseSourceTitle)
                 .font(.title2.weight(.semibold))
                 .padding(.top, 20)
-            if viewModel.selectedSource.isSafari || viewModel.selectedSource.isBrowser == false {
+            if viewModel.shouldShowTypeSelector {
+                typeSelectionButton
+            } else {
                 Text(UserText.importDataImportTypeTitleSelected)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
-            } else {
-                typeSelectionButton
             }
         }
     }

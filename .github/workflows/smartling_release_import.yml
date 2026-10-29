@@ -30,7 +30,7 @@ on:
         type: boolean
         default: false
       simulate_wednesday:
-        description: "Open the Asana task as the Wednesday run does when the translations aren't ready"
+        description: "Report on the Translations subtask as the Wednesday run does when the translations aren't ready"
         type: boolean
         default: false
 
@@ -188,7 +188,7 @@ jobs:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           PLATFORM: ${{ matrix.platform }}
           RELEASE_BRANCH: ${{ steps.release.outputs.branch }}
-        run: python3 "$RUNNER_TEMP/release_translations_task.py" --platform "$PLATFORM" --release-branch "$RELEASE_BRANCH"
+        run: python3 "$RUNNER_TEMP/release_translations_task.py" find --platform "$PLATFORM" --release-branch "$RELEASE_BRANCH"
 
       - name: Import ${{ matrix.platform }} release translations
         id: import
@@ -216,32 +216,8 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           IS_WEDNESDAY: ${{ steps.release.outputs.is_wednesday }}
           IS_SCHEDULED: ${{ github.event_name == 'schedule' }}
-        run: |
-          if [[ "$OUTCOME" == not_ready || "$OUTCOME" == status_error ]]; then
-            [[ "$IS_WEDNESDAY" != true ]] || echo "kind=not_ready" >> "$GITHUB_OUTPUT"
-          elif [[ "$JOB_STATUS" == failure && "$IS_SCHEDULED" == true ]]; then
-            echo "kind=failure" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Resolve ${{ matrix.platform }} task assignee
-        id: task-assignee
-        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
-        continue-on-error: true
-        uses: duckduckgo/native-github-asana-sync@v2.5.1
-        with:
-          action: get-asana-user-id
-          github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
-          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
-
-      - name: Open ${{ matrix.platform }} release translations ${{ steps.task.outputs.kind }} task
-        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
-        env:
-          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          TASK_KIND: ${{ steps.task.outputs.kind }}
-          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
-          TASK_NAME: "${{ steps.task.outputs.kind == 'not_ready' && 'Release translations not ready' || 'Release translations import failed' }}: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
           TASK_NOTES: |
-            ${{ steps.task.outputs.kind == 'not_ready' && format('⏳ The {0} translations for {1} aren''t ready to import yet. Please follow up with the Smartling AoR DRI.', matrix.platform, steps.release.outputs.branch) || format('❌ The nightly {0} release translations import failed for {1}.', matrix.platform, steps.release.outputs.branch || 'the release branch') }}
+            ${{ (steps.import.outputs.outcome == 'not_ready' || steps.import.outputs.outcome == 'status_error') && format('⏳ The {0} translations for {1} aren''t ready to import yet. Please follow up with the Smartling AoR DRI.', matrix.platform, steps.release.outputs.branch) || format('❌ The nightly {0} release translations import failed for {1}.', matrix.platform, steps.release.outputs.branch || 'the release branch') }}
 
             🔗 Job: ${{ steps.import.outputs.job_url || 'no release job found' }} (${{ steps.import.outputs.job_status || 'unknown status' }})
             📝 String translations left: ${{ steps.import.outputs.strings_left && format('{0} of {1}', steps.import.outputs.strings_left, steps.import.outputs.total_strings) || 'unavailable' }}
@@ -252,6 +228,52 @@ jobs:
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             ⏸️ Jobs awaiting authorization, which keep their strings out of other jobs: ${{ steps.import.outputs.jobs_awaiting_authorization == '' && 'none' || '' }}
             ${{ steps.import.outputs.jobs_awaiting_authorization }}
+        run: |
+          if [[ "$OUTCOME" == not_ready || "$OUTCOME" == status_error ]]; then
+            [[ "$IS_WEDNESDAY" != true ]] || echo "kind=not_ready" >> "$GITHUB_OUTPUT"
+          elif [[ "$JOB_STATUS" == failure && "$IS_SCHEDULED" == true ]]; then
+            echo "kind=failure" >> "$GITHUB_OUTPUT"
+          fi
+          {
+            echo "notes<<TASK_NOTES_EOF"
+            echo "$TASK_NOTES"
+            echo "TASK_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Update the Translations subtask
+        id: translations-update
+        if: >-
+          ${{ !cancelled() && steps.translations-task.outputs.task_id != '' && (
+            contains(fromJSON('["pr_opened","pr_updated","no_changes","pr_closed"]'), steps.import.outputs.outcome) ||
+            steps.task.outputs.kind == 'not_ready'
+          ) }}
+        continue-on-error: true
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          TASK_ID: ${{ steps.translations-task.outputs.task_id }}
+          OUTCOME: ${{ steps.import.outputs.outcome }}
+          NOTES: ${{ steps.task.outputs.kind == 'not_ready' && steps.task.outputs.notes || '' }}
+          PR_URL: ${{ steps.import.outputs.pr_url }}
+        run: python3 "$RUNNER_TEMP/release_translations_task.py" update --task-id "$TASK_ID" --outcome "$OUTCOME" --notes "$NOTES" --pr-url "$PR_URL"
+
+      - name: Resolve ${{ matrix.platform }} task assignee
+        id: task-assignee
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' && steps.translations-update.outputs.commented != 'true' }}
+        continue-on-error: true
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: get-asana-user-id
+          github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+
+      - name: Open ${{ matrix.platform }} release translations ${{ steps.task.outputs.kind }} task
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' && steps.translations-update.outputs.commented != 'true' }}
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          TASK_KIND: ${{ steps.task.outputs.kind }}
+          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
+          TASK_NAME: "${{ steps.task.outputs.kind == 'not_ready' && 'Release translations not ready' || 'Release translations import failed' }}: ${{ matrix.platform }} ${{ steps.import.outputs.version || steps.release.outputs.branch }}"
+          TASK_NOTES: ${{ steps.task.outputs.notes }}
         run: |
           task_args=()
           [ "$TASK_KIND" != not_ready ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")

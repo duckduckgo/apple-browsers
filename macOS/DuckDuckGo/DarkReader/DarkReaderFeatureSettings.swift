@@ -92,7 +92,7 @@ final class AppDarkReaderFeatureSettings: DarkReaderFeatureSettings {
 
     var isFeatureEnabled: Bool {
         guard #available(macOS 15.4, *) else { return false }
-        guard featureFlagger.isFeatureOn(.webExtensions), currentThemeProvider?.isLightTheme != true else { return false }
+        guard currentThemeProvider?.isLightTheme != true else { return false }
 
         return featureFlagger.isFeatureOn(.forceDarkModeOnWebsites)
     }

@@ -142,13 +142,13 @@ enum AIChatPixel: PixelKit.Event {
     // MARK: - Summarization
 
     /// Event Trigger: User triggers summarize action (either via keyboard shortcut or a context menu action)
-    case aiChatSummarizeText(source: AIChatTextSummarizationRequest.Source)
+    case aiChatSummarizeText(source: AIChatSelectionActionSource)
 
     /// Event Trigger: User clicks the website link on a summarize prompt in Duck.ai tab or sidebar
     case aiChatSummarizeSourceLinkClicked
 
-    /// Event Trigger: User triggers translate action
-    case aiChatTranslateText
+    /// Event Trigger: User triggers translate action (either via keyboard shortcut or a context menu action)
+    case aiChatTranslateText(source: AIChatSelectionActionSource)
 
     /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
     case aiChatTranslationSourceLinkClicked
@@ -162,8 +162,8 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User removes page context from the prompt using a button in the input field
     case aiChatPageContextRemoved(automaticEnabled: Bool)
 
-    /// Event Trigger: User attaches selected text as page context via the "Attach to Duck.ai" context-menu action
-    case aiChatAttachSelection
+    /// Event Trigger: User attaches selected text as page context (either via keyboard shortcut or a context menu action)
+    case aiChatAttachSelection(source: AIChatSelectionActionSource)
 
     // MARK: - Page Context Extraction
 
@@ -1018,10 +1018,8 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatChatsTitleBarMenu,
                 .aiChatTitleBarMiddleClickNewChat,
                 .aiChatSummarizeSourceLinkClicked,
-                .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
-                .aiChatAttachSelection,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -1232,7 +1230,9 @@ enum AIChatPixel: PixelKit.Event {
             return ["sidebarEntry": sidebarEntry.rawValue]
         case .aiChatSidebarResized(let width):
             return ["width": String(width)]
-        case .aiChatSummarizeText(let source):
+        case .aiChatSummarizeText(let source),
+                .aiChatTranslateText(let source),
+                .aiChatAttachSelection(let source):
             return ["source": source.rawValue]
         case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
             return ["automaticEnabled": String(automaticEnabled)]
@@ -1501,6 +1501,12 @@ enum AIChatDirectNavigationVia: String, CaseIterable {
         case .newTabPage: .directNewTabPage
         }
     }
+}
+
+/// How the user triggered a Duck.ai action on selected text
+enum AIChatSelectionActionSource: String, CaseIterable {
+    case contextMenu = "context-menu"
+    case keyboardShortcut = "keyboard-shortcut"
 }
 
 /// Source of AI Chat sidebar open action

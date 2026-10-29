@@ -158,20 +158,20 @@ jobs:
         run: |
           # scheduled runs don't have inputs so let's default to true for all_os_versions
           all_os_versions="${{ inputs.all_os_versions }}"
-          # "runner" is always a list of labels, even when the list holds one label. The Bitrise
-          # legs need two labels to select their runner. macos_run_ui_test.yml receives the
+          # "runner" is always a list of labels, even when the list holds one label. The macOS 27
+          # leg needs two labels to select the Bitrise runner. macos_run_ui_test.yml receives the
           # list as a JSON string and expands it with fromJSON, because a workflow_call input
           # cannot be an array.
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
             all_os_versions='false'
             config=$(jq -c <<< '[
-              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "26", "xcode-version": "27.0"}
+              {"runner": ["image:osx-27-edge", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
               {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
-              {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "26", "xcode-version": "27.0"},
+              {"runner": ["macos-26-xlarge"], "os-version": "26", "xcode-version": "26.6"},
               {"runner": ["image:osx-27-edge", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')
           fi

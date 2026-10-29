@@ -98,7 +98,7 @@ final class NavigationBarBadgeAnimationViewTests: XCTestCase {
         sut.prepareAnimation(.trackersBlocked(count: 10))
 
         // Then
-        XCTAssertNotEqual(sut.animatedView, firstView, "Should replace with new animated view")
+        XCTAssertFalse(sut.animatedView === firstView, "Should replace with new animated view")
         XCTAssertNil(firstView?.superview, "First view should be removed from superview")
     }
 

@@ -512,6 +512,7 @@ extension MainViewController {
                                                             freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                             daxGreetingDebugging: daxGreetingService,
                                                             duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                                                            aiChatBonusMessageLog: userScriptsDependencies.aiChatBonusOffer.messageLog,
                                                             promoCoordinationDiagnosticsProvider: promoCoordinationService,
                                                             promoCoordinationCooldownResetter: promoCoordinationService)
 
@@ -645,6 +646,7 @@ extension MainViewController {
             remoteMessagingDebugHandler: self.remoteMessagingDebugHandler,
             webExtensionManager: self.webExtensionManager,
             duckAiNativeStorageHandler: self.duckAiNativeStorageHandler,
+            aiChatBonusMessageLog: self.userScriptsDependencies.aiChatBonusOffer.messageLog,
             promoCoordinationDiagnosticsProvider: self.promoCoordinationService,
             promoCoordinationCooldownResetter: self.promoCoordinationService,
             daxGreetingDebugging: self.daxGreetingService))

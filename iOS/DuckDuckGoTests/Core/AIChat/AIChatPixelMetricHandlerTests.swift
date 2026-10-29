@@ -402,6 +402,21 @@ final class AIChatPixelMetricHandlerTests: XCTestCase {
                        DuckAIPromptPixelContext(source: nil, surface: .duckAI))
     }
 
+    func testKeyboardMonitorWaitsForTheAppToBecomeActiveBeforeQueryingGameController() {
+        let notificationCenter = NotificationCenter()
+        var queryCount = 0
+        let monitor = HardwareKeyboardMonitor(notificationCenter: notificationCenter, isConnectedNow: {
+            queryCount += 1
+            return true
+        })
+        XCTAssertEqual(queryCount, 0)
+        XCTAssertFalse(monitor.isConnected)
+
+        notificationCenter.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        XCTAssertEqual(queryCount, 1)
+        XCTAssertTrue(monitor.isConnected)
+    }
+
     func testKeyboardMonitorFollowsConnectAndDisconnectNotifications() {
         let notificationCenter = NotificationCenter()
         var isConnectedNow = false

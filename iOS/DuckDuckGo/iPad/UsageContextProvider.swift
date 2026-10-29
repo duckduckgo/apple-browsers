@@ -54,7 +54,7 @@ struct UsageContextProvider: UsageContextProviding {
     private let windowAndScreenWidths: @MainActor () -> (window: CGFloat, screen: CGFloat)?
 
     init(isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad,
-         keyboardMonitor: HardwareKeyboardMonitor = HardwareKeyboardMonitor(),
+         keyboardMonitor: HardwareKeyboardMonitor = .shared,
          isLargeWidth: @escaping () -> Bool = { AppWidthObserver.shared.isLargeWidth },
          windowAndScreenWidths: @escaping @MainActor () -> (window: CGFloat, screen: CGFloat)? = Self.keyWindowWidths) {
         self.isPad = isPad
@@ -102,19 +102,25 @@ extension UsageContext {
 }
 
 /// GameController reports the hardware keyboard reliably only on the main thread, so pixels fired elsewhere
-/// read this copy, kept current by its connect and disconnect notifications. Create it on the main thread.
+/// read this copy, refreshed on each app activation and on keyboard connect and disconnect notifications.
+///
+/// The first read waits until the app becomes active: it starts GameController's device session, which can
+/// block a background launch past the launch watchdog. Until then the keyboard reports as disconnected, so
+/// touch `shared` before the app first becomes active (Launching does).
 final class HardwareKeyboardMonitor {
+
+    static let shared = HardwareKeyboardMonitor()
 
     private let lock = NSLock()
     private let isConnectedNow: () -> Bool
-    private var isKeyboardConnected: Bool
+    private var isKeyboardConnected = false
     private var observers: [NSObjectProtocol] = []
 
     init(notificationCenter: NotificationCenter = .default,
          isConnectedNow: @escaping () -> Bool = { GCKeyboard.coalesced != nil }) {
         self.isConnectedNow = isConnectedNow
-        isKeyboardConnected = isConnectedNow()
-        observers = [Notification.Name.GCKeyboardDidConnect, .GCKeyboardDidDisconnect].map { name in
+        let names: [Notification.Name] = [UIApplication.didBecomeActiveNotification, .GCKeyboardDidConnect, .GCKeyboardDidDisconnect]
+        observers = names.map { name in
             notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 self?.refresh()
             }

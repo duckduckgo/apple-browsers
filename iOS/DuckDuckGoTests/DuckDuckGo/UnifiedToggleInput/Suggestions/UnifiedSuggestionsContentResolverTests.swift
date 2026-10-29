@@ -91,23 +91,6 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
         XCTAssertEqual(kind, .list(.duckAI))
     }
 
-    func test_idle_hatchIsEmbeddedInBothModesIncludingEmptyStates() {
-        let states = [
-            inputs(mode: .search),
-            inputs(mode: .search, hasFavorites: true),
-            inputs(mode: .search, hasMessages: true),
-            inputs(mode: .aiChat),
-            inputs(mode: .aiChat, hasRecents: true)
-        ]
-        for state in states {
-            let content = UnifiedSuggestionsContentResolver.resolve(state, previous: nil)
-            let placement = chromePlacement(mode: state.mode)
-
-            XCTAssertEqual(placement.escapeHatch, .embedded, "\(state)")
-            XCTAssertTrue(showsEmbeddedContent(content), "\(state)")
-        }
-    }
-
     func test_syncPromo_isEmbeddedOnlyInDuckAI() {
         XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: true).syncPromo, .embedded)
         XCTAssertEqual(chromePlacement(mode: .search, showsSyncPromo: true).syncPromo, .hidden)

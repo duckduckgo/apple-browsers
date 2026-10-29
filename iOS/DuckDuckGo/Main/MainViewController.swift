@@ -369,7 +369,8 @@ class MainViewController: UIViewController {
     var duckAIMenuAnchor: UIView?
     /// iPad only: shows the contextual Duck.ai surface beside the page.
     lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
-    var isContextualSurfaceResizeCheckPending = false
+    /// Watches a live window resize for its end, when the contextual surface settles where it fits.
+    var contextualSurfaceResizeEndObservation: NSKeyValueObservation?
     private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?

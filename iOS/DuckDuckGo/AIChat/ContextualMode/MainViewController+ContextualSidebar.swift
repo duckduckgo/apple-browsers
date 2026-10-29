@@ -100,17 +100,17 @@ extension MainViewController: AIChatContextualSidebarHosting {
     /// A live resize reports every step of the drag, so the chat moves once, when the user lets go of the window,
     /// rather than flipping between a sheet and the sidebar on the way.
     private func adaptContextualSurfaceOnceResizeEnds() {
-        if #available(iOS 26, *), view.window?.windowScene?.effectiveGeometry.isInteractivelyResizing == true {
-            guard !isContextualSurfaceResizeCheckPending else { return }
-            isContextualSurfaceResizeCheckPending = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.resizeEndCheckInterval) { [weak self] in
-                self?.isContextualSurfaceResizeCheckPending = false
-                self?.adaptContextualSurfaceOnceResizeEnds()
+        if #available(iOS 26, *), let scene = view.window?.windowScene, scene.effectiveGeometry.isInteractivelyResizing {
+            guard contextualSurfaceResizeEndObservation == nil else { return }
+            contextualSurfaceResizeEndObservation = scene.observe(\.effectiveGeometry) { [weak self] scene, _ in
+                MainActor.assumeIsolated {
+                    guard let self, !scene.effectiveGeometry.isInteractivelyResizing else { return }
+                    self.contextualSurfaceResizeEndObservation = nil
+                    self.adaptContextualSurfaceOnceResizeEnds()
+                }
             }
             return
         }
         currentTab?.aiChatContextualSheetCoordinator.adaptSurface(toPresenter: self)
     }
-
-    private static let resizeEndCheckInterval: TimeInterval = 0.1
 }

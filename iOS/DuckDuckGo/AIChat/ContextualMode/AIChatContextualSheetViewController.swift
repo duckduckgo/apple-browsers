@@ -541,7 +541,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     }
 
     /// Set while a window resize moves the surface between the sheet and the sidebar. The chat carries on, so leaving
-    /// one presentation and arriving in the other neither closes nor opens it.
+    /// one presentation and arriving in the other neither closes nor opens it. Arriving clears it, in `viewDidAppear`.
     private(set) var isChangingSurface = false
 
     func beginSurfaceChange() {
@@ -597,24 +597,21 @@ final class AIChatContextualSheetViewController: UIViewController {
         if isClosing {
             prepareForDismissal()
         }
-        view.endEditing(true)
-        removeKeyboardObserver()
-        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
+        windDownOnLeaving()
     }
 
     /// Closes a surface that a resize took off screen and that was dismissed before it came back, as if it had left.
     func closeWhileOffScreen() {
         isChangingSurface = false
         prepareForDismissal()
-        removeKeyboardObserver()
-        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
+        windDownOnLeaving()
         areSuggestionsVisible = false
-        persistentUTIHost?.endEditMode()
-        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+        finishClosing()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        defer { isChangingSurface = false }
         guard isOpeningOrClosing else { return }
         fireSuggestionsViewedPixelIfNeeded(for: sessionState.viewState)
     }
@@ -624,11 +621,45 @@ final class AIChatContextualSheetViewController: UIViewController {
         guard isOpeningOrClosing else { return }
         areSuggestionsVisible = false
         if isClosing {
-            persistentUTIHost?.endEditMode()
-            prepareForDismissal()
-            delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+            finishClosing()
         }
     }
+
+    /// Runs whenever the surface leaves the screen, whether or not the chat closes with it.
+    private func windDownOnLeaving() {
+        view.endEditing(true)
+        removeKeyboardObserver()
+        pixelHandler.fireSheetDismissed(hadUnsubmittedSelections: sessionState.hasUnsubmittedSelections)
+    }
+
+    /// Runs once a closing surface is off screen, including a parked one that never came back.
+    private func finishClosing() {
+        persistentUTIHost?.endEditMode()
+        prepareForDismissal()
+        delegate?.aiChatContextualSheetViewControllerDidDismiss(self)
+    }
+
+    /// Puts an image of the presented sheet over the window and returns what slides it off the bottom, so the sheet
+    /// itself can leave at once.
+    func makeSinkingSnapshot() -> (() -> Void)? {
+        guard let containerView = presentationController?.containerView,
+              let window = containerView.window,
+              let image = containerView.snapshotView(afterScreenUpdates: false) else { return nil }
+        image.frame = containerView.convert(containerView.bounds, to: window)
+        image.isUserInteractionEnabled = false
+        window.addSubview(image)
+        let sheetTop = presentationController?.presentedView?.frame.minY ?? 0
+        let travel = containerView.bounds.height - sheetTop
+        return {
+            UIView.animate(withDuration: Self.sinkDuration, delay: 0, options: [.curveEaseIn]) {
+                image.transform = CGAffineTransform(translationX: 0, y: travel)
+            } completion: { _ in
+                image.removeFromSuperview()
+            }
+        }
+    }
+
+    private static let sinkDuration: TimeInterval = 0.3
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()

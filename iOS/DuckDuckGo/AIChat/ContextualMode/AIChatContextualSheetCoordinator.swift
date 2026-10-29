@@ -762,7 +762,7 @@ final class AIChatContextualSheetCoordinator {
                 sidebarHost = nil
                 // A conversation keeps the full height it had in the sidebar; a chat yet to start opens like a new one.
                 sheetVC.prepareForPresentation(expanded: sessionState.hasActiveChat)
-                presentingVC.present(sheetVC, animated: true) { sheetVC.endSurfaceChange() }
+                presentingVC.present(sheetVC, animated: true)
             } else {
                 // Something else holds the screen; the chat waits behind the Duck.ai button instead.
                 sheetVC.closeWhileOffScreen()
@@ -779,7 +779,7 @@ final class AIChatContextualSheetCoordinator {
     /// instead of the sidebar waiting out the sheet's dismissal.
     private func moveSheetIntoSidebar(_ sheetVC: AIChatContextualSheetViewController, host: AIChatContextualSidebarHosting) {
         sheetVC.beginSurfaceChange()
-        let sinkingSheet = makeSinkingImage(of: sheetVC)
+        let sinkingSheet = sheetVC.makeSinkingSnapshot()
         sheetVC.dismiss(animated: false) { [weak self] in
             guard let self, self.sheetViewController === sheetVC, self.isSheetPresented else {
                 sheetVC.endSurfaceChange()
@@ -790,35 +790,10 @@ final class AIChatContextualSheetCoordinator {
         sinkingSheet?()
     }
 
-    /// Puts an image of the presented sheet over the window and returns what slides it off the bottom.
-    private func makeSinkingImage(of sheetVC: AIChatContextualSheetViewController) -> (() -> Void)? {
-        guard let containerView = sheetVC.presentationController?.containerView,
-              let window = containerView.window,
-              let image = containerView.snapshotView(afterScreenUpdates: false) else { return nil }
-        image.frame = containerView.convert(containerView.bounds, to: window)
-        image.isUserInteractionEnabled = false
-        window.addSubview(image)
-        let sheetTop = sheetVC.presentationController?.presentedView?.frame.minY ?? 0
-        let travel = containerView.bounds.height - sheetTop
-        return {
-            UIView.animate(withDuration: Self.sheetSinkDuration, delay: 0, options: [.curveEaseIn]) {
-                image.transform = CGAffineTransform(translationX: 0, y: travel)
-            } completion: { _ in
-                image.removeFromSuperview()
-            }
-        }
-    }
-
-    private static let sheetSinkDuration: TimeInterval = 0.3
-
     private func moveIntoSidebar(_ sheetVC: AIChatContextualSheetViewController, host: AIChatContextualSidebarHosting) {
         sheetVC.prepareForSidebar()
         sidebarHost = host
         host.presentContextualSidebar(sheetVC)
-        // Its appearance in the sidebar finishes on the way out of this turn, still as part of the move.
-        DispatchQueue.main.async {
-            sheetVC.endSurfaceChange()
-        }
     }
 
     /// Every route off screen funnels through here, because a sheet in the sidebar is not presented and

@@ -272,7 +272,8 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                        sortPredicate: jobDependencies.jobSortPredicate)
             .filter { jobData in
                 #if os(macOS) && DEBUG
-                let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker
+                // Only subscribers see Needs you, so holding a free user's job would leave it waiting forever.
+                let broker = isFreeScan ? nil : brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker
                 let config = jobDependencies.executionConfig
                 if let optOutJobData = jobData as? OptOutJobData, let broker, config.needsUser(forBrokerAt: broker.url) {
                     guard let extractedProfileId = optOutJobData.extractedProfile.id else { return false }

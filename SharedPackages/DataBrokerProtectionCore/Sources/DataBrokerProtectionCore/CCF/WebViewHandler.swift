@@ -68,6 +68,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var embeddedChallengeTask: Task<Void, Never>?
     private var userNavigatedDuringTurn = false
     private var turnEndedByUserNavigation = false
+    private var lastUserTurnKind: PIRAssistUserTurnKind?
     private var userTurnEndedSinceLastClickOrFill = false
 #endif
     private var urlObservation: NSKeyValueObservation?
@@ -311,6 +312,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         guard let webView, !manualControl.isPaused else { return }
         userNavigatedDuringTurn = false
         turnEndedByUserNavigation = false
+        lastUserTurnKind = kind
         let preservingAutomation = kind != .managedChallenge
         manualControl.isEmbeddedChallenge = preservingAutomation
         manualControl.pause(preservingAutomation: preservingAutomation)
@@ -452,6 +454,15 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return false }
         }
         return !Task.isCancelled && webView != nil && !turnEndedByUserNavigation
+    }
+
+    /// Whether the page the user moved to still has the challenge from their last turn, for example after a
+    /// broker rejected an unsolved form and reloaded it with a fresh widget.
+    func hasChallengeFromLastUserTurn() async -> Bool {
+        guard let selector = lastUserTurnKind?.tokenSelector else { return false }
+        let script = "return document.querySelector(selector) !== null"
+        let found = try? await webView?.callAsyncJavaScript(script, arguments: ["selector": selector], contentWorld: .defaultClient) as? Bool
+        return found == true
     }
 
     private func hasToken(for kind: PIRAssistUserTurnKind) async -> Bool {

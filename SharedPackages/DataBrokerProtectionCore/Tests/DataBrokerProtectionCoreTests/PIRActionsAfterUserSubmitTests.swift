@@ -40,6 +40,20 @@ final class PIRActionsAfterUserSubmitTests: XCTestCase {
         XCTAssertNil(sut.nextAction())
     }
 
+    func testAfterTheUsersTurn_thenTheRemainingChecksLookAtThePageOnce() throws {
+        let success = ExpectationAction(id: "success", actionType: .expectation,
+                                        json: Data(#"{"id":"success","actionType":"expectation","expectations":[]}"#.utf8))
+        let sut = optOut([GetCaptchaInfoAction(id: "captcha", actionType: .getCaptchaInfo), success])
+        _ = sut.nextAction()
+
+        XCTAssertTrue(sut.keepOnlyRemainingExpectations())
+
+        let check = try XCTUnwrap(sut.nextAction()?.json)
+        let retry = try XCTUnwrap((JSONSerialization.jsonObject(with: check) as? [String: Any])?["retry"] as? [String: Any])
+        XCTAssertEqual(retry["maxAttempts"] as? Int, 1)
+        XCTAssertTrue(sut.checksOnlyOnce)
+    }
+
     func testWhenNoChecksRemain_thenThereIsNothingToConfirmTheSubmission() {
         let sut = optOut([GetCaptchaInfoAction(id: "captcha", actionType: .getCaptchaInfo),
                           ClickAction(id: "submit", actionType: .click)])

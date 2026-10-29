@@ -44,18 +44,27 @@ public class ActionsHandler {
     /// Returns false when there's nothing left to check.
     func keepOnlyRemainingExpectations() -> Bool {
         let next = min((lastExecutedActionIndex ?? -1) + 1, actions.count)
-        let expectations = actions[next...].filter { $0 is ExpectationAction }
+        let expectations = actions[next...].compactMap { ($0 as? ExpectationAction)?.checkingOnce() }
         actions = Array(actions[..<next]) + expectations
+        checksOnlyOnce = true
         return !expectations.isEmpty
     }
 
+    /// The page has already loaded after the user's turn, so waiting or retrying would only delay a failure.
+    private(set) var checksOnlyOnce = false
+
     /// Set while the opt-out's final check runs ahead of `deferred`, to see whether the user already submitted the form.
-    var pendingSubmissionCheck: (check: Action, deferred: Action)?
+    var pendingSubmissionCheck: (check: Action, deferred: Action, afterUserNavigation: Bool)?
 
     /// The final check to run before `action`, if it would click or fill on the opt-out page.
     func submissionCheck(before action: Action) -> Action? {
-        guard stepType == .optOut, action is ClickAction || action is FillFormAction,
-              let index = lastExecutedActionIndex, index < actions.count,
+        guard action is ClickAction || action is FillFormAction else { return nil }
+        return finalCheck()
+    }
+
+    /// The opt-out's last remaining check, looking at the page once.
+    func finalCheck() -> Action? {
+        guard stepType == .optOut, let index = lastExecutedActionIndex, index < actions.count,
               let check = actions[(index + 1)...].last(where: { $0 is ExpectationAction }) as? ExpectationAction else { return nil }
         return check.checkingOnce()
     }

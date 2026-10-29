@@ -144,14 +144,12 @@ public extension SubJobWebRunning {
         handler.manualControl.resumeAfterUserNavigation = { [weak self] in
             guard let self else { return }
             // Checking the page is the only way to tell whether the user's own submission went through.
-            guard self.actionsHandler?.isForOptOut == true, self.actionsHandler?.keepOnlyRemainingExpectations() == true else {
-                self.failed(with: DataBrokerProtectionError.actionFailed(actionID: action.id,
-                                                                         message: "The page moved on during the user's turn"))
-                _ = self.runnerCancellation.markCancelled()
-                await self.webViewHandler?.finish()
+            guard let check = self.actionsHandler?.finalCheck() else {
+                await self.failAfterUserNavigation(during: action)
                 return
             }
-            await self.executeNextStep()
+            self.actionsHandler?.pendingSubmissionCheck = (check, action, true)
+            await self.executeSubmissionCheck(check)
         }
         handler.manualControl.cancel = { [weak self] in
             guard let self else { return }
@@ -159,6 +157,18 @@ public extension SubJobWebRunning {
             _ = self.runnerCancellation.markCancelled()
             await self.webViewHandler?.finish()
         }
+    }
+
+    func executeSubmissionCheck(_ check: Action) async {
+        await webViewHandler?.execute(action: check, ofType: actionsHandler?.stepType,
+                                      data: .userData(context.profileQuery, extractedProfile,
+                                                      fetchedEmail.map { FetchedEmail(email: $0) }, emailData))
+    }
+
+    func failAfterUserNavigation(during action: Action) async {
+        failed(with: DataBrokerProtectionError.actionFailed(actionID: action.id, message: "The page moved on during the user's turn"))
+        _ = runnerCancellation.markCancelled()
+        await webViewHandler?.finish()
     }
     #endif
 
@@ -168,6 +178,11 @@ public extension SubJobWebRunning {
         if !stageCalculator.isRetrying {
             // Scripts are not idempotent, so a failed one is never re-run. Authors handle their own retries.
             retriesCountOnError = action is ExecuteScriptAction ? 0 : 1
+            #if os(macOS) && DEBUG
+            if actionsHandler?.checksOnlyOnce == true {
+                retriesCountOnError = 0
+            }
+            #endif
         }
 
         return false
@@ -193,11 +208,9 @@ public extension SubJobWebRunning {
             }
             if let check = actionsHandler?.submissionCheck(before: action), await handler.consumeUserTurnEnded() {
                 // The user may have pressed the page's own submit during their turn; clicking again could send a duplicate.
-                actionsHandler?.pendingSubmissionCheck = (check, action)
+                actionsHandler?.pendingSubmissionCheck = (check, action, false)
                 Logger.action.log("Checking whether the user already submitted before running \(action.actionType.rawValue, privacy: .public)")
-                await webViewHandler?.execute(action: check, ofType: stepType,
-                                              data: .userData(context.profileQuery, extractedProfile,
-                                                              fetchedEmail.map { FetchedEmail(email: $0) }, emailData))
+                await executeSubmissionCheck(check)
                 return
             }
         }
@@ -761,6 +774,11 @@ public extension SubJobWebRunning {
         #if os(macOS) && DEBUG
         if let pending = actionsHandler?.pendingSubmissionCheck {
             actionsHandler?.pendingSubmissionCheck = nil
+            if pending.afterUserNavigation, let handler = webViewHandler as? DataBrokerProtectionWebViewHandler,
+               await !handler.hasChallengeFromLastUserTurn() {
+                await failAfterUserNavigation(during: pending.deferred)
+                return
+            }
             await runNextAction(pending.deferred)
             return
         }

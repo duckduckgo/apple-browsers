@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import os.log
 
 /// Bundles the "Return to tab" card and the tab switcher pill so callers render them as a single unit.
 struct EscapeHatchView: View {
@@ -50,11 +51,23 @@ struct EscapeHatchView: View {
             }
         }
         .id(model.targetTab.uid)
+        .onFrameUpdate(in: .global, using: EscapeHatchDiagnosticFrameKey.self) { frame in
+            let identity = String(describing: ObjectIdentifier(model))
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=hatch.frame renderer=compact model=\(identity, privacy: .public) frame=\(String(describing: frame), privacy: .public) returnCard=\(model.isReturnToTabCardVisible, privacy: .public) material=\(usesMaterialBackground, privacy: .public)")
+        }
     }
 
     private enum Metrics {
         static let spacing: CGFloat = 8
         static let collapseDuration: Double = 0.25
+    }
+}
+
+private struct EscapeHatchDiagnosticFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 

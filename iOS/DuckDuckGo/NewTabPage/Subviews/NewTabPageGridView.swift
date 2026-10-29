@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import os.log
 
 private struct GridWidthPreferenceKey: PreferenceKey {
     static var defaultValue: CGRect = .zero
@@ -63,6 +64,7 @@ struct NewTabPageGridView<Content: View>: View {
             }
         )
         .onPreferenceChange(GridWidthPreferenceKey.self) { newFrame in
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=favorites.grid columns=\(self.columnsCount, privacy: .public) frame=\(String(describing: newFrame), privacy: .public)")
             updateColumnsCountForWidth(newFrame.width)
         }
         .frame(maxWidth: .infinity)

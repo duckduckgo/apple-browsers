@@ -20,6 +20,7 @@
 import Combine
 import SwiftUI
 import UIKit
+import os.log
 
 /// Hosts the SwiftUI `UnifiedSuggestionsView` for any UTI surface (Duck.ai, Search). Parameterized
 /// by `UnifiedSuggestionsHostConfig` so the host is surface-agnostic. The empty-state logo and fire
@@ -30,6 +31,7 @@ final class UnifiedSuggestionsHost {
     var onContentChanged: (() -> Void)?
 
     private let config: UnifiedSuggestionsHostConfig
+    private let usesScrollableEscapeHatch: Bool
     private let listViewModel: SuggestionsListViewModel
     private let viewModel: UnifiedSuggestionsViewModel
     /// Tap-ahead arrow direction follows the UTI's live position, so it's mutable (not just the
@@ -38,19 +40,21 @@ final class UnifiedSuggestionsHost {
     private var hostingController: UIHostingController<UnifiedSuggestionsView>?
     private var escapeHatchTopInset: CGFloat = 0
     private var escapeHatch: EscapeHatchModel?
+    private var focusedMode: TextEntryMode = .search
+    private var syncPromo: AnyView?
     private var contentInsets: UIEdgeInsets = .zero
+    private var embeddedHatchInset: CGFloat = 0
     private var cancellables = Set<AnyCancellable>()
     let favoritesPresentation: FocusedFavoritesPresentation
     private var redesignedSearchPresentation: RedesignedFocusedSearchPresentation?
     private var redesignedPresentationCancellable: AnyCancellable?
+    private var showsRedesignedSearchModules = false
 
     /// Single-host path only: the duck.ai surface's source/VM, attached lazily and detached on
     /// disappear (mirrors the legacy per-host lifecycle). Nil on the old single-surface path.
     private var duckAISurface: UnifiedSuggestionsDuckAISurface?
 
-    var isShowingRedesignedSearchModules: Bool {
-        hostingController?.rootView.showsRedesignedSearchModules ?? false
-    }
+    var isShowingRedesignedSearchModules: Bool { showsRedesignedSearchModules }
 
     func setEscapeHatch(_ model: EscapeHatchModel?) {
         guard escapeHatch !== model else { return }
@@ -62,8 +66,39 @@ final class UnifiedSuggestionsHost {
         favoritesPresentation.updateOpenedAfterIdle(openedAfterIdle)
     }
 
-    init(config: UnifiedSuggestionsHostConfig) {
+    func setFocusedContent(mode: TextEntryMode, escapeHatch: EscapeHatchModel?, syncPromo: AnyView?) {
+        if focusedMode != mode || (self.syncPromo == nil) != (syncPromo == nil) {
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=content.selection mode=\(String(describing: mode), privacy: .public) promo=\(syncPromo != nil, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
+        }
+        focusedMode = mode
+        if usesScrollableEscapeHatch {
+            self.escapeHatch = escapeHatch
+        }
+        self.syncPromo = syncPromo
+        if redesignedSearchPresentation == nil, usesScrollableEscapeHatch {
+            favoritesPresentation.viewController?.setFocusedContent(LegacyFocusedNewTabPageContent(
+                recentChats: mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                syncPromo: syncPromo,
+                isAddressBarAtBottom: isAddressBarAtBottom), escapeHatch: escapeHatch)
+        } else {
+            if redesignedSearchPresentation == nil {
+                favoritesPresentation.viewController?.setFocusedContent(nil)
+            }
+            rebuildRootView()
+        }
+        let hatchPadding = redesignedSearchPresentation == nil ? 0 : EscapeHatchView.materialPadding * 2
+        embeddedHatchInset = !usesScrollableEscapeHatch || escapeHatch == nil ? 0 : 10 + TabSwitcherPill.compactSize + hatchPadding
+        applyCombinedInsets()
+    }
+
+    func scrollLegacyContentToTop(duration: TimeInterval) {
+        guard usesScrollableEscapeHatch, redesignedSearchPresentation == nil else { return }
+        favoritesPresentation.viewController?.scrollToTop(duration: duration)
+    }
+
+    init(config: UnifiedSuggestionsHostConfig, usesScrollableEscapeHatch: Bool = true) {
         self.config = config
+        self.usesScrollableEscapeHatch = usesScrollableEscapeHatch
         self.favoritesPresentation = FocusedFavoritesPresentation(makeViewController: config.favoritesProvider)
         self.isAddressBarAtBottom = config.isAddressBarAtBottom
         self.listViewModel = SuggestionsListViewModel(source: config.source)
@@ -94,13 +129,24 @@ final class UnifiedSuggestionsHost {
             .sink { [weak self] _ in self?.onContentChanged?() }
             .store(in: &cancellables)
 
+        NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
+            .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification))
+            .sink { [weak self] notification in
+                let event = notification.name == UIResponder.keyboardWillHideNotification ? "keyboard.will-hide" : "keyboard.did-hide"
+                self?.logScrollDiagnostics(event)
+            }
+            .store(in: &cancellables)
+
         let view = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
+            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
-            showsRedesignedSearchModules: redesignedSearchPresentation?.showsSearchModules ?? false,
-            escapeHatch: escapeHatch)
+            showsRedesignedSearchModules: showsRedesignedSearchModules,
+            mode: focusedMode,
+            escapeHatch: escapeHatch,
+            syncPromo: syncPromo)
         let hosting = UnifiedSuggestionsHostingController(rootView: view)
         hosting.isFloatingUIEnabled = isFloatingUIEnabled
         if #available(iOS 16.4, *) {
@@ -128,6 +174,8 @@ final class UnifiedSuggestionsHost {
         guard enabled != (redesignedSearchPresentation != nil) else { return }
         redesignedPresentationCancellable = nil
         if enabled {
+            favoritesPresentation.viewController?.setFocusedContent(nil)
+            embeddedHatchInset = 0
             let presentation = RedesignedFocusedSearchPresentation(
                 inputsPublisher: config.inputsPublisher,
                 dismissPublisher: viewModel.$dismissBehavior.eraseToAnyPublisher(),
@@ -136,11 +184,14 @@ final class UnifiedSuggestionsHost {
             redesignedPresentationCancellable = presentation.$showsSearchModules
                 .sink { [weak self] showsSearchModules in
                     // Use the emitted value: @Published sends before the stored value changes.
-                    self?.rebuildRootView(showsRedesignedSearchModules: showsSearchModules)
-                    self?.onContentChanged?()
+                    guard let self else { return }
+                    self.showsRedesignedSearchModules = showsSearchModules
+                    self.rebuildRootView()
+                    self.onContentChanged?()
                 }
         } else {
             redesignedSearchPresentation = nil
+            showsRedesignedSearchModules = false
             rebuildRootView()
         }
     }
@@ -171,6 +222,7 @@ final class UnifiedSuggestionsHost {
 
     /// Resets the dismiss/morph state on each focus.
     func prepareForActivation(favoritesExpansionState: FavoritesExpansionState? = nil) {
+        scrollLegacyContentToTop(duration: 0)
         if let favoritesExpansionState,
            let model = favoritesPresentation.viewController?.favoritesModel,
            model.expansionState !== favoritesExpansionState {
@@ -206,16 +258,44 @@ final class UnifiedSuggestionsHost {
 
     private func applyCombinedInsets() {
         let top = escapeHatchTopInset + contentInsets.top
-        viewModel.chromeInsetTop = top
+        viewModel.chromeInsetTop = top + embeddedHatchInset
+        logScrollDiagnostics("insets.before")
+        let contentTopInset = usesScrollableEscapeHatch ? top : 0
+        let duration = UIView.inheritedAnimationDuration
+        let animation: Animation? = duration > 0 && !UIAccessibility.isReduceMotionEnabled ? .easeInOut(duration: duration) : nil
+        withAnimation(animation) {
+            if viewModel.contentTopInset != contentTopInset {
+                viewModel.contentTopInset = contentTopInset
+            }
+            if redesignedSearchPresentation == nil {
+                favoritesPresentation.viewController?.setFocusedContentTopInset(contentTopInset)
+            }
+        }
+        // Nested SwiftUI hosts can apply a changing UIKit top inset twice. Keep the input clearance in their content.
         hostingController?.additionalSafeAreaInsets = UIEdgeInsets(
-            top: top,
+            top: usesScrollableEscapeHatch ? 0 : top,
             left: contentInsets.left,
             bottom: contentInsets.bottom,
             right: contentInsets.right
         )
-        // Flush the safe-area change on the controller whose insets changed (mirrors the legacy
-        // container's layoutIfNeeded) so the content glides inside the UTI's height animation.
         hostingController?.view.layoutIfNeeded()
+        logScrollDiagnostics("insets.after")
+        DispatchQueue.main.async { [weak self] in
+            self?.logScrollDiagnostics("insets.nextRunLoop")
+        }
+    }
+
+    func logScrollDiagnostics(_ event: String) {
+        let hostIdentity = String(describing: ObjectIdentifier(self))
+        let modelIdentity = escapeHatch.map { String(describing: ObjectIdentifier($0)) } ?? "nil"
+        let content = String(describing: viewModel.content)
+        let requested = String(describing: contentInsets)
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) mode=\(String(describing: self.focusedMode), privacy: .public) scrolling=\(self.usesScrollableEscapeHatch, privacy: .public) redesign=\(self.redesignedSearchPresentation != nil, privacy: .public) modules=\(self.showsRedesignedSearchModules, privacy: .public) content=\(content, privacy: .public) hatch=\(modelIdentity, privacy: .public) returnCard=\(self.escapeHatch?.isReturnToTabCardVisible ?? false, privacy: .public) requested=\(requested, privacy: .public) extraTop=\(self.escapeHatchTopInset, privacy: .public) embeddedHatch=\(self.embeddedHatchInset, privacy: .public) contentPaddingTop=\(self.viewModel.contentTopInset, privacy: .public) promo=\(self.syncPromo != nil, privacy: .public) inheritedDuration=\(UIView.inheritedAnimationDuration, privacy: .public)")
+        guard let view = hostingController?.viewIfLoaded else { return }
+        let frame = String(describing: view.convert(view.bounds, to: nil))
+        let safeArea = String(describing: view.safeAreaInsets)
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=\(event, privacy: .public) host=\(hostIdentity, privacy: .public) frame=\(frame, privacy: .public) safeArea=\(safeArea, privacy: .public) alpha=\(view.alpha, privacy: .public) hidden=\(view.isHidden, privacy: .public) window=\(view.window != nil, privacy: .public) bounds=\(String(describing: view.bounds), privacy: .public) presentation=\(String(describing: view.layer.presentation()?.frame), privacy: .public) parentBounds=\(String(describing: view.superview?.bounds), privacy: .public) keyboardGuide=\(String(describing: view.superview?.keyboardLayoutGuide.layoutFrame), privacy: .public)")
+        Logger.logEscapeHatchScrollViews(in: view, event: event)
     }
 
     // MARK: - Duck.ai surface (single-host path)
@@ -236,6 +316,9 @@ final class UnifiedSuggestionsHost {
 
         surface.source.start(textPublisher: textPublisher)
         rebuildRootView()
+        if usesScrollableEscapeHatch {
+            onContentChanged?()
+        }
     }
 
     /// Releases the duck.ai source/VM only (search persists), mirroring today's lazy lifecycle.
@@ -263,15 +346,18 @@ final class UnifiedSuggestionsHost {
 
     // MARK: - Private
 
-    private func rebuildRootView(showsRedesignedSearchModules: Bool? = nil) {
+    private func rebuildRootView() {
         guard let hosting = hostingController else { return }
         hosting.rootView = UnifiedSuggestionsView(
             viewModel: viewModel,
             isAddressBarAtBottom: isAddressBarAtBottom,
             favoritesPresentation: favoritesPresentation,
+            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
             usesRedesignedNewTabPageLayout: redesignedSearchPresentation != nil,
-            showsRedesignedSearchModules: showsRedesignedSearchModules ?? redesignedSearchPresentation?.showsSearchModules ?? false,
-            escapeHatch: escapeHatch)
+            showsRedesignedSearchModules: showsRedesignedSearchModules,
+            mode: focusedMode,
+            escapeHatch: escapeHatch,
+            syncPromo: syncPromo)
         NotificationCenter.default.post(name: RemoteMessageImpressionReporter.remoteMessageSurfaceDidChange, object: hosting)
     }
 }
@@ -284,6 +370,9 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
+        if rootView.usesScrollableEscapeHatch, rootView.usesRedesignedNewTabPageLayout {
+            enableVerticalBounce(in: view)
+        }
         guard isFloatingUIEnabled, view.window != nil, let containerView = view.superview else { return }
         // These are the native anchors used to constrain the host. The logo ignores the top
         // container safe area, but still reserves the bottom input-bar inset.
@@ -292,6 +381,14 @@ private final class UnifiedSuggestionsHostingController: UIHostingController<Uni
         viewport.size.height = max(0, keyboardTop - viewport.minY - view.safeAreaInsets.bottom)
         guard rootView.viewModel.logoViewportFrame != viewport else { return }
         rootView.viewModel.logoViewportFrame = viewport
+    }
+
+    private func enableVerticalBounce(in view: UIView) {
+        if let scrollView = view as? UIScrollView {
+            scrollView.alwaysBounceVertical = true
+            return
+        }
+        view.subviews.forEach { enableVerticalBounce(in: $0) }
     }
 
     func hasVisibleRemoteMessage(withID messageID: String) -> Bool {

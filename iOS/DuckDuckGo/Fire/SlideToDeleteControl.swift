@@ -130,7 +130,6 @@ struct SlideToDeleteControl: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.layoutDirection) private var layoutDirection
     @GestureState private var gestureIsActive = false
     @State private var translation: CGFloat = 0
@@ -155,17 +154,9 @@ struct SlideToDeleteControl: View {
             .font(.body.weight(.medium))
             .padding(.vertical)
             .frame(maxWidth: .infinity, minHeight: minimumHeight)
-            .background(Color(designSystemColor: .controlsFillPrimary), in: Capsule())
-            .overlay {
+            .background {
                 GeometryReader { geometry in
-                    Text(title)
-                        .font(.body.weight(.medium))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.4)
-                        .allowsTightening(true)
-                        .foregroundColor(Color(designSystemColor: .destructivePrimary))
-                        .padding(.horizontal, max(minimumHeight + 8, geometry.size.height))
-                        .frame(width: geometry.size.width, height: geometry.size.height)
+                    track(size: geometry.size)
                 }
             }
             .overlay {
@@ -233,69 +224,63 @@ struct SlideToDeleteControl: View {
             .onDisappear { cancelDrag() }
     }
 
+    private func track(size: CGSize) -> some View {
+        let travel = max(size.width - size.height, 0)
+        let progress = state.isComplete ? 1 : state.progress(translation: translation, travel: travel)
+        let showsCompletion = progress >= SlideToDeleteState.completionThreshold
+        return ZStack {
+            Capsule()
+                .fill(Color(designSystemColor: .controlsFillPrimary))
+            Capsule()
+                .fill(Color(designSystemColor: .destructivePrimary))
+                .opacity(progress)
+            if variant == .shimmer {
+                LinearGradient(colors: [Color(designSystemColor: .destructivePrimary), Color(singleUseColor: .fireModeAccent)],
+                               startPoint: .leading, endPoint: .trailing)
+                    .opacity(showsCompletion ? 1 : 0)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: showsCompletion)
+            }
+            Text(title)
+                .font(.body.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.4)
+                .allowsTightening(true)
+                .foregroundColor(Color(designSystemColor: hasSlid ? .textPrimary : .destructivePrimary))
+                .padding(.horizontal, max(minimumHeight + 8, size.height))
+                .frame(width: size.width, height: size.height)
+                .opacity(showsCompletion ? 0 : 1)
+            SlideToDeleteCompletionEffect(variant: variant,
+                                          isActive: showsCompletion,
+                                          showCompletionLabel: isDragging && state.shouldShowCompletionLabel)
+        }
+        .clipShape(Capsule())
+        .allowsHitTesting(false)
+        .animation(reduceMotion || isDragging ? nil : .easeOut(duration: 0.16), value: translation)
+    }
+
     private func slider(size: CGSize) -> some View {
         let inset = isThumbExpanded || state.isComplete ? 0 : handleInset
         let diameter = max(size.height - inset * 2, 0)
         let travel = max(size.width - size.height, 0)
         let progress = state.isComplete ? 1 : state.progress(translation: translation, travel: travel)
-        let offset = progress * travel
-        let isOriginal = effectiveStyle == .original
         let showsCompletion = progress >= SlideToDeleteState.completionThreshold
-        return ZStack(alignment: .leading) {
-            Capsule()
-                .fill(Color(designSystemColor: isOriginal && colorScheme != .dark && !hasSlid && !state.isComplete
-                            ? .controlsRaisedFillPrimary : .destructivePrimary))
-                .frame(width: isOriginal ? diameter + offset : size.width - inset * 2, height: diameter)
-                .overlay {
-                    if variant == .shimmer {
-                        LinearGradient(colors: [Color(designSystemColor: .destructivePrimary), Color(singleUseColor: .fireModeAccent)],
-                                       startPoint: .leading, endPoint: .trailing)
-                            .opacity(isOriginal ? min(max((progress - 0.35) / 0.45, 0), 1) : 1)
-                    }
-                }
-                .overlay {
-                    SlideToDeleteCompletionEffect(variant: variant,
-                                                  isActive: showsCompletion,
-                                                  showCompletionLabel: isDragging && state.shouldShowCompletionLabel)
-                }
-                .overlay {
-                    if isOriginal {
-                        Capsule().strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5)
-                    }
-                }
-                .overlay {
-                    if isOriginal {
-                        Capsule().inset(by: 0.5)
-                            .stroke(Color(designSystemColor: .highlightDecoration), lineWidth: 1)
-                            .mask(LinearGradient(colors: [.white, .clear], startPoint: .top, endPoint: .center))
-                    }
-                }
-                .clipShape(Capsule())
-                .shadow(color: Color(designSystemColor: .shadowSecondary).opacity(isOriginal ? 1 : 0), radius: 3, y: 2)
-                .shadow(color: Color(designSystemColor: .shadowPrimary).opacity(isOriginal ? 1 : 0), radius: 1, y: 1)
-                .opacity(isOriginal || (showsCompletion && variant != .basic) ? 1 : 0)
-                .allowsHitTesting(false)
-            thumb(diameter: diameter)
-                .contentShape(Circle().inset(by: -diameter * 0.05))
-                .opacity(state.isComplete || (isOriginal && showsCompletion) ? 0 : 1)
-                .offset(x: direction * offset)
-                .gesture(dragGesture(travel: travel))
-        }
-        .frame(width: size.width - inset * 2, height: diameter, alignment: .leading)
-        .padding(inset)
-        .animation(reduceMotion || isDragging ? nil : .easeOut(duration: 0.16), value: translation)
+        return thumb(diameter: diameter)
+            .contentShape(Circle().inset(by: -diameter * 0.05))
+            .opacity(state.isComplete || (effectiveStyle == .original && showsCompletion) ? 0 : 1)
+            .offset(x: direction * progress * travel)
+            .gesture(dragGesture(travel: travel))
+            .frame(width: size.width - inset * 2, height: diameter, alignment: .leading)
+            .padding(inset)
+            .animation(reduceMotion || isDragging ? nil : .easeOut(duration: 0.16), value: translation)
     }
 
     @ViewBuilder private func thumb(diameter: CGFloat) -> some View {
         let label = Image(uiImage: layoutDirection == .rightToLeft
                           ? DesignSystemImages.Glyphs.Size24.chevronLeftSmall
                           : DesignSystemImages.Glyphs.Size24.chevronRightSmall)
-            .foregroundColor(Color(designSystemColor: effectiveStyle == .glass ? .textPrimary
-                                   : colorScheme == .dark || hasSlid ? .destructiveContentPrimary : .destructivePrimary))
+            .foregroundColor(Color(designSystemColor: effectiveStyle == .glass ? .textPrimary : .destructivePrimary))
             .frame(width: diameter, height: diameter)
-        if effectiveStyle == .original {
-            label
-        } else if #available(iOS 26.0, *), !reduceTransparency {
+        if #available(iOS 26.0, *), effectiveStyle == .glass, !reduceTransparency {
             label.glassEffect(.regular, in: Circle())
         } else {
             label

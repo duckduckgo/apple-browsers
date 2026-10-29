@@ -178,7 +178,7 @@ final class AppLaunchUITests: XCTestCase {
         let deleteThis = app.buttons["Fire.Confirmation.Button.ThisTab"]
         XCTAssertTrue(deleteThis.waitForExistence(timeout: UITestTimeouts.navigation))
         XCTAssertEqual(deleteAll.frame.minY - deleteThis.frame.maxY, 16, accuracy: 1)
-        XCTAssertEqual(deleteAll.frame.height, deleteThis.frame.height, accuracy: 1)
+        XCTAssertGreaterThan(deleteAll.frame.height, deleteThis.frame.height)
         XCTAssertEqual(deleteAll.frame.width, deleteThis.frame.width, accuracy: 1)
         let sheetScreenshot = XCTAttachment(screenshot: app.screenshot())
         sheetScreenshot.name = "Fire sheet with 16-point button spacing"

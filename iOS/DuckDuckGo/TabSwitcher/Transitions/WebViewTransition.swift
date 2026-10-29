@@ -38,27 +38,11 @@ class WebViewTransition: TabSwitcherTransition {
         view.layer.add(animation, forKey: "cornerRadius")
         view.layer.cornerRadius = radius
     }
-}
 
-class FromWebViewTransition: WebViewTransition {
-    
-    private let mainViewController: MainViewController
-    
-    init(mainViewController: MainViewController,
-         tabSwitcherViewController: TabSwitcherViewController) {
-        self.mainViewController = mainViewController
-
-        super.init(tabSwitcherViewController: tabSwitcherViewController)
-    }
-    
-    /// Duck.ai tabs land on a rich card, not a screenshot. Crossfade a snapshot of the
-    /// destination cell over the webview preview so the shrink ends on matching content
-    /// instead of popping from screenshot to card. Gated on the rich-card flag: with it off
-    /// the AI cell is a screenshot, so there's nothing to crossfade to.
-    /// Only the body below the header is captured; the header slides in like any other tab.
-    private func installAITabCellSnapshot(for tab: Tab, at indexPath: IndexPath) -> UIView? {
-        guard tab.isAITab,
-              mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard) else { return nil }
+    /// Duck.ai cells show a rich card, not a screenshot, so the transition crossfades the cell body
+    /// against the preview. With the rich-card flag off the cell is a screenshot: nothing to crossfade.
+    fileprivate func installAITabCellSnapshot(for tab: Tab, at indexPath: IndexPath, isRichCardEnabled: Bool) -> UIView? {
+        guard tab.isAITab, isRichCardEnabled else { return nil }
 
         tabSwitcherViewController.collectionView.layoutIfNeeded()
         guard let cell = tabSwitcherViewController.collectionView
@@ -80,17 +64,38 @@ class FromWebViewTransition: WebViewTransition {
               let snapshot = cell.resizableSnapshotView(from: bodyFrame,
                                                         afterScreenUpdates: true,
                                                         withCapInsets: .zero) else { return nil }
-        // Scale uniformly from the full-width card down to the cell; stretching it to the
-        // card's frame squashes the logo while the card's aspect ratio changes.
         snapshot.frame = bodyFrame
-        snapshot.center = aiTabCellSnapshotStartCenter()
-        let scale = imageContainer.bounds.width / cell.bounds.width
-        snapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
-        snapshot.alpha = 0
         imageContainer.addSubview(snapshot)
         return snapshot
     }
 
+    /// Uniform scale: stretching to the card's frame squashes the logo.
+    fileprivate func expandAITabCellSnapshot(_ snapshot: UIView?, centeredAt center: CGPoint) {
+        guard let snapshot, snapshot.bounds.width > 0 else { return }
+        let scale = imageContainer.bounds.width / snapshot.bounds.width
+        snapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
+        snapshot.center = center
+    }
+
+    fileprivate func settleAITabCellSnapshot(_ snapshot: UIView?, inCardOfSize cardSize: CGSize) {
+        guard let snapshot else { return }
+        snapshot.transform = .identity
+        snapshot.center = CGPoint(x: cardSize.width / 2,
+                                  y: TabViewGridCell.Constants.headerHeight + snapshot.bounds.height / 2)
+    }
+}
+
+class FromWebViewTransition: WebViewTransition {
+    
+    private let mainViewController: MainViewController
+    
+    init(mainViewController: MainViewController,
+         tabSwitcherViewController: TabSwitcherViewController) {
+        self.mainViewController = mainViewController
+
+        super.init(tabSwitcherViewController: tabSwitcherViewController)
+    }
+    
     /// Start point for the cell snapshot, so its logo covers the logo in the preview image.
     /// With the keyboard up, the page centres its logo above the input rather than in the card, and the
     /// preview image doesn't line up with the live page, so the logo's position on the page is mapped onto the image.
@@ -108,13 +113,6 @@ class FromWebViewTransition: WebViewTransition {
         guard page.height > 0, inputTop > page.minY else { return cardCenter }
         let logoFraction = (min(inputTop, page.maxY) - page.minY) / 2 / page.height
         return CGPoint(x: bounds.midX, y: imageView.frame.minY + logoFraction * imageView.frame.height)
-    }
-
-    private func settleAITabCellSnapshot(_ snapshot: UIView?, inCardOfSize cardSize: CGSize) {
-        guard let snapshot else { return }
-        snapshot.transform = .identity
-        snapshot.center = CGPoint(x: cardSize.width / 2,
-                                  y: TabViewGridCell.Constants.headerHeight + snapshot.bounds.height / 2)
     }
 
     override func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
@@ -179,7 +177,12 @@ class FromWebViewTransition: WebViewTransition {
             alignsWithContainerBottom: isFloating)
         imageView.image = preview
 
-        let cellSnapshot = installAITabCellSnapshot(for: tab, at: indexPath)
+        let cellSnapshot = installAITabCellSnapshot(
+            for: tab,
+            at: indexPath,
+            isRichCardEnabled: mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard))
+        expandAITabCellSnapshot(cellSnapshot, centeredAt: aiTabCellSnapshotStartCenter())
+        cellSnapshot?.alpha = 0
         prepareOutgoingTabChrome(at: indexPath)
 
         UIView.animateKeyframes(withDuration: duration, delay: 0, options: .calculationModeLinear, animations: {
@@ -273,7 +276,7 @@ class ToWebViewTransition: WebViewTransition {
         })
     }
 
-    private func preparePreview(_ preview: UIImage?, rowIndex: Int) {
+    private func preparePreview(_ preview: UIImage?, rowIndex: Int, fadesIn: Bool) {
         if let preview {
             imageView.frame = WebViewTransitionGeometry.previewFrame(for: imageContainer.bounds.size,
                                                                      previewSize: preview.size,
@@ -291,7 +294,7 @@ class ToWebViewTransition: WebViewTransition {
             prepareListChrome(for: cell, initiallyVisible: true)
         }
 
-        if !tabSwitcherSettings.isGridViewEnabled {
+        if fadesIn || !tabSwitcherSettings.isGridViewEnabled {
             imageView.alpha = 0
         }
     }
@@ -308,6 +311,12 @@ class ToWebViewTransition: WebViewTransition {
             completeWithCrossfadeFallback(using: transitionContext)
             return
         }
+
+        // Before the card is laid out (afterScreenUpdates would flash it empty) and under the header snapshot.
+        let cellSnapshot = installAITabCellSnapshot(
+            for: tab,
+            at: IndexPath(row: rowIndex, section: 0),
+            isRichCardEnabled: mainViewController.featureFlagger.isFeatureOn(.aiChatTabSwitcherRichCard))
 
         let theme = ThemeManager.shared.currentTheme
         mainViewController.view.alpha = 1
@@ -338,7 +347,7 @@ class ToWebViewTransition: WebViewTransition {
             mainViewController.viewCoordinator.navigationBarContainer.backgroundColor = transitionBackgroundColor
         }
         let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
-        preparePreview(preview, rowIndex: rowIndex)
+        preparePreview(preview, rowIndex: rowIndex, fadesIn: cellSnapshot != nil)
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)
 
@@ -352,7 +361,11 @@ class ToWebViewTransition: WebViewTransition {
                 self.imageView.frame = WebViewTransitionGeometry.destinationImageFrame(for: destinationFrame.size,
                                                                                        previewSize: preview?.size,
                                                                                        alignsWithContainerBottom: isFloating)
-                self.imageView.alpha = 1
+                self.expandAITabCellSnapshot(cellSnapshot,
+                                             centeredAt: CGPoint(x: destinationFrame.width / 2, y: destinationFrame.height / 2))
+                if cellSnapshot == nil {
+                    self.imageView.alpha = 1
+                }
                 self.solidBackground.alpha = 1
                 if !self.tabSwitcherSettings.isGridViewEnabled {
                     self.applyListChromePose(isVisible: false)
@@ -361,6 +374,15 @@ class ToWebViewTransition: WebViewTransition {
 
             UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.7) {
                 self.tabSwitcherViewController.view.alpha = 0
+            }
+
+            if let cellSnapshot {
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.3) {
+                    cellSnapshot.alpha = 0
+                }
+                UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.5) {
+                    self.imageView.alpha = 1
+                }
             }
 
             if self.tabSwitcherSettings.isGridViewEnabled {

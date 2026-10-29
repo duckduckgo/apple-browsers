@@ -35,8 +35,8 @@ public final class DBPFeatureFlagger: DBPMacOSFeatureFlagging {
         false
     }
 
-    public var isWebViewUserAgentOn: Bool {
-        featureFlagger.isFeatureOn(.dbpWebViewUserAgent)
+    public var isCustomWebViewUserAgentOn: Bool {
+        featureFlagger.isFeatureOn(.dbpCustomWebViewUserAgent)
     }
 
     public var isOptOutRetryErrorFrequencyExperimentOn: Bool {

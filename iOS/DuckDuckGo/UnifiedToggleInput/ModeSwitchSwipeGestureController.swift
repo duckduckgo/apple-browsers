@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import os.log
 
 /// Installs left/right flick recognizers that switch Search↔Duck.ai (Search is the left page),
 /// mirroring a toggle tap. A quick flick triggers it; slow horizontal drags (e.g. row
@@ -57,6 +58,7 @@ final class ModeSwitchSwipeGestureController: NSObject {
     }
 
     @objc private func handleSwipe(_ gesture: UISwipeGestureRecognizer) {
+        Logger.unifiedInputState.debug("[EHScrollDiag] event=mode.swipe target=\(gesture.direction == .left ? "aiChat" : "search", privacy: .public) state=\(gesture.state.rawValue, privacy: .public)")
         onSwitch(gesture.direction == .left ? .aiChat : .search)
     }
 }

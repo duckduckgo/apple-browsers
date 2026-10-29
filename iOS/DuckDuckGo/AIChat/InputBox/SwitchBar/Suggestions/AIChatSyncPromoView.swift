@@ -22,6 +22,7 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 import SwiftUI
+import os.log
 
 #if DEBUG
 import PreviewSnapshots
@@ -67,6 +68,23 @@ struct AIChatSyncPromoView: View {
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
                 .fill(Color(designSystemColor: .surface))
         )
+        .onAppear {
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=syncPromo.appear")
+        }
+        .onDisappear {
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=syncPromo.disappear")
+        }
+        .onFrameUpdate(in: .global, using: SyncPromoGeometryFrameKey.self) { frame in
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=syncPromo.frame frame=\(String(describing: frame), privacy: .public)")
+        }
+    }
+}
+
+private struct SyncPromoGeometryFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 

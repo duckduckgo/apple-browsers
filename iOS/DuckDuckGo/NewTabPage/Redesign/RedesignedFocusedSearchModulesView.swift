@@ -23,22 +23,52 @@ import SwiftUI
 struct RedesignedFocusedSearchModulesView: View {
     let favoritesModel: FavoritesViewModel?
     let messagesModel: NewTabPageMessagesModel?
+    var showsSearchModules = true
+    var recentChats: SuggestionsListViewModel?
     var escapeHatch: EscapeHatchModel?
+    var syncPromo: AnyView?
+    var isAddressBarAtBottom = false
+    var contentTopInset: CGFloat = 0
+    var usesScrollableEscapeHatch = true
 
     var body: some View {
         GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
                     RedesignedNewTabPageModulesView(favoritesModel: favoritesModel)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(height: showsSearchModules ? nil : 0)
+                        .opacity(showsSearchModules ? 1 : 0)
+                        .allowsHitTesting(showsSearchModules)
+                        .accessibilityHidden(!showsSearchModules)
                     if let escapeHatch {
                         RedesignedEscapeHatchView(model: escapeHatch)
                             .frame(maxWidth: .infinity)
+                            .padding(.top, hatchTopPadding)
                             .padding(.horizontal, 16)
+                    }
+                    if let recentChats {
+                        VStack(spacing: FocusedChromeView.Metrics.bottomInset) {
+                            if let syncPromo {
+                                syncPromo
+                            }
+                            LegacyRecentChatsView(viewModel: recentChats, isAddressBarAtBottom: isAddressBarAtBottom)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, FocusedChromeView.Metrics.bottomInset)
                     }
                     if let messagesModel {
                         RedesignedNewTabPageMessagesView(messagesModel: messagesModel)
+                            .frame(height: showsSearchModules ? nil : 0)
+                            .opacity(showsSearchModules ? 1 : 0)
+                            .allowsHitTesting(showsSearchModules)
+                            .accessibilityHidden(!showsSearchModules)
                     }
                 }
+                .animation(nil, value: showsSearchModules)
+                .animation(nil, value: recentChats != nil)
+                .modifier(FocusedContentGeometryGroup(isEnabled: usesScrollableEscapeHatch))
+                .padding(.top, contentTopInset)
                 .padding(.leading, geometry.safeAreaInsets.leading)
                 .padding(.trailing, geometry.safeAreaInsets.trailing)
             }
@@ -47,6 +77,10 @@ struct RedesignedFocusedSearchModulesView: View {
             .ignoresSafeArea(.container, edges: .horizontal)
             .scrollDismissesKeyboardIfAvailable()
         }
-        .background(Color(designSystemColor: .background))
+    }
+
+    private var hatchTopPadding: CGFloat {
+        guard !showsSearchModules else { return 0 }
+        return usesScrollableEscapeHatch ? RedesignedNewTabPageModulesView.topPadding : 6
     }
 }

@@ -45,8 +45,9 @@
     const isDuckAIHost = hostname === "duck.ai" || hostname === "duckduckgo.com" || hostname.endsWith(".duckduckgo.com");
     const hasNonOpaqueOrigin = origin !== "null" && origin.length > 0;
     const isSyntheticDocument = locationProtocol === "about:";
+    const isTopLevel = globalThis.top === globalThis;
     const isSameOriginAsTopLevel = (() => {
-        if (globalThis.top === globalThis) {
+        if (isTopLevel) {
             return true;
         }
         try {
@@ -64,31 +65,48 @@
     // Some WebKit versions don't expose whether an embedded page (iframe) may use media.
     // Fall back to its HTML allow attribute and retain the parent's restrictions for nested
     // frames. This is a best-effort precheck; WebKit makes the final capture decision.
-    const fallbackPolicyAllows = (feature) => {
+    // Like WebKit, use the embedding attributes from when this document loaded; a later change
+    // applies on the next navigation. Parse the local rules before page scripts can replace
+    // the methods they use; only the inherited policy check waits for the first request.
+    const embeddingFrame = (() => {
+        if (hasPolicyIntrospection || !isSameOriginAsTopLevel || isTopLevel) {
+            return null;
+        }
+        try {
+            const frame = globalThis.frameElement;
+            if (!frame) {
+                return null;
+            }
+            const parent = globalThis.parent;
+            const getAttribute = Element.prototype.getAttribute;
+            const source = apply(getAttribute, frame, ["srcdoc"]) === null ? apply(getAttribute, frame, ["src"]) : null;
+            return {
+                policy: apply(getAttribute, frame, ["allow"]) ?? "",
+                source,
+                baseURI: source === null ? null : apply(getOwnPropertyDescriptor(Node.prototype, "baseURI").get, frame, []),
+                parentOrigin: parent.location.origin,
+                inheritedPolicy: parent[inheritedPolicyProperty]
+            };
+        } catch (_) {
+            return null;
+        }
+    })();
+    const localPolicyAllows = (feature) => {
         if (!isSameOriginAsTopLevel) {
             return false;
         }
-        if (globalThis.top === globalThis) {
+        if (isTopLevel) {
             return true;
         }
         try {
-            const parent = globalThis.parent;
-            const inheritedPolicy = parent[inheritedPolicyProperty];
-            if (typeof inheritedPolicy !== "function" || !inheritedPolicy(feature)) {
+            if (!embeddingFrame) {
                 return false;
             }
-            const frame = globalThis.frameElement;
-            if (!frame) {
-                return false;
-            }
-            const getAttribute = Element.prototype.getAttribute;
-            const policy = apply(getAttribute, frame, ["allow"]) ?? "";
-            const source = apply(getAttribute, frame, ["src"]);
-            let sourceOrigin = parent.location.origin;
-            if (source !== null && apply(getAttribute, frame, ["srcdoc"]) === null) {
+            const { policy, source, baseURI, parentOrigin } = embeddingFrame;
+            let sourceOrigin = parentOrigin;
+            if (source !== null) {
                 try {
-                    const baseURIGetter = getOwnPropertyDescriptor(Node.prototype, "baseURI").get;
-                    const sourceURL = new URL(source, apply(baseURIGetter, frame, []));
+                    const sourceURL = new URL(source, baseURI);
                     sourceOrigin = sourceURL.protocol === "http:" || sourceURL.protocol === "https:"
                         ? sourceURL.origin : origin;
                 } catch (_) {}
@@ -112,7 +130,7 @@
                         return false;
                     }
                     if (token.toLowerCase() === "'self'") {
-                        allowed ||= parent.location.origin === origin;
+                        allowed ||= parentOrigin === origin;
                     } else if (token.toLowerCase() === "'src'") {
                         allowed ||= sourceOrigin === origin;
                     } else {
@@ -128,11 +146,32 @@
             return false;
         }
     };
-    const fallbackCameraAllowed = fallbackPolicyAllows("camera");
-    const fallbackMicrophoneAllowed = fallbackPolicyAllows("microphone");
+    const localCameraAllowed = !hasPolicyIntrospection && localPolicyAllows("camera");
+    const localMicrophoneAllowed = !hasPolicyIntrospection && localPolicyAllows("microphone");
+    const fallbackPolicyAllows = (feature) => {
+        if (!(feature === "camera" ? localCameraAllowed : localMicrophoneAllowed)) {
+            return false;
+        }
+        if (isTopLevel) {
+            return true;
+        }
+        try {
+            const inheritedPolicy = embeddingFrame.inheritedPolicy;
+            return typeof inheritedPolicy === "function" && inheritedPolicy(feature);
+        } catch (_) {
+            return false;
+        }
+    };
+    let fallbackCameraAllowed;
+    let fallbackMicrophoneAllowed;
     const policyAllows = (feature) => {
         if (!hasPolicyIntrospection) {
-            return feature === "camera" ? fallbackCameraAllowed : fallbackMicrophoneAllowed;
+            if (feature === "camera") {
+                fallbackCameraAllowed ??= fallbackPolicyAllows("camera");
+                return fallbackCameraAllowed;
+            }
+            fallbackMicrophoneAllowed ??= fallbackPolicyAllows("microphone");
+            return fallbackMicrophoneAllowed;
         }
         try {
             return toBoolean(apply(allowsFeature, permissionsPolicy, [feature]));

@@ -71,8 +71,8 @@ final class GeolocationUserScriptTests: XCTestCase {
                       "Like WebKit, only a sandbox that makes the origin opaque blocks geolocation")
         XCTAssertFalse(policySource.contains("MutationObserver"), "Sandbox attributes do not restrict a document that keeps its origin")
         XCTAssertFalse(policySource.contains("postMessage"), "Policy checks must not post messages the page can observe")
-        XCTAssertTrue(source.contains("const registration = registerFrame()"),
-                      "Every operation must register with native policy enforcement")
+        XCTAssertTrue(source.contains(Self.deferredInstallation),
+                      "Without immediate installation, the shim must wait for native code to activate the frame")
         XCTAssertTrue(source.contains("message(\"registerFrame\")"), "Each frame must authenticate before sending requests")
         XCTAssertTrue(source.contains("const capability ="), "Every message must carry the native bridge capability")
         XCTAssertTrue(source.contains("documentID: frameNonce"), "Requests must identify the exact page document")
@@ -96,27 +96,23 @@ final class GeolocationUserScriptTests: XCTestCase {
         }
     }
 
-    func testImmediateInstallationHardensBeforeRegistrationAndBypassesOnlyDuckAIHosts() {
+    func testImmediateInstallationSkipsLoadRegistrationAndBypassesOnlyDuckAIHosts() {
         let source = GeolocationUserScript(installImmediately: true).source
 
         XCTAssertTrue(source.contains("const installImmediately = true"))
         XCTAssertTrue(source.contains("initialHostname === \"duck.ai\""))
         XCTAssertTrue(source.contains("initialHostname.endsWith(\".duck.ai\")"))
         XCTAssertFalse(source.contains("initialHostname === \"duckduckgo.com\""))
-        let install = source.range(of: "if (installImmediately) {\n        installShim();")
-        let registrationReply = source.range(of: "callThen(registration, (enabled) => {\n        if (enabled && !installImmediately)")
-        XCTAssertNotNil(install)
-        XCTAssertNotNil(registrationReply)
-        if let install, let registrationReply {
-            XCTAssertLessThan(install.lowerBound, registrationReply.lowerBound)
-        }
+        XCTAssertTrue(source.contains("if (installImmediately) {\n        installShim();\n    } else {\n        \(Self.deferredInstallation)"),
+                      "Tab web views must install the shim without registering frames that never use geolocation")
     }
 
     func testEachOperationRefreshesNativeFrameRegistration() {
         let source = GeolocationUserScript().source
+        let operations = source.replacingOccurrences(of: Self.deferredInstallation, with: "")
 
         XCTAssertTrue(source.contains("const registerFrame = () => callThen(postOneShot(message(\"registerFrame\"))"))
-        XCTAssertEqual(source.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
+        XCTAssertEqual(operations.components(separatedBy: "callThen(registerFrame(), (enabled)").count - 1, 4,
                        "Position requests, permission queries, watch starts, and watch cancellation must recover after native registration resets")
     }
 
@@ -305,6 +301,39 @@ final class GeolocationUserScriptTests: XCTestCase {
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":0"))
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":1:2"))
         XCTAssertFalse(GeolocationUserScript.isValidRequestID(nonce + ":" + String(repeating: "1", count: 96)))
+        XCTAssertTrue(GeolocationUserScript.isCallbackID(nonce + ":1", ownedBy: nonce))
+        XCTAssertFalse(GeolocationUserScript.isCallbackID(nonce + ":1", ownedBy: String(repeating: "b", count: 32)))
+    }
+
+    func testCallbacksMustBelongToTheRequestingDocument() async throws {
+        let delegate = TestGeolocationUserScriptDelegate()
+        let script = GeolocationUserScript(delegate: delegate)
+        script.activationHandler = { _ in true }
+        let webView = PolicyTestWebView()
+        let frame = WKFrameInfo.mock(isMainFrame: true, securityOriginHost: "example.com", webView: webView)
+        let controller = WKUserContentController()
+        let registration = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: registrationBody()).scriptMessage
+        let registered = await script.userContentController(controller, didReceive: registration)
+        XCTAssertEqual((registered.0 as? [String: Any])?["enabled"] as? Bool, true)
+        let otherDocumentCallback = String(repeating: "c", count: 32) + ":1"
+        let ownCallback = String(repeating: "b", count: 32) + ":1"
+
+        for callback in [otherDocumentCallback, ownCallback] {
+            for kind in ["startWatch", "queryPermission"] {
+                var body = registrationBody()
+                body["kind"] = kind
+                body["requestID"] = callback
+                body["statusID"] = callback
+                let message = MockWKScriptMessageObject(webView: webView, frameInfo: frame, body: body).scriptMessage
+                _ = await script.userContentController(controller, didReceive: message)
+            }
+        }
+
+        // Only the requesting document's own IDs reach the delegate.
+        XCTAssertEqual(delegate.watchCount, 1)
+        XCTAssertEqual(delegate.permissionQueryCount, 1)
+        XCTAssertFalse(script.send(.granted, toPermissionStatusWithID: otherDocumentCallback))
+        XCTAssertTrue(script.send(.granted, toPermissionStatusWithID: ownCallback))
     }
 
     func testEnabledRegistrationAuthenticatesLaterMessagesAcrossFrameInfoWrappers() async throws {
@@ -569,6 +598,8 @@ final class GeolocationUserScriptTests: XCTestCase {
             XCTAssertEqual(delegate.positionRequestCount, 0)
         }
     }
+
+    private static let deferredInstallation = "callThen(registerFrame(), (enabled) => { if (enabled) installShim(); }, () => {});"
 
     private func registrationBody() -> [String: Any] {
         [

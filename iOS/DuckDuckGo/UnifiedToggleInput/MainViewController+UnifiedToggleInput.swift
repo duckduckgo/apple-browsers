@@ -1344,6 +1344,10 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
             return .intercept
         }
+        let wasPresentingDirectly = isPresentingNewTabInputDirectly
+        isPresentingNewTabInputDirectly = wasPresentingDirectly
+            || (hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true)
+        defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top

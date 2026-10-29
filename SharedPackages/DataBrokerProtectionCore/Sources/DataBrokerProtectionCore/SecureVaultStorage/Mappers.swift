@@ -221,6 +221,7 @@ struct MapperToModel {
             parent: decodedBroker.parent,
             mirrorSites: decodedBroker.mirrorSites,
             optOutUrl: decodedBroker.optOutUrl,
+            userAgent: decodedBroker.userAgent,
             eTag: brokerDB.eTag,
             removedAt: brokerDB.removedAt
         )

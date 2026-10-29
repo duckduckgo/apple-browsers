@@ -68,6 +68,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isBottomFloatingField ? Metrics.floatingEmbeddedHeight : Metrics.height
     }
     static let expectedHeight: CGFloat = Metrics.height
+    static let bottomPositionFieldBottomPadding: CGFloat = Metrics.textAreaBottomPaddingAdjustedSpacing
 
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?

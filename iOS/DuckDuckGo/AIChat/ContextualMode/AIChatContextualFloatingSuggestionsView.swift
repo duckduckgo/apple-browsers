@@ -30,11 +30,9 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         static let edgeInset: CGFloat = 16
         static let hiddenScale: CGFloat = 0.9
         static let hiddenOffset: CGFloat = 40
-        static let showDuration: TimeInterval = 0.62
-        static let showDamping: CGFloat = 0.8
-        static let hideDuration: TimeInterval = 0.24
-        static let returnDuration: TimeInterval = 0.5
-        static let returnDamping: CGFloat = 1
+        static let fadeDuration: TimeInterval = 0.24
+        static let flightDuration: TimeInterval = 0.5
+        static let flightDamping: CGFloat = 1
         static let restyleDuration: TimeInterval = 0.3
         static let restyleDelay: TimeInterval = 0.08
         static let stagger: TimeInterval = 0.035
@@ -50,6 +48,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
     private var actions: [ContextualSheetAction] = []
     private weak var column: UIView?
     private var keyboardTop: CGFloat = 0
+    /// The column-style copies the chips take off from, until the glass has taken over.
+    private var takeoffStandIns: [UIView] = []
 
     private let chipsView: AIChatQuickActionsView<ContextualSheetAction> = {
         let view = AIChatQuickActionsView<ContextualSheetAction>()
@@ -98,8 +98,9 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         chipsView.containsChip(at: point, from: self)
     }
 
-    /// Places the chips beside `column`, just above `keyboardTop` (in the column's superview), flying each one in
-    /// from the matching frame in `sourceFrames`; chips without one slide in from the column's edge.
+    /// Places the chips beside `column`, just above `keyboardTop` (in the column's superview), flying each one out
+    /// from the matching frame in `sourceFrames`; chips without one fade in from the column's edge.
+    /// The exact reverse of `hide(animated:to:completion:)`, so the stack leaves the way it comes back.
     func show(beside column: UIView, keyboardTop: CGFloat, from sourceFrames: [CGRect]) {
         guard let host = column.superview else { return }
         if superview !== host {
@@ -109,29 +110,71 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         self.column = column
         self.keyboardTop = keyboardTop
         isShown = true
+        removeTakeoffStandIns()
         let chips = chipViews
+        var standIns: [UIView?] = []
         // Outside the keyboard's animation, which this is often called from: the chips start where they take off.
         UIView.performWithoutAnimation {
             updateFrame()
             for (index, chip) in chips.enumerated() {
                 chip.layer.removeAllAnimations()
-                let isFromColumn = index < sourceFrames.count
-                chip.transform = isFromColumn ? transform(from: sourceFrames[index], to: chip, in: host) : tuckedTransform
-                chip.alpha = isFromColumn ? 1 : 0
+                chip.alpha = 0
+                guard index < sourceFrames.count, index < actions.count else {
+                    chip.transform = tuckedTransform
+                    standIns.append(nil)
+                    continue
+                }
+                chip.transform = transform(from: sourceFrames[index], to: chip, in: host)
+                // Exactly over its twin in the column, which hides as this appears, so the handover changes no pixel.
+                let source = convert(sourceFrames[index], from: host)
+                let standIn = makeColumnStyleStandIn(for: actions[index])
+                standIn.center = CGPoint(x: source.midX, y: source.midY)
+                standIns.append(standIn)
             }
         }
+        let chipStandIns = standIns
+        takeoffStandIns = standIns.compactMap { $0 }
         // A pass later, once that start is on screen; a view added in this pass has nothing to animate from.
         DispatchQueue.main.async { [weak self] in
             guard let self, isShown else { return }
+            let takeoffs = DispatchGroup()
             for (index, chip) in chips.enumerated() {
-                UIView.animate(withDuration: Constants.showDuration,
-                               delay: Double(index) * Constants.stagger,
-                               usingSpringWithDamping: Constants.showDamping,
-                               initialSpringVelocity: 0,
-                               options: [.allowUserInteraction, .beginFromCurrentState]) {
-                    chip.transform = .identity
-                    chip.alpha = 1
+                let delay = Double(index) * Constants.stagger
+                guard let standIn = chipStandIns[index] else {
+                    UIView.animate(withDuration: Constants.fadeDuration,
+                                   delay: delay,
+                                   options: [.curveEaseOut, .allowUserInteraction, .beginFromCurrentState]) {
+                        chip.transform = .identity
+                        chip.alpha = 1
+                    }
+                    continue
                 }
+                let cover = covering(chip, with: standIn)
+                takeoffs.enter()
+                UIView.animate(withDuration: Constants.flightDuration,
+                               delay: delay,
+                               usingSpringWithDamping: Constants.flightDamping,
+                               initialSpringVelocity: 0,
+                               options: [.allowUserInteraction, .beginFromCurrentState],
+                               animations: {
+                                   chip.transform = .identity
+                                   standIn.center = cover.center
+                                   standIn.transform = cover.transform
+                               },
+                               completion: { _ in takeoffs.leave() })
+                // The column's look turns into the glass on the way, timed as the reverse of the trip home.
+                let restyleDelay = Constants.flightDuration - Constants.restyleDelay - Constants.restyleDuration
+                UIView.animate(withDuration: Constants.restyleDuration,
+                               delay: delay + restyleDelay,
+                               options: [.curveEaseInOut, .allowUserInteraction]) {
+                    chip.alpha = 1
+                    standIn.alpha = 0
+                }
+            }
+            let launched = takeoffStandIns
+            takeoffs.notify(queue: .main) { [weak self] in
+                guard let self, takeoffStandIns == launched else { return }
+                removeTakeoffStandIns()
             }
         }
     }
@@ -166,6 +209,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             return
         }
         isShown = false
+        removeTakeoffStandIns()
         let chips = chipViews
         guard animated, !chips.isEmpty, let host = superview else {
             removeFromSuperview()
@@ -182,7 +226,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             landings.enter()
             let landed: (Bool) -> Void = { _ in landings.leave() }
             guard index < targetFrames.count, index < actions.count else {
-                UIView.animate(withDuration: Constants.hideDuration,
+                UIView.animate(withDuration: Constants.fadeDuration,
                                delay: delay,
                                options: [.curveEaseIn, .beginFromCurrentState],
                                animations: {
@@ -193,11 +237,15 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
                 continue
             }
             let target = convert(targetFrames[index], from: host)
-            let standIn = makeColumnStyleStandIn(for: actions[index], over: chip)
+            let standIn = makeColumnStyleStandIn(for: actions[index])
+            let cover = covering(chip, with: standIn)
+            standIn.center = cover.center
+            standIn.transform = cover.transform
+            standIn.alpha = 0
             standIns.append(standIn)
-            UIView.animate(withDuration: Constants.returnDuration,
+            UIView.animate(withDuration: Constants.flightDuration,
                            delay: delay,
-                           usingSpringWithDamping: Constants.returnDamping,
+                           usingSpringWithDamping: Constants.flightDamping,
                            initialSpringVelocity: 0,
                            options: [.beginFromCurrentState],
                            animations: {
@@ -221,19 +269,26 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         }
     }
 
-    /// A chip in the column's own style, scaled to cover `chip` and transparent until the restyle fades it in.
-    private func makeColumnStyleStandIn(for action: ContextualSheetAction, over chip: UIView) -> UIView {
+    /// A chip in the column's own style, at its natural size, for a glass chip to cross-fade with in flight.
+    private func makeColumnStyleStandIn(for action: ContextualSheetAction) -> UIView {
         let standIn = AIChatQuickActionChipView()
         standIn.configure(with: action)
-        let size = standIn.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
-        standIn.bounds = CGRect(origin: .zero, size: size)
-        standIn.center = chip.superview?.convert(chip.center, to: self) ?? chip.center
-        let scale = size.width > 0 ? chip.bounds.width / size.width : 1
-        standIn.transform = CGAffineTransform(scaleX: scale, y: scale)
-        standIn.alpha = 0
+        standIn.bounds = CGRect(origin: .zero, size: standIn.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize))
         standIn.isUserInteractionEnabled = false
         addSubview(standIn)
         return standIn
+    }
+
+    /// Where `standIn` sits, and how it scales, to cover `chip` at its laid-out spot, whatever transform the chip has.
+    private func covering(_ chip: UIView, with standIn: UIView) -> (center: CGPoint, transform: CGAffineTransform) {
+        let center = chip.superview?.convert(chip.center, to: self) ?? chip.center
+        let scale = standIn.bounds.width > 0 ? chip.bounds.width / standIn.bounds.width : 1
+        return (center, CGAffineTransform(scaleX: scale, y: scale))
+    }
+
+    private func removeTakeoffStandIns() {
+        takeoffStandIns.forEach { $0.removeFromSuperview() }
+        takeoffStandIns = []
     }
 
     private var chipViews: [UIView] {

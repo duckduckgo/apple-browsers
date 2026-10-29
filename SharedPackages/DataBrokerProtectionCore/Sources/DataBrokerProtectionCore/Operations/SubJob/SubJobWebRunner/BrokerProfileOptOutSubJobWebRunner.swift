@@ -224,6 +224,11 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
             Logger.action.debug(loggerContext(for: action), message: "Next action")
             await runNextAction(action)
         } else {
+            #if os(macOS) && DEBUG
+            if shouldContinue, let handler = webViewHandler as? DataBrokerProtectionWebViewHandler, let actionsHandler {
+                handler.markAssistedOptOutSubmitted(awaitsEmailConfirmation: actionsHandler.haltsForEmailConfirmation)
+            }
+            #endif
             Logger.action.debug(loggerContext(), message: "Releasing the web view")
             await webViewHandler?.finish() // If we executed all steps we release the web view
 

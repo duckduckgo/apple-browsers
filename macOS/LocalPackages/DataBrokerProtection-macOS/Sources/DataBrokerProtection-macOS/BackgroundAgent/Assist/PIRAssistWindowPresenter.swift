@@ -24,7 +24,8 @@ import DesignResourcesKitIcons
 import SwiftUI
 import WebKit
 
-/// Owns one "Removing you from…" window per running assisted job. Closing a window only hides it.
+/// Owns one "Removing you from…" window per running assisted job. Closing a window only hides it, until the
+/// request is sent: then the window stays on the done screen until the user closes it.
 @MainActor
 final class PIRAssistWindowPresenter: PIRAssistPresenting {
     private var windows: [PIRAssistItemID: NSWindow] = [:]
@@ -41,6 +42,14 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
     }
 
     func dismiss(_ session: PIRAssistSession) {
+        if session.submission != nil, windows[session.id]?.isVisible == true {
+            closeDelegates[session.id]?.onClose = { [weak self] in self?.remove(session) }
+            return
+        }
+        remove(session)
+    }
+
+    private func remove(_ session: PIRAssistSession) {
         guard let window = windows.removeValue(forKey: session.id) else { return }
         closeDelegates[session.id] = nil
         session.webView.removeFromSuperview()
@@ -92,8 +101,11 @@ final class PIRAssistWindowPresenter: PIRAssistPresenting {
 }
 
 private final class HideOnCloseDelegate: NSObject, NSWindowDelegate {
+    var onClose: (() -> Void)?
+
     func windowShouldClose(_ sender: NSWindow) -> Bool {
         sender.orderOut(nil)
+        onClose?()
         return false
     }
 }
@@ -114,7 +126,7 @@ private struct PIRAssistAddressBar: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 16)
-            Text(session.userTurn == nil ? "Filling in" : "Waiting for you")
+            Text(status)
                 .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
         }
@@ -125,6 +137,11 @@ private struct PIRAssistAddressBar: View {
             Color(designSystemColor: .containerBorderPrimary).frame(height: 1)
         }
         .onReceive(session.webView.publisher(for: \.url)) { url = $0 }
+    }
+
+    private var status: String {
+        if session.submission != nil { return "Done" }
+        return session.userTurn == nil ? "Filling in" : "Waiting for you"
     }
 
     private var host: String {

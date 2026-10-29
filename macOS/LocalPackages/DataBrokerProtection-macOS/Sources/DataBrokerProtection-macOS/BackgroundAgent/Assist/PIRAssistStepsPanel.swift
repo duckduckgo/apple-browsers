@@ -34,8 +34,13 @@ struct PIRAssistStepsPanel: View {
                 .padding(.trailing, -4)
             header
                 .padding(.top, 8)
-            steps
-                .padding(.top, 16)
+            if let submission = session.submission {
+                whatHappensNext(submission)
+                    .padding(.top, 24)
+            } else {
+                steps
+                    .padding(.top, 16)
+            }
             Spacer(minLength: 0)
             footer
         }
@@ -47,9 +52,11 @@ struct PIRAssistStepsPanel: View {
     private var topRow: some View {
         HStack(spacing: 8) {
             Spacer()
-            Text("Keeps running if you close")
-                .font(.system(size: 13))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            if session.submission == nil {
+                Text("Keeps running if you close")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            }
             Button(action: close) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.close)
                     .renderingMode(.template)
@@ -67,7 +74,7 @@ struct PIRAssistStepsPanel: View {
     private var header: some View {
         VStack(spacing: isCompact ? 8 : 12) {
             PIRAssistBrokerAvatar(name: session.brokerName, size: isCompact ? 40 : 56)
-            Text("Removing you from \(session.brokerName)")
+            Text(title)
                 .font(.system(size: 22))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(subtitle)
@@ -82,7 +89,14 @@ struct PIRAssistStepsPanel: View {
         .background(RoundedRectangle(cornerRadius: 20).fill(Color(designSystemColor: .containerFillPrimary)))
     }
 
+    private var title: String {
+        session.submission == nil ? "Removing you from \(session.brokerName)" : "Request submitted to \(session.brokerName)"
+    }
+
     private var subtitle: String {
+        if session.submission != nil {
+            return "Nice work. That\u{2019}s the hard part done."
+        }
         if session.userTurn != nil {
             return "We\u{2019}ve paused. \(session.brokerName) needs a person for the next step."
         }
@@ -115,7 +129,54 @@ struct PIRAssistStepsPanel: View {
         }
     }
 
+    private func whatHappensNext(_ submission: PIRAssistSubmission) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("What happens next")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+            if submission.awaitsEmailConfirmation {
+                nextStep(DesignSystemImages.Glyphs.Size16.email,
+                         "We\u{2019}ll follow the link \(session.brokerName) emails to confirm the request.")
+            }
+            nextStep(DesignSystemImages.Glyphs.Size16.clock, "We\u{2019}ll check your info is gone on our next scan.")
+        }
+        .padding(.horizontal, 12)
+    }
+
+    private func nextStep(_ icon: DesignSystemImage, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(nsImage: icon)
+                .renderingMode(.template)
+                .foregroundColor(Color(designSystemColor: .iconsPrimary))
+                .padding(.top, 1)
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    @ViewBuilder
     private var footer: some View {
+        if session.submission != nil {
+            HStack {
+                Spacer()
+                Button(action: close) {
+                    Text("Back to dashboard")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(Color(designSystemColor: .surfaceTertiary))
+                        .padding(.horizontal, 18)
+                        .frame(height: 40)
+                        .background(Capsule().fill(Color(designSystemColor: .controlsBase)))
+                }
+                .buttonStyle(.plain)
+            }
+        } else {
+            stopButton
+        }
+    }
+
+    private var stopButton: some View {
         HStack {
             Spacer()
             Button(action: session.stop) {
@@ -219,16 +280,17 @@ private struct PIRAssistStepRow: View {
                 .font(.system(size: 16))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
             Text(userTurnMessage)
-                .font(.system(size: 13))
-                .lineSpacing(2)
-                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .font(.system(size: 12))
+                .lineSpacing(3)
+                // The prototype's body is a step lighter than primary text, between the two text tokens.
+                .foregroundColor(Color(designSystemColor: .textPrimary).opacity(0.875))
                 .fixedSize(horizontal: false, vertical: true)
             Button(action: userConfirmedDone) {
                 Text("I\u{2019}ve done it")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Color(designSystemColor: .surfaceTertiary))
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .frame(height: 36)
                     .background(Capsule().fill(Color(designSystemColor: .controlsBase)))
             }
             .buttonStyle(.plain)

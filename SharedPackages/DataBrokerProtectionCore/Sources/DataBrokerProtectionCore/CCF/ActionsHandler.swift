@@ -35,6 +35,8 @@ public class ActionsHandler {
 #if os(macOS) && DEBUG
     /// Runs the rest of an opt-out after the broker's confirmation email arrived.
     var isEmailConfirmationContinuation = false
+    /// The opt-out stops before the broker's confirmation email, which a later job follows.
+    var haltsForEmailConfirmation = false
     var assistActions: [Action] { actions }
     var assistCurrentIndex: Int? { lastExecutedActionIndex }
 
@@ -119,7 +121,11 @@ public class ActionsHandler {
             actions = step.actions
         }
 
-        return ActionsHandler(stepType: .optOut, actions: actions)
+        let handler = ActionsHandler(stepType: .optOut, actions: actions)
+#if os(macOS) && DEBUG
+        handler.haltsForEmailConfirmation = actions.count < step.actions.count
+#endif
+        return handler
     }
 
     /// Creates an ActionsHandler for email confirmation continuation - starts at email confirmation action,

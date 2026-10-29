@@ -86,6 +86,16 @@ public struct PIRAssistStep: Equatable, Sendable {
     public let state: PIRAssistStepState
 }
 
+/// An assisted opt-out that reached the end of the broker's form.
+public struct PIRAssistSubmission: Equatable, Sendable {
+    /// The broker still has to email a confirmation link, which PIR follows on its own.
+    public let awaitsEmailConfirmation: Bool
+
+    public init(awaitsEmailConfirmation: Bool) {
+        self.awaitsEmailConfirmation = awaitsEmailConfirmation
+    }
+}
+
 /// One running assisted job: its web view, where it is in the broker's flow, and whether it is waiting for the user.
 @MainActor
 public final class PIRAssistSession: ObservableObject, Identifiable {
@@ -96,6 +106,7 @@ public final class PIRAssistSession: ObservableObject, Identifiable {
 
     @Published public private(set) var checklist: PIRAssistChecklist?
     @Published public private(set) var userTurn: PIRAssistUserTurnKind?
+    @Published public private(set) var submission: PIRAssistSubmission?
 
     public var steps: [PIRAssistStep] { checklist?.steps(userTurn: userTurn) ?? [] }
 
@@ -120,6 +131,10 @@ public final class PIRAssistSession: ObservableObject, Identifiable {
     public func update(checklist: PIRAssistChecklist) {
         guard checklist != self.checklist else { return }
         self.checklist = checklist
+    }
+
+    public func didSubmit(_ submission: PIRAssistSubmission) {
+        self.submission = submission
     }
 
     public func setUserTurn(_ kind: PIRAssistUserTurnKind?) {

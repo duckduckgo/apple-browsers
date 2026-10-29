@@ -357,6 +357,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         }
     }
 
+    func markAssistedOptOutSubmitted(awaitsEmailConfirmation: Bool) {
+        assistSession?.didSubmit(PIRAssistSubmission(awaitsEmailConfirmation: awaitsEmailConfirmation))
+    }
+
     /// True once after a user's turn ended, when they may have submitted the form themselves.
     func consumeUserTurnEnded() -> Bool {
         defer { userTurnEndedSinceLastClickOrFill = false }
@@ -484,7 +488,6 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             params: Params(state: ActionRequest(action: action, data: data))
         )
     }
-
 
     public func evaluateJavaScript(_ javaScript: String) async throws {
         #if os(macOS) && DEBUG

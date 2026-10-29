@@ -29,6 +29,73 @@ import UniformTypeIdentifiers
 
 final class UnifiedToggleInputViewTests: XCTestCase {
 
+    func testTopMaterialTransitionReusesGlassAcrossEditingAndDismissal() throws {
+        guard #available(iOS 26.0, *) else {
+            throw XCTSkip("Liquid Glass requires iOS 26")
+        }
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.cardPosition = .top
+        sut.prepareForOmnibarEditingShow()
+        let shadow = try XCTUnwrap(sut.subviews.compactMap { $0 as? CompositeShadowView }.first)
+        let existingEffects = Set(allDescendants(of: UIVisualEffectView.self, in: sut).map(ObjectIdentifier.init))
+
+        sut.prepareForOmnibarMaterialTransition(duration: 0)
+        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first {
+            !existingEffects.contains(ObjectIdentifier($0))
+        })
+        XCTAssertTrue(glass.effect is UIGlassEffect)
+
+        UIView.performWithoutAnimation {
+            sut.applyOmnibarEditingShowPose()
+        }
+        XCTAssertNil(glass.effect)
+        XCTAssertFalse(shadow.isHidden)
+
+        UIView.performWithoutAnimation {
+            sut.applyOmnibarEditingDismissPose()
+        }
+        XCTAssertTrue(glass.effect is UIGlassEffect)
+        XCTAssertTrue(allDescendants(of: UIVisualEffectView.self, in: sut).contains { $0 === glass })
+
+        sut.finalizeOmnibarEditingDismiss()
+        XCTAssertNil(glass.superview)
+    }
+
+    func testTopFireMaterialTransitionPreservesGlassTintOnDismissal() throws {
+        guard #available(iOS 26.0, *) else {
+            throw XCTSkip("Liquid Glass requires iOS 26")
+        }
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false, isFireTab: true))
+        sut.cardPosition = .top
+        sut.prepareForOmnibarEditingShow()
+        let existingEffects = Set(allDescendants(of: UIVisualEffectView.self, in: sut).map(ObjectIdentifier.init))
+        sut.prepareForOmnibarMaterialTransition(duration: 0)
+        let glass = try XCTUnwrap(allDescendants(of: UIVisualEffectView.self, in: sut).first {
+            !existingEffects.contains(ObjectIdentifier($0))
+        })
+        let initialTint = try XCTUnwrap((glass.effect as? UIGlassEffect)?.tintColor)
+
+        UIView.performWithoutAnimation {
+            sut.applyOmnibarEditingShowPose()
+            sut.applyOmnibarEditingDismissPose()
+        }
+
+        let dismissedTint = try XCTUnwrap((glass.effect as? UIGlassEffect)?.tintColor)
+        XCTAssertEqual(dismissedTint.resolvedColor(with: sut.traitCollection), initialTint.resolvedColor(with: sut.traitCollection))
+        sut.finalizeOmnibarEditingDismiss()
+    }
+
+    func testBottomMaterialTransitionKeepsToolbarAsTheGlassOwner() {
+        let sut = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        sut.cardPosition = .bottom
+        let existingEffects = Set(allDescendants(of: UIVisualEffectView.self, in: sut).map(ObjectIdentifier.init))
+
+        sut.prepareForOmnibarMaterialTransition(duration: 0)
+
+        XCTAssertEqual(Set(allDescendants(of: UIVisualEffectView.self, in: sut).map(ObjectIdentifier.init)), existingEffects)
+        sut.finalizeOmnibarEditingDismiss()
+    }
+
     func testReplacingVisibleFooterReportsNewCardAppearance() {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

@@ -53,8 +53,7 @@ public struct PlatformLinksView: View {
             .padding(16)
             .frame(maxWidth: .infinity)
         }
-        .background(Color(designSystemColor: .background))
-        .ignoresSafeArea()
+        .background(Color(designSystemColor: .background).ignoresSafeArea())
         .navigationTitle(UserText.syncGetOtherDevicesScreenTitle)
     }
 
@@ -64,7 +63,7 @@ public struct PlatformLinksView: View {
                 .resizable()
                 .frame(width: 96, height: 96)
 
-            VStack(spacing: 4) {
+            VStack(spacing: 8) {
                 Text(UserText.syncGetOtherDevicesTitle)
                     .daxHeadline()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
@@ -115,7 +114,7 @@ public struct PlatformLinksView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
-                .fill(Color(designSystemColor: .surface))
+                .fill(Color(designSystemColor: .surfaceSecondary))
         )
         .onAppear {
             model.fireOtherPlatformLinksPixel(for: .appear, source: source)
@@ -212,14 +211,17 @@ struct PlatformLinksView_Previews: PreviewProvider {
             .init(name: "Platform Links", state: ())
         ],
         configure: { _ in
-            PlatformLinksView(
-                model: SyncSettingsViewModel(
-                    isOnDevEnvironment: { true },
-                    switchToProdEnvironment: {},
-                    autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
-                ),
-                source: .activated
-            )
+            PreviewNavigationContainer {
+                PlatformLinksView(
+                    model: SyncSettingsViewModel(
+                        isOnDevEnvironment: { true },
+                        switchToProdEnvironment: {},
+                        autoRestoreProvider: SyncAutoRestorePreviewProvider.disabled
+                    ),
+                    source: .activated
+                )
+                .navigationBarTitleDisplayMode(.inline)
+            }
         }
     )
 }

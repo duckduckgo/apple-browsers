@@ -370,7 +370,7 @@ final class CPMExtensionBaseURLTests: XCTestCase {
     func testLegacyRegistryRecordStillDecodesWithoutOriginIdentifier() throws {
         let record = installed()
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(record)) as? [String: Any])
-        object.removeValue(forKey: "cpmOriginIdentifier")
+        object.removeValue(forKey: "cpmStableOriginIdentifier")
         let decoded = try JSONDecoder().decode(InstalledWebExtension.self, from: JSONSerialization.data(withJSONObject: object))
         XCTAssertNil(decoded.cpmOriginIdentifier)
         XCTAssertEqual(decoded.uniqueIdentifier, record.uniqueIdentifier)

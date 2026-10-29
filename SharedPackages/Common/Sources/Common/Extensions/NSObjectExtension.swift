@@ -94,13 +94,12 @@ extension NSObject {
             }
             return
         }
-        // `weak`, not `unowned`: an Objective-C object (e.g. an `NSWindow`) can't be loaded as soon as its deallocation
-        // starts, while the `onDeinit` observer cancelling this check is only released at the end of the deallocation.
         let assertion = DispatchWorkItem { [weak self] in
-            guard let self else { return } // being deallocated
+            guard let self else /* already being deallocated */ { return }
             action.perform(self)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + timeout, execute: assertion)
+        // Called _after_ object's deinit
         self.onDeinit {
             assertion.cancel()
         }

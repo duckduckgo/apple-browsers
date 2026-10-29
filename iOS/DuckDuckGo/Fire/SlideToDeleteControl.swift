@@ -279,7 +279,7 @@ struct SlideToDeleteControl: View {
                 .opacity(isOriginal || (showsCompletion && variant != .basic) ? 1 : 0)
                 .allowsHitTesting(false)
             thumb(diameter: diameter)
-                .contentShape(Capsule())
+                .contentShape(Circle())
                 .opacity(state.isComplete || (isOriginal && showsCompletion) ? 0 : 1)
                 .offset(x: direction * offset)
                 .gesture(dragGesture(travel: travel))
@@ -299,11 +299,11 @@ struct SlideToDeleteControl: View {
         if effectiveStyle == .original {
             label
         } else if #available(iOS 26.0, *), !reduceTransparency {
-            label.glassEffect(.regular.interactive(), in: Capsule())
+            label.glassEffect(.regular, in: Circle())
         } else {
             label
-                .background(Color(designSystemColor: .controlsRaisedFillPrimary), in: Capsule())
-                .overlay { Capsule().strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5) }
+                .background(Color(designSystemColor: .controlsRaisedFillPrimary), in: Circle())
+                .overlay { Circle().strokeBorder(Color(designSystemColor: .shadowPrimary), lineWidth: 0.5) }
                 .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 3, y: 2)
                 .shadow(color: Color(designSystemColor: .shadowPrimary), radius: 1, y: 1)
         }

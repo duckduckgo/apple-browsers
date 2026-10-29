@@ -528,13 +528,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
+            let permissions = context(for: identifier)?.webExtension.requiredPermissionNames
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
                 name: loadResult.displayName,
                 version: loadResult.version,
                 embeddedType: embeddedType,
-                storeIdentity: storeIdentity
+                storeIdentity: storeIdentity,
+                permissions: permissions
             )
 
             installationStore.add(installedExtension)

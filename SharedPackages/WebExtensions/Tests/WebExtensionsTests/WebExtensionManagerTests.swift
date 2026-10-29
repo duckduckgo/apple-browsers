@@ -19,6 +19,7 @@
 @_spi(Testing) import Persistence
 import XCTest
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import ZIPFoundation
 @testable import WebExtensions
@@ -1001,6 +1002,28 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenEmbeddedSyncStarts_ThenListenerForwardsToController() async {
+        let manager = makeManager()
+        let listener = manager.eventsListener as? WebExtensionEventsListener
+        XCTAssertNil(listener?.controller)
+
+        await manager.syncEmbeddedExtensions(enabledTypes: [])
+
+        XCTAssertIdentical(listener?.controller, manager.controller)
+    }
+
+    @MainActor
+    func testScriptletUpdateReloadsAnAlreadyLoadedContext() async throws {
+        let manager = try await makeManagerWithLoadedAdBlocker()
+
+        try await manager.reloadExtension(for: .adBlockingExtension)
+
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(webExtensionLoadingMock.unloadedIdentifier, "old-adblock")
+        XCTAssertTrue(webExtensionLoadingMock.loadWebExtensionCalled)
+    }
+
+    @MainActor
     func testWhenLoadInstalledExtensions_ThenOrphanedExtensionsAreCleaned() async {
         installedExtensionStoringMock.installedExtensions = [
             makeInstalledWebExtension(uniqueIdentifier: "extension1"),
@@ -1600,6 +1623,192 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertNil(store.controllingIdentifier(for: .passwordSavingEnabled))
     }
 
+    private enum UpgradeFeatureFlag: String, FeatureFlagDescribing {
+        case cpmUpgradeBeforeLoad
+        var defaultValue: FeatureFlagDefaultValue { .enabled }
+        var source: FeatureFlagSource { .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad) }
+        var supportsLocalOverriding: Bool { true }
+        var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
+    }
+
+    @MainActor
+    func testCPMPreparationLeavesOtherInstallationsUntouchedAndDoesNotStartScriptlets() async throws {
+        let descriptor = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded))
+        let bundledURL = try XCTUnwrap(descriptor.bundledURL)
+        let metadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
+        let provider = MockScriptletProvider()
+        for enabled in [true, false] {
+            installedExtensionStoringMock.installedExtensions = EmbeddedWebExtensionRegistry.all.map {
+                makeInstalledWebExtension(uniqueIdentifier: $0.type.rawValue, version: metadata.version, embeddedType: $0.type)
+            }
+            let manager = WebExtensionManager(configuration: configurationMock,
+                                              controllerConfiguration: .nonPersistent(),
+                                              windowTabProvider: windowTabProviderMock,
+                                              storageProvider: storageProvidingMock,
+                                              installationStore: installedExtensionStoringMock,
+                                              isCPMUpgradeBeforeLoadEnabled: true,
+                                              scriptletConfiguration: ScriptletConfiguration(
+                                                provider: provider, installationTracker: MockScriptletStore(),
+                                                cacheRootDirectory: FileManager.default.temporaryDirectory),
+                                              bundledExtensionURL: {
+                                                  XCTAssertEqual($0.type, .embedded, "Other bundles must not be synced before load")
+                                                  return bundledURL
+                                              })
+
+            await manager.syncCPMExtensionBeforeLoad(isEnabled: enabled)
+
+            XCTAssertEqual(Set(manager.webExtensionIdentifiers), Set(EmbeddedWebExtensionRegistry.all.compactMap {
+                !enabled && $0.type == .embedded ? nil : $0.type.rawValue
+            }))
+            XCTAssertTrue(provider.startedTypes.isEmpty)
+            XCTAssertTrue(manager.loadedExtensions.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testLaunchLoadsAllContextsBeforeWaitingForAdBlockScriptletDownload() async throws {
+        for upgradeCPM in [false, true] {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchScriptlets-\(UUID().uuidString)")
+            createdTestExtensionDirs.append(directory)
+            let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
+            installedExtensionStoringMock.installedExtensions = []
+            var identifiers: [DuckDuckGoWebExtensionType: String] = [:]
+            for descriptor in EmbeddedWebExtensionRegistry.all {
+                let bundledURL = try XCTUnwrap(descriptor.bundledURL)
+                let metadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
+                let identifier = UUID().uuidString
+                if metadata.requiresExtraction {
+                    _ = try storage.extractExtension(from: bundledURL, identifier: identifier)
+                } else {
+                    _ = try storage.copyExtension(from: bundledURL, identifier: identifier)
+                }
+                identifiers[descriptor.type] = identifier
+                installedExtensionStoringMock.add(makeInstalledWebExtension(
+                    uniqueIdentifier: identifier,
+                    version: upgradeCPM && descriptor.type == .embedded ? "2000.1.1" : metadata.version,
+                    embeddedType: descriptor.type))
+            }
+            let config = MockScriptletConfigProvider()
+            config.manifests[.adBlockingExtension] = ScriptletManifest(version: "2", scriptlets: [
+                ScriptletDescriptor(name: "script.js", url: URL(string: "https://example.com/script.js")!, signature: "signature")
+            ])
+            let downloadStarted = expectation(description: "Ad-block scriptlet download is waiting for the network")
+            let fetcher = LaunchBlockingScriptletFetcher(started: downloadStarted)
+            let scriptletStore = MockScriptletStore()
+            let provider = ScriptletManager(configProvider: config, fetcher: fetcher,
+                                           validator: MockScriptletValidator(), store: scriptletStore)
+            let manager = WebExtensionManager(configuration: configurationMock,
+                                              controllerConfiguration: .nonPersistent(),
+                                              windowTabProvider: windowTabProviderMock,
+                                              storageProvider: storage,
+                                              installationStore: installedExtensionStoringMock,
+                                              isCPMUpgradeBeforeLoadEnabled: true,
+                                              scriptletConfiguration: ScriptletConfiguration(
+                                                provider: provider, installationTracker: scriptletStore,
+                                                cacheRootDirectory: directory.appendingPathComponent("cache")))
+            let coordinator = WebExtensionLifecycleCoordinator(manager: manager,
+                                                               initialLoadGateEnabledProvider: { false },
+                                                               enabledTypesProvider: { Set(EmbeddedWebExtensionRegistry.all.map(\.type)) })
+            let launch = coordinator.loadAndSync()
+            await fulfillment(of: [downloadStarted], timeout: 5)
+
+            // A stalled scriptlet request must not hold back CPM or any other installed context.
+            XCTAssertEqual(manager.loadedEmbeddedExtensionTypes, Set(EmbeddedWebExtensionRegistry.all.map(\.type)))
+            for (type, identifier) in identifiers where type != .embedded {
+                XCTAssertNotNil(manager.context(for: identifier), "\(type) must load before its scriptlets are fetched")
+            }
+            let currentCPM = manager.installedEmbeddedExtension(for: .embedded)
+            XCTAssertNotNil(currentCPM)
+            XCTAssertEqual(currentCPM?.uniqueIdentifier == identifiers[.embedded], !upgradeCPM)
+
+            await fetcher.resume()
+            await launch.value
+            manager.unloadAllExtensions()
+        }
+    }
+
+    @MainActor
+    func testLaunchUpgradeKillSwitchAppliesAtManagerCreation() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchUpgrade-\(UUID().uuidString)")
+        createdTestExtensionDirs.append(directory)
+        let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
+        let flag = UpgradeFeatureFlag.cpmUpgradeBeforeLoad
+        let featureFlagger = MockFeatureFlagger()
+        for enabled in [true, false, true] {
+            featureFlagger.featuresStub[flag.rawValue] = enabled
+            let previous = installedExtensionStoringMock.installedExtensions.first
+            let handlers = LaunchUpgradeHandlerProvider()
+            let manager = WebExtensionManager(configuration: configurationMock,
+                                              controllerConfiguration: .nonPersistent(),
+                                              windowTabProvider: windowTabProviderMock,
+                                              storageProvider: storage,
+                                              installationStore: installedExtensionStoringMock,
+                                              isCPMStableBaseURLEnabled: { true },
+                                              isCPMUpgradeBeforeLoadEnabled: featureFlagger.isFeatureOn(for: flag),
+                                              handlerProvider: handlers)
+            defer { manager.unloadAllExtensions() }
+            let coordinator = WebExtensionLifecycleCoordinator(manager: manager,
+                                                               initialLoadGateEnabledProvider: { false },
+                                                               enabledTypesProvider: { [.embedded] })
+            featureFlagger.featuresStub[flag.rawValue] = !enabled
+            featureFlagger.triggerUpdate()
+            await coordinator.loadAndSync().value
+
+            XCTAssertEqual(manager.isCPMUpgradeBeforeLoadEnabled, enabled)
+            let context = try XCTUnwrap(manager.contexts.first)
+            XCTAssertEqual(manager.contexts.count, 1)
+            if let previous {
+                let origin = try XCTUnwrap(previous.cpmOriginIdentifier ?? UUID(uuidString: previous.uniqueIdentifier))
+                let previousOrigin = URL(string: "webkit-extension://\(origin.uuidString.lowercased())/")
+                XCTAssertEqual(handlers.loadedIdentifiers.count, enabled ? 1 : 2)
+                XCTAssertEqual(handlers.loadedIdentifiers.contains(previous.uniqueIdentifier), !enabled)
+                if enabled {
+                    XCTAssertEqual(context.baseURL, previousOrigin)
+                } else {
+                    XCTAssertNotEqual(context.baseURL, previousOrigin)
+                }
+            }
+            let installed = try XCTUnwrap(manager.installedEmbeddedExtension(for: .embedded))
+            installedExtensionStoringMock.update(InstalledWebExtension(uniqueIdentifier: installed.uniqueIdentifier,
+                                                                      filename: installed.filename,
+                                                                      name: installed.name, version: "2000.1.1",
+                                                                      embeddedType: .embedded,
+                                                                      cpmOriginIdentifier: installed.cpmOriginIdentifier))
+        }
+    }
+
+    @MainActor
+    func testLaunchReinstallsCorruptCurrentBundledExtension() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("CPMLaunchRepair-\(UUID().uuidString)")
+        createdTestExtensionDirs.append(directory)
+        let storage = WebExtensionStorageProvider(extensionsDirectory: directory)
+        let bundledURL = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
+        let metadata = try await WebExtensionMetadata.fromZip(at: bundledURL)
+        let identifier = UUID().uuidString
+        let installedURL = try storage.copyExtension(from: bundledURL, identifier: identifier)
+        try Data("invalid zip".utf8).write(to: installedURL)
+        installedExtensionStoringMock.installedExtensions = [
+            makeInstalledWebExtension(uniqueIdentifier: identifier, version: metadata.version, embeddedType: .embedded)
+        ]
+        let manager = WebExtensionManager(configuration: configurationMock,
+                                          controllerConfiguration: .nonPersistent(),
+                                          windowTabProvider: windowTabProviderMock,
+                                          storageProvider: storage,
+                                          installationStore: installedExtensionStoringMock,
+                                          isCPMUpgradeBeforeLoadEnabled: true)
+        defer { manager.unloadAllExtensions() }
+        let coordinator = WebExtensionLifecycleCoordinator(manager: manager,
+                                                           initialLoadGateEnabledProvider: { false },
+                                                           enabledTypesProvider: { [.embedded] })
+
+        await coordinator.loadAndSync().value
+
+        XCTAssertTrue(manager.isAutoconsentExtensionLoaded)
+        XCTAssertEqual(manager.contexts.count, 1)
+        XCTAssertNotEqual(manager.installedEmbeddedExtension(for: .embedded)?.uniqueIdentifier, identifier)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent(identifier).path))
+    }
+
     // MARK: - Zip to Folder Upgrade Tests
 
     /// Existing Dark Reader installs are stored as a zip, which WebKit unzips on the main thread on
@@ -1832,6 +2041,42 @@ final class WebExtensionManagerTests: XCTestCase {
         return extensionDir
     }
 
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class LaunchUpgradeHandlerProvider: WebExtensionHandlerProviding {
+    private(set) var loadedIdentifiers: [String] = []
+
+    func makeHandlers(for context: WKWebExtensionContext) -> [WebExtensionMessageHandler] {
+        loadedIdentifiers.append(context.uniqueIdentifier)
+        return []
+    }
+}
+
+private actor LaunchBlockingScriptletFetcher: ScriptletFetching {
+    private let started: XCTestExpectation
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var isReleased = false
+
+    init(started: XCTestExpectation) {
+        self.started = started
+    }
+
+    func fetch(_ descriptors: [ScriptletDescriptor]) async throws -> [FetchedScriptlet] {
+        if !isReleased {
+            await withCheckedContinuation {
+                continuation = $0
+                started.fulfill()
+            }
+        }
+        throw URLError(.notConnectedToInternet)
+    }
+
+    func resume() {
+        isReleased = true
+        continuation?.resume()
+        continuation = nil
+    }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

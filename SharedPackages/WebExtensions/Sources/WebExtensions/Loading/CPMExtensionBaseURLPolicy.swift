@@ -28,6 +28,14 @@ final class CPMExtensionBaseURLPolicy {
     private let failedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
     // A first install has not reached the persistent registry when the loader creates its context.
     var pendingInstallations: [String: DuckDuckGoWebExtensionType] = [:]
+    // Carries an upgrade's origin while its replacement loads, before the new registry record exists.
+    var pendingOriginIdentifiers: [String: UUID] = [:]
+
+    /// The caller must ensure the previous installation has no live context before carrying its origin.
+    func originForUpgrade(of installed: InstalledWebExtension) -> UUID? {
+        guard isEnabled(), installed.embeddedType == .embedded else { return nil }
+        return installed.cpmOriginIdentifier ?? UUID(uuidString: installed.uniqueIdentifier)
+    }
 
     init(installationStore: InstalledWebExtensionStoring, isEnabled: @escaping @MainActor () -> Bool) {
         self.installationStore = installationStore
@@ -35,12 +43,20 @@ final class CPMExtensionBaseURLPolicy {
     }
 
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
-        guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
+        guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else {
+            // If this manifest no longer permits a stable origin, do not save the inherited one.
+            // A later private version must not revive the abandoned service-worker registration.
+            pendingOriginIdentifiers[identifier] = nil
+            return nil
+        }
         guard isEnabled() else {
             // Moving to WebKit's random origin leaves this origin's service-worker registration behind.
             // Re-enabling must use a fresh origin, never that abandoned registration.
             if let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) {
                 rotateOrigin(of: installed)
+            } else if pendingOriginIdentifiers[identifier] != nil {
+                // An upgrade may not be in the registry yet. Do not persist its abandoned origin.
+                pendingOriginIdentifiers[identifier] = UUID()
             }
             return nil
         }
@@ -89,6 +105,8 @@ final class CPMExtensionBaseURLPolicy {
             guard let resources = resources as? [Any], resources.isEmpty else { return nil }
         }
 
-        return installed?.cpmOriginIdentifier ?? uuid
+        // Recovery may already have saved a replacement origin while installation was pending.
+        // Its persistent value must take precedence over the inherited pending origin.
+        return installed?.cpmOriginIdentifier ?? pendingOriginIdentifiers[identifier] ?? uuid
     }
 }

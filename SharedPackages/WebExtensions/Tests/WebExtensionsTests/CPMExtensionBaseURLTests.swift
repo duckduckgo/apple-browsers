@@ -95,6 +95,107 @@ final class CPMExtensionBaseURLTests: XCTestCase {
         XCTAssertNil(policy.baseURL(for: identifier, webExtension: webExtension))
     }
 
+    func testLaunchUpgradePreservesRotatedOriginBeforeAndAfterRegistryWrite() async throws {
+        let store = registry()
+        var previous = installed()
+        previous.cpmOriginIdentifier = UUID()
+        store.update(previous)
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        let replacement = UUID().uuidString
+        let webExtension = try await webExtension()
+        let origin = try XCTUnwrap(policy.originForUpgrade(of: previous))
+        XCTAssertEqual(origin, previous.cpmOriginIdentifier)
+        policy.pendingInstallations[replacement] = .embedded
+        policy.pendingOriginIdentifiers[replacement] = origin
+        let before = try XCTUnwrap(policy.baseURL(for: replacement, webExtension: webExtension))
+        store.add(InstalledWebExtension(uniqueIdentifier: replacement, filename: "new", name: "CPM", version: "2",
+                                        embeddedType: .embedded, cpmOriginIdentifier: origin))
+        policy.pendingInstallations[replacement] = nil
+        policy.pendingOriginIdentifiers[replacement] = nil
+        let restored = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        XCTAssertEqual(restored.baseURL(for: replacement, webExtension: webExtension), before)
+        XCTAssertEqual(before.host, origin.uuidString.lowercased())
+    }
+
+    func testPendingUpgradeDoesNotReuseOriginAbandonedWhilePolicyWasDisabled() async throws {
+        var enabled = true
+        let store = registry()
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { enabled })
+        let replacement = UUID().uuidString
+        let webExtension = try await webExtension()
+        let inherited = try XCTUnwrap(policy.originForUpgrade(of: installed()))
+        policy.pendingInstallations[replacement] = .embedded
+        policy.pendingOriginIdentifiers[replacement] = inherited
+
+        enabled = false
+        XCTAssertNil(policy.baseURL(for: replacement, webExtension: webExtension))
+        let savedOrigin = try XCTUnwrap(policy.pendingOriginIdentifiers[replacement])
+        XCTAssertNotEqual(savedOrigin, inherited)
+        store.add(InstalledWebExtension(uniqueIdentifier: replacement, filename: "new", name: "CPM", version: "2",
+                                        embeddedType: .embedded, cpmOriginIdentifier: savedOrigin))
+        policy.pendingInstallations[replacement] = nil
+        policy.pendingOriginIdentifiers[replacement] = nil
+
+        enabled = true
+        let restored = try XCTUnwrap(policy.baseURL(for: replacement, webExtension: webExtension))
+        XCTAssertNotEqual(restored.host, inherited.uuidString.lowercased())
+    }
+
+    func testBackgroundFailureRotationOverridesPendingUpgradeOrigin() async throws {
+        let store = registry()
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        let replacement = UUID().uuidString
+        let webExtension = try await webExtension()
+        let inherited = try XCTUnwrap(policy.originForUpgrade(of: installed()))
+        policy.pendingInstallations[replacement] = .embedded
+        policy.pendingOriginIdentifiers[replacement] = inherited
+        store.add(InstalledWebExtension(uniqueIdentifier: replacement, filename: "new", name: "CPM", version: "2",
+                                        embeddedType: .embedded, cpmOriginIdentifier: inherited))
+        let context = WKWebExtensionContext(for: webExtension)
+        context.uniqueIdentifier = replacement
+        policy.recordBackgroundLoadFailure(in: context, errors: [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)])
+
+        let saved = try XCTUnwrap(store.installedExtension(withUniqueIdentifier: replacement)?.cpmOriginIdentifier)
+        XCTAssertNotEqual(saved, inherited)
+        XCTAssertEqual(policy.baseURL(for: replacement, webExtension: webExtension)?.host, saved.uuidString.lowercased())
+    }
+
+    func testUpgradeWithWebAccessibleResourcesDoesNotPersistAnAbandonedPrivateOrigin() async throws {
+        let store = registry()
+        let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })
+        let replacement = UUID().uuidString
+        let inherited = try XCTUnwrap(policy.originForUpgrade(of: installed()))
+        policy.pendingInstallations[replacement] = .embedded
+        policy.pendingOriginIdentifiers[replacement] = inherited
+        let publicExtension = try await webExtension(resources: ["exposed.js"])
+
+        XCTAssertNil(policy.baseURL(for: replacement, webExtension: publicExtension))
+        XCTAssertNil(policy.pendingOriginIdentifiers[replacement])
+        store.add(InstalledWebExtension(uniqueIdentifier: replacement, filename: "new", name: "CPM", version: "2",
+                                        embeddedType: .embedded, cpmOriginIdentifier: policy.pendingOriginIdentifiers[replacement]))
+        policy.pendingInstallations[replacement] = nil
+        policy.pendingOriginIdentifiers[replacement] = nil
+
+        // If a later bundle removes the public resources, it must not revive the abandoned private origin.
+        let privateExtension = try await webExtension()
+        let restored = try XCTUnwrap(policy.baseURL(for: replacement, webExtension: privateExtension))
+        XCTAssertNotEqual(restored.host, inherited.uuidString.lowercased())
+    }
+
+    func testLaunchUpgradeOriginHonorsRuntimeKillSwitchAndEmbeddedType() {
+        var enabled = true
+        let policy = CPMExtensionBaseURLPolicy(installationStore: registry(), isEnabled: { enabled })
+        XCTAssertEqual(policy.originForUpgrade(of: installed()), UUID(uuidString: identifier))
+        for type in DuckDuckGoWebExtensionType.allCases where type != .embedded {
+            XCTAssertNil(policy.originForUpgrade(of: installed(type: type)))
+        }
+        XCTAssertNil(policy.originForUpgrade(of: installed(type: nil)))
+        enabled = false
+        XCTAssertNil(policy.originForUpgrade(of: installed()))
+        enabled = true
+        XCTAssertNotNil(policy.originForUpgrade(of: installed()))
+    }
+
     func testFirstBundledInstallIsEligibleBeforeRegistryWrite() async throws {
         let store = InstalledWebExtensionStoringMock()
         let policy = CPMExtensionBaseURLPolicy(installationStore: store, isEnabled: { true })

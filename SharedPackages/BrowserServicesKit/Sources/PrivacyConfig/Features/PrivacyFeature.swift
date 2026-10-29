@@ -926,6 +926,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for keeping the embedded CPM origin stable across context reloads.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
     case cpmStableBaseURL
+    /// Failsafe for upgrading only CPM before launch load and carrying its origin to the replacement.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
+    case cpmUpgradeBeforeLoad
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.

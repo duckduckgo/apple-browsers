@@ -172,11 +172,8 @@ struct LegacyRecentChatsView: View {
     }
 
     private var separatorLeadingInset: CGFloat {
-        if #available(iOS 16, *) {
-            // List aligns separators with the title: 12pt row inset + 24pt icon + 10pt spacing.
-            return Metrics.rowLeftInset + 24 + 10
-        }
-        return Metrics.rowLeftInset
+        // List aligns separators with the title: 12pt row inset + 24pt icon + 10pt spacing.
+        Metrics.rowLeftInset + 24 + 10
     }
 
     private func rowButton(_ row: SuggestionRow) -> some View {

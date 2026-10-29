@@ -195,6 +195,8 @@ final class UnifiedSuggestionsViewModel: ObservableObject {
         switch kind {
         case .search:
             return listViewModel
+        case .recents where content != .list(.recents):
+            return emptyListViewModel
         case .duckAI, .recents:
             return duckAIListViewModel ?? emptyListViewModel
         }

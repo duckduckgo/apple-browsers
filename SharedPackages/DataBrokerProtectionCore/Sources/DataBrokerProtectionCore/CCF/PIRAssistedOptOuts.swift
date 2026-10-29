@@ -50,7 +50,7 @@ public enum PIRAssistedOptOuts {
                                          brokerName: data.dataBroker.name, brokerURL: data.dataBroker.url, recordName: nil)]
                     : []
                 return scan + data.optOutJobData
-                    .filter { $0.submittedSuccessfullyDate == nil && $0.extractedProfile.removedDate == nil }
+                    .filter { $0.submittedSuccessfullyDate == nil && $0.extractedProfile.removedDate == nil && !$0.isAwaitingEmailConfirmation }
                     .compactMap { job in
                         job.extractedProfile.id.map {
                             PIRAssistedOptOut(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: $0,
@@ -83,6 +83,13 @@ public enum PIRAssistedOptOuts {
     static func consumeStart(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?) -> Bool {
         let key = key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
         return lock.withLock { started.remove(key) != nil }
+    }
+}
+
+private extension OptOutJobData {
+    /// The confirmation runs without the user, so the user's part is done.
+    var isAwaitingEmailConfirmation: Bool {
+        historyEvents.max(by: { $0.date < $1.date })?.type == .optOutSubmittedAndAwaitingEmailConfirmation
     }
 }
 #endif

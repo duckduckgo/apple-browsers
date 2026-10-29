@@ -19,6 +19,7 @@
 #if os(macOS) && DEBUG
 import XCTest
 @testable import DataBrokerProtectionCore
+import DataBrokerProtectionCoreTestsUtils
 
 final class PIRNeedsYouTests: XCTestCase {
 
@@ -124,6 +125,22 @@ final class PIRAssistedOptOutsTests: XCTestCase {
         XCTAssertFalse(PIRAssistedOptOuts.consumeStart(brokerId: 90, profileQueryId: 1, extractedProfileId: nil))
         XCTAssertTrue(PIRAssistedOptOuts.consumeStart(brokerId: 90, profileQueryId: 1, extractedProfileId: 2))
         XCTAssertFalse(PIRAssistedOptOuts.consumeStart(brokerId: 90, profileQueryId: 1, extractedProfileId: 2))
+    }
+
+    func testWhenAnOptOutAwaitsEmailConfirmation_thenItNoLongerWaitsForTheUser() throws {
+        let broker = DataBroker(id: 1, name: "PeopleFinders", url: "peoplefinders.com", steps: [], version: "1.0.0",
+                                schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+        let awaiting = OptOutJobData.mock(with: ExtractedProfile(id: 10, name: "A", profileUrl: "a", identifier: "a"),
+                                          historyEvents: [.mock(type: .optOutStarted, date: Date(timeIntervalSince1970: 1)),
+                                                          .mock(type: .optOutSubmittedAndAwaitingEmailConfirmation, date: Date(timeIntervalSince1970: 2))])
+        let notStarted = OptOutJobData.mock(with: ExtractedProfile(id: 11, name: "B", profileUrl: "b", identifier: "b"))
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = [BrokerProfileQueryData(dataBroker: broker, profileQuery: .mock, scanJobData: .mock,
+                                                                          optOutJobData: [awaiting, notStarted])]
+
+        let pending = try PIRAssistedOptOuts.pending(in: database)
+
+        XCTAssertEqual(pending.map(\.extractedProfileId), [11])
     }
 }
 #endif

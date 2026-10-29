@@ -50,8 +50,11 @@ final class BrowserTabViewController: NSViewController {
 
     private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground))
     private(set) lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
-    private lazy var hoverLabel = NSTextField(string: URL.duckDuckGo.absoluteString)
-    private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: NSColor(resource: .browserTabBackground), borderWidth: 0)
+    private lazy var hoveredLinkTooltip = HoveredLinkTooltipPresenter(
+        hostView: view, backgroundColor: NSColor(resource: .browserTabBackground),
+        isAccessibilityIdentifierEnabled: [.uiTests, .uiTestsOnboarding].contains(AppVersion.runType)
+            && featureFlagger.isFeatureOn(.hoveredLinkTooltipAccessibilityIdentifier)
+    )
 
     private let activeRemoteMessageModel: ActiveRemoteMessageModel
     private let newTabPageActionsManager: () -> NewTabPageActionsManager
@@ -130,8 +133,6 @@ final class BrowserTabViewController: NSViewController {
     private var contextualCompletionCancellable: AnyCancellable?
 
     private weak var previouslySelectedTab: Tab?
-
-    private var hoverLabelWorkItem: DispatchWorkItem?
 
     private var lastURL: URL?
     private weak var lastTab: Tab?
@@ -249,35 +250,10 @@ final class BrowserTabViewController: NSViewController {
     override func loadView() {
         view = browserTabView
 
-        hoverLabelContainer.cornerRadius = 4
-        view.addSubview(hoverLabelContainer)
-
-        hoverLabel.focusRingType = .none
-        hoverLabel.translatesAutoresizingMaskIntoConstraints = false
-        hoverLabel.font = .systemFont(ofSize: 13)
-        hoverLabel.drawsBackground = false
-        hoverLabel.isEditable = false
-        hoverLabel.isBordered = false
-        hoverLabel.lineBreakMode = .byClipping
-        hoverLabel.textColor = .labelColor
-        hoverLabelContainer.addSubview(hoverLabel)
-
         setupLayout()
     }
 
     private func setupLayout() {
-        hoverLabelContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -2).isActive = true
-        view.bottomAnchor.constraint(equalTo: hoverLabelContainer.bottomAnchor, constant: -4).isActive = true
-
-        hoverLabel.setContentHuggingPriority(.defaultHigh, for: .vertical)
-        hoverLabel.setContentHuggingPriority(.init(rawValue: 251), for: .horizontal)
-        hoverLabel.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
-        hoverLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
-        hoverLabelContainer.bottomAnchor.constraint(equalTo: hoverLabel.bottomAnchor, constant: 10).isActive = true
-        hoverLabel.leadingAnchor.constraint(equalTo: hoverLabelContainer.leadingAnchor, constant: 12).isActive = true
-        hoverLabelContainer.trailingAnchor.constraint(equalTo: hoverLabel.trailingAnchor, constant: 8).isActive = true
-        hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
-
         view.addSubview(sidebarContainer)
 
         sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
@@ -302,8 +278,6 @@ final class BrowserTabViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        hoverLabelContainer.alphaValue = 0
-
         if let webViewContainer {
             removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
         }
@@ -313,6 +287,7 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewDidLayout() {
         super.viewDidLayout()
+        hoveredLinkTooltip.updatePosition()
 
         // Only adjust sidebar width when it is visually on-screen (leading < 0 means pulled into view)
         if let leading = sidebarContainerLeadingConstraint?.constant, leading < 0 {
@@ -350,6 +325,7 @@ final class BrowserTabViewController: NSViewController {
 
     override func viewWillDisappear() {
         super.viewWillDisappear()
+        hoveredLinkTooltip.reset()
 
         remoteMessageWindowStateCancellable?.cancel()
         remoteMessageWindowStateCancellable = nil
@@ -362,12 +338,6 @@ final class BrowserTabViewController: NSViewController {
 #if DEBUG
         if isLazyVar(named: "browserTabView", initializedIn: self) {
             browserTabView.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
-        if isLazyVar(named: "hoverLabel", initializedIn: self) {
-            hoverLabel.ensureObjectDeallocated(after: 1.0, do: .interrupt)
-        }
-        if isLazyVar(named: "hoverLabelContainer", initializedIn: self) {
-            hoverLabelContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
         }
         if isLazyVar(named: "sidebarContainer", initializedIn: self) {
             sidebarContainer.ensureObjectDeallocated(after: 1.0, do: .interrupt)
@@ -685,8 +655,7 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.distribution = .fill
         containerStackView.spacing = 0
 
-        // Make sure link preview (tooltip shown in the bottom-left) is on top
-        view.addSubview(containerStackView, positioned: .below, relativeTo: hoverLabelContainer)
+        view.addSubview(containerStackView, positioned: .below, relativeTo: sidebarContainer)
 
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -1184,11 +1153,11 @@ final class BrowserTabViewController: NSViewController {
 
     func subscribeToHoveredLink(of tabViewModel: TabViewModel?) {
         tabViewModel?.tab.hoveredLinkPublisher.sink { [weak self] in
-            self?.scheduleHoverLabelUpdatesForUrl($0)
+            self?.hoveredLinkTooltip.update(url: $0)
         }.store(in: &tabViewModelCancellables)
 #if DEBUG
         if case .xcPreviews = AppVersion.runType {
-            self.scheduleHoverLabelUpdatesForUrl(.duckDuckGo)
+            self.hoveredLinkTooltip.update(url: .duckDuckGo)
         }
 #endif
     }
@@ -1341,7 +1310,7 @@ final class BrowserTabViewController: NSViewController {
         // window closing is handled in the MainWindowController
         guard delegate?.closeWindowIfNeeded() != true else { return }
 
-        scheduleHoverLabelUpdatesForUrl(nil)
+        hoveredLinkTooltip.reset()
         defer {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
         }
@@ -1823,38 +1792,8 @@ extension BrowserTabViewController: TabDelegate {
 
     func windowDidResignKey() {
         pinnedTabsDelegatesCancellable = nil
-        scheduleHoverLabelUpdatesForUrl(nil)
+        hoveredLinkTooltip.reset()
         subscribeToTabSelectedInCurrentKeyWindow()
-    }
-
-    private func scheduleHoverLabelUpdatesForUrl(_ url: URL?) {
-        // cancel previous animation, if any
-        hoverLabelWorkItem?.cancel()
-
-        // schedule an animation if needed
-        var animationItem: DispatchWorkItem?
-        var delay: Double = 0
-        if url == nil && hoverLabelContainer.alphaValue > 0 {
-            // schedule a fade out
-            delay = 0.1
-            animationItem = DispatchWorkItem { [weak self] in
-                self?.hoverLabelContainer.animator().alphaValue = 0
-            }
-        } else if url != nil && hoverLabelContainer.alphaValue < 1 {
-            // schedule a fade in
-            delay = 0.5
-            animationItem = DispatchWorkItem { [weak self] in
-                self?.hoverLabel.stringValue = url?.absoluteString ?? ""
-                self?.hoverLabelContainer.animator().alphaValue = 1
-            }
-        } else {
-            hoverLabel.stringValue = url?.absoluteString ?? ""
-        }
-
-        if let item = animationItem {
-            hoverLabelWorkItem = item
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
-        }
     }
 
     func tab(_ tab: Tab, requestedSaveAutofillData autofillData: AutofillData) {
@@ -2079,6 +2018,16 @@ extension BrowserTabViewController: BrowserTabSelectionDelegate {
 extension BrowserTabViewController {
 
     func addMouseMonitors() {
+        NSEvent.addLocalCancellableMonitor(forEventsMatching: [.mouseMoved, .leftMouseDragged]) { [weak self] event in
+            guard let self, event.window === self.view.window else { return event }
+            if let webView = self.webView, webView.convert(webView.bounds, to: nil).contains(event.locationInWindow) {
+                self.hoveredLinkTooltip.mouseDidMove()
+            } else {
+                self.hoveredLinkTooltip.mouseDidExit()
+            }
+            return event
+        }.store(in: &cancellables)
+
         NSEvent.addLocalCancellableMonitor(forEventsMatching: .leftMouseDown) { [weak self] event in
             guard let self else { return event }
             return self.mouseDown(with: event)

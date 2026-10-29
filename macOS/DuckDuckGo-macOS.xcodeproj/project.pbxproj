@@ -952,6 +952,7 @@
 		3706FDF5293F661700E42796 /* StartupPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */; };
 		3706FDF6293F661700E42796 /* DuckPlayerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3714B1E828EDBAAB0056C57A /* DuckPlayerTests.swift */; };
 		3706FDF7293F661700E42796 /* WebViewExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67C6C3C2654B897006C872E /* WebViewExtensionTests.swift */; };
+		8D9D5E30A7B357F341FB3E04 /* HoveredLinkTooltipPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74051DC32FFB45E8AE2A6094 /* HoveredLinkTooltipPresenterTests.swift */; };
 		3706FDF8293F661700E42796 /* FileStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA1A6DD258C100A00F6F690 /* FileStoreTests.swift */; };
 		3706FDF9293F661700E42796 /* TabViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC9C01B24CB594C00AD1325 /* TabViewModelTests.swift */; };
 		3706FDFA293F661700E42796 /* DefaultBrowserPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CD54B627F1B28A00F1F7B9 /* DefaultBrowserPreferencesTests.swift */; };
@@ -3557,6 +3558,7 @@
 		B677FC542B064A9C0099EB04 /* DataImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B677FC532B064A9C0099EB04 /* DataImportViewModel.swift */; };
 		B677FC552B064A9C0099EB04 /* DataImportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B677FC532B064A9C0099EB04 /* DataImportViewModel.swift */; };
 		B67C6C3D2654B897006C872E /* WebViewExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67C6C3C2654B897006C872E /* WebViewExtensionTests.swift */; };
+		68A94859E4C944D05D10A3C3 /* HoveredLinkTooltipPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74051DC32FFB45E8AE2A6094 /* HoveredLinkTooltipPresenterTests.swift */; };
 		B67C6C422654BF49006C872E /* DuckDuckGo-Symbol.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B67C6C412654BF49006C872E /* DuckDuckGo-Symbol.jpg */; };
 		B67C6C472654C643006C872E /* FileManagerExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67C6C462654C643006C872E /* FileManagerExtensionTests.swift */; };
 		B68172AE269EB43F006D1092 /* GeolocationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68172AD269EB43F006D1092 /* GeolocationServiceTests.swift */; };
@@ -3683,7 +3685,9 @@
 		B6C0BB6729AEFF8100AE8E3C /* BookmarkExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0BB6629AEFF8100AE8E3C /* BookmarkExtension.swift */; };
 		B6C0BB6829AEFF8100AE8E3C /* BookmarkExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0BB6629AEFF8100AE8E3C /* BookmarkExtension.swift */; };
 		B6C0BB6A29AF1C7000AE8E3C /* BrowserTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0BB6929AF1C7000AE8E3C /* BrowserTabView.swift */; };
+		0EECF454D720C3F5EBD109BE /* HoveredLinkTooltipPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B656D5E475E4B75959AEF6E /* HoveredLinkTooltipPresenter.swift */; };
 		B6C0BB6B29AF1C7000AE8E3C /* BrowserTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C0BB6929AF1C7000AE8E3C /* BrowserTabView.swift */; };
+		7E2AC196B5F7D9C06CC1F817 /* HoveredLinkTooltipPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B656D5E475E4B75959AEF6E /* HoveredLinkTooltipPresenter.swift */; };
 		B6C2C9F62760B659005B7F0A /* TestDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9F42760B659005B7F0A /* TestDataModel.xcdatamodeld */; };
 		B6C416A7294A4AE500C4F2E7 /* DuckPlayerTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C416A6294A4AE500C4F2E7 /* DuckPlayerTabExtension.swift */; };
 		B6C843DA2BA1CAB6006FDEC3 /* FilePresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C843D92BA1CAB6006FDEC3 /* FilePresenterTests.swift */; };
@@ -6964,6 +6968,7 @@
 		B66CA41D2AD910B300447CF0 /* DataImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportView.swift; sourceTree = "<group>"; };
 		B677FC532B064A9C0099EB04 /* DataImportViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportViewModel.swift; sourceTree = "<group>"; };
 		B67C6C3C2654B897006C872E /* WebViewExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewExtensionTests.swift; sourceTree = "<group>"; };
+		74051DC32FFB45E8AE2A6094 /* HoveredLinkTooltipPresenterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoveredLinkTooltipPresenterTests.swift; sourceTree = "<group>"; };
 		B67C6C412654BF49006C872E /* DuckDuckGo-Symbol.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "DuckDuckGo-Symbol.jpg"; sourceTree = "<group>"; };
 		B67C6C462654C643006C872E /* FileManagerExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileManagerExtensionTests.swift; sourceTree = "<group>"; };
 		B68172AD269EB43F006D1092 /* GeolocationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeolocationServiceTests.swift; sourceTree = "<group>"; };
@@ -7069,6 +7074,7 @@
 		B6C0B24526E9CB190031CB7F /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
 		B6C0BB6629AEFF8100AE8E3C /* BookmarkExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkExtension.swift; sourceTree = "<group>"; };
 		B6C0BB6929AF1C7000AE8E3C /* BrowserTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTabView.swift; sourceTree = "<group>"; };
+		1B656D5E475E4B75959AEF6E /* HoveredLinkTooltipPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoveredLinkTooltipPresenter.swift; sourceTree = "<group>"; };
 		B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeallocationTests.swift; sourceTree = "<group>"; };
 		B6C2C9F52760B659005B7F0A /* Permissions.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Permissions.xcdatamodel; sourceTree = "<group>"; };
 		B6C416A6294A4AE500C4F2E7 /* DuckPlayerTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerTabExtension.swift; sourceTree = "<group>"; };
@@ -12099,6 +12105,7 @@
 			children = (
 				B637273A26CBC8AF00C8CB02 /* AuthenticationAlert.swift */,
 				B6C0BB6929AF1C7000AE8E3C /* BrowserTabView.swift */,
+				1B656D5E475E4B75959AEF6E /* HoveredLinkTooltipPresenter.swift */,
 				AA585D83248FD31100E9A3E2 /* BrowserTabViewController.swift */,
 				B6BE9FA9293F7955006363C6 /* ModalSheetCancellable.swift */,
 				AA6FFB4524DC3B5A0028F4D0 /* WebView.swift */,
@@ -12185,6 +12192,7 @@
 			children = (
 				B62EB47B25BAD3BB005745C6 /* WKWebViewPrivateMethodsAvailabilityTests.swift */,
 				B67C6C3C2654B897006C872E /* WebViewExtensionTests.swift */,
+				74051DC32FFB45E8AE2A6094 /* HoveredLinkTooltipPresenterTests.swift */,
 				3783F92229432E1800BCA897 /* WebViewTests.swift */,
 				B67C6C412654BF49006C872E /* DuckDuckGo-Symbol.jpg */,
 				AA92ACB024EFE210005F41C9 /* Model */,
@@ -16892,6 +16900,7 @@
 				3706FBED293F65D500E42796 /* TabCollection.swift in Sources */,
 				4B92B7AB2F18A7D800246241 /* WideEventFeatureFlagAdapter.swift in Sources */,
 				B6C0BB6B29AF1C7000AE8E3C /* BrowserTabView.swift in Sources */,
+				7E2AC196B5F7D9C06CC1F817 /* HoveredLinkTooltipPresenter.swift in Sources */,
 				1E4EDA282DE9ED2D0019B6E8 /* AIChatSessionStore.swift in Sources */,
 				B62B483A2ADE46FC000DECE5 /* Application.swift in Sources */,
 				3706FBEE293F65D500E42796 /* MainView.swift in Sources */,
@@ -17471,6 +17480,7 @@
 				3706FDF5293F661700E42796 /* StartupPreferencesTests.swift in Sources */,
 				3706FDF6293F661700E42796 /* DuckPlayerTests.swift in Sources */,
 				3706FDF7293F661700E42796 /* WebViewExtensionTests.swift in Sources */,
+				8D9D5E30A7B357F341FB3E04 /* HoveredLinkTooltipPresenterTests.swift in Sources */,
 				9FA5A0AA2BC900FC00153786 /* BookmarkAllTabsDialogViewModelTests.swift in Sources */,
 				CC0943002E16B6F000E67336 /* FavoritesImportProcessorTests.swift in Sources */,
 				56534DEE29DF252C00121467 /* CapturingDefaultBrowserProvider.swift in Sources */,
@@ -18649,6 +18659,7 @@
 				7BEC20452B0F505F00243D3E /* AddBookmarkFolderPopoverView.swift in Sources */,
 				7B0C7F0E2EDF132200A338FD /* WebNotificationsTabExtension.swift in Sources */,
 				B6C0BB6A29AF1C7000AE8E3C /* BrowserTabView.swift in Sources */,
+				0EECF454D720C3F5EBD109BE /* HoveredLinkTooltipPresenter.swift in Sources */,
 				B6B1E88026D5DA9B0062C350 /* DownloadsViewController.swift in Sources */,
 				BD7090D62C540D5D009EED82 /* EmptyMetadataCollector.swift in Sources */,
 				BBFE244B2EF08CF000D47B95 /* QuitSurveyReturnUserHandler.swift in Sources */,
@@ -20019,6 +20030,7 @@
 				5603D90629B7B746007F9F01 /* MockTabViewItemDelegate.swift in Sources */,
 				7B99CF342EEAC1B3003FA486 /* UserNotificationAuthorizationServiceTests.swift in Sources */,
 				B67C6C3D2654B897006C872E /* WebViewExtensionTests.swift in Sources */,
+				68A94859E4C944D05D10A3C3 /* HoveredLinkTooltipPresenterTests.swift in Sources */,
 				EEBBEF362CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */,
 				474BFF0A8F19B75B7A423E49 /* WebKitPasskeyRequestCancellerTests.swift in Sources */,
 				2C4844957F58F9A7961192B5 /* PasskeyRequestOutcomeReporterTests.swift in Sources */,

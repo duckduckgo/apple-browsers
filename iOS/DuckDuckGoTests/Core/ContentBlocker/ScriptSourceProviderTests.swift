@@ -20,6 +20,8 @@
 import XCTest
 import BrowserServicesKit
 import PrivacyConfig
+import AIChat
+import AIChatTestingUtilities
 @testable import DuckDuckGo
 
 final class ScriptSourceProviderTests: XCTestCase {
@@ -44,7 +46,8 @@ final class ScriptSourceProviderTests: XCTestCase {
                                                                      contentScopeExperimentsManager: experimentManager,
                                                                      internalUserDecider: MockInternalUserDecider(),
                                                                      syncErrorHandler: CapturingAdapterErrorHandler(),
-                                                                     webExtensionAvailability: nil)
+                                                                     webExtensionAvailability: nil,
+                                                                     aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore()))
         let sourceProvider = DefaultScriptSourceProvider(dependencies: dependencies)
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

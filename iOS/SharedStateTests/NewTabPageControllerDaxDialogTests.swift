@@ -23,7 +23,7 @@ import Bookmarks
 import Combine
 import Core
 import SwiftUI
-import Persistence
+@_spi(Testing) import Persistence
 import BrowserServicesKit
 import RemoteMessaging
 import RemoteMessagingTestsUtils
@@ -47,6 +47,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     var flowProvider: MockOnboardingFlowProvider!
     var tutorialSettings: MockTutorialSettings!
     var hvc: NewTabPageViewController!
+    private var testWindow: UIWindow?
 
     override func setUpWithError() throws {
         variantManager = CapturingVariantManager()
@@ -76,6 +77,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
+        testWindow = window
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
         window.rootViewController?.present(hvc, animated: false, completion: nil)
@@ -91,12 +93,51 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        testWindow?.rootViewController?.dismiss(animated: false)
+        testWindow?.isHidden = true
+        testWindow = nil
         variantManager = nil
         dialogFactory = nil
         specProvider = nil
         flowProvider = nil
         tutorialSettings = nil
         hvc = nil
+    }
+
+    func testWhenFocusedContentIsConfiguredBeforeLoadingThenHostedPageIsTransparent() throws {
+        let (configuration, _) = makeConfiguration(withScheduledMessage: false)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
+        XCTAssertFalse(controller.isViewLoaded)
+
+        controller.setFocusedContent(LegacyFocusedNewTabPageContent(isAddressBarAtBottom: false))
+        XCTAssertFalse(controller.isViewLoaded)
+        controller.loadViewIfNeeded()
+
+        let page = try XCTUnwrap(controller.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+        XCTAssertEqual(controller.children.count, 1)
+        XCTAssertTrue(page.parent === controller)
+        XCTAssertTrue(page.view.superview === controller.view)
+        XCTAssertEqual(controller.view.backgroundColor, .clear)
+        XCTAssertEqual(page.view.backgroundColor, .clear)
+    }
+
+    func testWhenLoadedPageChangesFocusedContentThenItRetainsHostAndRestoresBackground() throws {
+        let restingBackground = try XCTUnwrap(hvc.view.backgroundColor)
+        let page = try XCTUnwrap(hvc.children.compactMap { $0 as? UIHostingController<NewTabPageView> }.first)
+
+        hvc.setFocusedContent(LegacyFocusedNewTabPageContent(isAddressBarAtBottom: true))
+        XCTAssertEqual(hvc.view.backgroundColor, .clear)
+        XCTAssertEqual(page.view.backgroundColor, .clear)
+
+        hvc.setFocusedContent(nil)
+        let restoredBackground = try XCTUnwrap(hvc.view.backgroundColor)
+        for style in [UIUserInterfaceStyle.light, .dark] {
+            let traits = UITraitCollection(userInterfaceStyle: style)
+            XCTAssertEqual(restoredBackground.resolvedColor(with: traits), restingBackground.resolvedColor(with: traits))
+        }
+        XCTAssertEqual(page.view.backgroundColor, .clear)
+        XCTAssertEqual(hvc.children.count, 1)
+        XCTAssertTrue(hvc.children.first === page)
     }
 
     func testWhenPageResizesThenHostedContentFillsContainerAndInheritsSafeArea() throws {
@@ -113,6 +154,315 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             XCTAssertEqual(page.view.frame, hvc.view.bounds)
             XCTAssertEqual(page.view.safeAreaInsets, hvc.view.safeAreaInsets)
             XCTAssertFalse(page.view.hasAmbiguousLayout)
+        }
+    }
+
+    func testWhenLegacyFocusedTopClearanceShrinksThenScrollableContentTracksItOnce() throws {
+        try assertFocusedContentTracksTopClearance(usesRedesign: false)
+    }
+
+    func testWhenRedesignedFocusedTopClearanceShrinksThenScrollableContentTracksItOnce() throws {
+        try assertFocusedContentTracksTopClearance(usesRedesign: true)
+    }
+
+    func testWhenLegacyFocusedContentIsScrolledThenDismissalReturnsToAlignedTop() throws {
+        try assertFocusedContentTracksTopClearance(usesRedesign: false, resetsScrolledContent: true)
+    }
+
+    func testWhenLegacyFocusedContentIsScrolledThenResetReturnsToAlignedTopBeforeClearanceChanges() throws {
+        try assertFocusedContentTracksTopClearance(usesRedesign: false, resetsScrolledContent: true, resetsBeforeClearanceChanges: true)
+    }
+
+    func testWhenTypingTopClearanceShrinksThenNativeListTracksItInBothFlagStates() throws {
+        for usesScrollableEscapeHatch in [false, true] {
+            try assertTypingListTracksTopClearance(usesScrollableEscapeHatch: usesScrollableEscapeHatch)
+        }
+    }
+
+    func testWhenRedesignedHatchFirstContentChangesModeThenInputGapStaysFixed() throws {
+        let store = MockKeyValueFileStore()
+        LastTabShortcutAdapter(keyValueStore: store).setEnabled(true)
+        let hatch = EscapeHatchModel.preview(title: "Geometry", subtitle: "", tabType: .regular,
+                                             domain: nil, targetTab: Tab(), tabCount: 1, keyValueStore: store)
+        XCTAssertTrue(hatch.isReturnToTabCardVisible)
+        XCTAssertTrue(hvc.favoritesModel.isEmpty)
+        let recentChats = SuggestionsListViewModel(source: EmptySuggestionsSource())
+        var markerFrame: CGRect?
+        var frameRevision = 0
+        let marker = AnyView(Color.clear.frame(height: 1)
+            .onFrameUpdate(in: .global, using: FocusedScrollProbeFrameKey.self) { frame in
+                markerFrame = frame
+                frameRevision += 1
+            })
+        func content(showsSearchModules: Bool, topInset: CGFloat) -> AnyView {
+            AnyView(RedesignedFocusedSearchModulesView(favoritesModel: hvc.favoritesModel,
+                                                       messagesModel: nil,
+                                                       showsSearchModules: showsSearchModules,
+                                                       recentChats: recentChats,
+                                                       escapeHatch: hatch,
+                                                       syncPromo: marker,
+                                                       contentTopInset: topInset,
+                                                       usesScrollableEscapeHatch: true))
+        }
+        let hosting = UIHostingController(rootView: content(showsSearchModules: true, topInset: 131))
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        window.rootViewController = hosting
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+            testWindow?.makeKeyAndVisible()
+        }
+        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            hosting.view.layoutIfNeeded()
+            return markerFrame?.height == 1
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        let initialFrame = try XCTUnwrap(markerFrame)
+        let initialGap = initialFrame.minY - hosting.view.safeAreaInsets.top - 131
+
+        for showsSearchModules in [false, true] {
+            let topInset: CGFloat = showsSearchModules ? 131 : 184
+            let revision = frameRevision
+            let animated = expectation(description: "Redesigned mode clearance animation completes")
+            let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    hosting.rootView = content(showsSearchModules: showsSearchModules, topInset: topInset)
+                }
+                hosting.view.layoutIfNeeded()
+            }
+            animator.addCompletion { _ in animated.fulfill() }
+            animator.startAnimation()
+            wait(for: [animated], timeout: 5)
+            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                hosting.view.layoutIfNeeded()
+                return frameRevision > revision
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+            let frame = try XCTUnwrap(markerFrame)
+            XCTAssertEqual(frame.minY - hosting.view.safeAreaInsets.top - topInset, initialGap, accuracy: 1,
+                           "The marker below the unchanged hatch must retain its input gap across modes")
+            XCTAssertEqual(frame.minY, initialFrame.minY + topInset - 131, accuracy: 1,
+                           "The marker below the unchanged hatch must move by the input height change alone")
+        }
+    }
+
+    private func assertFocusedContentTracksTopClearance(
+        usesRedesign: Bool,
+        resetsScrolledContent: Bool = false,
+        resetsBeforeClearanceChanges: Bool = false
+    ) throws {
+        let (configuration, _) = makeConfiguration(withScheduledMessage: false)
+        let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .aiChat, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: true, resultsPending: false))
+        let host = UnifiedSuggestionsHost(config: UnifiedSuggestionsHostConfig(
+            source: EmptySuggestionsSource(),
+            inputsPublisher: inputs.eraseToAnyPublisher(),
+            isAddressBarAtBottom: false,
+            favoritesProvider: { controller },
+            onSelectRow: { _ in },
+            onDeleteRow: { _ in },
+            onTapAheadRow: { _ in }), usesScrollableEscapeHatch: true)
+        var probeFrame: CGRect?
+        var probeRevision = 0
+        let probe = AnyView(Color.clear.frame(height: 1_200)
+            .onFrameUpdate(in: .global, using: FocusedScrollProbeFrameKey.self) { frame in
+                probeFrame = frame
+                probeRevision += 1
+            })
+        host.setUsesRedesignedNewTabPageLayout(usesRedesign)
+        host.setFocusedContent(mode: .aiChat, escapeHatch: nil, syncPromo: probe)
+
+        let parent = UIViewController()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        window.rootViewController = parent
+        window.makeKeyAndVisible()
+        host.start(in: parent.view, parentViewController: parent, isFloatingUIEnabled: true, textPublisher: Just(""))
+        defer {
+            host.tearDown()
+            window.isHidden = true
+            window.rootViewController = nil
+            testWindow?.makeKeyAndVisible()
+        }
+        host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
+        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            parent.view.layoutIfNeeded()
+            return probeFrame?.height == 1_200 && self.outerContentScrollView(in: parent.view) != nil
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        let scrollView = try XCTUnwrap(outerContentScrollView(in: parent.view))
+        print("[EHScrollTest] mounted scene=\(scene.activationState.rawValue) parentWindow=\(parent.view.window === window) controllerWindow=\(controller.viewIfLoaded?.window === window)")
+        XCTAssertTrue(parent.view.window === window)
+        if !usesRedesign { XCTAssertTrue(controller.view.window === window) }
+        let initialFrame = try XCTUnwrap(probeFrame)
+        let initialViewport = scrollView.convert(scrollView.bounds, to: window)
+        let initialNativeTopInset = scrollView.adjustedContentInset.top
+        XCTAssertEqual(initialViewport.minY, 0, accuracy: 1)
+        XCTAssertEqual(initialNativeTopInset, parent.view.safeAreaInsets.top, accuracy: 1)
+
+        for topInset in [CGFloat(177), 131, 60] {
+            if resetsScrolledContent && topInset == 60 {
+                scrollView.contentOffset.y = 250
+                let scrolled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                    parent.view.layoutIfNeeded()
+                    return (probeFrame?.maxY ?? 0) > 0 && (probeFrame?.minY ?? 0) < 0
+                }, object: nil)
+                XCTAssertEqual(XCTWaiter.wait(for: [scrolled], timeout: 5), .completed)
+                XCTAssertTrue(outerContentScrollView(in: controller.view) === scrollView)
+                XCTAssertTrue(controller.isViewLoaded)
+                print("[EHScrollTest] reset.begin offset=\(scrollView.contentOffset) inset=\(scrollView.adjustedContentInset) content=\(scrollView.contentSize) probe=\(String(describing: probeFrame))")
+                host.scrollLegacyContentToTop(duration: 0.2)
+                if resetsBeforeClearanceChanges {
+                    let alignedTop = NSPredicate { _, _ in
+                        parent.view.layoutIfNeeded()
+                        return abs(scrollView.contentOffset.y + scrollView.adjustedContentInset.top) <= 1
+                            && abs((probeFrame?.minY ?? .infinity) - initialFrame.minY - 131 + 184) <= 1
+                    }
+                    let reset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
+                    let animatedResult = XCTWaiter.wait(for: [reset], timeout: 5)
+                    XCTAssertEqual(animatedResult, .completed)
+                    print("[EHScrollTest] reset.fixedClearance animated=\(animatedResult) offset=\(scrollView.contentOffset) probe=\(String(describing: probeFrame))")
+                    if animatedResult != .completed {
+                        controller.scrollToTop(duration: 0.2)
+                        let controllerReset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
+                        let controllerResult = XCTWaiter.wait(for: [controllerReset], timeout: 5)
+                        XCTAssertEqual(controllerResult, .completed)
+                        print("[EHScrollTest] reset.fixedClearance directController=\(controllerResult) offset=\(scrollView.contentOffset) loaded=\(controller.isViewLoaded)")
+                        host.scrollLegacyContentToTop(duration: 0)
+                        let immediateReset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
+                        let immediateResult = XCTWaiter.wait(for: [immediateReset], timeout: 5)
+                        XCTAssertEqual(immediateResult, .completed)
+                        print("[EHScrollTest] reset.fixedClearance immediate=\(immediateResult) offset=\(scrollView.contentOffset) probe=\(String(describing: probeFrame))")
+                        if immediateResult != .completed {
+                            scrollView.setContentOffset(CGPoint(x: 0, y: -scrollView.adjustedContentInset.top), animated: false)
+                            let nativeReset = XCTNSPredicateExpectation(predicate: alignedTop, object: nil)
+                            let nativeResult = XCTWaiter.wait(for: [nativeReset], timeout: 5)
+                            XCTAssertEqual(nativeResult, .completed)
+                            print("[EHScrollTest] reset.fixedClearance directNative=\(nativeResult) offset=\(scrollView.contentOffset) probe=\(String(describing: probeFrame))")
+                        }
+                    }
+                }
+            }
+            let revision = probeRevision
+            let animated = expectation(description: "Focused top clearance animation completes")
+            let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) {
+                host.setContentInsets(UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0))
+                parent.view.layoutIfNeeded()
+            }
+            animator.addCompletion { _ in animated.fulfill() }
+            animator.startAnimation()
+            wait(for: [animated], timeout: 5)
+            let expectedOrigin = initialFrame.minY + topInset - 184
+            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                parent.view.layoutIfNeeded()
+                return probeRevision > revision && abs((probeFrame?.minY ?? .infinity) - expectedOrigin) <= 1
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+
+            let frame = try XCTUnwrap(probeFrame)
+            if resetsScrolledContent && topInset == 60 {
+                print("[EHScrollTest] reset.end offset=\(scrollView.contentOffset) inset=\(scrollView.adjustedContentInset) content=\(scrollView.contentSize) probe=\(frame)")
+            }
+            XCTAssertEqual(frame.minY, initialFrame.minY + topInset - 184, accuracy: 1,
+                           "The scrolling content must follow the input clearance exactly once")
+            XCTAssertTrue(outerContentScrollView(in: parent.view) === scrollView)
+            XCTAssertEqual(scrollView.convert(scrollView.bounds, to: window).minY, initialViewport.minY, accuracy: 1)
+            XCTAssertEqual(scrollView.adjustedContentInset.top, initialNativeTopInset, accuracy: 1,
+                           "Input clearance belongs to the scrolling content, not the native safe area")
+        }
+    }
+
+    private func outerContentScrollView(in view: UIView) -> UIScrollView? {
+        if let scrollView = view as? UIScrollView, !(scrollView is UICollectionView), !(scrollView is UITableView) { return scrollView }
+        return view.subviews.lazy.compactMap { self.outerContentScrollView(in: $0) }.first
+    }
+
+    private func assertTypingListTracksTopClearance(usesScrollableEscapeHatch: Bool) throws {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: true, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let host = UnifiedSuggestionsHost(config: UnifiedSuggestionsHostConfig(
+            source: FocusedGeometrySuggestionsSource(),
+            inputsPublisher: inputs.eraseToAnyPublisher(),
+            isAddressBarAtBottom: false,
+            favoritesProvider: { nil },
+            onSelectRow: { _ in },
+            onDeleteRow: { _ in },
+            onTapAheadRow: { _ in }), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
+        host.setFocusedContent(mode: .search, escapeHatch: nil, syncPromo: nil)
+        let parent = UIViewController()
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+            .first { $0.activationState == .foregroundActive })
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        window.rootViewController = parent
+        window.makeKeyAndVisible()
+        host.start(in: parent.view, parentViewController: parent, isFloatingUIEnabled: true, textPublisher: Just("a"))
+        defer {
+            host.tearDown()
+            window.isHidden = true
+            window.rootViewController = nil
+            testWindow?.makeKeyAndVisible()
+        }
+
+        func nativeList(in view: UIView) -> UIScrollView? {
+            if let scrollView = view as? UIScrollView, scrollView is UICollectionView || scrollView is UITableView { return scrollView }
+            return view.subviews.lazy.compactMap { nativeList(in: $0) }.first
+        }
+        func visibleCell(in list: UIScrollView) -> UIView? {
+            if let list = list as? UICollectionView { return list.visibleCells.first }
+            return (list as? UITableView)?.visibleCells.first
+        }
+        let hostingController = try XCTUnwrap(parent.children.compactMap { $0 as? UIHostingController<UnifiedSuggestionsView> }.first)
+        print("[EHScrollTest] typing.mounted scene=\(scene.activationState.rawValue) parentWindow=\(parent.view.window === window) controllerWindow=\(hostingController.view.window === window)")
+        XCTAssertTrue(parent.view.window === window)
+        XCTAssertTrue(hostingController.view.window === window)
+        host.setContentInsets(UIEdgeInsets(top: 184, left: 0, bottom: 0, right: 0))
+        let mounted = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            parent.view.layoutIfNeeded()
+            guard let list = nativeList(in: parent.view), visibleCell(in: list) != nil else { return false }
+            return abs(list.convert(CGPoint.zero, to: window).y - parent.view.safeAreaInsets.top - 184) <= 1
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [mounted], timeout: 5), .completed)
+        let list = try XCTUnwrap(nativeList(in: parent.view))
+        let initialOrigin = list.convert(CGPoint.zero, to: window).y
+        let initialCell = try XCTUnwrap(visibleCell(in: list))
+        let initialCellOrigin = initialCell.convert(initialCell.bounds, to: window).minY
+        let initialViewportOrigin = list.convert(list.bounds, to: window).minY
+        XCTAssertEqual(hostingController.rootView.viewModel.contentTopInset, usesScrollableEscapeHatch ? 184 : 0)
+
+        for topInset in [CGFloat(177), 131, 60] {
+            let animated = expectation(description: "Typing list clearance animation completes")
+            let animator = UIViewPropertyAnimator(duration: 0.2, curve: .easeInOut) {
+                host.setContentInsets(UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0))
+                parent.view.layoutIfNeeded()
+            }
+            animator.addCompletion { _ in animated.fulfill() }
+            animator.startAnimation()
+            wait(for: [animated], timeout: 5)
+            let expectedOrigin = initialOrigin + topInset - 184
+            let expectedCellOrigin = initialCellOrigin + topInset - 184
+            let updated = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+                parent.view.layoutIfNeeded()
+                guard let cell = visibleCell(in: list) else { return false }
+                return abs(list.convert(CGPoint.zero, to: window).y - expectedOrigin) <= 1
+                    && abs(cell.convert(cell.bounds, to: window).minY - expectedCellOrigin) <= 1
+            }, object: nil)
+            XCTAssertEqual(XCTWaiter.wait(for: [updated], timeout: 5), .completed)
+            print("[EHScrollTest] typing scrolling=\(usesScrollableEscapeHatch) top=\(topInset) origin=\(list.convert(CGPoint.zero, to: window).y) offset=\(list.contentOffset) inset=\(list.adjustedContentInset) parentSafe=\(parent.view.safeAreaInsets)")
+            print("[EHScrollTest] typing modelTop=\(hostingController.rootView.viewModel.contentTopInset) viewport=\(list.convert(list.bounds, to: window)) cell=\(String(describing: visibleCell(in: list).map { $0.convert($0.bounds, to: window) }))")
+            XCTAssertEqual(hostingController.rootView.viewModel.contentTopInset, usesScrollableEscapeHatch ? topInset : 0)
+            XCTAssertEqual(list.convert(CGPoint.zero, to: window).y, expectedOrigin, accuracy: 1)
+            let cell = try XCTUnwrap(visibleCell(in: list))
+            XCTAssertEqual(cell.convert(cell.bounds, to: window).minY, expectedCellOrigin, accuracy: 1)
+            XCTAssertEqual(list.convert(list.bounds, to: window).minY, initialViewportOrigin, accuracy: 1)
+            XCTAssertTrue(nativeList(in: parent.view) === list)
         }
     }
 
@@ -341,6 +691,25 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         // Tailored router must NOT enter the regular Dax sequence when there is no promo — otherwise
         // a stray `.initial`/`.subsequent` dialog could leak into the Duck.ai onboarding completion UX.
         XCTAssertFalse(specProvider.nextHomeScreenMessageNewCalled)
+    }
+}
+
+@MainActor
+private final class FocusedGeometrySuggestionsSource: SuggestionsSource {
+    var sectionsPublisher: AnyPublisher<[SuggestionSection], Never> {
+        Just([SuggestionSection(id: "geometry", rows: [SuggestionRowMapper.searchRow(query: "geometry", idPrefix: "geometry")])])
+            .eraseToAnyPublisher()
+    }
+
+    func start(textPublisher: AnyPublisher<String, Never>) {}
+    func tearDown() {}
+}
+
+private struct FocusedScrollProbeFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 

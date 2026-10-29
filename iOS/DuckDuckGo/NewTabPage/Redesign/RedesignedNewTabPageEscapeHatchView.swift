@@ -20,6 +20,7 @@
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import os.log
 
 /// Renders the same eligible return-to-tab model as the production resting page.
 struct RedesignedNewTabPageEscapeHatchView: View {
@@ -62,6 +63,10 @@ struct RedesignedEscapeHatchView: View {
         }
         .animation(.easeInOut(duration: Metrics.collapseDuration), value: model.isReturnToTabCardVisible)
         .id(model.targetTab.uid)
+        .onFrameUpdate(in: .global, using: RedesignedEscapeHatchDiagnosticFrameKey.self) { frame in
+            let identity = String(describing: ObjectIdentifier(model))
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=hatch.frame renderer=redesigned model=\(identity, privacy: .public) frame=\(String(describing: frame), privacy: .public) returnCard=\(model.isReturnToTabCardVisible, privacy: .public)")
+        }
     }
 
     private var lastVisitedText: String? {
@@ -129,6 +134,14 @@ struct RedesignedEscapeHatchView: View {
         } else {
             model.burnWithConfirmationFromMenu(menuFrameInWindow)
         }
+    }
+}
+
+private struct RedesignedEscapeHatchDiagnosticFrameKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 

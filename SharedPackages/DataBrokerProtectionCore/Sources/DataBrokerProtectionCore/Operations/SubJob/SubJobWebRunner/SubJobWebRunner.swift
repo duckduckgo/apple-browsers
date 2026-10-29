@@ -141,6 +141,18 @@ public extension SubJobWebRunning {
                 await self.executeNextStep()
             }
         }
+        handler.manualControl.resumeAfterUserNavigation = { [weak self] in
+            guard let self else { return }
+            // Checking the page is the only way to tell whether the user's own submission went through.
+            guard self.actionsHandler?.isForOptOut == true, self.actionsHandler?.keepOnlyRemainingExpectations() == true else {
+                self.failed(with: DataBrokerProtectionError.actionFailed(actionID: action.id,
+                                                                         message: "The page moved on during the user's turn"))
+                _ = self.runnerCancellation.markCancelled()
+                await self.webViewHandler?.finish()
+                return
+            }
+            await self.executeNextStep()
+        }
         handler.manualControl.cancel = { [weak self] in
             guard let self else { return }
             self.failed(with: DataBrokerProtectionError.jobTimeout)
@@ -178,6 +190,15 @@ public extension SubJobWebRunning {
             await handler.updateAssistTarget(for: action)
             if let actionsHandler {
                 await handler.updateAssistChecklist(actionsHandler, profileQuery: context.profileQuery)
+            }
+            if let check = actionsHandler?.submissionCheck(before: action), await handler.consumeUserTurnEnded() {
+                // The user may have pressed the page's own submit during their turn; clicking again could send a duplicate.
+                actionsHandler?.pendingSubmissionCheck = (check, action)
+                Logger.action.log("Checking whether the user already submitted before running \(action.actionType.rawValue, privacy: .public)")
+                await webViewHandler?.execute(action: check, ofType: stepType,
+                                              data: .userData(context.profileQuery, extractedProfile,
+                                                              fetchedEmail.map { FetchedEmail(email: $0) }, emailData))
+                return
             }
         }
         if executionConfig.userSolvesCaptcha(forBrokerAt: context.dataBroker.url),
@@ -596,6 +617,15 @@ public extension SubJobWebRunning {
         recordDebugEvent(kind: .actionResponse,
                          actionType: actionType,
                          details: DebugHelper.prettyPrintedJSON(from: ["actionId": actionId, "actionType": actionType.rawValue]))
+        #if os(macOS) && DEBUG
+        if let pending = actionsHandler?.pendingSubmissionCheck, pending.check.id == actionId {
+            actionsHandler?.pendingSubmissionCheck = nil
+            Logger.action.log("The user already submitted; skipping to the remaining checks")
+            _ = actionsHandler?.keepOnlyRemainingExpectations()
+            await executeNextStep()
+            return
+        }
+        #endif
         let isForOptOut = actionsHandler?.isForOptOut == true
 
         switch actionType {
@@ -727,6 +757,14 @@ public extension SubJobWebRunning {
             await failAsCancelledAndTearDown()
             return
         }
+
+        #if os(macOS) && DEBUG
+        if let pending = actionsHandler?.pendingSubmissionCheck {
+            actionsHandler?.pendingSubmissionCheck = nil
+            await runNextAction(pending.deferred)
+            return
+        }
+        #endif
 
         if let currentAction = actionsHandler?.currentAction(), currentAction is ConditionAction {
             Logger.action.log(loggerContext(for: currentAction),

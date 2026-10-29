@@ -99,6 +99,13 @@ public class DataBrokerProtectionFeature: Subfeature {
         }
     }
 
+    /// The page holding the interrupted action is gone, so its response will never come.
+    @MainActor
+    func abandonSuspendedAction() {
+        suspendedAction = nil
+        manualGeneration = UUID()
+    }
+
     @MainActor
     private func waitForManualResume(generation: UUID) async -> Bool {
         while isManualControlActive && preservesManualAutomation && manualGeneration == generation {

@@ -143,4 +143,71 @@ final class PIRAssistedOptOutsTests: XCTestCase {
         XCTAssertEqual(pending.map(\.extractedProfileId), [11])
     }
 }
+final class PIRActionsAfterUserSubmitTests: XCTestCase {
+
+    private func optOut(_ actions: [Action]) -> ActionsHandler {
+        ActionsHandler.forOptOut(Step(type: .optOut, actions: actions))
+    }
+
+    func testWhenTheUserSubmitsDuringTheCaptcha_thenOnlyTheRemainingChecksRun() {
+        let sut = optOut([FillFormAction(id: "fill", actionType: .fillForm, elements: []),
+                          GetCaptchaInfoAction(id: "captcha", actionType: .getCaptchaInfo),
+                          SolveCaptchaAction(id: "solve", actionType: .solveCaptcha),
+                          ClickAction(id: "submit", actionType: .click),
+                          ExpectationAction(id: "success", actionType: .expectation)])
+        _ = sut.nextAction()
+        _ = sut.nextAction()
+
+        XCTAssertTrue(sut.keepOnlyRemainingExpectations())
+        XCTAssertEqual(sut.nextAction()?.id, "success")
+        XCTAssertNil(sut.nextAction())
+    }
+
+    func testWhenNoChecksRemain_thenThereIsNothingToConfirmTheSubmission() {
+        let sut = optOut([GetCaptchaInfoAction(id: "captcha", actionType: .getCaptchaInfo),
+                          ClickAction(id: "submit", actionType: .click)])
+        _ = sut.nextAction()
+
+        XCTAssertFalse(sut.keepOnlyRemainingExpectations())
+        XCTAssertNil(sut.nextAction())
+    }
+
+    func testChecksAlreadyRunAreNotRunAgain() {
+        let sut = optOut([ExpectationAction(id: "form-loaded", actionType: .expectation),
+                          GetCaptchaInfoAction(id: "captcha", actionType: .getCaptchaInfo),
+                          ExpectationAction(id: "success", actionType: .expectation)])
+        _ = sut.nextAction()
+        _ = sut.nextAction()
+
+        XCTAssertTrue(sut.keepOnlyRemainingExpectations())
+        XCTAssertEqual(sut.nextAction()?.id, "success")
+    }
+
+    func testBeforeTheSubmitClick_thenTheFinalCheckRunsFirst() throws {
+        let sut = optOut([GetCaptchaInfoAction(id: "captcha", actionType: .getCaptchaInfo),
+                          ClickAction(id: "submit", actionType: .click),
+                          ExpectationAction(id: "sent", actionType: .expectation),
+                          ExpectationAction(id: "success", actionType: .expectation)])
+        _ = sut.nextAction()
+        let submit = try XCTUnwrap(sut.nextAction())
+
+        XCTAssertEqual(sut.submissionCheck(before: submit)?.id, "success")
+    }
+
+    func testOnlyClicksAndFillsWaitForTheCheck() throws {
+        let sut = optOut([ExpectationAction(id: "loaded", actionType: .expectation),
+                          ExpectationAction(id: "success", actionType: .expectation)])
+        let loaded = try XCTUnwrap(sut.nextAction())
+
+        XCTAssertNil(sut.submissionCheck(before: loaded))
+    }
+
+    func testScansAreNeverChecked() throws {
+        let sut = ActionsHandler.forScan(Step(type: .scan, actions: [ClickAction(id: "search", actionType: .click),
+                                                                     ExpectationAction(id: "results", actionType: .expectation)]))
+        let search = try XCTUnwrap(sut.nextAction())
+
+        XCTAssertNil(sut.submissionCheck(before: search))
+    }
+}
 #endif

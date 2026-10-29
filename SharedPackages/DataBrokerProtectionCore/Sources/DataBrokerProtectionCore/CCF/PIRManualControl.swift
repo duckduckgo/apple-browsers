@@ -35,6 +35,8 @@ final class PIRManualControl {
     var isEmbeddedChallenge = false
     private(set) var preservesAutomation = false
     var resume: (() async -> Void)?
+    /// Runs when the user moved the page on during their turn, for example by submitting the form.
+    var resumeAfterUserNavigation: (() async -> Void)?
     var cancel: (() async -> Void)?
     let budget = PIRManualControlContext.budget
 

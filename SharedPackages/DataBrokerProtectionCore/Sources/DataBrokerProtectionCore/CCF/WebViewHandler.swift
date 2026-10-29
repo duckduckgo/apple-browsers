@@ -66,6 +66,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     private var expectedManagedChallengeURL: URL?
     private var resumeAfterManagedNavigation = false
     private var embeddedChallengeTask: Task<Void, Never>?
+    private var userNavigatedDuringTurn = false
+    private var turnEndedByUserNavigation = false
+    private var userTurnEndedSinceLastClickOrFill = false
 #endif
     private var urlObservation: NSKeyValueObservation?
     private var window: NSWindow?
@@ -302,6 +305,8 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     /// the page holds until the turn ends; a managed challenge replaces the page, so its interrupted work is dropped.
     private func beginUserTurn(_ kind: PIRAssistUserTurnKind) {
         guard let webView, !manualControl.isPaused else { return }
+        userNavigatedDuringTurn = false
+        turnEndedByUserNavigation = false
         let preservingAutomation = kind != .managedChallenge
         manualControl.isEmbeddedChallenge = preservingAutomation
         manualControl.pause(preservingAutomation: preservingAutomation)
@@ -329,19 +334,43 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                   isExpectedManagedChallengeDestination(webView.url) else { return }
         }
         let resumeInterruptedAutomation = manualControl.preservesAutomation && !manualControl.isManagedChallenge
+            && !turnEndedByUserNavigation
+        if turnEndedByUserNavigation {
+            manualControl.invalidateAutomation()
+            dataBrokerFeature?.abandonSuspendedAction()
+        }
         manualDeadline?.cancel()
         manualDeadline = nil
         resumeAfterManagedNavigation = false
         manualControl.isManagedChallenge = false
         manualControl.endPause()
         assistSession?.setUserTurn(nil)
+        userTurnEndedSinceLastClickOrFill = !turnEndedByUserNavigation
         dataBrokerFeature?.pushAssistMessage(.userTurnEnded, params: PIRUserTurnEndedParams(reason: reason), webView: webView)
         dataBrokerFeature?.setManualControl(false)
         installTimer()
         resumeActiveContinuation(with: .success(()))
-        if !resumeInterruptedAutomation {
+        if turnEndedByUserNavigation {
+            Task { @MainActor [weak self] in await self?.manualControl.resumeAfterUserNavigation?() }
+        } else if !resumeInterruptedAutomation {
             Task { @MainActor [weak self] in await self?.manualControl.resume?() }
         }
+    }
+
+    /// True once after a user's turn ended, when they may have submitted the form themselves.
+    func consumeUserTurnEnded() -> Bool {
+        defer { userTurnEndedSinceLastClickOrFill = false }
+        return userTurnEndedSinceLastClickOrFill
+    }
+
+    /// The user moved the page on during an embedded challenge, most likely by submitting the form themselves,
+    /// so the interrupted actions no longer apply to this page.
+    private func endTurnAfterUserNavigation() {
+        userNavigatedDuringTurn = false
+        guard manualControl.isPaused, manualControl.isEmbeddedChallenge else { return }
+        Logger.action.log("Assist: the page moved on during the user's turn")
+        turnEndedByUserNavigation = true
+        resumeFromUserTurn(reason: .userConfirmed)
     }
 
     private func stopAssistedJob() {
@@ -411,7 +440,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         await askUserToSolve(.recaptcha)
     }
 
-    /// Returns once the user's turn is over: true to carry on, false if the job ended meanwhile.
+    /// Returns once the user's turn is over: true to carry on, false if the job ended or the user moved the page on.
     private func askUserToSolve(_ kind: PIRAssistUserTurnKind) async -> Bool {
         beginUserTurn(kind)
         guard manualControl.isPaused else { return false }
@@ -423,7 +452,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             }
             do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return false }
         }
-        return !Task.isCancelled && webView != nil
+        return !Task.isCancelled && webView != nil && !turnEndedByUserNavigation
     }
 
     private func hasToken(for kind: PIRAssistUserTurnKind) async -> Bool {
@@ -455,6 +484,7 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
             params: Params(state: ActionRequest(action: action, data: data))
         )
     }
+
 
     public func evaluateJavaScript(_ javaScript: String) async throws {
         #if os(macOS) && DEBUG
@@ -664,6 +694,11 @@ extension DataBrokerProtectionWebViewHandler: NSToolbarDelegate {
 extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 
     public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+#if os(macOS) && DEBUG
+        if manualControl.isPaused, manualControl.isEmbeddedChallenge {
+            userNavigatedDuringTurn = true
+        }
+#endif
     }
 
     public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -671,6 +706,9 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
 #if os(macOS)
         updateAddressBar(with: webView.url)
         #if DEBUG
+        if userNavigatedDuringTurn {
+            endTurnAfterUserNavigation()
+        }
         pushAssistMode()
         if manualControl.isPaused, manualControl.isManagedChallenge, didReachManagedChallengeDestination {
             // The cleared challenge landed on the broker page, so hand back without waiting for the user.

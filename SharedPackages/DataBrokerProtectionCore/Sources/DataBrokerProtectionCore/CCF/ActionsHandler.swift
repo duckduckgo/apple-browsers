@@ -37,6 +37,25 @@ public class ActionsHandler {
     var isEmailConfirmationContinuation = false
     var assistActions: [Action] { actions }
     var assistCurrentIndex: Int? { lastExecutedActionIndex }
+
+    /// The user submitted the form themselves, so only the checks that it went through are left to run.
+    /// Returns false when there's nothing left to check.
+    func keepOnlyRemainingExpectations() -> Bool {
+        let next = min((lastExecutedActionIndex ?? -1) + 1, actions.count)
+        let expectations = actions[next...].filter { $0 is ExpectationAction }
+        actions = Array(actions[..<next]) + expectations
+        return !expectations.isEmpty
+    }
+
+    /// Set while the opt-out's final check runs ahead of `deferred`, to see whether the user already submitted the form.
+    var pendingSubmissionCheck: (check: Action, deferred: Action)?
+
+    /// The final check to run before `action`, if it would click or fill on the opt-out page.
+    func submissionCheck(before action: Action) -> Action? {
+        guard stepType == .optOut, action is ClickAction || action is FillFormAction,
+              let index = lastExecutedActionIndex, index < actions.count else { return nil }
+        return actions[(index + 1)...].last { $0 is ExpectationAction }
+    }
 #endif
 
     public func currentAction() -> Action? {

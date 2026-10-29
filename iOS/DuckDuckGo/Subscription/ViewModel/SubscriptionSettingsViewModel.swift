@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import FoundationExtensions
 import SwiftUI
 import StoreKit
 import Subscription
@@ -49,6 +50,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
     private let subscriptionFlowsExecuter: SubscriptionFlowsExecuting
     private let onboardingKeyValueStore: ThrowingKeyValueStoring
     private let aiChatSettings: AIChatSettingsProvider
+    private let locale: Locale
     let cancellationInstrumentation: SubscriptionCancellationInstrumenting
 
     private var externalAllowedDomains = ["stripe.com"]
@@ -170,12 +172,12 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             : UserText.subscriptionChangePlan
     }
 
-    var isEligibleForCancellationFlow: Bool {
+    var isEligibleToCancel: Bool {
         state.subscriptionInfo?.status == .autoRenewable && isAppleSubscriptionWithCancellationFlowEnabled
     }
 
     private var isAppleSubscriptionWithCancellationFlowEnabled: Bool {
-        state.subscriptionInfo?.platform == .apple && featureFlagger.isFeatureOn(.subscriptionCancellationFlow)
+        state.subscriptionInfo?.platform == .apple && locale.isEnglishUnitedStates && featureFlagger.isFeatureOn(.subscriptionCancellationFlow)
     }
 
     func cancelSubscriptionTapped() {
@@ -236,6 +238,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
          aiChatSettings: AIChatSettingsProvider = AIChatSettings(),
+         locale: Locale = .current,
          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentation()) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
@@ -244,6 +247,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         self.wideEvent = wideEvent
         self.onboardingKeyValueStore = onboardingKeyValueStore
         self.aiChatSettings = aiChatSettings
+        self.locale = locale
         self.cancellationInstrumentation = cancellationInstrumentation
         self.subscriptionFlowsExecuter = subscriptionFlowsExecuter ?? SubscriptionContainerViewFactory.makeSubscriptionFlowsExecuter(
             subscriptionManager: subscriptionManager,
@@ -369,7 +373,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
             Task {
                 await manageAppleSubscription()
                 // Refetch after the App Store sheet
-                if featureFlagger.isFeatureOn(.subscriptionCancellationFlow) {
+                if isAppleSubscriptionWithCancellationFlowEnabled {
                     _ = await fetchAndUpdateSubscriptionDetails(forceRefresh: true, loadingIndicator: false)
                 }
             }

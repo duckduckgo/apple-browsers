@@ -776,7 +776,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
     // MARK: - Cancellation Flow
 
-    func testIsEligibleForCancellationFlow_WhenFlagOnAndAutoRenewingApple_ReturnsTrue() async {
+    func testIsEligibleToCancel_WhenFlagOnAndAutoRenewingApple_ReturnsTrue() async {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
@@ -784,10 +784,10 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
 
         await waitForSubscriptionUpdate()
 
-        XCTAssertTrue(sut.isEligibleForCancellationFlow)
+        XCTAssertTrue(sut.isEligibleToCancel)
     }
 
-    func testIsEligibleForCancellationFlow_WhenFlagOnAndAppleTrial_ReturnsTrue() async {
+    func testIsEligibleToCancel_WhenFlagOnAndAppleTrial_ReturnsTrue() async {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         let subscription = SubscriptionMockFactory.subscription(status: .autoRenewable,
                                                                 platform: .apple,
@@ -799,10 +799,10 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         await loadSubscriptionWithoutRefresh()
 
         XCTAssertTrue(subscription.hasActiveTrialOffer)
-        XCTAssertTrue(sut.isEligibleForCancellationFlow)
+        XCTAssertTrue(sut.isEligibleToCancel)
     }
 
-    func testIsEligibleForCancellationFlow_WhenFlagOnAndNotApple_ReturnsFalse() async {
+    func testIsEligibleToCancel_WhenFlagOnAndNotApple_ReturnsFalse() async {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
@@ -811,11 +811,11 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
             sut = makeSUT()
             await loadSubscriptionWithoutRefresh()
 
-            XCTAssertFalse(sut.isEligibleForCancellationFlow, "Expected ineligible for \(platform)")
+            XCTAssertFalse(sut.isEligibleToCancel, "Expected ineligible for \(platform)")
         }
     }
 
-    func testIsEligibleForCancellationFlow_WhenFlagOnAndNotAutoRenewing_ReturnsFalse() async {
+    func testIsEligibleToCancel_WhenFlagOnAndNotAutoRenewing_ReturnsFalse() async {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
 
@@ -824,31 +824,45 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
             sut = makeSUT()
             await loadSubscriptionWithoutRefresh()
 
-            XCTAssertFalse(sut.isEligibleForCancellationFlow, "Expected ineligible for \(status)")
+            XCTAssertFalse(sut.isEligibleToCancel, "Expected ineligible for \(status)")
         }
     }
 
-    func testIsEligibleForCancellationFlow_WhenNoSubscription_ReturnsFalse() {
+    func testIsEligibleToCancel_WhenNoSubscription_ReturnsFalse() {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
         sut = makeSUT()
 
-        XCTAssertFalse(sut.isEligibleForCancellationFlow)
+        XCTAssertFalse(sut.isEligibleToCancel)
     }
 
-    func testIsEligibleForCancellationFlow_WhenFlagChangesWhileRunning_FollowsTheFlag() async {
+    func testIsEligibleToCancel_WhenFlagOnAndNotEnglishUS_ReturnsFalse() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+
+        for identifier in ["en_GB", "es_US", "de_DE", "en"] {
+            sut = makeSUT(locale: Locale(identifier: identifier))
+            await waitForSubscriptionUpdate()
+
+            XCTAssertFalse(sut.isEligibleToCancel, "Expected ineligible for \(identifier)")
+            XCTAssertNotEqual(sut.subscriptionManageButtonText, UserText.subscriptionManageSubscription)
+        }
+    }
+
+    func testIsEligibleToCancel_WhenFlagChangesWhileRunning_FollowsTheFlag() async {
         mockFeatureFlagger.enabledFeatureFlags = []
         mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
 
         await waitForSubscriptionUpdate()
-        XCTAssertFalse(sut.isEligibleForCancellationFlow)
+        XCTAssertFalse(sut.isEligibleToCancel)
 
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
-        XCTAssertTrue(sut.isEligibleForCancellationFlow)
+        XCTAssertTrue(sut.isEligibleToCancel)
 
         mockFeatureFlagger.enabledFeatureFlags = []
-        XCTAssertFalse(sut.isEligibleForCancellationFlow)
+        XCTAssertFalse(sut.isEligibleToCancel)
     }
 
     func testSubscriptionManageButtonText_WhenAutoRenewingApple_FollowsTheFlag() async {
@@ -873,7 +887,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         XCTAssertEqual(sut.subscriptionManageButtonText, UserText.subscriptionManageSubscription)
-        XCTAssertFalse(sut.isEligibleForCancellationFlow)
+        XCTAssertFalse(sut.isEligibleToCancel)
     }
 
     func testSubscriptionManageButtonText_WhenStripeAndFlagOn_ShowsManagePayment() async {
@@ -927,9 +941,26 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state.subscriptionInfo?.status, .expired)
     }
 
+    func testManageSubscription_WhenAppleAndFlagOnAndNotEnglishUS_DoesNotRefetchSubscription() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionCancellationFlow]
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .expired, platform: .apple))
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT(locale: Locale(identifier: "en_GB"))
+        await loadSubscriptionWithoutRefresh()
+
+        mockSubscriptionManager.resultSubscription = .success(SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple))
+        let refetched = expectation(forSubscriptionStatus: .autoRenewable)
+        refetched.isInverted = true
+        sut.manageSubscription()
+
+        await fulfillment(of: [refetched], timeout: 1.0)
+        XCTAssertEqual(sut.state.subscriptionInfo?.status, .expired)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT(subscriptionFlowsExecuter: SubscriptionFlowsExecuting? = nil,
+                         locale: Locale = Locale(identifier: "en_US"),
                          cancellationInstrumentation: SubscriptionCancellationInstrumenting = SubscriptionCancellationInstrumentationSpy()) -> SubscriptionSettingsViewModel {
         SubscriptionSettingsViewModel(
             subscriptionManager: mockSubscriptionManager,
@@ -938,6 +969,7 @@ final class SubscriptionSettingsViewModelTests: XCTestCase {
             onboardingKeyValueStore: onboardingKeyValueStore,
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+            locale: locale,
             cancellationInstrumentation: cancellationInstrumentation
         )
     }

@@ -243,7 +243,7 @@ struct SubscriptionSettingsViewV2: View {
                     )
                 }
 
-                if viewModel.isEligibleForCancellationFlow {
+                if viewModel.isEligibleToCancel {
                     cancelSubscriptionView
                 }
 

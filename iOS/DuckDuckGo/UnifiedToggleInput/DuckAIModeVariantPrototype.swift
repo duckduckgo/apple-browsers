@@ -57,7 +57,8 @@ enum DuckAIModeVisualVariant: String, CaseIterable {
 
     var tintsDuckAITab: Bool { self != .control }
 
-    static let duckAITabTint = UIColor(light: 0x034180, dark: 0xA9D8F9)
+    // t-accent-alt/text-secondary (LatestColorPalette.accentAltTextSecondary); iOS's DesignSystemColor doesn't expose it.
+    static let duckAITabTint = UIColor(light: 0x034180, dark: 0xE6F6FF)
 }
 
 extension UIColor {

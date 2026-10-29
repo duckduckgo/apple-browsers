@@ -190,6 +190,17 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         var reloadState: CPMMessagingEpisodeReport.ReloadState = .none
     }
 
+    /// Independent of failure episodes: a fast restart can finish before the first navigation timeout.
+    private struct BackgroundLoadRestartObservation {
+        let identifier: String
+        var deadline: Date
+        var generation: UInt?
+        var sawFailedMeasurement = false
+    }
+
+    private var backgroundLoadRestartObservation: BackgroundLoadRestartObservation?
+    private var backgroundLoadRestartDeadlineTask: Task<Void, Never>?
+
     private let pixelFiring: WebExtensionPixelFiring
     private let episodeLifetime: TimeInterval
     private let extensionLoadWait: TimeInterval
@@ -277,6 +288,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     }
 
     deinit {
+        backgroundLoadRestartDeadlineTask?.cancel()
         episodeDeadlineTask?.cancel()
     }
 
@@ -336,6 +348,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
         episodeDeadlineTask?.cancel()
         episodeDeadlineTask = nil
+        backgroundLoadRestartDeadlineTask?.cancel()
+        backgroundLoadRestartDeadlineTask = nil
     }
 
     /// Restarts pending waits in full and gives an open episode its remaining time, at least the minimum.
@@ -359,6 +373,11 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
                 delay: outcome == .reportFailure ? resumedResponseGracePeriod : extensionLoadWait,
                 outcome: outcome
             )
+        }
+        if var observation = backgroundLoadRestartObservation {
+            observation.deadline = max(observation.deadline, now().addingTimeInterval(minimumEpisodeRemainder))
+            backgroundLoadRestartObservation = observation
+            scheduleBackgroundLoadRestartDeadline()
         }
         guard var episode else { return }
         episode.deadline = max(episode.deadline, now().addingTimeInterval(minimumEpisodeRemainder))
@@ -631,6 +650,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func markResponseReceived(in tabIdentifier: String) {
         backgroundReadinessRecovery?.responseReceived(in: tabIdentifier)
         guard var state = tabs[tabIdentifier] else { return }
+        if backgroundLoadRestartObservation?.generation == state.extensionReloadGeneration {
+            finishBackgroundLoadRestartObservation(.responseReceived)
+        }
         Logger.webExtensions.debug("[CPM Health Monitor] Dashboard response attributed to tab=\(tabIdentifier, privacy: .public)")
         state.didReceiveResponse = true
         // This document now has provable evidence, which supersedes any earlier response that could
@@ -762,6 +784,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             return false
         }
         record.state = .failed
+        if backgroundLoadRestartObservation?.generation == measurement.extensionReloadGeneration {
+            backgroundLoadRestartObservation?.sawFailedMeasurement = true
+        }
         backgroundReadinessRecovery?.initializationFailed(in: measurement.tabIdentifier)
         measurements[measurement.identifier] = record
         // Reload attribution is reserved when the navigation begins, so simultaneous tabs cannot
@@ -847,7 +872,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         }
     }
 
-    /// The only CPM health emission: either a qualifying response closes the episode, or its deadline expires.
+    /// The terminal failure-episode report: a qualifying response closes it, or its deadline expires.
     /// Clear state before firing so repeated callbacks cannot emit another report for the same episode.
     /// Response outcomes describe dashboard evidence only, never an initResp ACK or recovery of every failed tab.
     private func finishEpisode(outcome: CPMMessagingEpisodeReport.Outcome) {
@@ -879,6 +904,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         if postReloadMeasurementIdentifier == measurement.identifier {
             postReloadMeasurementIdentifier = nil
         }
+        if backgroundLoadRestartObservation?.generation == measurement.extensionReloadGeneration {
+            finishBackgroundLoadRestartObservation(.responseReceived)
+        }
         guard let episode else { return }
 
         // Once a reload occurs, only a measurement begun against that generation can validate it.
@@ -906,23 +934,73 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         switch event {
         case .loaded:
             startGracePeriodsForFinishedNavigations()
-        case .willReload:
+        case .willReload(let identifier, _, let trigger):
+            finishBackgroundLoadRestartObservation(.superseded)
+            if trigger == .cpmBackgroundLoadFailure {
+                backgroundLoadRestartObservation = BackgroundLoadRestartObservation(
+                    identifier: identifier, deadline: now().addingTimeInterval(episodeLifetime))
+                pixelFiring.fire(.cpmBackgroundLoadRestart(.restartStarted))
+                scheduleBackgroundLoadRestartDeadline()
+            }
             backgroundReadinessRecovery?.invalidate()
             episode?.reloadState = .pending
             invalidateNavigationEvidenceForReload()
-        case .reloaded:
+        case .reloaded(let identifier, _, let trigger):
             // A response delivered while the old context was being unloaded is not evidence about
             // the replacement context, even if it arrived after `willReload` was handled.
             invalidateNavigationEvidenceForReload()
             // Generations distinguish navigations completed before and after a successful reload.
             extensionReloadGeneration &+= 1
+            if trigger == .cpmBackgroundLoadFailure, backgroundLoadRestartObservation?.identifier == identifier {
+                backgroundLoadRestartObservation?.generation = extensionReloadGeneration
+            } else {
+                finishBackgroundLoadRestartObservation(.superseded)
+            }
             pendingExtensionReloadMeasurementGeneration = extensionReloadGeneration
             guard var episode else { return }
             episode.reloadGeneration = extensionReloadGeneration
             episode.reloadState = .loaded
             self.episode = episode
-        case .reloadFailed:
+        case .reloadFailed(let identifier, _, let trigger):
+            if trigger == .cpmBackgroundLoadFailure, backgroundLoadRestartObservation?.identifier == identifier {
+                finishBackgroundLoadRestartObservation(.reloadFailed)
+            }
             episode?.reloadState = .failed
+        }
+    }
+
+    /// At most one terminal outcome per applied restart; background readiness is only an intermediate stage.
+    private func finishBackgroundLoadRestartObservation(_ outcome: CPMBackgroundLoadRestartOutcome) {
+        guard backgroundLoadRestartObservation != nil else { return }
+        backgroundLoadRestartObservation = nil
+        backgroundLoadRestartDeadlineTask?.cancel()
+        backgroundLoadRestartDeadlineTask = nil
+        pixelFiring.fire(.cpmBackgroundLoadRestart(outcome))
+    }
+
+    private func expireBackgroundLoadRestartObservation() {
+        guard let observation = backgroundLoadRestartObservation else { return }
+        if observation.generation == nil {
+            finishBackgroundLoadRestartObservation(.reloadTimedOut)
+        } else {
+            finishBackgroundLoadRestartObservation(observation.sawFailedMeasurement ? .noResponseBeforeDeadline : .unobserved)
+        }
+    }
+
+    /// Uses the same five-minute active-time budget as episodes, including suspension handling.
+    /// Process termination can lose an unfinished observation; absence of a terminal pixel is not failure.
+    private func scheduleBackgroundLoadRestartDeadline() {
+        backgroundLoadRestartDeadlineTask?.cancel()
+        guard interruptionStartedAt == nil, let observation = backgroundLoadRestartObservation else { return }
+        let lifetime = max(0, observation.deadline.timeIntervalSince(now()))
+        backgroundLoadRestartDeadlineTask = Task { [weak self] in
+            do {
+                try await Task.sleep(nanoseconds: UInt64(lifetime * 1_000_000_000))
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+            self?.expireBackgroundLoadRestartObservation()
         }
     }
 
@@ -971,6 +1049,9 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// cancels deadlines that could otherwise report after the evidence expired.
     private func discardExpiredState() {
         let currentDate = now()
+        if let observation = backgroundLoadRestartObservation, currentDate >= observation.deadline {
+            expireBackgroundLoadRestartObservation()
+        }
         if let episode, currentDate >= episode.deadline {
             finishEpisode(outcome: .noResponseBeforeDeadline)
         }

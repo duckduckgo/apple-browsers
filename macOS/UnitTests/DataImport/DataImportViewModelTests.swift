@@ -636,11 +636,17 @@ final class DataImportViewModelTests: XCTestCase {
     @MainActor
     func testImportButtonPressed_safariTechnologyPreviewWithHistoryOnly_asksForArchive() throws {
         try setHistoryImportFlag(true)
-        model = sourceFilterModel(importSource: .safariTechnologyPreview, isFilterOn: true, dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: [.bookmarks]) })
+        model = sourceFilterModel(
+            importSource: .safariTechnologyPreview,
+            isFilterOn: true,
+            availableImportSources: sourceFilterSources + [.safariTechnologyPreview],
+            dataImporterFactory: { _, _, _, _ in ImporterMock(importableTypes: [.bookmarks]) }
+        )
         model.selectDataTypes([.history])
 
         model.importButtonPressed()
 
+        XCTAssertEqual(model.importSource, .safariTechnologyPreview)
         guard case .archiveImport(let dataTypes, _) = model.screen else { return XCTFail("Expected archive import") }
         XCTAssertTrue(dataTypes.contains(.history))
     }
@@ -3050,6 +3056,7 @@ final class DataImportViewModelTests: XCTestCase {
     private func sourceFilterModel(
         importSource: Source,
         isFilterOn: Bool,
+        availableImportSources: [Source]? = nil,
         dataImporterFactory: @escaping DataImportViewModel.DataImporterFactory = { _, _, _, _ in ImporterMock() },
         openPanelCallback: @escaping ([UTType]) -> URL? = { _ in nil },
         featureFlagger: MockFeatureFlagger = MockFeatureFlagger(),
@@ -3058,7 +3065,7 @@ final class DataImportViewModelTests: XCTestCase {
         featureFlagger.featuresStub[FeatureFlag.dataImportSourceFilter.rawValue] = isFilterOn
         return DataImportViewModel(
             importSource: importSource,
-            availableImportSources: sourceFilterSources,
+            availableImportSources: availableImportSources ?? sourceFilterSources,
             syncFeatureVisibility: .hide,
             loadProfiles: loadProfiles ?? { browser in
                 .init(browser: browser, profiles: [BrowserProfile.test(fileStore: self.fileStore)(browser)])

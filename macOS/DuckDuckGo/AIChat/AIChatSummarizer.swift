@@ -33,11 +33,7 @@ struct AIChatTextSummarizationRequest: Equatable {
     let websiteTitle: String?
 
     /// The source of the summarize action
-    let source: Source
-
-    enum Source: String {
-        case contextMenu = "context-menu", keyboardShortcut = "keyboard-shortcut"
-    }
+    let source: AIChatSelectionActionSource
 }
 
 /// This protocol describes APIs for summarization in AI Chat.

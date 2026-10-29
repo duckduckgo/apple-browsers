@@ -181,8 +181,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
-    /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
-    case dbpWebViewUserAgent
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219955912780435
+    case dbpCustomWebViewUserAgent
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
@@ -306,6 +306,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Imports browsing history from third-party browsers.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219685718776840
     case dataImportHistory
+
+    /// Hides import sources that offer none of the data types the user selected.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219773908970690
+    case dataImportSourceFilter
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866620524141
     case blurryAddressBarTahoeFix
@@ -802,7 +806,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .bitwardenConnectionHardening:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionLightweightReload:
@@ -853,8 +857,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
-        case .dbpWebViewUserAgent:
-            Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true, category: .dbp)
+        case .dbpCustomWebViewUserAgent:
+            Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
         case .dbpPerformanceMetrics:
@@ -929,6 +933,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(DataImportSubfeature.newSafariFilePicker))
         case .dataImportHistory:
             Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.historyImport))
+        case .dataImportSourceFilter:
+            Config(defaultValue: .disabled, source: .remoteReleasable(DataImportSubfeature.sourceFilter))
         case .blurryAddressBarTahoeFix:
             Config(defaultValue: .enabled, source: .remoteReleasable(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .addressBarIMEConfirmFix:

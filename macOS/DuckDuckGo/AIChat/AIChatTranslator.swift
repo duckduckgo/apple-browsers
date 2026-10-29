@@ -20,7 +20,9 @@ import Foundation
 
 import AIChat
 import BrowserServicesKit
+import Common
 import PixelKit
+import WebKit
 
 /// This struct represents an object that's consumed by `AIChatTranslating` protocol and used to perform text translation.
 struct AIChatTextTranslationRequest: Equatable {
@@ -38,6 +40,30 @@ struct AIChatTextTranslationRequest: Equatable {
 
     /// Source language of the selected text based on element or document `lang` attribute
     let sourceLanguage: String?
+
+    /// The source of the translate action
+    let source: AIChatSelectionActionSource
+}
+
+extension AIChatTextTranslationRequest {
+
+    /// Builds a request for `text` selected in `webView`, reading the site's eTLD and the selection's language.
+    @MainActor
+    static func make(text: String, in webView: WKWebView?, tld: TLD, source: AIChatSelectionActionSource) async -> AIChatTextTranslationRequest {
+        let websiteTLD: String? = {
+            guard let sourceTLD = tld.eTLD(forStringURL: webView?.url?.absoluteString ?? "") else { return nil }
+            return "." + sourceTLD
+        }()
+
+        let sourceLanguage: String? = await webView?.currentSelectionLanguage
+
+        return AIChatTextTranslationRequest(text: text,
+                                            websiteURL: webView?.url,
+                                            websiteTitle: webView?.title,
+                                            websiteTLD: websiteTLD,
+                                            sourceLanguage: sourceLanguage,
+                                            source: source)
+    }
 }
 
 /// This protocol describes APIs for translation in AI Chat.
@@ -89,7 +115,7 @@ final class AIChatTranslator: AIChatTranslating {
                                                           sourceTLD: request.websiteTLD,
                                                           sourceLanguage: request.sourceLanguage,
                                                           targetLanguage: targetTranslationLanguage())
-        pixelFiring?.fire(AIChatPixel.aiChatTranslateText, frequency: .dailyAndStandard)
+        pixelFiring?.fire(AIChatPixel.aiChatTranslateText(source: request.source), frequency: .dailyAndStandard)
 
         if !aiChatCoordinator.isChatPresentedForCurrentTab() {
             pixelFiring?.fire(

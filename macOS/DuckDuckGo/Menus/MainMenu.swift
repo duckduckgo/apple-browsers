@@ -413,6 +413,10 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "", action: #selector(MainViewController.summarize), keyEquivalent: [.command, .shift, "\r"])
                 .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.askAboutSelection), keyEquivalent: [.option, .command, "k"])
+                .hidden()
+            NSMenuItem(title: "", action: #selector(MainViewController.translateSelection), keyEquivalent: [.option, .command, "t"])
+                .hidden()
             NSMenuItem.separator()
 
             NSMenuItem(title: UserText.mainMenuEditFind) {
@@ -1228,9 +1232,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Base URL Configuration").submenu(BaseURLDebugMenu())
-            if StandardApplicationBuildType().isSparkleBuild {
-                NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
-            }
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu(keyValueStore: UserDefaults.standard, internalUserDecider: internalUserDecider))
             if AppVersion.runType.requiresEnvironment {
                 NSMenuItem(title: "Promo Queue")
                     .submenu(PromoDebugMenu())

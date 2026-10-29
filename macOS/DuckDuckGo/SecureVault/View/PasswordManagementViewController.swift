@@ -1437,12 +1437,14 @@ final class PasswordManagementViewController: NSViewController {
             },
             dismissButtonAction: { [weak self] in
                 self?.syncPromoManager.promoDismissed()
-            }
+            },
+            pixelFiring: pixelFiring
         )
 
         let syncPromoView = SyncPromoView(viewModel: syncPromoViewModel, layout: .vertical)
         let view = NSHostingView(rootView: syncPromoView)
         replaceItemContainerChildView(with: view)
+        syncPromoViewModel.promoDisplayed()
     }
 
     private func createNewSecureVaultItemMenu() -> NSMenu {

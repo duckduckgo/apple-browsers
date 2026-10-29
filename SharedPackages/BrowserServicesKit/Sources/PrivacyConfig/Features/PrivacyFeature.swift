@@ -297,7 +297,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case continuedProcessing
     case pirRollout
     case goToMarket
-    case webViewUserAgent
+    case customWebViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
     case performanceMetrics
@@ -882,6 +882,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     case newDataImportExperience
     case dataImportSummarySyncPromotion
     case historyImport
+    case sourceFilter
 }
 
 public enum PopupBlockingSubfeature: String, PrivacySubfeature {

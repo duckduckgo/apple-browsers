@@ -462,7 +462,7 @@ extension MainViewController {
     }
 }
 
-private extension MainViewController {
+extension MainViewController {
 
     /// While Dax Dialogs are still in progress, the onboarding Search vs Search & Duck.ai choice
     /// is not applied to AIChatSettings yet. Use that pending choice for UTI presentation so
@@ -470,6 +470,9 @@ private extension MainViewController {
     func isAIChatSearchInputToggleEnabledForCurrentOnboardingState() -> Bool {
         onboardingSearchExperienceSettingsResolver.deferredValue ?? aiChatSettings.isAIChatSearchInputUserSettingsEnabled
     }
+}
+
+private extension MainViewController {
 
     func installUnifiedToggleInputViewController(_ inputVC: UnifiedToggleInputViewController) {
         addChild(inputVC)
@@ -1340,6 +1343,10 @@ extension MainViewController: UnifiedToggleInputOmnibarActivating {
             coordinator.restoreOmnibarInputOnAppOpen(isRequestValid: isRequestValid, completion: completion)
             return .intercept
         }
+        let wasPresentingDirectly = isPresentingNewTabInputDirectly
+        isPresentingNewTabInputDirectly = wasPresentingDirectly
+            || (hasInlineNewTabPageInput && tabManager.currentTabsModel.currentTab?.openedAfterIdle == true)
+        defer { isPresentingNewTabInputDirectly = wasPresentingDirectly }
         revealAddressBarForEditing()
         defer { finishNewTabPageInputHandoff() }
         let position: UnifiedToggleInputCardPosition = appSettings.currentAddressBarPosition == .bottom ? .bottom : .top

@@ -52,17 +52,40 @@ public struct ImportArchiveReader: ImportArchiveReading {
         public let passwords: [String]  // CSV contents
         public let bookmarks: [String]  // HTML contents
         public let creditCards: [String] // JSON contents
+        public let history: [String] // Safari History.json contents
+        public let unrecognizedHistoryFileCount: Int // JSON files that look like history but aren't a history export we can read
         public var type: ContentType { ContentType(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards) }
 
         public var isEmpty: Bool {
-            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty
+            passwords.isEmpty && bookmarks.isEmpty && creditCards.isEmpty && history.isEmpty
         }
 
-        public init(passwords: [String], bookmarks: [String], creditCards: [String]) {
+        public func hasData(for types: Set<DataImport.DataType>) -> Bool {
+            (types.contains(.passwords) && !passwords.isEmpty)
+                || (types.contains(.bookmarks) && !bookmarks.isEmpty)
+                || (types.contains(.creditCards) && !creditCards.isEmpty)
+                || (types.contains(.history) && !history.isEmpty)
+        }
+
+        public init(
+            passwords: [String],
+            bookmarks: [String],
+            creditCards: [String],
+            history: [String] = [],
+            unrecognizedHistoryFileCount: Int = 0
+        ) {
             self.passwords = passwords
             self.bookmarks = bookmarks
             self.creditCards = creditCards
+            self.history = history
+            self.unrecognizedHistoryFileCount = unrecognizedHistoryFileCount
         }
+    }
+
+    private enum JSONExportType {
+        case paymentCards(String)
+        case history(String)
+        case unrecognizedHistory
     }
 
     private enum Constants {
@@ -79,6 +102,8 @@ public struct ImportArchiveReader: ImportArchiveReading {
         var passwords = [String]()
         var bookmarks = [String]()
         var creditCards = [String]()
+        var history = [String]()
+        var unrecognizedHistoryFileCount = 0
 
         for entry in archive {
             let lowercasedPath = entry.path.lowercased()
@@ -92,15 +117,27 @@ public struct ImportArchiveReader: ImportArchiveReading {
             } else if lowercasedPath.hasSuffix(Constants.htmlExtension),
                       let content = extractFileContent(from: entry, in: archive) {
                 bookmarks.append(content)
-            } else if lowercasedPath.hasSuffix(Constants.jsonExtension),
-                      let content = extractFileContent(from: entry, in: archive) {
-                if isPaymentCardsJSON(content) {
+            } else if lowercasedPath.hasSuffix(Constants.jsonExtension) {
+                switch jsonExportType(of: extractFileContent(from: entry, in: archive), at: entry.path) {
+                case .paymentCards(let content):
                     creditCards.append(content)
+                case .history(let content):
+                    history.append(content)
+                case .unrecognizedHistory:
+                    unrecognizedHistoryFileCount += 1
+                case nil:
+                    break
                 }
             }
         }
 
-        return Contents(passwords: passwords, bookmarks: bookmarks, creditCards: creditCards)
+        return Contents(
+            passwords: passwords,
+            bookmarks: bookmarks,
+            creditCards: creditCards,
+            history: history,
+            unrecognizedHistoryFileCount: unrecognizedHistoryFileCount
+        )
     }
 
     // MARK: - Private
@@ -120,19 +157,39 @@ public struct ImportArchiveReader: ImportArchiveReading {
         return content
     }
 
-    private func isPaymentCardsJSON(_ content: String) -> Bool {
-        // Quick validation to ensure this is a payment cards JSON
+    private func jsonExportType(of content: String?, at path: String) -> JSONExportType? {
+        let jsonObject = content.flatMap(jsonObject(from:))
+        if let content, jsonObject?["payment_cards"] != nil {
+            return .paymentCards(content)
+        }
+        // Safari's History.json identifies itself with `"metadata": { "data_type": "history" }`.
+        if let content, let metadata = jsonObject?["metadata"] as? [String: Any], metadata["data_type"] as? String == "history" {
+            return .history(content)
+        }
+        // A history file we can't read, e.g. after Safari changes its format.
+        if jsonObject?["history"] != nil || isHistoryFileName(path) {
+            return .unrecognizedHistory
+        }
+        return nil
+    }
+
+    private func jsonObject(from content: String) -> [String: Any]? {
         guard let data = content.data(using: .utf8) else {
             Logger.autofill.debug("Failed to convert json content to data")
-            return false
+            return nil
         }
         do {
-            if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
-                return jsonObject["payment_cards"] != nil
-            }
+            return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         } catch {
             Logger.autofill.debug("Failed to parse JSON: \(error.localizedDescription)")
+            return nil
         }
-        return false
+    }
+
+    /// Safari names the file `History.json`, or `<Profile> - History.json` for other profiles.
+    /// Zips made on macOS can also hold `._History.json` metadata files, which aren't history.
+    private func isHistoryFileName(_ path: String) -> Bool {
+        let fileName = (path as NSString).lastPathComponent
+        return !fileName.hasPrefix("._") && fileName.lowercased().contains("history")
     }
 }

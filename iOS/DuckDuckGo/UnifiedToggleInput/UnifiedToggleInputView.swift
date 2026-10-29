@@ -648,6 +648,8 @@ final class UnifiedToggleInputView: UIView {
 
     private let cardView = UIView()
     private let frozenInputOverlay = UIView()
+    // PROTOTYPE: card sweep shared by variants B/C and E of the Duck.ai mode visuals.
+    private let duckAIInputSweepView = DuckAIEdgeSweepView(surface: .card)
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
@@ -871,6 +873,8 @@ final class UnifiedToggleInputView: UIView {
         syncOmnibarMaterialTransitionCorners()
         frozenInputOverlay.layer.cornerRadius = cardView.layer.cornerRadius
         frozenInputOverlay.layer.maskedCorners = cardView.layer.maskedCorners
+        duckAIInputSweepView.cornerRadius = cardView.layer.cornerRadius
+        duckAIInputSweepView.maskedCorners = cardView.layer.maskedCorners
         guard !expandedShadowView.isHidden else { return }
         // Runs inside UIView.animate via layoutIfNeeded so the shadow corners animate with cardView.
         expandedShadowView.layer.cornerRadius = cardView.layer.cornerRadius
@@ -890,6 +894,7 @@ final class UnifiedToggleInputView: UIView {
                 cardView.layer.borderColor = expandedBorderColor
             }
             refreshGlassAITabAccessoryConfigurations()
+            updateDuckAIVariantVisuals()
         }
     }
 
@@ -932,6 +937,46 @@ final class UnifiedToggleInputView: UIView {
         applyFireModeAppearance(isFireTab: fireMode)
         textEntryView.refreshFireMode(fireMode: fireMode)
         toolsToolbar.refreshFireMode(fireMode: fireMode)
+        updateDuckAIVariantVisuals()
+    }
+
+    // MARK: - PROTOTYPE: Duck.ai mode visuals
+
+    private func setUpDuckAIVariantPrototype() {
+        duckAIInputSweepView.translatesAutoresizingMaskIntoConstraints = false
+        insertSubview(duckAIInputSweepView, aboveSubview: cardView)
+        NSLayoutConstraint.activate([
+            duckAIInputSweepView.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
+            duckAIInputSweepView.trailingAnchor.constraint(equalTo: cardView.trailingAnchor),
+            duckAIInputSweepView.topAnchor.constraint(equalTo: cardView.topAnchor),
+            duckAIInputSweepView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
+        ])
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(cycleDuckAIVariant(_:)))
+        longPress.minimumPressDuration = 0.6
+        toggleView.addGestureRecognizer(longPress)
+
+        NotificationCenter.default.publisher(for: DuckAIModeVisualVariant.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateDuckAIVariantVisuals() }
+            .store(in: &cancellables)
+    }
+
+    @objc private func cycleDuckAIVariant(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        let variant = DuckAIModeVisualVariant.cycle()
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        ActionMessageView.present(message: "Duck.ai visuals: \(variant.title)", presentationLocation: .top)
+    }
+
+    private func updateDuckAIVariantVisuals() {
+        let variant = DuckAIModeVisualVariant.current
+        toggleView.tintsDuckAITab = variant.tintsDuckAITab
+        let isActive = isExpanded
+            && handler.currentToggleState == .aiChat
+            && !handler.isFireTab
+            && DuckAIModeVisualVariant.isSupported(in: traitCollection)
+        DuckAIModeVisualsDriver.shared.setActive(isActive, owner: self)
     }
 
     private func applyFireModeAppearance(isFireTab: Bool) {
@@ -1218,6 +1263,7 @@ final class UnifiedToggleInputView: UIView {
         let expanded = layout.isExpanded
         isExpanded = expanded
         handler.isExpanded = expanded
+        defer { updateDuckAIVariantVisuals() }
         // The matched omnibar pose (`applyOmnibarMatchedInsets`) drops the top constraint below the
         // pinned height so the card stays the pill's height; restore it here so every other layout
         // is driven by its real top/bottom margins again.
@@ -1883,6 +1929,7 @@ private extension UnifiedToggleInputView {
             self.delegate?.unifiedToggleInputView(self, isDraggingToggle: isDragging)
         }
         addSubview(toggleView)
+        setUpDuckAIVariantPrototype()
 
         inlineDismissButton.addTarget(self, action: #selector(handleInlineDismissTap), for: .primaryActionTriggered)
         addSubview(inlineDismissButton)
@@ -2102,6 +2149,7 @@ private extension UnifiedToggleInputView {
                 toggleView.setMode(mode, animated: true)
                 updateToolbarVisibility(for: mode, animated: true)
                 updateSubmitButtonAvailability()
+                updateDuckAIVariantVisuals()
             }
             .store(in: &cancellables)
 

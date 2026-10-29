@@ -319,5 +319,18 @@ final class UnifiedToggleInputToggleView: UIView {
 
     private func updateButtonAppearance() {
         // Icons are template-rendered so they inherit the text color — no per-state image swap needed.
+        let duckAIColor = tintsDuckAITab && selectedMode == .aiChat
+            ? DuckAIModeVisualVariant.duckAITabTint
+            : UIColor(designSystemColor: .textPrimary)
+        duckAIButton.configuration?.baseForegroundColor = duckAIColor
+        duckAIButton.tintColor = duckAIColor
+    }
+
+    // PROTOTYPE: variants A and B colour the selected Duck.ai segment.
+    var tintsDuckAITab = false {
+        didSet {
+            guard tintsDuckAITab != oldValue else { return }
+            updateButtonAppearance()
+        }
     }
 }

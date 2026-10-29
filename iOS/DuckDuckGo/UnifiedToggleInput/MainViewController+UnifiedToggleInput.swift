@@ -126,6 +126,7 @@ extension MainViewController {
         browserTabMentionSuggestionsController = mentions
         coordinator.onTabMentionSuggestionsChanged = { [weak mentions] in mentions?.show($0) }
         installFloatingReturnKeyViewController()
+        installDuckAIKeyboardVisualsPrototype()
         installSwipeTabsGesturesForUnifiedInput()
 
         subscribeToIntentPublisher(coordinator)
@@ -1091,6 +1092,19 @@ extension MainViewController {
     func updateUnifiedInputContentPresentation(presentation: NewTabPageInputPresentation, isOnAITab: Bool) {
         unifiedToggleInputCoordinator?.contentViewController.usesRedesignedNewTabPageLayout =
             presentation.usesRedesignedFocusedLayout(isOnAITab: isOnAITab)
+    }
+
+    /// PROTOTYPE: keyboard-side Duck.ai mode visuals (variants B/C and E).
+    func installDuckAIKeyboardVisualsPrototype() {
+        let keyboardVisuals = DuckAIKeyboardVisualsView()
+        keyboardVisuals.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(keyboardVisuals)
+        NSLayoutConstraint.activate([
+            keyboardVisuals.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            keyboardVisuals.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            keyboardVisuals.topAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor),
+            keyboardVisuals.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
     }
 
     func installFloatingReturnKeyViewController() {

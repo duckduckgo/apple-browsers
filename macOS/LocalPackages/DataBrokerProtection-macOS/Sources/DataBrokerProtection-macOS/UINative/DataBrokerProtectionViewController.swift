@@ -102,6 +102,9 @@ final public class DataBrokerProtectionViewController: NSViewController {
         webView?.uiDelegate = self
         webView?.navigationDelegate = self
         view = webView!
+#if DEBUG
+        webUIViewModel.startNeedsYouUpdates(in: webView!)
+#endif
 
         addLoadingIndicator()
 

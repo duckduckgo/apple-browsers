@@ -38,7 +38,17 @@ public final class EmailConfirmationJobProvider: EmailConfirmationJobProviding {
         let validConfirmations = confirmations.filter { $0.emailConfirmationAttemptCount < 3 }
         Logger.dataBrokerProtection.log("✉️ [EmailConfirmationJobProvider] \(validConfirmations.count, privacy: .public) confirmations are below max retry limit")
 
-        let sorted = validConfirmations.sorted { lhs, rhs in
+        #if os(macOS) && DEBUG
+        let includedConfirmations = try validConfirmations.filter { confirmation in
+            guard jobDependencies.executionConfig.allowedBrokerDomains != nil else { return true }
+            guard let broker = try jobDependencies.database.fetchBroker(with: confirmation.brokerId) else { return false }
+            return jobDependencies.executionConfig.includesBroker(at: broker.url)
+        }
+        #else
+        let includedConfirmations = validConfirmations
+        #endif
+
+        let sorted = includedConfirmations.sorted { lhs, rhs in
             let date1 = lhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture
             let date2 = rhs.emailConfirmationLinkObtainedOnBEDate ?? .distantFuture
             return date1 < date2

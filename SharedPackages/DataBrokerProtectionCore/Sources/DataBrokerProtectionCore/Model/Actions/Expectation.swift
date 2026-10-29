@@ -67,4 +67,14 @@ internal final class ExpectationAction: Action {
                           actionType: actionType,
                           json: json)
     }
+
+#if os(macOS) && DEBUG
+    /// The page retries element expectations for 30 seconds by default; a single look is enough to tell
+    /// whether the form was already submitted.
+    func checkingOnce() -> ExpectationAction {
+        guard let json, var object = try? JSONSerialization.jsonObject(with: json) as? [String: Any] else { return self }
+        object["retry"] = ["environment": "web", "interval": ["ms": 0], "maxAttempts": 1]
+        return with(json: try? JSONSerialization.data(withJSONObject: object))
+    }
+#endif
 }

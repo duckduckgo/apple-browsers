@@ -97,6 +97,9 @@ public protocol JobQueueManaging {
     func stop()
     func stopScheduledOperationsOnly()
     var debugRunningStatusString: String { get }
+    #if os(macOS) && DEBUG
+    func setManualControlActive(_ active: Bool, operationID: UUID)
+    #endif
 }
 
 public protocol JobQueueManagerDelegate: AnyObject {
@@ -105,6 +108,12 @@ public protocol JobQueueManagerDelegate: AnyObject {
     func queueManagerDidFinishOperations(_ queueManager: JobQueueManaging)
     func queueManagerDidCompleteIndividualJob(_ queueManager: JobQueueManaging, identifier: CompletedJobIdentifier?)
 }
+
+#if os(macOS) && DEBUG
+public extension JobQueueManaging {
+    func setManualControlActive(_ active: Bool, operationID: UUID) {}
+}
+#endif
 
 public extension JobQueueManagerDelegate {
     func queueManagerDidStartOperations(_ queueManager: JobQueueManaging) {}
@@ -124,6 +133,18 @@ public final class JobQueueManager: JobQueueManaging {
     private let operationErrorsLock = NSLock()
     private var operationErrors: [Error] = []
     private var activeRunID: UUID?
+    #if os(macOS) && DEBUG
+    private let manualControlLock = NSLock()
+    private var manuallyControlledOperations = Set<UUID>()
+    private var automaticConcurrency = 1
+
+    public func setManualControlActive(_ active: Bool, operationID: UUID) {
+        manualControlLock.withLock {
+            if active { manuallyControlledOperations.insert(operationID) } else { manuallyControlledOperations.remove(operationID) }
+            jobQueue.maxConcurrentOperationCount = automaticConcurrency + manuallyControlledOperations.count
+        }
+    }
+    #endif
 
     public var debugRunningStatusString: String {
         switch mode {
@@ -142,6 +163,10 @@ public final class JobQueueManager: JobQueueManaging {
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.jobQueue = jobQueue
+        #if os(macOS) && DEBUG
+        // Email confirmations can enter the queue before a scan or opt-out run configures it.
+        self.jobQueue.maxConcurrentOperationCount = 1
+        #endif
         self.jobProvider = jobProvider
         self.emailConfirmationJobProvider = emailConfirmationJobProvider
         self.mismatchCalculator = mismatchCalculator
@@ -336,7 +361,14 @@ private extension JobQueueManager {
                  errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                  completion: (() -> Void)?) {
 
+        #if os(macOS) && DEBUG
+        manualControlLock.withLock {
+            automaticConcurrency = jobDependencies.executionConfig.concurrentJobsFor(jobType)
+            jobQueue.maxConcurrentOperationCount = automaticConcurrency + manuallyControlledOperations.count
+        }
+        #else
         jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
+        #endif
 
         let jobs: [BrokerProfileJob]
         do {

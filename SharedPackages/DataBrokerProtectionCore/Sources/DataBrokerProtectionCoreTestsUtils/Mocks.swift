@@ -3141,6 +3141,10 @@ public extension DataBroker {
         )
     }
 
+    static func mock(id: Int64, name: String, url: String) -> DataBroker {
+        DataBroker(id: id, name: name, url: url, steps: [], version: "1.0", schedulingConfig: .mock, optOutUrl: "", eTag: "", removedAt: nil)
+    }
+
     static var mockWithoutId: DataBroker {
         DataBroker(
             name: "Test broker",

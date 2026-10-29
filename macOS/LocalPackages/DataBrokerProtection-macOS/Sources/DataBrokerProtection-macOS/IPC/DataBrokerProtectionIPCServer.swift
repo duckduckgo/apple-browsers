@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import DataBrokerProtectionCore
 import Foundation
 import XPCHelper
 
@@ -120,6 +121,10 @@ protocol XPCServerInterface {
     func getDebugMetadata(completion: @escaping (DBPBackgroundAgentMetadata?) -> Void)
     func startDebugServer(completion: @escaping (Bool) -> Void)
     func stopDebugServer()
+#if DEBUG
+    func getNeedsYou(completion: @escaping (Data?, Error?) -> Void)
+    func openNeedsYouItem(id: String, completion: @escaping (Bool, Error?) -> Void)
+#endif
 }
 
 protocol DataBrokerProtectionIPCServer: IPCClientInterface, XPCServerInterface {
@@ -230,4 +235,27 @@ extension DefaultDataBrokerProtectionIPCServer: XPCServerInterface {
     func stopDebugServer() {
         serverDelegate?.stopDebugServer()
     }
+
+#if DEBUG
+    func getNeedsYou(completion: @escaping (Data?, Error?) -> Void) {
+        Task {
+            do {
+                let list = try await serverDelegate?.getNeedsYou() ?? DBPUINeedsYouList(items: [])
+                completion(try JSONEncoder().encode(list), nil)
+            } catch {
+                completion(nil, error)
+            }
+        }
+    }
+
+    func openNeedsYouItem(id: String, completion: @escaping (Bool, Error?) -> Void) {
+        Task {
+            do {
+                completion(try await serverDelegate?.openNeedsYouItem(id: id) ?? false, nil)
+            } catch {
+                completion(false, error)
+            }
+        }
+    }
+#endif
 }

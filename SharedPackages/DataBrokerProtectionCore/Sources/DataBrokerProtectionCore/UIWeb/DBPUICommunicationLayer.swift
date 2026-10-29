@@ -65,6 +65,23 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func enableBackgroundAppRefresh() async
 }
 
+#if os(macOS) && DEBUG
+/// Implemented by the dashboard's handshake delegate on macOS, which can reach the background agent.
+public protocol DBPUINeedsYouDelegate: AnyObject {
+    func getNeedsYou() async -> DBPUINeedsYouList?
+    func openNeedsYouItem(id: String) async -> Bool
+}
+
+struct DBPUIOpenNeedsYouItemRequest: Decodable {
+    let id: String
+}
+
+struct DBPUIOpenNeedsYouItemResult: Encodable {
+    let success: Bool
+    let error: String?
+}
+#endif
+
 public enum DBPUIReceivedMethodName: String {
     case handshake
     case saveProfile
@@ -88,11 +105,18 @@ public enum DBPUIReceivedMethodName: String {
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
     case enableBackgroundAppRefresh
+#if os(macOS) && DEBUG
+    case getNeedsYou
+    case openNeedsYouItem
+#endif
 }
 
 public enum DBPUISendableMethodName: String {
     case setState
     case backgroundAppRefreshDidChange
+#if os(macOS) && DEBUG
+    case needsYouDidChange
+#endif
 }
 
 public struct DBPUICommunicationLayer: Subfeature {
@@ -155,6 +179,10 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
         case .enableBackgroundAppRefresh: return enableBackgroundAppRefresh
+#if os(macOS) && DEBUG
+        case .getNeedsYou: return getNeedsYou
+        case .openNeedsYouItem: return openNeedsYouItem
+#endif
         }
 
     }
@@ -404,4 +432,30 @@ public struct DBPUICommunicationLayer: Subfeature {
         await delegate?.enableBackgroundAppRefresh()
         return nil
     }
+
+#if os(macOS) && DEBUG
+    private var needsYouDelegate: DBPUINeedsYouDelegate? {
+        handshakeDelegate as? DBPUINeedsYouDelegate
+    }
+
+    func getNeedsYou(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let list = await needsYouDelegate?.getNeedsYou() else {
+            return DBPUIStandardResponse(version: Constants.version, success: false, id: "NOT_AVAILABLE", message: "Needs you is not available")
+        }
+        return list
+    }
+
+    func openNeedsYouItem(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let data = try? JSONSerialization.data(withJSONObject: params),
+              let request = try? JSONDecoder().decode(DBPUIOpenNeedsYouItemRequest.self, from: data) else {
+            return DBPUIOpenNeedsYouItemResult(success: false, error: "malformed_request")
+        }
+        let opened = await needsYouDelegate?.openNeedsYouItem(id: request.id) ?? false
+        return DBPUIOpenNeedsYouItemResult(success: opened, error: opened ? nil : "not_found")
+    }
+
+    public func sendNeedsYouDidChange(_ list: DBPUINeedsYouList, into webView: WKWebView) {
+        outboundBroker.push(method: DBPUISendableMethodName.needsYouDidChange.rawValue, params: list, for: self, into: webView)
+    }
+#endif
 }

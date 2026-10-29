@@ -526,6 +526,44 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertFalse(wasPixelFired(.freemiumPIRMaintenanceScanSkipped))
     }
 
+#if os(macOS) && DEBUG
+    func testWhenAFreeUsersScanIsForABrokerThatNeedsAPerson_thenItRunsWithoutBeingHeld() async {
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { false }
+        database.brokerProfileQueryDataToReturn = [makeSpyFlyQueryData()]
+
+        await run(makeSpyFlyScanJob(mockDependencies))
+
+        XCTAssertTrue(hasScanStarted(in: database.scanEvents, brokerId: 32, profileQueryId: 1))
+    }
+
+    func testWhenASubscribersScanIsForABrokerThatNeedsAPerson_thenItWaitsForTheUserToStartIt() async {
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+        mockDependencies.isAuthenticatedUserProvider = { true }
+        database.brokerProfileQueryDataToReturn = [makeSpyFlyQueryData()]
+
+        await run(makeSpyFlyScanJob(mockDependencies))
+
+        XCTAssertFalse(hasScanStarted(in: database.scanEvents, brokerId: 32, profileQueryId: 1))
+    }
+
+    private func makeSpyFlyQueryData() -> BrokerProfileQueryData {
+        makeBrokerProfileQueryData(brokerId: 32, profileQueryId: 1,
+                                   dataBroker: .mockWithDefaults(id: 32, name: "SpyFly", url: "spyfly.com",
+                                                                 steps: [Step(type: .scan, actions: [MockAction(actionType: .click)])]),
+                                   scanJobData: makeScanJobData(brokerId: 32, profileQueryId: 1, preferredRunDate: Date()))
+    }
+
+    private func makeSpyFlyScanJob(_ dependencies: MockBrokerProfileJobDependencies) -> BrokerProfileJob {
+        BrokerProfileJob(dataBrokerID: 32, jobType: .scheduledScan, priorityDate: Date(), showWebView: false,
+                         statusReportingDelegate: CompletedJobIdentifierCapturingDelegate(), jobDependencies: dependencies)
+    }
+#endif
+
     func testWhenAuthenticatedScheduledScanContainsMaintenanceScan_thenScanJobRuns() async {
         let delegate = CompletedJobIdentifierCapturingDelegate()
         let database = MockDatabase()

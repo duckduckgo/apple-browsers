@@ -39,7 +39,19 @@ public protocol DataBrokerProtectionAgentDebugCommands {
     func getDebugMetadata() async -> DBPBackgroundAgentMetadata?
     func startDebugServer() async -> Bool
     func stopDebugServer()
+#if DEBUG
+    func getNeedsYou() async throws -> DBPUINeedsYouList
+    /// Starts the held job behind a Needs you row, or brings its window forward if it's running.
+    func openNeedsYouItem(id: String) async throws -> Bool
+#endif
 }
+
+#if DEBUG
+public extension DataBrokerProtectionAgentDebugCommands {
+    func getNeedsYou() async throws -> DBPUINeedsYouList { DBPUINeedsYouList(items: []) }
+    func openNeedsYouItem(id: String) async throws -> Bool { false }
+}
+#endif
 
 public protocol DataBrokerProtectionAppToAgentInterface: AnyObject, DataBrokerProtectionAgentAppEvents, DataBrokerProtectionAgentDebugCommands {
 

@@ -45,6 +45,10 @@ public final class DBPUIViewModel {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     @MainActor private var freeScanEntryPoint: String?
     @MainActor private var lastHandshakeFreeScanEntryPoint: String?
+#if DEBUG
+    @MainActor private var needsYouUpdates: Task<Void, Never>?
+    @MainActor private var lastNeedsYou: DBPUINeedsYouList?
+#endif
 
     public init(dataManager: DataBrokerProtectionDataManaging?,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
@@ -136,3 +140,38 @@ extension DBPUIViewModel: DBPUIScanOps {
         return await agentInterface.getDebugMetadata()
     }
 }
+
+#if DEBUG
+extension DBPUIViewModel: DBPUINeedsYouDelegate {
+    public func getNeedsYou() async -> DBPUINeedsYouList? {
+        do {
+            return try await agentInterface.getNeedsYou()
+        } catch {
+            Logger.dataBrokerProtection.error("DBPUIViewModel getNeedsYou error: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
+    }
+
+    public func openNeedsYouItem(id: String) async -> Bool {
+        (try? await agentInterface.openNeedsYouItem(id: id)) ?? false
+    }
+
+    /// The agent can't message the app, so poll it while the dashboard is open and push changes to the page.
+    @MainActor func startNeedsYouUpdates(in webView: WKWebView) {
+        needsYouUpdates?.cancel()
+        needsYouUpdates = Task { @MainActor [weak self, weak webView] in
+            while !Task.isCancelled {
+                // Strong references only for one poll, so closing the dashboard frees the view model and ends the loop.
+                do {
+                    guard let self, let webView else { return }
+                    if webView.window != nil, let list = await self.getNeedsYou(), list != self.lastNeedsYou {
+                        self.lastNeedsYou = list
+                        self.communicationLayer?.sendNeedsYouDidChange(list, into: webView)
+                    }
+                }
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+        }
+    }
+}
+#endif

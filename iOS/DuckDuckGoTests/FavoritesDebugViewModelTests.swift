@@ -130,11 +130,35 @@ final class FavoritesDebugViewModelTests: XCTestCase {
         let originalIDs = try bookmarkIDs()
 
         for count in [-1, 0, 1_001, Int.max] {
-            XCTAssertThrowsError(try model.addFavorites(count: count))
+            XCTAssertThrowsError(try model.addFavorites(count: count)) { error in
+                XCTAssertEqual((error as NSError).domain, "com.duckduckgo.favoritesDebug")
+                XCTAssertEqual((error as NSError).code, 1)
+                XCTAssertEqual(error.localizedDescription, "Enter a count from 1 to 1,000.")
+            }
             XCTAssertEqual(model.favoritesCount, 5)
             XCTAssertEqual(favorites(on: .mobile).count, 5)
             XCTAssertEqual(try bookmarkIDs(), originalIDs)
         }
+    }
+
+    @MainActor
+    func testMissingFoldersErrorsPreserveDescriptions() throws {
+        let context = database.makeContext(concurrencyType: .mainQueueConcurrencyType)
+        for bookmark in try context.fetch(BookmarkEntity.fetchRequest()) {
+            context.delete(bookmark)
+        }
+        try context.save()
+        let model = makeModel()
+
+        for action in [{ try model.addFavorites(count: 5) }, { try model.removeAllFavorites() }] {
+            XCTAssertThrowsError(try action()) { error in
+                XCTAssertEqual((error as NSError).domain, "com.duckduckgo.favoritesDebug")
+                XCTAssertEqual((error as NSError).code, 2)
+                XCTAssertEqual(error.localizedDescription, "The bookmarks or favorites folders could not be loaded.")
+            }
+        }
+        XCTAssertTrue(try bookmarkIDs().isEmpty)
+        XCTAssertEqual(model.favoritesCount, 0)
     }
 
     @MainActor

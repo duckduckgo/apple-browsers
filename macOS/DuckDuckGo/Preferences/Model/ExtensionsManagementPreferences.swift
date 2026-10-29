@@ -31,6 +31,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
     private var cancellables = Set<AnyCancellable>()
+    private var enabledStateTasks: [String: Task<Void, Never>] = [:]
 
     init(configurationManager: PrivacyConfigurationManaging, webExtensionManager: WebExtensionManaging? = nil, windowControllersManager: WindowControllersManagerProtocol) {
         self.webExtensionManager = webExtensionManager
@@ -46,9 +47,7 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func setEnabled(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
         applyOptimisticEnabledState(isEnabled, for: entry)
-        Task { [weak self] in
-            await self?.applyEnabledState(isEnabled, identifier: entry.id)
-        }
+        scheduleEnabledState(isEnabled, identifier: entry.id)
     }
 
     func remove(_ entry: InstalledExtensionEntry) {
@@ -165,6 +164,20 @@ private extension ExtensionsManagementPreferences {
         }
 
         installedExtensions[index].record.isDisabled = !isEnabled
+    }
+
+    func scheduleEnabledState(_ isEnabled: Bool, identifier: String) {
+        let previousTask = enabledStateTasks[identifier]
+        previousTask?.cancel()
+
+        enabledStateTasks[identifier] = Task { [weak self] in
+            await previousTask?.value
+            if Task.isCancelled {
+                return
+            }
+
+            await self?.applyEnabledState(isEnabled, identifier: identifier)
+        }
     }
 
     func applyEnabledState(_ isEnabled: Bool, identifier: String) async {

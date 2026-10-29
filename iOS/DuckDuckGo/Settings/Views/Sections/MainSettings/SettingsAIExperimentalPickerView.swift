@@ -37,8 +37,8 @@ struct SettingsAIExperimentalPickerView: View {
         HStack(alignment: .top, spacing: SettingsAIExperimentalPickerViewLayout.optionsHorizontalSpacing) {
             PickerOptionView(
                 isSelected: !isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadSearchSelected, legacy: .inputToggleIPadSearchSelectedLegacy) : rebrandableImage(.inputToggleSearchSelected, legacy: .inputToggleSearchSelectedLegacy),
-                unselectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadSearchLight, legacy: .inputToggleIPadSearchLightLegacy) : rebrandableImage(.inputToggleSearchLight, legacy: .inputToggleSearchLightLegacy),
+                selectedImage: shouldUseIPadAssets ? .inputToggleIPadSearchSelected : .inputToggleSearchSelected,
+                unselectedImage: shouldUseIPadAssets ? .inputToggleIPadSearchLight : .inputToggleSearchLight,
                 title: UserText.Onboarding.SearchExperience.searchOnlyOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -50,8 +50,8 @@ struct SettingsAIExperimentalPickerView: View {
 
             PickerOptionView(
                 isSelected: isDuckAISelected,
-                selectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadAISelectedLight, legacy: .inputToggleIPadAISelectedLightLegacy) : rebrandableImage(.inputToggleAISelectedLight, legacy: .inputToggleAISelectedLightLegacy),
-                unselectedImage: shouldUseIPadAssets ? rebrandableImage(.inputToggleIPadAILight, legacy: .inputToggleIPadAILightLegacy) : rebrandableImage(.inputToggleAILight, legacy: .inputToggleAILightLegacy),
+                selectedImage: shouldUseIPadAssets ? .inputToggleIPadAISelectedLight : .inputToggleAISelectedLight,
+                unselectedImage: shouldUseIPadAssets ? .inputToggleIPadAILight : .inputToggleAILight,
                 title: UserText.Onboarding.SearchExperience.searchAndDuckAIOption,
                 showNewBadge: false,
                 titleMinHeight: maxOptionTitleHeight
@@ -71,10 +71,6 @@ struct SettingsAIExperimentalPickerView: View {
 
     private var shouldUseIPadAssets: Bool {
         UIDevice.current.userInterfaceIdiom == .pad
-    }
-
-    private func rebrandableImage(_ rebranded: ImageResource, legacy: ImageResource) -> ImageResource {
-        AppRebrand.isAppRebranded() ? rebranded : legacy
     }
 }
 

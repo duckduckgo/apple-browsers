@@ -39,6 +39,9 @@ protocol WindowControllersManagerProtocol: AnyObject {
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
 
+    /// The loaded tab whose own web view is `webView`, in any main window, pinned tabs included.
+    func tab(for webView: WKWebView?) -> Tab?
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
     var didChangeKeyWindowController: PassthroughSubject<MainWindowController?, Never> { get }
@@ -600,6 +603,18 @@ extension WindowControllersManagerProtocol {
         return mainWindowController?.mainViewController.tabCollectionViewModel.selectedTab
     }
 
+    func tab(for webView: WKWebView?) -> Tab? {
+        guard let webView else { return nil }
+        for windowController in mainWindowControllers {
+            let viewModel = windowController.mainViewController.tabCollectionViewModel
+            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
+            for case .loaded(let tab) in tabs where tab.webView === webView {
+                return tab
+            }
+        }
+        return nil
+    }
+
     var allTabCollectionViewModels: [TabCollectionViewModel] {
         return mainWindowControllers.map {
             $0.mainViewController.tabCollectionViewModel
@@ -737,16 +752,8 @@ extension WindowControllersManager: OnboardingNavigating {
 
     /// Resolve the sender, never the selected tab: the user may have switched tabs or windows.
     func onboardingTab(for webView: WKWebView?) -> Tab? {
-        guard let webView else { return nil }
-        for windowController in mainWindowControllers {
-            let viewModel = windowController.mainViewController.tabCollectionViewModel
-            let tabs = viewModel.tabCollection.tabs + (viewModel.pinnedTabsManager?.tabCollection.tabs ?? [])
-            for case .loaded(let tab) in tabs where tab.webView === webView {
-                guard case .onboarding = tab.content else { return nil }
-                return tab
-            }
-        }
-        return nil
+        guard let tab = tab(for: webView), case .onboarding = tab.content else { return nil }
+        return tab
     }
 
     func replaceOnboardingTab(_ source: Tab, with tab: Tab) -> Bool {

@@ -60,7 +60,7 @@ struct SettingsAIFeaturesView: View {
 
     private var header: some View {
         VStack(alignment: .center) {
-            Image(rebrandable: "SettingAIFeaturesHero")
+            Image(.settingAIFeaturesHero)
                 .padding(.top, -20)
 
             Text(UserText.settingsAiFeatures)

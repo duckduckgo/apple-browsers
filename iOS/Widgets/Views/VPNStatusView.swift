@@ -125,7 +125,7 @@ struct VPNStatusView: View {
             }
             .daxButton()
             .frame(height: 30)
-            .buttonBorderShape(.roundedRectangle(radius: 12))
+            .buttonBorderShape(.capsule)
             .borderedStyle(widgetRenderingMode == .fullColor)
         }
     }

@@ -88,7 +88,9 @@ extension MainViewController {
 
     func revealAddressBarForEditing() {
         guard viewCoordinator.newTabPageInputPresentation.hidesNavigationContainer else { return }
-        if unifiedToggleInputCoordinator != nil {
+        if isPresentingNewTabInputDirectly {
+            restingNewTabPageSnapshot = nil
+        } else if unifiedToggleInputCoordinator != nil {
             captureRestingNewTabPageSnapshot()
         }
         isAddressBarHandOffInProgress = true

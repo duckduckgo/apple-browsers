@@ -46,6 +46,10 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     /// False for records saved before this field existed.
     public var isDisabled: Bool
 
+    /// CPM's private origin after data clearing, rollback or a background-load failure.
+    /// Nil preserves the installation UUID for existing records.
+    public var cpmOriginIdentifier: UUID?
+
     public var id: String { uniqueIdentifier }
 
     /// Whether this extension was installed from the app bundle (embedded).
@@ -60,7 +64,8 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         version: String?,
         embeddedType: DuckDuckGoWebExtensionType? = nil,
         storeIdentity: WebExtensionStoreIdentity? = nil,
-        isDisabled: Bool = false
+        isDisabled: Bool = false,
+        cpmOriginIdentifier: UUID? = nil
     ) {
         self.uniqueIdentifier = uniqueIdentifier
         self.filename = filename
@@ -69,6 +74,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         self.embeddedType = embeddedType
         self.storeIdentity = storeIdentity
         self.isDisabled = isDisabled
+        self.cpmOriginIdentifier = cpmOriginIdentifier
     }
 
     public init(from decoder: Decoder) throws {
@@ -79,6 +85,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
         version = try container.decodeIfPresent(String.self, forKey: .version)
         embeddedType = try container.decodeIfPresent(DuckDuckGoWebExtensionType.self, forKey: .embeddedType)
         storeIdentity = try container.decodeIfPresent(WebExtensionStoreIdentity.self, forKey: .storeIdentity)
+        cpmOriginIdentifier = try container.decodeIfPresent(UUID.self, forKey: .cpmOriginIdentifier)
         isDisabled = try container.decodeIfPresent(Bool.self, forKey: .isDisabled) ?? false
     }
 }

@@ -38,7 +38,7 @@ struct SimplifiedConnectingContentView: View {
     var body: some View {
         VStack(spacing: 24) {
             if isWaitingForOtherDevice {
-                Image(rebrandable: "Desktop-Mobile-Sync-Feature-128", bundle: .module)
+                Image("Desktop-Mobile-Sync-Feature-128", bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 128)

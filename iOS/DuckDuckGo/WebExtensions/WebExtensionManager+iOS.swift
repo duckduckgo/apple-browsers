@@ -136,6 +136,9 @@ public enum WebExtensionManagerFactory {
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
             },
+            isCPMStableBaseURLEnabled: {
+                featureFlagger.isFeatureOn(.cpmStableBaseURL)
+            },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,
                 autoconsentPreferences: preferencesAdapter,

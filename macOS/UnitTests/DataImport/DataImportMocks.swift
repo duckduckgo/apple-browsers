@@ -18,6 +18,7 @@
 
 import Bookmarks
 import Foundation
+import History
 import SecureStorage
 
 @testable import BrowserServicesKit
@@ -45,4 +46,31 @@ struct MockBookmarkImporter: BookmarkImporter {
 
     var importBookmarks: (ImportedBookmarks, BookmarkImportSource, Bool, Int?) -> BookmarksImportSummary
 
+}
+
+struct MockChromiumHistoryReader: ChromiumHistoryReaderProtocol {
+    var result: DataImportResult<HistoryImport.ParseResult> = .success(.init(visits: [], skipped: 0))
+
+    func readVisits(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        result
+    }
+}
+
+struct MockFirefoxHistoryVisitsReader: FirefoxHistoryVisitsReaderProtocol {
+    var result: DataImportResult<HistoryImport.ParseResult> = .success(.init(visits: [], skipped: 0))
+
+    func readVisits(since cutoff: Date) -> DataImportResult<HistoryImport.ParseResult> {
+        result
+    }
+}
+
+final class MockHistoryImporter: HistoryImporterProtocol {
+    var summary = HistoryImport.Summary()
+    private(set) var importedParseResults: [HistoryImport.ParseResult] = []
+
+    @MainActor
+    func importVisits(_ parseResult: HistoryImport.ParseResult) async throws -> HistoryImport.Summary {
+        importedParseResults.append(parseResult)
+        return summary
+    }
 }

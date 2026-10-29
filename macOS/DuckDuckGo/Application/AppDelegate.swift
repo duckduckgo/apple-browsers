@@ -289,6 +289,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var duckAiLauncherPromo = DuckAiLauncherPromo(featureFlagger: featureFlagger, keyValueStore: keyValueStore)
 
     @MainActor
+    private(set) lazy var aiChatScreenshotCaptureService = AIChatScreenshotCaptureService()
+
+    @MainActor
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
@@ -1051,7 +1054,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
 
-        themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        themeManager = ThemeManager(appearancePreferences: appearancePreferences)
 
         let voiceChatPermissionOverride = DuckAiVoiceChatPermissionOverride(featureFlagger: featureFlagger)
         let websitePermissionDefaults = WebsitePermissionDefaults(
@@ -1845,6 +1848,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyAIChatSettingsStatePixel()
         fireDailyAIFeaturesStatePixel()
         fireDailyPromptBarStatePixel()
+        aiChatScreenshotCaptureService.reportPermissionGrantIfNeeded()
         fireDailyAdBlockingPixel()
         fireDailyAutoClearOnExitEnabledPixel()
 
@@ -2266,13 +2270,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             .store(in: &darkReaderCancellables)
 
-        let webExtensionsPublisher = featureFlagger.updatesPublisher
-            .compactMap { [weak featureFlagger] in
-                featureFlagger?.isFeatureOn(.webExtensions)
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-
         let embeddedExtensionPublisher = featureFlagger.updatesPublisher
             .compactMap { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.embeddedExtension)
@@ -2304,19 +2301,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         webExtensionFeatureFlagHandler = WebExtensionFeatureFlagHandler(
             webExtensionManagerProvider: { [weak self] in self?.webExtensionManager },
-            featureFlagPublisher: webExtensionsPublisher,
             embeddedExtensionFlagPublisher: embeddedExtensionPublisher,
             adBlockingExtensionFlagPublisher: adBlockingExtensionPublisher,
             adBlockingDefaultsFlagPublisher: adBlockingDefaultsPublisher,
-            onFeatureFlagEnabled: { [weak self] in
-                await self?.initializeWebExtensions()
-            },
-            onFeatureFlagDisabled: { [weak self] in
-                self?.webExtensionLifecycleCoordinator?.cancelAll()
-                self?.webExtensionLifecycleCoordinator = nil
-                self?.webExtensionManager = nil
-                self?.webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
-            },
             onEmbeddedExtensionFlagEnabled: { [weak self] in
                 await self?.syncEmbeddedExtensions()
             },
@@ -2328,54 +2315,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
-        if featureFlagger.isFeatureOn(.webExtensions) {
-            // Create manager synchronously so it's available during state restoration.
-            // Tabs restored before the manager exists won't have webExtensionController attached.
-            let webExtensionManager = WebExtensionManagerFactory.makeManager(
-                keyValueStore: keyValueStore,
-                privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-                autoconsentPreferences: cookiePopupProtectionPreferences,
-                darkReaderExcludedDomainsProvider: darkReaderSettings,
-                scriptletConfiguration: makeScriptletConfiguration()
-            )
-            self.webExtensionManager = webExtensionManager
-            webExtensionAutofillTakeover.manager = webExtensionManager
-
-            let coordinator = WebExtensionLifecycleCoordinator(
-                manager: webExtensionManager,
-                initialLoadGateEnabledProvider: { [weak self] in
-                    self?.featureFlagger.isFeatureOn(.webExtensionStateRestorationGate) == true
-                },
-                pixelFiring: MacOSWebExtensionPixelFiring()
-            ) { [weak self] in
-                self?.enabledEmbeddedExtensionTypes() ?? []
-            }
-            self.webExtensionLifecycleCoordinator = coordinator
-
-            // Load extensions asynchronously - the controller is already attached to tabs
-            let initialLoad = coordinator.loadAndSync()
-            Task { @MainActor [weak self] in
-                await initialLoad.value
-                self?.startRemoteDisableEnforcer(for: webExtensionManager)
-            }
-        } else {
-            webExtensionAutofillTakeover.extensionsDidBecomeUnavailable()
-        }
-    }
-
-    @available(macOS 15.4, *)
-    @MainActor
-    private func initializeWebExtensions() async {
-        guard webExtensionManager == nil else {
-            await webExtensionLifecycleCoordinator?.loadAndSync().value
-            return
-        }
-
+        // Create manager synchronously so it's available during state restoration.
+        // Tabs restored before the manager exists won't have webExtensionController attached.
         let webExtensionManager = WebExtensionManagerFactory.makeManager(
             keyValueStore: keyValueStore,
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
             autoconsentPreferences: cookiePopupProtectionPreferences,
-            darkReaderExcludedDomainsProvider: darkReaderFeatureSettings,
+            darkReaderExcludedDomainsProvider: darkReaderSettings,
             scriptletConfiguration: makeScriptletConfiguration()
         )
         self.webExtensionManager = webExtensionManager
@@ -2391,8 +2337,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.enabledEmbeddedExtensionTypes() ?? []
         }
         self.webExtensionLifecycleCoordinator = coordinator
-        await coordinator.loadAndSync().value
-        startRemoteDisableEnforcer(for: webExtensionManager)
+
+        // Load extensions asynchronously - the controller is already attached to tabs
+        let initialLoad = coordinator.loadAndSync()
+        Task { @MainActor [weak self] in
+            await initialLoad.value
+            self?.startRemoteDisableEnforcer(for: webExtensionManager)
+        }
     }
 
     /// Call it after the initial load, so an enforcement pass can't race it.

@@ -36,13 +36,13 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding, ObservableO
         self.isEnabledByUserProvider = isEnabledByUserProvider
     }
 
-    static func isFeatureSupported(featureFlagger: FeatureFlagger) -> Bool {
+    static var isFeatureSupported: Bool {
         guard #available(macOS 15.4, *) else { return false }
-        return featureFlagger.isFeatureOn(.webExtensions)
+        return true
     }
 
     var isFeatureSupported: Bool {
-        Self.isFeatureSupported(featureFlagger: featureFlagger)
+        Self.isFeatureSupported
     }
     var isEnabledByUser: Bool { isEnabledByUserProvider() }
 
@@ -51,7 +51,7 @@ final class AdBlockingAvailability: AdBlockingAvailabilityProviding, ObservableO
     }
 
     static func areAdBlockingDefaultsActive(featureFlagger: FeatureFlagger) -> Bool {
-        isFeatureSupported(featureFlagger: featureFlagger)
+        isFeatureSupported
             && featureFlagger.isFeatureOn(.adBlockingExtensionEnabledByDefault)
     }
 

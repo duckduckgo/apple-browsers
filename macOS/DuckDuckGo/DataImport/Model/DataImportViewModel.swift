@@ -35,10 +35,37 @@ struct DataImportViewModel {
     typealias DataType = DataImport.DataType
     typealias DataTypeSummary = DataImport.DataTypeSummary
 
+    /// The Bookmarks / Passwords (and History, when a source offers it) toggles that filter the sources
+    /// and what gets imported when the source filter is on.
+    struct DataTypeFilter: Equatable {
+        /// Types imported only when toggled on, even when a filter made before they were offered doesn't list them.
+        private let toggledTypes: Set<DataType> = [.bookmarks, .passwords, .history]
+
+        let filterableTypes: Set<DataType>
+        var enabledTypes: Set<DataType>
+
+        init(filterableTypes: Set<DataType> = [.bookmarks, .passwords], enabledTypes: Set<DataType>? = nil) {
+            self.filterableTypes = filterableTypes
+            self.enabledTypes = enabledTypes ?? filterableTypes
+        }
+
+        /// The sources that offer at least one enabled type.
+        func visibleSources(among sources: [Source], availableTypes: [Source: Set<DataType>]) -> [Source] {
+            sources.filter { !(availableTypes[$0] ?? []).isDisjoint(with: enabledTypes) }
+        }
+
+        /// The types to import: the enabled ones, plus any type the filter doesn't cover (Safari's credit cards).
+        func dataTypesToImport(from availableTypes: Set<DataType>) -> Set<DataType> {
+            availableTypes.filter { !toggledTypes.contains($0) || enabledTypes.contains($0) }
+        }
+    }
+
     @UserDefaultsWrapper(key: .homePageContinueSetUpImport, defaultValue: nil)
     var successfulImportHappened: Bool?
 
     let availableImportSources: [DataImport.Source]
+    private let availableImportTypesBySource: [Source: Set<DataType>]
+    private let preferredImportSources: [Source]
 
     private let featureFlagger: FeatureFlagger
 
@@ -124,6 +151,10 @@ struct DataImportViewModel {
     /// Lets `update(with:)` tell user intent apart from a selection that's
     /// just a side-effect of the current source's supported types.
     var hasUserModifiedDataTypeSelection: Bool = false
+    /// The data type toggles that filter the sources and what gets imported, or `nil` when the source filter is off.
+    /// Set from the feature flag when the import window opens and kept across source switches,
+    /// so a remote flag change can't leave the open window half-switched.
+    private(set) var dataTypeFilter: DataTypeFilter?
     var isPickerExpanded: Bool = false
 
     enum DataTypeSelection: Equatable {
@@ -229,6 +260,8 @@ struct DataImportViewModel {
          summary: [DataTypeImportResult] = [],
          selectedDataTypes: Set<DataType>? = nil,
          hasUserModifiedDataTypeSelection: Bool = false,
+         dataTypeFilter: DataTypeFilter? = nil,
+         isSourceFilterEnabled: Bool? = nil,
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
@@ -247,23 +280,21 @@ struct DataImportViewModel {
             ?? DataDirectoryPermissionFixAvailability(debugSettings: UserDefaults.standard.keyedStoring())
         let loadProfiles = loadProfiles ?? { $0.browserProfiles(detectsInaccessibleProfiles: directoryAccessAvailability.isAvailable) }
 
-        let filteredAvailableSources = availableImportSources.filter {
-            // Filter out CSV and HTML as we're using the new combined file import option
-             if $0 == .bookmarksHTML || $0 == .csv {
-                 return false
-             }
-
-            let browser = ThirdPartyBrowser.browser(for: $0)
-            guard browser?.isWebBrowser == true else {
-                // Don't filter out password managers or file imports
-                return true
-            }
-            let profiles = browser.map(loadProfiles)
-            return profiles?.defaultProfile != nil
+        let availableImportTypesBySource = availableImportSources.reduce(into: [Source: Set<DataType>]()) { result, source in
+            result[source] = source.availableImportTypes(loadingProfilesWith: loadProfiles)
         }
+        let filteredAvailableSources = availableImportSources.filter { availableImportTypesBySource[$0] != nil }
+        let isSourceFilterEnabled = isSourceFilterEnabled ?? featureFlagger.isFeatureOn(.dataImportSourceFilter)
+        let isHistoryOffered = availableImportTypesBySource.values.contains { $0.contains(.history) }
+        let defaultDataTypeFilter = DataTypeFilter(filterableTypes: isHistoryOffered ? [.bookmarks, .passwords, .history] : [.bookmarks, .passwords])
+        let dataTypeFilter = isSourceFilterEnabled ? dataTypeFilter ?? defaultDataTypeFilter : nil
+        let visibleSources = dataTypeFilter?.visibleSources(among: filteredAvailableSources, availableTypes: availableImportTypesBySource)
+            ?? filteredAvailableSources
 
         self.availableImportSources = filteredAvailableSources
-        let importSource = importSource ?? preferredImportSources.first(where: { filteredAvailableSources.contains($0) }) ?? filteredAvailableSources.first ?? .csv
+        self.availableImportTypesBySource = availableImportTypesBySource
+        self.preferredImportSources = preferredImportSources
+        let importSource = importSource ?? visibleSources.preferredSource(from: preferredImportSources) ?? .csv
 
         self.importSource = importSource
         self.loadProfiles = loadProfiles
@@ -276,24 +307,15 @@ struct DataImportViewModel {
         let selectedProfile = browserProfiles?.defaultProfile
         self.selectedProfile = selectedProfile
 
-        let availableImportTypes = importSource.supportedDataTypes.filter { dataType in
-            guard let profiles = browserProfiles else { return true }
-
-            // If we have valid profiles, check if any profile has valid data for this type.
-            // If no valid profiles (Safari doesn't check profiles, password managers), return true (include all types).
-            let validProfiles = profiles.validImportableProfiles
-            guard !validProfiles.isEmpty else { return true }
-
-            return validProfiles.contains { profile in
-                profile.hasValidProfileData(for: dataType)
-            }
-        }
+        let availableImportTypes = availableImportTypesBySource[importSource]
+            ?? importSource.availableImportTypes(in: browserProfiles)
         self.selectableImportTypes = availableImportTypes
-        self.selectedDataTypes = Self.determineSelectedDataTypes(
+        self.selectedDataTypes = dataTypeFilter?.dataTypesToImport(from: availableImportTypes) ?? Self.determineSelectedDataTypes(
             previousSelectedTypes: selectedDataTypes,
             availableTypes: availableImportTypes
         )
         self.hasUserModifiedDataTypeSelection = hasUserModifiedDataTypeSelection
+        self.dataTypeFilter = dataTypeFilter
 
         self.summary = summary
         self.isPickerExpanded = isPickerExpanded
@@ -404,7 +426,7 @@ struct DataImportViewModel {
             let sourceVersion = importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
             switch result {
             case .success(let dataTypeSummary):
-                if dataTypeSummary.isEmpty, nextScreen == nil {
+                if dataTypeSummary.isEmpty, nextScreen == nil, dataType.supportsFileImport {
                     switch screen {
                     case .archiveImport(let dataTypes, _):
                         nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
@@ -425,7 +447,7 @@ struct DataImportViewModel {
                 }
 
                 // show file import screen when import fails or no bookmarks|passwords found
-                if !((screen.isFileImport && screen.fileImportDataType == dataType) || screen.isArchiveImport), nextScreen == nil {
+                if !((screen.isFileImport && screen.fileImportDataType == dataType) || screen.isArchiveImport), nextScreen == nil, dataType.supportsFileImport {
                     // switch to file import of the failed data type displaying successful import results
                     nextScreen = .fileImport(dataType: dataType, summary: summary)
                 }
@@ -523,10 +545,10 @@ struct DataImportViewModel {
         switch screen {
         case .fileImport(dataType: let dataType, summary: _):
             dataTypes = dataType.allowedFileTypes
-        case .archiveImport:
-            dataTypes = Array(importSource.archiveImportSupportedFiles)
+        case .archiveImport(let archiveDataTypes, _):
+            dataTypes = Array(importSource.archiveImportSupportedFiles(for: archiveDataTypes))
         case .sourceAndDataTypesPicker:
-            dataTypes = importSource.supportedDataTypes.flatMap { $0.allowedFileTypes }
+            dataTypes = filteredSupportedDataTypes.flatMap { $0.allowedFileTypes }
         default:
             assertionFailure("Expected File Import")
             return
@@ -580,6 +602,11 @@ struct DataImportViewModel {
             return false
         }
 
+        if let dataTypeFilter, !dataTypeFilter.enabledTypes.contains(detectedDataType) {
+            showFileImportForEnabledType(insteadOf: detectedDataType, in: dataTypeFilter)
+            return false
+        }
+
         let newSource: Source = detectedDataType == .passwords ? .csv : .bookmarksHTML
 
         self.update(with: newSource)
@@ -589,6 +616,13 @@ struct DataImportViewModel {
         }
 
         return true
+    }
+
+    /// Shouldn't happen, as the file picker only offers the toggled types: shows the file screen for a toggled type instead.
+    private mutating func showFileImportForEnabledType(insteadOf detectedDataType: DataType, in dataTypeFilter: DataTypeFilter) {
+        Logger.dataImportExport.error("Selected a \(detectedDataType.rawValue) file while it's filtered out")
+        guard let dataType = DataType.allCases.first(where: dataTypeFilter.enabledTypes.contains) else { return }
+        screen = .fileImport(dataType: dataType)
     }
 
     mutating func goBack() {
@@ -657,8 +691,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
         FirefoxDataImporter(profile: profile,
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager)
+                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     case .safari, .safariTechnologyPreview:
         if #available(macOS 15.2, *), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,
@@ -707,7 +740,13 @@ extension DataImport.DataType {
         case .bookmarks: [.html]
         case .passwords: [.commaSeparatedText]
         case .creditCards: [.json]
+        case .history: []
         }
+    }
+
+    /// History can only be read from a browser profile, so it never falls back to a manual file import.
+    var supportsFileImport: Bool {
+        self != .history
     }
 }
 
@@ -748,7 +787,7 @@ extension DataImportViewModel {
 
     private func screenForNextDataTypeRemainingToImport(after currentDataType: DataType? = nil) -> Screen? {
         // keep the original sort order among all data types or only after current data type
-        for dataType in (currentDataType.map { DataType.dataTypes(after: $0) } ?? DataType.allCases[0...]) where selectedDataTypes.contains(dataType) {
+        for dataType in (currentDataType.map { DataType.dataTypes(after: $0) } ?? DataType.allCases[0...]) where selectedDataTypes.contains(dataType) && dataType.supportsFileImport {
             // if some of selected data types failed to import or not imported yet
             switch summary.last(where: { $0.dataType == dataType })?.result {
             case .success(let summary) where summary.isEmpty:
@@ -956,8 +995,12 @@ extension DataImportViewModel {
         // Only carry the user's selection forward if they actually chose it.
         // Otherwise let the new source default to its full set of types.
         self = .init(importSource: importSource,
+                     availableImportSources: availableImportSources,
+                     preferredImportSources: preferredImportSources,
                      selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
                      hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
+                     dataTypeFilter: dataTypeFilter,
+                     isSourceFilterEnabled: isSourceFilterEnabled,
                      isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,
@@ -983,6 +1026,63 @@ extension DataImportViewModel {
         }
     }
 
+    /// Applies the data types confirmed in the picker's type sheet.
+    /// With the source filter on, they become the filter, and the selected source changes if the filter hides it.
+    mutating func selectDataTypes(_ dataTypes: Set<DataType>) {
+        guard let dataTypeFilter else {
+            setSelectedDataTypes(dataTypes)
+            return
+        }
+        applyDataTypeFilter(DataTypeFilter(filterableTypes: dataTypeFilter.filterableTypes, enabledTypes: dataTypes))
+    }
+
+    /// Selects exactly these types among the current source's types, as the type sheet did before the source filter.
+    private mutating func setSelectedDataTypes(_ dataTypes: Set<DataType>) {
+        for dataType in selectableImportTypes {
+            setDataType(dataType, selected: dataTypes.contains(dataType))
+        }
+    }
+
+    private mutating func applyDataTypeFilter(_ dataTypeFilter: DataTypeFilter) {
+        self.dataTypeFilter = dataTypeFilter
+        guard visibleImportSources.contains(importSource) else {
+            selectDefaultVisibleSource()
+            return
+        }
+        selectedDataTypes = dataTypeFilter.dataTypesToImport(from: selectableImportTypes)
+    }
+
+    private mutating func selectDefaultVisibleSource() {
+        guard let source = visibleImportSources.preferredSource(from: preferredImportSources) else { return }
+        update(with: source)
+    }
+
+    var isSourceFilterEnabled: Bool {
+        dataTypeFilter != nil
+    }
+
+    /// Import sources shown in the picker: with the source filter on, those that offer a toggled data type.
+    var visibleImportSources: [Source] {
+        dataTypeFilter?.visibleSources(among: availableImportSources, availableTypes: availableImportTypesBySource)
+            ?? availableImportSources
+    }
+
+    /// Data types listed in the picker's type sheet.
+    var pickerSelectableDataTypes: Set<DataType> {
+        dataTypeFilter?.filterableTypes ?? selectableImportTypes
+    }
+
+    /// Data types turned on in the picker's type sheet.
+    var pickerSelectedDataTypes: Set<DataType> {
+        dataTypeFilter?.enabledTypes ?? selectedDataTypes
+    }
+
+    /// What the import source supports, narrowed to the toggled types when the source filter is on.
+    private var filteredSupportedDataTypes: Set<DataType> {
+        let supportedDataTypes = importSource.supportedDataTypes
+        return dataTypeFilter?.dataTypesToImport(from: supportedDataTypes) ?? supportedDataTypes
+    }
+
     /// Selects a profile and filters selected data types to only include types available for that profile.
     /// This should be called when the user selects a profile from the profile picker screen.
     /// - Parameter profile: The profile to select
@@ -1004,8 +1104,11 @@ extension DataImportViewModel {
             self.dataImportWideEventData = nil
         }
         self = .init(importSource: importSource,
+                     preferredImportSources: preferredImportSources,
                      selectedDataTypes: hasUserModifiedDataTypeSelection ? selectedDataTypes : nil,
                      hasUserModifiedDataTypeSelection: hasUserModifiedDataTypeSelection,
+                     dataTypeFilter: dataTypeFilter,
+                     isSourceFilterEnabled: isSourceFilterEnabled,
                      isPickerExpanded: isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,
@@ -1155,6 +1258,7 @@ extension DataImportViewModel {
     @MainActor
     mutating func importButtonPressed() {
         setupAndStartWideEventIfNeeded()
+        fireBookmarksSourceFileMissingPixelIfNeeded()
         guard let importer = selectedProfile.map({
             dataImporterFactory(/* importSource: */ importSource,
                                 /* dataType: */ nil,
@@ -1162,7 +1266,7 @@ extension DataImportViewModel {
                                 /* primaryPassword: */ nil)
         }), selectedDataTypes.intersects(importer.importableTypes) else {
             if #available(macOS 15.2, *), .safari == importSource {
-                screen = .archiveImport(dataTypes: importSource.supportedDataTypes)
+                screen = .archiveImport(dataTypes: filteredSupportedDataTypes)
                 return
             }
 
@@ -1173,7 +1277,7 @@ extension DataImportViewModel {
 
             // no profiles found
             // or selected data type not supported by selected browser data importer
-            guard let type = DataType.allCases.filter(selectedDataTypes.contains).first else {
+            guard let type = DataType.allCases.first(where: { selectedDataTypes.contains($0) && $0.supportsFileImport }) else {
                 // disabled Import button
                 return initiateImport()
             }
@@ -1189,6 +1293,19 @@ extension DataImportViewModel {
             screen = .moreInfo
         }
         initiateImport()
+    }
+
+    /// The profile folder could be read, but it has none of the bookmarks files the importer knows.
+    private func fireBookmarksSourceFileMissingPixelIfNeeded() {
+        guard importSource.supportedDataTypes.contains(.bookmarks),
+              let selectedProfile,
+              case .unavailable = selectedProfile.validateProfileData()?.bookmarks else { return }
+
+        let pixel = DataImportBookmarksPixel.sourceFileMissing(
+            source: importSource.pixelSourceParameterName,
+            sourceVersion: importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
+        )
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private mutating func dismiss(using dismiss: @escaping () -> Void) {

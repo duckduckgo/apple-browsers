@@ -88,7 +88,8 @@ fi
 
 # Packages managed by dedicated CI workflows (excluded from this checker)
 EXCLUDED_REPOS=(
-    "sparkle-project/sparkle"  # Managed by .github/workflows/macos_check_sparkle_update.yml
+    "sparkle-project/sparkle"     # Managed by .github/workflows/macos_check_sparkle_update.yml
+    "duckduckgo/wireguard-apple"  # Managed by .github/workflows/check_wireguard_update.yml
 )
 
 is_excluded() {

@@ -26,6 +26,12 @@ class MainViewCoordinator {
         static let tabBarContainerHeight: CGFloat = 40
         // Aligns top chrome with window controls.
         static let windowControlsRowTopSpacing: CGFloat = 4
+        static let contextualSidebarWidthFraction: CGFloat = 0.32
+        /// The narrowest iPhone, which is what the contextual surface's content is laid out for.
+        static let contextualSidebarMinWidth: CGFloat = 375
+        static let contextualSidebarMaxWidth: CGFloat = 400
+        /// Below this the page beside the sidebar would be narrower than a phone, so the surface is a sheet instead.
+        static let contextualSidebarMinPageWidth: CGFloat = 400
     }
 
     enum StatusBackgroundPresentation: Equatable {
@@ -48,6 +54,8 @@ class MainViewCoordinator {
     let superview: UIView
 
     var contentContainer: UIView!
+    /// iPad only: the column beside the page that hosts the contextual Duck.ai surface.
+    var contextualSidebarContainer: UIView?
     var logo: UIImageView!
     var logoContainer: UIView!
     var topSlideContainer: UIView!
@@ -196,6 +204,18 @@ class MainViewCoordinator {
         omniBar.barView.expectedHeight
     }
 
+    /// Height of the toolbar while it doesn't host the omnibar.
+    var standaloneToolbarHeight: CGFloat {
+        BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled, isCompact: toolbar.usesCompactStandaloneHeight)
+    }
+
+    func setCompactStandaloneToolbar(_ enabled: Bool) {
+        guard toolbar.usesCompactStandaloneHeight != enabled else { return }
+        toolbar.setCompactStandaloneHeight(enabled)
+        guard !isOmnibarInToolbar else { return }
+        constraints.toolbarHeight.constant = standaloneToolbarHeight
+    }
+
     init(parentController: UIViewController) {
         self.parentController = parentController
         self.superview = parentController.view
@@ -238,6 +258,8 @@ class MainViewCoordinator {
         var contentContainerTopToSafeArea: NSLayoutConstraint!
         var contentContainerTopToSuperview: NSLayoutConstraint!
         var contentContainerTopToAIChatHeader: NSLayoutConstraint!
+        var contextualSidebarShown: NSLayoutConstraint?
+        var contextualSidebarHidden: NSLayoutConstraint?
 
     }
 
@@ -297,7 +319,7 @@ class MainViewCoordinator {
         isOmnibarInToolbar = false
         guard isFloatingUIEnabled else {
             toolbar.setOmnibarView(nil, height: 0)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+            constraints.toolbarHeight.constant = standaloneToolbarHeight
             applyOmnibarHostedInNavigationContainerPose()
             setContentContainerBottomAnchorMode(requesting: .toolbar)
             return
@@ -308,7 +330,7 @@ class MainViewCoordinator {
         switch position {
         case .top:
             toolbar.setOmnibarView(nil, height: 0)
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+            constraints.toolbarHeight.constant = standaloneToolbarHeight
             omniBar.barView.makeGlass()
             applyOmnibarHostedInNavigationContainerPose()
             bringFloatingNavigationBarToFrontIfNeeded()
@@ -323,7 +345,7 @@ class MainViewCoordinator {
                 isMinimalChromeLayout: isInMinimalChromeLayout
             ) else {
                 toolbar.setOmnibarView(nil, height: 0)
-                constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+                constraints.toolbarHeight.constant = standaloneToolbarHeight
                 applyOmnibarHostedInNavigationContainerPose()
                 return
             }
@@ -363,7 +385,7 @@ class MainViewCoordinator {
     private func attachOmnibarToToolbar() -> Bool {
         guard toolbar.setOmnibarView(omniBar.barView, height: omniBar.barView.expectedHeight) else {
             // The toolbar has already applied its detachment pose; only the height constraint is ours.
-            constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+            constraints.toolbarHeight.constant = standaloneToolbarHeight
             applyOmnibarHostedInNavigationContainerPose()
             isOmnibarInToolbar = false
             return false
@@ -495,7 +517,7 @@ class MainViewCoordinator {
     }
 
     func applyDetachedToolbarHeight() {
-        constraints.toolbarHeight.constant = BrowserToolbarView.totalHeight(withOmnibarHeight: 0, isFloating: isFloatingUIEnabled)
+        constraints.toolbarHeight.constant = standaloneToolbarHeight
         toolbar.applyOmnibarDetachmentPose()
     }
 
@@ -1169,10 +1191,7 @@ class MainViewCoordinator {
 
     /// Resets nav bar from minimal chrome to default layout.
     func resetMinimalChromeLayout() {
-        // Height: fixed
-        constraints.navigationBarContainerHeight.isActive = true
-        constraints.navigationBarContainerMinHeight.isActive = false
-        constraints.navigationBarCollectionViewSafeAreaBottom.isActive = false
+        releaseMinimalChromeHeightBeforeFixingIt()
 
         // Bottom: toolbar-based, active only for bottom address bar
         constraints.navigationBarContainerBottom.isActive = false
@@ -1182,6 +1201,15 @@ class MainViewCoordinator {
             .constraint(equalTo: toolbar.topAnchor)
         constraints.navigationBarContainerBottom.isActive = addressBarPosition.isBottom
         isNavBarContainerBottomKeyboardBased = false
+
+        constraints.navigationBarContainerHeight.isActive = true
+    }
+
+    private func releaseMinimalChromeHeightBeforeFixingIt() {
+        NSLayoutConstraint.deactivate([
+            constraints.navigationBarContainerMinHeight,
+            constraints.navigationBarCollectionViewSafeAreaBottom,
+        ])
     }
 
     /// Switches to expandable height so the container can grow past the safe area

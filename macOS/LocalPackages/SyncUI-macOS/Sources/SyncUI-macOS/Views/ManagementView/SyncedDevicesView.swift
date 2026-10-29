@@ -95,7 +95,6 @@ struct SyncedDevicesView_Previews: PreviewProvider {
                 .frame(width: 512)
                 .padding()
                 .background(Color(nsColor: .windowBackgroundColor))
-                .applyRebranding()
         }
     )
 }

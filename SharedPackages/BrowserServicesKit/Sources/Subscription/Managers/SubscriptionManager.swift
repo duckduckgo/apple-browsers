@@ -188,6 +188,12 @@ extension SubscriptionManager {
             return true
         }
     }
+
+    /// Whether the app knows the user's purchase eligibility: either they're eligible (possibly from a previous
+    /// launch's cached products) or this launch's App Store product fetch has finished.
+    public var isPurchaseEligibilityKnown: Bool {
+        isSubscriptionPurchaseEligible || hasResolvedAppStoreProducts
+    }
 }
 
 // MARK: -  Default implementation

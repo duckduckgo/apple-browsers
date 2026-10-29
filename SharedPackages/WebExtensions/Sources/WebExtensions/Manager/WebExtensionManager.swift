@@ -86,6 +86,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     public let installationStore: InstalledWebExtensionStoring
     public let storageProvider: WebExtensionStorageProviding
+    let cpmBaseURLPolicy: CPMExtensionBaseURLPolicy
     public let loader: WebExtensionLoading
     public let permissionController: WebExtensionPermissionController?
     public var chromeWebStore: ChromeWebStoreManaging?
@@ -235,6 +236,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                 isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
                 isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
+                isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                 messageRouter: WebExtensionMessageRouting? = nil,
                 handlerProvider: WebExtensionHandlerProviding? = nil,
                 nativeMessagingHandler: WebExtensionNativeMessagingHandling? = nil,
@@ -273,9 +275,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         self.installationStore = installationStore
         self.permissionController = permissionController
         self.bundledExtensionURL = bundledExtensionURL
+        let baseURLPolicy = CPMExtensionBaseURLPolicy(installationStore: installationStore, isEnabled: isCPMStableBaseURLEnabled)
+        self.cpmBaseURLPolicy = baseURLPolicy
         self.loader = loader ?? WebExtensionLoader(storageProvider: storageProvider,
                                                    isInspectable: configuration.isInspectable,
-                                                   permissionController: permissionController)
+                                                   permissionController: permissionController,
+                                                   baseURLProvider: baseURLPolicy.baseURL)
         self.lifecycleDelegate = lifecycleDelegate
         self.internalSiteHandler = internalSiteHandler
         self.pixelFiring = pixelFiring
@@ -406,11 +411,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             guard let context = notification.object as? WKWebExtensionContext else { return }
             MainActor.assumeIsolated {
                 guard let self, self.context(for: context.uniqueIdentifier) === context,
-                      let error = context.errors.first(where: {
-                    let error = $0 as NSError
-                    return error.domain == "WKWebExtensionContextErrorDomain" &&
-                        error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
-                }) else { return }
+                      let error = context.errors.first(where: { NSError.webKitSafe($0).isBackgroundContentLoadFailure }) else { return }
+                self.cpmBaseURLPolicy.recordBackgroundLoadFailure(in: context, errors: [error])
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.
                 if self.embeddedBackgroundStartupContext === context {
@@ -704,6 +706,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: .dataClearing))
             do {
                 try controller.unloadCopyingErrors(context)
+                cpmBaseURLPolicy.prepareForDataClearingReload(of: context)
                 permissionController?.didUnload(identifier)
                 cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
                 cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
@@ -771,8 +774,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         reportLifecycleEvent(.willReload(identifier: identifier, type: type, trigger: trigger))
         await unloadGuard.awaitSettled(context(for: identifier))
 
+        let previousContext = context(for: identifier)
+        let previousErrors = previousContext?.errors ?? []
         do {
             try loader.unloadExtension(identifier: identifier, from: controller)
+            if let previousContext {
+                cpmBaseURLPolicy.recordBackgroundLoadFailure(in: previousContext, errors: previousErrors)
+            }
             cpmNetworkProcessRecovery.stopWatching(identifier: identifier)
             cpmDiagnosticsRecorder?.contextDidUnload(identifier: identifier)
         } catch {
@@ -1020,9 +1028,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @discardableResult
     @MainActor
     func recoverEmbeddedBackgroundLoadFailure(_ error: Error, context: WKWebExtensionContext) async -> Bool {
-        let error = error as NSError
-        guard error.domain == "WKWebExtensionContextErrorDomain",
-              error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue,
+        let error = NSError.webKitSafe(error)
+        guard error.isBackgroundContentLoadFailure,
               context.webExtension.duckDuckGoWebExtensionType == .embedded,
               self.context(for: context.uniqueIdentifier) === context,
               embeddedBackgroundContextForNavigation === context,

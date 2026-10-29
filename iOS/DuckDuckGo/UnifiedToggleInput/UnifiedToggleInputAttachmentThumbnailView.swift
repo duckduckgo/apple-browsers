@@ -49,12 +49,6 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     let attachmentId: UUID
     var onRemove: ((UUID) -> Void)?
     var onTap: ((UUID) -> Void)?
-    var showsPromptLengthError = false {
-        didSet {
-            guard showsPromptLengthError != oldValue else { return }
-            applyAppearance()
-        }
-    }
     private lazy var tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(chipTapped))
     private let attachment: UnifiedToggleInputAttachment
     private let usesCompactLayout: Bool
@@ -76,9 +70,9 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
     private var iconSize: CGFloat {
         guard usesCompactLayout else { return iconFrameSize }
         switch attachment {
-        case .tab, .pastedText:
+        case .tab:
             return Constants.faviconSize
-        case .image, .file, .invalidFile:
+        case .image, .file, .invalidFile, .pastedText:
             return iconFrameSize
         }
     }
@@ -199,18 +193,14 @@ final class UnifiedToggleInputAttachmentThumbnailView: UIView {
 
 private extension UnifiedToggleInputAttachmentThumbnailView {
 
-    var isErrorStyled: Bool {
-        attachment.isInvalid || (showsPromptLengthError && attachment.pastedText != nil)
-    }
-
     var borderColor: UIColor {
-        isErrorStyled
+        attachment.isInvalid
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.60 : 0.34)
             : UIColor(designSystemColor: .lines)
     }
 
     var chipBackgroundColor: UIColor {
-        isErrorStyled
+        attachment.isInvalid
             ? UIColor(designSystemColor: .destructivePrimary).withAlphaComponent(traitCollection.userInterfaceStyle == .dark ? 0.24 : 0.18)
             : UIColor(designSystemColor: .controlsFillPrimary)
     }
@@ -315,8 +305,8 @@ private extension UnifiedToggleInputAttachmentThumbnailView {
     func configurePastedText(_ pastedText: AIChatPastedText) {
         imageView.image = nil
         imageView.isHidden = true
-        fileIconView.image = DesignSystemImages.Glyphs.Size24.textSelect.withRenderingMode(.alwaysTemplate)
-        fileIconView.tintColor = UIColor(designSystemColor: .textSecondary)
+        fileIconView.image = DesignSystemImages.Color.Size24.fileTXT
+        fileIconView.tintColor = nil
         fileNameLabel.text = pastedText.title
         fileNameLabel.lineBreakMode = .byTruncatingTail
         fileIconView.isHidden = false

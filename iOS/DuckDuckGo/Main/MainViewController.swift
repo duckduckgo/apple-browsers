@@ -340,6 +340,7 @@ class MainViewController: UIViewController {
     var vpnConnectedWhenLeavingNewTabPage: Bool?
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let duckAISessionInstrumentation: DuckAISessionInstrumentation
+    let duckAIEntryInstrumentation: DuckAIEntryInstrumentation
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -860,6 +861,11 @@ class MainViewController: UIViewController {
         self.duckAISessionInstrumentation = DefaultDuckAISessionInstrumentation(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             isEnabled: { featureFlagger.isFeatureOn(.duckAISessionWideEvent) },
+            completeOrphanedFlowsOnInit: true
+        )
+        self.duckAIEntryInstrumentation = DefaultDuckAIEntryInstrumentation(
+            wideEvent: AppDependencyProvider.shared.wideEvent,
+            isEnabled: { featureFlagger.isFeatureOn(.duckAIEntryWideEvent) },
             completeOrphanedFlowsOnInit: true
         )
         self.syncAutoRestoreHandler = syncAutoRestoreHandler
@@ -1894,6 +1900,7 @@ class MainViewController: UIViewController {
         newTabPageReturnTimeAwayMs = nil
         postIdleSessionInstrumentation.sessionCancelledByBackground()
         duckAISessionInstrumentation.sessionCancelledByBackground()
+        duckAIEntryInstrumentation.entryCancelledByBackground()
         recordNewTabPageSessionVPNChangeIfNeeded()
         newTabPageSessionInstrumentation.visitBackgrounded()
 
@@ -5057,6 +5064,16 @@ class MainViewController: UIViewController {
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
                                    opensNewTab: opensNewTab,
                                    hasPrompt: hasPrompt)
+        let surface = DuckAIEntryWideEventData.Surface(source: source, opensNewTab: opensNewTab)
+        // A tab entry reads its chat state once its Duck.ai tab is shown.
+        let sheetChatState: DuckAIEntryWideEventData.ChatState? = surface == .contextualSheet
+            ? (currentTab?.hasContextualChatToReopen == true ? .existing : .new)
+            : nil
+        duckAIEntryInstrumentation.entryStarted(source: source, hasPrompt: hasPrompt, surface: surface, chatState: sheetChatState)
+        if surface == .contextualSheet {
+            // Gives the sheet entry the page it opened on, so it can notice that page changing later.
+            reportDuckAISessionCurrentTab()
+        }
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
@@ -7785,6 +7802,11 @@ extension MainViewController: TabDelegate {
 
     func tab(_ tab: TabViewController, didSubmitDuckAIPromptWithOrigin origin: AIChatEntryPointSource?) {
         postIdleSessionInstrumentation.promptSubmittedWithoutNavigation(origin: origin)
+        duckAIEntryInstrumentation.sheetPromptSubmitted()
+    }
+
+    func tabDidCloseContextualDuckAI(_ tab: TabViewController, chatDeleted: Bool) {
+        duckAIEntryInstrumentation.sheetDismissed(exitTrigger: chatDeleted ? .chatDeleted : nil)
     }
 
     func tab(_ tab: TabViewController, didFailDuckAINavigationFor url: URL, error: Error) {
@@ -7957,6 +7979,10 @@ extension MainViewController: TabDelegate {
         }
         openNewTab(from: tab, url: url, openedByPage: false, inheritedAttribution: attribution,
                    completion: stampingDuckAIEntrySource(entrySource, then: nil))
+    }
+
+    func tab(_ tab: TabViewController, didReportDuckAIEntry source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool) {
+        fireAIChatEntryPointPixel(source: source, opensNewTab: opensNewTab, hasPrompt: hasPrompt)
     }
 
     func tab(_ tab: TabViewController,
@@ -8385,6 +8411,8 @@ extension MainViewController: TabDelegate {
         postIdleSessionInstrumentation.sessionEnded(reason: .tabSelected)
         if tab.isAITab {
             fireAIChatEntryPointPixel(source: .tabsBarExistingChat, opensNewTab: false, hasPrompt: false)
+            // This tab was shown before the entry started, so report it again for the entry.
+            reportDuckAISessionCurrentTab()
         }
     }
 

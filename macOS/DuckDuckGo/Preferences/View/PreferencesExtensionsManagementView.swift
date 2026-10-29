@@ -41,8 +41,6 @@ extension Preferences {
         @State private var imageLoader: RemoteMessagingImageLoading = RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
                                                                                                  cache: RemoteMessagingImageLoader.defaultCache)
 
-        @State private var detailsListingID: String?
-
         @Environment(\.designSystemPalette) private var palette
 
         init(configurationManager: PrivacyConfigurationManaging,
@@ -54,19 +52,12 @@ extension Preferences {
         }
 
         var body: some View {
-            if let entry = detailsEntry {
+            if let entry = model.detailsEntry {
                 ExtensionDetailsView(entry: entry,
-                                     onBack: { detailsListingID = nil },
+                                     onBack: model.hideDetails,
                                      onRemove: { model.remove(entry) })
             } else {
                 overview
-            }
-        }
-
-        /// Looked up by store ID, so an update keeps the details open and a removal returns to the list.
-        private var detailsEntry: ExtensionsManagementPreferences.InstalledExtensionEntry? {
-            detailsListingID.flatMap { id in
-                model.installedExtensions.first { $0.listing.id == id }
             }
         }
 
@@ -132,7 +123,7 @@ extension Preferences {
                                   isEnabled: Binding(get: { entry.isEnabled },
                                                      set: { model.setEnabled($0, for: entry) }),
                                   isLocked: entry.isRemotelyDisabled,
-                                  onDetails: { detailsListingID = entry.listing.id },
+                                  onDetails: { model.showDetails(for: entry) },
                                   onRemove: { model.remove(entry) })
         }
 

@@ -27,6 +27,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     @Published private(set) var installedExtensions: [InstalledExtensionEntry] = []
     @Published private(set) var uninstalledPasswordManagers: [ChromeWebStoreListing] = []
+    @Published private(set) var detailsListingID: String?
+
+    /// Looked up by store ID, so an update keeps the details open.
+    var detailsEntry: InstalledExtensionEntry? {
+        detailsListingID.flatMap { id in
+            installedExtensions.first { $0.listing.id == id }
+        }
+    }
 
     private let webExtensionManager: WebExtensionManaging?
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -43,6 +51,14 @@ final class ExtensionsManagementPreferences: ObservableObject {
 
     func openStorePage(for item: ChromeWebStoreListing) {
         windowControllersManager.show(url: item.storeURL, source: .ui, newTab: true, selected: true)
+    }
+
+    func showDetails(for entry: InstalledExtensionEntry) {
+        detailsListingID = entry.listing.id
+    }
+
+    func hideDetails() {
+        detailsListingID = nil
     }
 
     func setEnabled(_ isEnabled: Bool, for entry: InstalledExtensionEntry) {
@@ -167,11 +183,17 @@ private extension ExtensionsManagementPreferences {
 
         installedExtensions = installedEntries(manager: manager, store: store)
         uninstalledPasswordManagers = availablePasswordManagers(in: store)
+
+        // Whoever removed it, a reinstall shouldn't reopen its details.
+        if detailsEntry == nil {
+            detailsListingID = nil
+        }
     }
 
     func resetExtensions() {
         installedExtensions = []
         uninstalledPasswordManagers = []
+        detailsListingID = nil
     }
 
     /// Built from the installation records, so extensions the catalog no longer offers stay listed.

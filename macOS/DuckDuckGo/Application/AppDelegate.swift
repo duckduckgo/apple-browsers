@@ -430,7 +430,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let wideEvent: WideEventManaging
     let freeTrialConversionService: FreeTrialConversionInstrumentationService
     let subscriptionManager: any SubscriptionManager
-    static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
 
@@ -674,6 +673,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The date this app instance was launched, used for computing uptime in memory pixels.
     private let appLaunchDate = Date()
+
+    /// The storage for the AuthV2 backup token, or nil when `authBackupToken` is off, so no backup token is created, renewed or restored from.
+    /// - Parameters:
+    ///   - featureFlagger: Decides whether the backup token is enabled.
+    ///   - makeStorage: Creates the backup token storage. Called only when the flag is on.
+    static func backupTokenStorageAtLaunch(featureFlagger: FeatureFlagger,
+                                           makeStorage: () -> any AuthTokenStoring) -> (any AuthTokenStoring)? {
+        featureFlagger.isFeatureOn(.authBackupToken) ? makeStorage() : nil
+    }
 
     @MainActor
     // swiftlint:disable cyclomatic_complexity
@@ -943,6 +951,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                  authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
+        let backupTokenStorage = Self.backupTokenStorageAtLaunch(featureFlagger: featureFlagger) {
+            SubscriptionTokenKeychainStorage(keychainManager: keychainManager,
+                                             userDefaults: .subs,
+                                             field: .backupTokenContainer) { accessType, error in
+                Logger.subscriptionKeychain.error("Backup token keychain error, \(accessType.rawValue, privacy: .public): \(error.localizedDescription, privacy: .public)")
+            }
+        }
 
         let isAuthV2WideEventEnabled = {
 #if DEBUG
@@ -955,7 +970,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                                     isFeatureEnabled: isAuthV2WideEventEnabled)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             authService: authService,
-                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping)
+                                            refreshEventMapping: authV2RefreshInstrumentation.eventMapping,
+                                            backupStorage: backupTokenStorage,
+                                            backupUserDefaults: subscriptionUserDefaults)
         Logger.general.log("Configuring Subscription")
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointService(apiService: apiServiceForSubscription,
@@ -963,15 +980,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
             guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
+                Logger.subscriptionTokensManagement.error("Unauthorized response, but no current token can be read to refresh")
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 
             if tokenContainer.decodedAccessToken.isExpired() {
-                Logger.OAuth.debug("Refreshing tokens")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an expired access token, refreshing it")
                 let tokens = try await authClient.getTokens(policy: .localForceRefresh, trigger: .backend)
                 return tokens.accessToken
             } else {
-                Logger.general.debug("Trying to refresh valid token, using the old one")
+                Logger.subscriptionTokensManagement.log("Unauthorized response with an unexpired access token, retrying with it")
                 return tokenContainer.accessToken
             }
         }
@@ -1012,9 +1030,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let restoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: defaultSubscriptionManager,
                                                      storePurchaseManager: defaultSubscriptionManager.storePurchaseManager(),
                                                      pendingTransactionHandler: pendingTransactionHandler)
-        defaultSubscriptionManager.tokenRecoveryHandler = {
-            try await Self.deadTokenRecoverer.attemptRecoveryFromPastPurchase(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform, restoreFlow: restoreFlow)
-        }
+        let backupRecovery = BackupTokenRecovery(oAuthClient: authClient)
+        let appStoreRecovery = AppStoreTokenRecovery(purchasePlatform: defaultSubscriptionManager.currentEnvironment.purchasePlatform,
+                                                     restoreFlow: restoreFlow)
+        defaultSubscriptionManager.tokenRecoveryCoordinator = TokenRecoveryCoordinator(invalidTokenStrategies: [backupRecovery, appStoreRecovery],
+                                                                                       missingTokenStrategies: [backupRecovery])
 
         subscriptionManager = defaultSubscriptionManager
         freeTrialConversionService = DefaultFreeTrialConversionInstrumentationService(
@@ -1854,6 +1874,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promoService?.applicationDidBecomeActive()
 
         hangMetricsService.resume()
+
+        Task { [subscriptionManager] in
+            await subscriptionManager.restoreMissingTokenIfPossible()
+        }
 
         // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
         let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)

@@ -23,6 +23,7 @@ import UniformTypeIdentifiers
 import DuckUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import os.log
 
 struct FavoritesView<Model: FavoritesViewModel>: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -85,6 +86,12 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
             .frame(width: NewTabPageGrid.Item.edgeSize)
         })
         .buttonStyle(.plain)
+        .onAppear {
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=favorite.cell.appear model=\(String(describing: ObjectIdentifier(self.model)), privacy: .public) key=\(favorite.id.hashValue, privacy: .public)")
+        }
+        .onDisappear {
+            Logger.unifiedInputState.debug("[EHScrollDiag] event=favorite.cell.disappear model=\(String(describing: ObjectIdentifier(self.model)), privacy: .public) key=\(favorite.id.hashValue, privacy: .public)")
+        }
     }
 }
 

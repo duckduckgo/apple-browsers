@@ -27,18 +27,22 @@ struct UnifiedSuggestionsView: View {
     @ObservedObject var viewModel: UnifiedSuggestionsViewModel
     let isAddressBarAtBottom: Bool
     let favoritesPresentation: FocusedFavoritesPresentation
+    var usesScrollableEscapeHatch = true
     var usesRedesignedNewTabPageLayout = false
     var showsRedesignedSearchModules = false
+    var mode: TextEntryMode = .search
     var escapeHatch: EscapeHatchModel?
+    var syncPromo: AnyView?
 
     var body: some View {
-        // Chrome stays pinned to the bar except for the redesigned Search escape hatch,
-        // which follows favorites in the scrolling modules. The logo overlays
-        // the content, anchored to the keyboard (the host's fixed bottom) so neither the bar-driven top
-        // inset nor a Search↔Duck.ai toggle moves it.
         ZStack(alignment: .bottom) {
+            if usesScrollableEscapeHatch {
+                logoLayer
+            }
             contentArea
-            logoLayer
+            if !usesScrollableEscapeHatch {
+                logoLayer
+            }
             fireLayer
         }
         // UIKit already bounds this host with its keyboard layout guide. Keep container
@@ -55,7 +59,7 @@ struct UnifiedSuggestionsView: View {
     private var fireLayer: some View {
         if viewModel.isFireTab {
             let showsFire = !isTypingList
-            FireModeEmptyStateView(type: .tab)
+            FireModeEmptyStateView(type: .tab, contentTopInset: viewModel.contentTopInset)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(designSystemColor: .background))
                 .opacity(showsFire ? 1 : 0)
@@ -78,24 +82,32 @@ struct UnifiedSuggestionsView: View {
             if usesRedesignedNewTabPageLayout {
                 RedesignedFocusedSearchModulesView(favoritesModel: favoritesPresentation.viewController?.favoritesModel,
                                                    messagesModel: favoritesPresentation.viewController?.messagesModel,
-                                                   escapeHatch: escapeHatch)
+                                                   showsSearchModules: !usesScrollableEscapeHatch || showsRedesignedSearchModules,
+                                                   recentChats: usesScrollableEscapeHatch && mode == .aiChat ? viewModel.listViewModel(for: .recents) : nil,
+                                                   escapeHatch: escapeHatch,
+                                                   syncPromo: usesScrollableEscapeHatch ? syncPromo : nil,
+                                                   isAddressBarAtBottom: isAddressBarAtBottom,
+                                                   contentTopInset: viewModel.contentTopInset,
+                                                   usesScrollableEscapeHatch: usesScrollableEscapeHatch)
+                    .background(usesScrollableEscapeHatch ? Color.clear : Color(designSystemColor: .background))
                     // Keep expansion and scroll state while typing or switching modes. Only one
                     // favorites hierarchy is mounted for the selected layout.
-                    .opacity(showsRedesignedSearchModules ? 1 : 0)
-                    .animation(nil, value: showsRedesignedSearchModules)
-                    .allowsHitTesting(showsRedesignedSearchModules)
-                    .accessibilityHidden(!showsRedesignedSearchModules)
+                    .opacity(showsEmbeddedContent ? 1 : 0)
+                    .animation(nil, value: showsEmbeddedContent)
+                    .allowsHitTesting(showsEmbeddedContent)
+                    .accessibilityHidden(!showsEmbeddedContent)
                     .transition(.identity)
                     .modifier(FocusedContentDismissFade(isFadingOut: viewModel.isFadingOut))
             } else {
-                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: isShowingFavorites)
+                SuggestionsFavoritesView(presentation: favoritesPresentation, isVisible: showsEmbeddedContent)
                     .transition(.identity)
+                    .modifier(FocusedContentDismissFade(isFadingOut: usesScrollableEscapeHatch && viewModel.isFadingOut))
             }
         }
     }
 
     private var isShowingList: Bool {
-        guard !showsRedesignedSearchModules else { return false }
+        guard !showsEmbeddedContent else { return false }
         if case .list = viewModel.content { return true }
         return false
     }
@@ -111,12 +123,20 @@ struct UnifiedSuggestionsView: View {
         FocusedSuggestionsView(viewModel: viewModel.listViewModel(for: activeListKind),
                                isAddressBarAtBottom: isAddressBarAtBottom,
                                isVisible: isShowingList,
-                               isFadingOut: viewModel.isFadingOut)
+                               isFadingOut: viewModel.isFadingOut,
+                               animatesAppearance: !usesScrollableEscapeHatch || usesRedesignedNewTabPageLayout)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                Color.clear.frame(height: viewModel.contentTopInset)
+            }
     }
 
-    private var isShowingFavorites: Bool {
-        if case .favorites = viewModel.content { return true }
-        return false
+    private var showsEmbeddedContent: Bool {
+        UnifiedSuggestionsContentResolver.showsEmbeddedContent(
+            usesScrollableEscapeHatch: usesScrollableEscapeHatch,
+            usesRedesignedNewTabPageLayout: usesRedesignedNewTabPageLayout,
+            showsRedesignedSearchModules: showsRedesignedSearchModules,
+            isFireTab: viewModel.isFireTab,
+            content: viewModel.content)
     }
 
     private var isShowingLogo: Bool {

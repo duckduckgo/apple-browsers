@@ -82,17 +82,18 @@ struct DataImportView: ModalView {
             switch model.screen {
             case .sourceAndDataTypesPicker:
                 ImportSourcePickerView(
-                    availableSources: model.availableImportSources,
+                    availableSources: model.visibleImportSources,
                     selectedSource: model.importSource,
-                    selectedImportTypes: Array(model.selectedDataTypes),
-                    selectableImportTypes: Array(model.selectableImportTypes),
+                    selectedImportTypes: Array(model.pickerSelectedDataTypes),
+                    selectableImportTypes: Array(model.pickerSelectableDataTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    isSourceFilterEnabled: model.isSourceFilterEnabled,
                     isPickerExpanded: model.isPickerExpanded,
                     onSourceSelected: { source in
                         model.update(with: source)
                     },
-                    onTypeSelected: { type, isSelected in
-                        model.setDataType(type, selected: isSelected)
+                    onTypesSelected: { types in
+                        model.selectDataTypes(types)
                     },
                     onSyncSelected: {
                         model.launchSync(using: dismiss.callAsFunction) {
@@ -119,10 +120,10 @@ struct DataImportView: ModalView {
                     selectFile: { model.selectFile() },
                     onFileDrop: { model.initiateImport(fileURL: $0) }
                 )
-            case .archiveImport(_, let summary):
+            case .archiveImport(let dataTypes, let summary):
                 FileImportScreenView(
                     importSource: model.importSource,
-                    kind: .archive,
+                    kind: .archive(dataTypes: dataTypes),
                     summary: summary,
                     isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
                     selectFile: { model.selectFile() },
@@ -413,6 +414,8 @@ extension DataImportProgressEvent {
             fraction
         case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
             fraction
+        case .importingHistory(numberOfVisits: _, fraction: let fraction):
+            fraction
         case .done:
             nil
         }
@@ -428,6 +431,8 @@ extension DataImportProgressEvent {
             UserText.importingPasswords(num)
         case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
             UserText.importingCreditCards(num)
+        case .importingHistory(numberOfVisits: let num, fraction: _):
+            UserText.importingHistory(num)
         case .done:
             nil
         }

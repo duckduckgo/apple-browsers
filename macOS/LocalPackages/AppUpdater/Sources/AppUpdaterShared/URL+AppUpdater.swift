@@ -28,6 +28,11 @@ public extension URL {
         URL(string: "https://apps.apple.com/app/duckduckgo-privacy-browser/id663592361")!
     }
 
+    /// Opens the DuckDuckGo listing directly in the Mac App Store app rather than in a browser.
+    static var macAppStore: URL {
+        URL(string: "macappstores://apps.apple.com/app/duckduckgo-privacy-browser/id663592361")!
+    }
+
     /// The internal release notes page URL.
     ///
     /// Used by Sparkle update flow to display release notes in a dedicated tab.

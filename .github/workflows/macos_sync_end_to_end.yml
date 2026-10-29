@@ -38,11 +38,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-14-xlarge, macos-15-xlarge, macos-26-xlarge]
+        runner: [macos-15-xlarge, macos-26-xlarge]
         include:
-          - xcode-version: "16.2"
-            runner: macos-14-xlarge
-            os-version: 14
           - xcode-version: "26.2"
             runner: macos-15-xlarge
             os-version: 15
@@ -76,11 +73,9 @@ jobs:
         mode: start
 
     - name: Install screenresolution
-      if: matrix.os-version != '14'
       run: brew install screenresolution
 
     - name: Change screen resolution
-      if: matrix.os-version != '14'
       run: screenresolution set 1920x1080x32@60
 
     - name: Setup Ruby and dependencies

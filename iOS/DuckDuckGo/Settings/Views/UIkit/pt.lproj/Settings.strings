@@ -1,9 +1,3 @@
-/* Class = "UINavigationItem"; title = "Keyboard"; ObjectID = "2pp-PM-6rW"; */
-"2pp-PM-6rW.title" = "Teclado";
-
-/* Class = "UILabel"; text = "App Launch"; ObjectID = "13n-KI-KLq"; */
-"13n-KI-KLq.text" = "Abertura das aplicações";
-
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Pedir sites com Barreiras de segurança ao iniciar sessão";
 
@@ -19,9 +13,6 @@
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Ainda sem sites com Barreira de segurança";
 
-/* Class = "UITableViewSection"; headerTitle = "Show keyboard on"; ObjectID = "tGh-di-rfq"; */
-"tGh-di-rfq.headerTitle" = "Mostrar teclado em";
-
 /* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
 "tWw-Lh-ZT1.title" = "Controlo Global de Privacidade (CGP)";
 
@@ -30,12 +21,6 @@
 
 /* Class = "UINavigationItem"; title = "Fireproof Sites"; ObjectID = "xUX-nF-HOl"; */
 "xUX-nF-HOl.title" = "Sites com barreira de segurança";
-
-/* Class = "UILabel"; text = "New Tab"; ObjectID = "Zpg-h0-rYv"; */
-"Zpg-h0-rYv.text" = "Novo separador";
-
-/* Class = "UITableViewController"; title = "Home Screen"; ObjectID = "zWP-d3-nVc"; */
-"zWP-d3-nVc.title" = "Ecrã inicial";
 
 /* Class = "UINavigationItem"; title = "Add Widget to Home Screen"; ObjectID = "zZa-pF-SHk"; */
 "zZa-pF-SHk.title" = "Adicionar widget ao ecrã inicial";

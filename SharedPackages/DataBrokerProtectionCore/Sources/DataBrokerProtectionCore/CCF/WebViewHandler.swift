@@ -53,6 +53,20 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     var webViewForTesting: WKWebView? { webView }
 
 #if os(macOS)
+#if DEBUG
+    let manualControl = PIRManualControl()
+    private let assistItemID: PIRAssistItemID?
+    private let assistBrokerName: String?
+    private var assistSession: PIRAssistSession?
+    private var manualDeadline: Task<Void, Never>?
+    private var manualNavigationURL: URL?
+    private var isAwaitingManagedChallengeDestination = false
+    private var isManagedChallengeResponse = false
+    private var didReachManagedChallengeDestination = false
+    private var expectedManagedChallengeURL: URL?
+    private var resumeAfterManagedNavigation = false
+    private var embeddedChallengeTask: Task<Void, Never>?
+#endif
     private var urlObservation: NSKeyValueObservation?
     private var window: NSWindow?
     private var addressBarTextField: NSTextField?
@@ -75,7 +89,13 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
                 shouldContinueActionHandler: @escaping () -> Bool,
                 customUserAgent: String? = nil,
                 contentBlocking: DBPWebViewContentBlocking? = nil,
+                assistItemID: PIRAssistItemID? = nil,
+                assistBrokerName: String? = nil,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil) throws {
+#if os(macOS) && DEBUG
+        self.assistItemID = assistItemID
+        self.assistBrokerName = assistBrokerName
+#endif
         self.isFakeBroker = isFakeBroker
         self.executionConfig = executionConfig
         self.challengePixelDataBroker = challengePixelDataBroker
@@ -109,6 +129,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         if let customUserAgent {
             webView?.customUserAgent = customUserAgent
         }
+#if os(macOS) && DEBUG
+        registerAssistSession()
+#endif
 
         if showWebView {
 #if os(macOS)
@@ -168,6 +191,10 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         didDetectChallenge = false
         didReportChallengeClearance = false
 #endif
+        #if os(macOS) && DEBUG
+        guard await manualControl.waitForAutomation(manualControl.epoch) else { return }
+        manualNavigationURL = url
+        #endif
         webView?.load(url)
         Logger.action.log("Loading URL: \(url.shortDescription)")
         try await waitForWebViewLoad()
@@ -180,6 +207,24 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func finish() {
+#if os(macOS) && DEBUG
+        embeddedChallengeTask?.cancel()
+        embeddedChallengeTask = nil
+        manualDeadline?.cancel()
+        manualDeadline = nil
+        manualControl.invalidateAutomation()
+        if manualControl.isPaused {
+            manualControl.endPause()
+        }
+        userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true)
+        window?.orderOut(nil)
+        window?.contentView = nil
+        window = nil
+        manualControl.resume = nil
+        manualControl.cancel = nil
+        unregisterAssistSession()
+#endif
+        resumeActiveContinuation(with: .failure(DataBrokerProtectionError.cancelled))
         Logger.action.log("WebViewHandler finished")
         webView?.stopLoading()
         userContentController?.cleanUpBeforeClosing()
@@ -221,7 +266,187 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
         continuation?.resume(with: result)
     }
 
-    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
+#if os(macOS) && DEBUG
+    private var dataBrokerFeature: DataBrokerProtectionFeature? {
+        userContentController?.dataBrokerUserScripts?.dataBrokerFeature
+    }
+
+    private func registerAssistSession() {
+        guard let assistItemID, let webView else { return }
+        let session = PIRAssistSession(id: assistItemID, brokerName: assistBrokerName ?? "the broker",
+                                       brokerURL: challengePixelDataBroker ?? "", webView: webView)
+        session.onUserConfirmedDone = { [weak self] in self?.resumeFromUserTurn(reason: .userConfirmed) }
+        session.onStop = { [weak self] in self?.stopAssistedJob() }
+        dataBrokerFeature?.onUserTurnCompleted = { [weak self] in self?.resumeFromUserTurn(reason: .completed) }
+        assistSession = session
+        PIRAssistCenter.shared.register(session)
+    }
+
+    private func unregisterAssistSession() {
+        guard let assistSession else { return }
+        self.assistSession = nil
+        PIRAssistCenter.shared.unregister(assistSession)
+    }
+
+    private func pushAssistMode() {
+        guard assistSession != nil, let webView else { return }
+        dataBrokerFeature?.pushAssistMessage(.setAssistMode, params: PIRAssistModeParams(enabled: true), webView: webView)
+        if let kind = assistSession?.userTurn {
+            dataBrokerFeature?.pushAssistMessage(.userTurnStarted,
+                                                 params: PIRUserTurnStartedParams(kind: kind, tokenSelector: kind.tokenSelector),
+                                                 webView: webView)
+        }
+    }
+
+    /// Pauses automation and asks the user to solve the challenge. Embedded widgets keep the in-flight action, which
+    /// the page holds until the turn ends; a managed challenge replaces the page, so its interrupted work is dropped.
+    private func beginUserTurn(_ kind: PIRAssistUserTurnKind) {
+        guard let webView, !manualControl.isPaused else { return }
+        let preservingAutomation = kind != .managedChallenge
+        manualControl.isEmbeddedChallenge = preservingAutomation
+        manualControl.pause(preservingAutomation: preservingAutomation)
+        dataBrokerFeature?.setManualControl(true, preservingAutomation: preservingAutomation)
+        stopTimer()
+        assistSession?.setUserTurn(kind)
+        dataBrokerFeature?.pushAssistMessage(.userTurnStarted,
+                                             params: PIRUserTurnStartedParams(kind: kind, tokenSelector: kind.tokenSelector),
+                                             webView: webView)
+        if let assistSession {
+            PIRAssistCenter.shared.presenter?.present(assistSession)
+        }
+        manualDeadline?.cancel()
+        manualDeadline = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: 600_000_000_000) } catch { return }
+            guard let self, self.manualControl.isPaused else { return }
+            self.stopAssistedJob()
+        }
+    }
+
+    private func resumeFromUserTurn(reason: PIRUserTurnEndedParams.Reason) {
+        guard manualControl.isPaused, let webView else { return }
+        if manualControl.isManagedChallenge {
+            guard didReachManagedChallengeDestination, !isManagedChallengeResponse,
+                  isExpectedManagedChallengeDestination(webView.url) else { return }
+        }
+        let resumeInterruptedAutomation = manualControl.preservesAutomation && !manualControl.isManagedChallenge
+        manualDeadline?.cancel()
+        manualDeadline = nil
+        resumeAfterManagedNavigation = false
+        manualControl.isManagedChallenge = false
+        manualControl.endPause()
+        assistSession?.setUserTurn(nil)
+        dataBrokerFeature?.pushAssistMessage(.userTurnEnded, params: PIRUserTurnEndedParams(reason: reason), webView: webView)
+        dataBrokerFeature?.setManualControl(false)
+        installTimer()
+        resumeActiveContinuation(with: .success(()))
+        if !resumeInterruptedAutomation {
+            Task { @MainActor [weak self] in await self?.manualControl.resume?() }
+        }
+    }
+
+    private func stopAssistedJob() {
+        if let webView, manualControl.isPaused {
+            dataBrokerFeature?.pushAssistMessage(.userTurnEnded, params: PIRUserTurnEndedParams(reason: .stopped), webView: webView)
+        }
+        Task { @MainActor [weak self] in await self?.manualControl.cancel?() }
+    }
+
+    private func isExpectedManagedChallengeDestination(_ url: URL?) -> Bool {
+        func normalizedHost(_ host: String?) -> String? {
+            guard let host else { return nil }
+            return host.lowercased().hasPrefix("www.") ? String(host.dropFirst(4)).lowercased() : host.lowercased()
+        }
+        guard let expectedHost = normalizedHost(expectedManagedChallengeURL?.host),
+              let responseHost = normalizedHost(url?.host) else { return false }
+        return responseHost == expectedHost || responseHost.hasSuffix(".\(expectedHost)") || expectedHost.hasSuffix(".\(responseHost)")
+    }
+
+    func updateManagedChallengeState(response: HTTPURLResponse) {
+        isManagedChallengeResponse = response.value(forHTTPHeaderField: "cf-mitigated")?.caseInsensitiveCompare("challenge") == .orderedSame
+        if isManagedChallengeResponse {
+            if !isAwaitingManagedChallengeDestination {
+                expectedManagedChallengeURL = manualNavigationURL ?? response.url
+            }
+            isAwaitingManagedChallengeDestination = true
+            didReachManagedChallengeDestination = false
+            manualControl.isManagedChallenge = true
+            dataBrokerFeature?.setManualControl(true)
+            if assistSession != nil {
+                beginUserTurn(.managedChallenge)
+            }
+            return
+        }
+        guard isAwaitingManagedChallengeDestination, (200..<400).contains(response.statusCode),
+              isExpectedManagedChallengeDestination(response.url) else { return }
+        isAwaitingManagedChallengeDestination = false
+        didReachManagedChallengeDestination = true
+        if !manualControl.isPaused {
+            manualControl.isManagedChallenge = false
+            resumeAfterManagedNavigation = true
+        }
+    }
+
+    func updateAssistTarget(for action: Action?) {
+        watchForEmbeddedChallenge(during: action)
+    }
+
+    private static let turnstileTokenField = "cf-turnstile-response"
+
+    /// Brokers such as PeopleFinders wait for a Turnstile token in their own form. Turnstile often clears by
+    /// itself; when it does not, hand the widget to the user before the wait times out.
+    private func watchForEmbeddedChallenge(during action: Action?) {
+        embeddedChallengeTask?.cancel()
+        embeddedChallengeTask = nil
+        guard assistSession != nil, let action, action.actionType == .expectation, let json = action.json,
+              String(bytes: json, encoding: .utf8)?.contains(Self.turnstileTokenField) == true else { return }
+        embeddedChallengeTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(nanoseconds: 4_000_000_000) } catch { return }
+            guard let self, !(await self.hasToken(for: .turnstile)), !self.manualControl.isPaused else { return }
+            _ = await self.askUserToSolve(.turnstile)
+        }
+    }
+
+    /// The user ticks this broker's reCAPTCHA in place of the backend solver.
+    func askUserToSolveCaptcha() async -> Bool {
+        await askUserToSolve(.recaptcha)
+    }
+
+    /// Returns once the user's turn is over: true to carry on, false if the job ended meanwhile.
+    private func askUserToSolve(_ kind: PIRAssistUserTurnKind) async -> Bool {
+        beginUserTurn(kind)
+        guard manualControl.isPaused else { return false }
+        while !Task.isCancelled, manualControl.isPaused {
+            // Also polled here, so resuming doesn't depend on the page reporting it.
+            if manualControl.isEmbeddedChallenge, await hasToken(for: kind) {
+                resumeFromUserTurn(reason: .completed)
+                break
+            }
+            do { try await Task.sleep(nanoseconds: 500_000_000) } catch { return false }
+        }
+        return !Task.isCancelled && webView != nil
+    }
+
+    private func hasToken(for kind: PIRAssistUserTurnKind) async -> Bool {
+        guard let selector = kind.tokenSelector else { return false }
+        let script = "return Array.from(document.querySelectorAll(selector)).some(field => field.value !== '')"
+        let solved = try? await webView?.callAsyncJavaScript(script, arguments: ["selector": selector], contentWorld: .defaultClient) as? Bool
+        return solved == true
+    }
+
+    func updateAssistChecklist(_ actionsHandler: ActionsHandler, profileQuery: ProfileQuery) {
+        guard let assistSession else { return }
+        let checklist = PIRAssistChecklist(stepType: actionsHandler.stepType, actions: actionsHandler.assistActions,
+                                           currentIndex: actionsHandler.assistCurrentIndex,
+                                           brokerName: assistSession.brokerName, profileQuery: profileQuery,
+                                           isConfirmation: actionsHandler.isEmailConfirmationContinuation)
+        assistSession.update(checklist: checklist)
+    }
+#endif
+
+    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
+        #if os(macOS) && DEBUG
+        guard await manualControl.waitForAutomation(manualControl.epoch) else { return }
+        #endif
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
 
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
@@ -232,6 +457,9 @@ public final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler 
     }
 
     public func evaluateJavaScript(_ javaScript: String) async throws {
+        #if os(macOS) && DEBUG
+        guard await manualControl.waitForAutomation(manualControl.epoch) else { return }
+        #endif
         try await webView?.evaluateJavaScript(javaScript) as Void?
     }
 
@@ -398,6 +626,9 @@ private extension DataBrokerProtectionWebViewHandler {
 
 extension DataBrokerProtectionWebViewHandler: NSWindowDelegate {
     public func windowShouldClose(_ sender: NSWindow) -> Bool {
+        #if DEBUG
+        if manualControl.isPaused { return false }
+        #endif
         sender.orderOut(nil)
         return false
     }
@@ -439,6 +670,23 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
         Logger.action.log("WebViewHandler didFinish")
 #if os(macOS)
         updateAddressBar(with: webView.url)
+        #if DEBUG
+        pushAssistMode()
+        if manualControl.isPaused, manualControl.isManagedChallenge, didReachManagedChallengeDestination {
+            // The cleared challenge landed on the broker page, so hand back without waiting for the user.
+            resumeFromUserTurn(reason: .completed)
+            return
+        }
+        guard !isAwaitingManagedChallengeDestination, !manualControl.isPaused else { return }
+        if resumeAfterManagedNavigation {
+            resumeAfterManagedNavigation = false
+            dataBrokerFeature?.setManualControl(false)
+            if activeContinuation == nil {
+                Task { @MainActor [weak self] in await self?.manualControl.resume?() }
+                return
+            }
+        }
+        #endif
 #endif
 
         resumeActiveContinuation(with: .success(()))
@@ -457,11 +705,23 @@ extension DataBrokerProtectionWebViewHandler: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
 #if os(macOS)
         updateAddressBar(with: webView.url)
+        #if DEBUG
+        if manualControl.isPaused && manualControl.preservesAutomation {
+            // A manual navigation replaces the interrupted document. Resume from the resulting page.
+            manualControl.invalidateAutomation()
+            userContentController?.dataBrokerUserScripts?.dataBrokerFeature.setManualControl(true)
+        }
+        #endif
 #endif
     }
 
     public func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
         let response = navigationResponse.response
+        #if os(macOS) && DEBUG
+        if navigationResponse.isForMainFrame, let response = response as? HTTPURLResponse {
+            updateManagedChallengeState(response: response)
+        }
+        #endif
 #if os(macOS)
         recordChallengeDetectionIfPresent(in: response, isForMainFrame: navigationResponse.isForMainFrame)
         if navigationResponse.isForMainFrame {

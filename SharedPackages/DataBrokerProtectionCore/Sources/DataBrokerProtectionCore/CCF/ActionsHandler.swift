@@ -32,6 +32,13 @@ public class ActionsHandler {
         self.actions = actions
     }
 
+#if os(macOS) && DEBUG
+    /// Runs the rest of an opt-out after the broker's confirmation email arrived.
+    var isEmailConfirmationContinuation = false
+    var assistActions: [Action] { actions }
+    var assistCurrentIndex: Int? { lastExecutedActionIndex }
+#endif
+
     public func currentAction() -> Action? {
         guard let lastExecutedActionIndex = self.lastExecutedActionIndex else { return nil }
 
@@ -114,8 +121,12 @@ public class ActionsHandler {
         var actions: [Action] = [NavigateAction(id: emailConfirmationAction.id, actionType: .navigate, url: confirmationURL.absoluteString)]
         actions.append(contentsOf: Array(step.actions.suffix(from: afterIndex)))
 
-        return ActionsHandler(stepType: .optOut,
-                              actions: actions)
+        let handler = ActionsHandler(stepType: .optOut,
+                                     actions: actions)
+#if os(macOS) && DEBUG
+        handler.isEmailConfirmationContinuation = true
+#endif
+        return handler
     }
 
 }

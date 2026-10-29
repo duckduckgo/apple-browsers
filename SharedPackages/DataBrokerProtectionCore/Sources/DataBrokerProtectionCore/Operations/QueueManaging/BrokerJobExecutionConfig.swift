@@ -20,6 +20,43 @@ import Foundation
 
 public struct BrokerJobExecutionConfig {
 
+    #if os(macOS) && DEBUG
+    /// PeopleFinders needs a person for its Turnstile, Glad I Know for its reCAPTCHA, and SpyFly's scan for a Turnstile
+    /// before it emails a verification code.
+    public static let assistantDemoBrokerDomains: Set<String> = ["peoplefinders.com", "gladiknow.com", "spyfly.com"]
+    /// Scans that also wait for the user to start them, because the broker needs a person partway through.
+    public static let assistantDemoAssistedScanBrokerDomains: Set<String> = ["spyfly.com"]
+    public var allowedBrokerDomains: Set<String>?
+
+    /// Opt-outs that need a person partway through. They wait in the preview until the user starts them.
+    public static let assistantDemoNeedsUserBrokerDomains: Set<String> = assistantDemoBrokerDomains
+    /// The user solves these brokers' captcha instead of the backend solver.
+    public static let assistantDemoUserCaptchaBrokerDomains: Set<String> = ["gladiknow.com"]
+
+    public func needsUser(forBrokerAt url: String) -> Bool {
+        Self.domain(of: url).map(Self.assistantDemoNeedsUserBrokerDomains.contains) ?? false
+    }
+
+    public func holdsScan(forBrokerAt url: String) -> Bool {
+        Self.domain(of: url).map(Self.assistantDemoAssistedScanBrokerDomains.contains) ?? false
+    }
+
+    public func userSolvesCaptcha(forBrokerAt url: String) -> Bool {
+        Self.domain(of: url).map(Self.assistantDemoUserCaptchaBrokerDomains.contains) ?? false
+    }
+
+    public func includesBroker(at url: String) -> Bool {
+        guard let allowedBrokerDomains else { return true }
+        return Self.domain(of: url).map(allowedBrokerDomains.contains) ?? false
+    }
+
+    private static func domain(of url: String) -> String? {
+        let absoluteURL = url.contains("://") ? url : "https://\(url)"
+        guard let host = URL(string: absoluteURL)?.host?.lowercased() else { return nil }
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+    #endif
+
     public struct Constants {
         /// Minimum time interval between consecutive jobs for the same broker
         public static let defaultIntervalBetweenSameBrokerJobs: TimeInterval = .seconds(2)
@@ -34,17 +71,29 @@ public struct BrokerJobExecutionConfig {
         #endif
 
         /// Maximum time allowed for a CSS action to complete before timing out
+        #if os(macOS) && DEBUG
+        public static let defaultCssActionTimeout: TimeInterval = .seconds(30)
+        public static let defaultOperationAwaitTime: TimeInterval = .seconds(2)
+        #else
         public static let defaultCssActionTimeout: TimeInterval = .seconds(60)
+        public static let defaultOperationAwaitTime: TimeInterval = .seconds(3)
+        #endif
 
         /// Interval for checking if a CSS action should be cancelled
         public static let defaultCssActionCancellationCheckInterval: TimeInterval = .seconds(1)
+        #if os(macOS) && DEBUG
+        // Keep one broker page active for the assisted PIR preview prototype.
+        public static let defaultConcurrentJobsDifferentBrokers: Int = 1
+        public static let defaultConcurrentJobsOnManualScans: Int = 1
+        #else
         /// Number of concurrent jobs allowed for different brokers
         public static let defaultConcurrentJobsDifferentBrokers: Int = 2
         /// Number of concurrent jobs allowed during manual scans
         public static let defaultConcurrentJobsOnManualScans: Int = 6
+        #endif
 
         /// Click await time (delay before click) for opt-out step actions
-        public static let defaultClickAwaitTimeForOptOut: TimeInterval = .seconds(3)
+        public static let defaultClickAwaitTimeForOptOut: TimeInterval = defaultOperationAwaitTime
         /// Click await time for scan step actions
         public static let defaultClickAwaitTimeForScan: TimeInterval = .seconds(0)
 

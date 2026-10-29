@@ -210,7 +210,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 var executed = false
 
                 if jobData is ScanJobData {
-                    executed = try await withTimeout(jobDependencies.executionConfig.scanJobTimeout,
+                    executed = try await withJobTimeout(jobDependencies.executionConfig.scanJobTimeout,
                                                      throwing: DataBrokerProtectionError.jobTimeout) { [self] in
                         try await BrokerProfileScanSubJob(dependencies: jobDependencies).runScan(
                             brokerProfileQueryData: brokerProfileData,
@@ -222,7 +222,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                             })
                     }
                 } else if let optOutJobData = jobData as? OptOutJobData {
-                    executed = try await withTimeout(jobDependencies.executionConfig.optOutJobTimeout,
+                    executed = try await withJobTimeout(jobDependencies.executionConfig.optOutJobTimeout,
                                                      throwing: DataBrokerProtectionError.jobTimeout) { [self] in
                         try await BrokerProfileOptOutSubJob(dependencies: jobDependencies).runOptOut(
                             for: optOutJobData.extractedProfile,
@@ -271,6 +271,19 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                                        priorityDate: priorityDate,
                                        sortPredicate: jobDependencies.jobSortPredicate)
             .filter { jobData in
+                #if os(macOS) && DEBUG
+                let broker = brokerProfileQueriesData.first(where: { $0.dataBroker.id == jobData.brokerId })?.dataBroker
+                let config = jobDependencies.executionConfig
+                if let optOutJobData = jobData as? OptOutJobData, let broker, config.needsUser(forBrokerAt: broker.url) {
+                    guard let extractedProfileId = optOutJobData.extractedProfile.id else { return false }
+                    return PIRAssistedOptOuts.consumeStart(brokerId: jobData.brokerId, profileQueryId: jobData.profileQueryId,
+                                                           extractedProfileId: extractedProfileId)
+                }
+                if jobData is ScanJobData, let broker, config.holdsScan(forBrokerAt: broker.url) {
+                    return PIRAssistedOptOuts.consumeStart(brokerId: jobData.brokerId, profileQueryId: jobData.profileQueryId,
+                                                           extractedProfileId: nil)
+                }
+                #endif
                 guard isFreeScan, let scanJobData = jobData as? ScanJobData else {
                     return true
                 }
@@ -335,4 +348,13 @@ private extension Array where Element == BrokerJobData {
             jobData.historyEvents.max(by: { $0.date < $1.date })?.type != .optOutSubmittedAndAwaitingEmailConfirmation
         }
     }
+}
+
+private func withJobTimeout<T>(_ timeout: TimeInterval, throwing error: Error,
+                               operation: @escaping () async throws -> T) async throws -> T {
+    #if os(macOS) && DEBUG
+    return try await PIRManualControlContext.withTimeout(timeout, throwing: error, operation: operation)
+    #else
+    return try await withTimeout(timeout, throwing: error, do: operation)
+    #endif
 }

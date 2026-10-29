@@ -34,7 +34,15 @@ final class CPMExtensionBaseURLPolicy {
         self.isEnabled = isEnabled
     }
 
+    /// The stable origin is only used on macOS and iOS 26.6 and later. Older releases keep WebKit's random origin
+    /// and never touch the stored origin, since no stable registration was ever created there.
+    private var isSupportedOS: Bool {
+        guard #available(macOS 26.6, iOS 26.6, *) else { return false }
+        return true
+    }
+
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
+        guard isSupportedOS else { return nil }
         guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
         guard isEnabled() else {
             // Moving to WebKit's random origin leaves this origin's service-worker registration behind.
@@ -56,7 +64,7 @@ final class CPMExtensionBaseURLPolicy {
     /// Save a fresh origin before retry/reload can be skipped or the app can terminate.
     /// The live context keeps its origin. Repeated errors from it must preserve the saved replacement.
     func recordBackgroundLoadFailure(in context: WKWebExtensionContext, errors: [Error]) {
-        guard isEnabled(), !failedBackgroundContexts.contains(context),
+        guard isSupportedOS, isEnabled(), !failedBackgroundContexts.contains(context),
               errors.contains(where: { NSError.webKitSafe($0).isBackgroundContentLoadFailure }) else { return }
         if rotateOrigin(of: context) {
             failedBackgroundContexts.add(context)

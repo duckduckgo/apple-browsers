@@ -88,7 +88,7 @@ final class AIChatOmnibarUsageCardLayoutTests: XCTestCase {
             featureFlagger: featureFlagger,
             aiChatMenuConfig: MockAIChatConfig()
         )
-        let themeManager = ThemeManager(appearancePreferences: appearancePreferences, featureFlagger: featureFlagger)
+        let themeManager = ThemeManager(appearancePreferences: appearancePreferences)
         let omnibarController = AIChatOmnibarController(
             aiChatTabOpener: MockAIChatTabOpener(),
             surface: .addressBar,

@@ -1,4 +1,62 @@
 {
+    "fire_animation-completed": {
+        "description": "Fires when an animation finishes naturally for an accepted manual burn, whether clearing finished before it or is still running. Excludes disabled or unavailable animations, interrupted playback and dropped burns. The count leg is the denominator for the fraction of burns outlasting their animation; the daily leg counts devices with an animated burn. Daily parameters describe the first occurrence that day, so use count events for parameter breakdowns.",
+        "owners": ["brindy"],
+        "expires": "2027-01-20",
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "scope",
+                "description": "Scope of the accepted manual burn",
+                "type": "string",
+                "enum": ["tab", "fire_mode", "normal_mode", "all"]
+            },
+            {
+                "key": "source",
+                "description": "Where the accepted manual burn was requested",
+                "type": "string",
+                "enum": ["browsing", "escapeHatch", "tabSwitcher", "settings", "quickFire", "deeplink", "autoClear", "chatSuggestions"]
+            },
+            {
+                "key": "animation",
+                "description": "The animation that finished playing",
+                "type": "string",
+                "enum": ["fireRising", "fireRisingLegacy", "waterSwirl", "airstream"]
+            },
+            {
+                "key": "burn_in_progress",
+                "description": "Whether this burn is still running when its animation finishes",
+                "type": "boolean"
+            }
+        ]
+    },
+    "fire_burn-outlasted-animation": {
+        "description": "Fires immediately when an accepted manual burn is still running after its animation finishes naturally, including burns that never complete. The daily leg counts affected devices; the count leg counts occurrences. Compare with fire_animation-completed on matching app versions and form factors.",
+        "owners": ["brindy"],
+        "expires": "2027-01-20",
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["daily_count", "platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "fire_post-animation-burn-completed": {
+        "description": "Fires when a manual burn that outlasted its naturally completed animation eventually returns. Reports bucketed wall time from animation completion to burn return, including any time spent in the background. Does not fire for burns that never return; use fire_burn-outlasted-animation to include those.",
+        "owners": ["brindy"],
+        "expires": "2027-01-20",
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "elapsed",
+                "description": "Upper-inclusive bucketed seconds from animation completion until the burn returned; more means over 300 seconds",
+                "type": "string",
+                "enum": ["1", "5", "10", "30", "60", "120", "300", "more"]
+            }
+        ]
+    },
+
     "m_fire_retrigger_in_20s": {
         "description": "Fired when the fire button is triggered again within 20 seconds of a previous fire",
         "owners": ["hanyutang-sandra"],
@@ -40,7 +98,7 @@
         "description": "Fired when user performs an action before the clearing operation completes",
         "owners": ["hanyutang-sandra"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": ["daily_standard", "platform", "form_factor"],
         "parameters": ["appVersion", "pixelSource"]
     },
 
@@ -106,5 +164,52 @@
         "triggers": ["other"],
         "suffixes": ["time_bucket", "platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "fire_single-tab-burn_requested": {
+        "description": "Single-tab burn reached the executor, including requests dropped because another burn is in progress. Sent with either optimization flag state.",
+        "owners": ["brindy"],
+        "expires": "2027-01-22",
+        "triggers": ["user_interaction", "feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "optimization_enabled",
+                "type": "boolean",
+                "description": "singleTabBurnOptimization flag state when the executor receives the request."
+            },
+            {
+                "key": "dropped",
+                "type": "boolean",
+                "description": "Another burn was in progress and this request was dropped."
+            }
+        ]
+    },
+    "fire_single-tab-burn_finished": {
+        "description": "Single-tab executor finished all requested cleanup and delegate callbacks. Completion does not imply every cleanup operation succeeded. Sent with either optimization flag state.",
+        "owners": ["brindy"],
+        "expires": "2027-01-22",
+        "triggers": ["feature_lifecycle"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "optimization_enabled",
+                "type": "boolean",
+                "description": "singleTabBurnOptimization flag state when the executor receives the request."
+            },
+            {
+                "key": "duration_ms",
+                "type": "string",
+                "enum": ["100", "250", "500", "1000", "2000", "5000", "10000", "30000", "60000", "120000", "300000", "more"],
+                "description": "Total executor duration, bucketed by inclusive upper bound in milliseconds; more means over 300000 ms."
+            },
+            {
+                "key": "tab_closure_ms",
+                "type": "string",
+                "enum": ["100", "250", "500", "1000", "2000", "5000", "10000", "30000", "60000", "120000", "300000", "more"],
+                "description": "Time from executor entry until tab closure and favicon cleanup return, bucketed by inclusive upper bound in milliseconds. Absent if closing tabs was not requested."
+            }
+        ]
     }
 }

@@ -60,6 +60,7 @@ public enum DataImport {
         case bookmarks
         case passwords
         case creditCards
+        case history
 
         public var description: String { rawValue }
 
@@ -68,6 +69,7 @@ public enum DataImport {
             case .bookmarks: .bookmarks
             case .passwords: .passwords
             case .creditCards: .creditCards
+            case .history: .history
             }
         }
 
@@ -142,6 +144,7 @@ public enum DataImportAction: String, RawRepresentable {
     case favicons
     case favorites
     case creditCards
+    case history
     case generic
 
     public init(_ type: DataImport.DataType) {
@@ -149,6 +152,7 @@ public enum DataImportAction: String, RawRepresentable {
         case .bookmarks: self = .bookmarks
         case .passwords: self = .passwords
         case .creditCards: self = .creditCards
+        case .history: self = .history
         }
     }
 }
@@ -209,6 +213,7 @@ public enum DataImportProgressEvent {
     case importingPasswords(numberOfPasswords: Int?, fraction: Double)
     case importingBookmarks(numberOfBookmarks: Int?, fraction: Double)
     case importingCreditCards(numberOfCreditCards: Int?, fraction: Double)
+    case importingHistory(numberOfVisits: Int?, fraction: Double)
     case done
 }
 

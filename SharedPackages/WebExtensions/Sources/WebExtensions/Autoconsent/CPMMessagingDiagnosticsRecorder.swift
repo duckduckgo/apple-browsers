@@ -222,7 +222,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         networkProcessIdentifierAtLastBackgroundViewCreation = nil
         lastBackgroundWebViewCreatedAt = nil
         lastBackgroundLoadError = nil
-        lastReportedBackgroundLoadErrors = context.errors.map(NSError.webKitSafe).filter(Self.isBackgroundLoadError)
+        lastReportedBackgroundLoadErrors = context.errors.map(NSError.webKitSafe).filter(\.isBackgroundContentLoadFailure)
         backgroundReadinessObserver.stopObserving()
         // Preserve the latest update across context reloads, without carrying over old-context callbacks.
         backgroundEvents = [latestExtensionUpdateEvent].compactMap { $0 }
@@ -307,7 +307,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         lastBackgroundWebViewCreatedAt = now()
         lastBackgroundLoadError = nil
         // Seed errors already on the context before this view's load; they are not failures of this attempt.
-        let existingLoadErrors = context.errors.map(NSError.webKitSafe).filter(Self.isBackgroundLoadError)
+        let existingLoadErrors = context.errors.map(NSError.webKitSafe).filter(\.isBackgroundContentLoadFailure)
         lastReportedBackgroundLoadErrors.append(contentsOf: Self.newBackgroundLoadErrors(in: existingLoadErrors,
                                                                                          since: lastReportedBackgroundLoadErrors))
         networkProcessIdentifierAtLastBackgroundViewCreation = networkProcessIdentifierNow
@@ -524,7 +524,7 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
         }
         // Suppress identical consecutive background-load errors reported within one second.
         // This does not distinguish new failures from repeated error-list notifications.
-        let loadErrors = errors.filter(Self.isBackgroundLoadError)
+        let loadErrors = errors.filter(\.isBackgroundContentLoadFailure)
         if lastBackgroundLoadError == nil,
            let createdAt = lastBackgroundWebViewCreatedAt,
            !Self.newBackgroundLoadErrors(in: loadErrors, since: lastReportedBackgroundLoadErrors).isEmpty {
@@ -549,11 +549,6 @@ public final class CPMMessagingDiagnosticsRecorder: CPMMessagingDiagnosticsProvi
             unmatchedPreviousErrors.remove(at: index)
             return false
         }
-    }
-
-    private static func isBackgroundLoadError(_ error: NSError) -> Bool {
-        error.domain == WKWebExtensionContext.errorDomain
-            && error.code == WKWebExtensionContext.Error.Code.backgroundContentFailedToLoad.rawValue
     }
 
     private func currentContextErrors() -> [String] {

@@ -189,13 +189,13 @@ Real test sites you can crib from. References mirror each test's path inside the
 
 ### iOS — preview-backed compact view (`.constrainedWidth`)
 - View: `iOS/DuckDuckGo/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoView.swift`
-- Test: `iOS/DuckDuckGoTests/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/Core/AIChat/InputBox/SwitchBar/Suggestions/AIChatSyncPromoViewTests.swift`
 - `PreviewProvider` in the same file as the view, reused directly by the test.
 
 ### iOS — preview-backed screen with mocks (`.screen`)
 - View: `iOS/DuckDuckGo/VoiceSearchFeedbackView.swift`
 - Preview mocks: `iOS/DuckDuckGo/VoiceSearchFeedbackView_PreviewMocks.swift`
-- Test: `iOS/DuckDuckGoTests/VoiceSearchFeedbackViewTests.swift`
+- Test: `iOS/DuckDuckGoTests/DuckDuckGo/Application/VoiceSearchFeedbackViewTests.swift`
 - Keep `PreviewProvider`, `typealias State`, and `static let snapshots` in the view file; move mocks to the sibling `_PreviewMocks.swift` under `#if DEBUG`.
 
 ### iOS — package test target, several states per view (`.screen`)

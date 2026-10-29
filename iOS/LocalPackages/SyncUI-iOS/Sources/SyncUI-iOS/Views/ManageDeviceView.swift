@@ -18,7 +18,6 @@
 //
 
 import DesignResourcesKit
-import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 import UIComponents
@@ -70,7 +69,7 @@ struct ManageDeviceView: View {
     private var headerSection: some View {
         Section {
             VStack(spacing: 8) {
-                Image(rebrandable: device.syncedIllustrationName, bundle: .module)
+                Image(device.syncedIllustrationName, bundle: .module)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 128, height: 96)

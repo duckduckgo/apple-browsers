@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import CombineExtensions
 import Common
+import DDGNavigation
 import DesignResourcesKitIcons
 import FoundationExtensions
 import Freemium
@@ -188,10 +189,6 @@ final class NavigationBarViewController: NSViewController {
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
-
-    /// Deprecated: Remove when `appRebranding` Ships
-    private var leftFocusSpacer: NSView?
-    private var rightFocusSpacer: NSView?
 
     private var daxFadeInAnimation: DispatchWorkItem?
     private var heightChangeAnimation: DispatchWorkItem?
@@ -846,23 +843,19 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            /// Use the taller, wider layout whenever there's user-provided input or Duck.ai is active; compact only
-            /// for `.inactive` + `.browsing` (see `AddressBarViewController.shouldUseTallAddressBarLayout`).
-            let isAddressBarFocused = addressBarViewController?.shouldUseTallAddressBarLayout ?? false
-
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
+            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
-            barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass, focused: isAddressBarFocused)
+            barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass)
 
             let bottom: NSLayoutConstraint = animated ? addressBarBottomConstraint.animator() : addressBarBottomConstraint
-            bottom.constant = addressBarStyleProvider.addressBarBottomPadding(for: sizeClass, focused: isAddressBarFocused)
+            bottom.constant = addressBarStyleProvider.addressBarBottomPadding(for: sizeClass)
 
             let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
             logoWidth.constant = sizeClass.logoWidth
 
-            resizeAddressBarWidth(isAddressBarFocused: isAddressBarFocused)
+            resizeAddressBarWidth()
         }
 
         let prepareNavigationBar = { [weak self] in
@@ -910,45 +903,8 @@ final class NavigationBarViewController: NSViewController {
         heightChange()
     }
 
-    private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
-        let styleProvider = theme.addressBarStyleProvider
-        if !styleProvider.shouldUseLegacyAddressBarSpacingMechanism {
-            addressBarViewController?.refreshAddressBarBackgroundWidth()
-            return
-        }
-
-        /// Will be removed when `.appRebranding` ships
-        if styleProvider.shouldShowNewSearchIcon {
-            if !isAddressBarFocused {
-                if leftFocusSpacer == nil {
-                    leftFocusSpacer = NSView()
-                    leftFocusSpacer?.wantsLayer = true
-                    leftFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
-                    leftFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
-                }
-                if rightFocusSpacer == nil {
-                    rightFocusSpacer = NSView()
-                    rightFocusSpacer?.wantsLayer = true
-                    rightFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
-                    rightFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
-                }
-                if let left = leftFocusSpacer, !addressBarStack.arrangedSubviews.contains(left) {
-                    addressBarStack.insertArrangedSubview(left, at: 0)
-                }
-                if let right = rightFocusSpacer, !addressBarStack.arrangedSubviews.contains(right) {
-                    addressBarStack.insertArrangedSubview(right, at: addressBarStack.arrangedSubviews.count)
-                }
-            } else {
-                if let left = leftFocusSpacer, addressBarStack.arrangedSubviews.contains(left) {
-                    addressBarStack.removeArrangedSubview(left)
-                    left.removeFromSuperview()
-                }
-                if let right = rightFocusSpacer, addressBarStack.arrangedSubviews.contains(right) {
-                    addressBarStack.removeArrangedSubview(right)
-                    right.removeFromSuperview()
-                }
-            }
-        }
+    private func resizeAddressBarWidth() {
+        addressBarViewController?.refreshAddressBarBackgroundWidth()
     }
 
     private func updatePasswordManagementButton() {
@@ -1511,12 +1467,13 @@ final class NavigationBarViewController: NSViewController {
             })
     }
 
-    /// Web extension buttons show on web pages and the New Tab page. Other tabs with native content hide them.
+    /// Web extension buttons show on web pages, extension pages and the New Tab page. Native content hides them.
     private func updateWebExtensionButtonsVisibility(for content: TabContent) {
         guard #available(macOS 15.4, *),
               let updater = webExtensionNavigationBarUpdater as? WebExtensionNavigationBarUpdater else { return }
         let isNewTab = if case .newtab = content { true } else { false }
-        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab
+        let isExtensionPage = if case .webExtensionUrl = content { true } else { false }
+        updater.buttonsAreVisible = content.displaysContentInWebView || content.usesExternalWebView || isNewTab || isExtensionPage
         updater.refreshActions()
     }
 
@@ -1644,7 +1601,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.url) {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.safeURL) {
             selectedTabViewModel.tab.goBack()
         }
     }
@@ -1654,7 +1611,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.url) {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.safeURL) {
             selectedTabViewModel.tab.goForward()
         }
     }

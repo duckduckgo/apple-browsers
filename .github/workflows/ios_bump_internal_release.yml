@@ -107,6 +107,8 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v6
         with:
+          # Elevated permissions token is needed to push to the release branch, which is protected by a ruleset
+          token: ${{ secrets.GHA_ELEVATED_PERMISSIONS_TOKEN }}
           fetch-depth: 0 # Fetch all history and tags in order to extract Asana task URLs from git log
           ref: ${{ needs.validate_input_conditions.outputs.release-branch }}
           submodules: recursive

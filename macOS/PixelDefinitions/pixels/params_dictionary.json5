@@ -468,6 +468,13 @@
             "funnel_duckai_macos__unknown"
         ]
     },
+    "subscriptionPageOrigin": {
+        "key": "origin",
+        "type": "string",
+        "description": "Origin from the subscription page URL, sent as-is. Can include web-defined origins in addition to the `subscriptionFunnelOrigin` values.",
+        "pattern": "^funnel_",
+        "examples": ["funnel_appsettings_macos", "funnel_appmenu_macos", "funnel_appsettings_macos_winback"]
+    },
     "onboardingEventType": {
         "key": "event",
         "type": "string",

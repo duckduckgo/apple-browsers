@@ -220,6 +220,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private var wideEventReporter: UTIWideEventReporter!
     private var modelSelector: UTIModelSelector!
     private var attachmentController: UTIAttachmentController!
+    private(set) var promptLengthGate: UTIPromptLengthGate!
     private var isPastedTextEnabled: Bool { featureFlagger.isFeatureOn(.unifiedToggleInputPastedText) }
     private var tabAttachmentContext: MultiTabAttachmentContext?
     private var tabAttachmentPreparations: [UUID: MultiTabAttachmentPreparation] = [:]
@@ -476,7 +477,8 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
             applyTextToView: { [weak self] in self?.viewController.text = $0 },
             persistDraft: { [weak self] in self?.persistDraftToStore() },
             updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
-            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentController.clearValidationErrorIfPossible() }
+            clearAttachmentValidationErrorIfPossible: { [weak self] in self?.attachmentController.clearValidationErrorIfPossible() },
+            onTextChanged: { [weak self] in self?.promptLengthGate?.refresh() }
         ))
         keyboardMonitor = UTIKeyboardMonitor(environment: .init(
             isOmnibarActiveTopCard: { [weak self] in
@@ -587,8 +589,11 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                 tabAttachmentFeatureState: { [weak self] in self?.tabAttachmentFeature?.state ?? .unavailable },
                 pageContextRemoveHandler: { [weak self] in self?.onPageContextRemoveRequested },
                 isFireTab: { [weak self] in self?.viewController.handler.isFireTab ?? false },
+                isAttachmentPasteEnabled: { attachmentPasteEnabled },
+                isPastedTextEnabled: { [weak self] in self?.isPastedTextEnabled ?? false },
                 isEditing: { [weak self] in self?.isEditing ?? false },
-                isVoiceSessionActive: { [weak self] in self?.isVoiceSessionActive ?? false }
+                isVoiceSessionActive: { [weak self] in self?.isVoiceSessionActive ?? false },
+                pastedTextSheetMode: { [weak self] in self?.promptLengthGate.sheetMode(for: $0) ?? .editable(limit: 0) }
             ),
             callbacks: .init(
                 onDraftChanged: { [weak self] in
@@ -599,15 +604,35 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                     persistDraftToStore()
                     onAttachmentsChanged?()
                     footerController?.refresh()
+                    promptLengthGate.refresh()
                 },
                 onExpandIfNeeded: { [weak self] in self?.expandIfOnExpandedInputHost() },
                 updateFloatingReturnKey: { [weak self] in self?.updateFloatingReturnKeyState() },
                 onTabAttached: { [weak self] in
                     self?.tabAttachmentFeature?.recordTabAttachment()
-                }
+                },
+                onPastedTextSheetDismissed: { [weak self] in self?.restoreFocusAfterSheet() }
             )
         )
-        viewController.attachmentPasteHandler = attachmentPasteEnabled ? attachmentController.pasteHandler : nil
+        promptLengthGate = UTIPromptLengthGate(
+            inputs: .init(
+                promptText: { [weak self] in self?.currentText ?? "" },
+                attachments: { [weak self] in self?.viewController.currentAttachments ?? [] },
+                attachmentLimits: { [weak self] in self?.modelStore.attachmentLimits },
+                isEnabled: { [weak self] in
+                    guard let self else { return false }
+                    return isPastedTextEnabled && inputMode == .aiChat
+                }
+            ),
+            onOverLimitChanged: { [weak self] overLimit in
+                self?.footerController?.setPromptTooLong(overLimit)
+                self?.viewController.isPromptOverLimit = overLimit != nil
+            }
+        )
+        viewController.attachmentPasteHandler = attachmentPasteEnabled || isPastedTextEnabled ? attachmentController.pasteHandler : nil
+        viewController.onAttachmentTapped = { [weak self] id in
+            self?.attachmentController.presentPastedTextSheet(id: id)
+        }
         modelStore.onModelsUpdated = { [weak self] in
             self?.handleModelsUpdated()
         }
@@ -1070,6 +1095,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
     private func applyEditMode() {
         viewController.setEditMode(isEditing, showsReplaceDisclaimer: isEditing && editHasResponsesToLose)
         refreshFooterSuppression()
+        promptLengthGate.refresh()
         delegate?.unifiedToggleInputDidChangeEditMode(isEditing)
     }
 
@@ -1347,7 +1373,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
                                     self.viewController.isInputFirstResponder && request.isValid())
             }
             guard selectsPrefill, self.omnibarPrefilledText != nil else { return }
-            DispatchQueue.main.async { [weak self] in
+            self.scheduleOmnibarFocus { [weak self] in
                 guard let self, self.omnibarFocusWorkID == workID, self.isOmnibarEditing,
                       requests.contains(where: { !$0.allowsInactive && $0.isValid() }) else { return }
                 self.viewController.selectAllText()
@@ -1475,6 +1501,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateInitialPromptPreparationState()
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
+        promptLengthGate.refresh()
 
         // Wraps toolbar-height update + content-swap broadcast in one CATransaction so they animate
         // together; otherwise the content snaps while the toolbar is still growing.
@@ -1518,6 +1545,7 @@ final class UnifiedToggleInputCoordinator: NSObject, AIChatInputBoxHandling {
         updateInitialPromptPreparationState()
         syncInputBehaviorToHandler()
         updateFloatingReturnKeyState()
+        promptLengthGate.refresh()
         if needsViewSync {
             viewController.setInputMode(effectiveMode, animated: false)
         }
@@ -2261,6 +2289,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
            viewController.currentAttachments.allSatisfy(\.isTab) {
             return
         }
+        guard !promptLengthGate.blocksSubmission(of: text) else { return }
         let userScript = boundUserScript
         let tools = toolsController.selectedToolsForSubmission()
 
@@ -2307,7 +2336,7 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
             frontendDeliveryPath: userScript != nil ? .userScript : .urlAutoSubmit,
             hasPageContext: hasAttachedPageContext(userScript: userScript),
             toolsSelected: !(tools?.isEmpty ?? true),
-            attachmentsSelected: !viewController.currentAttachments.isEmpty
+            attachmentsSelected: viewController.currentAttachments.hasAttachmentsSelected
         )
 
         let attachments = UnifiedToggleInputAttachmentEncoder.encode(viewController.currentAttachments,
@@ -2490,6 +2519,13 @@ extension UnifiedToggleInputCoordinator: UnifiedToggleInputViewControllerDelegat
         attachmentsChangeSubject.send()
         updateImageButtonEnabledState()
         updateFloatingReturnKeyState()
+        promptLengthGate.refresh()
+    }
+
+    private func restoreFocusAfterSheet() {
+        guard displayState != .hidden else { return }
+        expandIfOnExpandedInputHost()
+        activateInput()
     }
 
     func unifiedToggleInputVC(_ vc: UnifiedToggleInputViewController, didTapFooterPrimaryAction id: UTIFooterItem.ID) {
@@ -2739,6 +2775,7 @@ private extension UnifiedToggleInputCoordinator {
         onSubscriptionUpsellAvailabilityChanged?()
         toolsController.clearSelectionIfUnsupported(for: modelStore)
         attachmentController.removeUnsupportedAttachmentsForSelectedModel()
+        promptLengthGate.refresh()
         // The model-switch CTA needs the fetched list, so the card is resolved again once it lands.
         footerController?.refresh()
         modelSelector.updateModelChipLabel()

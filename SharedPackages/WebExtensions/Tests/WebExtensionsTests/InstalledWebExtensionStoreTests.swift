@@ -41,6 +41,27 @@ final class InstalledWebExtensionStoreTests: XCTestCase {
         super.tearDown()
     }
 
+    func testOriginUpdatePreservesOtherInstallationsAndSurvivesStoreRecreation() {
+        let first = makeExtension(uniqueIdentifier: "first")
+        let cpm = makeExtension(uniqueIdentifier: "cpm")
+        let last = makeExtension(uniqueIdentifier: "last")
+        store.add(first)
+        store.add(cpm)
+        store.add(last)
+        let origin = UUID()
+        let updated = InstalledWebExtension(uniqueIdentifier: cpm.uniqueIdentifier, filename: cpm.filename,
+                                            name: cpm.name, version: cpm.version, cpmOriginIdentifier: origin)
+        store.update(updated)
+        let restored = InstalledWebExtensionStore(storage: storage)
+        XCTAssertEqual(restored.installedExtensions, [first, updated, last])
+        XCTAssertEqual(restored.installedExtension(withUniqueIdentifier: "cpm")?.cpmOriginIdentifier, origin)
+    }
+
+    func testUpdatingMissingInstallationDoesNotCreateARecord() {
+        store.update(makeExtension())
+        XCTAssertNil(storage.extensions)
+    }
+
     // MARK: - Test Helpers
 
     private func makeExtension(uniqueIdentifier: String = "test-extension",

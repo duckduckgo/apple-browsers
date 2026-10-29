@@ -348,7 +348,8 @@ final class AIChatCoordinator: AIChatCoordinating {
     }
 
     /// Updates state, animates the sidebar closed, then tears down UI and ends the session.
-    private func hideSidebar(for tabID: TabIdentifier, animated: Bool) {
+    /// `completion` runs after the session has ended.
+    private func hideSidebar(for tabID: TabIdentifier, animated: Bool, completion: (() -> Void)? = nil) {
         sessionStore.sessions[tabID]?.state.setHidden()
         sidebarPresenceDidChangeSubject.send(.init(tabID: tabID, isShown: false))
 
@@ -356,6 +357,7 @@ final class AIChatCoordinator: AIChatCoordinating {
             guard let self else { return }
             self.tearDownUI(for: tabID)
             self.sessionStore.endSession(for: tabID)
+            completion?()
         }
     }
 
@@ -659,7 +661,13 @@ extension AIChatCoordinator: AIChatViewControllerDelegate {
         let currentAIChatURL = session.currentAIChatURL.removingAIChatPlacementParameter()
         let isCurrentTabNewTab = tabViewModel(for: currentTabID)?.tab.content == .newtab
 
-        toggleSidebar()
+        if isSidebarOpen(for: currentTabID) && !isAnimatingSidebarTransition {
+            hideSidebar(for: currentTabID, animated: true) { [weak self] in
+                // The chat now lives in the new tab. With keep-session on, reopening the sidebar here would bring it back.
+                // This has to run after the session ends, because ending it saves the live URL (with `chatID`) again.
+                self?.sessionStore.sessions[currentTabID]?.state.resetChat()
+            }
+        }
 
         Task { @MainActor in
             let behavior: LinkOpenBehavior = isCurrentTabNewTab ? .currentTab : .newTab(selected: true)

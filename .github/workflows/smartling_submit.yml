@@ -1,0 +1,405 @@
+name: Smartling - Submit
+
+# Submits one platform's strings to Smartling and authorizes the job up to a limit. Above it, the maintenance DRI
+# gets a review task.
+#   nightly: main, as "Nightly <platform> - <date>", called by smartling_nightly.yml. A failure also gets a task for
+#            the platform's owner.
+#   merge:   main, as "Merge <platform> - <date> <time> <commit>", called by smartling_on_merge.yml when a merge changes
+#            the platform's strings. A failure also gets a task for the platform's owner, as for a nightly.
+#   release: a release branch, as "Release <platform> <version>", called at code freeze, where nothing depends on it,
+#            so a failure doesn't stop the release. A failure, or a review task that couldn't be opened, comments on
+#            the release task, when one is given.
+# Any failure, including a task that couldn't be created, fails the run.
+# To test without authorizing anything or opening a review task, run it manually with auto_authorize_max_usd set to 0.
+# For a release, use a test branch with a fake 0.x.y version.
+on:
+  workflow_call:
+    inputs:
+      kind:
+        description: "nightly, merge or release"
+        required: true
+        type: string
+      platform:
+        description: "Platform (iOS or macOS)"
+        required: true
+        type: string
+      branch:
+        description: "Release branch, e.g. release/ios/7.200.0 (release only)"
+        required: false
+        type: string
+      version:
+        description: "Release version, taken from a release/<platform>/<version> branch if empty (release only)"
+        required: false
+        type: string
+      release_task_id:
+        description: "Asana release task ID to comment on if the submission fails (release only)"
+        required: false
+        type: string
+      auto_authorize_max_usd:
+        description: "Authorize the job if its maximum USD estimate is at most this (0 never authorizes)"
+        required: false
+        type: string
+        default: "500.00"
+      dry_run:
+        description: "Export and resolve the job name without writing to Smartling or Asana"
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "Kind"
+        required: true
+        type: choice
+        default: release
+        options:
+          - release
+          - nightly
+          - merge
+      platform:
+        description: "Platform"
+        required: true
+        type: choice
+        options:
+          - iOS
+          - macOS
+      branch:
+        description: "Release branch, e.g. release/ios/7.200.0 (release only)"
+        required: false
+        type: string
+      version:
+        description: "Release version, taken from a release/<platform>/<version> branch if empty (release only)"
+        required: false
+        type: string
+      release_task_id:
+        description: "Asana release task ID to comment on if the submission fails (release only)"
+        required: false
+        type: string
+      auto_authorize_max_usd:
+        description: "Authorize the job if its maximum USD estimate is at most this (0 never authorizes)"
+        type: string
+        default: "500.00"
+      dry_run:
+        description: "Export and resolve the job name without writing to Smartling or Asana"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  smartling:
+    name: ${{ inputs.platform }} ${{ inputs.kind }} translation job
+    runs-on: [image:osx-tahoe-27, m4pro]
+    timeout-minutes: 45
+    # Runs for the same job wait for each other, so they can't both create it. Nightly and merge runs share a group,
+    # so only one of them submits main at a time, and they can't both miss each other's pending job. GitHub keeps one
+    # run waiting per group and cancels an older waiting run when a newer one arrives. That loses nothing, because the
+    # newer run exports the latest main, but the cancelled run opens no task. Dry runs write nothing, so they get a
+    # group per branch and can't cancel a real run.
+    concurrency:
+      group: smartling-submit-${{ inputs.kind == 'release' && 'release' || inputs.dry_run && format('dry-run-{0}', github.ref) || 'main' }}-${{ inputs.platform }}-${{ inputs.branch }}
+      cancel-in-progress: false
+
+    env:
+      KIND: ${{ inputs.kind }}
+      PLATFORM: ${{ inputs.platform }}
+      AUTO_AUTHORIZE_MAX_USD: ${{ inputs.auto_authorize_max_usd || '500.00' }}
+
+    steps:
+      # The release import finds a release job by its exact name and downloads the files under the release branch,
+      # so the release job name and file URI prefix are its contract. Don't change them without updating the import.
+      - name: Resolve Smartling job
+        id: job
+        env:
+          BRANCH: ${{ inputs.branch }}
+          VERSION: ${{ inputs.version }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          platform_lowercase="$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')"
+          case "$KIND" in
+            nightly|merge)
+              # A dry run writes nothing, so it can test the job name from another branch.
+              if [[ "${GITHUB_REF}" != "refs/heads/${DEFAULT_BRANCH}" && "$DRY_RUN" != true ]]; then
+                echo "$KIND Smartling writes are only allowed from ${DEFAULT_BRANCH}." >&2
+                exit 1
+              fi
+              # A merge job also gets the commit it exports, once it's checked out.
+              if [[ "$KIND" == nightly ]]; then
+                job_name="Nightly $PLATFORM - $(date -u +%Y-%m-%d)"
+              else
+                job_name="Merge $PLATFORM - $(date -u '+%Y-%m-%d %H:%M')"
+              fi
+              # Nothing is submitted while an earlier nightly or merge job awaits authorization: its review task is
+              # still open.
+              {
+                echo "ref=${DEFAULT_BRANCH}"
+                echo "job_name=$job_name"
+                echo "pending_job_prefixes=Nightly $PLATFORM - |Merge $PLATFORM - "
+                echo "file_uri_prefix=${DEFAULT_BRANCH}"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            release)
+              # A release branch decides the version; any other branch (e.g. for testing) needs one passed in.
+              if [[ "$BRANCH" =~ ^release/([^/]+)/([^/]+)$ ]]; then
+                branch_platform="${BASH_REMATCH[1]}"
+                branch_version="${BASH_REMATCH[2]}"
+                if [[ "$branch_platform" != "$platform_lowercase" ]]; then
+                  echo "Branch '$BRANCH' is a release branch for '$branch_platform', not '$platform_lowercase'." >&2
+                  exit 1
+                fi
+                if [[ -n "$VERSION" && "$VERSION" != "$branch_version" ]]; then
+                  echo "Version '$VERSION' doesn't match release branch '$BRANCH'." >&2
+                  exit 1
+                fi
+                VERSION="$branch_version"
+              fi
+              if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "Can't resolve a release version from version '$VERSION' and branch '$BRANCH'." >&2
+                exit 1
+              fi
+              # No pending-job prefix: only a job with exactly this name stops a new one, so a rerun of code freeze
+              # finds this release's own job in any state, while other releases' jobs are ignored.
+              {
+                echo "ref=$BRANCH"
+                echo "job_name=Release $PLATFORM $VERSION"
+                echo "pending_job_prefixes="
+                echo "file_uri_prefix=$BRANCH"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unknown kind: $KIND" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Register SSH keys for private repos
+        uses: webfactory/ssh-agent@v0.10.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_DUCKSANS_FONT }}
+
+      - name: Check out ${{ steps.job.outputs.ref }}
+        id: checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.job.outputs.ref }}
+          submodules: recursive
+
+      # The checkout is main's latest commit when the run starts, which can be later than the merge that started it
+      # if the run waited behind another one, so the name says what the job really exports.
+      - name: Name the merge job after its commit
+        id: name
+        env:
+          JOB_NAME: ${{ steps.job.outputs.job_name }}
+          COMMIT: ${{ steps.checkout.outputs.commit }}
+        run: |
+          [ "$KIND" != merge ] || JOB_NAME="$JOB_NAME ${COMMIT:0:7}"
+          echo "job_name=$JOB_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve platform configuration
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.GH_ASANA_IOS_APP_PROJECT_ID }}"
+                echo "ASANA_INCOMING_SECTION_NAME=Incoming"
+                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210869535563575"
+                echo "REVIEW_TASK_GITHUB_ASSIGNEE=pballart"
+              } >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              {
+                echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}"
+                echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}"
+                echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}"
+                echo "ASANA_PROJECT_ID=${{ vars.MACOS_APP_DEVELOPMENT_ASANA_PROJECT_ID }}"
+                echo "ASANA_INCOMING_SECTION_NAME=Incoming: Dev Related Issues"
+                echo "ASANA_TRIAGE_ROTATION_SECTION_ID=1210871971126998"
+                echo "REVIEW_TASK_GITHUB_ASSIGNEE=andremartingo"
+              } >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "Unknown platform: $PLATFORM" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Set up Python
+        if: runner.environment != 'self-hosted'
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install aiohttp
+
+      # While an earlier nightly or merge job awaits authorization, which can take days, the submission would only
+      # return pending_review, so stop before spending an export on it. The submit step checks again.
+      - name: Check for a pending ${{ inputs.platform }} job
+        id: pending
+        if: ${{ !inputs.dry_run && steps.job.outputs.pending_job_prefixes != '' }}
+        env:
+          PENDING_JOB_PREFIXES: ${{ steps.job.outputs.pending_job_prefixes }}
+        run: |
+          prefix_args=()
+          IFS='|' read -r -a pending_job_prefixes <<< "$PENDING_JOB_PREFIXES"
+          for prefix in "${pending_job_prefixes[@]}"; do
+            prefix_args+=(--pending-job-prefix "$prefix")
+          done
+          result_file="${RUNNER_TEMP}/smartling-pending-job-${PLATFORM}.json"
+          ./scripts/smartling/loc_tool.sh pending-job "${prefix_args[@]}" --result-file "$result_file"
+          # A missing key fails the step instead of reading as a waiting job and skipping every export.
+          job_name="$(jq -er '.job_name | strings' "$result_file")"
+          echo "job_name=$job_name" >> "$GITHUB_OUTPUT"
+          if [ -n "$job_name" ]; then
+            {
+              echo "## $PLATFORM Smartling job: nothing submitted"
+              echo
+              echo "- Outcome: \`pending_review\`"
+              echo "- Waiting job: [$job_name]($(jq -er '.job_url | strings' "$result_file"))"
+              echo "- Reason: it's still awaiting authorization and its review task is open, so nothing was exported"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Select Xcode
+        if: steps.pending.outputs.job_name == ''
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Install xmlstarlet
+        if: inputs.platform == 'macOS' && steps.pending.outputs.job_name == ''
+        run: brew install xmlstarlet
+
+      - name: Export localizations
+        if: steps.pending.outputs.job_name == ''
+        run: |
+          set -e -o pipefail
+          "./$PLATFORM/scripts/loc_export.sh" | xcbeautify
+
+      # A release job left half-submitted by a failure is deleted, so that a rerun starts over instead of finding it.
+      # A nightly or merge one is kept for the review task, and the next run creates a new job anyway.
+      - name: Submit ${{ inputs.platform }} strings to Smartling
+        id: submit
+        if: ${{ !inputs.dry_run && steps.pending.outputs.job_name == '' }}
+        env:
+          JOB_NAME: ${{ steps.name.outputs.job_name }}
+          PENDING_JOB_PREFIXES: ${{ steps.job.outputs.pending_job_prefixes }}
+          FILE_URI_PREFIX: ${{ steps.job.outputs.file_uri_prefix }}
+        run: |
+          kind_args=()
+          IFS='|' read -r -a pending_job_prefixes <<< "$PENDING_JOB_PREFIXES"
+          for prefix in ${pending_job_prefixes[@]+"${pending_job_prefixes[@]}"}; do
+            kind_args+=(--pending-job-prefix "$prefix")
+          done
+          [ "$KIND" != release ] || kind_args+=(--delete-job-on-failure)
+          ./scripts/smartling/smartling_submit.sh "$PLATFORM" \
+            --job-name "$JOB_NAME" \
+            --file-uri-prefix "$FILE_URI_PREFIX" \
+            --auto-authorize-max-usd "$AUTO_AUTHORIZE_MAX_USD" \
+            "${kind_args[@]}"
+
+      - name: Print dry run result
+        if: inputs.dry_run
+        env:
+          JOB_NAME: ${{ steps.name.outputs.job_name }}
+          FILE_URI_PREFIX: ${{ steps.job.outputs.file_uri_prefix }}
+        run: |
+          echo "Dry run: would submit '$JOB_NAME' with files under $FILE_URI_PREFIX/, authorized up to \$$AUTO_AUTHORIZE_MAX_USD." \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # A job over the limit gets a review task, unless the limit is 0 (a test run). A nightly or merge failure gets a
+      # task, whether it failed in Smartling or before Smartling returned a result (runner, Xcode, export), as long as
+      # the platform's Asana project is known by then. A release failure comments on the release task instead, or only
+      # fails the run when there's no release task.
+      - name: Decide on an Asana task
+        id: task
+        if: ${{ !cancelled() && !inputs.dry_run && (steps.submit.outputs.outcome != '' || failure()) }}
+        env:
+          OUTCOME: ${{ steps.submit.outputs.outcome }}
+          FAILED: ${{ steps.submit.outputs.failed }}
+          RELEASE_TASK_ID: ${{ inputs.release_task_id }}
+        run: |
+          if [[ -z "$OUTCOME" || "$FAILED" == true ]]; then
+            if [[ "$KIND" != release ]]; then
+              [[ -z "${ASANA_PROJECT_ID:-}" ]] || echo "kind=failure" >> "$GITHUB_OUTPUT"
+            elif [[ -n "$RELEASE_TASK_ID" ]]; then
+              echo "comment_on_release_task=true" >> "$GITHUB_OUTPUT"
+            fi
+          elif [[ "$OUTCOME" == review_required ]] && awk -v limit="$AUTO_AUTHORIZE_MAX_USD" 'BEGIN { exit !(limit > 0) }'; then
+            echo "kind=review" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The platform's owner gets failure tasks. For now they get review tasks too while the automation beds in;
+      # remove --assignee below for review tasks to assign the platform's triage DRI instead.
+      # TODO: assign a merge run's failure task to the author of the merged commit instead of the platform's owner.
+      - name: Resolve ${{ inputs.platform }} task assignee
+        id: task-assignee
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
+        continue-on-error: true  # A review task falls back to the triage DRI and a failure task to no one.
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: get-asana-user-id
+          github-username: ${{ env.REVIEW_TASK_GITHUB_ASSIGNEE }}
+          github-pat: ${{ secrets.APPLE_GH_RO_PAT }}
+
+      # Due today in the app project's incoming section (named differently per project). A review task is assigned to the
+      # platform's triage DRI from the Asana triage rotation (on weekends, the next week's DRI), unless an assignee was
+      # resolved above. A failure task never goes to the triage DRI.
+      - name: Open ${{ inputs.platform }} Smartling ${{ steps.task.outputs.kind }} task
+        id: open-task
+        if: ${{ !cancelled() && steps.task.outputs.kind != '' }}
+        env:
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          TASK_KIND: ${{ steps.task.outputs.kind }}
+          ASSIGNEE: ${{ steps.task-assignee.outputs.asanaUserId }}
+          TASK_NAME: "${{ steps.task.outputs.kind == 'review' && 'Smartling job needs review' || 'Smartling submission failed' }}: ${{ steps.submit.outputs.job_name || format('{0} (no job created)', steps.name.outputs.job_name || steps.job.outputs.job_name) }}"
+          TASK_NOTES: |
+            ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized.{2}', inputs.platform, inputs.kind, steps.submit.outputs.job_id && ' The job created before the failure is left in Smartling.' || '') }}
+
+            🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
+            💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}
+            📝 String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}
+            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (job resolution, checkout, runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
+            🌿 Branch: ${{ steps.job.outputs.ref }}
+            🔖 Commit: ${{ steps.checkout.outputs.commit || 'unavailable' }}
+            ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          task_args=()
+          [ "$TASK_KIND" != review ] || task_args+=(--rotation-section "$ASANA_TRIAGE_ROTATION_SECTION_ID")
+          [ -z "$ASSIGNEE" ] || task_args+=(--assignee "$ASSIGNEE")
+          python3 ./scripts/smartling/asana_review_task.py \
+            --project "$ASANA_PROJECT_ID" \
+            --section-name "$ASANA_INCOMING_SECTION_NAME" \
+            --name "$TASK_NAME" \
+            --notes "$TASK_NOTES" \
+            ${task_args[@]+"${task_args[@]}"}
+
+      - name: Comment on the release task
+        if: ${{ !cancelled() && (steps.task.outputs.comment_on_release_task == 'true' || (inputs.kind == 'release' && inputs.release_task_id != '' && steps.open-task.outcome == 'failure')) }}
+        uses: duckduckgo/native-github-asana-sync@v2.5.1
+        with:
+          action: post-comment-asana-task
+          asana-pat: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-task-id: ${{ inputs.release_task_id }}
+          asana-task-comment-pinned: false
+          asana-task-comment-is-html: false
+          asana-task-comment: |
+            ⚠️ ${{ steps.open-task.outcome == 'failure' && format('The {0} Smartling job for this release is over the limit for automatic authorization, but its review task couldn''t be created, so nobody has been asked to authorize it.', inputs.platform) || format('The {0} strings for this release weren''t submitted to Smartling, so no translations are on the way yet.', inputs.platform) }} The release carries on: nothing waits for this submission.
+
+            ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (job resolution, checkout, runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
+            🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
+            🌿 Branch: ${{ inputs.branch }}
+            ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            🔁 ${{ steps.open-task.outcome == 'failure' && 'To get the translations, review and authorize the job in Smartling.' || format('To submit them, fix the cause and run Smartling - Submit with kind release for {0}.', inputs.branch) }}
+
+      # The submit script exits successfully even when Smartling fails, so the run fails here, after any failure task.
+      - name: Fail the run if the submission failed
+        if: ${{ !cancelled() && steps.submit.outputs.failed == 'true' }}
+        env:
+          REASON: ${{ steps.submit.outputs.reason }}
+        run: |
+          echo "::error::Smartling submission failed: $REASON"
+          exit 1

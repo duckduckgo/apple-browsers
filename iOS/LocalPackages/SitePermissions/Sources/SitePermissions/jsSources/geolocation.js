@@ -99,9 +99,9 @@
             if (typeof nativePolicyAllowsFeature === "function") {
                 return apply(nativePolicyAllowsFeature, nativePermissionsPolicy, ["geolocation"]);
             }
-            // Native code checks the top-level response policy. Without this API,
-            // subframe response policies cannot be verified, so deny subframes.
-            return globalThis.top === globalThis;
+            // Without this API, the isolated policy script checks each embedding
+            // frame's allow attribute and native code checks the top-level response policy.
+            return true;
         } catch (_) {
             return false;
         }
@@ -118,6 +118,7 @@
     const message = (kind, values = {}) => ({ capability, nonce, documentID: frameNonce, kind, ...values });
 
     // Native registration obtains policy in the isolated world and rechecks activation.
+    // Each operation registers first, so a frame that never uses geolocation sends nothing.
     const registerFrame = () => callThen(postOneShot(message("registerFrame")), (result) => {
         if (result?.status === "error" && result.code === 1) {
             constraints = freeze({ isSecureContext: false, isPolicyAllowed: false, isSandboxed: true });
@@ -133,7 +134,6 @@
         });
         return result.enabled === true;
     });
-    const registration = registerFrame();
 
     const optionsPayload = (options = {}) => {
         options = options ?? {};
@@ -260,8 +260,9 @@
             return watchID;
         }
 
+        // A watch cleared during registration must not start native location updates.
         callThen(
-            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform()
+            callThen(registerFrame(), (enabled) => enabled && isAllowedByPlatform() && apply(mapHas, activeWatches, [requestID])
                 ? postWatch(message("startWatch", { requestID, options: optionsPayload(options) }))
                 : deniedResult()),
             (result) => {
@@ -410,13 +411,12 @@
         return true;
     };
 
+    // Install in every frame, blank ones included. A frame left with WebKit's API would let
+    // the page reach WebKit's own location flow and bypass the site's saved decision.
+    // Without immediate installation, the shim waits until native code activates the frame.
     if (installImmediately) {
         installShim();
+    } else {
+        callThen(registerFrame(), (enabled) => { if (enabled) installShim(); }, () => {});
     }
-
-    callThen(registration, (enabled) => {
-        if (enabled && !installImmediately) {
-            installShim();
-        }
-    }, () => {});
 })();

@@ -630,6 +630,10 @@ final class DuckPlayerBrowserChromeDelegateMock: BrowserChromeDelegate {
 
     var barsMaxHeight: CGFloat = 30
 
+    var currentBarsVisibilityOverride: CGFloat?
+
+    var currentBarsVisibility: CGFloat { currentBarsVisibilityOverride ?? (isToolbarHidden ? 0 : 1) }
+
     var isInMinimalChromeLayout: Bool = false
 
     func floatingWebViewBottomObscuredHeight(for barsVisibilityPercent: CGFloat) -> CGFloat { 0 }

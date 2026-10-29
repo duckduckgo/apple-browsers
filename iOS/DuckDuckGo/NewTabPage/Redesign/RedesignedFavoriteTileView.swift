@@ -43,4 +43,9 @@ struct RedesignedFavoriteTileView<Icon: View>: View {
 enum RedesignedFavoriteTileMetrics {
     static let iconToTitleSpacing: CGFloat = 8
     static let titleLineLimit = 2
+    static let cornerRadius: CGFloat = 16
+
+    static var tileShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+    }
 }

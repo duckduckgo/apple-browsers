@@ -201,6 +201,9 @@ extension DataImport {
                 if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
+            case .history:
+                guard let profileDirectoryContents = try? fileStore.directoryContents(at: profileURL.path) else { return false }
+                return profileDirectoryContents.contains(ChromiumHistoryReader.Constants.historyDatabaseName)
             case .creditCards:
                 return false
             }
@@ -249,7 +252,7 @@ extension DataImport {
         private func validateBookmarksData(profileDirectoryContents: Set<String>) -> ProfileDataItemValidationResult {
             switch browser {
             case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi, .yandex:
-                let hasChromiumBookmarks = profileDirectoryContents.contains(ChromiumBookmarksReader.Constants.defaultBookmarksFileName)
+                let hasChromiumBookmarks = !profileDirectoryContents.isDisjoint(with: ChromiumBookmarksReader.Constants.bookmarksFileNames)
 
                 return hasChromiumBookmarks ? .available
                 : .unavailable(path: profileURL.appendingPathComponent(ChromiumBookmarksReader.Constants.defaultBookmarksFileName).path)
@@ -438,6 +441,35 @@ extension DataImport.Source {
         }
     }
 
+    /// The data types the source can import, or `nil` when it isn't offered: CSV and HTML (replaced by the combined
+    /// file option) and browsers without a profile. Password managers and the file option offer all they support.
+    func availableImportTypes(loadingProfilesWith loadProfiles: (ThirdPartyBrowser) -> DataImport.BrowserProfileList) -> Set<DataImport.DataType>? {
+        if self == .bookmarksHTML || self == .csv {
+            return nil
+        }
+        guard let browser = ThirdPartyBrowser.browser(for: self), browser.isWebBrowser else {
+            return supportedDataTypes
+        }
+        let profiles = loadProfiles(browser)
+        guard profiles.defaultProfile != nil else { return nil }
+        return availableImportTypes(in: profiles)
+    }
+
+    /// The supported data types the source's profiles have data for. Without a readable profile
+    /// (manual imports, browsers awaiting read permission), every supported type counts as available.
+    func availableImportTypes(in profiles: DataImport.BrowserProfileList?) -> Set<DataImport.DataType> {
+        let validProfiles = profiles?.validImportableProfiles ?? []
+        guard !validProfiles.isEmpty else { return supportedDataTypes }
+        return supportedDataTypes.filter { dataType in
+            validProfiles.contains { $0.hasValidProfileData(for: dataType) }
+        }
+    }
+
+    func archiveImportSupportedFiles(for dataTypes: Set<DataImport.DataType>) -> Set<UTType> {
+        let selectedFileTypes = Set(dataTypes.flatMap { $0.allowedFileTypes })
+        return archiveImportSupportedFiles.intersection(selectedFileTypes.union([.zip]))
+    }
+
     func installedAppsMajorVersionDescription(selectedProfile: DataImport.BrowserProfile?) -> String? {
         let installedVersions: Set<String>
         if let appVersion = selectedProfile?.appVersion, !appVersion.isEmpty {
@@ -464,6 +496,7 @@ extension DataImport.DataType {
         case .bookmarks: UserText.bookmarkImportBookmarks
         case .passwords: UserText.importLoginsPasswords
         case .creditCards: UserText.importCreditCards
+        case .history: UserText.importHistory
         }
     }
 
@@ -475,10 +508,18 @@ extension DataImport.DataType: @retroactive Comparable {
         case .bookmarks: return 0
         case .passwords: return 1
         case .creditCards: return 2
+        case .history: return 3
         }
     }
 
     public static func < (lhs: Self, rhs: Self) -> Bool {
         lhs.order < rhs.order
+    }
+}
+
+extension Array where Element == DataImport.Source {
+    /// The first of `preferredSources` in the array, otherwise its first source.
+    func preferredSource(from preferredSources: [DataImport.Source]) -> DataImport.Source? {
+        preferredSources.first { contains($0) } ?? first
     }
 }

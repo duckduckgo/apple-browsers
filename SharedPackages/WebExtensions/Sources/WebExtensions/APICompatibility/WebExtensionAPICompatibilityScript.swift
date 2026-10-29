@@ -31,7 +31,8 @@ public enum WebExtensionAPICompatibilityScript {
     /// handler of this name reports nothing.
     public static let messageHandlerName = "ddgWebExtensionAPICompatibility"
 
-    /// Function on `globalThis` that other scripts call with a kind and an API path to report it.
+    /// Function on `globalThis` that other scripts call with a kind and an API path to report it, or
+    /// with "error" and an error message for the browser to classify, like the errors a page raises.
     static let reportFunctionName = "__ddgReportAPICompatibility"
 
     public static let source = """
@@ -41,6 +42,9 @@ public enum WebExtensionAPICompatibilityScript {
 
         var api = globalThis.chrome || globalThis.browser;
         if (!api) {
+            return;
+        }
+        if (typeof globalThis["\(Self.reportFunctionName)"] === "function") {
             return;
         }
 
@@ -195,9 +199,17 @@ public enum WebExtensionAPICompatibilityScript {
 
         installCompatibilityHooks();
 
+        function reportFromAnotherScript(kind, value) {
+            if (kind === "error") {
+                reportErrorMessage(value);
+            } else {
+                reportAPI(kind, value);
+            }
+        }
+
         try {
             Object.defineProperty(globalThis, "\(Self.reportFunctionName)", {
-                value: reportAPI,
+                value: reportFromAnotherScript,
                 writable: false,
                 enumerable: false,
                 configurable: false

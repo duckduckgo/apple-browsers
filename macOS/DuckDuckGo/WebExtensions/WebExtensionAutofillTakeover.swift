@@ -52,9 +52,8 @@ protocol WebExtensionAutofillTakeoverManaging: AnyObject {
 /// decision reads it, from any thread. A change posts `.autofillUserSettingsDidChange`, which rebuilds the
 /// autofill scripts, so open tabs follow on their next navigation.
 ///
-/// It is read again when:
-/// - extensions load or unload, or an extension changes its setting (`.webExtensionPrivacySettingsDidChange`);
-/// - web extensions become unavailable (`extensionsDidBecomeUnavailable()`).
+/// It is read again when extensions load or unload, or an extension changes its setting
+/// (`.webExtensionPrivacySettingsDidChange`).
 ///
 /// Handing it a new extension manager doesn't read it: its extensions haven't loaded yet, and reading
 /// now would clear the saved state that tabs restored at launch rely on. The first read comes once
@@ -108,13 +107,6 @@ final class WebExtensionAutofillTakeover: WebExtensionAutofillTakeoverManaging {
         managingExtension = updated
         preferences.isManagedByExtension = isManaged
         notificationCenter.post(name: .autofillUserSettingsDidChange, object: nil)
-    }
-
-    /// Web extensions are off: no extension manages autofill, so DuckDuckGo takes it back.
-    @MainActor
-    func extensionsDidBecomeUnavailable() {
-        manager = nil
-        refresh()
     }
 
     /// Gives autofill back to DuckDuckGo: no extension controls any privacy setting any more, not even one

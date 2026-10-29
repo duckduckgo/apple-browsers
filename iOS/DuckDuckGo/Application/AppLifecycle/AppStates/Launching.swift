@@ -85,8 +85,7 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
             appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            featureFlagger: featureFlagger,
-            aiChatBonusService: aiChatBonusService
+            featureFlagger: featureFlagger
         )
 
         var isBookmarksDBFilePresent: Bool?
@@ -416,7 +415,6 @@ struct Launching: LaunchingHandling {
             return shortcutItems.filter { $0.type != ShortcutKey.openVPNSettings }
         })
         let inactivityNotificationSchedulerService = InactivityNotificationSchedulerService(
-            featureFlagger: featureFlagger,
             notificationServiceManager: notificationServiceManager,
             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
             stateStore: inactivityStateStore

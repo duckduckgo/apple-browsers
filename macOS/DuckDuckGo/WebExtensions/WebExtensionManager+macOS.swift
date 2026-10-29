@@ -55,6 +55,34 @@ extension WebExtensionManager {
     static var areExtensionsEnabled: Bool {
         NSApp.delegateTyped.webExtensionManager != nil
     }
+
+    /// Start after installed extensions load, so enforcement can't race the initial load.
+    @MainActor
+    func startRemoteDisableEnforcer(configurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        guard remoteDisableEnforcer == nil else { return }
+        let enforcer = WebExtensionRemoteDisableEnforcer(
+            manager: self,
+            configurationManager: configurationManager,
+            disabledExtensionIDs: { [featureFlagger] in
+                Self.flagDisabledExtensionIDs(featureFlagger: featureFlagger)
+            },
+            disabledExtensionIDsDidChange: featureFlagger.updatesPublisher
+        )
+        remoteDisableEnforcer = enforcer
+        enforcer.start()
+    }
+
+    /// Catalog extensions that a feature flag turns on or off.
+    static let flaggedCatalogExtensions: [(flag: FeatureFlag, id: ChromeWebStoreID)] = [
+        (.webExtensionBitwarden, .bitwarden),
+        (.webExtensionOnePassword, .onePassword),
+        (.webExtensionICloudPasswords, .iCloudPasswords),
+    ]
+
+    /// The catalog extensions whose feature flag is off.
+    static func flagDisabledExtensionIDs(featureFlagger: FeatureFlagger) -> Set<String> {
+        Set(flaggedCatalogExtensions.filter { !featureFlagger.isFeatureOn($0.flag) }.map(\.id.rawValue))
+    }
 }
 
 // MARK: - Factory
@@ -125,6 +153,9 @@ enum WebExtensionManagerFactory {
             },
             isCPMLateBackgroundDocumentRecoveryEnabled: {
                 Application.appDelegate.featureFlagger.isFeatureOn(.cpmLateBackgroundDocumentRecovery)
+            },
+            isCPMStableBaseURLEnabled: {
+                Application.appDelegate.featureFlagger.isFeatureOn(.cpmStableBaseURL)
             },
             handlerProvider: WebExtensionHandlerProvider(
                 privacyConfigurationManager: privacyConfigurationManager,

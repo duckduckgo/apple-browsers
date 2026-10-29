@@ -41,7 +41,8 @@ name: test_unified_input_send_prompt
 # Type a prompt (verify it lands in the input) and submit
 - inputText: "What is a duck?"
 - assertVisible: "What is a duck?"
-- tapOn: "Submit"
+- tapOn:
+    id: "AIChat.Toolbar.Button.Submit"
 
 # First send on a clearState device shows the anonymous-chat consent. Accepting it dispatches
 # the pending prompt (verified on-device: no re-submit needed).

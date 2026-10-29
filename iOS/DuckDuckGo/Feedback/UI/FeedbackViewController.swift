@@ -18,7 +18,6 @@
 //
 
 import UIKit
-import DesignResourcesKitIcons
 
 class FeedbackViewController: UIViewController {
     
@@ -48,11 +47,6 @@ class FeedbackViewController: UIViewController {
     private func configureButtons() {
         applyShadow(to: postitiveFeedbackButton)
         applyShadow(to: negativeFeedbackButton)
-
-        if AppRebrand.isAppRebranded() {
-            postitiveFeedbackButton.setImage(UIImage(resource: .responseGood56), for: .normal)
-            negativeFeedbackButton.setImage(UIImage(resource: .responseBad56), for: .normal)
-        }
     }
     
     private func applyShadow(to button: UIButton) {

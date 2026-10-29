@@ -43,12 +43,9 @@ final class MockThemeManager: ThemeManaging {
         }
     }
 
-    let isAppRebranded: Bool
-
-    init(appearance: ThemeAppearance = .dark, themeName: ThemeName = .default, isAppRebranded: Bool = false) {
+    init(appearance: ThemeAppearance = .dark, themeName: ThemeName = .default) {
         self.appearance = appearance
         self.theme = ThemeStyle.buildThemeStyle(themeName: themeName)
-        self.isAppRebranded = isAppRebranded
     }
 }
 #endif

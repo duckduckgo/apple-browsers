@@ -98,7 +98,7 @@ public struct PreferencesSubscriptionSettingsView: View {
             StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .statusGreen)), isLarge: true)
             if let variant = model.tierBadgeToDisplay {
                 Rectangle()
-                    .fill(Color(designSystemColor: .lines))
+                    .fill(Color(designSystemColor: .surfaceDecorationPrimary))
                     .frame(width: 1, height: 8)
                 TierBadgeView(variant: variant)
             }
@@ -111,7 +111,7 @@ public struct PreferencesSubscriptionSettingsView: View {
             StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .statusGreen)), isLarge: true)
             if let variant = model.tierBadgeToDisplay {
                 Rectangle()
-                    .fill(Color(designSystemColor: .lines))
+                    .fill(Color(designSystemColor: .surfaceDecorationPrimary))
                     .frame(width: 1, height: 8)
                 TierBadgeView(variant: variant)
             }
@@ -121,7 +121,7 @@ public struct PreferencesSubscriptionSettingsView: View {
     @ViewBuilder
     private var pendingActivationHeaderView: some View {
         VStack(alignment: .leading, spacing: 16) {
-            StatusIndicatorView(status: .custom(UserText.activatingStatusIndicator, Color(designSystemColor: .alertYellow)), isLarge: true)
+            StatusIndicatorView(status: .custom(UserText.activatingStatusIndicator, Color(designSystemColor: .statusYellowPrimary)), isLarge: true)
 
             TextMenuItemCaption(UserText.preferencesSubscriptionPendingCaption)
 
@@ -183,7 +183,7 @@ public struct PreferencesSubscriptionSettingsView: View {
         if model.shouldShowUpgrade, let tierName = model.firstAvailableUpgradeTier {
             SubfeatureGroup {
                 HStack(alignment: .top, spacing: 12) {
-                    Image(AppRebrand.isAppRebranded() ? .aiChatAdvancedColor24 :  .aiChatAdvancedColor24Legacy)
+                    Image(.aiChatAdvancedColor24)
                     VStack(alignment: .leading, spacing: 18) {
                         Text(UserText.upgradeSectionCaption)
                             .foregroundColor(Color(.textPrimary))

@@ -21,7 +21,6 @@
 import SwiftUI
 import WidgetKit
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 struct FavoritesWidgetView: View {
 
@@ -113,7 +112,7 @@ struct FavoriteView: View {
                             }
 
                         } else if favorite.isDuckDuckGo {
-                            Image(uiImage: UIImage(rebrandable: "WidgetDaxLogo") ?? UIImage(resource: .widgetDaxLogo))
+                            Image(uiImage: UIImage(resource: .widgetDaxLogo))
                                 .resizable()
                                 .useFullColorRendering()
                                 .frame(width: 46, height: 46, alignment: .center)

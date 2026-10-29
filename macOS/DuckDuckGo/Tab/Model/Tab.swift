@@ -1113,7 +1113,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 return nil
             }
 
-            if webView.url == url, webView.backForwardList.currentItem?.url == url, !webView.isLoading, !content.isUserRequestedPageDownload {
+            if webView.url == url, webView.backForwardList.currentItem?.safeURL == url, !webView.isLoading, !content.isUserRequestedPageDownload {
                 return reload()
             }
             if restoreInteractionStateIfNeeded() { return nil /* session restored */ }

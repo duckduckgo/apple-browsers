@@ -213,6 +213,7 @@ public enum DataImportProgressEvent {
     case importingPasswords(numberOfPasswords: Int?, fraction: Double)
     case importingBookmarks(numberOfBookmarks: Int?, fraction: Double)
     case importingCreditCards(numberOfCreditCards: Int?, fraction: Double)
+    case importingHistory(numberOfVisits: Int?, fraction: Double)
     case done
 }
 

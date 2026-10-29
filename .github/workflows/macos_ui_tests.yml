@@ -170,7 +170,6 @@ jobs:
           else
             all_os_versions='true'
             config=$(jq -c <<< '[
-              {"runner": ["macos-14-xlarge"], "os-version": "14", "xcode-version": "16.2"},
               {"runner": ["macos-15-xlarge"], "os-version": "15", "xcode-version": "26.2"},
               {"runner": ["image:osx-tahoe-27", "ui-tests"], "os-version": "27", "xcode-version": "27.0"}
             ]')

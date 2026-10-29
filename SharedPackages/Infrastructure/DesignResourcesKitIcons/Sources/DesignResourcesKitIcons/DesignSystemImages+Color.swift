@@ -227,7 +227,6 @@ public extension DesignSystemImages {
         public enum Size32 {
             public static var duckDuckAI: DesignSystemImage { .init(resource: .duckAIColor32) }
             public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor32) }
-            public static var document: DesignSystemImage { .init(resource: .documentColor32Legacy) }
             public static var shieldUtility: DesignSystemImage { .init(resource: .shieldUtilityColor32) }
         }
 
@@ -263,8 +262,6 @@ public extension DesignSystemImages {
         public enum Size128 {
             public static var duckAIPaid: DesignSystemImage { .init(resource: .duckDuckGoDuckAI128) }
             public static var success: DesignSystemImage { .init(resource: .success128) }
-            public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128Legacy) }
-            public static var fileDrop: DesignSystemImage { .init(resource: .fileDrop128Legacy) }
             public static var fileIssue: DesignSystemImage { .init(resource: .fileIssue128) }
             public static var bringStuff: DesignSystemImage { .init(resource: .bringStuff128) }
             public static var bringStuffDownload: DesignSystemImage { .init(resource: .bringStuffDownload128) }

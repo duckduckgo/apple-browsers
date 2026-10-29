@@ -344,6 +344,8 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
 
     var hasInlineSearchInput: Bool { false }
 
+    var inlineToggleMode: TextEntryMode? { nil }
+
     weak var chromeDelegate: BrowserChromeDelegate?
     weak var delegate: NewTabPageControllerDelegate?
 

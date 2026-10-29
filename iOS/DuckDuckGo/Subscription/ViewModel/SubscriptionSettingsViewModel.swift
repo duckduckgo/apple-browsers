@@ -382,7 +382,7 @@ final class SubscriptionSettingsViewModel: ObservableObject {
         let setStatus: (SubscriptionTransactionStatus) -> Void = { [weak self] in self?.setCancelDowngradeStatus($0) }
         await subscriptionFlowsExecuter.performTierChange(to: productId,
                                                           changeType: "upgrade",
-                                                          contextName: SubscriptionPlanChangeOrigin.cancelDowngrade.rawValue,
+                                                          wideEventFunnelName: SubscriptionPlanChangeOrigin.cancelDowngrade.rawValue,
                                                           setTransactionStatus: setStatus,
                                                           setTransactionError: setError,
                                                           pushPurchaseUpdate: nil)

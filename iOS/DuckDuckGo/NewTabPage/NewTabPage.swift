@@ -81,6 +81,9 @@ protocol NewTabPage: UIViewController,
     /// Suppresses the chrome address bar while the page is not editing.
     var hasInlineSearchInput: Bool { get }
 
+    /// The side the page's own toggle shows; nil when hidden.
+    var inlineToggleMode: TextEntryMode? { get }
+
     var delegate: NewTabPageControllerDelegate? { get set }
     var chromeDelegate: BrowserChromeDelegate? { get set }
 

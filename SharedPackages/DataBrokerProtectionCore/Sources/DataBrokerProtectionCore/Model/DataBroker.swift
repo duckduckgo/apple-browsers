@@ -144,6 +144,26 @@ public struct BrokerResource {
     }
 }
 
+public struct DataBrokerUserAgent: Codable, Sendable, Equatable {
+    public let macOS: String?
+    public let iOS: String?
+
+    public init(macOS: String? = nil, iOS: String? = nil) {
+        self.macOS = macOS
+        self.iOS = iOS
+    }
+
+    var currentPlatformValue: String? {
+#if os(macOS)
+        let value = macOS
+#else
+        let value = iOS
+#endif
+        guard let value, !value.isEmpty else { return nil }
+        return value
+    }
+}
+
 public struct DataBroker: Codable, Sendable {
     public let id: Int64?
     public let name: String
@@ -154,8 +174,13 @@ public struct DataBroker: Codable, Sendable {
     public let parent: String?
     public let mirrorSites: [MirrorSite]
     public let optOutUrl: String
+    public let userAgent: DataBrokerUserAgent?
     public var eTag: String
     public var removedAt: Date?
+
+    public var customUserAgent: String? {
+        userAgent?.currentPlatformValue
+    }
 
     public var isFakeBroker: Bool {
         name.contains("fake") // A future improvement will be to add a property in the JSON file.
@@ -170,6 +195,7 @@ public struct DataBroker: Codable, Sendable {
         case parent
         case mirrorSites
         case optOutUrl
+        case userAgent
         case eTag
         case removedAt
     }
@@ -187,6 +213,7 @@ public struct DataBroker: Codable, Sendable {
          parent: String? = nil,
          mirrorSites: [MirrorSite] = [MirrorSite](),
          optOutUrl: String,
+         userAgent: DataBrokerUserAgent? = nil,
          eTag: String,
          removedAt: Date?
     ) {
@@ -205,6 +232,7 @@ public struct DataBroker: Codable, Sendable {
         self.parent = parent
         self.mirrorSites = mirrorSites
         self.optOutUrl = optOutUrl
+        self.userAgent = userAgent
         self.eTag = eTag
         self.removedAt = removedAt
     }
@@ -239,6 +267,7 @@ public struct DataBroker: Codable, Sendable {
         }
 
         optOutUrl = (try? container.decode(String.self, forKey: .optOutUrl)) ?? ""
+        userAgent = try? container.decode(DataBrokerUserAgent.self, forKey: .userAgent)
 
         do {
             eTag = try container.decode(String.self, forKey: .eTag)
@@ -303,6 +332,7 @@ extension DataBroker {
                    parent: parent,
                    mirrorSites: mirrorSites,
                    optOutUrl: optOutUrl,
+                   userAgent: userAgent,
                    eTag: eTag,
                    removedAt: removedAt)
     }

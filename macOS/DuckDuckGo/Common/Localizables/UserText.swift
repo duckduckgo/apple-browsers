@@ -1952,7 +1952,7 @@ struct UserText {
     static let importLoginsPasswordsExplainerEncrypted = NSLocalizedString("import.logins.passwords.explainer.encrypted", value: "Encrypted", comment: "Explanatory label stating that the passwords are encrypted")
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
-    static let importHistory = NotLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
+    static let importHistory = NSLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
     static let importHistoryTimeRange = NotLocalizedString("import.history.time-range", value: "Last 30 days", comment: "Label next to the History import option explaining that only the last 30 days of browsing history are imported")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
@@ -2017,7 +2017,7 @@ struct UserText {
         return String(format: localized, successful, total)
     }
     static func importSummaryHistoryImported(_ count: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.imported", value: "History: %d", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange or importSummaryHistoryTotal")
+        let localized = NotLocalizedString("import.summary.history.count", value: "History: %d", comment: "Summary text showing number of browsing history visits imported, followed by importSummaryHistoryTimeRange or importSummaryHistoryTotal")
         return String(format: localized, count)
     }
     static let importSummaryHistoryTimeRange = NotLocalizedString("import.summary.history.time-range", value: "(last 30 days)", comment: "Shown after the number of imported browsing history visits when every visit found was new")
@@ -2070,7 +2070,7 @@ struct UserText {
     static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
     static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
     static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
-    static let importCouldNotImportHistory = NotLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
+    static let importCouldNotImportHistory = NSLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
     static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")
@@ -2163,10 +2163,10 @@ struct UserText {
 
     static func importingHistory(_ numberOfVisits: Int?) -> String {
         if let numberOfVisits, numberOfVisits > 0 {
-            let localized = NotLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
+            let localized = NSLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
             return String(format: localized, numberOfVisits)
         } else {
-            return NotLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
+            return NSLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
         }
     }
 
@@ -2606,6 +2606,10 @@ struct UserText {
     static let updateNewVersionAvailableMenuItem = NSLocalizedString("update.new.version.available.menu.item", value: "New version available - Update DuckDuckGo", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
     static let updateAvailableMenuItemAppStore = NSLocalizedString("update.available.menu.item.app.store", value: "Update Available - Update in the App Store", comment: "Title of the menu item that informs user that a new update is available in the App Store. Clicking on the menu item takes the user to the App Store")
     static let updateReadyMenuItem = NSLocalizedString("update.ready.menu.item", value: "Update Ready - Restart to Update", comment: "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app")
+    static let updateBannerRowTitle = NotLocalizedString("update.banner.row.title", value: "Update ready", comment: "Title of the compact banner at the top of the browser menu that tells the user an update is ready to install")
+    static let updateBannerCardTitle = NotLocalizedString("update.banner.card.title", value: "New version available", comment: "Title of the illustrated card at the top of the browser menu that tells the user a new version of the browser is available")
+    static let updateBannerOpenAppStoreButton = NotLocalizedString("update.banner.open-app-store.button", value: "Open App Store", comment: "Button in the update banner at the top of the browser menu that opens DuckDuckGo in the App Store")
+    static let addressBarUpdateButton = NotLocalizedString("update.address-bar.button", value: "Update now", comment: "Button next to the browser menu button that starts updating the browser")
     static let releaseNotesMenuItem = NSLocalizedString("release.notes.menu.item", value: "Release Notes", comment: "Title of the dialog menu item that opens release notes")
     static let whatsNewMenuItem = NSLocalizedString("whats.new.menu.item", value: "What's New", comment: "Title of the dialog menu item that opens the 'What's New' page")
     static let browserUpdatesTitle = NSLocalizedString("settings.browser.updates.title", value: "Browser Updates", comment: "Title of the section in Settings where people set up automatic vs manual updates")

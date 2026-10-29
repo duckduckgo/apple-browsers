@@ -359,7 +359,7 @@ jobs:
           TASK_NOTES: |
             ${{ steps.task.outputs.kind == 'review' && format('🌍 The {0} {1} Smartling job is over the limit for automatic authorization.{2}', inputs.platform, inputs.kind, inputs.kind == 'release' && ' The release''s translations are imported once it''s authorized and completed.' || '') || format('❌ Submitting the {0} {1} strings to Smartling failed, so nothing was authorized.{2}', inputs.platform, inputs.kind, steps.submit.outputs.job_id && ' The job created before the failure is left in Smartling.' || '') }}
 
-            🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
+            🔗 Job: ${{ steps.submit.outputs.job_url || 'no job was created' }}
             💵 Maximum USD estimate / limit: ${{ steps.submit.outputs.max_usd && format('${0}', steps.submit.outputs.max_usd) || 'unavailable' }} / $${{ env.AUTO_AUTHORIZE_MAX_USD }}
             📝 String translations: ${{ steps.submit.outputs.total_strings && format('{0} across {1} locales', steps.submit.outputs.total_strings, steps.submit.outputs.locales) || 'unavailable' }}
             ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (job resolution, checkout, runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
@@ -390,7 +390,7 @@ jobs:
             ⚠️ ${{ steps.open-task.outcome == 'failure' && format('The {0} Smartling job for this release is over the limit for automatic authorization, but its review task couldn''t be created, so nobody has been asked to authorize it.', inputs.platform) || format('The {0} strings for this release weren''t submitted to Smartling, so no translations are on the way yet.', inputs.platform) }} The release carries on: nothing waits for this submission.
 
             ✋ Reason: ${{ steps.submit.outputs.reason || 'A step failed before Smartling returned a result (job resolution, checkout, runner setup, Xcode, localization export or the submit script). See the workflow logs.' }}
-            🔗 Job: ${{ steps.submit.outputs.job_id && format('https://dashboard.smartling.com/app/projects/{0}/account-jobs/{0}:{1}', env.SMARTLING_PROJECT_ID, steps.submit.outputs.job_id) || 'no job was created' }}
+            🔗 Job: ${{ steps.submit.outputs.job_url || 'no job was created' }}
             🌿 Branch: ${{ inputs.branch }}
             ⚙️ Workflow: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
             🔁 ${{ steps.open-task.outcome == 'failure' && 'To get the translations, review and authorize the job in Smartling.' || format('To submit them, fix the cause and run Smartling - Submit with kind release for {0}.', inputs.branch) }}

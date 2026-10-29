@@ -84,8 +84,11 @@ public final class WideEventUserDefaultsStorage: WideEventStoring {
             guard key.hasPrefix("\(T.metadata.pixelName).") else { continue }
             let globalID = String(key.dropFirst(T.metadata.pixelName.count + 1))
             guard !globalID.isEmpty, UUID(uuidString: globalID) != nil else { continue }
-            if let decoded: T = (try? load(globalID: globalID)) {
-                results.append(decoded)
+            do {
+                results.append(try load(globalID: globalID))
+            } catch {
+                // Saved with a value this version no longer knows, so it can never be sent.
+                defaults.removeObject(forKey: key)
             }
         }
 

@@ -1121,7 +1121,43 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
 
         sendChats(5, through: storage)
         sendChats(2, through: storage)
+        XCTAssertEqual(storage.chatsPublisherRequests, 0, "Chats aren't observed while the feature is off")
+
         featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+
+        XCTAssertEqual(storage.chatsPublisherRequests, 1)
+        XCTAssertTrue(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testShowSuggestedPrompts_isFalseOnceTheFeatureTurnsOnWithChatsAtTheLimit() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": false]
+        let storage = ObservableChatStorage()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+        sendChats(5, through: storage)
+
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        featureFlagger.triggerUpdate()
+        drainMainQueue()
+        sendChats(2, through: storage)
+
+        XCTAssertFalse(provider.showSuggestedPrompts)
+    }
+
+    @MainActor
+    func testResetSuggestedPrompts_bringsTheChipsBackWithChatsAtTheLimit() throws {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.featuresStub = ["aiChatNtpSuggestedPrompts": true]
+        let storage = ObservableChatStorage()
+        let store = try makeStore()
+        let provider = try makeProvider(persistor: MockAIChatPreferencesPersisting(), keyValueStore: store, featureFlagger: featureFlagger, duckAiStorageHandler: storage)
+        sendChats(5, through: storage)
+        XCTAssertFalse(provider.showSuggestedPrompts)
+
+        NewTabPageOmnibarConfigProvider.resetSuggestedPrompts(in: store, notificationCenter: NotificationCenter())
 
         XCTAssertTrue(provider.showSuggestedPrompts)
     }
@@ -1130,9 +1166,14 @@ final class NewTabPageOmnibarConfigProviderTests: XCTestCase {
     @MainActor
     private func sendChats(_ count: Int, through storage: ObservableChatStorage) {
         storage.chats.send((0..<count).map { DuckAiChatRecord(chatId: "chat-\($0)", data: Data("{}".utf8)) })
-        let applied = expectation(description: "\(count) chats applied")
-        DispatchQueue.main.async { applied.fulfill() }
-        wait(for: [applied], timeout: 1)
+        drainMainQueue()
+    }
+
+    @MainActor
+    private func drainMainQueue() {
+        let drained = expectation(description: "main queue drained")
+        DispatchQueue.main.async { drained.fulfill() }
+        wait(for: [drained], timeout: 1)
     }
 
     @MainActor

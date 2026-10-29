@@ -139,6 +139,32 @@ final class DuckAiNativeDataStoreChatsTests: XCTestCase {
         XCTAssertEqual(received, [DuckAiChatRecord(chatId: "chat-1", data: Data("hello".utf8))])
     }
 
+    func testChatCountPublisher_emitsTheCountAndOnlyChangesOfIt() throws {
+        try sut.putChat(chatId: "chat-1", data: Data("hello".utf8))
+
+        var received: [Int] = []
+        let initial = expectation(description: "initial count")
+        let afterAdd = expectation(description: "count after a chat is added")
+        sut.chatCountPublisher()
+            .sink(
+                receiveCompletion: { _ in },
+                receiveValue: { count in
+                    received.append(count)
+                    if received.count == 1 { initial.fulfill() }
+                    if count == 2 { afterAdd.fulfill() }
+                }
+            )
+            .store(in: &cancellables)
+
+        wait(for: [initial], timeout: 2)
+        // Rewriting a chat, as a streamed response does, leaves the count as it is.
+        try sut.putChat(chatId: "chat-1", data: Data("hello again".utf8))
+        try sut.putChat(chatId: "chat-2", data: Data("hi".utf8))
+        wait(for: [afterAdd], timeout: 2)
+
+        XCTAssertEqual(received, [1, 2])
+    }
+
     func testChatsPublisher_reEmitsWhenAChatIsAdded() throws {
         let initial = expectation(description: "initial emission")
         let afterWrite = expectation(description: "emission after write")

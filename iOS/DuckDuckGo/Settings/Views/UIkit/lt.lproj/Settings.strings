@@ -1,20 +1,11 @@
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Prašyti apsaugoti svetaines prisijungiant";
 
-/* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
-"cW7-OM-2oW.text" = "Visuotinė privatumo kontrolė (VPK)";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Etiketė";
 
-/* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
-"fV3-86-QQj.title" = "Visuotinė privatumo kontrolė (VPK)";
-
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Apsaugotų svetainių dar nėra";
-
-/* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
-"tWw-Lh-ZT1.title" = "Visuotinė privatumo kontrolė (VPK)";
 
 /* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
 "UZx-52-aer.text" = "Pašalinti visas apsaugotas svetaines";

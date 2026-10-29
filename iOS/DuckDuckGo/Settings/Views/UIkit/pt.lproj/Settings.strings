@@ -1,20 +1,11 @@
 /* Class = "UILabel"; text = "Ask to Fireproof sites on sign-in"; ObjectID = "bIg-0T-UWq"; */
 "bIg-0T-UWq.text" = "Pedir sites com Barreiras de segurança ao iniciar sessão";
 
-/* Class = "UILabel"; text = "Global Privacy Control (GPC)"; ObjectID = "cW7-OM-2oW"; */
-"cW7-OM-2oW.text" = "Controlo Global de Privacidade (CGP)";
-
 /* Class = "UILabel"; text = "Label"; ObjectID = "dud-qo-Ces"; */
 "dud-qo-Ces.text" = "Rótulo";
 
-/* Class = "UITableViewController"; title = "Global Privacy Control (GPC)"; ObjectID = "fV3-86-QQj"; */
-"fV3-86-QQj.title" = "Controlo Global de Privacidade (CGP)";
-
 /* Class = "UILabel"; text = "No Fireproof sites yet"; ObjectID = "OfP-Kw-IOk"; */
 "OfP-Kw-IOk.text" = "Ainda sem sites com Barreira de segurança";
-
-/* Class = "UINavigationItem"; title = "Global Privacy Control (GPC)"; ObjectID = "tWw-Lh-ZT1"; */
-"tWw-Lh-ZT1.title" = "Controlo Global de Privacidade (CGP)";
 
 /* Class = "UILabel"; text = "Remove All Fireproof Sites"; ObjectID = "UZx-52-aer"; */
 "UZx-52-aer.text" = "Remover todos os sites com barreira de segurança";

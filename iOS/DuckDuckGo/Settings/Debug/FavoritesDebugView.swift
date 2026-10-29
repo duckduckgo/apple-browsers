@@ -22,6 +22,7 @@ import Bookmarks
 import CoreData
 import Persistence
 import Combine
+import DDGError
 
 struct FavoritesDebugView: View {
 
@@ -39,53 +40,69 @@ struct FavoritesDebugView: View {
     var body: some View {
         List {
             Section {
-                Button("Add 5 Favorites") {
+                Button {
                     perform { try model.addFavorites(count: 5) }
+                } label: {
+                    Text(verbatim: "Add 5 Favorites")
                 }
-                Button("Add 30 Favorites") {
+                Button {
                     perform { try model.addFavorites(count: 30) }
+                } label: {
+                    Text(verbatim: "Add 30 Favorites")
                 }
             } header: {
-                Text("Add Favorites")
+                Text(verbatim: "Add Favorites")
             } footer: {
-                Text("Adds example.com bookmarks to your current favorites. Changes can sync to your other devices.")
+                Text(verbatim: "Adds example.com bookmarks to your current favorites. Changes can sync to your other devices.")
             }
 
             Section {
-                TextField("Number of favorites", text: $customCount)
+                TextField(text: $customCount) {
+                    Text(verbatim: "Number of favorites")
+                }
                     .keyboardType(.numberPad)
-                    .accessibilityLabel("Number of favorites")
-                Button("Add Custom Count") {
+                    .accessibilityLabel(Text(verbatim: "Number of favorites"))
+                Button {
                     guard let count = Int(customCount) else { return }
                     perform { try model.addFavorites(count: count) }
+                } label: {
+                    Text(verbatim: "Add Custom Count")
                 }
                 .disabled(!FavoritesDebugViewModel.allowedCounts.contains(Int(customCount) ?? 0))
             } header: {
-                Text("Add Custom Count")
+                Text(verbatim: "Add Custom Count")
             } footer: {
-                Text("Adds example.com bookmarks to your current favorites. Enter a count from 1 to 1,000. Changes can sync to your other devices.")
+                Text(verbatim: "Adds example.com bookmarks to your current favorites. Enter a count from 1 to 1,000. Changes can sync to your other devices.")
             }
 
             Section {
-                Button("Remove All Favorites", role: .destructive) {
+                Button(role: .destructive) {
                     showingRemoveConfirmation = true
+                } label: {
+                    Text(verbatim: "Remove All Favorites")
                 }
                 .disabled(model.favoritesCount == 0)
             } footer: {
-                Text("Removes favorite status from all favorites in your current display mode. Bookmarks are kept.")
+                Text(verbatim: "Removes favorite status from all favorites in your current display mode. Bookmarks are kept.")
             }
         }
-        .navigationTitle("\(model.favoritesCount) Favorites")
-        .alert("Remove All Favorites?", isPresented: $showingRemoveConfirmation) {
-            Button("Cancel", role: .cancel) { }
-            Button("Remove All", role: .destructive) {
+        .navigationTitle(Text(verbatim: "\(model.favoritesCount) Favorites"))
+        .alert(Text(verbatim: "Remove All Favorites?"), isPresented: $showingRemoveConfirmation) {
+            Button(role: .cancel) { } label: {
+                Text(verbatim: "Cancel")
+            }
+            Button(role: .destructive) {
                 perform { try model.removeAllFavorites() }
+            } label: {
+                Text(verbatim: "Remove All")
             }
         } message: {
-            Text("Bookmarks will be kept. This change can sync to your other devices.")
+            Text(verbatim: "Bookmarks will be kept. This change can sync to your other devices.")
         }
-        .alert("Favorites Update Failed", isPresented: $showingError) {
-            Button("OK", role: .cancel) { }
+        .alert(Text(verbatim: "Favorites Update Failed"), isPresented: $showingError) {
+            Button(role: .cancel) { } label: {
+                Text(verbatim: "OK")
+            }
         } message: {
             Text(errorMessage)
         }
@@ -176,11 +193,20 @@ final class FavoritesDebugViewModel: ObservableObject {
         }
     }
 
-    private enum OperationError: LocalizedError {
+    private enum OperationError: DDGError {
         case invalidCount
         case missingFolders
 
-        var errorDescription: String? {
+        static let errorDomain = "com.duckduckgo.favoritesDebug"
+
+        var errorCode: Int {
+            switch self {
+            case .invalidCount: return 1
+            case .missingFolders: return 2
+            }
+        }
+
+        var description: String {
             switch self {
             case .invalidCount:
                 return "Enter a count from 1 to 1,000."

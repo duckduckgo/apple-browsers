@@ -312,6 +312,7 @@ extension Preferences {
             static let cardCornerRadius: CGFloat = 12
             static let rowHeight: CGFloat = 58
             static let rowHorizontalPadding: CGFloat = 10
+            static let rowVerticalPadding: CGFloat = 12
             static let titleFontSize: CGFloat = 13
             static let detailsFontSize: CGFloat = 11
             static let removeButtonTopPadding: CGFloat = 56
@@ -385,12 +386,14 @@ extension Preferences {
                 Text(title)
                     .font(.system(size: Const.titleFontSize))
                     .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
                 Text(details)
                     .font(.system(size: Const.detailsFontSize))
                     .foregroundColor(Color(designSystemColor: .textSecondary, palette: palette))
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .lineLimit(1)
-            .truncationMode(.tail)
+            .padding(.vertical, Const.rowVerticalPadding)
             .frame(maxWidth: .infinity, minHeight: Const.rowHeight, alignment: .leading)
         }
 

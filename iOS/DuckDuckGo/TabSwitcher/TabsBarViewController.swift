@@ -87,6 +87,7 @@ class TabsBarViewController: UIViewController {
     var buttonsBackground: UIView { tabsBarView.buttonsBackground }
 
     private var addTabButtonLeadingConstraint: NSLayoutConstraint?
+    private weak var tabSearchController: TabsBarSearchViewController?
     private var currentLayout: TabsBarLayout?
     private var draggedTabOriginalFrame: CGRect?
     private var draggedTabGrabOffset: CGFloat = 0
@@ -97,6 +98,18 @@ class TabsBarViewController: UIViewController {
 
     // Opaque backdrop so tabs scrolling under the sticky button don't show through it.
     private let addTabButtonBackground = UIView()
+    private let searchTabBackground = TabFlaredBackgroundView()
+    private let searchTabBackdrop = UIView()
+
+    lazy var searchTabsButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(DesignSystemImages.Glyphs.Size16.searchFind, for: .normal)
+        button.accessibilityLabel = "Search Tabs"
+        button.accessibilityIdentifier = "Browser.TabsBar.SearchTabsButton"
+        button.isPointerInteractionEnabled = true
+        button.isHidden = true
+        return button
+    }()
 
     // Draws the active tab's flared background; the callbacks below forward to it.
     private lazy var flareBackground = TabFlareBackgroundController(
@@ -253,6 +266,13 @@ class TabsBarViewController: UIViewController {
         addTabButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(addTabButtonBackground)
         view.addSubview(addTabButton)
+        [searchTabBackdrop, searchTabBackground, searchTabsButton].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview($0)
+        }
+        searchTabBackdrop.isHidden = true
+        searchTabBackground.isHidden = true
+        searchTabBackdrop.isUserInteractionEnabled = false
         let leadingConstraint = addTabButton.leadingAnchor.constraint(equalTo: collectionView.leadingAnchor)
         addTabButtonLeadingConstraint = leadingConstraint
         NSLayoutConstraint.activate([
@@ -264,8 +284,23 @@ class TabsBarViewController: UIViewController {
             addTabButtonBackground.topAnchor.constraint(equalTo: view.topAnchor),
             addTabButtonBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+        NSLayoutConstraint.activate([
+            searchTabsButton.trailingAnchor.constraint(equalTo: addTabButton.leadingAnchor, constant: -Constants.addTabButtonGap),
+            searchTabsButton.widthAnchor.constraint(equalToConstant: Constants.buttonWidth),
+            searchTabsButton.topAnchor.constraint(equalTo: view.topAnchor),
+            searchTabsButton.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            searchTabBackground.leadingAnchor.constraint(equalTo: searchTabsButton.leadingAnchor, constant: -Constants.tabRampSize.width),
+            searchTabBackground.trailingAnchor.constraint(equalTo: searchTabsButton.trailingAnchor, constant: Constants.tabRampSize.width),
+            searchTabBackground.topAnchor.constraint(equalTo: view.topAnchor),
+            searchTabBackground.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            searchTabBackdrop.leadingAnchor.constraint(equalTo: searchTabBackground.leadingAnchor),
+            searchTabBackdrop.trailingAnchor.constraint(equalTo: addTabButton.leadingAnchor),
+            searchTabBackdrop.topAnchor.constraint(equalTo: view.topAnchor),
+            searchTabBackdrop.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
 
         addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
+        searchTabsButton.addTarget(self, action: #selector(onSearchTabsPressed), for: .touchUpInside)
         aiChatChip.textButton.addTarget(self, action: #selector(onAIChatPressed), for: .touchUpInside)
         aiChatChip.iconButton.addTarget(self, action: #selector(onAIChatContextualSheetIconPressed), for: .touchUpInside)
         aiChatMenuButton.addTarget(self, action: #selector(onAIChatMenuButtonPressed), for: .touchUpInside)
@@ -403,6 +438,34 @@ class TabsBarViewController: UIViewController {
         requestNewTab(type: .currentMode)
     }
 
+    @objc private func onSearchTabsPressed() {
+        guard currentLayout?.showsSearchButton == true, presentedViewController == nil else { return }
+        delegate?.tabsBarDidRequestDismissContextualSheet(self) { [weak self] in
+            self?.presentTabSearch()
+        }
+    }
+
+    private func presentTabSearch() {
+        guard currentLayout?.showsSearchButton == true, presentedViewController == nil else { return }
+        let controller = TabsBarSearchViewController()
+        controller.tabs = tabsModel?.tabs ?? []
+        controller.onSelect = { [weak self, weak controller] tab in
+            controller?.navigationController?.dismiss(animated: true) { [weak self] in
+                guard let self, let index = self.tabsModel?.indexOf(tab: tab) else { return }
+                self.collectionView(self.collectionView, didSelectItemAt: IndexPath(item: index, section: 0))
+                self.scrollToSelectedTab()
+            }
+        }
+        let navigation = UINavigationController(rootViewController: controller)
+        navigation.modalPresentationStyle = .popover
+        navigation.preferredContentSize = CGSize(width: 420, height: 480)
+        navigation.overrideUserInterfaceStyle = tabManager?.currentBrowsingMode == .fire ? .dark : .unspecified
+        navigation.popoverPresentationController?.sourceView = searchTabsButton
+        navigation.popoverPresentationController?.sourceRect = searchTabsButton.bounds
+        tabSearchController = controller
+        present(navigation, animated: true)
+    }
+
     @objc private func onAIChatPressed() {
         PixelKit.fire(Pixel.Event.openAIChatFromNavigationBarShortcut, frequency: .dailyAndCount)
         delegate?.tabsBarDidRequestAIChat(self)
@@ -421,6 +484,7 @@ class TabsBarViewController: UIViewController {
 
     func refresh(tabsModel: TabsModelManaging?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
+        tabSearchController?.tabs = tabsModel?.tabs ?? []
         recomputeItemSize()
         reloadData()
         fireUsageDailyPixels()
@@ -435,6 +499,7 @@ class TabsBarViewController: UIViewController {
             return
         }
         self.tabsModel = tabsModel
+        tabSearchController?.tabs = tabsModel.tabs
         if animatesSelectionReveal, let currentIndex {
             // The page has already switched; animate only the strip's new selection and reveal.
             UIView.animate(withDuration: UIAccessibility.isReduceMotionEnabled ? 0 : 0.18,
@@ -459,6 +524,7 @@ class TabsBarViewController: UIViewController {
             return
         }
         self.tabsModel = tabsModel
+        tabSearchController?.tabs = tabsModel.tabs
         // deleteItems animates by default; suppress it to match reloadData()'s instant update.
         UIView.performWithoutAnimation {
             collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
@@ -531,9 +597,13 @@ class TabsBarViewController: UIViewController {
             minItemWidth: Constants.minItemWidth,
             maxItemWidth: maxItemWidth(forStripWidth: availableStripWidth),
             buttonWidth: Constants.buttonWidth,
-            buttonGap: Constants.addTabButtonGap
+            buttonGap: Constants.addTabButtonGap,
+            searchButtonWidth: Constants.buttonWidth
         )
         currentLayout = layout
+        searchTabsButton.isHidden = !layout.showsSearchButton
+        searchTabBackground.isHidden = !layout.showsSearchButton
+        searchTabBackdrop.isHidden = !layout.showsSearchButton
 
         if let flowLayout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout, tabsCount > 0 {
             flowLayout.itemSize = CGSize(width: layout.itemWidth, height: view.frame.size.height)
@@ -580,6 +650,7 @@ class TabsBarViewController: UIViewController {
     }
 
     private func reloadData() {
+        tabSearchController?.tabs = tabsModel?.tabs ?? []
         tabAwaitingSelection = nil
         collectionView.reloadData()
         refreshTabSwitcherButton()
@@ -596,6 +667,7 @@ class TabsBarViewController: UIViewController {
     }
 
     func reloadCell(for tab: Tab) {
+        tabSearchController?.tabs = tabsModel?.tabs ?? []
         guard let index = tabsModel?.indexOf(tab: tab) else { return }
         let indexPath = IndexPath(item: index, section: 0)
         guard collectionView.indexPathsForVisibleItems.contains(indexPath) else { return }
@@ -1137,6 +1209,8 @@ extension TabsBarViewController {
         collectionView.backgroundColor = .clear
         buttonsBackground.backgroundColor = theme.tabsBarBackgroundColor
         addTabButtonBackground.backgroundColor = theme.tabsBarBackgroundColor
+        searchTabBackdrop.backgroundColor = theme.tabsBarBackgroundColor
+        searchTabBackground.fillColor = theme.omniBarBackgroundColor
 
         collectionView.reloadData()
         collectionView.layoutIfNeeded()

@@ -25,27 +25,33 @@ struct TabsBarLayout {
 
     let itemWidth: CGFloat
     let isFloored: Bool
+    let showsSearchButton: Bool
     let addTabButtonLeadingOffset: CGFloat
     let addTabButtonContentInsetRight: CGFloat
 
     init(stripWidth: CGFloat, tabsCount: Int, minItemWidth: CGFloat, maxItemWidth: CGFloat,
-         buttonWidth: CGFloat, buttonGap: CGFloat) {
+         buttonWidth: CGFloat, buttonGap: CGFloat, searchButtonWidth: CGFloat = 0) {
         guard stripWidth > 0 else {
             itemWidth = 0
             isFloored = false
+            showsSearchButton = false
             addTabButtonLeadingOffset = 0
             addTabButtonContentInsetRight = 0
             return
         }
 
-        let reservedWidth = max(0, stripWidth - buttonWidth - buttonGap)
+        let availableWidth = max(0, stripWidth - buttonWidth - buttonGap)
+        // Decide before reserving the search control, so it cannot cause its own overflow.
+        showsSearchButton = tabsCount > 0 && CGFloat(tabsCount) * minItemWidth > availableWidth && searchButtonWidth > 0
+        let searchReservation = showsSearchButton ? searchButtonWidth + buttonGap : 0
+        let reservedWidth = max(0, availableWidth - searchReservation)
         itemWidth = Self.itemWidth(availableWidth: reservedWidth, visibleItems: tabsCount,
                                     minWidth: minItemWidth, maxWidth: maxItemWidth)
         isFloored = itemWidth > 0 && itemWidth <= minItemWidth
 
         let contentWidth = CGFloat(tabsCount) * itemWidth
         addTabButtonLeadingOffset = isFloored ? max(0, stripWidth - buttonWidth) : contentWidth + buttonGap
-        addTabButtonContentInsetRight = isFloored ? buttonWidth + buttonGap : 0
+        addTabButtonContentInsetRight = isFloored ? buttonWidth + buttonGap + searchReservation : 0
     }
 
     /// Equal share of the strip, capped at `maxWidth` then floored at `minWidth` (floor wins).

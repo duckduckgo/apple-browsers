@@ -140,6 +140,25 @@ final class TabsBarLayoutTests: XCTestCase {
         XCTAssertEqual(result.addTabButtonLeadingOffset, gap, accuracy: accuracy)
         XCTAssertEqual(result.addTabButtonContentInsetRight, 0, accuracy: accuracy)
     }
+
+    func testSearchTabAppearsOnlyBeyondExactFitAndReservesItsWidth() {
+        for width in [CGFloat(530), 531, 529] {
+            let result = TabsBarLayout(stripWidth: width, tabsCount: 4, minItemWidth: minWidth, maxItemWidth: 300,
+                                       buttonWidth: buttonWidth, buttonGap: gap, searchButtonWidth: buttonWidth)
+            XCTAssertEqual(result.showsSearchButton, width < 530)
+            if result.showsSearchButton {
+                XCTAssertEqual(result.addTabButtonContentInsetRight, 2 * (buttonWidth + gap), accuracy: accuracy)
+            }
+        }
+    }
+
+    func testSearchTabHidesWithNoTabsOrNoStrip() {
+        for (width, count) in [(CGFloat(0), 10), (900, 0)] {
+            let result = TabsBarLayout(stripWidth: width, tabsCount: count, minItemWidth: minWidth, maxItemWidth: 300,
+                                       buttonWidth: buttonWidth, buttonGap: gap, searchButtonWidth: buttonWidth)
+            XCTAssertFalse(result.showsSearchButton)
+        }
+    }
 }
 
 @MainActor

@@ -3602,6 +3602,14 @@
 		FD8C554D30455000D23DB903 /* EventHub in Frameworks */ = {isa = PBXBuildFile; productRef = CA7335A53836D5A56E2F5B4A /* EventHub */; };
 		FDA1B4BA3496AAC580206639 /* AIChatScreenRecordingPermissionDialog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EE53F7B34DCDE5FB7BAFD7 /* AIChatScreenRecordingPermissionDialog.swift */; };
 		FFF6627FC03B410786EF2635 /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E776DE170ED47F4B3E992DF /* RebrandedContextualOnboardingDialogs+SearchCompleted.swift */; };
+		EEACDECA46B814D062622206 /* SafariHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */; };
+		1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */; };
+		80978128CD955A845BE962D1 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */; };
+		2DDC6062FFB8E4F4C4618F55 /* UpdateBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */; };
+		792BE1F0CD5692DD43762863 /* AddressBarUpdateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */; };
+		56249313D17C9A5B0CFBC973 /* AddressBarUpdateButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */; };
+		362FAD50191BC48E988D89A8 /* MoreProminentUpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */; };
+		96A6957FC87A0E7D373A79E6 /* MoreProminentUpdatesDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -5515,6 +5523,10 @@
 		FB0C0800000000000000CE01 /* PageContextExtractionPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageContextExtractionPixelHandler.swift; sourceTree = "<group>"; };
 		FC6A1D3C2297F810D9AF56C1 /* NonBlockingOnboarding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonBlockingOnboarding.swift; sourceTree = "<group>"; };
 		FD23FD2C2886A81D007F6985 /* AutoconsentManagement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoconsentManagement.swift; sourceTree = "<group>"; };
+		1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SafariHistoryReader.swift; sourceTree = "<group>"; };
+		398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBannerView.swift; sourceTree = "<group>"; };
+		0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarUpdateButton.swift; sourceTree = "<group>"; };
+		54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreProminentUpdatesDebugMenu.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -6226,6 +6238,7 @@
 				BB4830C82E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift */,
 				BB98DF472E74AEC500C15330 /* AppStore */,
 				BB98DF462E74AE9100C15330 /* Sparkle */,
+				5D0C91F836258CA674F5DA16 /* MoreProminentUpdates */,
 				C8E83B44C98E513830A68B8C /* UpdateNotificationPromoBridge.swift */,
 				AC0AC7AE1E7A467B93B0F2C5 /* UpdateAvailablePromoDelegate.swift */,
 				0306A5AC965747A4A7BD1343 /* BrowserUpdatedPromoDelegate.swift */,
@@ -7491,6 +7504,7 @@
 			isa = PBXGroup;
 			children = (
 				4BB99CFC26FE191E001E4761 /* SafariBookmarksReader.swift */,
+				1B3A8568E1D39FF37D77C9D9 /* SafariHistoryReader.swift */,
 				4BB99CFD26FE191E001E4761 /* SafariDataImporter.swift */,
 				4B0AACAD28BC6FD0001038AC /* SafariFaviconsReader.swift */,
 			);
@@ -10135,6 +10149,16 @@
 			path = PromptInput;
 			sourceTree = "<group>";
 		};
+		5D0C91F836258CA674F5DA16 /* MoreProminentUpdates */ = {
+			isa = PBXGroup;
+			children = (
+				398AE0FCD0117E7EC93228D0 /* UpdateBannerView.swift */,
+				0132D4CACFD5583EB4FA0959 /* AddressBarUpdateButton.swift */,
+				54C040BCD9735327B12497A0 /* MoreProminentUpdatesDebugMenu.swift */,
+			);
+			path = MoreProminentUpdates;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -12143,6 +12167,7 @@
 				B65C7DFC2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
 				AA5E1EC72A0000000000E003 /* WKWebView+MainResourceData.swift in Sources */,
 				3706FAF4293F65D500E42796 /* SafariBookmarksReader.swift in Sources */,
+				EEACDECA46B814D062622206 /* SafariHistoryReader.swift in Sources */,
 				36E8D3722F857F9000861037 /* SubscriptionPromoTabExtension.swift in Sources */,
 				376E8C1B2D41186B00D5D2EC /* DefaultRecentActivityActionsHandler.swift in Sources */,
 				37F09AD72DDE483500643A1B /* AppearancePreferencesMock.swift in Sources */,
@@ -12718,6 +12743,9 @@
 				3706FBDC293F65D500E42796 /* Permissions.xcdatamodeld in Sources */,
 				4B41EDB52B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */,
 				BB4830CD2E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift in Sources */,
+				2DDC6062FFB8E4F4C4618F55 /* UpdateBannerView.swift in Sources */,
+				56249313D17C9A5B0CFBC973 /* AddressBarUpdateButton.swift in Sources */,
+				96A6957FC87A0E7D373A79E6 /* MoreProminentUpdatesDebugMenu.swift in Sources */,
 				371209302C233D66003ADF3D /* RemoteMessagingDatabase.swift in Sources */,
 				3706FBDD293F65D500E42796 /* PaddedImageButton.swift in Sources */,
 				BB8E056E2EE0D22E006CD2E6 /* HomePageSubscriptionCardVisibilityManager.swift in Sources */,
@@ -13839,6 +13867,7 @@
 				317307272CD248DB00C492AB /* AutofillToolbarOnboardingPopover.swift in Sources */,
 				CDCC672B44CC6EA9370CAAA1 /* AutofillToolbarPinningPromoDelegate.swift in Sources */,
 				4BB99D0326FE191E001E4761 /* SafariBookmarksReader.swift in Sources */,
+				1335CC7FAF8E9433F1048426 /* SafariHistoryReader.swift in Sources */,
 				BBD7A1D12F97F0FF00D6AF54 /* AIChatReasoningEffort.swift in Sources */,
 				316913292BD2C7570051B46D /* DataBrokerProtectionErrorViewController.swift in Sources */,
 				1DA6D0FD2A1FF9A100540406 /* HTTPCookie.swift in Sources */,
@@ -14567,6 +14596,9 @@
 				BBB891E72DAEC1C1001A42DF /* MoreOptionsMenuIconsProviding.swift in Sources */,
 				CB63DECB2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */,
 				BB4830CB2E7CB001002D320C /* AppStoreUpdatesDebugMenu.swift in Sources */,
+				80978128CD955A845BE962D1 /* UpdateBannerView.swift in Sources */,
+				792BE1F0CD5692DD43762863 /* AddressBarUpdateButton.swift in Sources */,
+				362FAD50191BC48E988D89A8 /* MoreProminentUpdatesDebugMenu.swift in Sources */,
 				BB3A50B32EE063E700BD4BDD /* HomePageContinueSetUpModelPersistor.swift in Sources */,
 				B6040856274B830F00680351 /* DictionaryExtension.swift in Sources */,
 				B684592725C93C0500DC17B6 /* Publishers.NestedObjectChanges.swift in Sources */,

@@ -470,6 +470,74 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testHistoricalError6NotificationDoesNotRestartHealthyBackground() async throws {
+        var recoveryEnabled = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { recoveryEnabled },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+
+        // Recovery can happen independently while WebKit keeps the historical error entry.
+        let healthyView = WKWebView()
+        context.retainedBackgroundWebView = healthyView
+        recoveryEnabled = true
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6), NSError(domain: "unrelated", code: 1)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let restarted = expectation(description: "Historical error must not restart a healthy context")
+        restarted.isInverted = true
+        let observer = Task { @MainActor in
+            for await event in manager.lifecycleEvents {
+                if case .reloaded = event { restarted.fulfill() }
+            }
+        }
+        defer { observer.cancel() }
+        await fulfillment(of: [restarted], timeout: 0.2)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertIdentical(context.retainedBackgroundWebView, healthyView)
+        XCTAssertTrue(context.completions.isEmpty)
+    }
+
+    @MainActor
+    func testAdditionalEqualError6StillRestartsRetainedBackground() async throws {
+        try await assertNewError6RestartsRetainedBackground(removeHistoricalError: false)
+    }
+
+    @MainActor
+    func testError6ReappearingAfterRemovalStillRestartsRetainedBackground() async throws {
+        try await assertNewError6RestartsRetainedBackground(removeHistoricalError: true)
+    }
+
+    @MainActor
+    private func assertNewError6RestartsRetainedBackground(removeHistoricalError: Bool) async throws {
+        var recoveryEnabled = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { recoveryEnabled },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        if removeHistoricalError {
+            context.recordedErrors = []
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        }
+        recoveryEnabled = true
+        context.retainedBackgroundWebView = WKWebView()
+        let restarted = expectation(description: "A new failure must still restart the retained view")
+        context.onBackgroundLoad = { restarted.fulfill() }
+        context.recordedErrors = removeHistoricalError ? [error] : [error, error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        await fulfillment(of: [restarted], timeout: 2)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
     func testQueuedError6RestartHonorsRuntimeKillSwitch() async throws {
         var restartEnabled = true
         let manager = makeManager(controllerConfiguration: .nonPersistent(),

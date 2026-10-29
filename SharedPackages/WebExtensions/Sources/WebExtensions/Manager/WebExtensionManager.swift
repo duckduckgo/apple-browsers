@@ -191,6 +191,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private var isCPMMessagingRecoveryInProgress = false
     private var lastBackgroundLoadRecoveryAt: Date?
     private var backgroundLoadErrorObserver: NSObjectProtocol?
+    /// WebKit can retain historical errors after recovery. Weak keys keep generations independent.
+    private let observedBackgroundLoadErrors = NSMapTable<WKWebExtensionContext, NSArray>.weakToStrongObjects()
     private var backgroundStartupFix: [String: CPMRecoveryFix] = [:]
     private weak var backgroundLoadRestartContext: WKWebExtensionContext?
     private var navigationWaitContexts: Set<String> = []
@@ -415,8 +417,17 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         ) { [weak self] notification in
             guard let context = notification.object as? WKWebExtensionContext else { return }
             MainActor.assumeIsolated {
-                guard let self, self.context(for: context.uniqueIdentifier) === context,
-                      let error = context.errors.first(where: { NSError.webKitSafe($0).isBackgroundContentLoadFailure }) else { return }
+                guard let self, self.context(for: context.uniqueIdentifier) === context else { return }
+                let errors = context.errors.map(NSError.webKitSafe).filter(\.isBackgroundContentLoadFailure)
+                var previousErrors = self.observedBackgroundLoadErrors.object(forKey: context) as? [NSError] ?? []
+                // Consume equal historical entries individually: another equal entry is a new failure.
+                let newErrors = errors.filter { error in
+                    guard let index = previousErrors.firstIndex(where: { $0.isEqual(error) }) else { return true }
+                    previousErrors.remove(at: index)
+                    return false
+                }
+                self.observedBackgroundLoadErrors.setObject(errors as NSArray, forKey: context)
+                guard let error = newErrors.first else { return }
                 self.cpmBaseURLPolicy.recordBackgroundLoadFailure(in: context, errors: [error])
                 // WebKit can record a service-worker load failure without invoking pending
                 // loadBackgroundContent callbacks. Release callers before retrying its background.

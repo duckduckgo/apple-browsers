@@ -780,8 +780,6 @@ final class UnifiedToggleInputView: UIView {
     /// size they were measured at — a rotation between focus and dismiss invalidates them.
     private var cachedOmnibarMatchedInsetsWindowSize: CGSize?
     private var omnibarMaterialTransitionBackgroundColor: UIColor?
-    /// Resting-grey stand-in revealed as the editing fill fades. Flat color (not live glass) so the
-    /// morph keeps the card's silhouette without adding glass self-shadowing on top of the toolbar.
     private var omnibarMaterialBackdropView: UIView?
     /// Opaque editing surface whose alpha crossfades over `omnibarMaterialBackdropView`.
     private var omnibarMaterialEditingFillView: UIView?
@@ -954,12 +952,25 @@ final class UnifiedToggleInputView: UIView {
         UIColor(singleUseColor: .floatingAddressBarBackground)
     }
 
+    @available(iOS 26.0, *)
+    private func omnibarGlassEffect() -> UIGlassEffect {
+        let effect = UIGlassEffect(style: .regular)
+        if handler.isFireTab {
+            effect.tintColor = UIColor(singleUseColor: .fireModeBackground)
+        }
+        return effect
+    }
+
     private func ensureOmnibarMaterialTransitionViews() {
         if omnibarMaterialBackdropView == nil {
-            let backdrop = UIView()
+            let backdrop: UIView
+            if #available(iOS 26.0, *), cardPosition == .top {
+                backdrop = UIVisualEffectView(effect: omnibarGlassEffect())
+            } else {
+                backdrop = UIView()
+            }
             backdrop.translatesAutoresizingMaskIntoConstraints = false
             backdrop.isUserInteractionEnabled = false
-            backdrop.backgroundColor = restingMaterialColor()
             cardView.insertSubview(backdrop, at: 0)
             NSLayoutConstraint.activate([
                 backdrop.leadingAnchor.constraint(equalTo: cardView.leadingAnchor),
@@ -990,7 +1001,9 @@ final class UnifiedToggleInputView: UIView {
 
         let solid = omnibarMaterialTransitionBackgroundColor ?? cardBackgroundColor(isFireTab: false)
         omnibarMaterialEditingFillView?.backgroundColor = solid
-        omnibarMaterialBackdropView?.backgroundColor = restingMaterialColor()
+        if !(omnibarMaterialBackdropView is UIVisualEffectView) {
+            omnibarMaterialBackdropView?.backgroundColor = restingMaterialColor()
+        }
         syncOmnibarMaterialTransitionCorners()
     }
 
@@ -1016,7 +1029,7 @@ final class UnifiedToggleInputView: UIView {
             materialTransitionSavedExpandedShadowHidden = expandedShadowView.isHidden
             materialTransitionSavedCardShadowOpacity = cardView.layer.shadowOpacity
         }
-        // Floating resting chrome draws its shadow on the toolbar capsule, not the search pill.
+        // The resting material supplies the floating chrome's shadow.
         expandedShadowView.isHidden = true
         cardView.layer.shadowOpacity = 0
     }
@@ -1035,11 +1048,22 @@ final class UnifiedToggleInputView: UIView {
     private func scheduleOmnibarMaterialFill(alpha: CGFloat, delay: TimeInterval, duration: TimeInterval) {
         guard let fill = omnibarMaterialEditingFillView else { return }
         fill.layer.removeAllAnimations()
+        let glassBackdrop = omnibarMaterialBackdropView as? UIVisualEffectView
+        let animations = {
+            fill.alpha = alpha
+            if #available(iOS 26.0, *) {
+                glassBackdrop?.effect = alpha == 0 ? self.omnibarGlassEffect() : nil
+            }
+        }
+        if UIAccessibility.isReduceMotionEnabled {
+            UIView.performWithoutAnimation(animations)
+            return
+        }
         UIView.animate(
             withDuration: max(duration, 0.01),
             delay: max(delay, 0),
             options: [.curveEaseInOut, .beginFromCurrentState, .allowUserInteraction],
-            animations: { fill.alpha = alpha }
+            animations: animations
         )
     }
 
@@ -1388,13 +1412,14 @@ final class UnifiedToggleInputView: UIView {
     }
 
     func prepareForOmnibarMaterialTransition(duration: TimeInterval) {
-        guard cardPosition == .bottom else { return }
+        if cardPosition == .top {
+            guard #available(iOS 26.0, *) else { return }
+        }
         omnibarMaterialTransitionDuration = duration
         if omnibarMaterialTransitionBackgroundColor == nil {
             omnibarMaterialTransitionBackgroundColor = cardView.backgroundColor ?? cardBackgroundColor(isFireTab: false)
         }
         ensureOmnibarMaterialTransitionViews()
-        // Start on resting grey; white fades in after the pill silhouette is established.
         omnibarMaterialEditingFillView?.layer.removeAllAnimations()
         omnibarMaterialEditingFillView?.alpha = 0
         applyCardBackgroundColor(.clear)
@@ -1406,8 +1431,6 @@ final class UnifiedToggleInputView: UIView {
         if omnibarMaterialTransitionBackgroundColor != nil {
             ensureOmnibarMaterialTransitionViews()
             applyCardBackgroundColor(.clear)
-            // Fade white in over the first half so grey→white tracks the grow, without stretching
-            // a live glass effect across the expanded card.
             let fadeDuration = omnibarMaterialTransitionDuration * 0.45
             scheduleOmnibarMaterialFill(alpha: 1, delay: 0, duration: fadeDuration)
         }
@@ -1418,6 +1441,7 @@ final class UnifiedToggleInputView: UIView {
             // applyCardLayout's `(_, _)` case applies expandedShadows internally; the toggle-reveal
             // path bypasses it, so morph the omnibar-matching pre-stage shadows back here.
             expandedShadowView.updateShadows(expandedShadows)
+            expandedShadowView.isHidden = false
         case (_, _):
             applyCardLayout(.expanded(showsToggle: isToggleEnabled, showsToolbar: isToggleEnabled && toggleView.selectedMode == .aiChat), animated: false)
         }
@@ -1433,8 +1457,6 @@ final class UnifiedToggleInputView: UIView {
             ensureOmnibarMaterialTransitionViews()
             applyCardBackgroundColor(.clear)
             suppressShadowsForMaterialTransition()
-            // Keep white through most of the shrink, then fade to resting grey once the card is
-            // nearly pill-shaped — matching silhouette and avoiding a large grey round-rect.
             let fadeDuration = omnibarMaterialTransitionDuration * 0.4
             let fadeDelay = omnibarMaterialTransitionDuration * 0.55
             scheduleOmnibarMaterialFill(alpha: 0, delay: fadeDelay, duration: fadeDuration)

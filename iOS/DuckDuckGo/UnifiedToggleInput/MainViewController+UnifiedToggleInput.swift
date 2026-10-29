@@ -1669,7 +1669,6 @@ extension MainViewController: AIChatTabChatHeaderViewDelegate {
 
     func aiChatTabChatHeaderDidTapNewImage() {
         PixelKit.fire(Pixel.Event.aiChatNewImageTapped, frequency: .dailyAndCount)
-        // A new chat started from inside Duck.ai, in the same tab.
         fireAIChatEntryPointPixel(source: .duckAINewChat, opensNewTab: false, hasPrompt: false, chatState: .new)
         reportDuckAISessionCurrentTab()
         recordDuckAISessionNewChatCreatedOnCurrentTab()

@@ -40,7 +40,6 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestNewTab(_ tab: TabViewController)
 
-    /// `source` is where the user started the voice chat.
     func tabDidRequestNewVoiceChat(_ tab: TabViewController, source: AIChatEntryPointSource)
 
     func newTab(reuseExisting: Bool)

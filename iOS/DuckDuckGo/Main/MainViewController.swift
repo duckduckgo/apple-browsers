@@ -4449,7 +4449,6 @@ class MainViewController: UIViewController {
         (tab?.webView as? WebView)?.lastFindInPageQuery = tab?.webView.findInteraction?.searchText
     }
 
-    /// `entrySource` is where voice search was opened outside the address bar, reported if it goes to Duck.ai.
     func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil, entrySource: AIChatEntryPointSource? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
@@ -5115,7 +5114,6 @@ class MainViewController: UIViewController {
         startDuckAIVoiceMode(from: .addressBar, entrySource: isPad ? .ipadTogglePrompt : .addressBarPrompt)
     }
 
-    /// `entrySource` is where the user started; the entry pixel reports it with `voice=true`.
     func startDuckAIVoiceMode(from source: VoiceEntryPointSource, entrySource: AIChatEntryPointSource) {
         pixelFiring?.fire(Pixel.Event.voiceEntryPointTapped, options: .parameters([PixelParameters.source: source.rawValue]))
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {

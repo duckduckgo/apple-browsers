@@ -75,7 +75,6 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case chatHistoryOpenChat = "chat_history_open_chat"
     case chatHistoryViewAll = "chat_history_view_all"
     case onboarding
-    /// A prompt sent from the address bar that onboarding's completion-step Try Duck.ai opened.
     case onboardingCompletionPromo = "onboarding_completion_promo"
     case subscriptionOnboarding = "subscription_onboarding"
     case paidSettings = "paid_settings"
@@ -88,15 +87,12 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case widgetFavorite = "widget_favorite"
     case widgetLockScreen = "widget_lock_screen"
     case widgetControlCenter = "widget_control_center"
-    /// The customizable address bar and toolbar buttons (Settings → Appearance), iPhone only.
     case addressBarCustomButton = "address_bar_custom_button"
     case toolbarCustomButton = "toolbar_custom_button"
     case siri
     case deepLinkOther = "deep_link_other"
     case returnToChatCard = "return_to_chat_card"
-    /// The app opened, or came back from the background, onto a tab already showing Duck.ai.
     case appOpen = "app_open"
-    /// Swiping on the address bar onto a tab already showing Duck.ai.
     case tabSwipe = "tab_swipe"
     case ddgHomepage = "ddg_homepage"
 }

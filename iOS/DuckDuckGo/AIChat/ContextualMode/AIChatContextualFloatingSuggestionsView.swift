@@ -51,6 +51,28 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
     /// The column-style copies the chips take off from, until the glass has taken over.
     private var takeoffStandIns: [UIView] = []
 
+    /// Hides the chips, and the page's dim with them, e.g. while the user types a prompt of their own.
+    var isSteppedAside = false {
+        didSet {
+            guard isSteppedAside != oldValue else { return }
+            alpha = isSteppedAside ? 0 : 1
+            pageDimView.alpha = pageDimAlpha
+        }
+    }
+
+    /// Dims the page under the chips, like the iPhone floating input. Purely visual: the page stays in use.
+    private let pageDimView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .black
+        view.alpha = 0
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+
+    private var pageDimAlpha: CGFloat {
+        isShown && !isSteppedAside ? ContextualSurfaceScrim.alpha : 0
+    }
+
     private let chipsView: AIChatQuickActionsView<ContextualSheetAction> = {
         let view = AIChatQuickActionsView<ContextualSheetAction>()
         view.chipBackgroundStyle = .glass
@@ -107,8 +129,13 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             removeFromSuperview()
             host.insertSubview(self, aboveSubview: column)
         }
+        if pageDimView.superview !== host {
+            pageDimView.removeFromSuperview()
+            host.insertSubview(pageDimView, belowSubview: self)
+        }
         self.column = column
         self.keyboardTop = keyboardTop
+        UIView.performWithoutAnimation { isSteppedAside = false }
         isShown = true
         removeTakeoffStandIns()
         let chips = chipViews
@@ -137,6 +164,11 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         // A pass later, once that start is on screen; a view added in this pass has nothing to animate from.
         DispatchQueue.main.async { [weak self] in
             guard let self, isShown else { return }
+            UIView.animate(withDuration: Constants.flightDuration,
+                           delay: 0,
+                           options: [.curveEaseInOut, .allowUserInteraction, .beginFromCurrentState]) {
+                self.pageDimView.alpha = self.pageDimAlpha
+            }
             let takeoffs = DispatchGroup()
             for (index, chip) in chips.enumerated() {
                 let delay = Double(index) * Constants.stagger
@@ -199,6 +231,10 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         let top = max(columnFrame.minY + Constants.edgeInset, bottom - size.height)
         frame = CGRect(x: columnFrame.minX - Constants.columnSpacing - width, y: top, width: width, height: size.height)
         layoutIfNeeded()
+        // The page runs from the host's leading edge to the column, level with it.
+        let hostBounds = column.superview?.bounds ?? .zero
+        pageDimView.frame = CGRect(x: hostBounds.minX, y: columnFrame.minY,
+                                   width: columnFrame.minX - hostBounds.minX, height: columnFrame.height)
     }
 
     /// Flies each chip back onto its twin's frame in `targetFrames` (in the column's superview), or fades it.
@@ -213,8 +249,13 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         let chips = chipViews
         guard animated, !chips.isEmpty, let host = superview else {
             removeFromSuperview()
+            pageDimView.removeFromSuperview()
+            pageDimView.alpha = 0
             completion?()
             return
+        }
+        UIView.animate(withDuration: Constants.flightDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+            self.pageDimView.alpha = 0
         }
 
         // Every chip has to land before the handover: they land in reverse order, so no single one marks the end.
@@ -266,6 +307,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             standIns.forEach { $0.removeFromSuperview() }
             guard let self, !isShown else { return }
             removeFromSuperview()
+            pageDimView.removeFromSuperview()
         }
     }
 

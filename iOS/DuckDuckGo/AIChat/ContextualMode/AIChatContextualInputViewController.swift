@@ -766,7 +766,10 @@ private extension AIChatContextualInputViewController {
         let isColumnListHidden = isFloatingSuggestions || isLandingFloatingSuggestions || isAwaitingSubmittedChat
         quickActionsScrollView.alpha = isColumnListHidden ? 0 : 1
         quickActionsScrollView.isUserInteractionEnabled = !isColumnListHidden
-        floatingSuggestionsView.alpha = hidesForText ? 0 : 1
+        // Only while floating: chips flying home with a prompt typed must not reappear on the way.
+        if isFloatingSuggestions {
+            floatingSuggestionsView.isSteppedAside = hidesForText
+        }
     }
 
     /// When the list has to scroll, the chips nearest the input stay in view.

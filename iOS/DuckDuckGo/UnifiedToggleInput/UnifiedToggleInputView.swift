@@ -650,6 +650,7 @@ final class UnifiedToggleInputView: UIView {
     private let frozenInputOverlay = UIView()
     // PROTOTYPE: card sweep shared by variants B/C and E of the Duck.ai mode visuals.
     private let duckAIInputSweepView = DuckAIEdgeSweepView(surface: .card)
+    private var duckAIIconGlow: DuckAIIconGlowController?
 
     /// Edges of the visible input card, which sits inside this view's own padding. Content placed
     /// around the bar should align to these rather than to the view's edges.
@@ -952,6 +953,11 @@ final class UnifiedToggleInputView: UIView {
             duckAIInputSweepView.bottomAnchor.constraint(equalTo: cardView.bottomAnchor),
         ])
 
+        duckAIIconGlow = DuckAIIconGlowController(host: self, card: cardView, sweep: duckAIInputSweepView) { [weak self] in
+            guard let self else { return [] }
+            return [toolsToolbar, textEntryView, inlineDismissButton]
+        }
+
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(cycleDuckAIVariant(_:)))
         longPress.minimumPressDuration = 0.6
         toggleView.addGestureRecognizer(longPress)
@@ -975,7 +981,6 @@ final class UnifiedToggleInputView: UIView {
         let isActive = isExpanded
             && handler.currentToggleState == .aiChat
             && !handler.isFireTab
-            && DuckAIModeVisualVariant.isSupported(in: traitCollection)
         DuckAIModeVisualsDriver.shared.setActive(isActive, owner: self)
     }
 

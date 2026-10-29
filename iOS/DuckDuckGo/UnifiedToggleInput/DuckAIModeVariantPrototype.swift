@@ -20,6 +20,7 @@
 import Combine
 import UIKit
 import DesignResourcesKit
+import os.log
 
 // PROTOTYPE: throwaway visuals for "make it more obvious when a user is on Duck.ai" (Round 2).
 // Long-press the Search/Duck.ai toggle to cycle Control → B/C → E.
@@ -56,14 +57,7 @@ enum DuckAIModeVisualVariant: String, CaseIterable {
 
     var tintsDuckAITab: Bool { self != .control }
 
-    /// The prototype palette comes from the light-mode Figma file only.
-    static func isSupported(in traits: UITraitCollection) -> Bool {
-        traits.userInterfaceStyle != .dark
-    }
-
-    static let duckAITabTint = UIColor { traits in
-        DuckAIModeVisualVariant.isSupported(in: traits) ? UIColor(prototypeHex: 0x034180) : UIColor(designSystemColor: .textPrimary)
-    }
+    static let duckAITabTint = UIColor(light: 0x034180, dark: 0xA9D8F9)
 }
 
 extension UIColor {
@@ -72,6 +66,13 @@ extension UIColor {
                   green: CGFloat((hex >> 8) & 0xFF) / 255,
                   blue: CGFloat(hex & 0xFF) / 255,
                   alpha: alpha)
+    }
+
+    /// The Figma file is light-only; the dark values are a prototype guess.
+    convenience init(light: UInt32, dark: UInt32) {
+        self.init { traits in
+            UIColor(prototypeHex: traits.userInterfaceStyle == .dark ? dark : light)
+        }
     }
 }
 
@@ -308,6 +309,16 @@ final class DuckAIEdgeSweepView: UIView {
                             cornerRadii: CGSize(width: radius, height: radius)).cgPath
     }
 
+    /// The gradient's current start angle (degrees, clockwise from the top) and how visible the
+    /// stroke is, read from the running animation so anything following it stays in step.
+    var liveSweep: (angle: CGFloat, visibility: CGFloat)? {
+        guard trailGradient.animation(forKey: "sweep") != nil,
+              let gradient = trailGradient.presentation(),
+              let host = trailHost.presentation() else { return nil }
+        let transform = gradient.transform
+        return (atan2(transform.m12, transform.m11) * 180 / .pi, CGFloat(host.opacity))
+    }
+
     private func stop() {
         [trailHost, leadHost, trailGradient, leadGradient, leadMask].forEach { $0.removeAllAnimations() }
     }
@@ -366,6 +377,282 @@ final class DuckAIEdgeSweepView: UIView {
     }
 }
 
+// MARK: - B icon tint
+
+/// Icons nearest the travelling card stroke take on its colour: a tinted copy of each icon
+/// (and of the model picker title) fades in over it as the stroke passes.
+final class DuckAIIconGlowController {
+
+    private enum Constants {
+        /// The brightest part of the stroke sits ~340° into the conic gradient.
+        static let head: CGFloat = 340
+        static let fadeIn: CGFloat = 22
+        static let fadeOut: CGFloat = 100
+        static let blue = UIColor(light: 0x0076CF, dark: 0xA9D8F9)
+        static let purple = UIColor(light: 0x763AC2, dark: 0xC7B1F5)
+        static let green = UIColor(light: 0x008C4D, dark: 0x9FD6B6)
+        static let labelStrength: CGFloat = 0.85
+        /// The stroke's ease-out passes most icons within half a second, so a purely angle-driven
+        /// tint (as in the Figma prototype) only flickers on device. Each glow holds its colour
+        /// after the head passes and fades over this long instead.
+        static let glowDecay: CGFloat = 1.2
+        /// A soft halo in the glow colour around each tinted icon makes the tint read on device.
+        /// Dark icons on a light card need much less of it than light icons on a dark card.
+        struct Look {
+            let tintStrength: CGFloat
+            let haloRadius: CGFloat
+            let haloOpacity: Float
+        }
+        static let darkLook = Look(tintStrength: 1, haloRadius: 6, haloOpacity: 0.9)
+        static let lightLook = Look(tintStrength: 0.75, haloRadius: 4, haloOpacity: 0.3)
+        /// Skips photo thumbnails; icons are at most this wide.
+        static let maximumIconWidth: CGFloat = 40
+    }
+
+    private weak var host: UIView?
+    private weak var card: UIView?
+    private weak var sweep: DuckAIEdgeSweepView?
+    private let iconRoots: () -> [UIView]
+    private var displayLink: CADisplayLink?
+    private var cancellable: AnyCancellable?
+    /// The source image each glow copy was made from, so it is re-tinted only when the icon changes.
+    private let glowSources = NSMapTable<UIImageView, UIImage>.weakToWeakObjects()
+    /// Icon → its glow copy in `overlay`.
+    private let glows = NSMapTable<UIView, UIView>.weakToStrongObjects()
+    private let overlay: UIView = {
+        let view = UIView()
+        view.isUserInteractionEnabled = false
+        return view
+    }()
+    private var lastTargets: [Target] = []
+    private let logger = Logger(subsystem: "com.duckduckgo.prototype", category: "DuckAIIconGlow")
+    private var wasStrokeVisible = false
+    private var lastTickTime: CFTimeInterval = 0
+    private var glowLevels: [ObjectIdentifier: CGFloat] = [:]
+    private var didLogPeak = false
+
+    init(host: UIView, card: UIView, sweep: DuckAIEdgeSweepView, iconRoots: @escaping () -> [UIView]) {
+        self.host = host
+        self.card = card
+        self.sweep = sweep
+        self.iconRoots = iconRoots
+        cancellable = DuckAIModeVisualsDriver.shared.$activeVariant
+            .sink { [weak self] variant in
+                if variant == nil { self?.stop() } else { self?.start() }
+            }
+    }
+
+    deinit {
+        displayLink?.invalidate()
+    }
+
+    private func start() {
+        guard displayLink == nil else { return }
+        logger.log("[IconGlow] display link started")
+        let link = CADisplayLink(target: DisplayLinkProxy(self), selector: #selector(DisplayLinkProxy.tick))
+        link.add(to: .main, forMode: .common)
+        displayLink = link
+    }
+
+    private func stop() {
+        displayLink?.invalidate()
+        displayLink = nil
+        glowLevels.removeAll()
+        hideAll()
+    }
+
+    fileprivate func tick() {
+        guard let host, let card, let sweep else {
+            logger.log("[IconGlow] tick without host, card or sweep")
+            return
+        }
+        let now = CACurrentMediaTime()
+        let elapsed = CGFloat(min(max(now - lastTickTime, 0), 0.1))
+        lastTickTime = now
+
+        let live = sweep.liveSweep
+        let visibility = live?.visibility ?? 0
+        guard visibility > 0 || glowLevels.values.contains(where: { $0 > 0 }) else {
+            wasStrokeVisible = false
+            hideAll()
+            return
+        }
+        let isNewLap = visibility > 0 && !wasStrokeVisible
+        if isNewLap {
+            wasStrokeVisible = true
+            didLogPeak = false
+        } else if visibility == 0 {
+            wasStrokeVisible = false
+        }
+
+        let look = host.traitCollection.userInterfaceStyle == .dark ? Constants.darkLook : Constants.lightLook
+        let cardFrame = presentedFrame(of: card, in: host)
+        let center = CGPoint(x: cardFrame.midX, y: cardFrame.midY)
+        var peak: CGFloat = 0
+        var count = 0
+        forEachTarget { glow, target in
+            count += 1
+            let targetFrame = presentedFrame(of: target.view, in: host)
+            let point = CGPoint(x: targetFrame.midX, y: targetFrame.midY)
+            let iconAngle = atan2(point.x - center.x, center.y - point.y) * 180 / .pi
+            // > 0: the stroke head has passed this icon.
+            let delta = ((live?.angle ?? 0) + Constants.head - iconAngle).truncatingRemainder(dividingBy: 360)
+            let d = (delta + 540).truncatingRemainder(dividingBy: 360) - 180
+            let strength: CGFloat
+            if d < -Constants.fadeIn {
+                strength = 0
+            } else if d < 0 {
+                strength = 1 + d / Constants.fadeIn
+            } else {
+                strength = max(0, 1 - d / Constants.fadeOut)
+            }
+            let key = ObjectIdentifier(glow)
+            let decayed = (glowLevels[key] ?? 0) - elapsed / Constants.glowDecay
+            let level = max(strength * visibility, decayed, 0)
+            glowLevels[key] = level
+
+            let isLabel = target.view is UILabel
+            glow.alpha = level * look.tintStrength * target.effectiveAlpha * (isLabel ? Constants.labelStrength : 1)
+            glow.layer.shadowRadius = look.haloRadius
+            glow.layer.shadowOpacity = look.haloOpacity
+            peak = max(peak, glow.alpha)
+            // While decaying, keep the colour the head left behind rather than sliding to green.
+            if strength > 0 {
+                let color = d < 18 ? Constants.blue : d < 45 ? Constants.purple : Constants.green
+                if let label = glow as? UILabel {
+                    label.textColor = color
+                } else {
+                    glow.tintColor = color
+                }
+                glow.layer.shadowColor = color.resolvedColor(with: host.traitCollection).cgColor
+            }
+        }
+        if isNewLap, let live {
+            logger.log("[IconGlow] lap started: \(count) targets, angle \(Double(live.angle)), visibility \(Double(live.visibility))")
+        }
+        if peak > 0.5, !didLogPeak {
+            didLogPeak = true
+            logger.log("[IconGlow] peak glow \(Double(peak)) at angle \(Double(live?.angle ?? 0))")
+        }
+    }
+
+    private struct Target {
+        let view: UIView
+        /// The icon's alpha after its ancestors' alpha, so a fading icon fades its glow too.
+        let effectiveAlpha: CGFloat
+    }
+
+    private func hideAll() {
+        overlay.subviews.forEach { $0.alpha = 0 }
+    }
+
+    /// Calls `body` with each visible icon's glow copy (created on first use) and the icon it covers.
+    /// Glow copies live in `overlay` above the whole card, not inside the buttons: on iOS 26 glass
+    /// buttons drop colour from their own subviews.
+    private func forEachTarget(_ body: (UIView, Target) -> Void) {
+        guard let host else { return }
+        if overlay.superview !== host || host.subviews.last !== overlay {
+            host.addSubview(overlay)
+        }
+        overlay.frame = host.bounds
+        hideAll()
+
+        var targets: [Target] = []
+        func visit(_ view: UIView, insideButton: Bool) {
+            guard !view.isHidden else { return }
+            if let imageView = view as? UIImageView {
+                guard imageView.image != nil, imageView.bounds.width <= Constants.maximumIconWidth else { return }
+                targets.append(Target(view: imageView, effectiveAlpha: effectiveAlpha(of: imageView, in: host)))
+                return
+            }
+            if let label = view as? UILabel {
+                guard insideButton, label.text?.isEmpty == false else { return }
+                targets.append(Target(view: label, effectiveAlpha: effectiveAlpha(of: label, in: host)))
+                return
+            }
+            view.subviews.forEach { visit($0, insideButton: insideButton || view is UIButton) }
+        }
+        iconRoots().forEach { visit($0, insideButton: false) }
+        lastTargets = targets.filter { $0.effectiveAlpha > 0.01 }
+        for target in lastTargets {
+            body(glow(for: target.view), target)
+        }
+    }
+
+    /// Reads the on-screen (presentation) alpha, so a toolbar that is still fading in keeps its glow faded too.
+    private func effectiveAlpha(of view: UIView, in host: UIView) -> CGFloat {
+        var alpha: CGFloat = 1
+        var current: UIView? = view
+        while let view = current, view !== host {
+            alpha *= view.isHidden ? 0 : CGFloat((view.layer.presentation() ?? view.layer).opacity)
+            current = view.superview
+        }
+        return alpha
+    }
+
+    /// The view's on-screen frame mid-animation, so glows ride along as the toolbar slides in.
+    private func presentedFrame(of view: UIView, in host: UIView) -> CGRect {
+        let source = view.layer.presentation() ?? view.layer
+        let destination = host.layer.presentation() ?? host.layer
+        return source.convert(source.bounds, to: destination)
+    }
+
+    private func applyHalo(to glow: UIView) {
+        glow.layer.shadowOffset = .zero
+    }
+
+    private func glow(for target: UIView) -> UIView {
+        guard let host else { return UIView() }
+        let frame = presentedFrame(of: target, in: host)
+        if let imageView = target as? UIImageView {
+            let glow = glows.object(forKey: imageView) as? UIImageView ?? {
+                let glow = UIImageView()
+                applyHalo(to: glow)
+                overlay.addSubview(glow)
+                glows.setObject(glow, forKey: imageView)
+                return glow
+            }()
+            glow.frame = frame
+            glow.contentMode = imageView.contentMode
+            glow.preferredSymbolConfiguration = imageView.preferredSymbolConfiguration
+            if let image = imageView.image, glowSources.object(forKey: glow) !== image {
+                glowSources.setObject(image, forKey: glow)
+                glow.image = image.withRenderingMode(.alwaysTemplate)
+            }
+            return glow
+        }
+        guard let label = target as? UILabel else { return UIView() }
+        let glow = glows.object(forKey: label) as? UILabel ?? {
+            let glow = UILabel()
+            applyHalo(to: glow)
+            overlay.addSubview(glow)
+            glows.setObject(glow, forKey: label)
+            return glow
+        }()
+        glow.frame = frame
+        glow.font = label.font
+        glow.text = label.text
+        glow.textAlignment = label.textAlignment
+        glow.numberOfLines = label.numberOfLines
+        glow.lineBreakMode = label.lineBreakMode
+        return glow
+    }
+}
+
+/// Breaks the retain cycle between `CADisplayLink` and its target.
+private final class DisplayLinkProxy: NSObject {
+    private weak var controller: DuckAIIconGlowController?
+
+    init(_ controller: DuckAIIconGlowController) {
+        self.controller = controller
+        super.init()
+    }
+
+    @objc func tick() {
+        controller?.tick()
+    }
+}
+
 // MARK: - C: drifting circles behind the keyboard
 
 /// Drawn in the app window under the keyboard frame; the system keyboard's translucent
@@ -373,7 +660,7 @@ final class DuckAIEdgeSweepView: UIView {
 final class DuckAIKeyboardGlowView: UIView {
 
     private struct Blob {
-        let color: UInt32
+        let color: UIColor
         let diameter: CGFloat
         /// Centre = `anchor` (fraction of the bounds) + `offset`, from the 402pt-wide Figma keyboard.
         let anchor: CGPoint
@@ -388,15 +675,20 @@ final class DuckAIKeyboardGlowView: UIView {
     private static let speed: CFTimeInterval = 1.35
     private static let distance: CGFloat = 1.45
     private static let blobs: [Blob] = [
-        Blob(color: 0xE6F6FF, diameter: 300, anchor: CGPoint(x: 0, y: 0), offset: CGPoint(x: 60, y: 40), duration: 14,
+        Blob(color: UIColor(light: 0xE6F6FF, dark: 0x16365A), diameter: 300, anchor: CGPoint(x: 0, y: 0), offset: CGPoint(x: 60, y: 40), duration: 14,
              keyframes: [(150, 90, 1.15), (60, 220, 0.9), (-80, 120, 1.08)]),
-        Blob(color: 0xF5FBFE, diameter: 260, anchor: CGPoint(x: 1, y: 0), offset: CGPoint(x: -60, y: 70), duration: 17,
+        Blob(color: UIColor(light: 0xF5FBFE, dark: 0x0F2A44), diameter: 260, anchor: CGPoint(x: 1, y: 0), offset: CGPoint(x: -60, y: 70), duration: 17,
              keyframes: [(-160, -110, 0.88), (-60, 140, 1.14), (90, 40, 0.95)]),
-        Blob(color: 0xCAF0FE, diameter: 280, anchor: CGPoint(x: 0, y: 1), offset: CGPoint(x: 100, y: -20), duration: 19,
+        Blob(color: UIColor(light: 0xCAF0FE, dark: 0x0E3F4F), diameter: 280, anchor: CGPoint(x: 0, y: 1), offset: CGPoint(x: 100, y: -20), duration: 19,
              keyframes: [(170, -140, 1.12), (220, 60, 0.92), (40, -60, 1.06)]),
-        Blob(color: 0xEDEEFB, diameter: 300, anchor: CGPoint(x: 1, y: 1), offset: CGPoint(x: -60, y: -40), duration: 16,
+        Blob(color: UIColor(light: 0xEDEEFB, dark: 0x2A2556), diameter: 300, anchor: CGPoint(x: 1, y: 1), offset: CGPoint(x: -60, y: -40), duration: 16,
              keyframes: [(-140, -170, 1.1), (-220, -30, 0.9), (-60, -120, 1.12)]),
     ]
+
+    private static let base = UIColor(light: 0xE6F6FF, dark: 0x0F2238)
+    private static let greyTintColor = UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .clear : UIColor(red: 150 / 255, green: 166 / 255, blue: 180 / 255, alpha: 0.2)
+    }
 
     private var blobLayers: [CAGradientLayer] = []
     private let greyTint = CALayer()
@@ -405,22 +697,36 @@ final class DuckAIKeyboardGlowView: UIView {
         super.init(frame: frame)
         isUserInteractionEnabled = false
         clipsToBounds = true
-        backgroundColor = UIColor(prototypeHex: 0xE6F6FF)
+        backgroundColor = Self.base
         for blob in Self.blobs {
             let layer = CAGradientLayer()
             layer.type = .radial
             layer.startPoint = CGPoint(x: 0.5, y: 0.5)
             layer.endPoint = CGPoint(x: 1, y: 1)
-            let color = UIColor(prototypeHex: blob.color)
-            layer.colors = [color.cgColor, color.cgColor, color.withAlphaComponent(0).cgColor]
             // A radial falloff over the outer blur radius stands in for CSS `filter: blur(40px)`.
             let size = blob.diameter + Self.blur * 2
             layer.locations = [0, NSNumber(value: Double((blob.diameter / 2 - Self.blur) / (size / 2))), 1]
             self.layer.addSublayer(layer)
             blobLayers.append(layer)
         }
-        greyTint.backgroundColor = UIColor(red: 150 / 255, green: 166 / 255, blue: 180 / 255, alpha: 0.2).cgColor
         layer.addSublayer(greyTint)
+        applyPalette()
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            applyPalette()
+        }
+    }
+
+    /// Layer colours are snapshotted `CGColor`s, so they are re-resolved on each appearance change.
+    private func applyPalette() {
+        for (layer, blob) in zip(blobLayers, Self.blobs) {
+            let color = blob.color.resolvedColor(with: traitCollection)
+            layer.colors = [color.cgColor, color.cgColor, color.withAlphaComponent(0).cgColor]
+        }
+        greyTint.backgroundColor = Self.greyTintColor.resolvedColor(with: traitCollection).cgColor
     }
 
     required init?(coder: NSCoder) {

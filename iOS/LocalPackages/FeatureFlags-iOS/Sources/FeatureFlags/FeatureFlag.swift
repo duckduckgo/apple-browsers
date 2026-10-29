@@ -531,9 +531,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1215105704317047
     case aiChatChromeShortcutIPad
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218316798217456?focus=true
-    case aiChatChromeMenuButtonIPad
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219711238433101?focus=true
     case ipadAIChatContextSidebar
 
@@ -1019,8 +1016,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.walletPassDownload))
         case .aiChatChromeShortcutIPad:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.iPadChromeShortcut))
-        case .aiChatChromeMenuButtonIPad:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadChromeMenuButton))
         case .ipadAIChatContextSidebar:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(AIChatSubfeature.iPadContextualSidebar))
         case .floatingUIiOS26:

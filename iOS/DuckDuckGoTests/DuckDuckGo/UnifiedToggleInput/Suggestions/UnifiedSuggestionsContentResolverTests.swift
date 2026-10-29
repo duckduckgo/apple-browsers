@@ -91,18 +91,11 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
         XCTAssertEqual(kind, .list(.duckAI))
     }
 
-    func test_syncPromo_isEmbeddedOnlyInDuckAI() {
-        XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: true).syncPromo, .embedded)
-        XCTAssertEqual(chromePlacement(mode: .search, showsSyncPromo: true).syncPromo, .hidden)
-        XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: false).syncPromo, .hidden)
-    }
-
-    func test_absentHatch_doesNotHideEligiblePromoOrEmptyScrollView() {
+    func test_absentHatch_doesNotHideEligiblePromo() {
         let placement = chromePlacement(mode: .aiChat, hasEscapeHatch: false, showsSyncPromo: true)
 
         XCTAssertEqual(placement.escapeHatch, .hidden)
         XCTAssertEqual(placement.syncPromo, .embedded)
-        XCTAssertTrue(showsEmbeddedContent(.logo))
     }
 
     func test_typing_hidesChromeInBothModesAndFlagStates() {
@@ -182,6 +175,7 @@ final class UnifiedSuggestionsContentResolverTests: XCTestCase {
                 XCTAssertEqual(placement.syncPromo, mode == .aiChat ? .embedded : .hidden)
             }
         }
+        XCTAssertEqual(chromePlacement(mode: .aiChat, showsSyncPromo: false).syncPromo, .hidden)
     }
 
     func test_idleContent_includingEmptyAndRecents_usesScrollableContent() {

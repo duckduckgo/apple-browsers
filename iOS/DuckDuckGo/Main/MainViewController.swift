@@ -3288,7 +3288,7 @@ class MainViewController: UIViewController {
 
     @discardableResult
     private func addTab(url: URL?, inheritedAttribution: AdClickAttributionLogic.State?, fromExternalLink: Bool = false, voiceMode: Bool = false) -> Tab {
-        let outgoingTab = tabManager.currentTabsModel.currentTab
+        captureForSwipeBack(tabManager.currentTabsModel.currentTab)
         let tab = tabManager.add(url: url, inheritedAttribution: inheritedAttribution)
         tab.inferredOpenerContext = .external
         tab.isVoiceModeRequested = voiceMode
@@ -3303,7 +3303,6 @@ class MainViewController: UIViewController {
 
         currentTab?.aiChatContextualSheetCoordinator.dismissSheet()
         dismissOmniBar()
-        captureForSwipeBack(outgoingTab)
         resetUnifiedToggleInputForTabTransition(to: tab)
         attachTab(tab: tab)
         return tab.tabModel

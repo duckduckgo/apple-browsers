@@ -79,13 +79,14 @@ extension ExtensionsManagementPreferences {
         var record: InstalledWebExtension
         let listing: ChromeWebStoreListing
         let isRemotelyDisabled: Bool
+        /// Saved at installation, so they're known while the extension is disabled.
+        let permissions: [String]
 
         var id: String { record.uniqueIdentifier }
         var isEnabled: Bool { !record.isDisabled && !isRemotelyDisabled }
 
-        /// Saved at installation, so it's known while the extension is disabled.
         var permissionsSummary: String? {
-            let names = (record.permissions ?? [])
+            let names = permissions
                 .compactMap(WebExtensionManifestPermission.init(rawValue:))
                 .map(\.displayName)
 
@@ -188,7 +189,10 @@ private extension ExtensionsManagementPreferences {
                 continue
             }
 
-            let entry = InstalledExtensionEntry(record: record, listing: listing, isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier))
+            let entry = InstalledExtensionEntry(record: record,
+                                                listing: listing,
+                                                isRemotelyDisabled: manager.isRemotelyDisabled(identifier: identifier),
+                                                permissions: manager.extensionPermissions(for: identifier))
             entries.append(entry)
             seenListingIDs.insert(listing.id)
         }

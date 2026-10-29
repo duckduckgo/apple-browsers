@@ -1266,6 +1266,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         installationStore.installedExtension(withUniqueIdentifier: identifier)?.version
     }
 
+    public func extensionPermissions(for identifier: String) -> [String] {
+        // Records saved before permissions were stored fall back to the loaded extension.
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.permissions
+            ?? context(for: identifier)?.webExtension.requiredPermissionNames
+            ?? []
+    }
+
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {
         contexts.first { Self.url(url, isWithin: $0.baseURL) }
     }

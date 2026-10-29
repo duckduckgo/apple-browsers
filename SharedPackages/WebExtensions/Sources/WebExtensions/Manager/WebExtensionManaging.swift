@@ -179,6 +179,10 @@ public protocol WebExtensionManaging: AnyObject {
     @available(macOS 15.4, iOS 18.4, *)
     func extensionVersion(for identifier: String) -> String?
 
+    /// Returns the manifest permissions for the given identifier.
+    @available(macOS 15.4, iOS 18.4, *)
+    func extensionPermissions(for identifier: String) -> [String]
+
     /// Returns the extension context for the given URL.
     @available(macOS 15.4, iOS 18.4, *)
     func extensionContext(for url: URL) -> WKWebExtensionContext?

@@ -18,6 +18,7 @@
 
 import Combine
 import Common
+import DataBrokerProtectionCore
 import ConcurrencyExtensions
 import Foundation
 import FoundationExtensions
@@ -180,6 +181,41 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
             })
         }
     }
+
+#if DEBUG
+    public func getNeedsYou() async throws -> DBPUINeedsYouList {
+        let data: Data = try await withCheckedThrowingContinuation { continuation in
+            xpc.execute(call: { server in
+                server.getNeedsYou { data, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume(returning: data ?? Data())
+                    }
+                }
+            }, xpcReplyErrorHandler: { error in
+                continuation.resume(throwing: error)
+            })
+        }
+        return try JSONDecoder().decode(DBPUINeedsYouList.self, from: data)
+    }
+
+    public func openNeedsYouItem(id: String) async throws -> Bool {
+        try await withCheckedThrowingContinuation { continuation in
+            xpc.execute(call: { server in
+                server.openNeedsYouItem(id: id) { opened, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else {
+                        continuation.resume(returning: opened)
+                    }
+                }
+            }, xpcReplyErrorHandler: { error in
+                continuation.resume(throwing: error)
+            })
+        }
+    }
+#endif
 
     public func startDebugServer() async -> Bool {
         await withCheckedContinuation { continuation in

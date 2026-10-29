@@ -72,6 +72,10 @@ public enum PIRAssistedOptOuts {
         } else {
             try database.updatePreferredRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId)
         }
+        markStarted(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
+    }
+
+    static func markStarted(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64?) {
         _ = lock.withLock { started.insert(key(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)) }
     }
 

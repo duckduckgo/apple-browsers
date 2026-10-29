@@ -164,6 +164,13 @@ public final class PIRAssistCenter {
         return session.userTurn == nil ? .running : .needsYou
     }
 
+    public var runningItems: [PIRNeedsYou.RunningItem] {
+        sessions.values.map {
+            PIRNeedsYou.RunningItem(id: $0.id, brokerName: $0.brokerName, brokerURL: $0.brokerURL,
+                                    state: $0.userTurn == nil ? .running : .needsYou)
+        }
+    }
+
     /// Shows the item's window now if it is running, or as soon as it starts.
     public func open(_ id: PIRAssistItemID) {
         if let session = sessions[id] {

@@ -59,7 +59,12 @@ public class DataBrokerProtectionAgentManagerProvider {
         let statsPixelRepository = DataBrokerProtectionStatsPixelsUserDefaults()
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        #if DEBUG
+        // Check for confirmation emails every minute so assisted opt-outs can follow them through.
+        let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: .fastForIntegrationTests)
+        #else
         let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
+        #endif
         let activityScheduler = DefaultDataBrokerProtectionBackgroundActivityScheduler(
             config: schedulingConfig,
             isDeferralHandlingEnabled: featureFlagger.isSchedulerDeferralHandlingEnabled)
@@ -134,7 +139,12 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                                    pixelHandler: pixelHandler,
                                                                    freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
+        #if DEBUG
+        var executionConfig = BrokerJobExecutionConfig()
+        executionConfig.allowedBrokerDomains = BrokerJobExecutionConfig.assistantDemoBrokerDomains
+        #else
         let executionConfig = BrokerJobExecutionConfig()
+        #endif
         let jobDependencies = BrokerProfileJobDependencies(
             database: dataManager.database,
             contentScopeProperties: contentScopeProperties,
@@ -205,6 +215,9 @@ public final class DataBrokerProtectionAgentManager {
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let resourceMonitor: ResourceMonitoring?
     private let wideEventSweeper: DBPWideEventSweeper?
+    #if DEBUG
+    private var assistPresenter: AnyObject?
+    #endif
 
     // Used for debug functions only, so not injected
     private lazy var browserWindowManager = BrowserWindowManager()
@@ -265,6 +278,9 @@ public final class DataBrokerProtectionAgentManager {
         self.resourceMonitor = resourceMonitor
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
 
+        #if DEBUG
+        setUpAssist()
+        #endif
         self.activityScheduler.delegate = self
         self.activityScheduler.dataSource = self
         self.queueManager.delegate = self
@@ -557,6 +573,43 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
         await checkForEmailConfirmationData()
         queueManager.addEmailConfirmationJobs(showWebView: showWebView, jobDependencies: jobDependencies)
     }
+
+#if DEBUG
+    public func getNeedsYou() async throws -> DBPUINeedsYouList {
+        let pending = try PIRAssistedOptOuts.pending(in: jobDependencies.database, config: jobDependencies.executionConfig)
+        let running = await MainActor.run { PIRAssistCenter.shared.runningItems }
+        return DBPUINeedsYouList(items: PIRNeedsYou.items(pending: pending, running: running))
+    }
+
+    public func openNeedsYouItem(id: String) async throws -> Bool {
+        guard let itemID = PIRAssistItemID(needsYouID: id) else { return false }
+        let isRunning = await MainActor.run { () -> Bool in
+            let isRunning = PIRAssistCenter.shared.state(of: itemID) != nil
+            PIRAssistCenter.shared.open(itemID)
+            return isRunning
+        }
+        guard !isRunning else { return true }
+        try PIRAssistedOptOuts.start(brokerId: itemID.brokerId, profileQueryId: itemID.profileQueryId,
+                                     extractedProfileId: itemID.extractedProfileId, in: jobDependencies.database)
+        startScheduledOperations(showWebView: false)
+        return true
+    }
+
+    private func setUpAssist() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let presenter = PIRAssistWindowPresenter()
+            self.assistPresenter = presenter
+            PIRAssistCenter.shared.presenter = presenter
+            var operationIDs: [PIRAssistItemID: UUID] = [:]
+            PIRAssistCenter.shared.onUserTurnChange = { [weak self] id, isUserTurn in
+                let operationID = operationIDs[id] ?? UUID()
+                operationIDs[id] = isUserTurn ? operationID : nil
+                self?.queueManager.setManualControlActive(isUserTurn, operationID: operationID)
+            }
+        }
+    }
+#endif
 
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
 

@@ -83,12 +83,30 @@ class FromWebViewTransition: WebViewTransition {
         // Scale uniformly from the full-width card down to the cell; stretching it to the
         // card's frame squashes the logo while the card's aspect ratio changes.
         snapshot.frame = bodyFrame
-        snapshot.center = CGPoint(x: imageContainer.bounds.midX, y: imageContainer.bounds.midY)
+        snapshot.center = aiTabCellSnapshotStartCenter()
         let scale = imageContainer.bounds.width / cell.bounds.width
         snapshot.transform = CGAffineTransform(scaleX: scale, y: scale)
         snapshot.alpha = 0
         imageContainer.addSubview(snapshot)
         return snapshot
+    }
+
+    /// Over the preview's empty-state logo. With the keyboard up the page centres it above the input,
+    /// and the preview isn't laid out over the live page, so follow the image.
+    private func aiTabCellSnapshotStartCenter() -> CGPoint {
+        let bounds = imageContainer.bounds
+        let cardCenter = CGPoint(x: bounds.midX, y: bounds.midY)
+        guard mainViewController.keyboardShowing,
+              let coordinator = mainViewController.viewCoordinator,
+              coordinator.isUnifiedToggleInputVisible,
+              let input = coordinator.unifiedToggleInputContainer,
+              let webView = mainViewController.currentTab?.webView else { return cardCenter }
+
+        let page = imageContainer.convert(webView.bounds, from: webView)
+        let inputTop = imageContainer.convert(input.bounds, from: input).minY
+        guard page.height > 0, inputTop > page.minY else { return cardCenter }
+        let logoFraction = (min(inputTop, page.maxY) - page.minY) / 2 / page.height
+        return CGPoint(x: bounds.midX, y: imageView.frame.minY + logoFraction * imageView.frame.height)
     }
 
     private func settleAITabCellSnapshot(_ snapshot: UIView?, inCardOfSize cardSize: CGSize) {

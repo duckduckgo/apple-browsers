@@ -3604,8 +3604,8 @@ https://duckduckgo.com/mac";
 /* Title of the dialog in the Duck.ai onboarding flow asking the user if they want to set DuckDuckGo as their default browser. */
 "onboarding.duckai.browser.title" = "Want to make DuckDuckGo your default browser?";
 
-/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. 'Duck.ai' is a brand name and should not be translated. '[[chat_icon]]' is a placeholder and should not be translated. */
-"onboarding.duckai.contextual.end-of-journey.message" = "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.\n\nYou can use Duck.ai from anywhere you see the chat icon [[chat_icon]]";
+/* Message of the last screen of the onboarding to the browser app for the Duck.ai flow. */
+"onboarding.duckai.contextual.end-of-journey.message" = "Start a private AI chat with Duck.ai or toggle to Search for protected browsing.";
 
 /* Body text of the subscription promo shown at the end of the Duck.ai onboarding flow. Describes the paid Duck.ai subscription. 'GPT', 'Claude' are brand names and should not be translated. */
 "onboarding.duckai.contextual.subscription.message" = "We also offer a paid subscription featuring advanced AI models with higher chat limits from GPT and Claude, a secure VPN, and more.";

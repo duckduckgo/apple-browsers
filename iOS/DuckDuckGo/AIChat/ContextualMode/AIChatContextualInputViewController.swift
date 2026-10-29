@@ -73,6 +73,9 @@ final class AIChatContextualInputViewController: UIViewController {
         static let horizontalPadding: CGFloat = 20
         static let quickActionsBottomSpacing: CGFloat = 12
         static let keyboardSpacing: CGFloat = 20
+        /// A hardware keyboard's shortcuts bar covers less than this, so it never floats the suggestions.
+        static let floatingKeyboardOverlap: CGFloat = 150
+        static let startActionsEdgeFadeLength: CGFloat = 24
         static let iPadBottomPadding: CGFloat = 16
         static let dimmedStartActionsAlpha: CGFloat = 0.4
     }
@@ -95,8 +98,8 @@ final class AIChatContextualInputViewController: UIViewController {
         }
     }()
 
-    private lazy var quickActionsScrollView: UIScrollView = {
-        let scrollView = UIScrollView()
+    private lazy var quickActionsScrollView: StartActionsScrollView = {
+        let scrollView = StartActionsScrollView()
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -145,6 +148,30 @@ final class AIChatContextualInputViewController: UIViewController {
     }
     private var displayedTermsOfServiceMessage: UTIFooterMessage?
     private var renderedStartActions: [ContextualSheetAction] = []
+    private var lastStartActionsHeight: CGFloat = 0
+    private lazy var startActionsEdgeFadeMask = CAGradientLayer()
+
+    /// The sidebar column the suggestions float beside while a keyboard covers it, or nil when this input is not in one.
+    var floatingSuggestionsColumn: () -> UIView? = { nil }
+
+    private(set) var isFloatingSuggestions = false
+    /// A sent prompt's chat is about to replace this input, so its suggestions must not come back in the meantime.
+    private var isAwaitingSubmittedChat = false
+    /// The prompt typed into a host's own input, which replaces the basic one.
+    private var hostInputText = ""
+    private var inputText: String {
+        showsBasicNativeInput ? basicNativeInputViewController.text : hostInputText
+    }
+    /// Where the column's chips sat with no keyboard up, in this view's space: by the time the keyboard
+    /// notification arrives the column is already laid out for it, so the floating chips take off from here.
+    private var restingStartActionFrames: [CGRect] = []
+    /// While the floating chips fly home, the column's list waits for them to land before it reappears.
+    private var isLandingFloatingSuggestions = false
+    private lazy var floatingSuggestionsView: AIChatContextualFloatingSuggestionsView = {
+        let view = AIChatContextualFloatingSuggestionsView()
+        view.onActionSelected = { [weak self] action in self?.didSelectStartAction(action) }
+        return view
+    }()
 
     // MARK: - Initialization
 
@@ -176,16 +203,17 @@ final class AIChatContextualInputViewController: UIViewController {
         setupUI()
         if showsBasicNativeInput {
             configureBasicNativeInput()
-            setupKeyboardObservers()
             setupAppLifecycleObservers()
             refreshTermsOfServiceDisclaimer()
         }
         configureQuickActions()
+        setupKeyboardObservers()
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         updateWelcomeLabelCentering()
+        recordRestingStartActionFrames()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -197,6 +225,11 @@ final class AIChatContextualInputViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         startInputOutcomeMeasurement()
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        resetFloatingSuggestions(animated: animated)
     }
 
     override func viewDidDisappear(_ animated: Bool) {
@@ -257,14 +290,25 @@ final class AIChatContextualInputViewController: UIViewController {
         guard actions != renderedStartActions else { return }
         renderedStartActions = actions
         quickActionsView.configure(with: actions)
+        floatingSuggestionsView.configure(with: actions)
+        view.layoutIfNeeded()
+        recordRestingStartActionFrames()
     }
 
     func updateSuggestionsLoading(_ isLoading: Bool) {
         quickActionsView.setLoading(isLoading)
+        floatingSuggestionsView.setLoading(isLoading)
+    }
+
+    /// Puts the start actions back in the column at once, e.g. when the surface leaves the sidebar.
+    func resetFloatingSuggestions(animated: Bool = false) {
+        guard isFloatingSuggestions else { return }
+        // The column is going away with this input, so floating chips fade rather than fly home into it.
+        setFloatingSuggestions(false, animation: nil, animatesFloatingSuggestions: animated, returnsToColumn: false)
     }
 
     /// Clipping is released because interactive glass scales a chip past its bounds on touch. Safe here:
-    /// the scroll view is sized to its content, so it never actually scrolls.
+    /// the scroll view is sized to its content, so it only scrolls when the screen runs out of room.
     func useGlassStartActionBackgrounds() {
         quickActionsView.chipBackgroundStyle = .glass
         quickActionsScrollView.clipsToBounds = false
@@ -291,9 +335,33 @@ final class AIChatContextualInputViewController: UIViewController {
         !self.view.isHidden && quickActionsView.containsChip(at: point, from: view)
     }
 
+    /// Call when a prompt is sent: in the sidebar, the suggestions leave instead of returning as the input empties.
+    func hideStartActionsForSubmittedPrompt() {
+        guard floatingSuggestionsColumn() != nil else { return }
+        isAwaitingSubmittedChat = true
+        resetFloatingSuggestions(animated: true)
+        UIView.animate(withDuration: 0.2) {
+            self.updateStartActionsVisibility()
+        }
+    }
+
+    /// Call when the input is back for a new chat.
+    func showStartActionsForNewChat() {
+        guard isAwaitingSubmittedChat else { return }
+        isAwaitingSubmittedChat = false
+        updateStartActionsVisibility()
+    }
+
+    /// For a host whose own input replaces the basic one, so floating suggestions step aside while a prompt is typed.
+    func hostInputTextDidChange(_ text: String) {
+        hostInputText = text
+        updateStartActionsVisibilityForText()
+    }
+
     func setStartActionsDimmed(_ dimmed: Bool) {
         quickActionsView.alpha = dimmed ? Constants.dimmedStartActionsAlpha : 1
         quickActionsView.isUserInteractionEnabled = !dimmed
+        floatingSuggestionsView.setDimmed(dimmed)
     }
 
     /// Call only for an Ask tap: sending with the disclaimer on screen is the acceptance, a chip never is.
@@ -382,19 +450,7 @@ private extension AIChatContextualInputViewController {
         centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
-        NSLayoutConstraint.activate([
-            // Scroll view wraps quick actions at natural size, pinned above input
-            quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
-            quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            quickActionsScrollView.bottomAnchor.constraint(equalTo: basicNativeInputViewController.view.topAnchor, constant: -Constants.quickActionsBottomSpacing),
-
-            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
-            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
-            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
-            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
-            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
-            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
-
+        NSLayoutConstraint.activate(startActionsConstraints(above: basicNativeInputViewController.view.topAnchor) + [
             // Welcome label centered horizontally, vertical position set dynamically
             centerY,
             welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -444,29 +500,42 @@ private extension AIChatContextualInputViewController {
         centerY.priority = .defaultHigh
         welcomeCenterYConstraint = centerY
 
-        let scrollLeading = quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding)
-        startActionsLeadingConstraint = scrollLeading
-        let scrollTrailing = quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding)
-        startActionsTrailingConstraint = scrollTrailing
-
-        NSLayoutConstraint.activate([
-            scrollLeading,
-            scrollTrailing,
-            quickActionsScrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -Constants.quickActionsBottomSpacing),
-
-            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
-            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
-            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
-            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
-            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
-            quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor),
-
+        NSLayoutConstraint.activate(startActionsConstraints(above: view.bottomAnchor) + [
             centerY,
             welcomeLabel.bottomAnchor.constraint(lessThanOrEqualTo: quickActionsScrollView.topAnchor, constant: -Constants.quickActionsBottomSpacing),
             welcomeLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             welcomeLabel.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             welcomeLabel.trailingAnchor.constraint(lessThanOrEqualTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
         ])
+    }
+
+    /// Sized to the chips until the space above `bottom` runs out; then the list scrolls instead of growing upwards.
+    func startActionsConstraints(above bottom: NSLayoutYAxisAnchor) -> [NSLayoutConstraint] {
+        quickActionsScrollView.onLayout = { [weak self] in
+            self?.keepNearestStartActionsVisible()
+            self?.updateStartActionsEdgeFade()
+            self?.recordRestingStartActionFrames()
+        }
+        let fitContent = quickActionsScrollView.frameLayoutGuide.heightAnchor.constraint(
+            equalTo: quickActionsScrollView.contentLayoutGuide.heightAnchor)
+        fitContent.priority = .defaultHigh
+        let leading = quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding)
+        startActionsLeadingConstraint = leading
+        let trailing = quickActionsScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding)
+        startActionsTrailingConstraint = trailing
+        return [
+            quickActionsScrollView.topAnchor.constraint(greaterThanOrEqualTo: view.topAnchor),
+            leading,
+            trailing,
+            quickActionsScrollView.bottomAnchor.constraint(equalTo: bottom, constant: -Constants.quickActionsBottomSpacing),
+
+            quickActionsView.topAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.topAnchor),
+            quickActionsView.leadingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.leadingAnchor),
+            quickActionsView.trailingAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.trailingAnchor),
+            quickActionsView.bottomAnchor.constraint(equalTo: quickActionsScrollView.contentLayoutGuide.bottomAnchor),
+            quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
+            fitContent,
+        ]
     }
 
     func embedBasicNativeInputViewController() {
@@ -483,13 +552,16 @@ private extension AIChatContextualInputViewController {
 
     func configureQuickActions() {
         quickActionsView.onActionSelected = { [weak self] action in
-            guard let self else { return }
-            switch action {
-            case .quickAction(let quickAction):
-                delegate?.contextualInputViewController(self, didSelectQuickAction: quickAction)
-            case .suggestion(let suggestion):
-                delegate?.contextualInputViewController(self, didSelectSuggestion: suggestion)
-            }
+            self?.didSelectStartAction(action)
+        }
+    }
+
+    func didSelectStartAction(_ action: ContextualSheetAction) {
+        switch action {
+        case .quickAction(let quickAction):
+            delegate?.contextualInputViewController(self, didSelectQuickAction: quickAction)
+        case .suggestion(let suggestion):
+            delegate?.contextualInputViewController(self, didSelectSuggestion: suggestion)
         }
     }
 
@@ -581,11 +653,146 @@ private extension AIChatContextualInputViewController {
     }
 
     @objc func keyboardWillShow(_ notification: Notification) {
-        bottomInset = -Constants.keyboardSpacing
+        let floats = !isAwaitingSubmittedChat
+            && viewIfLoaded?.window != nil
+            && keyboardOverlap(from: notification) >= Constants.floatingKeyboardOverlap
+        let animation = KeyboardAdaptationAnimation(notification)
+        guard floats != isFloatingSuggestions else {
+            bottomInset = -Constants.keyboardSpacing
+            if floats, let keyboardTop = keyboardTopInColumnHost(from: notification) {
+                floatingSuggestionsView.moveAbove(keyboardTop: keyboardTop, animation: (animation.duration, animation.options))
+            }
+            return
+        }
+        setFloatingSuggestions(floats, animation: animation, keyboardTop: keyboardTopInColumnHost(from: notification))
     }
 
     @objc func keyboardWillHide(_ notification: Notification) {
-        bottomInset = bottomPaddingForOrientation()
+        guard isFloatingSuggestions else {
+            bottomInset = bottomPaddingForOrientation()
+            return
+        }
+        setFloatingSuggestions(false, animation: KeyboardAdaptationAnimation(notification), keyboardIsHiding: true)
+    }
+
+    func recordRestingStartActionFrames() {
+        guard let window = view.window else { return }
+        let keyboardHeight = window.bounds.maxY - window.keyboardLayoutGuide.layoutFrame.minY
+        guard !isFloatingSuggestions, keyboardHeight < Constants.floatingKeyboardOverlap else { return }
+        restingStartActionFrames = quickActionsView.chipViews.map { $0.convert($0.bounds, to: view) }
+    }
+
+    /// Where the keyboard's top edge lands, in the coordinate space the floating suggestions are placed in.
+    func keyboardTopInColumnHost(from notification: Notification) -> CGFloat? {
+        guard let endFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let host = floatingSuggestionsColumn()?.superview,
+              let screen = view.window?.windowScene?.screen else { return nil }
+        return host.convert(endFrame, from: screen.coordinateSpace).minY
+    }
+
+    /// Measured against the column, which keeps its frame while the input above the keyboard moves.
+    func keyboardOverlap(from notification: Notification) -> CGFloat {
+        guard let endFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
+              let column = floatingSuggestionsColumn(),
+              let screen = view.window?.windowScene?.screen else { return 0 }
+        let keyboardFrame = column.convert(endFrame, from: screen.coordinateSpace)
+        return column.bounds.intersection(keyboardFrame).height
+    }
+
+    /// Runs alongside the keyboard, so the suggestions slide out of the column as it rises and back as it falls.
+    func setFloatingSuggestions(_ floats: Bool,
+                                animation: KeyboardAdaptationAnimation?,
+                                keyboardTop: CGFloat? = nil,
+                                keyboardIsHiding: Bool = false,
+                                animatesFloatingSuggestions: Bool = true,
+                                returnsToColumn: Bool = true) {
+        isFloatingSuggestions = floats
+        if floats, let column = floatingSuggestionsColumn(), let host = column.superview {
+            let isColumnListShowing = quickActionsScrollView.alpha > 0 && quickActionsView.alpha > 0
+            let sourceFrames = isColumnListShowing ? restingStartActionFrames.map { view.convert($0, to: host) } : []
+            floatingSuggestionsView.show(beside: column,
+                                         keyboardTop: keyboardTop ?? host.keyboardLayoutGuide.layoutFrame.minY,
+                                         from: sourceFrames)
+            isLandingFloatingSuggestions = false
+            // The floating chips take over in place, so the column's own fade would show each one twice.
+            // Outside the keyboard's animation, which this notification arrives inside.
+            UIView.performWithoutAnimation { updateStartActionsVisibility() }
+        } else if floatingSuggestionsView.isShown {
+            let host = floatingSuggestionsColumn()?.superview
+            let isColumnListReturning = returnsToColumn && inputText.isEmpty
+            // The column is already laid out for the keyboard going down, so its chips' frames are where they will rest.
+            view.layoutIfNeeded()
+            let targetFrames = isColumnListReturning && animatesFloatingSuggestions
+                ? host.map { host in quickActionsView.chipViews.map { $0.convert($0.bounds, to: host) } } ?? []
+                : []
+            isLandingFloatingSuggestions = !targetFrames.isEmpty
+            floatingSuggestionsView.hide(animated: animatesFloatingSuggestions, to: targetFrames) { [weak self] in
+                guard let self, isLandingFloatingSuggestions else { return }
+                isLandingFloatingSuggestions = false
+                updateStartActionsVisibility()
+            }
+        }
+        let changes = { [self] in
+            bottomInset = keyboardIsHiding ? bottomPaddingForOrientation() : -Constants.keyboardSpacing
+            updateStartActionsVisibility()
+        }
+        if let animation {
+            UIView.animate(withDuration: animation.duration, delay: 0, options: animation.options, animations: changes)
+        } else {
+            changes()
+        }
+    }
+
+    func updateStartActionsVisibilityForText() {
+        guard isFloatingSuggestions else { return }
+        UIView.animate(withDuration: 0.2) {
+            self.updateStartActionsVisibility()
+        }
+    }
+
+    /// While the suggestions float, they step aside once the user types a prompt of their own,
+    /// and the column's own list stays empty.
+    func updateStartActionsVisibility() {
+        let hidesForText = isFloatingSuggestions && !inputText.isEmpty
+        let isColumnListHidden = isFloatingSuggestions || isLandingFloatingSuggestions || isAwaitingSubmittedChat
+        quickActionsScrollView.alpha = isColumnListHidden ? 0 : 1
+        quickActionsScrollView.isUserInteractionEnabled = !isColumnListHidden
+        floatingSuggestionsView.alpha = hidesForText ? 0 : 1
+    }
+
+    /// When the list has to scroll, the chips nearest the input stay in view.
+    func keepNearestStartActionsVisible() {
+        let height = quickActionsScrollView.bounds.height
+        defer { lastStartActionsHeight = height }
+        guard height != lastStartActionsHeight else { return }
+        let maxOffset = max(0, quickActionsScrollView.contentSize.height - height)
+        quickActionsScrollView.contentOffset = CGPoint(x: 0, y: maxOffset)
+    }
+
+    /// Fades whichever edge has chips scrolled out past it, so a cut-off chip reads as more to scroll to.
+    func updateStartActionsEdgeFade() {
+        let scrollView = quickActionsScrollView
+        let length = scrollView.bounds.height
+        let contentLength = scrollView.contentSize.height
+        let offset = scrollView.contentOffset.y
+        guard length > 0, contentLength > length + 1 else {
+            scrollView.layer.mask = nil
+            return
+        }
+
+        let fade = min(Constants.startActionsEdgeFadeLength / length, 0.5)
+        let opaque = UIColor.black.cgColor
+        let clear = UIColor.black.withAlphaComponent(0).cgColor
+        let mask = startActionsEdgeFadeMask
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        mask.startPoint = CGPoint(x: 0.5, y: 0)
+        mask.endPoint = CGPoint(x: 0.5, y: 1)
+        mask.colors = [offset > 1 ? clear : opaque, opaque, opaque, offset + length < contentLength - 1 ? clear : opaque]
+        mask.locations = [0, NSNumber(value: Double(fade)), NSNumber(value: Double(1 - fade)), 1]
+        mask.frame = scrollView.bounds
+        CATransaction.commit()
+        scrollView.layer.mask = mask
     }
 
     func updateBottomPaddingForOrientation() {
@@ -616,5 +823,32 @@ extension AIChatContextualInputViewController: AIChatBasicNativeInputViewControl
 
     func basicNativeInputViewController(_ viewController: AIChatBasicNativeInputViewController, didChangeText text: String) {
         scrollQuickActionsToBottom()
+        updateStartActionsVisibilityForText()
+    }
+}
+
+// MARK: - Start Actions Scroll View
+
+/// Reports each layout pass, the first point where its content size is current.
+private final class StartActionsScrollView: UIScrollView {
+    var onLayout: (() -> Void)?
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        onLayout?()
+    }
+}
+
+// MARK: - Keyboard Animation
+
+private struct KeyboardAdaptationAnimation {
+    let duration: TimeInterval
+    let options: UIView.AnimationOptions
+
+    init(_ notification: Notification) {
+        let userInfo = notification.userInfo
+        duration = userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval ?? 0.25
+        let curve = userInfo?[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt ?? UInt(UIView.AnimationCurve.easeInOut.rawValue)
+        options = UIView.AnimationOptions(rawValue: curve << 16)
     }
 }

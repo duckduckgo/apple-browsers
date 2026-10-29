@@ -74,9 +74,8 @@ extension MainViewController: AIChatContextualSidebarHosting {
         presenter.dismiss(hostedViewController, animated: true, coversPage: false, completion: nil)
     }
 
-    /// Runs on every step of a window resize, and on rotation, before the new size lands. A sidebar that stops fitting
-    /// hands the chat to a sheet straight away, so it never leaves the screen. Going back into the sidebar waits for
-    /// the resize to end, since the sheet works at any width and the drag may still reverse.
+    /// Runs on every step of a window resize, and on rotation, before the new size lands. The chat follows the window
+    /// both ways mid-drag: a sidebar that stops fitting hands it to a sheet, and a sheet moves back once it fits again.
     func contextualSurfaceWillTransition(with transitionCoordinator: UIViewControllerTransitionCoordinator) {
         guard let coordinator = currentTab?.aiChatContextualSheetCoordinator else { return }
         // A rotation animates its own change, which covers the column leaving at once.
@@ -89,28 +88,23 @@ extension MainViewController: AIChatContextualSidebarHosting {
             if coordinator.isSheetInSidebar, !self.canPresentContextualSidebar {
                 coordinator.parkSurfaceForResize(animated: true)
             }
-            if coordinator.hasParkedSurface {
-                coordinator.adaptSurface(toPresenter: self)
-            } else {
-                self.adaptContextualSurfaceOnceResizeEnds()
-            }
+            coordinator.adaptSurface(toPresenter: self)
+            self.adaptContextualSurfaceWhenResizeEnds()
         }
     }
 
-    /// A live resize reports every step of the drag, so the chat moves once, when the user lets go of the window,
-    /// rather than flipping between a sheet and the sidebar on the way.
-    private func adaptContextualSurfaceOnceResizeEnds() {
-        if #available(iOS 26, *), let scene = view.window?.windowScene, scene.effectiveGeometry.isInteractivelyResizing {
-            guard contextualSurfaceResizeEndObservation == nil else { return }
-            contextualSurfaceResizeEndObservation = scene.observe(\.effectiveGeometry) { [weak self] scene, _ in
-                MainActor.assumeIsolated {
-                    guard let self, !scene.effectiveGeometry.isInteractivelyResizing else { return }
-                    self.contextualSurfaceResizeEndObservation = nil
-                    self.adaptContextualSurfaceOnceResizeEnds()
-                }
+    /// A step that lands while the sheet is still sliding in can't move it, so the end of the drag settles it.
+    private func adaptContextualSurfaceWhenResizeEnds() {
+        guard #available(iOS 26, *),
+              let scene = view.window?.windowScene,
+              scene.effectiveGeometry.isInteractivelyResizing,
+              contextualSurfaceResizeEndObservation == nil else { return }
+        contextualSurfaceResizeEndObservation = scene.observe(\.effectiveGeometry) { [weak self] scene, _ in
+            MainActor.assumeIsolated {
+                guard let self, !scene.effectiveGeometry.isInteractivelyResizing else { return }
+                self.contextualSurfaceResizeEndObservation = nil
+                self.currentTab?.aiChatContextualSheetCoordinator.adaptSurface(toPresenter: self)
             }
-            return
         }
-        currentTab?.aiChatContextualSheetCoordinator.adaptSurface(toPresenter: self)
     }
 }

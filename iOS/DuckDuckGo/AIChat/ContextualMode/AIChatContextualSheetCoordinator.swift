@@ -764,7 +764,7 @@ final class AIChatContextualSheetCoordinator {
         parkedSheetViewController != nil
     }
 
-    /// Once a resize settles, puts the open surface where the window's size calls for: the sidebar when there's room
+    /// On a resize, puts the open surface where the window's size calls for: the sidebar when there's room
     /// for it, a sheet when there isn't. The chat, its draft and its page context carry over untouched.
     func adaptSurface(toPresenter presentingVC: UIViewController) {
         guard isSheetPresented, let sheetVC = sheetViewController else { return }

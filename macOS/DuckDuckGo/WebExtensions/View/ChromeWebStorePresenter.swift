@@ -75,7 +75,7 @@ final class ChromeWebStorePresenter: NSObject, ChromeWebStorePresenting {
         alert.informativeText = UserText.chromeWebStoreRemoveMessage
         alert.addButton(withTitle: UserText.cancel)
         alert.addButton(withTitle: UserText.chromeWebStoreRemoveButton)
-        alert.buttons[0].keyEquivalent = ""
+        alert.buttons[0].keyEquivalent = "\u{1b}"
         alert.buttons[1].keyEquivalent = "\r"
         return await present(alert) == .alertSecondButtonReturn
     }

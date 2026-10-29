@@ -17,74 +17,90 @@
 //
 
 import AppUpdaterShared
+import FoundationExtensions
 import PrivacyConfigTestsUtils
 import Testing
 
 @Suite("MoreProminentUpdatesSettings")
 struct MoreProminentUpdatesSettingsTests {
 
-    private func makeSettings(_ json: String?) -> MoreProminentUpdatesSettings {
+    private func makeSettings(_ json: String?, isInternalUser: Bool = false) -> MoreProminentUpdatesSettings {
         let privacyConfig = MockPrivacyConfiguration()
         privacyConfig.subfeatureSettings = json
-        return MoreProminentUpdatesSettings(privacyConfig: privacyConfig)
+        return MoreProminentUpdatesSettings(privacyConfig: privacyConfig, isInternalUser: isInternalUser)
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Uses defaults when the subfeature has no settings", .timeLimit(.minutes(1)))
-    func defaultsWithoutSettings() {
+    @Test("Uses the external defaults when the subfeature has no settings", .timeLimit(.minutes(1)))
+    func externalDefaultsWithoutSettings() {
         let settings = makeSettings(nil)
 
-        #expect(settings.daysUntilFirstPrompt == 2)
-        #expect(settings.daysUntilSecondPrompt == 4)
-        #expect(settings.versionsBehindBeforePrompt == 1)
+        #expect(settings.firstPromptDelay == .hours(48))
+        #expect(settings.secondPromptDelay == .hours(96))
+        #expect(settings.appStoreUpdateAvailableDelay == .hours(24))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Reads all values from the remote settings", .timeLimit(.minutes(1)))
-    func readsRemoteValues() {
-        let settings = makeSettings(#"{"daysUntilFirstPrompt": 3, "daysUntilSecondPrompt": 7, "versionsBehindBeforePrompt": 2}"#)
+    @Test("Uses the internal defaults for internal users when the subfeature has no settings", .timeLimit(.minutes(1)))
+    func internalDefaultsWithoutSettings() {
+        let settings = makeSettings(nil, isInternalUser: true)
 
-        #expect(settings.daysUntilFirstPrompt == 3)
-        #expect(settings.daysUntilSecondPrompt == 7)
-        #expect(settings.versionsBehindBeforePrompt == 2)
+        #expect(settings.firstPromptDelay == .hours(2))
+        #expect(settings.secondPromptDelay == .hours(4))
+        #expect(settings.appStoreUpdateAvailableDelay == .hours(1))
+    }
+
+    private static let allValues = """
+        {"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 120, "hoursUntilAppStoreUpdateAvailable": 12,
+         "internalHoursUntilFirstPrompt": 0.5, "internalHoursUntilSecondPrompt": 3, "internalHoursUntilAppStoreUpdateAvailable": 0}
+        """
+
+    @available(iOS 16, macOS 13, *)
+    @Test("External users read the unprefixed values", .timeLimit(.minutes(1)))
+    func externalUsersReadUnprefixedValues() {
+        let settings = makeSettings(Self.allValues)
+
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 72, hoursUntilSecondPrompt: 120, hoursUntilAppStoreUpdateAvailable: 12))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Falls back per value when one setting is missing", .timeLimit(.minutes(1)))
-    func fallsBackForMissingValue() {
-        let settings = makeSettings(#"{"daysUntilSecondPrompt": 10}"#)
+    @Test("Internal users read the internal values", .timeLimit(.minutes(1)))
+    func internalUsersReadInternalValues() {
+        let settings = makeSettings(Self.allValues, isInternalUser: true)
 
-        #expect(settings.daysUntilFirstPrompt == 2)
-        #expect(settings.daysUntilSecondPrompt == 10)
-        #expect(settings.versionsBehindBeforePrompt == 1)
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 0.5, hoursUntilSecondPrompt: 3, hoursUntilAppStoreUpdateAvailable: 0))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Falls back when a value is negative", .timeLimit(.minutes(1)))
-    func fallsBackForNegativeValue() {
-        let settings = makeSettings(#"{"daysUntilFirstPrompt": -1, "daysUntilSecondPrompt": 5}"#)
+    @Test("Internal users fall back to the internal defaults when only the external values are present", .timeLimit(.minutes(1)))
+    func internalUsersIgnoreExternalValues() {
+        let settings = makeSettings(#"{"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 120, "hoursUntilAppStoreUpdateAvailable": 12}"#,
+                                    isInternalUser: true)
 
-        #expect(settings.daysUntilFirstPrompt == 2)
-        #expect(settings.daysUntilSecondPrompt == 5)
+        #expect(settings == MoreProminentUpdatesSettings(.internal))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Falls back when the settings can't be decoded", .timeLimit(.minutes(1)), arguments: [
-        #"{"daysUntilFirstPrompt": "soon"}"#,
-        #"{"versionsBehindBeforePrompt": "one"}"#
-    ])
-    func fallsBackForInvalidSettings(json: String) {
-        let settings = makeSettings(json)
+    @Test("Falls back per value when one setting is missing or negative", .timeLimit(.minutes(1)))
+    func fallsBackPerValue() {
+        let settings = makeSettings(#"{"hoursUntilSecondPrompt": 100, "hoursUntilAppStoreUpdateAvailable": -1}"#)
 
-        #expect(settings == MoreProminentUpdatesSettings())
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 100, hoursUntilAppStoreUpdateAvailable: 24))
     }
 
     @available(iOS 16, macOS 13, *)
-    @Test("Validates the versions-behind threshold", .timeLimit(.minutes(1)), arguments: [-1, 0, 3])
-    func validatesVersionsBehindBeforePrompt(value: Int) {
-        let settings = makeSettings("{\"daysUntilFirstPrompt\": 3, \"versionsBehindBeforePrompt\": \(value)}")
+    @Test("Falls back to both default prompt timings when the second prompt would come before the first", .timeLimit(.minutes(1)))
+    func fallsBackWhenPromptsAreOutOfOrder() {
+        let settings = makeSettings(#"{"hoursUntilFirstPrompt": 72, "hoursUntilSecondPrompt": 60, "hoursUntilAppStoreUpdateAvailable": 12}"#)
 
-        #expect(settings.daysUntilFirstPrompt == 3)
-        #expect(settings.versionsBehindBeforePrompt == (value < 0 ? 1 : value))
+        #expect(settings == MoreProminentUpdatesSettings(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 12))
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("Falls back to the defaults when the settings can't be decoded", .timeLimit(.minutes(1)))
+    func fallsBackForUndecodableSettings() {
+        let settings = makeSettings(#"{"hoursUntilFirstPrompt": "soon"}"#)
+
+        #expect(settings == MoreProminentUpdatesSettings(.external))
     }
 }

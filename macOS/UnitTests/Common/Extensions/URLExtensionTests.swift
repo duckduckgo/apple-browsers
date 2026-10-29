@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import AppKitExtensions
 import Combine
 import Foundation
 import Testing
@@ -27,7 +26,7 @@ import Testing
 final class URLExtensionTests {
 
     @available(iOS 16, macOS 13, *)
-    @Test("ATB request URLs use the production traffic policy", .timeLimit(.minutes(1)), arguments: [
+    @Test("ATB request URLs are marked as test traffic in Debug builds", .timeLimit(.minutes(1)), arguments: [
         URL.initialAtb,
         URL.exti(forAtb: "v123-1"),
         URL.searchAtb(atbWithVariant: "v123-1", setAtb: "v123-2", isSignedIntoEmailProtection: false),
@@ -38,11 +37,7 @@ final class URLExtensionTests {
         let components = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false))
         let testParameters = components.queryItems?.filter { $0.name == "test" } ?? []
 
-        if BuildFlags.isProductionBuild {
-            #expect(testParameters.isEmpty)
-        } else {
-            #expect(testParameters == [URLQueryItem(name: "test", value: "1")])
-        }
+        #expect(testParameters == [URLQueryItem(name: "test", value: "1")])
     }
 
     @available(iOS 16, macOS 13, *)

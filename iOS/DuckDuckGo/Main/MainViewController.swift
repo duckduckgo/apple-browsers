@@ -341,8 +341,7 @@ class MainViewController: UIViewController {
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let duckAISessionInstrumentation: DuckAISessionInstrumentation
     let duckAIEntryInstrumentation: DuckAIEntryInstrumentation
-    /// The new tab page onboarding's Try Duck.ai opened the address bar on. An address-bar prompt from it, while it is
-    /// still current and empty, reports the promo instead; any entry clears it.
+    /// The new tab page onboarding's Try Duck.ai opened the address bar on, until the next entry.
     weak var onboardingPromoTab: Tab?
     /// Where voice search was opened from outside the address bar, e.g. a widget; nil when opened in-app.
     private var voiceSearchEntrySource: AIChatEntryPointSource?
@@ -5070,11 +5069,7 @@ class MainViewController: UIViewController {
     @discardableResult
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
                                    chatState: DuckAIEntryWideEventData.ChatState? = nil) -> AIChatEntryPointSource {
-        let isAddressBarPrompt = source == .addressBarPrompt || source == .ipadTogglePrompt
-        let currentTabModel = tabManager.currentTabsModel.currentTab
-        let isOnPromoTab = onboardingPromoTab != nil && onboardingPromoTab === currentTabModel && currentTabModel?.link == nil
-        let source: AIChatEntryPointSource = isOnPromoTab && isAddressBarPrompt ? .onboardingCompletionPromo : source
-        onboardingPromoTab = nil
+        let source = takeOnboardingPromoSource(for: source)
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
@@ -5093,6 +5088,17 @@ class MainViewController: UIViewController {
             reportDuckAISessionCurrentTab()
         }
         return source
+    }
+
+    /// An address-bar prompt from the tab onboarding's Try Duck.ai opened reports the promo; any entry clears it.
+    private func takeOnboardingPromoSource(for source: AIChatEntryPointSource) -> AIChatEntryPointSource {
+        defer { onboardingPromoTab = nil }
+        guard let promoTab = onboardingPromoTab,
+              promoTab === tabManager.currentTabsModel.currentTab,
+              promoTab.link == nil,
+              source == .addressBarPrompt || source == .ipadTogglePrompt
+        else { return source }
+        return .onboardingCompletionPromo
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {

@@ -336,8 +336,11 @@ class MainViewController: UIViewController {
     let duckAIWideEventInstrumentation: DuckAIWideEventInstrumentation
     let duckAISessionInstrumentation: DuckAISessionInstrumentation
     let duckAIEntryInstrumentation: DuckAIEntryInstrumentation
-    /// Set by onboarding's Try Duck.ai; the next address-bar prompt reports it instead, and any entry clears it.
-    var pendingOnboardingPromoEntry = false
+    /// The new tab page onboarding's Try Duck.ai opened the address bar on. An address-bar prompt from it, while it is
+    /// still current and empty, reports the promo instead; any entry clears it.
+    weak var onboardingPromoTab: Tab?
+    /// Where voice search was opened from outside the address bar, e.g. a widget; nil when opened in-app.
+    private var voiceSearchEntrySource: AIChatEntryPointSource?
     let syncAutoRestoreHandler: SyncAutoRestoreHandling
     private let lastActiveTabStore: LastActiveTabStoring
     let fireModeCapability: FireModeCapable
@@ -4383,10 +4386,12 @@ class MainViewController: UIViewController {
         (tab?.webView as? WebView)?.lastFindInPageQuery = tab?.webView.findInteraction?.searchText
     }
 
-    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil) {
+    /// `entrySource` is where voice search was opened outside the address bar, reported if it goes to Duck.ai.
+    func handleVoiceSearchOpenRequest(preferredTarget: VoiceSearchTarget? = nil, entrySource: AIChatEntryPointSource? = nil) {
         SpeechRecognizer.requestMicAccess { [weak self] permission in
             guard let self = self else { return }
             if permission {
+                self.voiceSearchEntrySource = entrySource
                 if let target = preferredTarget {
                     self.showVoiceSearch(preferredTarget: target)
                 } else {
@@ -4999,11 +5004,15 @@ class MainViewController: UIViewController {
     }
 
     /// `chatState` overrides how the entry wide event reads it, for an entry that starts a new chat in the tab on screen.
+    /// Returns the source reported, which the caller stamps on the tab so its prompts report it too.
+    @discardableResult
     func fireAIChatEntryPointPixel(source: AIChatEntryPointSource, opensNewTab: Bool, hasPrompt: Bool, voice: Bool = false,
-                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) {
+                                   chatState: DuckAIEntryWideEventData.ChatState? = nil) -> AIChatEntryPointSource {
         let isAddressBarPrompt = source == .addressBarPrompt || source == .ipadTogglePrompt
-        let source: AIChatEntryPointSource = pendingOnboardingPromoEntry && isAddressBarPrompt ? .onboardingCompletionPromo : source
-        pendingOnboardingPromoEntry = false
+        let currentTabModel = tabManager.currentTabsModel.currentTab
+        let isOnPromoTab = onboardingPromoTab != nil && onboardingPromoTab === currentTabModel && currentTabModel?.link == nil
+        let source: AIChatEntryPointSource = isOnPromoTab && isAddressBarPrompt ? .onboardingCompletionPromo : source
+        onboardingPromoTab = nil
         AIChatEntryPointPixel.fire(source: source,
                                    duckAIEnabled: aiChatSettings.isAIChatEnabled,
                                    toggleEnabled: aiChatSettings.isAIChatSearchInputUserSettingsEnabled,
@@ -5021,6 +5030,7 @@ class MainViewController: UIViewController {
             // Gives the sheet entry the page it opened on, so it can notice that page changing later.
             reportDuckAISessionCurrentTab()
         }
+        return source
     }
 
     func stampDuckAIEntrySourceOnCurrentTab(_ source: AIChatEntryPointSource) {
@@ -5089,7 +5099,7 @@ class MainViewController: UIViewController {
         // Voice always opens a new tab over existing content (chat included) — voice over a chat would replace the prior conversation. NTP stays in-place via `link != nil`.
         let hasContent = currentTab.tabModel.link != nil
         let openInNewTab = hasContent && (unifiedToggleInputFeature.isAvailable || fromDeepLink)
-        fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
+        let source = fireAIChatEntryPointPixel(source: source, opensNewTab: openInNewTab, hasPrompt: false, voice: true)
 
         if openInNewTab {
             let voiceURL = currentTab.aiChatContentHandler.buildVoiceModeURL()
@@ -5164,8 +5174,9 @@ class MainViewController: UIViewController {
     }
 
     private func openAIChat(_ request: AIChatOpeningRequest, from originatingTab: TabViewController) {
-        fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab, hasPrompt: request.hasEntryPrompt,
-                                  voice: request.isVoice)
+        var request = request
+        request.source = fireAIChatEntryPointPixel(source: request.source, opensNewTab: request.reportsNewTab,
+                                                   hasPrompt: request.hasEntryPrompt, voice: request.isVoice)
         // Record NTP use before ending the idle session.
         if !request.opensNewTab {
             measureAIChatUseFromNewTabPage(originatingTab)
@@ -6725,7 +6736,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     func performCancel(animated: Bool = true) {
-        pendingOnboardingPromoEntry = false
+        onboardingPromoTab = nil
         cancelPendingAppOpenKeyboard()
         dismissOmniBar(animated: animated)
         omniBar.cancel()
@@ -7523,7 +7534,7 @@ extension MainViewController: EscapeHatchActionRouter {
 extension MainViewController: NewTabPageControllerDelegate {
 
     func newTabPageDidOpenDuckAIOnboardingPromo(_ controller: any NewTabPage) {
-        pendingOnboardingPromoEntry = true
+        onboardingPromoTab = tabManager.currentTabsModel.currentTab
     }
 
     func newTabPageDidRequestSettings(_ controller: any NewTabPage) {
@@ -9441,7 +9452,8 @@ extension MainViewController: VoiceSearchViewControllerDelegate {
                 coordinator.submitVoicePrompt(query)
             } else {
                 performCancel()
-                openAIChat(source: isPad ? .ipadTogglePrompt : .addressBarPrompt, query, autoSend: true, tabAttachmentRequest: nil, voice: true)
+                let source = voiceSearchEntrySource ?? (isPad ? .ipadTogglePrompt : .addressBarPrompt)
+                openAIChat(source: source, query, autoSend: true, tabAttachmentRequest: nil, voice: true)
             }
         }
     }

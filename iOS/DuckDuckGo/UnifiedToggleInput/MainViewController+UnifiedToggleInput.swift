@@ -1300,7 +1300,7 @@ extension MainViewController {
     }
 
     func handleUnifiedToggleInputSearchSubmission(_ query: String) {
-        pendingOnboardingPromoEntry = false
+        onboardingPromoTab = nil
         fireUnifiedInputDuckAIDirectNavigationPixelIfNeeded(for: query)
         if let tab = tabManager.currentTabsModel.currentTab, tab.link == nil {
             ntpAfterIdleInstrumentation.barUsedFromNTP(afterIdle: tab.openedAfterIdle)

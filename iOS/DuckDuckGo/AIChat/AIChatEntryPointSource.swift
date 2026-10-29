@@ -74,7 +74,6 @@ public enum AIChatEntryPointSource: String, CaseIterable {
     case chatHistoryNewChat = "chat_history_new_chat"
     case chatHistoryOpenChat = "chat_history_open_chat"
     case chatHistoryViewAll = "chat_history_view_all"
-    case voice
     case onboarding
     /// A prompt sent from the address bar that onboarding's completion-step Try Duck.ai opened.
     case onboardingCompletionPromo = "onboarding_completion_promo"
@@ -107,7 +106,7 @@ extension AIChatEntryPointSource {
     /// Doors where the address bar hands a typed prompt to the Duck.ai page, which reports it as its own.
     var handsOverAddressBarPrompt: Bool {
         switch self {
-        case .addressBarPrompt, .addressBarEditingState, .suggestionAskAI, .ipadTogglePrompt: return true
+        case .addressBarPrompt, .addressBarEditingState, .suggestionAskAI, .ipadTogglePrompt, .onboardingCompletionPromo: return true
         default: return false
         }
     }

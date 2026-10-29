@@ -110,7 +110,7 @@ struct AIChatOpeningRequest {
 
     let url: URL
     let payload: Any?
-    let source: AIChatEntryPointSource
+    var source: AIChatEntryPointSource
     let opensNewTab: Bool
     let prompt: Prompt
     /// The user started by speaking, e.g. voice search sent to Duck.ai.

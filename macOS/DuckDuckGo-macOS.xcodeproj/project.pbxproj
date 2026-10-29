@@ -1376,6 +1376,7 @@
 		37C320FE2F1E80A1008F4604 /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 37C320BC2F1E80A1008F4604 /* Common */; };
 		37C321552F1F8C82008F4604 /* XCUIElementExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBCE6812BA444FA00B9DF00 /* XCUIElementExtension.swift */; };
 		37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
+		B695EBE286085888080D4CB9 /* AutofillTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9477808A5595580FC2E708AA /* AutofillTestHelpers.swift */; };
 		37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC472E0DB051000874F7 /* XCUIElementTypeExtension.swift */; };
 		37C3215A2F1F8C82008F4604 /* XCUIElementSnapshotExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E2FC452E0DB041000874F7 /* XCUIElementSnapshotExtension.swift */; };
 		37C3215B2F1F8C82008F4604 /* UITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE02D4192BB4609900DBE6B3 /* UITests.swift */; };
@@ -3987,6 +3988,7 @@
 		BBC90A2B2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */; };
 		BBC90A2C2E3265D50013E52C /* ReportProblemFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
+		7852CD07C749A7BFA6057336 /* AutofillTestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9477808A5595580FC2E708AA /* AutofillTestHelpers.swift */; };
 		BBD31EAA2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */; };
 		BBD31EAB2E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */; };
 		BBD798AD2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
@@ -7233,6 +7235,7 @@
 		BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
 		BBC90A2A2E3265D50013E52C /* ReportProblemFormViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportProblemFormViewModel.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
+		9477808A5595580FC2E708AA /* AutofillTestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillTestHelpers.swift; sourceTree = "<group>"; };
 		BBD31EA92E2FB46E0045551C /* VPNUpsellVisibilityManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUpsellVisibilityManagerTests.swift; sourceTree = "<group>"; };
 		BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPermissionButtonsIconsProviding.swift; sourceTree = "<group>"; };
 		BBD7A1CF2F97F0FF00D6AF54 /* AIChatReasoningEffort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatReasoningEffort.swift; sourceTree = "<group>"; };
@@ -14036,6 +14039,7 @@
 		EEBCE6802BA444FA00B9DF00 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				9477808A5595580FC2E708AA /* AutofillTestHelpers.swift */,
 				8449053E2E549B6D0054F4FD /* StringExtensions.swift */,
 				EE02D4192BB4609900DBE6B3 /* UITests.swift */,
 				BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */,
@@ -18061,6 +18065,7 @@
 				B57E206A2F5783070045B419 /* StartupPerformanceTests.swift in Sources */,
 				B5C980FF2F229F5C00655B21 /* XCTOptions+Helpers.swift in Sources */,
 				37C321572F1F8C82008F4604 /* XCUIApplicationExtension.swift in Sources */,
+				B695EBE286085888080D4CB9 /* AutofillTestHelpers.swift in Sources */,
 				B5C980F72F228EE300655B21 /* MemoryAllocationStatsMetric.swift in Sources */,
 				37C321592F1F8C82008F4604 /* XCUIElementTypeExtension.swift in Sources */,
 				B5DFC53A2F608DD8001AB6AA /* XCUIApplication+Helpers.swift in Sources */,
@@ -18295,6 +18300,7 @@
 				EE02D41A2BB4609900DBE6B3 /* UITests.swift in Sources */,
 				EE0429E02BA31D2F009EB20F /* FindInPageTests.swift in Sources */,
 				BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */,
+				7852CD07C749A7BFA6057336 /* AutofillTestHelpers.swift in Sources */,
 				8438BB172F2874270084DE69 /* WarnBeforeQuitUITests.swift in Sources */,
 				4B79481B2F81DFC400DA4028 /* TabNavigationPopupTests.swift in Sources */,
 				BBBB65402C77BB9400E69AC6 /* BookmarkSearchTests.swift in Sources */,

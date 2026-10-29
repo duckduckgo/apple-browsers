@@ -2569,6 +2569,7 @@
 		844905492E55A9740054F4FD /* SearchNonexistentDomainUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844905462E559E880054F4FD /* SearchNonexistentDomainUITests.swift */; };
 		8449054B2E55BBD60054F4FD /* NavigationProtectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */; };
 		8449054D2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */; };
+		79ABDDA2E9B919D153136E5A /* JSAlertUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA628B3443EB55FF939C3AF7 /* JSAlertUITests.swift */; };
 		8449054F2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8449054E2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift */; };
 		844905512E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */; };
 		844905532E55C9CD0054F4FD /* ErrorPageUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844905522E55C9CD0054F4FD /* ErrorPageUITests.swift */; };
@@ -6351,6 +6352,7 @@
 		844905462E559E880054F4FD /* SearchNonexistentDomainUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchNonexistentDomainUITests.swift; sourceTree = "<group>"; };
 		8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationProtectionUITests.swift; sourceTree = "<group>"; };
 		8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HTTPSUpgradeUITests.swift; sourceTree = "<group>"; };
+		FA628B3443EB55FF939C3AF7 /* JSAlertUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertUITests.swift; sourceTree = "<group>"; };
 		8449054E2E55BBEE0054F4FD /* PrivacyDashboardUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardUITests.swift; sourceTree = "<group>"; };
 		844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionUITests.swift; sourceTree = "<group>"; };
 		844905522E55C9CD0054F4FD /* ErrorPageUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorPageUITests.swift; sourceTree = "<group>"; };
@@ -10472,6 +10474,7 @@
 				843A52F52EA8F9170094C215 /* Fire */,
 				BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */,
 				8449054C2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift */,
+				FA628B3443EB55FF939C3AF7 /* JSAlertUITests.swift */,
 				844905502E55C9C80054F4FD /* MaliciousSiteProtectionUITests.swift */,
 				8449054A2E55BBD60054F4FD /* NavigationProtectionUITests.swift */,
 				56A054522C2592CE007D8FAB /* OnboardingUITests.swift */,
@@ -18291,6 +18294,7 @@
 				7B0A53D02F78469500F9A0DE /* StalledResourceLoadUITests.swift in Sources */,
 				84E2FC482E0DB058000874F7 /* XCUIElementTypeExtension.swift in Sources */,
 				8449054D2E55BBE30054F4FD /* HTTPSUpgradeUITests.swift in Sources */,
+				79ABDDA2E9B919D153136E5A /* JSAlertUITests.swift in Sources */,
 				EE02D41C2BB460A600DBE6B3 /* BrowsingHistoryTests.swift in Sources */,
 				EE02D41A2BB4609900DBE6B3 /* UITests.swift in Sources */,
 				EE0429E02BA31D2F009EB20F /* FindInPageTests.swift in Sources */,

@@ -26,6 +26,18 @@ final class WebViewContainerView: NSView {
     let webView: WebView
     weak var tab: Tab?
 
+    /// A JS dialog blocks the page's web process, so accessibility clients such as VoiceOver and UI tests hang
+    /// reading the page while the dialog covers it. Like aria-modal, the dialog hides the page until it's dismissed.
+    var isPageHiddenFromAccessibility = false {
+        didSet {
+            NSAccessibility.post(element: self, notification: .layoutChanged)
+        }
+    }
+
+    override func accessibilityChildren() -> [Any]? {
+        isPageHiddenFromAccessibility ? [] : super.accessibilityChildren()
+    }
+
     override var constraints: [NSLayoutConstraint] {
         // return nothing to WKFullScreenWindowController which will keep the constraints
         // and crash after trying to reactivate them as the ContainerView will be gone by the moment

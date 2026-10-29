@@ -1672,11 +1672,24 @@ final class BrowserTabViewController: NSViewController {
 
     private func showAlert(with query: JSAlertQuery) -> AnyCancellable {
         let jsAlertController = JSAlertController.create(query)
+        // The dialog covers the whole tab, the Duck.ai sidebar included, and the page that raised it can be in either
+        setPagesHiddenFromAccessibility(true)
         present(jsAlertController, animator: jsAlertController)
 
         return AnyCancellable { [weak self] in
+            self?.setPagesHiddenFromAccessibility(false)
             self?.dismiss(jsAlertController)
         }
+    }
+
+    private func setPagesHiddenFromAccessibility(_ isHidden: Bool) {
+        func webViewContainers(in view: NSView) -> [WebViewContainerView] {
+            if let container = view as? WebViewContainerView {
+                return [container]
+            }
+            return view.subviews.flatMap(webViewContainers(in:))
+        }
+        webViewContainers(in: view).forEach { $0.isPageHiddenFromAccessibility = isHidden }
     }
 
 }

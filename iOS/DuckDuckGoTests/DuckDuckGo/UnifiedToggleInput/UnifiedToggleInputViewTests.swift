@@ -1226,6 +1226,54 @@ final class UnifiedToggleInputViewTests: XCTestCase {
         XCTAssertGreaterThan(callbacks, 0)
     }
 
+    func testDynamicTypeResizesInteractedEmptyInputAndReportsNewHeight() throws {
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let parent = UIViewController()
+        window.rootViewController = parent
+        window.isHidden = false
+        defer {
+            window.isHidden = true
+            window.rootViewController = nil
+        }
+        let child = UIViewController()
+        parent.addChild(child)
+        parent.view.addSubview(child.view)
+        child.view.frame = parent.view.bounds
+        child.didMove(toParent: parent)
+        let initialTraits = UITraitCollection(preferredContentSizeCategory: .large)
+        parent.setOverrideTraitCollection(initialTraits, forChild: child)
+        var input: UnifiedToggleInputView?
+        initialTraits.performAsCurrent {
+            input = UnifiedToggleInputView(handler: UnifiedToggleInputHandler(isVoiceSearchEnabled: false))
+        }
+        let sut = try XCTUnwrap(input)
+        child.view.addSubview(sut)
+        sut.applyCardLayout(.expanded(showsToggle: true, showsToolbar: true), animated: false)
+        prepareForFitting(sut, width: 390, height: 200)
+        flushMainQueue()
+        let initialHeight = applyFittingHeight(to: sut, width: 390)
+        let entry = try XCTUnwrap(firstDescendant(of: SwitchBarTextEntryView.self, in: sut))
+        let textView = try XCTUnwrap(firstDescendant(of: UITextView.self, in: entry))
+        let initialFontSize = try XCTUnwrap(textView.font).pointSize
+        entry.hasBeenInteractedWith = true
+        var reportedHeights = [CGFloat]()
+        sut.onNeedsHierarchyLayout = { [weak sut] in
+            guard let sut else { return }
+            reportedHeights.append(self.applyFittingHeight(to: sut, width: 390))
+        }
+
+        parent.setOverrideTraitCollection(UITraitCollection(preferredContentSizeCategory: .accessibilityExtraExtraExtraLarge), forChild: child)
+        child.view.setNeedsLayout()
+        child.view.layoutIfNeeded()
+        flushMainQueue()
+        let resizedHeight = applyFittingHeight(to: sut, width: 390)
+        let resizedFontSize = try XCTUnwrap(textView.font).pointSize
+        XCTAssertGreaterThan(resizedFontSize, initialFontSize)
+        XCTAssertGreaterThan(resizedHeight, initialHeight)
+        XCTAssertEqual(try XCTUnwrap(reportedHeights.last), resizedHeight, accuracy: 1,
+                       "The focused content must receive the resized input height after Dynamic Type changes")
+    }
+
     func test_flankedAIChatShadowUsesTransparentBlackTokenInDarkMode() throws {
         let handler = UnifiedToggleInputHandler(isVoiceSearchEnabled: false)
         let sut = UnifiedToggleInputView(handler: handler)

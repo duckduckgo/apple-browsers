@@ -32,6 +32,14 @@ struct OnboardingStepsHelper {
         ]
     }
 
+    /// The iPhone default flow before the user answers the Download Screen.
+    static func expectedIPhoneDownloadReasonSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
+        [
+            .introDialog(isReturningUser: isReturningUser),
+            .downloadReasonSelection
+        ]
+    }
+
     static func expectedIPadSteps(isReturningUser: Bool) -> [OnboardingIntroStep] {
         [
             .introDialog(isReturningUser: isReturningUser),
@@ -63,7 +71,7 @@ struct OnboardingStepsHelper {
         let personalisationSteps: [OnboardingIntroStep]
         switch reason {
         case .browserPrivately:
-            personalisationSteps = [.searchPrivacySettingsSelection, .searchExperienceSelection]
+            personalisationSteps = [.searchExperienceSelection]
         case .privateAIChat:
             personalisationSteps = [.aiModelSelection, .toggleInputModeSelection]
         case .noAI:

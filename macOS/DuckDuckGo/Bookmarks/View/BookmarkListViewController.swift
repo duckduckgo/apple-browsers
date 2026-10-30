@@ -129,15 +129,16 @@ final class BookmarkListViewController: NSViewController {
     private let syncPromoManager: SyncPromoManaging
     private let emptyStatePromo: ImportSyncEmptyStatePromoPresenting
     private let pixelFiring: (any PixelKitFiring)?
+    private var shouldFireSyncPromoDisplayedPixel = false
+
+    private lazy var syncPromoViewModel = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
+        self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
+    }, dismissButtonAction: { [weak self] in
+        self?.syncPromoManager.promoDismissed()
+    }, pixelFiring: pixelFiring)
 
     private lazy var syncPromoViewHostingView: NSHostingView<SyncPromoView> = {
-        let model = SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
-            self?.syncPromoManager.goToSyncSettings(for: .bookmarks)
-        }, dismissButtonAction: { [weak self] in
-            self?.syncPromoManager.promoDismissed()
-        })
-
-        let headerView = SyncPromoView(viewModel: model)
+        let headerView = SyncPromoView(viewModel: syncPromoViewModel)
 
         let hostingController = NSHostingView(rootView: headerView)
         return hostingController
@@ -381,6 +382,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     override func viewWillAppear() {
+        shouldFireSyncPromoDisplayedPixel = true
         subscribeToModelEvents()
         reloadData()
 
@@ -388,6 +390,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     override func viewWillDisappear() {
+        shouldFireSyncPromoDisplayedPixel = false
         cancellables = []
     }
 
@@ -1010,6 +1013,7 @@ extension BookmarkListViewController {
             }
 
             updateOutlineColumnWidth(isShowingSyncPromo: true)
+            fireSyncPromoDisplayedPixelIfNeeded()
 
             let promoHeight = syncPromoViewHostingView.intrinsicContentSize.height == 0 ? 80 : syncPromoViewHostingView.intrinsicContentSize.height
             let totalHeight = promoHeight + outlineViewHeight
@@ -1024,6 +1028,12 @@ extension BookmarkListViewController {
             updateOutlineColumnWidth(isShowingSyncPromo: false)
             updateDocumentViewHeightIfNeeded(outlineViewHeight)
         }
+    }
+
+    private func fireSyncPromoDisplayedPixelIfNeeded() {
+        guard shouldFireSyncPromoDisplayedPixel else { return }
+        shouldFireSyncPromoDisplayedPixel = false
+        syncPromoViewModel.promoDisplayed()
     }
 
     private func updateOutlineColumnWidth(isShowingSyncPromo: Bool) {

@@ -1,0 +1,2971 @@
+//
+//  FloatingUITests.swift
+//  DuckDuckGoTests
+//
+//  Copyright © 2026 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import FeatureFlags_iOS
+import UIKit
+import WebKit
+import XCTest
+@testable import Core
+@testable import DuckDuckGo
+
+final class FloatingUIFeatureFlagTests: XCTestCase {
+
+    func testWhenCheckingCurrentOSThenOnlyTheMatchingFlagIsUsed() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+        let isIOS26Enabled = featureFlagger.isFloatingUIFeatureEnabled()
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+        let isIOS27Enabled = featureFlagger.isFloatingUIFeatureEnabled()
+
+        if #available(iOS 27, *) {
+            XCTAssertFalse(isIOS26Enabled)
+            XCTAssertTrue(isIOS27Enabled)
+        } else if #available(iOS 26, *) {
+            XCTAssertTrue(isIOS26Enabled)
+            XCTAssertFalse(isIOS27Enabled)
+        } else {
+            XCTAssertFalse(isIOS26Enabled)
+            XCTAssertFalse(isIOS27Enabled)
+        }
+    }
+
+    func testWhenOnlyIOS26FlagIsEnabledThenFloatingUIIsEnabledOnlyOnIOS26() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26])
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenOnlyIOS27FlagIsEnabledThenFloatingUIIsEnabledOnIOS27AndLater() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS27])
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 28))
+    }
+
+    func testWhenBothFlagsAreEnabledThenFloatingUIIsEnabledOnBothSupportedVersions() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenBothFlagsAreDisabledThenFloatingUIIsDisabledOnBothSupportedVersions() {
+        let featureFlagger = MockFeatureFlagger()
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+    }
+
+    func testWhenOSIsOutsideTheRolloutThenFloatingUIIsDisabledEvenWithBothFlagsEnabled() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+
+        for version in [18, 25] {
+            XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: version))
+        }
+    }
+
+    func testWhenFlagsChangeThenOnlyTheirRespectiveOSIsAffected() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.floatingUIiOS26, .floatingUIiOS27])
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS27]
+
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+
+        featureFlagger.enabledFeatureFlags = [.floatingUIiOS26]
+
+        XCTAssertTrue(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 26))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 27))
+        XCTAssertFalse(featureFlagger.isFloatingUIFeatureEnabled(osMajorVersion: 28))
+    }
+}
+
+final class StatusBackgroundScrollEdgeTests: XCTestCase {
+
+    func testScrollEdgeRegionDrawsNoContentAndDoesNotInterceptTouches() throws {
+        let background = MainViewFactory.StatusBackgroundView(effect: nil)
+        background.frame = CGRect(x: 0, y: 0, width: 402, height: 62)
+        background.addScrollEdgeRegion()
+        let region = try XCTUnwrap(background.contentView.subviews.first as? UIImageView)
+        let image = try XCTUnwrap(region.image?.cgImage)
+        var pixels = [UInt8](repeating: 255, count: image.width * image.height * 4)
+        try pixels.withUnsafeMutableBytes { bytes in
+            let context = try XCTUnwrap(CGContext(data: bytes.baseAddress,
+                                                 width: image.width,
+                                                 height: image.height,
+                                                 bitsPerComponent: 8,
+                                                 bytesPerRow: image.width * 4,
+                                                 space: CGColorSpaceCreateDeviceRGB(),
+                                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.clear(CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        }
+
+        XCTAssertTrue(stride(from: 3, to: pixels.count, by: 4).allSatisfy { pixels[$0] == 0 })
+        XCTAssertNil(region.hitTest(CGPoint(x: 200, y: 30), with: nil))
+        XCTAssertFalse(region.isAccessibilityElement)
+        XCTAssertFalse(region.isHidden)
+        XCTAssertEqual(region.alpha, 1)
+    }
+
+    func testScrollEdgeRegionFollowsStatusBackgroundBounds() throws {
+        let background = MainViewFactory.StatusBackgroundView(effect: nil)
+        background.addScrollEdgeRegion()
+        let region = try XCTUnwrap(background.contentView.subviews.first)
+
+        for size in [CGSize(width: 402, height: 62), CGSize(width: 874, height: 0), CGSize(width: 402, height: 62)] {
+            background.frame.size = size
+            background.layoutIfNeeded()
+            XCTAssertEqual(region.frame, background.contentView.bounds)
+        }
+    }
+}
+
+final class FloatingUIManagerTests: XCTestCase {
+
+    func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPhoneThenFloatingUIIsEnabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            isSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+
+        XCTAssertTrue(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenFloatingUIIsEnabledButUnifiedToggleInputIsUnavailableThenFloatingUIIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            isSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenFloatingUIIsDisabledAndUnifiedToggleInputIsAvailableThenFloatingUIIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: false,
+            isPadProvider: { false },
+            isSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenFloatingUIAndUnifiedToggleInputAreEnabledOnIPadThenFloatingUIIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { true },
+            isSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenOSIsUnsupportedThenFloatingUIIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            isSupportedOSProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+    }
+
+    func testWhenFloatingUIFlagIsEnabledOnSupportedIPhoneThenFloatingTabSwitcherIsEnabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            isSupportedOSProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: false)
+        )
+
+        XCTAssertFalse(manager.isFloatingUIEnabled)
+        XCTAssertTrue(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenFloatingUIFlagIsDisabledThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: false,
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenFloatingUIFlagIsEnabledOnIPadThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { true },
+            isTabSwitcherSupportedOSProvider: { true }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+    func testWhenTabSwitcherOSIsUnsupportedThenFloatingTabSwitcherIsDisabled() {
+        let manager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            isTabSwitcherSupportedOSProvider: { false }
+        )
+
+        XCTAssertFalse(manager.isFloatingTabSwitcherEnabled)
+    }
+
+}
+
+final class FloatingUIPullToRefreshTests: XCTestCase {
+
+    func testWhenPageBackgroundColorIsAvailableThenFloatingRefreshUsesIt() {
+        let pageBackgroundColor = UIColor.red
+        let refreshBackgroundColor = PullToRefreshViewAdapter.refreshBackgroundColor(pageBackgroundColor: pageBackgroundColor)
+
+        XCTAssertEqual(refreshBackgroundColor, pageBackgroundColor)
+    }
+
+    func testWhenPageBackgroundColorIsUnavailableThenRefreshUsesBrowserBackground() {
+        let refreshBackgroundColor = PullToRefreshViewAdapter.refreshBackgroundColor(pageBackgroundColor: nil)
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+
+        XCTAssertEqual(refreshBackgroundColor.resolvedColor(with: traits),
+                       UIColor(designSystemColor: .background).resolvedColor(with: traits))
+    }
+
+    func testWhenFloatingUIIsEnabledThenRefreshUsesWebViewUnderPageBackgroundColor() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+
+        adapter.backgroundColor = .blue
+
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let expectedComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testWhenUnderPageBackgroundChangesAtRestThenScrollViewBackgroundMatchesIt() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+
+        webView.underPageBackgroundColor = .red
+        adapter.webViewUnderPageBackgroundDidChange()
+
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let expectedComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testWhenNativeErrorPageVisibilityChangesThenBackdropUsesBrowserBackgroundAndRestoresPageColor() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let pageBackgroundComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
+
+        adapter.setNativeErrorPageVisible(true)
+
+        let errorBackgroundComponents = UIColor(designSystemColor: .background).resolvedColor(with: traits).cgColor.components
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, errorBackgroundComponents)
+        XCTAssertEqual(webView.underPageBackgroundColor?.resolvedColor(with: traits).cgColor.components, pageBackgroundComponents)
+
+        adapter.setNativeErrorPageVisible(false)
+
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: traits).cgColor.components, pageBackgroundComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, pageBackgroundComponents)
+    }
+
+    func testWhileFloatingRefreshIsRunningThenPageRestsBelowRefreshControl() {
+        XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: true, isFloatingUIEnabled: true), 80)
+        XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: false, isFloatingUIEnabled: true), 0)
+        XCTAssertEqual(PullToRefreshViewAdapter.pullableViewRestingOffset(isRefreshing: true, isFloatingUIEnabled: false), 0)
+    }
+
+    func testPullToRefreshObservesWebViewPanRecognizerWithoutAddingCompetingRecognizer() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let gestureRecognizerCount = webView.scrollView.gestureRecognizers?.count
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+
+        withExtendedLifetime(adapter) {
+            XCTAssertEqual(webView.scrollView.gestureRecognizers?.count, gestureRecognizerCount)
+        }
+    }
+
+    func testApplyingRefreshBackgroundUpdatesEveryVisibleWebViewLayer() {
+        let webView = WKWebView()
+        let refreshBackgroundColor = UIColor.red
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let expectedComponents = refreshBackgroundColor.resolvedColor(with: traits).cgColor.components
+
+        PullToRefreshViewAdapter.applyRefreshBackgroundColor(refreshBackgroundColor, to: webView)
+
+        XCTAssertEqual(webView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.underPageBackgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testWhenPageBackgroundChangesDuringFloatingPullThenRefreshKeepsItsCapturedColor() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+        let selector = NSSelectorFromString("handlePanGesture:")
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .changed
+        gesture.translationY = 20
+        adapter.perform(selector, with: gesture)
+
+        webView.backgroundColor = .white
+        webView.scrollView.backgroundColor = .white
+        webView.underPageBackgroundColor = .white
+        adapter.webViewUnderPageBackgroundDidChange()
+        adapter.webViewBackgroundDidChange()
+
+        let traits = UITraitCollection(userInterfaceStyle: .light)
+        let expectedComponents = UIColor.red.resolvedColor(with: traits).cgColor.components
+        XCTAssertEqual(pullableView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.scrollView.backgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+        XCTAssertEqual(webView.underPageBackgroundColor?.resolvedColor(with: traits).cgColor.components, expectedComponents)
+    }
+
+    func testWhenGestureMovesUpFromTopThenFloatingPullDoesNotStart() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+        let selector = NSSelectorFromString("handlePanGesture:")
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .changed
+        gesture.translationY = -20
+
+        adapter.perform(selector, with: gesture)
+
+        XCTAssertTrue(webView.scrollView.bounces)
+        XCTAssertEqual(pullableView.transform, .identity)
+    }
+
+    func testWhenRefreshIsDisabledThenFloatingPullDoesNotStartOrRefresh() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        var refreshCount = 0
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: { refreshCount += 1 })
+        adapter.setRefreshControlEnabled(false)
+        let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+        let selector = NSSelectorFromString("handlePanGesture:")
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .changed
+        gesture.translationY = 200
+
+        adapter.perform(selector, with: gesture)
+
+        XCTAssertEqual(refreshCount, 0)
+        XCTAssertTrue(webView.scrollView.bounces)
+        XCTAssertEqual(pullableView.transform, .identity)
+    }
+
+    func testWhenFloatingPullEndsThenWebKitResumesManagingUnderPageBackgroundColor() {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let webView = WKWebView(frame: pullableView.bounds)
+        webView.underPageBackgroundColor = .red
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(webView)
+        let adapter = PullToRefreshViewAdapter(with: webView.scrollView,
+                                               pullableView: pullableView,
+                                               webView: webView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        let gesture = TestPanGestureRecognizer(state: .began, translationY: 0)
+        let selector = NSSelectorFromString("handlePanGesture:")
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .changed
+        gesture.translationY = 20
+        adapter.perform(selector, with: gesture)
+        gesture.stubbedState = .ended
+        adapter.perform(selector, with: gesture)
+
+        let expectation = expectation(description: "Pull restoration")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            webView.backgroundColor = .white
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+            let restoredColor = webView.underPageBackgroundColor?.resolvedColor(with: .init(userInterfaceStyle: .light))
+            XCTAssertTrue(restoredColor?.getRed(&red, green: &green, blue: &blue, alpha: &alpha) == true)
+            XCTAssertEqual(red, 1)
+            XCTAssertEqual(green, 1)
+            XCTAssertEqual(blue, 1)
+            XCTAssertEqual(alpha, 1)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+    }
+
+    func testRefreshTriggerThresholdIsBoundedForFloatingUIWithoutChangingClassicUI() {
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: true), 120)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 200, isFloatingUIEnabled: true), 80)
+        XCTAssertEqual(PullToRefreshViewAdapter.refreshTriggerThreshold(containerHeight: 844, isFloatingUIEnabled: false), 253.2,
+                       accuracy: 0.01)
+    }
+
+    func testWhenFloatingUIIsDisabledThenRefreshHostRemainsBehindPullableView() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let pageScrollView = UIScrollView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(pageScrollView)
+        let adapter = PullToRefreshViewAdapter(with: pageScrollView,
+                                               pullableView: pullableView,
+                                               isFloatingUIEnabled: false,
+                                               onRefresh: {})
+        adapter.backgroundColor = .red
+        let refreshHost = try XCTUnwrap(hostView.subviews.compactMap { $0 as? UIScrollView }.first)
+
+        XCTAssertLessThan(try XCTUnwrap(hostView.subviews.firstIndex(of: refreshHost)),
+                          try XCTUnwrap(hostView.subviews.firstIndex(of: pullableView)))
+        XCTAssertTrue(refreshHost.isUserInteractionEnabled)
+        XCTAssertEqual(refreshHost.contentInsetAdjustmentBehavior, .automatic)
+        XCTAssertEqual(refreshHost.refreshControl?.backgroundColor, .red)
+    }
+
+    func testWhenTopOffsetChangesThenBackdropStaysFixedAndRefreshHostAllowsOverflow() throws {
+        let hostView = UIView(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        let pullableView = UIView(frame: hostView.bounds)
+        let pageScrollView = UIScrollView(frame: pullableView.bounds)
+        hostView.addSubview(pullableView)
+        pullableView.addSubview(pageScrollView)
+        let adapter = PullToRefreshViewAdapter(with: pageScrollView,
+                                               pullableView: pullableView,
+                                               isFloatingUIEnabled: true,
+                                               onRefresh: {})
+        hostView.layoutIfNeeded()
+        let refreshHost = try XCTUnwrap(hostView.subviews.compactMap { $0 as? UIScrollView }.first)
+        let backdrop = try XCTUnwrap(hostView.subviews.first { $0 !== pullableView && !($0 is UIScrollView) })
+        let initialBackdropMinY = backdrop.frame.minY
+        let refreshHostTopConstraint = try XCTUnwrap(hostView.constraints.first {
+            guard let constrainedView = $0.firstItem as? UIView else { return false }
+            return constrainedView === refreshHost && $0.firstAttribute == .top
+        })
+
+        adapter.setTopOffset(72)
+        hostView.layoutIfNeeded()
+
+        XCTAssertEqual(backdrop.frame.minY, initialBackdropMinY)
+        XCTAssertEqual(backdrop.frame.maxY, hostView.bounds.maxY)
+        XCTAssertEqual(refreshHostTopConstraint.constant, 72)
+        XCTAssertEqual(backdrop.backgroundColor?.resolvedColor(with: .init(userInterfaceStyle: .light)),
+                       UIColor(designSystemColor: .background).resolvedColor(with: .init(userInterfaceStyle: .light)))
+        XCTAssertEqual(refreshHost.backgroundColor, .clear)
+        XCTAssertEqual(refreshHost.refreshControl?.backgroundColor, .clear)
+        XCTAssertEqual(refreshHost.contentInsetAdjustmentBehavior, .never)
+        XCTAssertGreaterThan(try XCTUnwrap(hostView.subviews.firstIndex(of: refreshHost)),
+                             try XCTUnwrap(hostView.subviews.firstIndex(of: pullableView)))
+        XCTAssertFalse(refreshHost.isUserInteractionEnabled)
+        XCTAssertFalse(refreshHost.clipsToBounds)
+    }
+}
+
+private final class TestPanGestureRecognizer: UIPanGestureRecognizer {
+
+    var stubbedState: UIGestureRecognizer.State
+    var translationY: CGFloat
+
+    init(state: UIGestureRecognizer.State, translationY: CGFloat) {
+        self.stubbedState = state
+        self.translationY = translationY
+        super.init(target: nil, action: nil)
+    }
+
+    override var state: UIGestureRecognizer.State {
+        get { stubbedState }
+        set { stubbedState = newValue }
+    }
+
+    override func translation(in view: UIView?) -> CGPoint {
+        CGPoint(x: 0, y: translationY)
+    }
+}
+
+final class FloatingGlassAppearancePolicyTests: XCTestCase {
+
+    func testWhenPageColorIsUnavailableThenSiteThemeColorIsUsed() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: false,
+            contentBackgroundColor: nil,
+            underPageBackgroundColor: nil,
+            siteThemeColor: .black)
+
+        XCTAssertEqual(color, .black)
+    }
+
+    func testWhenSiteThemeColorIsAvailableThenItTakesPriorityOverUnderPageColor() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: false,
+            contentBackgroundColor: nil,
+            underPageBackgroundColor: .white,
+            siteThemeColor: .black)
+
+        XCTAssertEqual(color, .black)
+    }
+
+    func testWhenContentBackgroundColorIsAvailableThenItTakesPriority() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: false,
+            contentBackgroundColor: .black,
+            underPageBackgroundColor: .white,
+            siteThemeColor: .white)
+
+        XCTAssertEqual(color, .black)
+    }
+
+    func testWhenNewTabPageIsVisibleThenStaleWebPageColorsAreIgnored() {
+        let color = FloatingGlassAppearancePolicy.pageBackgroundColor(
+            isNewTabPageVisible: true,
+            contentBackgroundColor: .black,
+            underPageBackgroundColor: .black,
+            siteThemeColor: .black)
+
+        XCTAssertNil(color)
+    }
+
+    func testWhenFireModeIsActiveThenInterfaceStyleIsDarkRegardlessOfDeviceAndPageAppearance() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: true,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: .white)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesDarkDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .dark)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenDarkDeviceAppearanceHasNoPageColorThenInterfaceStyleIsDark() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .dark),
+            pageBackgroundColor: nil)
+
+        XCTAssertEqual(interfaceStyle, .dark)
+    }
+
+    func testWhenNormalModeUsesLightDeviceAppearanceThenInterfaceStyleFollowsPageAppearance() {
+        let traitCollection = UITraitCollection(userInterfaceStyle: .light)
+
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .black),
+                       .dark)
+        XCTAssertEqual(FloatingGlassAppearancePolicy.interfaceStyle(isFireMode: false,
+                                                                    traitCollection: traitCollection,
+                                                                    pageBackgroundColor: .white),
+                       .light)
+    }
+
+    func testWhenNormalModeHasNoPageColorThenInterfaceStyleIsLight() {
+        let interfaceStyle = FloatingGlassAppearancePolicy.interfaceStyle(
+            isFireMode: false,
+            traitCollection: UITraitCollection(userInterfaceStyle: .light),
+            pageBackgroundColor: nil)
+
+        XCTAssertEqual(interfaceStyle, .light)
+    }
+}
+
+final class FloatingUILayoutPolicyTests: XCTestCase {
+
+    func testWhenFloatingChromeObscuresContentThenWebViewRemainsFullBleed() {
+        let obscuredContentInsets = UIEdgeInsets(top: 111, left: 0, bottom: 83, right: 0)
+
+        let layout = FloatingUILayoutPolicy.webViewLayout(obscuredContentInsets: obscuredContentInsets)
+
+        XCTAssertEqual(layout.topAnchorConstant, 0)
+        XCTAssertEqual(layout.bottomAnchorConstant, 0)
+        XCTAssertEqual(layout.obscuredContentInsets, obscuredContentInsets)
+    }
+
+    func testWhenFloatingTopBarThenNewTabPageBottomInsetClearsTheToolbar() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .top,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        )
+
+        XCTAssertEqual(inset, 62)
+    }
+
+    func testWhenFloatingBottomBarThenNewTabPageBottomInsetClearsTheCombinedChrome() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 170,
+            safeAreaBottom: 34,
+            omnibarHeight: 48
+        )
+
+        XCTAssertEqual(inset, 136)
+    }
+
+    func testWhenFloatingUIIsDisabledThenNewTabPageKeepsLegacyBottomInsets() {
+        XCTAssertEqual(FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .top,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        ), 0)
+        XCTAssertEqual(FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52
+        ), 52)
+    }
+
+    func testWhenInlineInputHidesLegacyBottomAddressBarThenNoExtraBottomSpaceIsReserved() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: false,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52,
+            reservesAddressBarSpace: false
+        )
+
+        XCTAssertEqual(inset, 0)
+    }
+
+    func testWhenInlineInputHidesFloatingAddressBarThenVisibleToolbarSpaceIsStillReserved() {
+        let inset = FloatingUILayoutPolicy.newTabPageBottomAdditionalSafeAreaInset(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            floatingBottomObscuredHeight: 96,
+            safeAreaBottom: 34,
+            omnibarHeight: 52,
+            reservesAddressBarSpace: false
+        )
+
+        XCTAssertEqual(inset, 62)
+    }
+
+    func testWhenBarsVisibleThenBottomObscuredHeightIsToolbarSlot() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 1,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 100, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndBottomCapsuleVisibleThenBottomObscuredHeightTracksCapsule() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 70, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndNoBottomCapsuleThenBottomObscuredHeightIsSafeArea() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 0,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 34, accuracy: 0.001)
+    }
+
+    func testWhenPartiallyHiddenThenBottomObscuredHeightIsMaxOfShrinkingToolbarAndCapsule() {
+        // toolbar term = 100 * 0.5 = 50, capsule rest = 70 -> capsule wins the crossover.
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.5,
+            toolbarSlotHeight: 100,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 70, accuracy: 0.001)
+    }
+
+    func testWhenVisibleToolbarIsTallerThanTheInterpolatedSlotThenBottomObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewBottomObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            toolbarSlotHeight: 100,
+            visibleToolbarHeight: 90,
+            bottomCapsuleObscuredHeight: 70,
+            safeAreaBottom: 34
+        )
+
+        XCTAssertEqual(height, 90, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleThenTopObscuredHeightIsExpandedChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 1,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 111, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndTopCapsuleVisibleThenTopObscuredHeightTracksCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenAndNoTopCapsuleThenTopObscuredHeightIsSafeArea() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 0,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 59, accuracy: 0.001)
+    }
+
+    func testWhenPartiallyHiddenThenTopObscuredHeightIsMaxOfShrinkingChromeAndCapsule() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.5,
+            expandedChromeHeight: 111,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 91, accuracy: 0.001)
+    }
+
+    func testWhenVisibleTopChromeIsTallerThanTheInterpolatedChromeThenTopObscuredHeightUsesTheVisibleChrome() {
+        let height = FloatingUILayoutPolicy.webViewTopObscuredHeight(
+            barsVisibilityPercent: 0.8,
+            expandedChromeHeight: 111,
+            visibleChromeHeight: 105,
+            topCapsuleObscuredHeight: 91,
+            safeAreaTop: 59
+        )
+
+        XCTAssertEqual(height, 105, accuracy: 0.001)
+    }
+
+    func testWhenBarsVisibleAboveTheHandoffThenChromeStaysFullyOnScreen() {
+        for percent in [1.0, 0.9, 0.75, 0.6] as [CGFloat] {
+            let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: percent, handoffStart: 0.6)
+
+            XCTAssertEqual(fraction, 1, accuracy: 0.001, "expected no slide at \(percent)")
+        }
+    }
+
+    func testWhenBarsVisibleBelowTheHandoffThenChromeSlidesOutProportionally() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0.3, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0.5, accuracy: 0.001)
+    }
+
+    func testWhenBarsHiddenThenChromeIsFullyOffScreen() {
+        let fraction = FloatingUILayoutPolicy.chromeOnScreenFraction(barsVisibilityPercent: 0, handoffStart: 0.6)
+
+        XCTAssertEqual(fraction, 0, accuracy: 0.001)
+    }
+
+    func testWhenFloatingBottomAddressBarAndNotMinimalChromeThenOmnibarIsHostedInToolbar() {
+        XCTAssertTrue(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: false
+        ))
+    }
+
+    func testWhenMinimalChromeThenBottomOmnibarIsNotHostedInToolbar() {
+        // The toolbar is hidden in minimal chrome, so hosting the omnibar in it would hide the bar.
+        XCTAssertFalse(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+            isFloatingUIEnabled: true,
+            addressBarPosition: .bottom,
+            isUnifiedToggleInputVisible: false,
+            isMinimalChromeLayout: true
+        ))
+    }
+
+    func testWhenTopAddressBarThenOmnibarIsNotHostedInToolbarRegardlessOfMinimalChrome() {
+        for isMinimalChromeLayout in [false, true] {
+            XCTAssertFalse(FloatingUILayoutPolicy.shouldHostOmnibarInFloatingToolbar(
+                isFloatingUIEnabled: true,
+                addressBarPosition: .top,
+                isUnifiedToggleInputVisible: false,
+                isMinimalChromeLayout: isMinimalChromeLayout
+            ))
+        }
+    }
+
+    func testWhenAtOrBelowHandoffStartThenRampedProgressIsZero() {
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.6, from: 0.6, to: 0.85), 0, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.4, from: 0.6, to: 0.85), 0, accuracy: 0.001)
+    }
+
+    func testWhenAtOrAboveHandoffEndThenRampedProgressIsOne() {
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.85, from: 0.6, to: 0.85), 1, accuracy: 0.001)
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(1, from: 0.6, to: 0.85), 1, accuracy: 0.001)
+    }
+
+    func testWhenInsideTheHandoffBandThenRampedProgressIsLinear() {
+        // Midway between 0.6 and 0.85 (0.725) should read as halfway through the ramp.
+        XCTAssertEqual(FloatingUILayoutPolicy.rampedProgress(0.725, from: 0.6, to: 0.85), 0.5, accuracy: 0.001)
+    }
+
+    func testWhenAtOrBelowCollapseStartThenToolbarButtonRowIsFullyCollapsed() {
+        for percent in [CGFloat(0.85), 0.6, 0.45, 0.0] {
+            XCTAssertEqual(
+                FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: percent, collapseStart: 0.85),
+                1,
+                accuracy: 0.001,
+                "the button row must have finished collapsing by collapseStart, at percent \(percent)"
+            )
+        }
+    }
+
+    func testWhenAboveCollapseStartThenToolbarButtonRowCollapseIsGradual() {
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 1, collapseStart: 0.85), 0, accuracy: 0.001)
+        // Halfway between collapseStart (0.85) and 1.0 (0.925) should be halfway collapsed.
+        XCTAssertEqual(FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(barsVisibilityPercent: 0.925, collapseStart: 0.85), 0.5, accuracy: 0.001)
+    }
+
+    // The pill is single-row, so it must not start appearing until the bottom bar is single-row too.
+    func testWhenBottomPillStartsFadingInThenToolbarButtonRowHasFinishedCollapsing() {
+        let pillFadeStart = FloatingDomainCapsuleController.alphaHandoffEnd(for: .bottom)
+        let collapse = FloatingUILayoutPolicy.toolbarButtonRowCollapseProgress(
+            barsVisibilityPercent: pillFadeStart,
+            collapseStart: FloatingDomainCapsuleController.handoffEnd
+        )
+
+        XCTAssertEqual(collapse, 1, accuracy: 0.001)
+    }
+}
+
+final class DefaultOmniBarViewLongPressPreviewTests: XCTestCase {
+
+    func testWhenGlassHostIsTransformedThenPreviewTargetsOriginalFieldGeometry() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, hostTransform: CGAffineTransform(scaleX: 0.9, y: 0.9))
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let container = try XCTUnwrap(menu.barView.searchContainer)
+            let frame = container.convert(container.bounds, to: menu.window)
+            let targetCenter = preview.target.container.convert(preview.target.center, to: menu.window)
+
+            XCTAssertTrue(preview.view === container)
+            XCTAssertTrue(preview.target.container === container.superview)
+            XCTAssertEqual(targetCenter.x, frame.midX, accuracy: 0.001)
+            XCTAssertEqual(targetCenter.y, frame.midY, accuracy: 0.001)
+            XCTAssertEqual(preview.target.transform, container.transform)
+            XCTAssertEqual(preview.size, container.bounds.size)
+        }
+    }
+
+    func testWhenMenuDisplaysThenGlassIsDisabledWithoutHidingTheLiveField() throws {
+        for withAnimator in [false, true] {
+            let menu = try makeDisplayedMenu(displayAnimator: withAnimator ? MenuDismissAnimator() : nil)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let glass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertFalse(preview.view.isHidden)
+            XCTAssertEqual(preview.view.alpha, 1)
+            XCTAssertNil(glass.effect)
+
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+
+            XCTAssertTrue(preview.view.window === menu.window)
+            XCTAssertFalse(preview.view.isHidden)
+            let restoredGlass = try XCTUnwrap(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first)
+            if #available(iOS 26.0, *) {
+                XCTAssertNotNil(restoredGlass.effect)
+            }
+        }
+    }
+
+    func testWhenAppearanceChangesDuringMenuThenPreviewKeepsLiveContentAndAdaptiveFill() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom)
+            defer { menu.window.isHidden = true }
+            let preview = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                          previewForDismissingMenuWithConfiguration: menu.configuration))
+            let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+            let lightTraits = UITraitCollection(userInterfaceStyle: .light)
+            let darkTraits = UITraitCollection(userInterfaceStyle: .dark)
+            XCTAssertNotEqual(fill.resolvedColor(with: lightTraits), fill.resolvedColor(with: darkTraits))
+
+            menu.window.overrideUserInterfaceStyle = .dark
+            menu.window.layoutIfNeeded()
+            menu.barView.refreshMaterialAppearance()
+
+            XCTAssertTrue(preview.view === menu.barView.searchContainer)
+            XCTAssertEqual(preview.view.traitCollection.userInterfaceStyle, .dark)
+            XCTAssertEqual(menu.barView.searchContainer.backgroundColor, .clear)
+            XCTAssertTrue(menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.allSatisfy { $0.effect == nil })
+
+            let dismissal = try XCTUnwrap(menu.barView.contextMenuInteraction(menu.interaction,
+                                                                            previewForDismissingMenuWithConfiguration: menu.configuration))
+            XCTAssertTrue(dismissal.view === preview.view)
+            XCTAssertEqual(dismissal.parameters.backgroundColor?.resolvedColor(with: darkTraits), fill.resolvedColor(with: darkTraits))
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: nil)
+        }
+    }
+
+    func testWhenMovingAddressBarThenWaitsForDismissalAndRestoresGlassBeforeMoving() throws {
+        for actionAfterWillEnd in [false, true] {
+            let menu = try makeDisplayedMenu()
+            defer { menu.window.isHidden = true }
+            let animator = MenuDismissAnimator()
+            var moves = 0
+            let move = {
+                XCTAssertFalse(menu.barView.searchContainer.isHidden)
+                let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+                if #available(iOS 26.0, *) {
+                    XCTAssertNotNil(glass?.effect)
+                }
+                moves += 1
+            }
+
+            if !actionAfterWillEnd {
+                menu.barView.performAfterLongPressMenuDismissal(move)
+            }
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+            if actionAfterWillEnd {
+                menu.barView.performAfterLongPressMenuDismissal(move)
+            }
+
+            XCTAssertEqual(moves, 0)
+            XCTAssertFalse(menu.barView.searchContainer.isHidden)
+            animator.complete()
+
+            XCTAssertEqual(moves, 1)
+            menu.barView.performAfterLongPressMenuDismissal(move)
+            XCTAssertEqual(moves, 2)
+        }
+    }
+
+    func testWhenLandscapeMenuDismissesThenFieldStaysVisibleUntilGlassRestores() throws {
+        for isBottom in [false, true] {
+            let menu = try makeDisplayedMenu(isBottom: isBottom, windowSize: CGSize(width: 844, height: 390))
+            defer { menu.window.isHidden = true }
+            let field = try XCTUnwrap(menu.barView.searchContainer)
+            let parent = field.superview
+            let animator = MenuDismissAnimator()
+            menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+            animator.complete()
+
+            XCTAssertFalse(field.isHidden)
+            XCTAssertEqual(field.alpha, 1)
+            XCTAssertTrue(field.superview === parent)
+        }
+    }
+
+    func testWhenMenuIsRemovedDuringDismissalThenPendingMoveIsCancelled() throws {
+        let menu = try makeDisplayedMenu()
+        defer { menu.window.isHidden = true }
+        let animator = MenuDismissAnimator()
+        var didMove = false
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+        menu.barView.longPressMenuProvider = nil
+        animator.complete()
+
+        XCTAssertFalse(didMove)
+        XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        let glass = menu.barView.searchContainer.subviews.compactMap { $0 as? UIVisualEffectView }.first
+        if #available(iOS 26.0, *) {
+            XCTAssertNotNil(glass?.effect)
+        }
+    }
+
+    func testWhenAddressBarLeavesWindowThenPendingMoveIsCancelled() throws {
+        let menu = try makeDisplayedMenu()
+        defer { menu.window.isHidden = true }
+        let animator = MenuDismissAnimator()
+        var didMove = false
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        menu.barView.contextMenuInteraction(menu.interaction, willEndFor: menu.configuration, animator: animator)
+
+        menu.barView.removeFromSuperview()
+        animator.complete()
+
+        XCTAssertFalse(menu.barView.searchContainer.isHidden)
+        XCTAssertFalse(didMove)
+        menu.barView.performAfterLongPressMenuDismissal { didMove = true }
+        XCTAssertTrue(didMove)
+    }
+
+    func testWhenMenuIsNotDisplayedThenMoveRunsImmediately() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        var didMove = false
+
+        barView.performAfterLongPressMenuDismissal { didMove = true }
+
+        XCTAssertTrue(didMove)
+    }
+
+    private struct DisplayedMenu {
+        let barView: DefaultOmniBarView
+        let window: UIWindow
+        let interaction: UIContextMenuInteraction
+        let configuration: UIContextMenuConfiguration
+    }
+
+    private func makeDisplayedMenu(isBottom: Bool = false,
+                                   hostTransform: CGAffineTransform = .identity,
+                                   displayAnimator: UIContextMenuInteractionAnimating? = nil,
+                                   windowSize: CGSize = CGSize(width: 390, height: 800)) throws -> DisplayedMenu {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = isBottom
+        barView.frame = CGRect(x: 0, y: 100, width: windowSize.width, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(origin: .zero, size: windowSize))
+        let host = UIView(frame: window.bounds.insetBy(dx: 10, dy: 20))
+        window.addSubview(host)
+        host.addSubview(barView)
+        host.transform = hostTransform
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+        _ = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: displayAnimator)
+        return DisplayedMenu(barView: barView, window: window, interaction: interaction, configuration: configuration)
+    }
+
+    private final class MenuDismissAnimator: NSObject, UIContextMenuInteractionAnimating {
+        var previewViewController: UIViewController? { nil }
+        private var completions: [() -> Void] = []
+
+        func addAnimations(_ animations: @escaping () -> Void) {
+            animations()
+        }
+
+        func addCompletion(_ completion: @escaping () -> Void) {
+            completions.append(completion)
+        }
+
+        func complete() {
+            let callbacks = completions
+            completions.removeAll()
+            callbacks.forEach { $0() }
+        }
+    }
+
+    func testWhenFloatingMenuHighlightsAndDismissesThenPreviewIncludesWholeFieldWithoutMovingControls() throws {
+        for isBottom in [false, true] {
+            let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+            barView.isUsingSmallTopSpacing = isBottom
+            barView.frame = CGRect(x: 0, y: 100, width: 390, height: barView.expectedHeight)
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+            barView.layoutIfNeeded()
+            barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+
+            let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+                .first { $0.delegate === barView })
+            let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+            let container = try XCTUnwrap(barView.searchContainer)
+            let fieldParent = barView.textField.superview
+            let containerParent = container.superview
+            let contentHost = try XCTUnwrap(container.subviews.first { $0 is DefaultOmniBarView.FloatingGlassContentHostView
+                || $0 is UIVisualEffectView })
+            let contentParent = contentHost.superview
+            let windowSubviews = window.subviews
+
+            let highlight = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+            XCTAssertTrue(highlight.view === container)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            XCTAssertFalse(container.isHidden)
+            barView.contextMenuInteraction(interaction, willDisplayMenuFor: configuration, animator: nil)
+            let dismissal = try XCTUnwrap(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+            XCTAssertTrue(highlight.view === dismissal.view)
+            XCTAssertTrue(barView.textField.superview === fieldParent)
+            XCTAssertTrue(container.superview === containerParent)
+            XCTAssertTrue(contentHost.superview === contentParent)
+
+            for preview in [highlight, dismissal] {
+                XCTAssertEqual(preview.view.bounds.size, container.bounds.size)
+                XCTAssertGreaterThan(preview.view.bounds.width, barView.textField.bounds.width)
+                let fill = try XCTUnwrap(preview.parameters.backgroundColor)
+                XCTAssertEqual(fill.resolvedColor(with: barView.traitCollection).cgColor.alpha, 1)
+                let previewBounds = try XCTUnwrap(preview.parameters.visiblePath).bounds
+                XCTAssertEqual(previewBounds.minX, container.bounds.minX, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.minY, container.bounds.minY, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.width, container.bounds.width, accuracy: 0.001)
+                XCTAssertEqual(previewBounds.height, container.bounds.height, accuracy: 0.001)
+            }
+
+            barView.contextMenuInteraction(interaction, willEndFor: configuration, animator: nil)
+            XCTAssertFalse(container.isHidden)
+            XCTAssertEqual(window.subviews, windowSubviews)
+            barView.longPressMenuProvider = nil
+            XCTAssertFalse(barView.textField.interactions.contains { $0 === interaction })
+        }
+    }
+
+    func testWhenFloatingUIIsDisabledThenMenuUsesDefaultPreviews() throws {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: false)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = try XCTUnwrap(barView.textField.interactions.compactMap { $0 as? UIContextMenuInteraction }
+            .first { $0.delegate === barView })
+        let configuration = try XCTUnwrap(barView.contextMenuInteraction(interaction, configurationForMenuAtLocation: .zero))
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+
+    func testWhenInteractionBelongsToAnotherControlThenMenuUsesDefaultPreviews() {
+        let barView = DefaultOmniBarView.create(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        barView.layoutIfNeeded()
+        barView.longPressMenuProvider = { UIMenu(children: [UIAction(title: "Move") { _ in }]) }
+        let interaction = UIContextMenuInteraction(delegate: barView)
+        let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil, actionProvider: nil)
+
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForHighlightingMenuWithConfiguration: configuration))
+        XCTAssertNil(barView.contextMenuInteraction(interaction, previewForDismissingMenuWithConfiguration: configuration))
+    }
+}
+
+final class DefaultOmniBarViewMinimalChromeTests: XCTestCase {
+
+    private func makeBarView(isFloatingUIEnabled: Bool) -> DefaultOmniBarView {
+        DefaultOmniBarView.create(isFloatingUIEnabled: isFloatingUIEnabled)
+    }
+
+    private func firstGlassView(in view: UIView) -> UIVisualEffectView? {
+        if let glassView = view as? UIVisualEffectView {
+            return glassView
+        }
+        return view.subviews.lazy.compactMap(firstGlassView(in:)).first
+    }
+
+    private func glassViewCount(in view: UIView) -> Int {
+        view.subviews.filter { $0 is UIVisualEffectView }.count
+            + view.subviews.reduce(0) { $0 + glassViewCount(in: $1) }
+    }
+
+    private func floatingContentHost(in view: UIView) -> DefaultOmniBarView.FloatingGlassContentHostView? {
+        if let host = view as? DefaultOmniBarView.FloatingGlassContentHostView {
+            return host
+        }
+        return view.subviews.lazy.compactMap(floatingContentHost(in:)).first
+    }
+
+    func testWhenFloatingMinimalChromeBarEnabledThenLeadingAndTrailingGlassGroupsAreAddedAndRemoved() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
+
+        // The address bar field already carries its own glass; enabling adds the two button groups.
+        let baseline = glassViewCount(in: barView)
+
+        barView.setFloatingMinimalChromeBar(true)
+        XCTAssertEqual(glassViewCount(in: barView), baseline + 2)
+
+        barView.setFloatingMinimalChromeBar(false)
+        XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
+
+    func testWhenFloatingMinimalChromeBarShowsLightPageThenGlassUsesSupportedAppearancePolicy() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
+        barView.overrideUserInterfaceStyle = .dark
+        barView.setFloatingMinimalChromeBar(true)
+
+        barView.refreshMaterialAppearance(interfaceStyle: .light)
+
+        let glassViews = allGlassViews(in: barView)
+        XCTAssertEqual(glassViews.count, 3)
+        if #available(iOS 26.0, *) {
+            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .unspecified })
+        } else {
+            XCTAssertTrue(glassViews.allSatisfy { $0.overrideUserInterfaceStyle == .light })
+        }
+    }
+
+    private func allGlassViews(in view: UIView) -> [UIVisualEffectView] {
+        view.subviews.flatMap { subview in
+            ((subview as? UIVisualEffectView).map { [$0] } ?? []) + allGlassViews(in: subview)
+        }
+    }
+
+    func testWhenFloatingUIDisabledThenMinimalChromeBarAddsNoGlassGroups() {
+        let barView = makeBarView(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 700, height: 60)
+
+        let baseline = glassViewCount(in: barView)
+        barView.setFloatingMinimalChromeBar(true)
+
+        XCTAssertEqual(glassViewCount(in: barView), baseline)
+    }
+
+    func testWhenFloatingBarResizesThenFieldGlassMatchesItsContainerBounds() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: 60)
+        barView.layoutIfNeeded()
+
+        guard let searchContainer = barView.searchContainer,
+              let glassView = firstGlassView(in: searchContainer) else {
+            XCTFail("Missing field glass")
+            return
+        }
+
+        XCTAssertEqual(glassView.frame, searchContainer.bounds)
+
+        barView.frame.size.width = 700
+        barView.setNeedsLayout()
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(glassView.frame, searchContainer.bounds)
+    }
+
+    func testWhenFloatingFieldIsAtBottomThenContentUsesPlainEmbeddedContainer() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+
+        XCTAssertTrue(contentHost.superview === searchContainer)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertEqual(searchContainer.backgroundColor?.resolvedColor(with: searchContainer.traitCollection),
+                       UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
+    }
+
+    func testWhenShieldAndLoupeShareTheIconSlotThenTheyShareACentre() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let shield = try XCTUnwrap(barView.privacyInfoContainer)
+        let slot = try XCTUnwrap(barView.leftIconContainerView)
+
+        func assertCentred(_ context: String, file: StaticString = #filePath, line: UInt = #line) {
+            let shieldCentre = barView.convert(shield.center, from: shield.superview)
+            let slotCentre = barView.convert(slot.center, from: slot.superview)
+            XCTAssertEqual(shieldCentre.x, slotCentre.x, accuracy: 0.5, context, file: file, line: line)
+            XCTAssertEqual(shieldCentre.y, slotCentre.y, accuracy: 0.5, context, file: file, line: line)
+        }
+
+        // The shield and the loupe swap in and out of the same slot, so a shared centre keeps the
+        // icon from shifting when the state changes.
+        assertCentred("at rest")
+
+        barView.textField.becomeFirstResponder()
+        barView.layoutIfNeeded()
+        assertCentred("while focused")
+    }
+
+    func testWhenEmbeddedFieldIsTallerThanItsControlsThenTheRowStaysCentred() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let field = try XCTUnwrap(barView.searchContainer)
+        let fieldMidY = barView.convert(field.bounds, from: field).midY
+
+        // The 44pt controls are shorter than the 48pt field, so the slack has to split evenly
+        // rather than settling the row against one edge.
+        for item in [barView.leftIconContainerView, barView.refreshButton, barView.textField] {
+            let view = try XCTUnwrap(item)
+            XCTAssertEqual(barView.convert(view.bounds, from: view).midY, fieldMidY, accuracy: 0.5)
+        }
+    }
+
+    func testWhenEmbeddedFieldLaysOutThenIconSlotsAreInsetFromTheCapsuleEnds() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.layoutIfNeeded()
+
+        let field = try XCTUnwrap(barView.searchContainer)
+        let fieldFrame = barView.convert(field.bounds, from: field)
+        let slot = try XCTUnwrap(barView.leftIconContainerView)
+        let slotFrame = barView.convert(slot.bounds, from: slot)
+        let shield = try XCTUnwrap(barView.privacyInfoContainer)
+        let shieldCentre = barView.convert(shield.center, from: shield.superview)
+
+        let inset: CGFloat = 2
+
+        // The 44pt slot sits 2pt in from the capsule so its 47pt shield animation is not trimmed
+        // against the leading edge.
+        XCTAssertEqual(slotFrame.minX, fieldFrame.minX + inset, accuracy: 0.5)
+
+        // With a 48pt field the inset lands the shield on the centre of the leading arc, so the
+        // trackers-blocked burst is symmetrical inside the capsule.
+        XCTAssertEqual(shieldCentre.x, fieldFrame.minX + fieldFrame.height / 2, accuracy: 0.5)
+
+        // The trailing end of the content row (whichever control, or the text field, is last) gets
+        // the same breathing room from the trailing arc.
+        let trailingViews: [UIView] = [barView.clearButton, barView.cancelButton, barView.refreshButton,
+                                       barView.customizableButton, barView.urlSeparatorView, barView.aiChatButton,
+                                       barView.textField]
+        let trailingEdge = try XCTUnwrap(trailingViews
+            .filter { !$0.isHidden }
+            .map { barView.convert($0.bounds, from: $0).maxX }
+            .max())
+        XCTAssertEqual(trailingEdge, fieldFrame.maxX - inset, accuracy: 0.5)
+    }
+
+    func testWhenFieldLayoutChangesThenNotificationsKeepUniformPadding() throws {
+        let types: [OmniBarNotificationType] = [.trackersBlocked(count: 12), .cookiePopupManaged]
+        for isFloating in [false, true] {
+            let barView = makeBarView(isFloatingUIEnabled: isFloating)
+            let controller = UIViewController()
+            let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+            window.rootViewController = controller
+            controller.view.addSubview(barView)
+            window.makeKeyAndVisible()
+            defer { window.isHidden = true }
+
+            for isBottom in [false, true] {
+                barView.isUsingSmallTopSpacing = isBottom
+                barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+                window.layoutIfNeeded()
+                barView.layoutIfNeeded()
+
+                let field = try XCTUnwrap(barView.searchContainer)
+                let container = try XCTUnwrap(barView.notificationContainer)
+
+                for type in types {
+                    container.prepareAnimation(type, in: controller)
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    let fieldFrame = barView.convert(field.bounds, from: field)
+                    let containerFrame = barView.convert(container.bounds, from: container)
+                    let notification = try XCTUnwrap(container.currentNotificationController).rootView
+                    let verticalInset = (fieldFrame.height - notification.lozengeHeight) / 2
+                    XCTAssertEqual(verticalInset, OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.minX, fieldFrame.minX, accuracy: 0.01)
+                    XCTAssertEqual(containerFrame.midY, fieldFrame.midY, accuracy: 0.01,
+                                   "floating=\(isFloating), bottom=\(isBottom), type=\(type), field=\(fieldFrame), notification=\(containerFrame)")
+                    barView.isExpandedPhoneLayout = true
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    let updatedNotification = try XCTUnwrap(container.currentNotificationController).rootView
+                    XCTAssertEqual((field.bounds.height - updatedNotification.lozengeHeight) / 2,
+                                   OmniBarMetrics.notificationLozengeInset, accuracy: 0.01)
+                    barView.isExpandedPhoneLayout = false
+                    window.layoutIfNeeded()
+                    barView.layoutIfNeeded()
+                    container.removePreviousNotification()
+                }
+            }
+        }
+    }
+
+    func testWhenNonFloatingIPadSearchAreaExpandsThenModeToggleDoesNotOverlapBottomControls() throws {
+        let barView = makeBarView(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 1024, height: DefaultOmniBarView.expectedHeight)
+        barView.setLayoutMode(.expandedPad)
+        barView.isModeToggleHidden = false
+        barView.setSearchAreaExpanded(true, animated: false)
+        barView.layoutIfNeeded()
+
+        let modeToggle = try XCTUnwrap(firstSubview(of: PadOmnibarToggleView.self, in: barView))
+        let modeToggleFrame = barView.convert(modeToggle.bounds, from: modeToggle)
+        let sendButtonFrame = barView.convert(barView.aiChatSendButton.bounds, from: barView.aiChatSendButton)
+
+        XCTAssertLessThanOrEqual(modeToggleFrame.maxY, sendButtonFrame.minY)
+    }
+
+    func testWhenFieldIsEmbeddedAtBottomThenItFillsTheFullSlotHeight() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        XCTAssertEqual(barView.expectedHeight, 48, accuracy: 0.01)
+        XCTAssertEqual(searchContainer.bounds.height, barView.expectedHeight, accuracy: 0.01)
+        XCTAssertEqual(searchContainer.backgroundColor?.resolvedColor(with: searchContainer.traitCollection),
+                       UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
+    }
+
+    func testWhenToolbarMaterialAppearanceRefreshesThenHostedOmnibarUsesSettledStyle() {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
+        toolbar.overrideUserInterfaceStyle = .light
+        toolbar.setFloatingStyleEnabled(true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        toolbar.setOmnibarView(barView, height: barView.expectedHeight)
+
+        toolbar.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let refreshCompleted = expectation(description: "Embedded material refreshed")
+        DispatchQueue.main.async {
+            XCTAssertNil(self.firstGlassView(in: barView.searchContainer))
+            XCTAssertEqual(barView.searchContainer.backgroundColor?.resolvedColor(with: barView.searchContainer.traitCollection),
+                           UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground)
+                            .resolvedColor(with: barView.searchContainer.traitCollection))
+            refreshCompleted.fulfill()
+        }
+        wait(for: [refreshCompleted], timeout: 1)
+    }
+
+    func testWhenBottomFloatingFieldIsHostedThenContentInheritsToolbarGlass() throws {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 390, height: 200))
+        toolbar.setFloatingStyleEnabled(true)
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        toolbar.setOmnibarView(barView, height: barView.expectedHeight)
+        toolbar.layoutIfNeeded()
+
+        let toolbarGlass = try XCTUnwrap(firstGlassView(in: toolbar))
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+
+        XCTAssertTrue(contentHost.isDescendant(of: toolbarGlass.contentView))
+    }
+
+    func testWhenFloatingFieldMovesBetweenTopAndBottomThenContentUsesTheCurrentContainer() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let initialTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === initialTopGlass.contentView)
+
+        barView.isUsingSmallTopSpacing = true
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+
+        barView.isUsingSmallTopSpacing = false
+        let secondTopGlass = try XCTUnwrap(firstGlassView(in: searchContainer))
+        XCTAssertFalse(secondTopGlass === initialTopGlass)
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === secondTopGlass.contentView)
+
+        barView.isUsingSmallTopSpacing = true
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        XCTAssertEqual(glassViewCount(in: searchContainer), 0)
+    }
+
+    func testWhenTopFloatingFieldUsesAdaptiveGlassThenContentInheritsGlassContrast() throws {
+        guard #available(iOS 26.0, *) else { return }
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.overrideUserInterfaceStyle = .light
+
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+        XCTAssertTrue(contentHost.superview === glassView.contentView)
+        XCTAssertEqual(contentHost.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenBottomFloatingFieldLeavesFireModeThenContentReturnsToContainer() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+
+        barView.refreshFireMode(fireMode: true)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertFalse(searchContainer.backgroundColor == .clear)
+
+        barView.refreshFireMode(fireMode: false)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(contentHost.superview === searchContainer)
+        XCTAssertEqual(searchContainer.backgroundColor?.resolvedColor(with: searchContainer.traitCollection),
+                       UIColor(singleUseColor: .floatingEmbeddedAddressBarBackground).resolvedColor(with: searchContainer.traitCollection))
+    }
+
+    func testWhenFireModeStackConstraintsAreLostThenFieldInsetsAreRestored() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.isUsingSmallTopSpacing = true
+        barView.refreshFireMode(fireMode: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let stackView = try XCTUnwrap(firstSubview(of: DefaultOmniBarView.TopLevelStackView.self, in: barView))
+        NSLayoutConstraint.deactivate(stackView.constraints.filter { $0.identifier?.hasPrefix("UISV-") == true })
+        let host = UIView(frame: window.bounds)
+        window.addSubview(host)
+        host.addSubview(barView)
+        barView.frame.size.width = 430
+        barView.setNeedsLayout()
+        barView.layoutIfNeeded()
+
+        let fieldFrame = searchContainer.convert(searchContainer.bounds, to: barView)
+        XCTAssertEqual(fieldFrame.minX, 16, accuracy: 0.01)
+        XCTAssertEqual(barView.bounds.maxX - fieldFrame.maxX, 16, accuracy: 0.01)
+    }
+
+    func testWhenFireModeFieldReturnsFromLandscapeThenPortraitGeometryIsRestored() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        window.addSubview(barView)
+        window.makeKeyAndVisible()
+        barView.isUsingSmallTopSpacing = true
+        barView.refreshFireMode(fireMode: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let portraitFrame = searchContainer.frame
+        let portraitCornerRadius = searchContainer.layer.cornerRadius
+
+        barView.isExpandedPhoneLayout = true
+        barView.setFloatingMinimalChromeBar(true)
+        barView.setLayoutMode(.expandedPhone)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isExpandedPhoneLayout = false
+        barView.setFloatingMinimalChromeBar(false)
+        barView.setLayoutMode(.compact)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.restoreFloatingFieldAppearance()
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(searchContainer.frame, portraitFrame)
+        XCTAssertEqual(searchContainer.layer.cornerRadius, portraitCornerRadius)
+        XCTAssertNil(firstGlassView(in: searchContainer))
+        XCTAssertTrue(try XCTUnwrap(floatingContentHost(in: barView)).superview === searchContainer)
+        let contentHost = try XCTUnwrap(floatingContentHost(in: barView))
+        XCTAssertEqual(barView.fieldContainerLayoutGuide.layoutFrame, contentHost.bounds)
+        let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: barView))
+        XCTAssertEqual(searchView.center.y, contentHost.bounds.midY, accuracy: 0.01)
+    }
+
+    func testWhenGlassAppearanceIsUnchangedThenMakingGlassPreservesGlassView() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.makeGlass()
+
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+    }
+
+    func testWhenTopMaterialAppearanceIsUnchangedThenRefreshPreservesGlassViewAndConstraints() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        let constraints = barView.searchContainer.constraints.filter { $0.firstItem as? UIView === glassView }
+
+        for _ in 0..<10 {
+            barView.refreshMaterialAppearance()
+        }
+
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === glassView)
+        XCTAssertFalse(constraints.isEmpty)
+        XCTAssertTrue(constraints.allSatisfy { $0.isActive })
+    }
+
+    func testWhenInterfaceStyleChangesThenGlassViewIsRebuiltOnce() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 800))
+        window.overrideUserInterfaceStyle = .light
+        window.addSubview(barView)
+        window.layoutIfNeeded()
+        barView.refreshMaterialAppearance(interfaceStyle: .light)
+        let originalGlass = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        window.overrideUserInterfaceStyle = .dark
+        window.layoutIfNeeded()
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        let updatedGlass = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        XCTAssertFalse(originalGlass === updatedGlass)
+        barView.refreshMaterialAppearance(interfaceStyle: .dark)
+        XCTAssertTrue(firstGlassView(in: barView.searchContainer) === updatedGlass)
+    }
+
+    func testWhenFireModeChangesThenGlassViewIsRebuilt() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: DefaultOmniBarView.expectedHeight)
+        barView.layoutIfNeeded()
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+
+        barView.refreshFireMode(fireMode: true)
+
+        XCTAssertFalse(firstGlassView(in: barView.searchContainer) === glassView)
+    }
+
+    func testWhenFireModeWithoutMinimalChromeBarThenButtonContainersKeepSystemStyle() {
+        let barView = makeBarView(isFloatingUIEnabled: false)
+
+        barView.refreshFireMode(fireMode: true)
+
+        XCTAssertEqual(barView.leadingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+        XCTAssertEqual(barView.trailingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenFireModeOnMinimalChromeBarThenFieldGlassKeepsSystemStyle() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: DefaultOmniBarView.expectedHeight)
+        barView.setFloatingMinimalChromeBar(true)
+
+        barView.refreshFireMode(fireMode: true)
+
+        let glassView = try XCTUnwrap(firstGlassView(in: barView.searchContainer))
+        XCTAssertEqual(glassView.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenFireModeOnMinimalChromeBarThenButtonContainersAreDarkUntilBarIsRemoved() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.setFloatingMinimalChromeBar(true)
+
+        barView.refreshFireMode(fireMode: true)
+        XCTAssertEqual(barView.leadingButtonsContainer.overrideUserInterfaceStyle, .dark)
+        XCTAssertEqual(barView.trailingButtonsContainer.overrideUserInterfaceStyle, .dark)
+
+        barView.setFloatingMinimalChromeBar(false)
+        XCTAssertEqual(barView.leadingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+        XCTAssertEqual(barView.trailingButtonsContainer.overrideUserInterfaceStyle, .unspecified)
+    }
+
+    func testWhenBottomFloatingBarTemporarilyHasZeroHeightThenCornerRadiusRemainsRounded() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: 0)
+        barView.isUsingSmallTopSpacing = true
+
+        barView.layoutIfNeeded()
+
+        XCTAssertGreaterThan(barView.searchContainer.layer.cornerRadius, 0)
+    }
+
+    func testWhenFloatingAddressBarMovesToBottomThenFirstLayoutUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.layoutIfNeeded()
+
+        barView.isUsingSmallTopSpacing = true
+        barView.frame.size.height = barView.expectedHeight
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
+    }
+
+    func testWhenBottomFloatingSwipeFieldIsFirstLaidOutThenItUsesCapsuleRadius() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.searchContainer.bounds.height, 48)
+        XCTAssertEqual(barView.searchContainer.layer.cornerRadius, 24)
+    }
+
+    func testWhenBottomFloatingFieldThenExpectedHeightIsTheFortyEightPointPill() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+
+        XCTAssertEqual(barView.expectedHeight, 48)
+    }
+
+    func testWhenTopFloatingFieldThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = false
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    func testWhenTopFloatingFieldThenInputIsFortyEightPointsHighWithTwoPointInternalSpacing() throws {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+
+        barView.layoutIfNeeded()
+
+        let searchContainer = try XCTUnwrap(barView.searchContainer)
+        let searchContainerFrame = barView.convert(searchContainer.bounds, from: searchContainer)
+        let searchView = try XCTUnwrap(firstSubview(of: DefaultOmniBarSearchView.self, in: searchContainer))
+        let loupe = try XCTUnwrap(barView.searchLoupe)
+        let loupeFrame = searchView.convert(loupe.bounds, from: loupe)
+        XCTAssertEqual(searchContainerFrame.height, 48, accuracy: 0.01)
+        XCTAssertEqual(searchContainerFrame.minX, 16, accuracy: 0.5)
+        XCTAssertEqual(barView.bounds.width - searchContainerFrame.maxX, 16, accuracy: 0.5)
+        XCTAssertEqual(barView.restingSearchFieldSize.width, searchContainerFrame.width, accuracy: 0.01)
+        XCTAssertEqual(barView.restingSearchFieldSize.height, 48, accuracy: 0.01)
+        XCTAssertEqual(searchContainerFrame.midX, barView.bounds.midX, accuracy: 0.01)
+        XCTAssertEqual(searchContainerFrame.midY, barView.bounds.midY, accuracy: 0.01)
+        XCTAssertEqual(searchView.bounds.height, 44, accuracy: 0.01)
+        XCTAssertEqual((searchContainerFrame.height - searchView.bounds.height) / 2, 2, accuracy: 0.01)
+        XCTAssertEqual(loupeFrame.midY, searchView.bounds.midY, accuracy: 0.01)
+    }
+
+    func testWhenTopFloatingLandscapeChromeThenInputHeightStaysUnchanged() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.expandedPhone, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenTopFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.compact, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenBottomFloatingLandscapeEditingThenCompactModeKeepsInputHeightUnchanged() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.frame = CGRect(x: 0, y: 0, width: 844, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = true
+        barView.isExpandedPhoneLayout = true
+        barView.setLayoutMode(.compact, animated: false)
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenNonFloatingTopFieldThenInputHeightStaysUnchanged() {
+        let barView = makeBarView(isFloatingUIEnabled: false)
+        barView.frame = CGRect(x: 0, y: 0, width: 390, height: barView.expectedHeight)
+        barView.isUsingSmallTopSpacing = false
+
+        barView.layoutIfNeeded()
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+        XCTAssertEqual(barView.searchContainer.frame.height, 44, accuracy: 0.01)
+    }
+
+    func testWhenBottomFloatingLandscapeChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.setLayoutMode(.expandedPhone, animated: false)
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    func testWhenBottomFloatingPadChromeThenExpectedHeightStaysAtTheStandardBarHeight() {
+        let barView = makeBarView(isFloatingUIEnabled: true)
+        barView.isUsingSmallTopSpacing = true
+        barView.setLayoutMode(.expandedPad, animated: false)
+
+        XCTAssertEqual(barView.expectedHeight, DefaultOmniBarView.expectedHeight)
+    }
+
+    private func firstSubview<View: UIView>(of type: View.Type, in view: UIView) -> View? {
+        if let view = view as? View {
+            return view
+        }
+        return view.subviews.lazy.compactMap { self.firstSubview(of: type, in: $0) }.first
+    }
+}
+
+final class FloatingDomainCapsuleControllerTests: XCTestCase {
+
+    private var window: UIWindow!
+    private var containerView: UIView!
+    private var controller: FloatingDomainCapsuleController!
+    private let expandedFrame = CGRect(x: 16, y: 20, width: 358, height: 52)
+
+    override func setUp() {
+        super.setUp()
+        window = UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+        containerView = UIView(frame: window.bounds)
+        window.addSubview(containerView)
+        window.makeKeyAndVisible()
+        controller = FloatingDomainCapsuleController(onTap: {})
+        controller.install(in: containerView, addressBarPosition: .top)
+    }
+
+    override func tearDown() {
+        window.isHidden = true
+        window = nil
+        containerView = nil
+        controller = nil
+        super.tearDown()
+    }
+
+    private var capsuleButton: UIButton? {
+        containerView.subviews.compactMap { $0 as? UIButton }.first
+    }
+
+    @discardableResult
+    private func update(barsVisibilityPercent: CGFloat,
+                        addressBarPosition: AddressBarPosition = .top,
+                        reduceMotion: Bool = false) -> UIButton? {
+        controller.update(addressBarPosition: addressBarPosition,
+                          isFloatingUIEnabled: true,
+                          isUnifiedToggleInputActive: false,
+                          isAITab: false,
+                          isMinimalChromeLayout: false,
+                          domain: "example.com",
+                          barsVisibilityPercent: barsVisibilityPercent,
+                          expandedFrame: expandedFrame,
+                          reduceMotion: reduceMotion,
+                          in: containerView)
+        containerView.layoutIfNeeded()
+        return capsuleButton
+    }
+
+    func testWhenBarsHiddenThenPillIsAtCapsuleSizeAndVisible() {
+        let button = update(barsVisibilityPercent: 0)
+
+        XCTAssertNotNil(button)
+        XCTAssertEqual(button?.alpha ?? 0, 1, accuracy: 0.001)
+        // Capsule hugs the domain label, so it is far narrower than the bar.
+        XCTAssertLessThan(button?.bounds.width ?? .greatestFiniteMagnitude, expandedFrame.width / 2)
+    }
+
+    func testWhenContainerResizesThenBottomCapsuleRemainsCenteredAndAboveTheBottomEdge() throws {
+        let button = try XCTUnwrap(update(barsVisibilityPercent: 0, addressBarPosition: .bottom))
+        containerView.frame = CGRect(x: 0, y: 0, width: 844, height: 390)
+        containerView.layoutIfNeeded()
+
+        let bottomPadding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(
+            safeAreaBottom: containerView.safeAreaInsets.bottom)
+        XCTAssertEqual(button.frame.midX, containerView.bounds.midX, accuracy: 1 / window.screen.scale)
+        XCTAssertEqual(button.frame.maxY, containerView.bounds.maxY - bottomPadding, accuracy: 1 / window.screen.scale)
+        XCTAssertLessThanOrEqual(button.bounds.width, containerView.bounds.width - 32)
+    }
+
+    func testWhenContainerResizesThenTopCapsuleRemainsCenteredAndAtTheTopEdge() throws {
+        let button = try XCTUnwrap(update(barsVisibilityPercent: 0, addressBarPosition: .top))
+        containerView.frame = CGRect(x: 0, y: 0, width: 844, height: 390)
+        containerView.layoutIfNeeded()
+
+        XCTAssertEqual(button.frame.midX, containerView.bounds.midX, accuracy: 1 / window.screen.scale)
+        XCTAssertEqual(button.frame.minY, expandedFrame.minY, accuracy: 1 / window.screen.scale)
+    }
+
+    func testWhenTopBarsHiddenThenPillKeepsTheBarsTopEdge() {
+        let button = update(barsVisibilityPercent: 0)
+
+        // The pill collapses upward into the bar's top edge, so no empty band is left above it.
+        XCTAssertEqual(button?.frame.minY ?? 0, expandedFrame.minY, accuracy: 0.5)
+    }
+
+    func testWhenTopCapsuleRestsThenObscuredHeightTracksThePillBottom() {
+        update(barsVisibilityPercent: 0)
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+
+        let obscured = controller.restObscuredHeightFromScreenEdge(for: .top,
+                                                                   safeAreaInsets: insets,
+                                                                   expandedFrame: expandedFrame)
+
+        // Tracks the moved pill, so page-fixed headers don't leave a dead band beneath it.
+        XCTAssertEqual(obscured, expandedFrame.minY + controller.capsuleHeight, accuracy: 0.001)
+        XCTAssertLessThan(obscured, expandedFrame.maxY)
+    }
+
+    func testWhenPartiallyVisibleThenPillWidthIsBetweenCapsuleAndBarAndFullyOpaque() {
+        let capsuleWidth = update(barsVisibilityPercent: 0)?.bounds.width ?? 0
+        let midWidth = update(barsVisibilityPercent: 0.5)?.bounds.width ?? 0
+
+        XCTAssertGreaterThan(midWidth, capsuleWidth)
+        XCTAssertLessThan(midWidth, expandedFrame.width)
+        // No mid-transition cross-fade: the pill is solid through the resize band.
+        XCTAssertEqual(capsuleButton?.alpha ?? 0, 1, accuracy: 0.001)
+    }
+
+    func testWhenBarsFullyVisibleThenPillIsHidden() {
+        update(barsVisibilityPercent: 1)
+
+        XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001)
+        XCTAssertEqual(capsuleButton?.isHidden, true)
+    }
+
+    func testWhenReduceMotionThenPillStaysAtCapsuleSize() {
+        let capsuleWidth = update(barsVisibilityPercent: 0, reduceMotion: true)?.bounds.width ?? 0
+        let midWidth = update(barsVisibilityPercent: 0.5, reduceMotion: true)?.bounds.width ?? 0
+
+        XCTAssertEqual(midWidth, capsuleWidth, accuracy: 0.5)
+    }
+
+    func testWhenBottomBarsHiddenThenPillRestsAtTheLowerCollapsedCenter() {
+        let button = update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
+        let expectedCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .bottom,
+            expandedFrame: expandedFrame,
+            boundsMaxY: containerView.bounds.maxY,
+            safeAreaInsets: containerView.safeAreaInsets,
+            capsuleHeight: controller.capsuleHeight)
+
+        XCTAssertEqual(button?.center.y ?? 0, expectedCenterY, accuracy: 0.5)
+    }
+
+    func testWhenBottomCapsuleRestsThenObscuredHeightTracksThePillNotExtraTopPadding() {
+        update(barsVisibilityPercent: 0, addressBarPosition: .bottom)
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let padding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: insets.bottom)
+        let obscured = controller.restObscuredHeightFromScreenEdge(for: .bottom, safeAreaInsets: insets)
+
+        XCTAssertEqual(obscured, padding + controller.capsuleHeight, accuracy: 0.001)
+        XCTAssertLessThan(obscured, insets.bottom + FloatingDomainCapsuleController.restEdgePadding + controller.capsuleHeight)
+    }
+
+    func testWhenInsideTheHandoffBandThenPillFadesInWhileHoldingTheBarFrame() {
+        for position in [AddressBarPosition.top, .bottom] {
+            let alphaEnd = FloatingDomainCapsuleController.alphaHandoffEnd(for: position)
+            let midBandPercent = (FloatingDomainCapsuleController.handoffStart + alphaEnd) / 2
+            let button = update(barsVisibilityPercent: midBandPercent, addressBarPosition: position)
+
+            XCTAssertEqual(button?.alpha ?? -1, 0.5, accuracy: 0.01, "position \(position)")
+            // Both bar and pill are geometry-locked throughout the band: the pill already sits at the
+            // bar's full expanded size, so widening the fade can't make either visibly creep.
+            XCTAssertEqual(button?.bounds.width ?? 0, expandedFrame.width, accuracy: 0.5, "position \(position)")
+            XCTAssertEqual(button?.bounds.height ?? 0, expandedFrame.height, accuracy: 0.5, "position \(position)")
+        }
+    }
+
+    func testWhenAtItsAlphaHandoffEndThenPillIsHidden() {
+        for position in [AddressBarPosition.top, .bottom] {
+            update(barsVisibilityPercent: FloatingDomainCapsuleController.alphaHandoffEnd(for: position), addressBarPosition: position)
+
+            XCTAssertEqual(capsuleButton?.alpha ?? -1, 0, accuracy: 0.001, "position \(position)")
+            XCTAssertEqual(capsuleButton?.isHidden, true, "position \(position)")
+        }
+    }
+
+    // The top bar has no button row to sequence a collapse cue through first, so its fade must start
+    // immediately at rest (percent 1) rather than holding at full pill-alpha-zero through a silent
+    // dead zone before suddenly fading — that dead-then-fast pattern is what reads as an abrupt swap.
+    func testWhenTopBarAndBarelyScrolledThenPillHasAlreadyStartedFadingIn() {
+        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .top)
+
+        XCTAssertGreaterThan(button?.alpha ?? 0, 0, "the top bar's pill must start fading in the instant scrolling begins, not after a dead zone")
+    }
+
+    // The bottom bar's button row collapses first (over `[handoffEnd, 1]`), so the pill should still
+    // be fully hidden at the same point that would already show a fade on the top bar.
+    func testWhenBottomBarAndBarelyScrolledThenPillHasNotStartedFadingInYet() {
+        let button = update(barsVisibilityPercent: 0.99, addressBarPosition: .bottom)
+
+        XCTAssertEqual(button?.alpha ?? -1, 0, accuracy: 0.001, "the bottom bar's pill should wait for the button row to collapse first")
+    }
+}
+
+final class FloatingDomainCapsuleGeometryTests: XCTestCase {
+
+    func testWhenHomeIndicatorIsPresentThenBottomRestPaddingIsReducedByTwelvePoints() {
+        let safeAreaBottom: CGFloat = 34
+        let padding = FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: safeAreaBottom)
+
+        XCTAssertEqual(
+            padding,
+            safeAreaBottom + FloatingDomainCapsuleController.restEdgePadding - FloatingDomainCapsuleController.restBottomInsetReduction,
+            accuracy: 0.001)
+    }
+
+    func testWhenSafeAreaCannotAbsorbTheReductionThenBottomRestPaddingClampsToZero() {
+        XCTAssertEqual(FloatingDomainCapsuleController.restPaddingFromPhysicalBottom(safeAreaBottom: 0), 0, accuracy: 0.001)
+    }
+
+    func testWhenBottomAddressBarThenCollapsedRestCenterIsLowerByTheInsetReduction() {
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let capsuleHeight: CGFloat = 28
+        let boundsMaxY: CGFloat = 844
+        let previousRestCenterY = boundsMaxY - insets.bottom - FloatingDomainCapsuleController.restEdgePadding - capsuleHeight / 2
+        let restCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .bottom,
+            expandedFrame: .zero,
+            boundsMaxY: boundsMaxY,
+            safeAreaInsets: insets,
+            capsuleHeight: capsuleHeight)
+
+        XCTAssertEqual(restCenterY, previousRestCenterY + FloatingDomainCapsuleController.restBottomInsetReduction, accuracy: 0.001)
+    }
+
+    func testWhenTopAddressBarThenCollapsedRestCenterAlignsWithTheBarsTopEdge() {
+        let insets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+        let capsuleHeight: CGFloat = 28
+        let expandedFrame = CGRect(x: 16, y: insets.top, width: 358, height: 60)
+        let restCenterY = FloatingDomainCapsuleController.restCenterY(
+            addressBarPosition: .top,
+            expandedFrame: expandedFrame,
+            boundsMaxY: 844,
+            safeAreaInsets: insets,
+            capsuleHeight: capsuleHeight)
+
+        XCTAssertEqual(restCenterY - capsuleHeight / 2, expandedFrame.minY, accuracy: 0.001)
+    }
+}
+
+final class WebViewPreviewSnapshotGeometryTests: XCTestCase {
+
+    func testWhenWebViewBoundsAreValidThenVisibleRectUsesTheFullViewport() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds), bounds)
+    }
+
+    func testWhenViewportIsEmptyThenVisibleRectIsNil() {
+        XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: .zero))
+    }
+
+    func testWhenContentInsetIsGivenThenVisibleRectExcludesTopAndBottomInsets() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset),
+                       CGRect(x: 0, y: 50, width: 320, height: 560))
+    }
+
+    func testWhenContentInsetHasHorizontalValuesThenVisibleRectKeepsFullWidth() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset),
+                       bounds)
+    }
+
+    func testWhenContentInsetsExceedHeightThenVisibleRectIsNil() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 100)
+        let contentInset = UIEdgeInsets(top: 60, left: 0, bottom: 60, right: 0)
+
+        XCTAssertNil(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds, contentInset: contentInset))
+    }
+
+    func testWhenCapturingFullBoundsThenOnlyTheTopInsetIsCropped() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: true),
+                       CGRect(x: 0, y: 50, width: 320, height: 590))
+    }
+
+    func testWhenNotCapturingFullBoundsThenTopAndBottomInsetsAreCropped() {
+        let bounds = CGRect(x: 0, y: 0, width: 320, height: 640)
+        let contentInset = UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0)
+
+        XCTAssertEqual(WebViewPreviewSnapshotGeometry.visibleRect(webViewBounds: bounds,
+                                                                  contentInset: contentInset,
+                                                                  capturesFullBounds: false),
+                       CGRect(x: 0, y: 50, width: 320, height: 560))
+    }
+}
+
+final class WebViewPreviewSnapshotPolicyTests: XCTestCase {
+
+    func testWhenPageIsLoadingThenSnapshotIsSkipped() {
+        XCTAssertFalse(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: true))
+    }
+
+    func testWhenPageIsNotLoadingThenSnapshotIsCaptured() {
+        XCTAssertTrue(WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: false))
+    }
+}
+
+@MainActor
+final class WebViewPreviewSnapshotCapturerTests: XCTestCase {
+
+    private let webView = FakeSnapshottingWebView()
+    private var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] { webView.snapshots }
+    private var results: [(UIImage?, WebContentHealthPixel.SnapshotResult)] = []
+
+    func testWhenFirstSnapshotAnswersThenItIsUsedWithoutSecondSnapshot() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        snapshots[0].completion(image)
+        waitPastTimeouts()
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .success)
+    }
+
+    func testWhenFirstSnapshotTimesOutThenSnapshotWithoutWaitingIsUsedAndLateFirstAnswerIgnored() {
+        let image = UIImage()
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[0].completion(UIImage()) // Late, so ignored.
+        snapshots[1].completion(image)
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [true, false])
+        XCTAssertEqual(results.count, 1)
+        XCTAssertIdentical(results[0].0, image)
+        XCTAssertEqual(results[0].1, .retryImage)
+    }
+
+    func testWhenSnapshotWithoutWaitingAnswersWithoutImageThenResultSaysSo() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { self.snapshots.count == 2 }
+        snapshots[1].completion(nil)
+
+        XCTAssertEqual(results.map(\.1), [.retryNoImage])
+    }
+
+    func testWhenBothSnapshotsTimeOutThenCompletionRunsOnceWithoutImage() {
+        capture(waitForScreenUpdates: true)
+        waitUntil { !self.results.isEmpty }
+        waitPastTimeouts()
+
+        XCTAssertEqual(results.count, 1)
+        XCTAssertNil(results[0].0)
+        XCTAssertEqual(results[0].1, .retryTimeout)
+    }
+
+    func testWhenNotWaitingForScreenUpdatesThenOnlyTheSnapshotThatDoesNotWaitIsTaken() {
+        capture(waitForScreenUpdates: false)
+        snapshots[0].completion(UIImage())
+
+        XCTAssertEqual(snapshots.map(\.afterScreenUpdates), [false])
+        XCTAssertEqual(results.map(\.1), [.retryImage])
+    }
+
+    func testWhenFirstSnapshotNeverAnswersThenItsPendingCallbackDoesNotKeepTheWebViewAlive() {
+        var webView: FakeSnapshottingWebView? = FakeSnapshottingWebView()
+        weak var releasedWebView = webView
+        WebViewPreviewSnapshotCapturer().capture(webView: webView!,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 60,
+                                                 waitForScreenUpdates: true) { _, _ in }
+        // The fake keeps the callback, as WebKit does for a frozen page that never answers.
+        webView = nil
+
+        XCTAssertNil(releasedWebView)
+    }
+
+    private func capture(waitForScreenUpdates: Bool) {
+        WebViewPreviewSnapshotCapturer().capture(webView: webView,
+                                                 rect: CGRect(x: 0, y: 0, width: 100, height: 100),
+                                                 timeout: 0.05,
+                                                 waitForScreenUpdates: waitForScreenUpdates) { [weak self] image, result in
+            self?.results.append((image, result))
+        }
+    }
+
+    private func waitUntil(_ condition: @escaping () -> Bool) {
+        let deadline = Date().addingTimeInterval(5)
+        while !condition() && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
+        XCTAssertTrue(condition())
+    }
+
+    private func waitPastTimeouts() {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.15))
+    }
+}
+
+/// Records each snapshot request and answers only when the test calls its completion.
+@MainActor
+private final class FakeSnapshottingWebView: WebViewSnapshotting {
+
+    let window: UIWindow? = nil
+    private(set) var snapshots: [(afterScreenUpdates: Bool, completion: (UIImage?) -> Void)] = []
+
+    func takeSnapshot(with snapshotConfiguration: WKSnapshotConfiguration?,
+                      completionHandler: @escaping @MainActor @Sendable (UIImage?, (any Error)?) -> Void) {
+        snapshots.append((snapshotConfiguration?.afterScreenUpdates ?? true, { completionHandler($0, nil) }))
+    }
+}
+
+final class BrowserKeyboardLayoutTests: XCTestCase {
+
+    func testHardwareKeyboardAccessoryUsesLayoutGuideWhenNotificationReportsNoKeyboard() {
+        let frame = BrowserKeyboardLayout.webInputFrame(notificationFrame: CGRect(x: 0, y: 874, width: 402, height: 0),
+                                                        layoutGuideFrame: CGRect(x: 0, y: 806, width: 402, height: 68),
+                                                        viewBounds: CGRect(x: 0, y: 0, width: 402, height: 874),
+                                                        safeAreaFrame: CGRect(x: 0, y: 62, width: 402, height: 778))
+        XCTAssertEqual(frame, CGRect(x: 0, y: 806, width: 402, height: 68))
+    }
+
+    func testKeyboardDismissalIgnoresLayoutGuideWithinBottomSafeArea() {
+        let bounds = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let safeArea = CGRect(x: 0, y: 62, width: 402, height: 778)
+        for notificationFrame in [CGRect.zero, CGRect(x: 0, y: 874, width: 402, height: 338)] {
+            let frame = BrowserKeyboardLayout.webInputFrame(notificationFrame: notificationFrame,
+                                                            layoutGuideFrame: CGRect(x: 0, y: 840, width: 402, height: 34),
+                                                            viewBounds: bounds,
+                                                            safeAreaFrame: safeArea)
+            XCTAssertEqual(frame, .zero)
+        }
+    }
+
+    func testWebInputFrameCoversKeyboardDuringLayoutGuideTransitionAndIgnoresUndockedKeyboard() {
+        let bounds = CGRect(x: 0, y: 0, width: 402, height: 874)
+        let safeArea = CGRect(x: 0, y: 62, width: 402, height: 778)
+        let keyboard = CGRect(x: 0, y: 536, width: 402, height: 338)
+        let restingGuide = CGRect(x: 0, y: 840, width: 402, height: 34)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: keyboard,
+                                                           layoutGuideFrame: restingGuide,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), keyboard)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: .zero,
+                                                           layoutGuideFrame: keyboard,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), keyboard)
+        XCTAssertEqual(BrowserKeyboardLayout.webInputFrame(notificationFrame: CGRect(x: 40, y: 300, width: 300, height: 250),
+                                                           layoutGuideFrame: restingGuide,
+                                                           viewBounds: bounds,
+                                                           safeAreaFrame: safeArea), .zero)
+    }
+
+    func testKeyboardOverlapReplacesCoveredChromeAndRestoresItAfterDismissal() {
+        let bounds = CGRect(x: 0, y: 0, width: 400, height: 900)
+        let chromeInsets = UIEdgeInsets(top: 100, left: 0, bottom: 140, right: 0)
+
+        let visible = BrowserKeyboardLayout.obscuredInsets(
+            chromeInsets: chromeInsets,
+            keyboardFrame: CGRect(x: 0, y: 550, width: 400, height: 350),
+            viewBounds: bounds
+        )
+        XCTAssertEqual(visible, UIEdgeInsets(top: 100, left: 0, bottom: 350, right: 0))
+        for dismissedFrame in [CGRect.zero, CGRect(x: 0, y: 900, width: 400, height: 350)] {
+            XCTAssertEqual(BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                              keyboardFrame: dismissedFrame,
+                                                              viewBounds: bounds), chromeInsets)
+        }
+    }
+
+    func testKeyboardOverlapUsesViewBoundsInsteadOfKeyboardHeight() {
+        let insets = BrowserKeyboardLayout.obscuredInsets(
+            chromeInsets: UIEdgeInsets(top: 60, left: 0, bottom: 40, right: 0),
+            keyboardFrame: CGRect(x: 0, y: 500, width: 400, height: 400),
+            viewBounds: CGRect(x: 0, y: 100, width: 400, height: 600)
+        )
+        XCTAssertEqual(insets, UIEdgeInsets(top: 60, left: 0, bottom: 200, right: 0))
+    }
+
+    func testUndockedAndNonOverlappingKeyboardsKeepChromeInsets() {
+        let chromeInsets = UIEdgeInsets(top: 60, left: 0, bottom: 140, right: 0)
+        let bounds = CGRect(x: 0, y: 0, width: 400, height: 900)
+        for frame in [CGRect(x: 40, y: 300, width: 300, height: 250),
+                      CGRect(x: 500, y: 550, width: 400, height: 350),
+                      CGRect(x: 0, y: 850, width: 400, height: 50)] {
+            XCTAssertEqual(BrowserKeyboardLayout.obscuredInsets(chromeInsets: chromeInsets,
+                                                              keyboardFrame: frame,
+                                                              viewBounds: bounds), chromeInsets)
+        }
+    }
+}
+
+final class WebViewScrollViewInsetUpdaterTests: XCTestCase {
+
+    @available(iOS 26, *)
+    func testKeyboardLayoutUpdatesInsetsDuringChromeTransitionOnlyWithFloatingUIEnabled() {
+        for isEnabled in [false, true] {
+            let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
+            tab.floatingUIManager = FloatingUIManager(
+                isFloatingUIFeatureEnabled: isEnabled,
+                isPadProvider: { false },
+                unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+            )
+            tab.loadViewIfNeeded()
+            let chrome = DuckPlayerBrowserChromeDelegateMock()
+            tab.chromeDelegate = chrome
+            chrome.obscuredContentInsets = UIEdgeInsets(top: 90, left: 0, bottom: 140, right: 0)
+            tab.updateWebViewBottomAnchor(for: 1)
+            let restingInsets = tab.webView.obscuredContentInsets
+            chrome.currentBarsVisibilityOverride = 0.5
+            let keyboardInsets = UIEdgeInsets(top: 90, left: 0, bottom: 350, right: 0)
+            chrome.obscuredContentInsets = keyboardInsets
+
+            tab.updateWebViewLayoutForKeyboard()
+
+            XCTAssertEqual(tab.webView.obscuredContentInsets, isEnabled ? keyboardInsets : restingInsets)
+            if isEnabled {
+                XCTAssertEqual(tab.webView.scrollView.contentInset, keyboardInsets)
+            }
+        }
+    }
+
+    @available(iOS 26, *)
+    func testFloatingChromeKeepsWebKitAndScrollInsetsStableUntilEachEndpoint() {
+        let tab = TabViewController.fake(featureFlagger: MockFeatureFlagger())
+        tab.floatingUIManager = FloatingUIManager(
+            isFloatingUIFeatureEnabled: true,
+            isPadProvider: { false },
+            unifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider(isAvailable: true)
+        )
+        tab.loadViewIfNeeded()
+        let chrome = DuckPlayerBrowserChromeDelegateMock()
+        tab.chromeDelegate = chrome
+        let expanded = UIEdgeInsets(top: 90, left: 0, bottom: 140, right: 0)
+        let collapsed = UIEdgeInsets(top: 50, left: 0, bottom: 55, right: 0)
+        chrome.obscuredContentInsets = expanded
+        tab.updateWebViewBottomAnchor(for: 1)
+        XCTAssertEqual(tab.webView.obscuredContentInsets, expanded)
+
+        for (endpoint, insets) in [(CGFloat(0), collapsed), (CGFloat(1), expanded)] {
+            let previous = tab.webView.obscuredContentInsets
+            chrome.obscuredContentInsets = insets
+            for progress: CGFloat in [0.2, 0.5, 0.8] {
+                tab.updateWebViewBottomAnchor(for: progress)
+                XCTAssertEqual(tab.webView.obscuredContentInsets, previous)
+                XCTAssertEqual(tab.webView.scrollView.contentInset, previous)
+                XCTAssertEqual(tab.webView.scrollView.verticalScrollIndicatorInsets, insets)
+            }
+            tab.updateWebViewBottomAnchor(for: endpoint)
+            XCTAssertEqual(tab.webView.obscuredContentInsets, insets)
+            XCTAssertEqual(tab.webView.scrollView.contentInset, insets)
+        }
+    }
+
+    func testTopBounceDefersInsetsUntilScrollingSettlesOrMovesBackIntoPage() {
+        let scrollView = BounceScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset.top = 97.33333333333334
+
+        for state in [BounceScrollView.State.tracking, .dragging, .decelerating, .idle] {
+            scrollView.state = state
+            for offsetY: CGFloat in [-156, -97.33333333333333, -96] {
+                scrollView.contentOffset.y = offsetY
+                XCTAssertEqual(WebViewScrollViewInsetUpdater.shouldDeferDuringTopBounce(scrollView),
+                               state != .idle && offsetY < -97,
+                               "state=\(state), offsetY=\(offsetY)")
+            }
+        }
+    }
+
+    private final class BounceScrollView: UIScrollView {
+        enum State { case idle, tracking, dragging, decelerating }
+        var state: State = .idle
+
+        override var isTracking: Bool { state == .tracking }
+        override var isDragging: Bool { state == .dragging }
+        override var isDecelerating: Bool { state == .decelerating }
+    }
+
+    func testWhenManagingInsetsThenAutomaticAdjustmentIsDisabledAndCanBeRestored() {
+        let scrollView = UIScrollView()
+        scrollView.contentInsetAdjustmentBehavior = .automatic
+        scrollView.automaticallyAdjustsScrollIndicatorInsets = true
+
+        let behavior = WebViewScrollViewInsetUpdater.beginManaging(scrollView)
+
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .never)
+        XCTAssertFalse(scrollView.automaticallyAdjustsScrollIndicatorInsets)
+
+        WebViewScrollViewInsetUpdater.endManaging(scrollView, restoring: behavior)
+
+        XCTAssertEqual(scrollView.contentInsetAdjustmentBehavior, .automatic)
+        XCTAssertTrue(scrollView.automaticallyAdjustsScrollIndicatorInsets)
+    }
+
+    func testWhenContentInsetsAreUnchangedThenContentOffsetIsUnchanged() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 20, left: 0, bottom: 30, right: 0)
+        scrollView.contentInset = insets
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: insets)
+
+        XCTAssertEqual(scrollView.contentOffset, CGPoint(x: 0, y: 40))
+    }
+
+    func testWhenPinnedToTopThenUpdatingInsetsPreservesPinnedPosition() {
+        let topInset: CGFloat = 97.33333333333334
+        for offsetY in [-topInset, -97.33333333333333] {
+            let scrollView = UIScrollView()
+            scrollView.contentInsetAdjustmentBehavior = .never
+            scrollView.contentInset = UIEdgeInsets(top: topInset, left: 0, bottom: 0, right: 0)
+            scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
+
+            WebViewScrollViewInsetUpdater.update(scrollView,
+                                                 insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0),
+                                                 isFloatingUIEnabled: true)
+
+            XCTAssertEqual(scrollView.contentOffset.y, -122)
+        }
+    }
+
+    func testInsetTopToleranceIsOnlyUsedForFloatingUI() {
+        let topInset: CGFloat = 97
+        for isFloatingUIEnabled in [false, true] {
+            for offsetY in [-topInset, -topInset + 0.0005] {
+                let scrollView = InsetScrollView()
+                scrollView.contentInset.top = topInset
+                scrollView.contentOffset = CGPoint(x: 0, y: offsetY)
+
+                WebViewScrollViewInsetUpdater.update(scrollView,
+                                                     insets: UIEdgeInsets(top: 122, left: 0, bottom: 30, right: 0),
+                                                     isFloatingUIEnabled: isFloatingUIEnabled)
+
+                XCTAssertEqual(scrollView.contentOffset.y, isFloatingUIEnabled || offsetY == -topInset ? -122 : offsetY)
+            }
+        }
+    }
+
+    private final class InsetScrollView: UIScrollView {
+        private var storedInsets = UIEdgeInsets.zero
+        private var storedOffset = CGPoint.zero
+
+        override var contentInset: UIEdgeInsets {
+            get { storedInsets }
+            set { storedInsets = newValue }
+        }
+
+        override var adjustedContentInset: UIEdgeInsets { storedInsets }
+
+        override var contentOffset: CGPoint {
+            get { storedOffset }
+            set { storedOffset = newValue }
+        }
+
+        override func setContentOffset(_ contentOffset: CGPoint, animated: Bool) {
+            self.contentOffset = contentOffset
+        }
+    }
+
+    func testWhenNotPinnedToTopThenUpdatingInsetsPreservesContentOffset() {
+        let scrollView = UIScrollView(frame: CGRect(x: 0, y: 0, width: 320, height: 640))
+        scrollView.contentSize = CGSize(width: 320, height: 2_000)
+        scrollView.contentInset = UIEdgeInsets(top: 20, left: 0, bottom: 0, right: 0)
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView,
+                                             insets: UIEdgeInsets(top: 50, left: 0, bottom: 30, right: 0))
+
+        XCTAssertEqual(scrollView.contentOffset.y, 40)
+    }
+
+    func testWhenUpdatingInsetsThenBothScrollIndicatorInsetsAreUpdated() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 50, left: 2, bottom: 30, right: 4)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: insets)
+
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, insets)
+        XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, insets)
+    }
+
+    func testWhenClearingInsetsThenContentAndIndicatorInsetsAreZero() {
+        let scrollView = UIScrollView()
+        let insets = UIEdgeInsets(top: 50, left: 2, bottom: 30, right: 4)
+        scrollView.contentInset = insets
+        scrollView.verticalScrollIndicatorInsets = insets
+        scrollView.horizontalScrollIndicatorInsets = insets
+        scrollView.contentOffset = CGPoint(x: 0, y: 40)
+
+        WebViewScrollViewInsetUpdater.update(scrollView, insets: .zero)
+
+        XCTAssertEqual(scrollView.contentInset, .zero)
+        XCTAssertEqual(scrollView.verticalScrollIndicatorInsets, .zero)
+        XCTAssertEqual(scrollView.horizontalScrollIndicatorInsets, .zero)
+    }
+
+    func testWhenChromeTransitionIsInProgressThenPreviouslyAppliedInsetsAreKept() {
+        XCTAssertFalse(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenChromeTransitionReachesEndpointsThenInsetsAreUpdated() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0,
+                hasAppliedInsets: true
+            )
+        )
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 1,
+                hasAppliedInsets: true
+            )
+        )
+    }
+
+    func testWhenInsetsHaveNotBeenAppliedThenTheyAreUpdatedDuringChromeTransition() {
+        XCTAssertTrue(
+            WebViewScrollViewInsetUpdater.shouldUpdateDuringChromeTransition(
+                barsVisibilityPercent: 0.5,
+                hasAppliedInsets: false
+            )
+        )
+    }
+}
+
+final class FloatingSwipePreviewGeometryTests: XCTestCase {
+
+    private let superviewBounds = CGRect(x: 0, y: 0, width: 390, height: 844)
+    private let safeAreaInsets = UIEdgeInsets(top: 59, left: 0, bottom: 34, right: 0)
+
+    func testWhenDestinationIsAITabThenFrameFitsBetweenAIChrome() {
+        let frame = FloatingSwipePreviewGeometry.destinationFrame(
+            isAITab: true,
+            superviewBounds: superviewBounds,
+            contentContainerFrame: CGRect(x: 0, y: 50, width: 390, height: 760),
+            safeAreaInsets: safeAreaInsets,
+            aiHeaderHeight: 84,
+            aiInputHeight: 120
+        )
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: 93, width: 390, height: 547))
+    }
+
+    func testWhenDestinationIsRegularTabThenFrameUsesFullFloatingViewport() {
+        let frame = FloatingSwipePreviewGeometry.destinationFrame(
+            isAITab: false,
+            superviewBounds: superviewBounds,
+            contentContainerFrame: CGRect(x: 0, y: 143, width: 390, height: 547),
+            safeAreaInsets: safeAreaInsets,
+            aiHeaderHeight: 84,
+            aiInputHeight: 120
+        )
+
+        XCTAssertEqual(frame, CGRect(x: 0, y: -143, width: 390, height: 844))
+    }
+}
+
+final class SwipeTabBoundaryPolicyTests: XCTestCase {
+
+    func testWhenOnlyOneTabIsAITabThenBoundaryIsCrossed() {
+        XCTAssertTrue(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: true, destinationIsAITab: false))
+        XCTAssertTrue(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: false, destinationIsAITab: true))
+    }
+
+    func testWhenTabsHaveSameTypeThenBoundaryIsNotCrossed() {
+        XCTAssertFalse(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: true, destinationIsAITab: true))
+        XCTAssertFalse(SwipeTabBoundaryPolicy.crossesAITabBoundary(currentIsAITab: false, destinationIsAITab: false))
+    }
+}
+
+final class LiveTabSwipePolicyTests: XCTestCase {
+
+    func testWhenFloatingUIHasWebDestinationThenLiveDestinationIsUsed() {
+        XCTAssertTrue(
+            LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: true,
+                hasWebDestination: true
+            )
+        )
+    }
+
+    func testWhenFloatingUIIsDisabledThenLiveDestinationIsNotUsed() {
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: false,
+                hasWebDestination: true
+            )
+        )
+    }
+
+    func testWhenDestinationHasNoWebContentThenLiveDestinationIsNotUsed() {
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldUseLiveDestination(
+                isFloatingUIEnabled: true,
+                hasWebDestination: false
+            )
+        )
+    }
+
+    func testWhenCommittingDifferentExistingTabThenDestinationViewIsKeptForTransition() {
+        XCTAssertTrue(
+            LiveTabSwipePolicy.shouldKeepDestinationView(
+                targetIndex: 2,
+                currentIndex: 1,
+                tabCount: 3
+            )
+        )
+    }
+
+    func testWhenCancellingOrOpeningNewTabThenDestinationViewIsNotKept() {
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldKeepDestinationView(
+                targetIndex: 1,
+                currentIndex: 1,
+                tabCount: 3
+            )
+        )
+        XCTAssertFalse(
+            LiveTabSwipePolicy.shouldKeepDestinationView(
+                targetIndex: 3,
+                currentIndex: 2,
+                tabCount: 3
+            )
+        )
+    }
+}
+
+final class SwipeChromeTransitionPolicyTests: XCTestCase {
+
+    private func transition(currentHasInlineSearchInput: Bool,
+                            destinationHasInlineSearchInput: Bool,
+                            currentIsAITab: Bool = false,
+                            destinationIsAITab: Bool = false,
+                            usesMinimalChromeForWebPages: Bool = false) -> SwipeChromeTransition {
+        SwipeChromeTransitionPolicy.transition(currentHasInlineSearchInput: currentHasInlineSearchInput,
+                                               destinationHasInlineSearchInput: destinationHasInlineSearchInput,
+                                               currentIsAITab: currentIsAITab,
+                                               destinationIsAITab: destinationIsAITab,
+                                               usesMinimalChromeForWebPages: usesMinimalChromeForWebPages)
+    }
+
+    func testWhenSwipingFromNewTabPageToWebPageThenChromeCrossFadesLeavingNewTabPage() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true, destinationHasInlineSearchInput: false),
+                       .crossFade(leavingNewTabPage: true))
+    }
+
+    func testWhenSwipingFromWebPageToNewTabPageThenChromeCrossFadesEnteringNewTabPage() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false, destinationHasInlineSearchInput: true),
+                       .crossFade(leavingNewTabPage: false))
+    }
+
+    func testWhenBothTabsHaveTheSameChromeThenChromeSlides() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false, destinationHasInlineSearchInput: false), .slide)
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true, destinationHasInlineSearchInput: true), .slide)
+    }
+
+    func testWhenWebPagesUseMinimalChromeThenChromeSlides() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true,
+                                  destinationHasInlineSearchInput: false,
+                                  usesMinimalChromeForWebPages: true), .slide)
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false,
+                                  destinationHasInlineSearchInput: true,
+                                  usesMinimalChromeForWebPages: true), .slide)
+    }
+
+    func testWhenEitherTabIsAITabThenChromeSlides() {
+        XCTAssertEqual(transition(currentHasInlineSearchInput: false,
+                                  destinationHasInlineSearchInput: true,
+                                  currentIsAITab: true), .slide)
+        XCTAssertEqual(transition(currentHasInlineSearchInput: true,
+                                  destinationHasInlineSearchInput: false,
+                                  destinationIsAITab: true), .slide)
+    }
+}
+
+final class LiveDestinationParkingTests: XCTestCase {
+
+    private let landingInsets = UIEdgeInsets(top: 0, left: 59, bottom: 21, right: 0)
+    private let original = UIEdgeInsets(top: 4, left: 1, bottom: 2, right: 3)
+
+    func testWhenPageIsAtItsLandingPositionThenOriginalInsetsAreKept() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: 0, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, original)
+    }
+
+    func testWhenPageIsShiftedRightThenLeftInsetMakesUpTheCutoutItMovedPast() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: 20, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 4, left: 21, bottom: 2, right: 3))
+    }
+
+    func testWhenPageIsShiftedPastTheCutoutThenLeftInsetIsCappedAtTheLandingInset() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: 400, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 4, left: 60, bottom: 2, right: 3))
+    }
+
+    func testWhenPageIsShiftedLeftThenRightInsetMakesUpOnlyTheRightLandingInset() {
+        let rightCutout = UIEdgeInsets(top: 0, left: 0, bottom: 21, right: 59)
+
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: -30, landingInsets: rightCutout)
+
+        XCTAssertEqual(insets, UIEdgeInsets(top: 4, left: 1, bottom: 2, right: 33))
+    }
+
+    func testWhenPageIsShiftedTowardsAnEdgeWithoutCutoutThenInsetsAreUnchanged() {
+        let insets = LiveDestinationParking.landingSafeAreaInsets(original: original, translation: -30, landingInsets: landingInsets)
+
+        XCTAssertEqual(insets, original)
+    }
+}
+
+final class FloatingOmnibarSwipeGeometryTests: XCTestCase {
+
+    private let bounds = CGRect(x: 0, y: 0, width: 300, height: 60)
+
+    func testWhenSwipingLeftThenOutgoingCollapsesFromRightAndIncomingExpandsFromRight() {
+        let rects = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .left)
+
+        XCTAssertEqual(rects.outgoing, CGRect(x: 0, y: 0, width: 217, height: 60))
+        XCTAssertEqual(rects.incoming, CGRect(x: 233, y: 0, width: 67, height: 60))
+        XCTAssertEqual(rects.incoming.minX - rects.outgoing.maxX, 16)
+    }
+
+    func testWhenSwipingRightThenOutgoingCollapsesFromLeftAndIncomingExpandsFromLeft() {
+        let rects = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .right)
+
+        XCTAssertEqual(rects.outgoing, CGRect(x: 83, y: 0, width: 217, height: 60))
+        XCTAssertEqual(rects.incoming, CGRect(x: 0, y: 0, width: 67, height: 60))
+        XCTAssertEqual(rects.outgoing.minX - rects.incoming.maxX, 16)
+    }
+
+    func testWhenProgressExceedsBoundsThenGeometryIsClamped() {
+        let beforeStart = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: -1, direction: .left)
+        let afterEnd = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 2, direction: .left)
+
+        XCTAssertEqual(beforeStart.outgoing.width, bounds.width)
+        XCTAssertEqual(beforeStart.incoming.width, 0)
+        XCTAssertEqual(afterEnd.outgoing.width, 0)
+        XCTAssertEqual(afterEnd.incoming.width, bounds.width)
+    }
+
+    func testWhenSwipeIsBeforeHandoffThenIncomingBarAndTextRemainHidden() {
+        let morph = FloatingOmnibarSwipeMorph.values(progress: 0.19)
+
+        XCTAssertEqual(morph.incomingBarAlpha, 0)
+        XCTAssertEqual(morph.outgoingTextAlpha, 1)
+        XCTAssertEqual(morph.incomingTextAlpha, 0)
+    }
+
+    func testWhenSwipeCrossesMidpointThenTextHandoffIsUnderway() {
+        let morph = FloatingOmnibarSwipeMorph.values(progress: 0.5)
+
+        XCTAssertEqual(morph.incomingBarAlpha, 1)
+        XCTAssertEqual(morph.outgoingTextAlpha, 0)
+        XCTAssertEqual(morph.incomingTextAlpha, 0.75, accuracy: 0.001)
+    }
+
+    func testWhenSwipingThenTextTracksMovingFieldEdges() {
+        let left = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .left)
+        let right = FloatingOmnibarSwipeGeometry.visibleRects(bounds: bounds, progress: 0.25, direction: .right)
+
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.trailingTranslationX(bounds: bounds, visibleRect: left.outgoing), -83)
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.leadingTranslationX(bounds: bounds, visibleRect: left.incoming), 233)
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.leadingTranslationX(bounds: bounds, visibleRect: right.outgoing), 83)
+        XCTAssertEqual(FloatingOmnibarSwipeGeometry.trailingTranslationX(bounds: bounds, visibleRect: right.incoming), -233)
+    }
+
+    func testWhenSwipeEndsThenToolbarRemovesMasksAndIncomingView() {
+        let toolbar = BrowserToolbarView(frame: CGRect(x: 0, y: 0, width: 320, height: 140))
+        let outgoingView = UIView()
+        let incomingView = UIView()
+        toolbar.setFloatingStyleEnabled(true)
+        toolbar.setOmnibarView(outgoingView, height: 60)
+        toolbar.layoutIfNeeded()
+
+        toolbar.beginOmnibarSwipe(with: incomingView)
+        toolbar.updateOmnibarSwipe(progress: 0.5, direction: .left)
+        XCTAssertNotNil(outgoingView.layer.mask)
+        XCTAssertNotNil(incomingView.layer.mask)
+
+        toolbar.endOmnibarSwipe()
+        XCTAssertNil(outgoingView.layer.mask)
+        XCTAssertNil(incomingView.layer.mask)
+        XCTAssertNil(incomingView.superview)
+    }
+}
+
+final class ChromeMorphAnimatorTests: XCTestCase {
+
+    func testSkippedFramesStillCompleteWithinTraversalDuration() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        var values: [CGFloat] = []
+        var completions = 0
+        animator.setTarget(0, onProgress: { values.append($0) }, onComplete: { completions += 1 })
+
+        animator.advance(timestamp: 10, targetTimestamp: 10.05)
+        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+        XCTAssertEqual(animator.currentValue, 1.0 / 6, accuracy: 0.001)
+        animator.advance(timestamp: 10.30, targetTimestamp: 10.35)
+
+        XCTAssertEqual(values.last, 0)
+        XCTAssertEqual(completions, 1)
+        XCTAssertFalse(animator.isAnimating)
+    }
+
+    func testReversingDirectionPreservesTheDisplayedValueAndFrameClock() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        var obsoleteCompletions = 0
+        var completions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
+        animator.advance(timestamp: 10, targetTimestamp: 10.15)
+        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
+
+        animator.setTarget(1, onProgress: { _ in }, onComplete: { completions += 1 })
+        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
+        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+        XCTAssertEqual(animator.currentValue, 5.0 / 6, accuracy: 0.001)
+        animator.advance(timestamp: 10.30, targetTimestamp: 10.35)
+
+        XCTAssertEqual(animator.currentValue, 1)
+        XCTAssertEqual(obsoleteCompletions, 0)
+        XCTAssertEqual(completions, 1)
+    }
+
+    func testJumpDiscardsThePreviousClockAndCompletion() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        var obsoleteCompletions = 0
+        animator.setTarget(0, onProgress: { _ in }, onComplete: { obsoleteCompletions += 1 })
+        animator.advance(timestamp: 10, targetTimestamp: 10.1)
+        animator.jump(to: 1)
+        animator.advance(timestamp: 20, targetTimestamp: 20.1)
+        XCTAssertEqual(animator.currentValue, 1)
+
+        animator.setTarget(0, onProgress: { _ in }, onComplete: {})
+        animator.advance(timestamp: 30, targetTimestamp: 30.15)
+        XCTAssertEqual(animator.currentValue, 0.5, accuracy: 0.001)
+        XCTAssertEqual(obsoleteCompletions, 0)
+        animator.cancel()
+    }
+
+    func testTraversalDurationOverrideAppliesOnlyToThatLeg() {
+        let animator = ChromeMorphAnimator(fullTraversalDuration: 0.3)
+        animator.setTarget(0, fullTraversalDuration: 1, onProgress: { _ in }, onComplete: {})
+        animator.advance(timestamp: 10, targetTimestamp: 10.15)
+        XCTAssertEqual(animator.currentValue, 0.85, accuracy: 0.001)
+
+        animator.setTarget(1, onProgress: { _ in }, onComplete: {})
+        animator.advance(timestamp: 10.20, targetTimestamp: 10.25)
+        XCTAssertEqual(animator.currentValue, 1)
+        XCTAssertFalse(animator.isAnimating)
+    }
+}

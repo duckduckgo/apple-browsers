@@ -68,6 +68,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isBottomFloatingField ? Metrics.floatingEmbeddedHeight : Metrics.height
     }
     static let expectedHeight: CGFloat = Metrics.height
+    static let bottomPositionFieldBottomPadding: CGFloat = Metrics.textAreaBottomPaddingAdjustedSpacing
 
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
@@ -1328,6 +1329,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
 
         fireButtonView.setImage(DesignSystemImages.Glyphs.Size24.fireSolid)
         DefaultOmniBarView.setUpCommonProperties(for: fireButtonView)
+        fireButtonView.accessibilityIdentifier = "Browser.Toolbar.Button.Fire"
         fireButtonView.isHidden = true
 
         tabSwitcherContainerView.translatesAutoresizingMaskIntoConstraints = false

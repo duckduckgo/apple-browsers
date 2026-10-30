@@ -23,11 +23,9 @@ final class MockAIChatBonusStore: AIChatBonusStoring {
     var storedRecord: AIChatBonusRecord?
     var readError: Error?
     var writeError: Error?
-    var deleteError: Error?
 
     private(set) var readCallCount = 0
     private(set) var writeCallCount = 0
-    private(set) var deleteCallCount = 0
 
     init(storedRecord: AIChatBonusRecord? = nil) {
         self.storedRecord = storedRecord
@@ -46,8 +44,6 @@ final class MockAIChatBonusStore: AIChatBonusStoring {
     }
 
     func delete() throws {
-        deleteCallCount += 1
-        if let deleteError { throw deleteError }
         storedRecord = nil
     }
 }

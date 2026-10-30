@@ -678,7 +678,7 @@ final class DataImportViewModelTests: XCTestCase {
     func testDataTypeFilter_dataTypesToImport_keepsTypesTheFilterDoesNotCover() {
         let filter = DataImportViewModel.DataTypeFilter(enabledTypes: [.bookmarks])
 
-        let dataTypes = filter.dataTypesToImport(from: [.bookmarks, .passwords, .creditCards])
+        let dataTypes = filter.dataTypesToImport(from: [.bookmarks, .passwords, .creditCards, .history])
 
         XCTAssertEqual(dataTypes, [.bookmarks, .creditCards])
     }

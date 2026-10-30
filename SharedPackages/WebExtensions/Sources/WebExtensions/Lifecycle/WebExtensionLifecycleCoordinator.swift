@@ -119,10 +119,6 @@ public final class WebExtensionLifecycleCoordinator {
         for await _ in completion { }
     }
 
-    /// Bumped by `cancelAll()`; every queued op captures the generation at enqueue time and bails if
-    /// it changed, so a single cancel stops the whole chain (not just the tail).
-    private var generation = 0
-
     public init(manager: WebExtensionManaging,
                 initialLoadTimeout: TimeInterval = 5,
                 initialLoadGateEnabledProvider: @escaping @MainActor () -> Bool = { true },
@@ -135,7 +131,7 @@ public final class WebExtensionLifecycleCoordinator {
         self.pixelFiring = pixelFiring
     }
 
-    /// Full load followed by embedded sync, as one indivisible chain entry. Launch / re-init.
+    /// Prepares CPM when enabled, loads installed extensions, then syncs all bundled types. Launch / re-init.
     @discardableResult
     public func loadAndSync() -> Task<Void, Never> {
         if let pendingLoadAndSync { return pendingLoadAndSync }
@@ -147,9 +143,7 @@ public final class WebExtensionLifecycleCoordinator {
                                self?.initialLoadAndSyncDidComplete()
                            }) { [weak self] in
             guard let self else { return }
-            await self.manager.loadInstalledExtensions()
-            guard !Task.isCancelled else { return }
-            await self.manager.syncEmbeddedExtensions(enabledTypes: self.enabledTypesProvider())
+            await self.loadAndSyncInstalledExtensions()
             guard !Task.isCancelled else { return }
             if isInitialLoadAndSync, self.initialLoadGateEnabledProvider(), !self.isInitialLoadGateOpen {
                 // WebKit's callback may never arrive. Only the bounded gate wait belongs on the
@@ -169,6 +163,18 @@ public final class WebExtensionLifecycleCoordinator {
             initialLoadAndSync = task
         }
         return task
+    }
+
+    private func loadAndSyncInstalledExtensions() async {
+        if manager.isCPMUpgradeBeforeLoadEnabled {
+            // Only CPM is updated/removed before its old context can start. Leave all other types
+            // and scriptlet downloads until after contexts load, preserving their existing startup.
+            await manager.syncCPMExtensionBeforeLoad(isEnabled: enabledTypesProvider().contains(.embedded))
+        }
+        // Failed CPM upgrades retain the previous installation for this load. The following sync
+        // also repairs any corrupt bundled installation that the full load removes.
+        await manager.loadInstalledExtensions()
+        await manager.syncEmbeddedExtensions(enabledTypes: enabledTypesProvider())
     }
 
     /// Embedded sync only. Appearance / YouTube / feature-flag triggers.
@@ -222,20 +228,6 @@ public final class WebExtensionLifecycleCoordinator {
         enqueue { [weak self] in self?.reportConsistency() }
     }
 
-    /// Cancels the in-flight tail and prevents every queued operation from running. Used on
-    /// feature-flag disable / teardown.
-    public func cancelAll() {
-        generation += 1
-        backgroundNavigationReadiness?.wait.cancel()
-        backgroundNavigationReadiness = nil
-        initialLoadAndSync?.cancel()
-        tail?.cancel()
-        tail = nil
-        pendingSync = nil
-        pendingLoadAndSync = nil
-        initialLoadAndSyncDidComplete()
-    }
-
     /// Compares enabled embedded types against loaded ones and fires pixels. Runs on the chain.
     private func reportConsistency() {
         let expected = enabledTypesProvider()
@@ -263,12 +255,11 @@ public final class WebExtensionLifecycleCoordinator {
                          onCompletion: (@MainActor () -> Void)? = nil,
                          _ body: @escaping @MainActor () async -> Void) -> Task<Void, Never> {
         let previous = tail
-        let enqueuedGeneration = generation
-        let task = Task { @MainActor [weak self] in
+        let task = Task { @MainActor in
             defer { onCompletion?() }
             await previous?.value
             clearPendingOnStart?()
-            guard !Task.isCancelled, self?.generation == enqueuedGeneration else { return }
+            guard !Task.isCancelled else { return }
             await body()
         }
         tail = task

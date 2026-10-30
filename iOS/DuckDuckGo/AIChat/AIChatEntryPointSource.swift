@@ -37,7 +37,7 @@ enum AIChatEntryPointPixel: PixelKit.Event {
 
     var namePrefix: PixelKitNamePrefix { .custom("m_") }
 
-    /// Shared so entry paths outside `MainViewController` can report too.
+    /// Fired only through `MainViewController.fireAIChatEntryPointPixel`, which also starts the Duck.ai entry wide event.
     static func fire(source: AIChatEntryPointSource,
                      duckAIEnabled: Bool,
                      toggleEnabled: Bool,

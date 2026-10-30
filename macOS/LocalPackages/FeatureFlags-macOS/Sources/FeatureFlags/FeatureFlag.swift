@@ -153,6 +153,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
     case cpmStableBaseURL
 
+    /// Failsafe for upgrading only CPM before launch load; evaluated when the manager is created.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
+    case cpmUpgradeBeforeLoad
+
     /// Remotely activated Web Extension background Web View graveyard treatment.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218860893478440
     case cpmBackgroundGraveyardTreatment
@@ -181,8 +185,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382544
     case delayedWebviewPresentation
 
-    /// https://app.asana.com/1/137249556945/project/1206873150423133/task/1213344522599586
-    case dbpWebViewUserAgent
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219955912780435
+    case dbpCustomWebViewUserAgent
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212843034975366
     case dbpOptOutRetryError96Hours
@@ -803,7 +807,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .bitwardenConnectionHardening:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionLightweightReload:
@@ -826,6 +830,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmNetworkProcessRecovery), category: .webExtensions)
         case .cpmStableBaseURL:
             Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmStableBaseURL), category: .webExtensions)
+        case .cpmUpgradeBeforeLoad:
+            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.cpmUpgradeBeforeLoad), category: .webExtensions)
         case .cpmBackgroundGraveyardTreatment:
             Config(defaultValue: .disabled,
                    source: .remoteReleasable(WebExtensionsSubfeature.cpmBackgroundGraveyardTreatment),
@@ -854,8 +860,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .disabled)
         case .delayedWebviewPresentation:
             Config(defaultValue: .enabled, source: .remoteReleasable(DelayedWebviewPresentationSubfeature.featureEnabled))
-        case .dbpWebViewUserAgent:
-            Config(source: .remoteReleasable(DBPSubfeature.webViewUserAgent), supportsLocalOverriding: true, category: .dbp)
+        case .dbpCustomWebViewUserAgent:
+            Config(source: .remoteReleasable(DBPSubfeature.customWebViewUserAgent), supportsLocalOverriding: true, category: .dbp)
         case .dbpOptOutRetryError96Hours:
             Config(source: .remoteReleasable(DBPSubfeature.optOutRetryError96Hours), category: .dbp)
         case .dbpPerformanceMetrics:

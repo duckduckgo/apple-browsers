@@ -287,11 +287,7 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             frequency = .dailyAndCount
             parameters = [:]
         case .cpmBackgroundLoadRestart(let outcome):
-#if os(macOS)
-            name = "web_extension_cpm_background_load_restart_macos"
-#else
             name = "web_extension_cpm_background_load_restart"
-#endif
             frequency = .dailyAndCount
             parameters = ["outcome": outcome.rawValue]
         case .cpmRecovery(let fix, let outcome):

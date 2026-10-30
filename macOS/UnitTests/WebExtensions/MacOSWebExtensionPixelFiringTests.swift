@@ -29,7 +29,7 @@ final class MacOSWebExtensionPixelFiringTests: XCTestCase {
             MacOSWebExtensionPixelFiring(pixelFiring: pixels).fire(.cpmBackgroundLoadRestart(outcome))
             XCTAssertEqual(pixels.actualFireCalls.count, 1)
             let call = try XCTUnwrap(pixels.actualFireCalls.first)
-            XCTAssertEqual(call.pixel.name, "web_extension_cpm_background_load_restart_macos")
+            XCTAssertEqual(call.pixel.name, "web_extension_cpm_background_load_restart")
             XCTAssertEqual(call.pixel.namePrefix, .none)
             XCTAssertEqual(call.frequency, .dailyAndCount)
             XCTAssertEqual(call.pixel.parameters, ["outcome": outcome.rawValue])

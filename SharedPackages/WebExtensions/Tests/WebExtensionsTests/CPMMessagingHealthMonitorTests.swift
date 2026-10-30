@@ -149,11 +149,7 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
     func testError6RestartPixelMetadataContainsOnlyAllowlistedOutcome() throws {
         for outcome in CPMBackgroundLoadRestartOutcome.allCases {
             let metadata = try XCTUnwrap(CPMWebExtensionPixelMetadata(event: .cpmBackgroundLoadRestart(outcome)))
-#if os(macOS)
-            XCTAssertEqual(metadata.name, "web_extension_cpm_background_load_restart_macos")
-#else
             XCTAssertEqual(metadata.name, "web_extension_cpm_background_load_restart")
-#endif
             XCTAssertEqual(metadata.frequency, .dailyAndCount)
             XCTAssertEqual(metadata.parameters, ["outcome": outcome.rawValue])
         }

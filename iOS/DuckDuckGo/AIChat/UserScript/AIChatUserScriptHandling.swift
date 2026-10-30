@@ -238,6 +238,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
     private var bonusRecordChangedHandler: ((AIChatBonusRecordPayload) -> Void)?
+    private let bonusMessageLog: AIChatBonusMessageLogging?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
     private let devicePlatform: DevicePlatformProviding.Type
@@ -298,10 +299,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          installTypeProvider: @escaping () -> AIChatInstallType = {
              StatisticsUserDefaults().variant == VariantIOS.returningUser.name ? .returning : .new
          },
-         homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
+         homepageAiChatsProvider: HomepageAiChatsProvider? = nil,
+         bonusMessageLog: AIChatBonusMessageLogging? = nil) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
         self.bonusHandler = bonusHandler
+        self.bonusMessageLog = bonusMessageLog
         self.featureFlagger = featureFlagger
         self.termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: keyValueStore)
         self.promptHandler = promptHandler
@@ -828,31 +831,58 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.getAIChatBonusRecord.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.request, method: method, params: params)
+            return nil
+        }
         // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
-        return bonusHandler.getAIChatBonusRecord()
+        let reply = bonusHandler.getAIChatBonusRecord()
+        logBonusRequest(method, params: params, reply: reply)
+        return reply
     }
 
     func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.getAIChatNewBonusRecord.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.request, method: method, params: params)
+            return nil
+        }
         // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
-        return bonusHandler.getAIChatNewBonusRecord(params: params)
+        let reply = bonusHandler.getAIChatNewBonusRecord(params: params)
+        logBonusRequest(method, params: params, reply: reply)
+        return reply
     }
 
     func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.aiChatBonusRedeemOutcome.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.notification, method: method, params: params)
+            return nil
+        }
+        bonusMessageLog?.record(.notification, method: method, params: params)
         bonusHandler.aiChatBonusRedeemOutcome(params: params)
         return nil
     }
 
     func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.aiChatBonusDismiss.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.notification, method: method, params: params)
+            return nil
+        }
+        bonusMessageLog?.record(.notification, method: method, params: params)
         bonusHandler.aiChatBonusDismiss(params: params)
         return nil
     }
 
     func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? {
-        guard isBonusOfferEnabled else { return nil }
+        let method = AIChatUserScriptMessages.aiChatBonusEnd.rawValue
+        guard isBonusOfferEnabled else {
+            logIgnoredBonusMessage(.notification, method: method, params: params)
+            return nil
+        }
+        bonusMessageLog?.record(.notification, method: method, params: params)
         bonusHandler.aiChatBonusEnd()
         return nil
     }
@@ -865,6 +895,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 self.bonusRecordChangedHandler?(payload)
             }
             .store(in: &cancellables)
+    }
+
+    private func logBonusRequest(_ method: String, params: Any, reply: Encodable?) {
+        bonusMessageLog?.record(
+            .request,
+            method: method,
+            params: params,
+            body: reply,
+            note: reply == nil ? "No reply: invalid params, or the record couldn't be read or written" : nil
+        )
+    }
+
+    private func logIgnoredBonusMessage(_ kind: AIChatBonusMessageLog.Kind, method: String, params: Any) {
+        bonusMessageLog?.record(
+            kind,
+            method: method,
+            params: params,
+            note: "Dropped: aiChatLimitExtensionPromo is off"
+        )
     }
 
     // MARK: - Sync

@@ -134,7 +134,7 @@ final class UserScripts: UserScriptsProvider {
         let aiChatSettings = AIChatSettings()
         let homepageAiChatsProvider = HomepageAiChatsProvider(featureFlagProvider: AIChatFeatureFlagProvider(featureFlagger: featureFlagger))
         let aiChatBonusHandler = AIChatBonusHandler(
-            service: sourceProvider.aiChatBonusService,
+            service: sourceProvider.aiChatBonusOffer.service,
             factsProvider: AIChatBonusFactsProvider(
                 statisticsStore: StatisticsUserDefaults(),
                 aiChatSettings: aiChatSettings
@@ -147,9 +147,11 @@ final class UserScripts: UserScriptsProvider {
                                                           featureFlagger: featureFlagger,
                                                           isNativeStorageBridgeAvailable: isNativeStorageBridgeAvailable,
                                                           attachmentPrivacyWebKeySource: duckAiNativeStorageHandler,
-                                                          homepageAiChatsProvider: homepageAiChatsProvider)
+                                                          homepageAiChatsProvider: homepageAiChatsProvider,
+                                                          bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
-                                            debugSettings: aiChatDebugSettings)
+                                            debugSettings: aiChatDebugSettings,
+                                            bonusMessageLog: sourceProvider.aiChatBonusOffer.messageLog)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: aiChatSettings))
 
         if isNativeStorageBridgeAvailable,

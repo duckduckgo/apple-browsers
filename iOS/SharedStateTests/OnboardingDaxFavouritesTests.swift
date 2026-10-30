@@ -109,7 +109,7 @@ private final class MockIdleReturnEligibilityManagerForMainVC: IdleReturnEligibi
                                                                               internalUserDecider: MockInternalUserDecider(),
                                                                               syncErrorHandler: CapturingAdapterErrorHandler(),
                                                                               webExtensionAvailability: nil,
-                                                                              aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore()))
+                                                                              aiChatBonusOffer: AIChatBonusOfferDependencies(service: AIChatBonusService(store: MockAIChatBonusStore()), messageLog: AIChatBonusMessageLog()))
 
         let fireModel = TabsModel(tabs: [], desktop: false, mode: .fire)
         let modelProvider = TabsModelProvider(normalTabsModel: tabsModel, fireModeTabsModel: fireModel, persistence: tabsPersistence)

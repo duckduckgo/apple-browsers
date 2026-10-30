@@ -803,7 +803,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .bitwardenConnectionHardening:
             Config(defaultValue: .enabled, source: .remoteReleasable(AutofillSubfeature.bitwardenConnectionHardening))
         case .webExtensions:
-            Config(defaultValue: .enabled, source: .remoteReleasable(WebExtensionsSubfeature.featureEnabled), category: .webExtensions)
+            Config(defaultValue: .enabled, source: .remoteReleasable(ExtensionManagementSubfeature.isLaunchedExtensions), category: .webExtensions)
         case .webExtensionsPermissions:
             Config(defaultValue: .internalOnly, source: .remoteReleasable(WebExtensionsSubfeature.permissions), category: .webExtensions)
         case .webExtensionLightweightReload:

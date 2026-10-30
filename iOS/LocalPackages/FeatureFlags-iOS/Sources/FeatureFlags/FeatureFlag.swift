@@ -162,6 +162,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218291758637484
     case subscriptionOnboardingPaidSubsOct2026
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219907744895168
+    case subscriptionCancellationFlow
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866464085187
     case syncSetupBarcodeIsUrlBased
 
@@ -294,9 +297,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case aiChatAutoAttachContextByDefault
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1217856366373963?focus=true
-    case aiChatPdfPageContext
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1218354738310249?focus=true
     case aiChatContextualAddressBarMenu
@@ -786,6 +786,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingFreeTrialsOct2026), cohortType: SubscriptionOnboardingFreeTrialsOct2026Cohort.self)
         case .subscriptionOnboardingPaidSubsOct2026:
             Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionOnboardingPaidSubsOct2026), cohortType: SubscriptionOnboardingPaidSubsOct2026Cohort.self)
+        case .subscriptionCancellationFlow:
+            Config(source: .remoteReleasable(PrivacyProSubfeature.subscriptionCancellationFlow))
         case .syncSetupBarcodeIsUrlBased:
             Config(source: .remoteReleasable(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
@@ -876,8 +878,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(PageContextSubfeature.featureEnabled))
         case .aiChatAutoAttachContextByDefault:
             Config(source: .remoteReleasable(AIChatSubfeature.autoAttachContextByDefault))
-        case .aiChatPdfPageContext:
-            Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.pdfPageContext))
         case .aiChatContextualAddressBarMenu:
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.contextualAddressBarMenu), supportsLocalOverriding: true)
         case .aiChatSync:

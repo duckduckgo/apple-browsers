@@ -99,6 +99,8 @@ struct UserText {
     static let webExtensionInstallTitle = NotLocalizedString("webExtensions.install.title", value: "Add “%@”?", comment: "Extension installation title; placeholder is the extension name")
     static let webExtensionPermissionTitle = NotLocalizedString("webExtensions.permissions.title", value: "Allow “%@” additional access?", comment: "Extension permissions title; placeholder is the extension name")
     static let webExtensionUnnamedExtension = NotLocalizedString("webExtensions.unnamed", value: "Extension", comment: "Fallback for an unnamed web extension")
+    static let webExtensionAddedTitle = NotLocalizedString("webExtensions.added.title", value: "“%@” added!", comment: "Popover title shown by a newly installed extension's toolbar button; placeholder is the extension name")
+    static let webExtensionAddedMessage = NotLocalizedString("webExtensions.added.message", value: "You can access this extension from here. We've also turned off DuckDuckGo's built-in autofill.", comment: "Popover message shown by a newly installed extension's toolbar button")
     static let webExtensionPermissionExplanation = NotLocalizedString("webExtensions.permissions.explanation", value: "It can:", comment: "Introduction to extension permission list")
     static let webExtensionNoPermissions = NotLocalizedString("webExtensions.permissions.none", value: "No additional permissions requested.", comment: "Extension requests no permissions")
     static let webExtensionInstall = NotLocalizedString("webExtensions.install.button", value: "Add Extension", comment: "Approve extension installation")

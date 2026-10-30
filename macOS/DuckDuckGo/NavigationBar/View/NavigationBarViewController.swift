@@ -90,6 +90,7 @@ final class NavigationBarViewController: NSViewController {
     private var internalUserCancellable: AnyCancellable?
     /// Owns the toolbar buttons of the loaded web extensions. `nil` when web extensions are unavailable.
     private var webExtensionNavigationBarUpdater: AnyObject?
+    private var webExtensionInstalledCancellable: AnyCancellable?
     private var fireWindowBackgroundView: NSImageView?
     private(set) var goBackButtonWidthConstraint: NSLayoutConstraint!
     private(set) var goBackButtonHeightConstraint: NSLayoutConstraint!
@@ -806,7 +807,20 @@ final class NavigationBarViewController: NSViewController {
                                                            selectedTabProvider: { [weak self] in self?.tabCollectionViewModel.selectedTabViewModel?.tab })
             updater.startUpdating()
             webExtensionNavigationBarUpdater = updater
+            subscribeToWebExtensionInstalls(updater: updater)
         }
+    }
+
+    /// Only the window the install started from shows the popover.
+    @available(macOS 15.4, *)
+    private func subscribeToWebExtensionInstalls(updater: WebExtensionNavigationBarUpdater) {
+        webExtensionInstalledCancellable = NotificationCenter.default.publisher(for: .chromeWebStoreExtensionInstalled)
+            .sink { [weak self, weak updater] notification in
+                guard let self, let updater,
+                      let window = notification.object as? NSWindow, window === view.window,
+                      let extensionId = notification.userInfo?[ChromeWebStoreUserScript.UserInfoKeys.extensionID] as? String else { return }
+                updater.showAddedPopover(forChromeWebStoreID: extensionId, parent: self)
+            }
     }
 
     override func viewWillAppear() {

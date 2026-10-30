@@ -4450,6 +4450,8 @@
 		DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */; };
 		DC2900022FD0000000000004 /* ChromeWebStorePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */; };
 		DC2900022FD0000000000005 /* ChromeWebStorePresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */; };
+		608F9AD36A840D96A2327DFE /* WebExtensionAddedPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA089C17B9C34087E99E1F73 /* WebExtensionAddedPopover.swift */; };
+		0CA67E21459DF14527CAF06D /* WebExtensionAddedPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA089C17B9C34087E99E1F73 /* WebExtensionAddedPopover.swift */; };
 		DC2900022FD0000000000007 /* ChromeWebStoreUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */; };
 		DC2900022FD0000000000008 /* ChromeWebStoreUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */; };
 		DC4AC14123AB4178D197B75B /* WarnBeforeQuitOverlayPresenterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE0DC5AC3D4DA64E3E5CE370 /* WarnBeforeQuitOverlayPresenterTests.swift */; };
@@ -7268,6 +7270,7 @@
 		DBEA6E06EC3A2A68115CC25D /* DuckAiLauncherPromo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckAiLauncherPromo.swift; sourceTree = "<group>"; };
 		DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionPermissionPrompt.swift; sourceTree = "<group>"; };
 		DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStorePresenter.swift; sourceTree = "<group>"; };
+		EA089C17B9C34087E99E1F73 /* WebExtensionAddedPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionAddedPopover.swift; sourceTree = "<group>"; };
 		DC2900022FD0000000000009 /* ChromeWebStoreUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromeWebStoreUserScriptTests.swift; sourceTree = "<group>"; };
 		DD27DA7B0000000000000002 /* DataImportDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportDebugMenu.swift; sourceTree = "<group>"; };
 		DD27DA7C0000000000000002 /* DataDirectoryPermissionFixAvailability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataDirectoryPermissionFixAvailability.swift; sourceTree = "<group>"; };
@@ -8179,6 +8182,7 @@
 				7BD5A0212F0A0C0100000021 /* WebExtensionAPICompatibilityLogWindow.swift */,
 				DC2900012FD0000000000003 /* WebExtensionPermissionPrompt.swift */,
 				DC2900022FD0000000000006 /* ChromeWebStorePresenter.swift */,
+				EA089C17B9C34087E99E1F73 /* WebExtensionAddedPopover.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -16515,6 +16519,7 @@
 				7BD5A0222F0A0C0100000022 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */,
 				DC2900012FD0000000000002 /* WebExtensionPermissionPrompt.swift in Sources */,
 				DC2900022FD0000000000005 /* ChromeWebStorePresenter.swift in Sources */,
+				0CA67E21459DF14527CAF06D /* WebExtensionAddedPopover.swift in Sources */,
 				37FC2A192CF903080048E226 /* MockPrivacyStats.swift in Sources */,
 				C167D9032DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */,
 				B60C6F7829B0E286007BFAA8 /* SearchNonexistentDomainNavigationResponder.swift in Sources */,
@@ -19117,6 +19122,7 @@
 				7BD5A0232F0A0C0100000023 /* WebExtensionAPICompatibilityLogWindow.swift in Sources */,
 				DC2900012FD0000000000001 /* WebExtensionPermissionPrompt.swift in Sources */,
 				DC2900022FD0000000000004 /* ChromeWebStorePresenter.swift in Sources */,
+				608F9AD36A840D96A2327DFE /* WebExtensionAddedPopover.swift in Sources */,
 				F1A2E1202DCB9FB00086F538 /* LogExporter.swift in Sources */,
 				B6C00ECD292F89D9009C73A6 /* FindInPageTabExtension.swift in Sources */,
 				85589E8327BBB8630038AD11 /* BurnerHomePageViewController.swift in Sources */,

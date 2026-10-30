@@ -163,6 +163,7 @@ final class AutofillLoginListViewController: UIViewController {
     private var importPromoPresented: Bool = false
     private var syncPromoPresented: Bool = false
     private var extensionPromoPresented: Bool = false
+    private var isReturningFromSyncSettings = false
 
     private lazy var emptySearchViewCenterYConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: emptySearchView,
@@ -256,19 +257,16 @@ final class AutofillLoginListViewController: UIViewController {
         registerForKeyboardNotifications()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        guard transitionCoordinator?.viewController(forKey: .from) is SyncSettingsViewController else { return }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.passwordsPageUsed()
+        guard isReturningFromSyncSettings else { return }
+        isReturningFromSyncSettings = false
         if viewModel.viewState == .authLocked {
             authenticate()
         } else {
             updateTableHeaderView()
         }
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        productSurfaceTelemetry.passwordsPageUsed()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -500,6 +498,7 @@ final class AutofillLoginListViewController: UIViewController {
             segueToSync(source: source)
             return
         }
+        isReturningFromSyncSettings = true
         navigationController?.pushViewController(mainVC.makeSyncSettingsViewController(source: source), animated: true)
     }
 

@@ -8,15 +8,14 @@ set -euo pipefail
 #
 # Run from the monorepo root, on the feature branch you are about to open a PR
 # from. The push reuses whatever GitHub access you already have: the monorepo's
-# SSH remote (host, port and alias included) when it is cloned over SSH, otherwise `gh` credentials, otherwise git's own
+# SSH host (port and alias included) when it is cloned over SSH, otherwise `gh` credentials, otherwise git's own
 # credential helper. Without an authenticated `gh`, it prints a link to open the
 # PR in the browser instead.
 #
 # Usage: ./scripts/open-snapshot-submodule-pr.sh
 
 SUBMODULE_PATH="SnapshotReferences"
-SUBMODULE_REPO_NAME="apple-browsers-snapshots"
-SUBMODULE_REPO="duckduckgo/$SUBMODULE_REPO_NAME"
+SUBMODULE_REPO="duckduckgo/apple-browsers-snapshots"
 SUBMODULE_HTTPS_URL="https://github.com/$SUBMODULE_REPO.git"
 BASE_BRANCH="main"
 
@@ -25,15 +24,21 @@ gh_is_authenticated() {
 }
 
 push_submodule_branch() {
-	local monorepo_url
+	local monorepo_url ssh_host ssh_url=""
 	monorepo_url="$(git remote get-url origin 2>/dev/null || true)"
 	case "$monorepo_url" in
-		"" | http://* | https://*) ;;
-		*)
-			git -C "$SUBMODULE_PATH" push "${monorepo_url%/*}/$SUBMODULE_REPO_NAME.git" "HEAD:refs/heads/$BRANCH"
-			return
+		ssh://*)
+			ssh_host="${monorepo_url#ssh://}"
+			ssh_url="ssh://${ssh_host%%/*}/$SUBMODULE_REPO.git"
 			;;
+		*://*) ;;
+		[!/]*:*) ssh_url="${monorepo_url%%:*}:$SUBMODULE_REPO.git" ;;
 	esac
+
+	if [ -n "$ssh_url" ]; then
+		git -C "$SUBMODULE_PATH" push "$ssh_url" "HEAD:refs/heads/$BRANCH"
+		return
+	fi
 
 	if gh_is_authenticated; then
 		git -C "$SUBMODULE_PATH" \

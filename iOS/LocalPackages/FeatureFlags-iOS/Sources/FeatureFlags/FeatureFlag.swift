@@ -477,7 +477,7 @@ public enum FeatureFlag: String {
     case fireButtonRefinements
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
-    case swipeToDelete
+    case slideToDelete
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true
     case aiChatOmnibarDefaultPosition
@@ -987,8 +987,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             Config(defaultValue: .enabled, source: .remoteReleasable(AIChatSubfeature.supportsSyncChatsUpdate))
         case .fireMode:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireMode))
-        case .swipeToDelete:
-            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.swipeToDelete))
+        case .slideToDelete:
+            Config(defaultValue: .internalOnly, source: .remoteReleasable(iOSBrowserConfigSubfeature.slideToDelete))
         case .fireButtonRefinements:
             Config(defaultValue: .enabled, source: .remoteReleasable(iOSBrowserConfigSubfeature.fireButtonRefinements))
         case .aiChatOmnibarDefaultPosition:

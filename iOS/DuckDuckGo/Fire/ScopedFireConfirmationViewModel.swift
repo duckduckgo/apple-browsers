@@ -121,7 +121,7 @@ final class ScopedFireConfirmationViewModel: ObservableObject {
                                         showDeleteAllOnlyForSingleTab: showDeleteAllOnlyForSingleTab,
                                         onConfirm: onConfirm,
                                         onCancel: onCancel)
-        if case .default = fireContext, featureFlagger.isFeatureOn(.swipeToDelete) {
+        if case .default = fireContext, featureFlagger.isFeatureOn(.slideToDelete) {
             self.buttons = buttons.map { button in
                 guard button.accessibilityIdentifier == AccessibilityIdentifiers.deleteAll else { return button }
                 return FireConfirmationButton(title: UserText.scopedFireConfirmationSlideToDeleteAll,

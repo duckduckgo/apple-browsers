@@ -604,12 +604,12 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
 
-    func testSwipeToDeleteFlagChangesOnNextPresentation() {
+    func testSlideToDeleteFlagChangesOnNextPresentation() {
         let tab = createTabViewModel()
         let disabled = makeSUT(tabViewModel: tab)
         XCTAssertFalse(disabled.buttons.contains { $0.style == .slide })
 
-        mockFeatureFlagger.enabledFeatureFlags = [.swipeToDelete]
+        mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
         let enabled = makeSUT(tabViewModel: tab)
         let slider = enabled.buttons.first { $0.style == .slide }
         XCTAssertEqual(slider?.title, UserText.scopedFireConfirmationSlideToDeleteAll)
@@ -621,7 +621,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
     }
 
     func testSliderPreservesDeleteAllScopeInBothBrowsingModes() {
-        mockFeatureFlagger.enabledFeatureFlags = [.swipeToDelete]
+        mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
         for mode: BrowsingMode in [.normal, .fire] {
             var request: FireRequest?
             let sut = makeSUT(tabViewModel: nil, isSingleTab: true, browsingMode: mode, onConfirm: { request = $0 })
@@ -637,8 +637,8 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
 
-    func testSwipeToDeleteDoesNotChangeScopedConfirmations() {
-        mockFeatureFlagger.enabledFeatureFlags = [.swipeToDelete]
+    func testSlideToDeleteDoesNotChangeScopedConfirmations() {
+        mockFeatureFlagger.enabledFeatureFlags = [.slideToDelete]
         let contexts: [ScopedFireConfirmationViewModel.FireContext] = [
             .singleTab, .contextualChat(onDelete: {}), .duckAIOnboarding,
             .custom(title: "History", subtitle: "", action: "Delete"),

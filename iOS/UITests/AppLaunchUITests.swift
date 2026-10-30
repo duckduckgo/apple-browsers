@@ -52,9 +52,9 @@ final class AppLaunchUITests: XCTestCase {
         )
     }
 
-    func testSwipeToDeleteRequiresCompletedDrag() {
+    func testSlideToDeleteRequiresCompletedDrag() {
         app.terminate()
-        app.launchArguments += ["-ff.swipeToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
+        app.launchArguments += ["-ff.slideToDelete", "true", "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
 
         let menuButton = app.buttons["Browser.Toolbar.Button.Menu"]
@@ -101,8 +101,8 @@ final class AppLaunchUITests: XCTestCase {
         XCTAssertEqual(app.collectionViews.cells.containing(.button, identifier: "Open new tab").count, 1)
     }
 
-    func testSwipeToDeleteDisabledKeepsDeleteAllButton() {
-        openFireConfirmationForWidthTest(swipeToDelete: false, orientation: .landscapeLeft)
+    func testSlideToDeleteDisabledKeepsDeleteAllButton() {
+        openFireConfirmationForWidthTest(slideToDelete: false, orientation: .landscapeLeft)
         defer { XCUIDevice.shared.orientation = .portrait }
         let deleteAll = app.buttons["alert.forget-data.confirm"]
         XCTAssertEqual(deleteAll.label, "Delete All")
@@ -116,8 +116,8 @@ final class AppLaunchUITests: XCTestCase {
         XCTAssertTrue(deleteAll.waitForNonExistence(timeout: UITestTimeouts.navigation))
     }
 
-    func testSwipeToDeleteLandscapeModalWidthAndRotation() {
-        openFireConfirmationForWidthTest(swipeToDelete: true, orientation: .portrait)
+    func testSlideToDeleteLandscapeModalWidthAndRotation() {
+        openFireConfirmationForWidthTest(slideToDelete: true, orientation: .portrait)
         defer { XCUIDevice.shared.orientation = .portrait }
         let slider = app.buttons["alert.forget-data.confirm"]
         XCTAssertEqual(slider.label, "Slide To Delete All")
@@ -160,16 +160,16 @@ final class AppLaunchUITests: XCTestCase {
         XCTAssertTrue(slider.waitForNonExistence(timeout: UITestTimeouts.navigation))
     }
 
-    private func openFireConfirmationForWidthTest(swipeToDelete: Bool, orientation: UIDeviceOrientation) {
+    private func openFireConfirmationForWidthTest(slideToDelete: Bool, orientation: UIDeviceOrientation) {
         app.terminate()
         XCUIDevice.shared.orientation = orientation
-        app.launchArguments += ["-ff.swipeToDelete", String(swipeToDelete), "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
+        app.launchArguments += ["-ff.slideToDelete", String(slideToDelete), "-ff.fireMode", "true", "-ff.fireButtonRefinements", "true"]
         app.launch()
         let dismissInput = app.buttons.matching(NSPredicate(format: "identifier IN %@", [
             "UnifiedToggleInput.Button.Dismiss", "Browser.OmniBar.Button.Dismiss"
         ])).firstMatch
         if dismissInput.waitForExistence(timeout: 3) { dismissInput.tap() }
-        if swipeToDelete && UIDevice.current.userInterfaceIdiom == .pad {
+        if slideToDelete && UIDevice.current.userInterfaceIdiom == .pad {
             app.buttons["Browser.OmniBar.Button.BrowsingMenu"].tap()
             let newTab = app.buttons["New Tab"]
             XCTAssertTrue(newTab.waitForExistence(timeout: UITestTimeouts.navigation))

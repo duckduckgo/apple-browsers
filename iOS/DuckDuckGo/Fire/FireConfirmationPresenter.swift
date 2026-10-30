@@ -98,7 +98,7 @@ struct FireConfirmationPresenter {
             hostingController.isModalInPresentation = true
         }
 
-        let limitsLandscapeWidth = !DevicePlatform.isIpad && AppDependencyProvider.shared.featureFlagger.isFeatureOn(.swipeToDelete)
+        let limitsLandscapeWidth = !DevicePlatform.isIpad && AppDependencyProvider.shared.featureFlagger.isFeatureOn(.slideToDelete)
         let presentingSize = limitsLandscapeWidth
             ? (viewController.view.window?.bounds.size ?? viewController.view.bounds.size)
             : viewController.view.frame.size

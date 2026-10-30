@@ -13,6 +13,8 @@ on:
       - 'SharedPackages/DDGError/**'
       - 'SharedPackages/ICSParser/**'
       - 'SharedPackages/Infrastructure/SystemFrameworksExtensions/**'
+      - 'SharedPackages/Infrastructure/DesignResourcesKitIcons/**'
+      - 'SharedPackages/Infrastructure/DesignResourcesKit/**'
       - 'SharedPackages/Networking/**'
       - 'SharedPackages/Persistence/**'
       - 'SharedPackages/PixelKit/**'
@@ -45,6 +47,8 @@ jobs:
         SharedPackages/DDGError/**
         SharedPackages/ICSParser/**
         SharedPackages/Infrastructure/SystemFrameworksExtensions/**
+        SharedPackages/Infrastructure/DesignResourcesKitIcons/**
+        SharedPackages/Infrastructure/DesignResourcesKit/**
         SharedPackages/Networking/**
         SharedPackages/Persistence/**
         SharedPackages/PixelKit/**
@@ -326,7 +330,7 @@ jobs:
           DESTINATION: ${{ steps.select-simulator.outputs.destination }}
         run: |
           failed=()
-          for package in DDGError ICSParser Infrastructure/SystemFrameworksExtensions; do
+          for package in DDGError ICSParser Infrastructure/DesignResourcesKit Infrastructure/SystemFrameworksExtensions; do
             (
               cd "SharedPackages/${package}" || exit 1
               scheme="${package##*/}"
@@ -335,7 +339,13 @@ jobs:
               if [[ "$package" == Infrastructure/SystemFrameworksExtensions ]]; then
                 scheme="SystemFrameworksExtensions-Package"
                 test_settings=(-only-testing:FoundationExtensionsTests)
-                warning_sources=(Sources/FoundationExtensions Tests/FoundationExtensionsTests)
+                warning_sources=(
+                  Sources/FoundationExtensions
+                  Sources/CombineExtensions
+                  Sources/UIKitExtensions
+                  Sources/UIKitExtensionsProxy
+                  Tests/FoundationExtensionsTests
+                )
               fi
               set -o pipefail && xcodebuild clean test \
                 -scheme "$scheme" \
@@ -352,6 +362,20 @@ jobs:
             echo "::error::Package checks failed for: ${failed[*]}"
             exit 1
           fi
+
+      - name: Validate DesignResourcesKitIcons (iOS)
+        if: (success() || failure()) && steps.select-simulator.outcome == 'success'
+        working-directory: SharedPackages/Infrastructure/DesignResourcesKitIcons
+        env:
+          DESTINATION: ${{ steps.select-simulator.outputs.destination }}
+        run: |
+          set -o pipefail && xcodebuild clean build \
+            -scheme DesignResourcesKitIcons \
+            -destination "$DESTINATION" \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee ios-build-log.txt | xcbeautify || exit 1
+          python3 "$GITHUB_WORKSPACE/scripts/check-swift-concurrency-warnings.py" ios-build-log.txt Sources
 
       - name: Report job duration
         if: success() || (always() && steps.run-unit-tests-ios.outcome == 'failure')
@@ -390,6 +414,7 @@ jobs:
             SharedPackages/BrowserServicesKit/bsk-ios-unittests-crash-details.json
             SharedPackages/DDGError/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
+            SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
           retention-days: 7
 
@@ -402,6 +427,7 @@ jobs:
             SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
             SharedPackages/DDGError/ios-unittests.xml
             SharedPackages/ICSParser/ios-unittests.xml
+            SharedPackages/Infrastructure/DesignResourcesKit/ios-unittests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-unittests.xml
           require_tests: true
           check_retries: ${{ needs.should-run-checks.outputs.strict_mode != 'true' }}
@@ -428,7 +454,9 @@ jobs:
             SharedPackages/BrowserServicesKit/ios-build-log.txt
             SharedPackages/DDGError/ios-build-log.txt
             SharedPackages/ICSParser/ios-build-log.txt
+            SharedPackages/Infrastructure/DesignResourcesKit/ios-build-log.txt
             SharedPackages/Infrastructure/SystemFrameworksExtensions/ios-build-log.txt
+            SharedPackages/Infrastructure/DesignResourcesKitIcons/ios-build-log.txt
 
       - name: Upload xcresult bundle
         uses: actions/upload-artifact@v6
@@ -439,6 +467,7 @@ jobs:
             SharedPackages/BrowserServicesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/SystemFrameworksExtensions/DerivedData/Logs/Test/*.xcresult
           retention-days: 7
           if-no-files-found: ignore
@@ -501,7 +530,7 @@ jobs:
           # another. Clean selected packages so cached compilation cannot hide warnings.
           # Each package writes its own report next to its manifest, matching the BSK job layout.
           failed=()
-          for package in Common DDGError ICSParser Infrastructure/SystemFrameworksExtensions Networking Persistence PixelKit WideEvent; do
+          for package in Common DDGError ICSParser Infrastructure/DesignResourcesKit Infrastructure/SystemFrameworksExtensions Networking Persistence PixelKit WideEvent; do
             echo "::group::${package}"
             (
               cd "SharedPackages/${package}" || exit 1
@@ -511,13 +540,19 @@ jobs:
               build_actions=(test)
               warning_sources=(Sources Tests)
               case "$package" in
-                DDGError|ICSParser) check_concurrency=true; build_actions=(clean test) ;;
+                DDGError|ICSParser|Infrastructure/DesignResourcesKit) check_concurrency=true; build_actions=(clean test) ;;
                 Infrastructure/SystemFrameworksExtensions)
                   scheme="SystemFrameworksExtensions-Package"
                   test_settings=(-only-testing:FoundationExtensionsTests)
                   check_concurrency=true
                   build_actions=(clean test)
-                  warning_sources=(Sources/FoundationExtensions Tests/FoundationExtensionsTests)
+                  warning_sources=(
+                    Sources/FoundationExtensions
+                    Sources/CombineExtensions
+                    Sources/UIKitExtensions
+                    Sources/UIKitExtensionsProxy
+                    Tests/FoundationExtensionsTests
+                  )
                   ;;
               esac
               set -o pipefail && xcodebuild "${build_actions[@]}" \
@@ -543,6 +578,18 @@ jobs:
             echo "::error::Package checks failed for: ${failed[*]}"
             exit 1
           fi
+
+      - name: Validate DesignResourcesKitIcons (macOS)
+        if: success() || failure()
+        working-directory: SharedPackages/Infrastructure/DesignResourcesKitIcons
+        run: |
+          set -o pipefail && xcodebuild clean build \
+            -scheme DesignResourcesKitIcons \
+            -destination 'platform=macOS' \
+            -derivedDataPath DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build-log.txt | xcbeautify || exit 1
+          python3 "$GITHUB_WORKSPACE/scripts/check-swift-concurrency-warnings.py" build-log.txt Sources
 
       # One call per package: the action reads a single report, and this keeps a separate
       # job-summary table per package. test-outcome only gates crash injection, which is a no-op
@@ -575,6 +622,16 @@ jobs:
           junit-path: package-tests.xml
           log-path: build-log.txt
           title: ICSParser (macOS)
+          test-outcome: ${{ steps.run-unit-tests.outcome }}
+
+      - name: Process test results (DesignResourcesKit)
+        if: always()
+        uses: ./.github/actions/process-test-results
+        with:
+          working-directory: SharedPackages/Infrastructure/DesignResourcesKit
+          junit-path: package-tests.xml
+          log-path: build-log.txt
+          title: DesignResourcesKit (macOS)
           test-outcome: ${{ steps.run-unit-tests.outcome }}
 
       - name: Process test results (FoundationExtensions)
@@ -636,6 +693,7 @@ jobs:
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
+            SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/package-tests.xml
             SharedPackages/Networking/package-tests.xml
             SharedPackages/Persistence/package-tests.xml
@@ -644,6 +702,7 @@ jobs:
             SharedPackages/Common/package-tests-crash-details.json
             SharedPackages/DDGError/package-tests-crash-details.json
             SharedPackages/ICSParser/package-tests-crash-details.json
+            SharedPackages/Infrastructure/DesignResourcesKit/package-tests-crash-details.json
             SharedPackages/Infrastructure/SystemFrameworksExtensions/package-tests-crash-details.json
             SharedPackages/Networking/package-tests-crash-details.json
             SharedPackages/Persistence/package-tests-crash-details.json
@@ -660,6 +719,7 @@ jobs:
             SharedPackages/Common/package-tests.xml
             SharedPackages/DDGError/package-tests.xml
             SharedPackages/ICSParser/package-tests.xml
+            SharedPackages/Infrastructure/DesignResourcesKit/package-tests.xml
             SharedPackages/Infrastructure/SystemFrameworksExtensions/package-tests.xml
             SharedPackages/Networking/package-tests.xml
             SharedPackages/Persistence/package-tests.xml
@@ -676,7 +736,7 @@ jobs:
         run: |
           # Extract failed tests from the junit reports
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          for package in Common DDGError ICSParser Infrastructure/SystemFrameworksExtensions Networking Persistence PixelKit WideEvent; do
+          for package in Common DDGError ICSParser Infrastructure/DesignResourcesKit Infrastructure/SystemFrameworksExtensions Networking Persistence PixelKit WideEvent; do
             report="SharedPackages/${package}/package-tests.xml"
             [[ -f "$report" ]] || continue
             yq < "$report" -p xml -o json -r \
@@ -694,7 +754,9 @@ jobs:
             SharedPackages/Common/build-log.txt
             SharedPackages/DDGError/build-log.txt
             SharedPackages/ICSParser/build-log.txt
+            SharedPackages/Infrastructure/DesignResourcesKit/build-log.txt
             SharedPackages/Infrastructure/SystemFrameworksExtensions/build-log.txt
+            SharedPackages/Infrastructure/DesignResourcesKitIcons/build-log.txt
             SharedPackages/Networking/build-log.txt
             SharedPackages/Persistence/build-log.txt
             SharedPackages/PixelKit/build-log.txt
@@ -711,6 +773,7 @@ jobs:
             SharedPackages/Common/DerivedData/Logs/Test/*.xcresult
             SharedPackages/DDGError/DerivedData/Logs/Test/*.xcresult
             SharedPackages/ICSParser/DerivedData/Logs/Test/*.xcresult
+            SharedPackages/Infrastructure/DesignResourcesKit/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Infrastructure/SystemFrameworksExtensions/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Networking/DerivedData/Logs/Test/*.xcresult
             SharedPackages/Persistence/DerivedData/Logs/Test/*.xcresult

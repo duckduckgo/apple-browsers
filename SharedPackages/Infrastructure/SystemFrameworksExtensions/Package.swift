@@ -56,7 +56,10 @@ let package = Package(
             ]
         ),
         .target(
-            name: "CombineExtensions"
+            name: "CombineExtensions",
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .target(
             name: "ConcurrencyExtensions",
@@ -67,7 +70,10 @@ let package = Package(
 
         // MARK: - Platform Specific Targets
         .target(
-            name: "UIKitExtensions"
+            name: "UIKitExtensions",
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .target(
             name: "UIKitExtensionsProxy",
@@ -76,6 +82,9 @@ let package = Package(
                   name: "UIKitExtensions",
                   condition: .when(platforms: [.iOS])
                 )
+            ],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
 

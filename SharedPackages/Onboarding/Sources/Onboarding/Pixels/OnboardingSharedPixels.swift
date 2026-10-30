@@ -50,6 +50,7 @@ public enum OnboardingPixelParameter {
         case `default` = "default"
         case duckAI = "duckai"
         case tailoredByDownloadReason = "tailored_by_download_reason"
+        case tailoredByDownloadReasonVPN = "tailored_by_download_reason_vpn"
     }
 
     /// Pixel parameter for the variant of the onboarding flow the user enters after a branching step during onboarding.

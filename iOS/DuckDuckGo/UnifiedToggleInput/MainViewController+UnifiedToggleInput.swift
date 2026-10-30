@@ -1166,6 +1166,12 @@ extension MainViewController {
 
 extension MainViewController {
 
+    var isEscapeHatchHandoff: Bool {
+        isNewTabPageVisible
+            && escapeHatchForEditingState() != nil
+            && unifiedToggleInputCoordinator?.contentViewController.isShowingEscapeHatchContent == true
+    }
+
     func resetLegacyScrollForDismiss(coordinator: UnifiedToggleInputCoordinator?, duration: TimeInterval) {
         guard let coordinator, coordinator.contentViewController.usesScrollableEscapeHatch,
               !coordinator.contentViewController.usesRedesignedNewTabPageLayout else { return }
@@ -1196,9 +1202,10 @@ extension MainViewController {
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator.contentViewController.isShowingFavoritesContent
             && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let keepsFocusedContentStationary = coordinator.contentViewController.isShowingLogoContent
             || coordinator.contentViewController.isShowingFavoritesContent
+            || isEscapeHatchHandoff
         let contentContainer = viewCoordinator.unifiedInputContentContainer
         let stationaryContentSnapshot = makeStationaryFocusedContentSnapshotIfNeeded(
             keepsFocusedContentStationary: keepsFocusedContentStationary,
@@ -1207,7 +1214,7 @@ extension MainViewController {
 
         if isLogoToLogo {
             coordinator.contentViewController.morphLogoHomeForDismiss(matching: duration)
-        } else if !isFavoritesToFavorites {
+        } else if !isSeamlessHandoff {
             coordinator.contentViewController.beginDismissFade()
         }
 

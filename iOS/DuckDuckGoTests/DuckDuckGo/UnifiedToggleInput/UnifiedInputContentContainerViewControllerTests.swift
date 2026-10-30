@@ -21,6 +21,7 @@ import AIChat
 import Bookmarks
 import Combine
 import FeatureFlags_iOS
+@_spi(Testing) import Persistence
 import PrivacyConfig
 import Suggestions
 import UIKit
@@ -66,6 +67,35 @@ final class UnifiedInputContentContainerViewControllerTests: XCTestCase {
             let nextController = UnifiedInputContentContainerViewController(
                 switchBarHandler: MockUnifiedInputSwitchBarHandler(), featureFlagger: featureFlagger)
             XCTAssertEqual(nextController.usesScrollableEscapeHatch, isIOS16OrLater && !initiallyEnabled)
+        }
+    }
+
+    func testEscapeHatchHandoffTracksVisibleContentWithEitherFlagState() {
+        for isScrollableEscapeHatchEnabled in [false, true] {
+            let handler = MockUnifiedInputSwitchBarHandler()
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: isScrollableEscapeHatchEnabled ? [.scrollableEscapeHatch] : [])
+            let controller = UnifiedInputContentContainerViewController(switchBarHandler: handler, featureFlagger: featureFlagger)
+            XCTAssertFalse(controller.isShowingEscapeHatchContent)
+
+            controller.setEscapeHatch(.preview(title: "Website", subtitle: "", tabType: .regular,
+                                               domain: nil, targetTab: Tab(), tabCount: 1,
+                                               keyValueStore: MockKeyValueFileStore()))
+            XCTAssertTrue(controller.isShowingEscapeHatchContent)
+
+            handler.currentText = "query"
+            handler.hasUserInteractedWithText = true
+            XCTAssertFalse(controller.isShowingEscapeHatchContent)
+
+            handler.currentText = ""
+            XCTAssertTrue(controller.isShowingEscapeHatchContent)
+
+            handler.isFireTab = true
+            XCTAssertFalse(controller.isShowingEscapeHatchContent)
+            handler.isFireTab = false
+            XCTAssertTrue(controller.isShowingEscapeHatchContent)
+
+            controller.setEscapeHatch(nil)
+            XCTAssertFalse(controller.isShowingEscapeHatchContent)
         }
     }
 

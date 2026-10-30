@@ -30,6 +30,7 @@ import XCTest
 import UserScript
 import WebKit
 @testable import AIChat
+import AIChatTestingUtilities
 @_spi(Testing) import PixelKit
 
 // swiftlint:disable inclusive_language
@@ -39,12 +40,19 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockPayloadHandler: AIChatPayloadHandler!
     var mockAIChatSyncHandler: MockAIChatSyncHandling!
+    var mockBonusHandler: MockAIChatBonusHandling!
     var mockAIChatContextualModeFeature: MockAIChatContextualModeFeatureProviding!
     var mockUnifiedToggleInputFeature: MockUnifiedToggleInputFeatureProvider!
     var mockIPadDuckAIControlsFeature: MockIPadDuckAIControlsFeatureProvider!
     private var mockUserScriptErrorEventMapper: CapturingAIChatUserScriptErrorEventMapper!
     private var mockUserDefaults: UserDefaults!
     private var pixelKitMock: PixelKitMock!
+
+    private static let bonusPayload = AIChatBonusRecordPayload(
+        record: AIChatBonusRecord(campaignName: "launch", bonusId: "8a7b9c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d"),
+        isNewInstall: true,
+        aiChatEnabled: true
+    )
 
     private var mockSuiteName: String {
         String(describing: self)
@@ -55,6 +63,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         mockPayloadHandler = AIChatPayloadHandler()
         mockAIChatSyncHandler = MockAIChatSyncHandling()
+        mockBonusHandler = MockAIChatBonusHandling()
         MockDevicePlatform.isIphone = false
         mockAIChatContextualModeFeature = MockAIChatContextualModeFeatureProviding()
         mockUnifiedToggleInputFeature = MockUnifiedToggleInputFeatureProvider()
@@ -74,6 +83,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         mockFeatureFlagger = nil
         mockPayloadHandler = nil
         mockAIChatSyncHandler = nil
+        mockBonusHandler = nil
         mockAIChatContextualModeFeature = nil
         mockUnifiedToggleInputFeature = nil
         mockIPadDuckAIControlsFeature = nil
@@ -91,6 +101,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         return AIChatUserScriptHandler(
             experimentalAIChatManager: experimentalAIChatManager,
             syncHandler: mockAIChatSyncHandler,
+            bonusHandler: mockBonusHandler,
             featureFlagger: mockFeatureFlagger,
             keyValueStore: mockUserDefaults,
             devicePlatform: MockDevicePlatform.self,
@@ -1159,6 +1170,155 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNil(response)
         XCTAssertEqual(mockAIChatSyncHandler.setAIChatHistoryEnabledCalls, [true])
+    }
+
+    // MARK: - Bonus offer
+
+    func testWhenBonusOfferFlagIsOnThenConfigSupportsBonusOffer() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsBonusOffer, true)
+    }
+
+    func testWhenBonusOfferFlagIsOffThenConfigDoesNotSupportBonusOffer() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertEqual(configValues?.supportsBonusOffer, false)
+    }
+
+    func testWhenBonusOfferFlagIsOnThenGetBonusRecordRepliesWithThePayload() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+        mockBonusHandler.payload = Self.bonusPayload
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatBonusRecord(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(try XCTUnwrap(response as? AIChatBonusRecordPayload), Self.bonusPayload)
+    }
+
+    func testWhenTheBonusRecordCantBeReadThenGetBonusRecordRepliesNil() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+        mockBonusHandler.payload = nil
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatBonusRecord(params: [], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertNil(response)
+    }
+
+    func testWhenTheClaimFailsThenGetNewBonusRecordRepliesNil() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+        mockBonusHandler.payload = nil
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatNewBonusRecord(params: ["campaignName": "launch"], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertNil(response)
+    }
+
+    func testWhenBonusOfferFlagIsOffThenBonusRequestsReplyNilWithoutReachingTheHandler() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockBonusHandler.payload = Self.bonusPayload
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        // When
+        let recordResponse = aiChatUserScriptHandler.getAIChatBonusRecord(params: [], message: message)
+        let claimResponse = aiChatUserScriptHandler.getAIChatNewBonusRecord(params: ["campaignName": "launch"], message: message)
+
+        // Then
+        XCTAssertNil(recordResponse)
+        XCTAssertNil(claimResponse)
+        XCTAssertEqual(mockBonusHandler.getRecordCallCount, 0)
+        XCTAssertEqual(mockBonusHandler.claimCallCount, 0)
+    }
+
+    func testWhenBonusOfferFlagIsOnThenClaimPassesTheParamsAndRepliesWithThePayload() throws {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+        mockBonusHandler.payload = Self.bonusPayload
+
+        // When
+        let response = aiChatUserScriptHandler.getAIChatNewBonusRecord(params: ["campaignName": "launch"], message: MockUserScriptMessage(name: "test", body: [:]))
+
+        // Then
+        XCTAssertEqual(try XCTUnwrap(response as? AIChatBonusRecordPayload), Self.bonusPayload)
+        XCTAssertEqual(mockBonusHandler.claimParams.first as? [String: String], ["campaignName": "launch"])
+    }
+
+    func testWhenBonusOfferFlagIsOnThenNotificationsReachTheHandler() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        // When
+        _ = aiChatUserScriptHandler.aiChatBonusRedeemOutcome(params: ["bonusId": "id"], message: message)
+        _ = aiChatUserScriptHandler.aiChatBonusDismiss(params: ["campaignName": "launch"], message: message)
+        _ = aiChatUserScriptHandler.aiChatBonusEnd(params: [], message: message)
+
+        // Then
+        XCTAssertEqual(mockBonusHandler.redeemOutcomeCallCount, 1)
+        XCTAssertEqual(mockBonusHandler.dismissCallCount, 1)
+        XCTAssertEqual(mockBonusHandler.dismissParams.first as? [String: String], ["campaignName": "launch"])
+        XCTAssertEqual(mockBonusHandler.endCallCount, 1)
+    }
+
+    func testWhenBonusOfferFlagIsOffThenNotificationsAreIgnored() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        let message = MockUserScriptMessage(name: "test", body: [:])
+
+        // When
+        _ = aiChatUserScriptHandler.aiChatBonusRedeemOutcome(params: ["bonusId": "id"], message: message)
+        _ = aiChatUserScriptHandler.aiChatBonusDismiss(params: ["campaignName": "launch"], message: message)
+        _ = aiChatUserScriptHandler.aiChatBonusEnd(params: [], message: message)
+
+        // Then
+        XCTAssertEqual(mockBonusHandler.redeemOutcomeCallCount, 0)
+        XCTAssertEqual(mockBonusHandler.dismissCallCount, 0)
+        XCTAssertEqual(mockBonusHandler.endCallCount, 0)
+    }
+
+    func testWhenBonusOfferFlagIsOnThenARecordChangeIsForwarded() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.aiChatLimitExtensionPromo]
+        var received: [AIChatBonusRecordPayload] = []
+        aiChatUserScriptHandler.setBonusRecordChangedHandler { received.append($0) }
+
+        // When
+        mockBonusHandler.payloadSubject.send(Self.bonusPayload)
+
+        // Then
+        XCTAssertEqual(received, [Self.bonusPayload])
+    }
+
+    func testWhenBonusOfferFlagIsOffThenARecordChangeIsNotForwarded() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        var received: [AIChatBonusRecordPayload] = []
+        aiChatUserScriptHandler.setBonusRecordChangedHandler { received.append($0) }
+
+        // When
+        mockBonusHandler.payloadSubject.send(Self.bonusPayload)
+
+        // Then
+        XCTAssertTrue(received.isEmpty)
     }
 
     // MARK: - Push Message: submitChangeModelAction (native → FE active-chat model change)

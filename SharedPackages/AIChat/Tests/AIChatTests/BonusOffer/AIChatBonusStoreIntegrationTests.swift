@@ -97,7 +97,7 @@ final class AIChatBonusStoreIntegrationTests {
     @Test("Check a write over an existing record keeps the directory excluded from backup", .timeLimit(.minutes(1)))
     func writeOverAnExistingRecordKeepsTheDirectoryExcludedFromBackup() throws {
         // GIVEN
-        try sut.write(AIChatBonusRecord(dismissed: true))
+        try sut.write(AIChatBonusRecordMock.dismissedOnly)
 
         // WHEN
         // The directory exists now, and the atomic write replaces the file.
@@ -147,7 +147,7 @@ final class AIChatBonusStoreIntegrationTests {
     @Test("Check a write leaves only the record in the directory", .timeLimit(.minutes(1)))
     func writeLeavesOnlyTheRecordInTheDirectory() throws {
         // WHEN
-        try sut.write(AIChatBonusRecord(dismissed: true))
+        try sut.write(AIChatBonusRecordMock.dismissedOnly)
         try sut.write(AIChatBonusRecordMock.active)
 
         // THEN

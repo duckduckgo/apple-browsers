@@ -18,6 +18,8 @@
 //
 
 @testable import DuckDuckGo
+import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKitTestsUtils
 import PrivacyConfig
 
@@ -32,7 +34,8 @@ extension DefaultScriptSourceProvider.Dependencies {
              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
              internalUserDecider: MockInternalUserDecider(),
              syncErrorHandler: CapturingAdapterErrorHandler(),
-             webExtensionAvailability: nil)
+             webExtensionAvailability: nil,
+             aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore()))
     }
 
     static func makeMock(privacyConfig: PrivacyConfigurationManaging) -> Self {
@@ -44,6 +47,7 @@ extension DefaultScriptSourceProvider.Dependencies {
              contentScopeExperimentsManager: MockContentScopeExperimentManager(),
              internalUserDecider: MockInternalUserDecider(),
              syncErrorHandler: CapturingAdapterErrorHandler(),
-             webExtensionAvailability: nil)
+             webExtensionAvailability: nil,
+             aiChatBonusService: AIChatBonusService(store: MockAIChatBonusStore()))
     }
 }

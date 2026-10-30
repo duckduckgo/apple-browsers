@@ -210,6 +210,14 @@ protocol AIChatUserScriptHandling: AnyObject {
     func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable?
     func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable?
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
+
+    // Bonus offer
+    func setBonusRecordChangedHandler(_ handler: ((AIChatBonusRecordPayload) -> Void)?)
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable?
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable?
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable?
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -224,10 +232,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let syncHandler: AIChatSyncHandling
+    private let bonusHandler: AIChatBonusHandling
     private let featureFlagger: FeatureFlagger
     private let unifiedToggleInputFeature: UnifiedToggleInputFeatureProviding
     private let iPadDuckAIControlsFeature: IPadDuckAIControlsFeatureProviding
     private var syncStatusChangedHandler: ((AIChatSyncHandler.SyncStatus) -> Void)?
+    private var bonusRecordChangedHandler: ((AIChatBonusRecordPayload) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private let migrationStore = AIChatMigrationStore()
     private let devicePlatform: DevicePlatformProviding.Type
@@ -244,6 +254,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     private var isAttachmentPrivacyEnabled: Bool {
         !devicePlatform.isIphone && featureFlagger.isFeatureOn(.aiChatAttachmentPrivacyIPad)
+    }
+
+    private var isBonusOfferEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatLimitExtensionPromo)
     }
 
     @MainActor private lazy var attachmentPrivacyDisclosure = AttachmentPrivacyDisclosure(
@@ -268,6 +282,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     init(experimentalAIChatManager: ExperimentalAIChatManager,
          syncHandler: AIChatSyncHandling,
+         bonusHandler: AIChatBonusHandling,
          featureFlagger: FeatureFlagger,
          keyValueStore: KeyValueStoring = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
          promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared,
@@ -286,6 +301,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
          homepageAiChatsProvider: HomepageAiChatsProvider? = nil) {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.syncHandler = syncHandler
+        self.bonusHandler = bonusHandler
         self.featureFlagger = featureFlagger
         self.termsOfServiceStore = DuckAiTermsOfServiceStore(keyValueStore: keyValueStore)
         self.promptHandler = promptHandler
@@ -301,6 +317,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.installTypeProvider = installTypeProvider
         self.homepageAiChatsProvider = homepageAiChatsProvider
         setUpSyncStatusObserver()
+        setUpBonusRecordObserver()
     }
 
     @MainActor
@@ -501,6 +518,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             installAge: AIChatNativeConfigValues.installAgeBucket(installDate: installDateProvider()),
             supportsAttachmentPrivacyDisplay: isAttachmentPrivacyEnabled,
             supportsHomePageChatSuggestions: supportsHomePageChatSuggestions(for: message),
+            supportsBonusOffer: isBonusOfferEnabled,
             supportsCanonicalChatFormat: true
         )
         config.supportsResponseStateReporting = true
@@ -801,6 +819,52 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         guard isNativeChatInputAvailable else { return nil }
         focusChatInputHandler?()
         return nil
+    }
+
+    // MARK: - Bonus offer
+
+    func setBonusRecordChangedHandler(_ handler: ((AIChatBonusRecordPayload) -> Void)?) {
+        self.bonusRecordChangedHandler = handler
+    }
+
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard isBonusOfferEnabled else { return nil }
+        // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
+        return bonusHandler.getAIChatBonusRecord()
+    }
+
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard isBonusOfferEnabled else { return nil }
+        // The bonus requests reply `nil` on failure, so the bridge sends an error and Duck.ai treats it like a timeout.
+        return bonusHandler.getAIChatNewBonusRecord(params: params)
+    }
+
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard isBonusOfferEnabled else { return nil }
+        bonusHandler.aiChatBonusRedeemOutcome(params: params)
+        return nil
+    }
+
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard isBonusOfferEnabled else { return nil }
+        bonusHandler.aiChatBonusDismiss(params: params)
+        return nil
+    }
+
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard isBonusOfferEnabled else { return nil }
+        bonusHandler.aiChatBonusEnd()
+        return nil
+    }
+
+    private func setUpBonusRecordObserver() {
+        // Already delivered on the main queue
+        bonusHandler.recordPayloadPublisher
+            .sink { [weak self] payload in
+                guard let self, self.isBonusOfferEnabled else { return }
+                self.bonusRecordChangedHandler?(payload)
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Sync

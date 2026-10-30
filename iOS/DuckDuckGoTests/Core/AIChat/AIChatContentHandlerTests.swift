@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import AIChatTestingUtilities
 import BrowserServicesKitTestsUtils
 import PixelKit
 import PixelExperimentKit
@@ -625,7 +626,7 @@ final class AIChatContentHandlerTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatContextualAttachMoreTabs])
         let nativeHandler = AIChatUserScriptHandler(
             experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
-            syncHandler: MockAIChatSyncHandling(), featureFlagger: featureFlagger)
+            syncHandler: MockAIChatSyncHandling(), bonusHandler: MockAIChatBonusHandling(), featureFlagger: featureFlagger)
         let script = AIChatUserScript(handler: nativeHandler, debugSettings: MockAIChatDebugSettingsForTests())
         script.connectInitialPromptSession(session)
         return script
@@ -1191,6 +1192,12 @@ final class MockAIChatUserScriptHandling: AIChatUserScriptHandling {
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {}
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {}
     func setSyncStatusChangedHandler(_ handler: ((AIChatSyncHandler.SyncStatus) -> Void)?) {}
+    func setBonusRecordChangedHandler(_ handler: ((AIChatBonusRecordPayload) -> Void)?) {}
+    func getAIChatBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func getAIChatNewBonusRecord(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func aiChatBonusRedeemOutcome(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func aiChatBonusDismiss(params: Any, message: UserScriptMessage) -> Encodable? { nil }
+    func aiChatBonusEnd(params: Any, message: UserScriptMessage) -> Encodable? { nil }
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable? { nil }

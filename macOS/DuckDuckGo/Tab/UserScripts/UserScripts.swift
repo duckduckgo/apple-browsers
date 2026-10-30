@@ -67,6 +67,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
+    let sponsorBlockSubfeature = SponsorBlockSubfeature()
     /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
     /// `nil` when web extensions are unavailable or the user is not an internal user.
     let webExtensionPageStubUserScript: UserScript?
@@ -262,6 +263,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
         contentScopeUserScriptIsolated.registerSubfeature(delegate: contextMenuSubfeature)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: pageObserverScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: hoverUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: sponsorBlockSubfeature)
         if let chromeWebStoreUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: chromeWebStoreUserScript)
         }

@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.5"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.1.1"),
-        .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.22.0"),
+        .package(path: "/Users/msmaga/orca/workspaces/content-scope-scripts/michal-mvp-block-sponsors"), // LOCAL C-S-S - do not commit; was: .package(url: "https://github.com/duckduckgo/content-scope-scripts.git", exact: "17.22.0"),
         .package(path: "../DDGError"),
         .package(path: "../Common"),
         .package(path: "../Persistence"),
@@ -81,7 +81,7 @@ let package = Package(
             dependencies: [
                 .product(name: "WideEvent", package: "WideEvent"),
                 .product(name: "Autofill", package: "duckduckgo-autofill"),
-                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                .product(name: "ContentScopeScripts", package: "michal-mvp-block-sponsors"),
                 .product(name: "Persistence", package: "Persistence"),
                 "PrivacyConfig",
                 "TrackerRadarKit",
@@ -461,7 +461,7 @@ let package = Package(
                 "UserScript",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
-                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                .product(name: "ContentScopeScripts", package: "michal-mvp-block-sponsors"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -796,7 +796,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PrivacyDashboard",
                 .product(name: "Persistence", package: "Persistence"),
-                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                .product(name: "ContentScopeScripts", package: "michal-mvp-block-sponsors"),
                 "BrowserServicesKitTestsUtils",
             ]
         ),
@@ -844,7 +844,7 @@ let package = Package(
                 "SharedObjCTestsUtils",
                 "PixelExperimentKit",
                 "Configuration",
-                .product(name: "ContentScopeScripts", package: "content-scope-scripts"),
+                .product(name: "ContentScopeScripts", package: "michal-mvp-block-sponsors"),
                 "DDGNavigation",
                 "SecureStorage",
                 "Subscription",

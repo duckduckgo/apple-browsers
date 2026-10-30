@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import AppKitExtensions
 import Combine
 import Common
 import UserScript
@@ -30,7 +29,6 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     let featureName = featureNameValue
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: ChromeWebStoreURL.host)])
     weak var broker: UserScriptMessageBroker?
-    private let isEnabled: Bool
     private let serviceProvider: @MainActor () -> ChromeWebStoreManaging?
 
     private let notificationCenter: NotificationCenter
@@ -38,16 +36,13 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     @MainActor private weak var webView: WKWebView?
 
     init(serviceProvider: @escaping @MainActor () -> ChromeWebStoreManaging?,
-         notificationCenter: NotificationCenter = .default,
-         buildType: ApplicationBuildType = StandardApplicationBuildType()) {
-        self.isEnabled = buildType.isSparkleBuild
+         notificationCenter: NotificationCenter = .default) {
         self.serviceProvider = serviceProvider
         self.notificationCenter = notificationCenter
     }
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
-        guard isEnabled else { return }
         changeCancellable = notificationCenter.publisher(for: .chromeWebStoreExtensionChanged)
             .sink { [weak self] notification in
                 guard let extensionId = notification.userInfo?["extensionId"] as? String else { return }
@@ -60,7 +55,7 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
     @MainActor
     private func extensionChanged(_ extensionId: String) {
         // A tab may have navigated away since its last validated store request.
-        guard isEnabled, ChromeWebStoreURL.isValidExtensionID(extensionId),
+        guard ChromeWebStoreURL.isValidExtensionID(extensionId),
               let webView, let url = webView.url,
               url.scheme == "https", url.host == ChromeWebStoreURL.host,
               url.port == nil || url.port == 443 else { return }
@@ -118,12 +113,10 @@ final class ChromeWebStoreUserScript: NSObject, Subfeature {
               pageURL.scheme == "https", pageURL.host == ChromeWebStoreURL.host,
               pageURL.port == nil || pageURL.port == 443 else { throw ChromeWebStoreError.invalidRequest }
 
-        // Setup is build-level and does not require an extension ID or a service.
+        // Setup does not require an extension ID or a service.
         if method == .initialSetup {
-            return InitialSetupResponse(enabled: isEnabled)
+            return InitialSetupResponse(enabled: true)
         }
-
-        guard isEnabled else { throw ChromeWebStoreError.unavailable }
 
         // The catalog takes no extension ID. Without a service, web extensions are off and
         // nothing is installable, so reply with an empty list. C-S-S hides the button on

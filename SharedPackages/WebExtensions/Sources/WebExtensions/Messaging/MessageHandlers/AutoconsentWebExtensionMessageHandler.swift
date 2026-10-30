@@ -72,7 +72,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         case .sendPixel:
             return handleSendPixel(message.params)
         case .refreshCpmDashboardState:
-            return await handleRefreshCpmDashboardState(message.params)
+            return await handleRefreshCpmDashboardState(message.params, extensionIdentifier: message.extensionIdentifier)
         case .showCpmAnimation:
             return handleShowCpmAnimation(message.params)
         case .cookiePopupHandled:
@@ -110,7 +110,7 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         return .success(Self.successResponse)
     }
 
-    private func handleRefreshCpmDashboardState(_ params: [String: Any]?) async -> WebExtensionMessageResult {
+    private func handleRefreshCpmDashboardState(_ params: [String: Any]?, extensionIdentifier: String) async -> WebExtensionMessageResult {
         guard
             let urlString = params?["url"] as? String,
             let url = URL(string: urlString),
@@ -124,7 +124,8 @@ public final class AutoconsentWebExtensionMessageHandler: WebExtensionMessageHan
         Logger.webExtensions.debug("📊 Refresh CPM Dashboard State - url: \(url.shortDescription), consentManaged: \(consentStatus.consentManaged)")
 
         let extensionTabIdentifier = (params?["tabId"] as? NSNumber)?.intValue
-        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url))
+        await cpmMessagingHealthMonitor?.handle(.dashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url,
+                                                                 extensionIdentifier: extensionIdentifier))
         delegate?.refreshDashboardState(url: url, consentStatus: consentStatus)
 
         return .success(Self.successResponse)

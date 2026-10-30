@@ -553,6 +553,34 @@
             }
         ]
     },
+    "web_extension_cpm_background_load_restart": {
+        "description": "Observes a CPM context restart applied after error 6 with the same failed background view still retained. restart_started counts applying the fix; background_ready is only a successful background-load callback, not a page response. Exactly one terminal outcome is observed per attempt: response_received is an unambiguously attributed dashboard response from the replacement context; no_response_before_deadline means at least one post-restart navigation timed out and no qualifying response was observed within five active minutes, not proof of permanent breakage; unobserved means no timed-out navigation or attributable response was seen; superseded means another reload or embedded upgrade ended attribution; reload_failed means context replacement threw; reload_timed_out means replacement did not complete before the observation deadline. restart_limit_reached is reported once when another restart is blocked after three attempts without a confirmed page response from the current extension context; that response resets the budget even after the restart observation has expired or another reload has superseded it, while background readiness, suspension and context replacement alone do not. This blocked-attempt outcome is separate from the last applied restart's terminal observation. The in-memory budget also resets on process restart. Suspension time is excluded and resume grants at least 30 seconds. Process termination can lose unfinished observations: missing terminal rows are not failures. Count rows measure stages/outcomes; daily deduplication is by name, so daily usually contains restart_started and must not estimate outcome rates. No URLs, tab IDs, raw errors or document values are sent.",
+        "owners": ["mallexxx"],
+        "triggers": ["feature_lifecycle", "exception"],
+        "expires": "2027-01-15",
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "outcome",
+                "type": "string",
+                "enum": [
+                    "restart_started",
+                    "background_ready",
+                    "response_received",
+                    "no_response_before_deadline",
+                    "unobserved",
+                    "superseded",
+                    "reload_failed",
+                    "reload_timed_out",
+                    "restart_limit_reached"
+                ],
+                "description": "Applied/ready stages, a single terminal observation per applied restart, or a once-per-budget blocked-restart report. Use count rows for outcome rates; readiness is not page recovery and missing observations are not failures."
+            }
+        ]
+    },
     "web_extension_cpm_background_load_retry": {
         "description": "CPM background load retry fix observation. Background-ready means a successful public WebKit callback after a slow load (or any error-6 retry), not a document ACK. Reload-started counts one accepted GET document reload after a known unfinished startup and missing dashboard response; response-received counts an unambiguously attributed dashboard response after that reload, not an initResp ACK. No URLs, tab IDs, field values or raw errors are sent.",
         "owners": ["mallexxx"],

@@ -46,6 +46,10 @@ let package = Package(
             ]),
         .testTarget(
             name: "DesignResourcesKitTests",
-            dependencies: ["DesignResourcesKit"]),
-    ]
+            dependencies: ["DesignResourcesKit"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]),
+    ],
+    swiftLanguageVersions: [.v5]
 )

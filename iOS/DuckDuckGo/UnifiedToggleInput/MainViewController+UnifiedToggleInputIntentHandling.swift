@@ -295,7 +295,7 @@ private extension MainViewController {
         // so it slides in without the container's fade (which otherwise reads as a flash over the slide).
         let isFavoritesToFavorites = newTabPageViewController?.isShowingFavorites == true
         let isBottom = coordinator.cardPosition.isBottom
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let unifiedInputContentContainer: UIView = viewCoordinator.unifiedInputContentContainer
 
         viewCoordinator.focusedStateBackground.alpha = isSeamlessHandoff ? 1 : 0
@@ -367,7 +367,7 @@ private extension MainViewController {
             && newTabPageViewController?.restingContentIsLogo == true
         let isFavoritesToFavorites = coordinator?.contentViewController.isShowingFavoritesContent == true
             && newTabPageViewController?.restingContentIsFavorites == true
-        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites
+        let isSeamlessHandoff = isLogoToLogo || isFavoritesToFavorites || isEscapeHatchHandoff
         let onDismissed: () -> Void = { [weak self, weak coordinator] in
             coordinator?.viewController.setTextHorizontalShift(0)
             coordinator?.viewController.finalizeOmnibarEditingDismiss()
@@ -400,7 +400,7 @@ private extension MainViewController {
             let utiPlaceholderColor = coordinator?.viewController.defaultPlaceholderColor
             if isLogoToLogo {
                 coordinator?.contentViewController.morphLogoHomeForDismiss(matching: duration)
-            } else if !isFavoritesToFavorites {
+            } else if !isSeamlessHandoff {
                 coordinator?.contentViewController.beginDismissFade()
             }
             let additionalAnimations: () -> Void = { [weak self] in

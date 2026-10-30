@@ -313,6 +313,39 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
         assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
     }
 
+    func testErrorPageIsNotMeasured() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let failedURL = URL(string: "https://unreachable.example/")!
+
+        monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .other))
+        monitor.handle(.navigationFailed(tabIdentifier: "tab-1"))
+        // The error page reports the failed http(s) URL but runs no content scripts.
+        monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .errorPage))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: failedURL))
+        monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: failedURL, extensionIsLoaded: true))
+        await waitForEventTimeout(on: monitor)
+
+        assertNoEpisode(on: monitor, pixelFiring: pixelFiring)
+    }
+
+    func testNavigationAfterErrorPageIsMeasured() async {
+        let pixelFiring = CapturingWebExtensionPixelFiring()
+        let monitor = makeEventMonitor(pixelFiring: pixelFiring)
+        let failedURL = URL(string: "https://unreachable.example/")!
+        let url = URL(string: "https://example.com/consent")!
+
+        monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .errorPage))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: failedURL))
+        monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: failedURL, extensionIsLoaded: true))
+        monitor.handle(.navigationStarted(tabIdentifier: "tab-1", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab-1", url: url))
+        monitor.handle(.navigationFinished(tabIdentifier: "tab-1", url: url, extensionIsLoaded: true))
+        await waitForEventTimeout(on: monitor)
+
+        assertPendingEpisode(on: monitor, pixelFiring: pixelFiring, reason: .other, wasStuck: false, reloadState: .none)
+    }
+
     func testPendingTabCrashTakesPrecedenceOverBackForwardNavigation() async {
         let pixelFiring = CapturingWebExtensionPixelFiring()
         let monitor = makeEventMonitor(pixelFiring: pixelFiring)

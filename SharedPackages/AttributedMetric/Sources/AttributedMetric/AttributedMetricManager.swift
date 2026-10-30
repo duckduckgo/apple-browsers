@@ -513,8 +513,11 @@ public final class AttributedMetricManager: @unchecked Sendable {
     // https://app.asana.com/1/137249556945/project/1205842942115003/task/1211301604929613?focus=true
 
     func processSubscriptionDay(purchaseIsFreeTrial: Bool?) {
-        Logger.attributedMetric.log("Processing subscription purchase")
-        guard dataStorage.subscriptionDate == nil else { return }
+        Logger.attributedMetric.log("Processing subscription purchase, free trial from purchase: \(String(describing: purchaseIsFreeTrial), privacy: .public)")
+        guard dataStorage.subscriptionDate == nil else {
+            Logger.attributedMetric.log("Subscription already recorded")
+            return
+        }
         dataStorage.subscriptionDate = dateProvider.now()
 
         if let purchaseIsFreeTrial {

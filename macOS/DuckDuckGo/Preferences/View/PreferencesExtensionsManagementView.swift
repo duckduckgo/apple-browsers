@@ -17,6 +17,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import PreferencesUI_macOS
 import PrivacyConfig
 import RemoteMessaging
@@ -31,9 +32,14 @@ extension Preferences {
 
         private enum Const {
             static let footerSpacing: CGFloat = 4
+            static let dividerTopPadding: CGFloat = 32
+            static let dividerBottomPadding: CGFloat = 28
+            static let moreExtensionsBottomPadding: CGFloat = 42
         }
 
         @StateObject private var model: ExtensionsManagementPreferences
+        @State private var imageLoader: RemoteMessagingImageLoading = RemoteMessagingImageLoader(dataProvider: RemoteMessagingImageLoader.defaultDataProvider,
+                                                                                                 cache: RemoteMessagingImageLoader.defaultCache)
 
         @Environment(\.designSystemPalette) private var palette
 
@@ -70,15 +76,73 @@ extension Preferences {
                     description
                 }
 
-                PreferencePaneSection(UserText.extensionsSettingsPasswordManagersHeader, spacing: 12) {
-                    ForEach(model.uninstalledPasswordManagers) { item in
-                        ExtensionsManagementRow(item: item, imageLoader: model.imageLoader) {
-                            model.openStorePage(for: item)
-                        }
+                extensionsList
+            }
+        }
+
+        private var extensionsList: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                if !model.installedExtensions.isEmpty {
+                    installedExtensionsView
+
+                    if !model.uninstalledPasswordManagers.isEmpty {
+                        moreExtensionsHeader
                     }
                 }
-                .padding(.top, 20)
+
+                if !model.uninstalledPasswordManagers.isEmpty {
+                    uninstalledExtensionsView
+                }
             }
+            .padding(.top, 20)
+            .padding(.bottom, 16)
+        }
+
+        private var installedExtensionsView: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                sectionTitle(UserText.extensionsSettingsAddedHeader)
+                ForEach(model.installedExtensions) { entry in
+                    installedRow(for: entry)
+                }
+            }
+        }
+
+        private func installedRow(for entry: ExtensionsManagementPreferences.InstalledExtensionEntry) -> some View {
+            InstalledExtensionRow(item: entry.listing,
+                                  imageLoader: imageLoader,
+                                  isEnabled: Binding(get: { entry.isEnabled },
+                                                     set: { model.setEnabled($0, for: entry) }),
+                                  isLocked: entry.isRemotelyDisabled,
+                                  // Placeholder until details are wired up.
+                                  onDetails: {},
+                                  onRemove: { model.remove(entry) })
+        }
+
+        private var moreExtensionsHeader: some View {
+            VStack(alignment: .leading, spacing: 0) {
+                Divider()
+                    .padding(.top, Const.dividerTopPadding)
+                    .padding(.bottom, Const.dividerBottomPadding)
+                sectionTitle(UserText.extensionsSettingsMoreExtensionsHeader)
+                    .padding(.bottom, Const.moreExtensionsBottomPadding)
+            }
+        }
+
+        private var uninstalledExtensionsView: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                TextMenuItemHeader(UserText.extensionsSettingsPasswordManagersHeader)
+                ForEach(model.uninstalledPasswordManagers) { item in
+                    UninstalledExtensionRow(item: item, imageLoader: imageLoader) {
+                        model.openStorePage(for: item)
+                    }
+                }
+            }
+        }
+
+        private func sectionTitle(_ title: String) -> some View {
+            Text(title)
+                .font(.callout)
+                .foregroundColor(Color(designSystemColor: .textTertiary, palette: palette))
         }
 
         private var description: some View {
@@ -104,7 +168,7 @@ extension Preferences {
         }
     }
 
-    private struct ExtensionsManagementRow: View {
+    private struct UninstalledExtensionRow: View {
 
         private enum Const {
             /// Narrower windows shrink the box, truncating its text, rather than overflowing the pane.
@@ -127,40 +191,14 @@ extension Preferences {
         let onGet: () -> Void
 
         @Environment(\.designSystemPalette) private var palette
-        @State private var remoteIcon: NSImage?
-
-        /// Downloaded, else cached; `nil` leaves the gray tile empty.
-        private var icon: NSImage? {
-            remoteIcon ?? item.iconURL.flatMap(imageLoader.cachedImage(for:))
-        }
 
         var body: some View {
             HStack(spacing: 16) {
-                ZStack {
-                    if let icon {
-                        Image(nsImage: icon)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: Const.iconSize, height: Const.iconSize)
-                    }
-                }
-                .frame(width: Const.iconTileSize, height: Const.iconTileSize)
-                .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
-                .clipShape(RoundedRectangle(cornerRadius: Const.iconTileCornerRadius, style: .continuous))
-                .task(id: item.iconURL) {
-                    guard let iconURL = item.iconURL else { return }
-                    remoteIcon = try? await imageLoader.loadImage(from: iconURL)
-                }
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(item.name)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
-                    Text(item.publisher)
-                        .foregroundColor(Color.rebrandableLink(palette: palette))
-                }
-                .lineLimit(1)
-                .truncationMode(.tail)
+                ExtensionSummary(item: item,
+                                 imageLoader: imageLoader,
+                                 tileSize: Const.iconTileSize,
+                                 tileCornerRadius: Const.iconTileCornerRadius,
+                                 iconSize: Const.iconSize)
 
                 Spacer(minLength: 0)
 
@@ -183,6 +221,119 @@ extension Preferences {
             .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
             .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
             .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+    }
+
+    private struct InstalledExtensionRow: View {
+
+        private enum Const {
+            static let maxWidth: CGFloat = 560
+            static let height: CGFloat = 80
+            static let cornerRadius: CGFloat = 16
+            static let leadingPadding: CGFloat = 16
+            static let trailingPadding: CGFloat = 24
+            static let iconTileSize: CGFloat = 48
+            static let iconTileCornerRadius: CGFloat = 8
+            static let iconSize: CGFloat = 24
+            static let optionsToSwitchSpacing: CGFloat = 16
+        }
+
+        let item: ChromeWebStoreListing
+        let imageLoader: RemoteMessagingImageLoading
+        @Binding var isEnabled: Bool
+        let isLocked: Bool
+        let onDetails: () -> Void
+        let onRemove: () -> Void
+
+        @Environment(\.designSystemPalette) private var palette
+
+        var body: some View {
+            HStack(spacing: 16) {
+                ExtensionSummary(item: item,
+                                 imageLoader: imageLoader,
+                                 tileSize: Const.iconTileSize,
+                                 tileCornerRadius: Const.iconTileCornerRadius,
+                                 iconSize: Const.iconSize)
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: Const.optionsToSwitchSpacing) {
+                    Menu {
+                        Button(UserText.extensionsSettingsDetailsMenuItem, action: onDetails)
+                        Divider()
+                        Button(UserText.webExtensionRemoveMenuItem, action: onRemove)
+                    } label: {
+                        Image(nsImage: DesignSystemImages.Glyphs.Size16.menuDots)
+                            .renderingMode(.template)
+                            .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    }
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .accessibilityLabel(UserText.extensionsSettingsMoreOptions)
+
+                    Toggle(isOn: $isEnabled) {
+                        EmptyView()
+                    }
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(isLocked)
+                }
+            }
+            .padding(.leading, Const.leadingPadding)
+            .padding(.trailing, Const.trailingPadding)
+            .frame(maxWidth: Const.maxWidth)
+            .frame(height: Const.height)
+            .background(Color(designSystemColor: .controlsSubtleFillSecondary, palette: palette))
+            .clipShape(RoundedRectangle(cornerRadius: Const.cornerRadius, style: .continuous))
+            .accessibilityIdentifier("Preferences.Extensions.\(item.id)")
+        }
+    }
+
+    private struct ExtensionSummary: View {
+
+        let item: ChromeWebStoreListing
+        let imageLoader: RemoteMessagingImageLoading
+        let tileSize: CGFloat
+        let tileCornerRadius: CGFloat
+        let iconSize: CGFloat
+
+        @Environment(\.designSystemPalette) private var palette
+        @State private var remoteIcon: NSImage?
+
+        /// Downloaded, else cached; `nil` leaves the gray tile empty.
+        private var icon: NSImage? {
+            remoteIcon ?? item.iconURL.flatMap(imageLoader.cachedImage(for:))
+        }
+
+        var body: some View {
+            HStack(spacing: 16) {
+                ZStack {
+                    if let icon {
+                        Image(nsImage: icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: iconSize, height: iconSize)
+                    }
+                }
+                .frame(width: tileSize, height: tileSize)
+                .background(Color(designSystemColor: .containerFillTertiary, palette: palette))
+                .clipShape(RoundedRectangle(cornerRadius: tileCornerRadius, style: .continuous))
+                .task(id: item.iconURL) {
+                    guard let iconURL = item.iconURL else { return }
+                    remoteIcon = try? await imageLoader.loadImage(from: iconURL)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(item.name)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(Color(designSystemColor: .textPrimary, palette: palette))
+                    Text(item.publisher)
+                        .foregroundColor(Color.rebrandableLink(palette: palette))
+                }
+                .lineLimit(1)
+                .truncationMode(.tail)
+            }
         }
     }
 }

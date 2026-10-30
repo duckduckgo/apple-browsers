@@ -38,6 +38,9 @@ public enum CPMNavigationKind: String, Equatable, Sendable {
     case backForward = "back_forward"
     /// The first completed navigation after the tab's web-content process terminated.
     case tabCrash = "tab_crash"
+    /// The browser's own page shown in place of a failed load. It reports the failed http(s) URL but never
+    /// runs content scripts, so CPM cannot answer on it and it is not measured.
+    case errorPage = "error_page"
     /// Any other completed main-frame navigation.
     case other
 }
@@ -406,7 +409,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Records the committed document and retries responses buffered before native commit arrived.
     /// - Parameters identify the stable app tab and its committed URL.
     private func commitNavigation(in tabIdentifier: String, url: URL) {
-        guard url.isEligibleForCPMMessagingHealthMeasurement else {
+        guard url.isEligibleForCPMMessagingHealthMeasurement, tabs[tabIdentifier]?.navigationKind != .errorPage else {
             cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
             return
         }
@@ -430,7 +433,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         url: URL,
         extensionIsLoaded: Bool
     ) {
-        guard url.isEligibleForCPMMessagingHealthMeasurement else {
+        guard url.isEligibleForCPMMessagingHealthMeasurement, tabs[tabIdentifier]?.navigationKind != .errorPage else {
             cancelCurrentNavigation(in: tabIdentifier, preserveCrashMarker: true)
             return
         }
@@ -1112,7 +1115,7 @@ private extension CPMNavigationKind {
         switch self {
         case .sessionRestoration: return .sessionRestoration
         case .tabCrash: return .tabCrash
-        case .backForward, .other: return .other
+        case .backForward, .errorPage, .other: return .other
         }
     }
 }

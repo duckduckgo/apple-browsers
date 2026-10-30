@@ -78,22 +78,24 @@ public extension WKFrameInfo {
         return self.swizzledRequest() // call the original
     }
 
-    private func isWebExtensionSymbol(_ symbol: String) -> Bool {
-        symbol.contains("WebExtension")
-    }
-
-    /// WebKit internal calls (e.g. from `requestMediaCapturePermissionFor`) access `.request`
-    /// directly. These frames lack debug symbols and `callingSymbol()` returns a module UUID
-    /// instead of a readable name — we should not assert on these.
-    private func isWebKitInternalSymbol(_ symbol: String) -> Bool {
-        // WebKit internal frames are not symbolicated in debug builds,
-        // so callingSymbol() returns the module UUID (e.g. "8338D2BF-1C6B-3B01-B979-A50F6D272044")
-        // rather than a function name like "-[SomeClass method]" or "$sSwiftMangled..."
-        !symbol.hasPrefix("-[") && !symbol.hasPrefix("$s") && !symbol.hasPrefix("_$s") && UUID(uuidString: symbol) != nil
-    }
-
 #else
     static var addSafetyCheckForSafeRequestUsageOnce: Void { () }
 #endif
 
 }
+
+#if DEBUG
+func isWebExtensionSymbol(_ symbol: String) -> Bool {
+    symbol.contains("WebExtension")
+}
+
+/// WebKit internal calls (e.g. from `requestMediaCapturePermissionFor`) access unsafe getters
+/// directly. These frames lack debug symbols and `callingSymbol()` returns a module UUID
+/// instead of a readable name — we should not assert on these.
+func isWebKitInternalSymbol(_ symbol: String) -> Bool {
+    // WebKit internal frames are not symbolicated in debug builds,
+    // so callingSymbol() returns the module UUID (e.g. "8338D2BF-1C6B-3B01-B979-A50F6D272044")
+    // rather than a function name like "-[SomeClass method]" or "$sSwiftMangled..."
+    !symbol.hasPrefix("-[") && !symbol.hasPrefix("$s") && !symbol.hasPrefix("_$s") && UUID(uuidString: symbol) != nil
+}
+#endif

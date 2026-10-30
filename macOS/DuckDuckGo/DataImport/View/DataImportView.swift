@@ -414,6 +414,8 @@ extension DataImportProgressEvent {
             fraction
         case .importingCreditCards(numberOfCreditCards: _, fraction: let fraction):
             fraction
+        case .importingHistory(numberOfVisits: _, fraction: let fraction):
+            fraction
         case .done:
             nil
         }
@@ -429,6 +431,8 @@ extension DataImportProgressEvent {
             UserText.importingPasswords(num)
         case .importingCreditCards(numberOfCreditCards: let num, fraction: _):
             UserText.importingCreditCards(num)
+        case .importingHistory(numberOfVisits: let num, fraction: _):
+            UserText.importingHistory(num)
         case .done:
             nil
         }

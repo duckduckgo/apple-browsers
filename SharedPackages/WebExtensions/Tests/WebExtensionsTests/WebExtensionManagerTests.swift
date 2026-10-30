@@ -2187,10 +2187,12 @@ private final class CatalogNamingWebStore: ChromeWebStoreManaging {
     }
 
     var catalogExtensionIDs: [String] { [] }
+    var learnMoreURL: URL? { nil }
     func status(for identifier: String) -> ChromeWebStoreStatus { .unknown }
     func install(identifier: String, downloadURL: URL) async -> Bool { false }
     func remove(identifier: String) async -> Bool { false }
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? { entries[identifier] }
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? { nil }
 }
 
 @available(macOS 15.4, iOS 18.4, *)

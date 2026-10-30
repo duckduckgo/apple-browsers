@@ -29,6 +29,8 @@ import WebKit
 ///
 /// This cleaner must only run after a *full* clear. After a single-chat delete, the remaining chats'
 /// images are still live and their blob files must stay.
+/// A full clear on a page without IndexedDB (Lockdown Mode) counts too: the Fire asked for every chat to go,
+/// and removing the images of chats saved before Lockdown Mode was turned on is all the app can do there.
 public protocol AIChatIndexedDBBlobCleaning {
     /// Lists the IndexedDB blob files currently stored for the Duck.ai origins.
     func blobFiles() async -> [URL]

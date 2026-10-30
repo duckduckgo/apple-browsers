@@ -297,7 +297,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case continuedProcessing
     case pirRollout
     case goToMarket
-    case webViewUserAgent
+    case customWebViewUserAgent
     case freemiumPIR
     case optOutRetryError96Hours
     case performanceMetrics
@@ -764,6 +764,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
     /// change covers every platform.
     case partnershipsHub
+
+    /// Gates the cancellation flow shown from "Cancel Subscription" in Subscription Settings.
+    case subscriptionCancellationFlow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {

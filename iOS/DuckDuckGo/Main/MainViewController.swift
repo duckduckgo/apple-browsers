@@ -139,6 +139,7 @@ class MainViewController: UIViewController {
     private var isFindInPageChromeLockActive = false
     private var didFindInPageHideChrome = false
     private var findInPageDismissalTimer: Timer?
+    private var findResultVisibilityWorkItem: DispatchWorkItem?
 
     weak var notificationView: UIView?
 
@@ -916,6 +917,7 @@ class MainViewController: UIViewController {
     deinit {
         chromeMorphAnimator.cancel()
         findInPageDismissalTimer?.invalidate()
+        findResultVisibilityWorkItem?.cancel()
     }
 
     func loadFindInPage() {
@@ -2107,6 +2109,7 @@ class MainViewController: UIViewController {
     @objc private func keyboardWillChangeFrame(_ notification: Notification) {
         guard let keyboard = BrowserKeyboardLayout(notification: notification) else { return }
         adjustUI(withKeyboardFrame: keyboard.frame, in: keyboard.duration, animationCurve: keyboard.animationCurve)
+        scheduleCurrentFindResultVisibility(after: keyboard.duration + 0.15)
     }
 
     private var floatingWebInputKeyboardFrame: CGRect {
@@ -4388,6 +4391,23 @@ class MainViewController: UIViewController {
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
         bringFindInPageToFrontIfNeeded()
+        scheduleCurrentFindResultVisibility()
+    }
+
+    private func scheduleCurrentFindResultVisibility(after delay: TimeInterval = 0.2) {
+        findResultVisibilityWorkItem?.cancel()
+        guard let findInPage = currentTab?.findInPage, findInPage.current > 0 else { return }
+
+        let workItem = DispatchWorkItem { [weak self, weak findInPage] in
+            guard let self, let findInPage, self.currentTab?.findInPage === findInPage,
+                  let findInPageView = self.findInPageView, !findInPageView.isHidden,
+                  let webView = self.currentTab?.webView, webView.bounds.height > 0 else { return }
+            self.view.layoutIfNeeded()
+            let visibleBottom = findInPageView.container.convert(findInPageView.container.bounds, to: webView).minY
+            findInPage.keepCurrentResultVisible(visibleBottomFraction: visibleBottom / webView.bounds.height)
+        }
+        findResultVisibilityWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
     }
 
     private func bringFindInPageToFrontIfNeeded() {
@@ -5463,6 +5483,7 @@ extension MainViewController: FindInPageDelegate {
     
     func updated(findInPage: FindInPage) {
         findInPageView?.update(with: findInPage, updateTextField: false)
+        scheduleCurrentFindResultVisibility()
     }
 
 }
@@ -5470,6 +5491,7 @@ extension MainViewController: FindInPageDelegate {
 extension MainViewController: FindInPageViewDelegate {
     
     func done(findInPageView: FindInPageView) {
+        findResultVisibilityWorkItem?.cancel()
         currentTab?.findInPage = nil
         viewCoordinator.toolbar.accessibilityElementsHidden = false
 

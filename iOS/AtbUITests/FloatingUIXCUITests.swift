@@ -82,6 +82,7 @@ class FloatingUIXCUITestCase: XCTestCase {
         static let oneHeading = "Floating UI Test Page One"
         static let twoHeading = "Floating UI Test Page Two"
         static let longHeading = "Floating UI Long Page"
+        static let findKeyboardHeading = "Find Keyboard Test Page"
         static let scrollEdgeHeading = "Floating UI Scroll Edge"
         static let edgeHeading = "Floating UI Edge Controls"
         static let slowHeading = "Floating UI Slow Page"
@@ -630,6 +631,42 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(findField.waitForNonExistence(timeout: timeout))
     }
 
+    func verifyFindResultClearsKeyboard(floatingUIEnabled: Bool) {
+        app.terminate()
+        launchApp(additionalArguments: [
+            "-ff.floatingUIiOS26", String(floatingUIEnabled),
+            "-ff.floatingUIiOS27", String(floatingUIEnabled),
+            "-ff.legacyFindInPage", "true",
+        ])
+        openPage(path: "/find-keyboard", heading: Page.findKeyboardHeading)
+
+        element(withIdentifier: AccessibilityID.toolbarMenu).tap()
+        let findAction = app.buttons["Find in Page"]
+        XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
+        findAction.tap()
+
+        let findField = app.searchFields["Find in Page"]
+        XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        findField.typeText("hackers")
+        XCTAssertTrue(app.staticTexts["1 of 3"].waitForExistence(timeout: timeout))
+        let nextButton = app.buttons["Find Next"]
+        XCTAssertTrue(nextButton.waitForHittable(timeout: timeout))
+        nextButton.tap()
+        nextButton.tap()
+        XCTAssertTrue(app.staticTexts["3 of 3"].waitForExistence(timeout: timeout))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+
+        let matches = webView.staticTexts.matching(identifier: "hackers")
+        XCTAssertEqual(matches.count, 3)
+        let selectedMatch = matches.element(boundBy: 2)
+        XCTAssertTrue(waitUntil(timeout: timeout) { selectedMatch.frame.maxY < findField.frame.minY - 8 })
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Find in Page - Keyboard Clearance"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     func verifyDefaultCustomizableFireButton() {
         let fireButton = element(withIdentifier: AccessibilityID.toolbarFire)
         XCTAssertTrue(fireButton.waitForHittable(timeout: timeout))
@@ -946,6 +983,9 @@ class FloatingUIXCUITestCase: XCTestCase {
         server["/long-page"] = { _ in
             .ok(.html(Self.longPageHTML))
         }
+        server["/find-keyboard"] = { _ in
+            .ok(.html(Self.findKeyboardHTML))
+        }
         server["/scroll-edge"] = { _ in
             .ok(.html(Self.scrollEdgeHTML))
         }
@@ -995,6 +1035,22 @@ class FloatingUIXCUITestCase: XCTestCase {
     <html lang="en">
       <head><meta name="viewport" content="width=device-width, initial-scale=1"><title>Page Two</title></head>
       <body><h1>\(Page.twoHeading)</h1><a href="/page-one">Previous page</a></body>
+    </html>
+    """
+
+    private static let findKeyboardHTML = """
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Find Keyboard Test</title>
+        <style>body { font: 24px/1.5 -apple-system; } p { margin: 320px 0; }</style>
+      </head>
+      <body>
+        <h1>\(Page.findKeyboardHeading)</h1>
+        <p>hackers</p><p>hackers</p><p>hackers</p>
+        <div style="height: 1200px"></div>
+      </body>
     </html>
     """
 
@@ -1156,6 +1212,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
     func testFindInPageGlass() { verifyFindInPageGlass() }
+    func testFindResultClearsKeyboardWithFloatingUI() { verifyFindResultClearsKeyboard(floatingUIEnabled: true) }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
@@ -1194,6 +1251,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
     func testFindInPageGlass() { verifyFindInPageGlass() }
+    func testFindResultClearsKeyboardWithLegacyUI() { verifyFindResultClearsKeyboard(floatingUIEnabled: false) }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }

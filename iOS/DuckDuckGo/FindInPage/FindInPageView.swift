@@ -81,6 +81,9 @@ class FindInPageView: UIView {
         NSLayoutConstraint.deactivate(searchBackground.constraints.filter {
             $0.firstAttribute == .height && $0.secondItem == nil
         })
+        searchBackground.constraints.first {
+            $0.firstItem === searchBackground && $0.firstAttribute == .trailing && $0.secondItem === counterLabel
+        }?.constant = 16
 
         let doneEffect = UIGlassEffect(style: .regular)
         doneEffect.tintColor = .systemBlue

@@ -92,4 +92,17 @@ class FindInPage: NSObject {
         delegate?.updated(findInPage: self)
     }
 
+    func keepCurrentResultVisible(visibleBottomFraction: CGFloat) {
+        let fraction = min(1, max(0, visibleBottomFraction))
+        evaluate(js: """
+            (() => {
+                const match = document.querySelector('.__firefox__find-highlight-active');
+                if (!match) return;
+                const visibleBottom = window.innerHeight * \(fraction) - 16;
+                const overflow = match.getBoundingClientRect().bottom - visibleBottom;
+                if (overflow > 0) window.scrollBy(0, overflow);
+            })();
+            """)
+    }
+
 }

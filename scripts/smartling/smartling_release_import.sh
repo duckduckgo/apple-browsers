@@ -147,6 +147,7 @@ else
 	existing_pr="$(gh pr list --head "$IMPORT_BRANCH" --state all --limit 1 --json state,url --jq '.[] | "\(.state) \(.url)"')"
 	if [ -n "$existing_pr" ]; then
 		PR_URL="${existing_pr#* }"
+		[ "${existing_pr%% *}" != "MERGED" ] || finish pr_merged "The translations pull request for $VERSION is merged, so the release branch has the translations"
 		finish skipped_existing_pr "A translations pull request for $VERSION already exists (${existing_pr% *})"
 	fi
 fi

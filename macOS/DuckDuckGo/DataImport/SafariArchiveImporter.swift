@@ -23,6 +23,7 @@ import PixelKit
 import PrivacyConfig
 import Common
 import FoundationExtensions
+import History
 import UniformTypeIdentifiers
 
 /// A DataImporter that can import Safari archives as well as standalone Safari exports
@@ -90,6 +91,9 @@ final class SafariArchiveImporter: DataImporter {
     private let creditCardImporter: CreditCardImporter
     private let vault: (any AutofillSecureVault)?
     private let faviconManager: FaviconManagement
+    private let historyReader: SafariHistoryReaderProtocol
+    private let historyImporter: HistoryImporterProtocol
+    private let pixelFiring: PixelFiring?
     private let featureFlagger: FeatureFlagger
     private let secureVaultReporter: SecureVaultReporting
     private let tld: TLD
@@ -102,6 +106,9 @@ final class SafariArchiveImporter: DataImporter {
     ///   - bookmarkImporter: The bookmark importer to use for importing bookmarks
     ///   - loginImporter: The login importer to use for importing passwords
     ///   - faviconManager: The favicon manager for handling favicons
+    ///   - historyReader: The reader used to parse the archive's History.json
+    ///   - historyImporter: The importer that adds the parsed visits to history
+    ///   - pixelFiring: Fires the pixel that reports a history file the archive reader can't recognise
     ///   - featureFlagger: Feature flagger for controlling import behavior
     ///   - secureVaultReporter: Reporter for secure vault operations
     ///   - tld: TLD helper for URL processing
@@ -112,6 +119,9 @@ final class SafariArchiveImporter: DataImporter {
          creditCardImporter: CreditCardImporter = SecureVaultCreditCardImporter(),
          vault: (any AutofillSecureVault)? = nil,
          faviconManager: FaviconManagement,
+         historyReader: SafariHistoryReaderProtocol = SafariHistoryReader(),
+         historyImporter: HistoryImporterProtocol,
+         pixelFiring: PixelFiring? = PixelKit.shared,
          featureFlagger: FeatureFlagger,
          secureVaultReporter: SecureVaultReporting,
          tld: TLD) {
@@ -123,6 +133,9 @@ final class SafariArchiveImporter: DataImporter {
         self.creditCardImporter = creditCardImporter
         self.vault = vault ?? (try? AutofillSecureVaultFactory.makeVault(reporter: secureVaultReporter))
         self.faviconManager = faviconManager
+        self.historyReader = historyReader
+        self.historyImporter = historyImporter
+        self.pixelFiring = pixelFiring
         self.featureFlagger = featureFlagger
         self.secureVaultReporter = secureVaultReporter
         self.tld = tld
@@ -147,6 +160,9 @@ final class SafariArchiveImporter: DataImporter {
             }
             if !contents.creditCards.isEmpty {
                 types.append(.creditCards)
+            }
+            if !contents.history.isEmpty {
+                types.append(.history)
             }
             return types
         case .passwords:
@@ -233,6 +249,10 @@ final class SafariArchiveImporter: DataImporter {
             return finalSummary
         }
 
+        if contents.unrecognizedHistoryFileCount > 0 {
+            fireHistorySourceFileMissingPixel()
+        }
+
         guard contents.hasData(for: types) else {
             for type in types {
                 finalSummary[type] = .failure(ImportError(action: .generic, type: .importContents, underlyingError: nil))
@@ -258,6 +278,12 @@ final class SafariArchiveImporter: DataImporter {
         // Import credit cards if requested and available
         if types.contains(.creditCards), let content = contents.creditCards.first {
             let summary = try await importCreditCards(content, types, updateProgress, &cumulativeFraction)
+            finalSummary.merge(summary) { (_, new) in new }
+        }
+
+        // Import history if requested and available
+        if types.contains(.history), !contents.history.isEmpty {
+            let summary = try await importHistory(contents.history, types, updateProgress, &cumulativeFraction)
             finalSummary.merge(summary) { (_, new) in new }
         }
 
@@ -408,6 +434,44 @@ final class SafariArchiveImporter: DataImporter {
         }
         let creditCardResults = await creditCardTask.task.value
         return creditCardResults
+    }
+
+    private func importHistory(_ historyContents: [String], _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        try updateProgress(.importingHistory(numberOfVisits: nil, fraction: cumulativeFraction))
+
+        // Safari exports a History file for each of its profiles
+        var visits = [HistoryImport.Visit]()
+        var skipped = 0
+        for content in historyContents {
+            switch historyReader.readVisits(fromHistoryJSON: Data(content.utf8), since: .monthAgo) {
+            case .success(let result):
+                visits += result.visits
+                skipped += result.skipped
+            case .failure(let error):
+                return [.history: .failure(error)]
+            }
+        }
+        let parseResult = HistoryImport.ParseResult(visits: visits, skipped: skipped)
+        // parsing a large export can take a while: don't add visits to history after the import was cancelled
+        try Task.checkCancellation()
+
+        let historyResult: DataImportResult<DataImport.DataTypeSummary>
+        do {
+            let importSummary = try await historyImporter.importVisits(parseResult)
+            historyResult = .success(.init(successful: importSummary.imported, duplicate: importSummary.alreadyInHistory, failed: 0))
+        } catch {
+            historyResult = .failure(SafariHistoryReader.ImportError(type: .importVisits, underlyingError: error))
+        }
+
+        cumulativeFraction += 1.0 / Double(types.count)
+        try updateProgress(.importingHistory(numberOfVisits: try? historyResult.get().successful, fraction: cumulativeFraction))
+        return [.history: historyResult]
+    }
+
+    /// The archive has a file that looks like Safari history, but not one the archive reader can read.
+    private func fireHistorySourceFileMissingPixel() {
+        let pixel = DataImportHistoryPixel.sourceFileMissing(source: DataImport.Source.safari.pixelSourceParameterName, sourceVersion: nil)
+        pixelFiring?.fire(pixel, frequency: .dailyAndCount)
     }
 
     private static func contentType(for url: URL) -> UTType? {

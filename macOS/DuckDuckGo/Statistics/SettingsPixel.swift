@@ -142,6 +142,7 @@ enum SettingsPixel: PixelKit.Event {
             case .subscriptionSettings: return "settings_subscription_opened"
             case .about: return "settings_about_opened"
             case .otherPlatforms: return "settings_other_platforms_clicked"
+            case .extensions: return "settings_extensions_management_opened"
             case .partnershipsHub:
                 // Never selected as a pane: `PreferencesSidebarModel.selectPane(_:)` opens a tab and
                 // fires `SubscriptionPixel.subscriptionPartnerBenefitsSettings` instead.

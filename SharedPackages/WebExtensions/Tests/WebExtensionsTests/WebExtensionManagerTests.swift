@@ -438,6 +438,66 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testOldContextResponseAfterUpgradeCannotResetRestartLimit() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for _ in 0..<3 {
+            try await applyError6Restart(in: manager, context: old)
+            date += 61
+        }
+        let oldURL = URL(string: "https://old-document.example")!
+        monitor.handle(.navigationStarted(tabIdentifier: "old-tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "old-tab", url: oldURL))
+        // Production upgrades install the new identifier before removing the old version.
+        let replacement = try await loadDeferredEmbeddedContext("upgraded", into: manager)
+        manager.reportLifecycleEvent(.loaded(identifier: "upgraded", type: .embedded))
+        XCTAssertIdentical(manager.embeddedBackgroundContextForNavigation, replacement)
+        XCTAssertIdentical(manager.context(for: "embedded"), old)
+        XCTAssertEqual(pixels.outcomes.last, .superseded)
+        // This document belongs to the old context. Its late reply must not heal the replacement.
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: oldURL, extensionIdentifier: "embedded"))
+        replacement.retainedBackgroundWebView = WKWebView()
+        let disturbed = expectation(description: "An old-context response cannot grant a fourth restart")
+        disturbed.isInverted = true
+        replacement.onBackgroundLoad = { disturbed.fulfill() }
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: replacement)
+        await fulfillment(of: [disturbed], timeout: 0.15)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 3)
+        XCTAssertEqual(pixels.outcomes.last, .restartLimitReached)
+        replacement.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testNewContextResponseAfterUpgradeResetsRestartLimit() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for _ in 0..<3 {
+            try await applyError6Restart(in: manager, context: old)
+            date += 61
+        }
+        let replacement = try await loadDeferredEmbeddedContext("upgraded", into: manager)
+        manager.reportLifecycleEvent(.loaded(identifier: "upgraded", type: .embedded))
+        let url = URL(string: "https://new-document.example")!
+        monitor.handle(.navigationStarted(tabIdentifier: "new-tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "new-tab", url: url))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url, extensionIdentifier: "upgraded"))
+        try await applyError6Restart(in: manager, context: replacement)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 4)
+        XCTAssertFalse(pixels.outcomes.contains(.restartLimitReached))
+    }
+
+    @MainActor
     func testError6RestartLimitSurvivesReplacementContextsAndReportsOnce() async throws {
         var date = Date()
         let pixels = CapturingCPMRestartPixels()
@@ -904,6 +964,10 @@ final class WebExtensionManagerTests: XCTestCase {
             context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
             NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
             context.retainedBackgroundWebView = nil
+        }
+        // UIKit/WebKit may release their temporary ownership on a later main-loop turn.
+        for _ in 0..<150 where failedView != nil {
+            try await Task.sleep(for: .milliseconds(20))
         }
         XCTAssertNil(failedView, "Pending recovery must not keep WebKit's failed view alive")
         XCTAssertNil(manager.cpmDiagnosticsRecorder)

@@ -69,7 +69,7 @@ public enum CPMMessagingHealthEvent: Sendable {
     case navigationFailed(tabIdentifier: String)
     case tabClosed(tabIdentifier: String)
     case webContentProcessTerminated(tabIdentifier: String)
-    case dashboardResponse(extensionTabIdentifier: Int?, url: URL)
+    case dashboardResponse(extensionTabIdentifier: Int?, url: URL, extensionIdentifier: String? = nil)
     case extensionLifecycle(WebExtensionLifecycleEvent)
     /// The process may stop running: iOS entered the background, or macOS is going to sleep.
     /// Time does not count towards waits and episodes until `interruptionEnded`.
@@ -125,6 +125,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// even after a pixel observation ends. Old-context responses and successful background-load
     /// callbacks do not count as recovery.
     var onHealthyResponse: (() -> Void)?
+    /// Old and new embedded versions can coexist during an upgrade; only the current sender is evidence.
+    var isCurrentEmbeddedExtension: ((String) -> Bool)?
     var backgroundReadinessRecovery: CPMBackgroundReadinessRecovery?
 
     public func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {
@@ -333,7 +335,8 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         case .webContentProcessTerminated(let tabIdentifier):
             backgroundReadinessRecovery?.navigationCancelled(in: tabIdentifier)
             markWebContentProcessTerminated(in: tabIdentifier)
-        case .dashboardResponse(let extensionTabIdentifier, let url):
+        case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier):
+            if let extensionIdentifier, isCurrentEmbeddedExtension?(extensionIdentifier) == false { return }
             if !isCPMMessagingBreakageSimulationEnabled {
                 receiveDashboardResponse(extensionTabIdentifier: extensionTabIdentifier, url: url)
             }
@@ -1148,7 +1151,7 @@ private extension CPMMessagingHealthEvent {
             return "tabClosed tab=\(tabIdentifier)"
         case .webContentProcessTerminated(let tabIdentifier):
             return "webContentProcessTerminated tab=\(tabIdentifier)"
-        case .dashboardResponse(let extensionTabIdentifier, _):
+        case .dashboardResponse(let extensionTabIdentifier, _, _):
             return "dashboardResponse extensionTab=\(extensionTabIdentifier.logDescription)"
         case .extensionLifecycle(let event):
             return "extensionLifecycle \(event.logDescription)"

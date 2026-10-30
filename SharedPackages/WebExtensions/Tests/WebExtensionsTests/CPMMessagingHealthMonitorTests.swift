@@ -123,6 +123,29 @@ final class CPMMessagingHealthMonitorTests: XCTestCase {
                        "A replacement version's response must not count as recovery by the original restart")
     }
 
+    func testOldExtensionResponseCannotValidateNewNavigationWithSameURL() {
+        let pixels = CapturingWebExtensionPixelFiring()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        var currentIdentifier = "embedded"
+        var healthyResponses = 0
+        monitor.isCurrentEmbeddedExtension = { $0 == currentIdentifier }
+        monitor.onHealthyResponse = { healthyResponses += 1 }
+        startError6Restart(on: monitor)
+        let url = URL(string: "https://example.com")!
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: url))
+        currentIdentifier = "upgraded"
+        monitor.handle(.loaded(identifier: currentIdentifier, type: .embedded))
+        monitor.handle(.navigationStarted(tabIdentifier: "tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "tab", url: url))
+
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url, extensionIdentifier: "embedded"))
+        XCTAssertEqual(healthyResponses, 0, "Even a matching document URL cannot make an old sender current")
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: url, extensionIdentifier: "upgraded"))
+        XCTAssertEqual(healthyResponses, 1)
+        XCTAssertEqual(pixels.restartOutcomes, [.restartStarted, .superseded], "The old pixel observation stays closed")
+    }
+
     func testLoadedSameIdentifierPreservesError6RestartObservation() {
         let pixels = CapturingWebExtensionPixelFiring()
         let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)

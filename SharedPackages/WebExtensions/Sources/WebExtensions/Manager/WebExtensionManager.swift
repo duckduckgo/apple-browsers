@@ -420,6 +420,10 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+            healthMonitor.isCurrentEmbeddedExtension = { [weak self] identifier in
+                guard let self, !self.isCPMMessagingRecoveryInProgress else { return false }
+                return self.embeddedBackgroundContextForNavigation?.uniqueIdentifier == identifier
+            }
             healthMonitor.onHealthyResponse = { [weak self] in
                 self?.backgroundLoadRestartAttempts = 0
             }

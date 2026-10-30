@@ -25,20 +25,28 @@ import WebKit
 final class CPMExtensionBaseURLPolicy {
     private let installationStore: InstalledWebExtensionStoring
     private let isEnabled: @MainActor () -> Bool
+    private let isSupportedOS: @MainActor () -> Bool
     private let failedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
     // A first install has not reached the persistent registry when the loader creates its context.
     var pendingInstallations: [String: DuckDuckGoWebExtensionType] = [:]
 
-    init(installationStore: InstalledWebExtensionStoring, isEnabled: @escaping @MainActor () -> Bool) {
+    init(installationStore: InstalledWebExtensionStoring,
+         isEnabled: @escaping @MainActor () -> Bool,
+         isSupportedOS: @escaping @MainActor () -> Bool = {
+             if #available(macOS 26.6, iOS 26.6, *) { return true }
+             return false
+         }) {
         self.installationStore = installationStore
         self.isEnabled = isEnabled
+        self.isSupportedOS = isSupportedOS
     }
 
+    /// The stable origin is only used on macOS and iOS 26.6 and later. Older releases use WebKit's random origin.
     func baseURL(for identifier: String, webExtension: WKWebExtension) -> URL? {
         guard let uuid = originIdentifier(for: identifier, webExtension: webExtension) else { return nil }
-        guard isEnabled() else {
+        guard isSupportedOS(), isEnabled() else {
             // Moving to WebKit's random origin leaves this origin's service-worker registration behind.
-            // Re-enabling must use a fresh origin, never that abandoned registration.
+            // Re-enabling or updating the OS must use a fresh origin, never that abandoned registration.
             if let installed = installationStore.installedExtension(withUniqueIdentifier: identifier) {
                 rotateOrigin(of: installed)
             }
@@ -56,7 +64,7 @@ final class CPMExtensionBaseURLPolicy {
     /// Save a fresh origin before retry/reload can be skipped or the app can terminate.
     /// The live context keeps its origin. Repeated errors from it must preserve the saved replacement.
     func recordBackgroundLoadFailure(in context: WKWebExtensionContext, errors: [Error]) {
-        guard isEnabled(), !failedBackgroundContexts.contains(context),
+        guard isSupportedOS(), isEnabled(), !failedBackgroundContexts.contains(context),
               errors.contains(where: { NSError.webKitSafe($0).isBackgroundContentLoadFailure }) else { return }
         if rotateOrigin(of: context) {
             failedBackgroundContexts.add(context)

@@ -29,7 +29,10 @@ protocol AIChatContextualSidebarHosting: AnyObject {
 
     /// - Parameter coversPage: False when the window is resizing, which reflows the page anyway; an image of it at
     ///   its old size would show as a second copy.
-    func presentContextualSidebar(_ viewController: UIViewController, coversPage: Bool)
+    func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool)
+
+    /// False once `viewController` starts sliding out, though it stays in the column until it is gone.
+    func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool
 
     /// `completion` runs once `viewController` has left the sidebar, or straight away when it isn't in it.
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?)

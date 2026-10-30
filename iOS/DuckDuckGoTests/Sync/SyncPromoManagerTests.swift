@@ -447,10 +447,46 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(syncPromoManager.designFor(.bookmarks), .standard)
     }
 
-    func testWhenRedesignFlagOnThenPasswordsDesignIsStandard() {
-        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 30)
+    func testWhenRedesignFlagOnAndInstalledMoreThanThreeDaysAgoThenPasswordsDesignIsRedesigned() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 4)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .redesigned)
+    }
+
+    func testWhenRedesignFlagOnAndInstalledThreeDaysAgoThenPasswordsDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 3)
 
         XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOffThenPasswordsDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.passwords), .standard)
+    }
+
+    func testWhenRedesignFlagOnThenAIChatDesignIsStandard() {
+        let syncPromoManager = makeManager(featureFlags: [.syncPromotionRedesign], installedDaysAgo: 30)
+
+        XCTAssertEqual(syncPromoManager.designFor(.aiChat), .standard)
+    }
+
+    func testWhenPasswordsDesignIsRedesignedThenPromoHasRedesignedPasswordsCopy() {
+        let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .redesigned)
+
+        XCTAssertNil(passwords.secondaryButtonTitle)
+        XCTAssertEqual(passwords.primaryButtonTitle, UserText.syncPromoTurnOnAction)
+        XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
+        XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsRedesignMessage)
+    }
+
+    func testWhenPasswordsDesignIsStandardThenPromoKeepsPasswordsCopy() {
+        let passwords = SyncPromoViewModel(touchpointType: .passwords, design: .standard)
+
+        XCTAssertEqual(passwords.secondaryButtonTitle, UserText.syncPromoDismissAction)
+        XCTAssertEqual(passwords.primaryButtonTitle, UserText.syncPromoConfirmAction)
+        XCTAssertEqual(passwords.title, UserText.syncPromoPasswordsTitle)
+        XCTAssertEqual(passwords.subtitle, UserText.syncPromoPasswordsMessage)
     }
 
     func testWhenDesignIsRedesignedThenPromoHasNoDismissButtonAndRedesignCopy() {

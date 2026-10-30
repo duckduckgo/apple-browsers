@@ -163,6 +163,7 @@ final class AutofillLoginListViewController: UIViewController {
     private var importPromoPresented: Bool = false
     private var syncPromoPresented: Bool = false
     private var extensionPromoPresented: Bool = false
+    private var isReturningFromSyncSettings = false
 
     private lazy var emptySearchViewCenterYConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: emptySearchView,
@@ -259,6 +260,13 @@ final class AutofillLoginListViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         productSurfaceTelemetry.passwordsPageUsed()
+        guard isReturningFromSyncSettings else { return }
+        isReturningFromSyncSettings = false
+        if viewModel.viewState == .authLocked {
+            authenticate()
+        } else {
+            updateTableHeaderView()
+        }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -377,7 +385,7 @@ final class AutofillLoginListViewController: UIViewController {
     @objc private func appDidBecomeActiveCallback() {
         // New hub import flow requires app switching to source apps (e.g. Chrome/Safari).
         // Avoid intrusive re-auth while user remains in that flow.
-        guard !isInNewImportFlow else { return }
+        guard !isInNewImportFlow, !isInSyncSettingsFlow else { return }
 
         // AutofillLoginDetailsViewController will handle calling authenticate() if it is the top view controller
         guard navigationController?.topViewController is AutofillLoginDetailsViewController else {
@@ -398,6 +406,10 @@ final class AutofillLoginListViewController: UIViewController {
         return navigationController.viewControllers.contains { viewController in
             viewController is DataImportHubViewController || viewController is ImportSourceDetailViewController
         }
+    }
+
+    private var isInSyncSettingsFlow: Bool {
+        navigationController?.viewControllers.contains { $0 is SyncSettingsViewController } ?? false
     }
 
     @objc private func authenticatorInvalidateContext() {
@@ -479,6 +491,15 @@ final class AutofillLoginListViewController: UIViewController {
         let importController = ImportPasswordsViaSyncViewController(syncService: syncService)
         importController.delegate = self
         navigationController?.pushViewController(importController, animated: true)
+    }
+
+    private func pushSyncSettings(source: String) {
+        guard let mainVC = presentingViewController as? MainViewController else {
+            segueToSync(source: source)
+            return
+        }
+        isReturningFromSyncSettings = true
+        navigationController?.pushViewController(mainVC.makeSyncSettingsViewController(source: source), animated: true)
     }
 
     func segueToSync(source: String? = nil) {
@@ -772,8 +793,9 @@ final class AutofillLoginListViewController: UIViewController {
         }
 
         if viewModel.shouldShowSyncPromo(), !surveyPromptPresented, !importPromoPresented {
-            if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
-                configureTableHeaderView(for: .syncPromo(.passwords))
+            let syncPromo = AutofillHeaderViewFactory.ViewType.syncPromo(.passwords, viewModel.syncPromoDesign())
+            if shouldUpdateHeaderView(for: syncPromo) {
+                configureTableHeaderView(for: syncPromo)
                 syncPromoPresented = true
             }
             return
@@ -816,8 +838,8 @@ final class AutofillLoginListViewController: UIViewController {
             if let hostingController = currentHeaderHostingController as? UIHostingController<AutofillSurveyView> {
                 setupTableHeaderView(with: hostingController)
             }
-        case .syncPromo(let promoType):
-            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .syncPromo(promoType))
+        case .syncPromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: type)
             if let hostingController = currentHeaderHostingController as? UIHostingController<SyncPromoView> {
                 setupTableHeaderView(with: hostingController)
             }
@@ -1194,8 +1216,13 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
                 self.dismiss(animated: true)
             }
             viewModel.dismissSurvey(id: survey.id)
-        case .syncPromo(let touchpoint):
-            segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
+        case .syncPromo(let touchpoint, let design):
+            switch design {
+            case .standard:
+                segueToSync(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
+            case .redesigned:
+                pushSyncSettings(source: SyncSettingsViewController.SourceConstants.passwordsPromotion)
+            }
             PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": touchpoint.rawValue]))
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)

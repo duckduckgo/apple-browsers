@@ -1314,6 +1314,24 @@ extension OnboardingIntroViewModelTests {
         XCTAssertNil(resumeStepRawValue(in: store))
     }
 
+    func testWhenResumeStepIsSearchPrivacySettings_AndBrowsePrivatelyFlowNoLongerContainsIt_ThenStoreIsCleared() {
+        // The search privacy settings step was removed from the browse-privately flow
+        let store = MockKeyValueStore()
+        setResumeStep(.searchPrivacySettingsSelection, in: store)
+        onboardingManagerMock.onboardingSteps = [.introDialog(isReturningUser: false), .downloadReasonSelection] + OnboardingStepsHelper.expectedRemainingSteps(for: .browserPrivately)
+        _ = makeSUT(resumeStepStore: store)
+        XCTAssertNil(resumeStepRawValue(in: store))
+    }
+
+    func testWhenResumeStepIsOldIPhoneDefaultStep_AndFlowStartsWithDownloadScreen_ThenStoreIsCleared() {
+        // Users mid-way through the old iPhone default flow when the download-reason flow rolls out
+        let store = MockKeyValueStore()
+        setResumeStep(.appIconSelection, in: store)
+        onboardingManagerMock.onboardingSteps = OnboardingStepsHelper.expectedIPhoneDownloadReasonSteps(isReturningUser: false)
+        _ = makeSUT(resumeStepStore: store)
+        XCTAssertNil(resumeStepRawValue(in: store))
+    }
+
     func testWhenResumeStepIsDuckAIQuerySelection_AndIsDefaultFlow_ThenOnAppearShowsDuckAIQuery() {
         let store = MockKeyValueStore()
         setResumeStep(.duckAIQuerySelection, in: store)
@@ -1774,7 +1792,7 @@ extension OnboardingIntroViewModelTests {
     }
 
     func testBrowsePrivatelyFlowAdvancesThroughItsStepsInOrder() {
-        // GIVEN a treatment user picking "browse privately" on the Download Screen
+        // GIVEN an iPhone user picking "browse privately" on the Download Screen
         let sut = makeSUTOnDownloadScreen(for: .browserPrivately)
 
         // WHEN / THEN each action advances to the next screen of the real browse-privately sequence
@@ -1782,9 +1800,6 @@ extension OnboardingIntroViewModelTests {
         XCTAssertEqual(sut.state.intro?.type, .setDefaultBrowserDialog(content: .mockBrowser))
 
         sut.setDefaultBrowserAction()
-        XCTAssertEqual(sut.state.intro?.type, .searchPrivacySettingsDialog(content: .mock))
-
-        sut.searchPrivacySettingsContinueAction()
         XCTAssertEqual(sut.state.intro?.type, .chooseSearchExperienceDialog(content: .mock))
 
         sut.selectSearchExperienceAction()

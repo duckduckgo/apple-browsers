@@ -220,6 +220,70 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         await fulfillment(of: [notificationPosted], timeout: 1.0)
     }
 
+    func test_completeSubscriptionPurchase_withIntroductoryOfferTransaction_postsIsFreeTrialTrue() async {
+        subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
+
+        let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default) { notification in
+            notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial] as? Bool == true
+        }
+
+        _ = await sut.completeSubscriptionPurchase(with: makeTransactionJWS(payload: #"{"offerType":1}"#), experimentAttribution: nil)
+
+        await fulfillment(of: [notificationPosted], timeout: 1.0)
+    }
+
+    func test_completeSubscriptionPurchase_withUnreadableTransaction_postsNoIsFreeTrial() async {
+        subscriptionManagerMock.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainerWithEntitlements()
+        let subscription = SubscriptionMockFactory.appleSubscription
+        subscriptionManagerMock.resultSubscription = .success(subscription)
+        subscriptionManagerMock.confirmPurchaseResponse = .success(subscription)
+
+        let notificationPosted = expectation(forNotification: .userDidPurchaseSubscription, object: nil, notificationCenter: .default) { notification in
+            notification.userInfo?[UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial] == nil
+        }
+
+        _ = await sut.completeSubscriptionPurchase(with: "transactionJWS", experimentAttribution: nil)
+
+        await fulfillment(of: [notificationPosted], timeout: 1.0)
+    }
+
+    // MARK: - isFreeTrial(transactionJWS:) Tests
+
+    func test_isFreeTrial_withIntroductoryOffer_returnsTrue() {
+        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"offerType":1}"#)), true)
+    }
+
+    func test_isFreeTrial_withNonIntroductoryOffer_returnsFalse() {
+        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"offerType":3}"#)), false)
+    }
+
+    func test_isFreeTrial_withoutOffer_returnsFalse() {
+        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"productId":"monthly"}"#)), false)
+    }
+
+    func test_isFreeTrial_withBase64URLCharactersAndNoPadding_decodesPayload() {
+        // This payload's base64url contains "_" and drops "==" padding.
+        let jws = makeTransactionJWS(payload: #"{"offerType":1,"note":"??>"}"#)
+        XCTAssertTrue(jws.contains("_"))
+        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: jws), true)
+    }
+
+    func test_isFreeTrial_withMalformedJWS_returnsNil() {
+        XCTAssertNil(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: "transactionJWS"))
+        XCTAssertNil(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: "header.!!!.signature"))
+    }
+
+    private func makeTransactionJWS(payload: String) -> String {
+        let encoded = Data(payload.utf8).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        return "header.\(encoded).signature"
+    }
+
     // MARK: - PendingTransactionHandler Tests
 
     func test_completeSubscriptionPurchase_withSuccess_callsHandleSubscriptionActivated() async {

@@ -273,7 +273,8 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                     return .failure(.missingEntitlements)
                 } else {
                     pendingTransactionHandler?.handleSubscriptionActivated()
-                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
+                    let userInfo = Self.isFreeTrial(transactionJWS: transactionJWS).map { [UserDidPurchaseSubscriptionUserInfoKey.isFreeTrial: $0] }
+                    NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self, userInfo: userInfo)
                     return .success(.completed)
                 }
             } else {
@@ -299,5 +300,22 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
             Logger.subscription.error("Failed to retrieve the current subscription ID: \(String(describing: error), privacy: .public)")
             return nil
         }
+    }
+
+    /// Reads `offerType` from the transaction payload. Our only introductory offers (type 1) are free trials. `nil` if the payload can't be read.
+    static func isFreeTrial(transactionJWS: TransactionJWS) -> Bool? {
+        struct Payload: Decodable {
+            let offerType: Int?
+        }
+
+        let segments = transactionJWS.split(separator: ".")
+        guard segments.count == 3 else { return nil }
+
+        var base64 = segments[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
+
+        guard let data = Data(base64Encoded: base64),
+              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return nil }
+        return payload.offerType == 1
     }
 }

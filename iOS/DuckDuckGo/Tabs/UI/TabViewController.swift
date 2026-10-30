@@ -605,7 +605,8 @@ class TabViewController: UIViewController {
         }
     }
 
-    private let rulesCompilationMonitor = RulesCompilationMonitor.shared
+    var rulesCompilationMonitor = RulesCompilationMonitor.shared
+    private var navigationSetupWaitID: UUID?
     
     private var lastRenderedURL: URL?
 
@@ -2580,11 +2581,11 @@ class TabViewController: UIViewController {
             }
         }
         // Tab removal closes synchronously; this also covers controllers released outside the tab cache.
-        Task { @MainActor [sitePermissionsState, freezeMonitor] in
+        Task { @MainActor [sitePermissionsState, freezeMonitor, rulesCompilationMonitor, navigationSetupWaitID] in
+            rulesCompilationMonitor.finish(navigationSetupWaitID, outcome: .tabClosed)
             sitePermissionsState.close()
             freezeMonitor.end(.closed)
         }
-        rulesCompilationMonitor.tabWillClose(tabModel.uid)
         eventHub.onTabClosed(tabID: eventHubTabID)
         removeObservers()
         temporaryDownloadForPreviewedFile?.cancel()
@@ -3593,6 +3594,15 @@ extension TabViewController: WKNavigationDelegate {
             sitePermissionsState.cancelContentBlockingWaits()
         }
 
+        let setupWaitID: UUID?
+        if webView === self.webView, navigationAction.isTargetingMainFrame,
+           [.http, .https].contains(navigationAction.request.url?.navigationalScheme) {
+            setupWaitID = rulesCompilationMonitor.begin()
+            navigationSetupWaitID = setupWaitID
+        } else {
+            setupWaitID = nil
+        }
+
         // Capture the site-loading navigation type only at the moment the navigation is actually allowed.
         // Doing it any earlier — e.g. at the top of this function — would race when policy decisions
         // overlap: for instance, the content-blocking wait below can hold nav1's `decisionHandler` while
@@ -3616,6 +3626,7 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.isTargetingMainFrame,
            [.http, .https].contains(navigationAction.request.url?.navigationalScheme),
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
+            rulesCompilationMonitor.beginStage(.webExtensions, for: setupWaitID)
             webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
                 guard !Task.isCancelled else {
                     wrappedHandler(.cancel)
@@ -3629,8 +3640,10 @@ extension TabViewController: WKNavigationDelegate {
                     return
                 }
                 webExtensionNavigationTask = nil
+                rulesCompilationMonitor.endStage(for: setupWaitID)
                 decidePolicyAfterWebExtensionInitialLoad(webView,
                                                          navigationAction: navigationAction,
+                                                         setupWaitID: setupWaitID,
                                                          decisionHandler: wrappedHandler)
             }
             return
@@ -3638,16 +3651,20 @@ extension TabViewController: WKNavigationDelegate {
 
         decidePolicyAfterWebExtensionInitialLoad(webView,
                                                  navigationAction: navigationAction,
+                                                 setupWaitID: setupWaitID,
                                                  decisionHandler: wrappedHandler)
     }
 
-    func cancelWebExtensionNavigationWait() {
+    func cancelWebExtensionNavigationWait(outcome: RulesCompilationMonitor.Outcome = .cancelled) {
+        rulesCompilationMonitor.finish(navigationSetupWaitID, outcome: outcome)
+        navigationSetupWaitID = nil
         webExtensionNavigationTask?.cancel()
         webExtensionNavigationTask = nil
     }
 
     private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
                                                           navigationAction: WKNavigationAction,
+                                                          setupWaitID: UUID?,
                                                           decisionHandler wrappedHandler: @escaping (TabNavigationDecision) -> Void) {
 
         var isUserInitiated = false
@@ -3658,6 +3675,7 @@ extension TabViewController: WKNavigationDelegate {
 
         if let url = navigationAction.request.url {
             if !tabURLInterceptor.allowsNavigatingTo(url: url) {
+                rulesCompilationMonitor.finish(setupWaitID, outcome: .cancelled)
                 wrappedHandler(.cancel)
                 // If there is history or a page loaded keep the tab open
                 if self.currentlyLoadedURL == nil {
@@ -3668,6 +3686,7 @@ extension TabViewController: WKNavigationDelegate {
         }
         
         if duckPlayerNavigationHandler.handleDelegateNavigation(navigationAction: navigationAction, webView: webView) {
+            rulesCompilationMonitor.finish(setupWaitID, outcome: .cancelled)
             wrappedHandler(.cancel)
             return
         }
@@ -3675,17 +3694,26 @@ extension TabViewController: WKNavigationDelegate {
         if let url = navigationAction.request.url,
            true == shouldWaitUntilContentBlockingIsLoaded({ [weak self, webView /* decision handler must be called */] shouldContinue in
                guard shouldContinue, let self = self else {
+                   self?.rulesCompilationMonitor.finish(setupWaitID, outcome: .cancelled)
                    wrappedHandler(.cancel)
                    return
                }
                self.decidePolicyAfterWebExtensionInitialLoad(webView,
                                                              navigationAction: navigationAction,
+                                                             setupWaitID: setupWaitID,
                                                              decisionHandler: wrappedHandler)
-           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
+           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame, setupWaitID: setupWaitID) {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
         
+
+        // Success means the setup gates released navigation, including an extension-gate timeout.
+        // Page loading and CPM responses are outside this metric.
+        rulesCompilationMonitor.finish(setupWaitID, outcome: .success)
+        if navigationSetupWaitID == setupWaitID {
+            navigationSetupWaitID = nil
+        }
 
         didGoBackForward = (navigationAction.navigationType == .backForward)
 
@@ -3892,7 +3920,8 @@ extension TabViewController: WKNavigationDelegate {
 
     func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor (Bool) -> Void,
                                                 for url: URL,
-                                                isMainFrame: Bool = true) -> Bool {
+                                                isMainFrame: Bool = true,
+                                                setupWaitID: UUID? = nil) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
         let shouldWait = Self.shouldWaitForContentBlockingAssets(
             assetsInstalled: userContentController.contentBlockingAssetsInstalled,
@@ -3902,11 +3931,10 @@ extension TabViewController: WKNavigationDelegate {
             isDuckDuckGoSearch: url.isDuckDuckGoSearch
         )
         if !shouldWait {
-
-            rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
         }
 
+        rulesCompilationMonitor.beginStage(.contentBlocking, for: setupWaitID)
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
             if isMainFrame {
@@ -3914,10 +3942,9 @@ extension TabViewController: WKNavigationDelegate {
             }
             // Retains the tab until assets install: tab deinit stops asset delivery and would strand WebKit's decision.
             Task {
-                rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
                 showProgressIndicator()
                 await userContentController.awaitContentBlockingAssetsInstalled()
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                rulesCompilationMonitor.endStage(for: setupWaitID)
                 completion(true)
             }
             return true
@@ -3925,7 +3952,6 @@ extension TabViewController: WKNavigationDelegate {
 
         // Geolocation must be installed before the first document, including SERP and content-blocking-off loads.
         // Keep these wait tasks so tab teardown resolves WebKit's outstanding decisions.
-        rulesCompilationMonitor.tabWillWaitForRulesCompilation(tabModel.uid)
         showProgressIndicator()
         let waitID = UUID()
         let timeout = sitePermissionsNavigationTimeout
@@ -3934,10 +3960,9 @@ extension TabViewController: WKNavigationDelegate {
         if isMainFrame {
             startContentBlockingWaitTimeoutPixel(until: geolocationInstalled)
         }
-        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState, rulesCompilationMonitor, tabID = tabModel.uid] in
+        sitePermissionsState.contentBlockingWaitTasks[waitID] = Task { [weak self, weak state = sitePermissionsState] in
             defer {
                 state?.contentBlockingWaitTasks[waitID] = nil
-                rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
             }
             guard !Task.isCancelled else {
                 completion(false)
@@ -3961,8 +3986,13 @@ extension TabViewController: WKNavigationDelegate {
             if isMainFrame {
                 state?.contentBlockingWaitTimeoutPixel = nil
             }
-            if !isReady, isMainFrame {
-                self?.showSitePermissionsAssetsTimeout(for: url)
+            self?.rulesCompilationMonitor.endStage(for: setupWaitID)
+            if !isReady {
+                // The error page also cancels navigation; the readiness timeout is the cause to retain.
+                self?.rulesCompilationMonitor.finish(setupWaitID, outcome: .timeout)
+                if isMainFrame {
+                    self?.showSitePermissionsAssetsTimeout(for: url)
+                }
             }
             completion(isReady)
         }

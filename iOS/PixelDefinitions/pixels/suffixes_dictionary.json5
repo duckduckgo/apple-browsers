@@ -2,6 +2,13 @@
 // In your pixel definitions, you can reference these suffixes by their key
 // See TEMPLATE.json for an example
 {
+    "compilation_state": {
+        "key": "state",
+        "type": "string",
+        "description": "Whether onboarding had not been seen when the process-wide setup-wait monitor was created.",
+        "enum": ["onboarding", "regular"]
+    },
+
     "first_daily_count": {
         "type": "string",
         "description": "Pixel schedule type",

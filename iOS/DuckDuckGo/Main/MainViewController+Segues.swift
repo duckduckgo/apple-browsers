@@ -349,7 +349,7 @@ extension MainViewController {
         }, deepLinkTarget: .dbp())
     }
 
-    func segueToPIRWithSubscriptionCheck() {
+    func segueToPIRWithSubscriptionCheck(presentationStyle: PresentationContext.Style = .dismissModalsAndPresentFromRoot) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
@@ -368,11 +368,11 @@ extension MainViewController {
                 }
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .dbp(freeScanEntryPoint: freeScanEntryPoint))
-                }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint))
+                }, deepLinkTarget: .dbp(freeScanEntryPoint: freeScanEntryPoint), presentationStyle: presentationStyle)
             } else {
                 launchSettings(completion: {
                     $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
-                }, deepLinkTarget: .subscriptionFlow())
+                }, deepLinkTarget: .subscriptionFlow(), presentationStyle: presentationStyle)
             }
         }
     }
@@ -488,6 +488,7 @@ extension MainViewController {
 
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
                         deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil,
+                        presentationStyle: PresentationContext.Style = .dismissModalsAndPresentFromRoot,
                         configure: ((SettingsViewModel, SettingsHostingController) -> Void)? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,
                                                             syncDataProviders: syncDataProviders,
@@ -584,12 +585,20 @@ extension MainViewController {
         PixelKit.fire(Pixel.Event.settingsPresented)
 
         func doLaunch() {
-            if let navigationController = self.presentedViewController as? UINavigationController,
+            if case .dismissModalsAndPresentFromRoot = presentationStyle,
+               let navigationController = self.presentedViewController as? UINavigationController,
                let settingsHostingController = navigationController.viewControllers.first as? SettingsHostingController {
                 navigationController.popToRootViewController(animated: false)
                 completion?(settingsHostingController.viewModel)
             } else {
-                assert(self.presentedViewController == nil)
+                let presenter: UIViewController
+                switch presentationStyle {
+                case .dismissModalsAndPresentFromRoot:
+                    assert(self.presentedViewController == nil)
+                    presenter = self
+                case .withinCurrentContext:
+                    presenter = topMostPresentedViewController(startingFrom: self)
+                }
 
                 let settingsController = SettingsHostingController(viewModel: settingsViewModel,
                                                                    viewProvider: legacyViewProvider,
@@ -612,7 +621,7 @@ extension MainViewController {
                 // Apply custom configuration (e.g. pre-navigate to specific screens before presentation)
                 configure?(settingsViewModel, settingsController)
 
-                present(navController, animated: true) {
+                presenter.present(navController, animated: true) {
                     completion?(settingsViewModel)
                 }
             }

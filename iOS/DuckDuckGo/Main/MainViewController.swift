@@ -9616,7 +9616,9 @@ extension MainViewController: MessageNavigationDelegate {
         case .dismissModalsAndPresentFromRoot:
             segueToSettingsAIChat(openedFromSERPSettingsButton: openedFromSERPSettingsButton)
         case .withinCurrentContext:
-            assertionFailure("Not implemented yet.")
+            launchSettings(deepLinkTarget: .aiChat, presentationStyle: presentationStyle) { viewModel, _ in
+                viewModel.openedFromSERPSettingsButton = openedFromSERPSettingsButton
+            }
         }
     }
     
@@ -9691,12 +9693,7 @@ extension MainViewController: MessageNavigationDelegate {
     }
 
     func segueToPIR(presentationStyle: PresentationContext.Style) {
-        switch presentationStyle {
-        case .dismissModalsAndPresentFromRoot:
-            segueToPIRWithSubscriptionCheck()
-        case .withinCurrentContext:
-            assertionFailure("Not implemented yet.")
-        }
+        segueToPIRWithSubscriptionCheck(presentationStyle: presentationStyle)
     }
 
 }

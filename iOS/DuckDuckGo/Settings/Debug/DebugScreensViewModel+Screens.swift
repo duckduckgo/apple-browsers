@@ -191,6 +191,7 @@ extension DebugScreensViewModel {
                 WhatsNewDebugView(
                     diagnosticsProvider: dependencies.promoCoordinationDiagnosticsProvider,
                     cooldownResetter: dependencies.promoCoordinationCooldownResetter,
+                    keyValueStore: dependencies.keyValueStore,
                     remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler
                 )
             }),

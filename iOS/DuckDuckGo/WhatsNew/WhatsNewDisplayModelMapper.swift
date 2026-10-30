@@ -136,6 +136,14 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             nil
         }
 
+        // Keep What's New open while the navigation destination is presented above it.
+        let dismissAfterPrimaryAction: (() -> Void)?
+        if case .navigation = primaryAction {
+            dismissAfterPrimaryAction = nil
+        } else {
+            dismissAfterPrimaryAction = onDismiss
+        }
+
         return RemoteMessagingUI.CardsListDisplayModel(
             screenTitle: mainTitleText,
             icon: placeholder?.rawValue,
@@ -152,7 +160,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             onAppear: onMessageAppear,
             primaryAction: (
                 title: primaryActionText,
-                action: makeAction(for: primaryAction, handler: onPrimaryAction, andDismiss: onDismiss)
+                action: makeAction(for: primaryAction, handler: onPrimaryAction, andDismiss: dismissAfterPrimaryAction)
             )
         )
     }

@@ -447,12 +447,16 @@ class SyncSettingsViewController: UIHostingController<SimplifiedSyncSettingsView
     }
 
     private func startSyncWithAnotherDeviceIfNecessary() {
-        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
-        guard let source, autoStartPairingSources.contains(source),
-              syncService.authState == .inactive else {
+        guard let source, syncService.authState == .inactive else {
             return
         }
-        viewModel.beginPairingFlow()
+        let autoStartPairingSources = [SourceConstants.startSyncFlow, SourceConstants.aiChatPromotion]
+        let autoStartSetupSources = [SourceConstants.bookmarksPromotion, SourceConstants.passwordsPromotion]
+        if autoStartPairingSources.contains(source) {
+            viewModel.beginPairingFlow()
+        } else if autoStartSetupSources.contains(source), featureFlagger.isFeatureOn(.syncPromotionRedesign) {
+            viewModel.enableSyncToggleTapped()
+        }
     }
 
     private func askForAuthThenStartPairing() {

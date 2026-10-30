@@ -5092,6 +5092,9 @@ Take back control of your personal information with the browser designed for dat
 /* Message for the Sync Promotion banner when user has bookmarks that can be synced */
 "sync.promo.bookmarks.message" = "No account needed. End-to-end encryption means nobody but you can see your bookmarks, not even us.";
 
+/* Message for the redesigned Sync Promotion banner on the Bookmarks screen */
+"sync.promo.bookmarks.redesign.message" = "End-to-end encrypted. Nobody can see your bookmarks, not even us.";
+
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sync & Back Up Your Bookmarks";
 
@@ -5112,6 +5115,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sync & Back Up Your Passwords";
+
+/* Title for a button in the Sync Promotion banner that opens Sync settings and starts setting up Sync with another device */
+"sync.promo.turn-on.action" = "Turn On";
 
 /* Button title to start backup */
 "sync.recovery.alternative.prompt.backup.button" = "Sync & Backup This Device";

@@ -148,8 +148,14 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager(syncService: syncService)
 
     private lazy var syncPromoViewHostingController: UIHostingController<SyncPromoView> = {
-        let headerView = SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: { [weak self] in
-            self?.segueToSync(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
+        let design = syncPromoManager.designFor(.bookmarks)
+        let headerView = SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, design: design, primaryButtonAction: { [weak self] in
+            switch design {
+            case .standard:
+                self?.segueToSync(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
+            case .redesigned:
+                self?.pushSyncSettings(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion)
+            }
             PixelKit.fire(Pixel.Event.syncPromoConfirmed, options: .parameters(["source": SyncPromoManager.Touchpoint.bookmarks.rawValue]))
         }, dismissButtonAction: { [weak self] in
             self?.syncPromoManager.dismissPromoFor(.bookmarks, reason: .userTapped)
@@ -746,6 +752,12 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                 }
             }
         }
+    }
+
+    private func pushSyncSettings(source: String) {
+        guard let mainVC = presentingViewController as? MainViewController else { return }
+        navigationController?.setToolbarHidden(true, animated: true)
+        navigationController?.pushViewController(mainVC.makeSyncSettingsViewController(source: source), animated: true)
     }
 
     func segueToSync(source: String? = nil) {

@@ -781,6 +781,7 @@ public enum SyncPromotionSubfeature: String, PrivacySubfeature {
     case bookmarks
     case passwords
     case syncAnotherDevice
+    case redesign
 }
 
 public enum HTMLHistoryPageSubfeature: String, Equatable, PrivacySubfeature {

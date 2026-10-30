@@ -232,6 +232,23 @@ final class AIChatUserScript: NSObject, Subfeature {
         delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
         switch message {
+        case .toolsList:
+            return { @MainActor [weak self] params, message in
+                guard let self, self.prepareBrowserTools(for: message) else {
+                    return BrowserToolsListResponse(failure: .unavailable)
+                }
+                return await self.handler.mcpToolsList(params: params, message: message)
+            }
+        case .toolsCall:
+            return { @MainActor [weak self] params, message in
+                guard let self, self.prepareBrowserTools(for: message) else {
+                    let request: InvokeBrowserToolRequest? = DecodableHelper.decode(from: params)
+                    let callID = (params as? [String: Any])?["callId"] as? String ?? ""
+                    let failure: BrowserToolFailure = request?.name.isEmpty == false ? .unavailable : .invalidRequest
+                    return InvokeBrowserToolResponse(callId: callID, result: .failure(failure))
+                }
+                return await self.handler.mcpToolsCall(params: params, message: message, elicitationPusher: self)
+            }
         case .responseState:
             return handler.getResponseState
         case .getAIChatNativeConfigValues:
@@ -684,5 +701,17 @@ final class AIChatUserScript: NSObject, Subfeature {
 extension AIChatUserScript: AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric) {
         delegate?.aiChatUserScript(self, didReceiveMetric: metric)
+    }
+}
+    @MainActor
+    func pushToolsListChanged() {
+        _ = pushBrowserToolsMessage(.toolsListChanged, params: nil)
+    }
+    @MainActor
+    private func pushBrowserToolsMessage(_ message: AIChatUserScriptMessages, params: Encodable?) -> Bool {
+        guard let webView, let broker, let host = webView.url?.host,
+              messageDestinationPolicy.isAllowed(host) else { return false }
+        broker.push(method: message.rawValue, params: params, for: self, into: webView)
+        return true
     }
 }

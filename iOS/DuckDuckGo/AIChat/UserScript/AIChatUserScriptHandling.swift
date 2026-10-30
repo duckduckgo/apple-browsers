@@ -150,6 +150,8 @@ final class AIChatUserScriptErrorEventMapper: EventMapping<AIChatUserScriptError
 
 // swiftlint:disable inclusive_language
 protocol AIChatUserScriptHandling: AnyObject {
+    @MainActor func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable?
     var displayMode: AIChatDisplayMode? { get set }
     var isFireModeProvider: (() -> Bool)? { get set }
     var focusChatInputHandler: (@MainActor () -> Void)? { get set }
@@ -212,6 +214,18 @@ protocol AIChatUserScriptHandling: AnyObject {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
+    @MainActor
+    func mcpToolsList(params: Any, message: UserScriptMessage) async -> Encodable? {
+        BrowserToolsListResponse(failure: .unavailable)
+    }
+
+    @MainActor
+    func mcpToolsCall(params: Any, message: UserScriptMessage, elicitationPusher: (any AIChatElicitationPushing)?) async -> Encodable? {
+        let request: InvokeBrowserToolRequest? = DecodableHelper.decode(from: params)
+        let callID = (params as? [String: Any])?["callId"] as? String ?? ""
+        let failure: BrowserToolFailure = request?.name.isEmpty == false ? .unavailable : .invalidRequest
+        return InvokeBrowserToolResponse(callId: callID, result: .failure(failure))
+    }
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     @MainActor private var initialPromptConnection: AIChatInitialPromptSession.Connection?

@@ -38,6 +38,10 @@ public protocol NewTabPageOmnibarActionsHandling: AnyObject {
                     files: [NewTabPageDataModel.OmnibarPromptFile]?,
                     aiTermsAccepted: Bool)
 
+    /// Called alongside `submitChat` when the prompt came from a suggested-prompt chip.
+    @MainActor
+    func suggestedPromptSubmitted(promptId: String)
+
     @MainActor
     func openAiChat(_ chatId: String, isPinned: Bool, trigger: NewTabPageDataModel.OpenAiChatTrigger, target: NewTabPageDataModel.OpenTarget)
 

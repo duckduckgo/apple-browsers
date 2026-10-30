@@ -344,6 +344,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
     /// The host's current content state, so the dismiss path can pick the right NTP handoff.
     var isShowingLogoContent: Bool { unifiedSuggestionsHost?.isShowingLogo ?? false }
     var isShowingFavoritesContent: Bool { unifiedSuggestionsHost?.isShowingFavorites ?? false }
+    var isShowingEscapeHatchContent: Bool { chromePlacement.escapeHatch != .hidden }
 
     /// Fades the focused content (logo / suggestion list) out as the UTI collapses, so the NTP
     /// content takes over cleanly.

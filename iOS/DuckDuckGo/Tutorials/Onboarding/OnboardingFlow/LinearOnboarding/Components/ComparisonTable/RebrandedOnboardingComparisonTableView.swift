@@ -30,9 +30,13 @@ private enum ComparisonTableMetrics {
 
     // Row layout
     static let rowSpacing: CGFloat = 0
-    static let cellHeight: CGFloat = 56
+    // Minimum row height. Rows grow beyond it when the feature title wraps (e.g. long translations).
+    static let cellMinHeight: CGFloat = 56
     static let cellCornerRadius: CGFloat = 12
-    static let cellInsets: EdgeInsets = EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 4)
+    static let cellLeadingInset: CGFloat = 12
+    static let cellTrailingInset: CGFloat = 4
+    // Vertical padding around the feature title only, so the status column separator still spans the full row height.
+    static let cellVerticalPadding: CGFloat = 10
 
     // Feature section (left)
     static let featureIconSize: CGFloat = 32
@@ -151,46 +155,45 @@ private struct FeatureRow: View {
     }
 
     var body: some View {
-        ZStack(alignment: .leading) {
-            backgroundColor
-                .cornerRadius(ComparisonTableMetrics.cellCornerRadius)
+        HStack {
+            HStack(alignment: .center, spacing: ComparisonTableMetrics.featureTextSpacing) {
+                feature.icon
+                    .resizable()
+                    .frame(width: 24.0, height: 24.0)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: ComparisonTableMetrics.featureIconSize, height: ComparisonTableMetrics.featureIconSize)
 
-            HStack {
-                HStack(alignment: .center, spacing: ComparisonTableMetrics.featureTextSpacing) {
-                    feature.icon
-                        .resizable()
-                        .frame(width: 24.0, height: 24.0)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: ComparisonTableMetrics.featureIconSize, height: ComparisonTableMetrics.featureIconSize)
-
-                    Text(feature.title)
-                        .font(onboardingTheme.typography.rowDetails)
-                        .foregroundColor(onboardingTheme.colorPalette.textPrimary)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack(spacing: ComparisonTableMetrics.statusColumnSpacing) {
-                    feature.competitorAvailability.image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: ComparisonTableMetrics.availabilityIconSize, height: ComparisonTableMetrics.availabilityIconSize)
-                        .frame(width: ComparisonTableMetrics.statusColumnWidth)
-
-                    Rectangle()
-                        .fill(ComparisonTableMetrics.separatorColor)
-                        .frame(width: ComparisonTableMetrics.separatorWidth)
-
-                    ddgAvailableFeature
-                        .frame(width: ComparisonTableMetrics.availabilityIconSize, height: ComparisonTableMetrics.availabilityIconSize)
-                        .frame(width: ComparisonTableMetrics.statusColumnWidth)
-                }
+                Text(feature.title)
+                    .font(onboardingTheme.typography.rowDetails)
+                    .foregroundColor(onboardingTheme.colorPalette.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(ComparisonTableMetrics.cellInsets)
+            .padding(.vertical, ComparisonTableMetrics.cellVerticalPadding)
+            .frame(maxWidth: .infinity, minHeight: ComparisonTableMetrics.cellMinHeight, alignment: .leading)
+
+            HStack(spacing: ComparisonTableMetrics.statusColumnSpacing) {
+                feature.competitorAvailability.image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: ComparisonTableMetrics.availabilityIconSize, height: ComparisonTableMetrics.availabilityIconSize)
+                    .frame(width: ComparisonTableMetrics.statusColumnWidth)
+
+                // Stretches to the row height so the separator is continuous across rows.
+                Rectangle()
+                    .fill(ComparisonTableMetrics.separatorColor)
+                    .frame(width: ComparisonTableMetrics.separatorWidth)
+                    .frame(maxHeight: .infinity)
+
+                ddgAvailableFeature
+                    .frame(width: ComparisonTableMetrics.availabilityIconSize, height: ComparisonTableMetrics.availabilityIconSize)
+                    .frame(width: ComparisonTableMetrics.statusColumnWidth)
+            }
         }
-        .frame(height: ComparisonTableMetrics.cellHeight)
-        .clipShape(RoundedRectangle(cornerRadius: ComparisonTableMetrics.cellCornerRadius))
+        .padding(.leading, ComparisonTableMetrics.cellLeadingInset)
+        .padding(.trailing, ComparisonTableMetrics.cellTrailingInset)
+        .fixedSize(horizontal: false, vertical: true) // Sizes the row to its tallest content (at least `cellMinHeight`) and lets the separator fill that height.
+        .background(backgroundColor, in: RoundedRectangle(cornerRadius: ComparisonTableMetrics.cellCornerRadius))
     }
 
     @ViewBuilder

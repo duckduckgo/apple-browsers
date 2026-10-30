@@ -50,7 +50,10 @@ let package = Package(
         // MARK: - Shared Targets
         .target(
             name: "FoundationExtensions",
-            exclude: ["README.md"]
+            exclude: ["README.md"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .target(
             name: "CombineExtensions"
@@ -79,11 +82,15 @@ let package = Package(
         // MARK: - Test Targets
         .testTarget(
             name: "FoundationExtensionsTests",
-            dependencies: ["FoundationExtensions"]
+            dependencies: ["FoundationExtensions"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
         .testTarget(
             name: "ConcurrencyExtensionsTests",
             dependencies: ["ConcurrencyExtensions"]
         ),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

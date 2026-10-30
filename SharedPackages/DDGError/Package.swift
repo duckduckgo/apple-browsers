@@ -35,12 +35,17 @@ let package = Package(
         .target(
             name: "DDGError",
             swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
+                .define("DEBUG", .when(configuration: .debug)),
+                .enableExperimentalFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
             name: "DDGErrorTests",
-            dependencies: ["DDGError"]
+            dependencies: ["DDGError"],
+            swiftSettings: [
+                .enableExperimentalFeature("StrictConcurrency")
+            ]
         ),
-    ]
+    ],
+    swiftLanguageVersions: [.v5]
 )

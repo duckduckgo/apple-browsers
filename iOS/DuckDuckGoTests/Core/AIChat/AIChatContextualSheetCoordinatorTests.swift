@@ -196,7 +196,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
         var modalPresentationCount = 0
         private weak var slidingOutViewController: UIViewController?
 
-        func presentContextualSidebar(_ viewController: UIViewController, animated: Bool) {
+        func presentContextualSidebar(_ viewController: UIViewController, animated: Bool, coversPage: Bool) {
             sidebarPresentations.append(viewController)
             sidebarPresentationsAnimated.append(animated)
             slidingOutViewController = nil

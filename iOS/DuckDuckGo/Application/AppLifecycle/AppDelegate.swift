@@ -28,10 +28,22 @@ import Common
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        let settingsCommand = UIKeyCommand(title: UserText.settingsTitle, action: #selector(MainViewController.keyboardSettings),
-                                          input: ",", modifierFlags: .command)
-        settingsCommand.wantsPriorityOverSystemBehavior = true
-        builder.replaceChildren(ofMenu: .preferences) { _ in [settingsCommand] }
+        // UIKit can request menus before normal launch setup or during simulated launches.
+        // Access the shared provider only after launch setup has initialized it, even when the menu flag is enabled.
+        let menuService: MainMenuService?
+        switch appStateMachine.currentState {
+        case .launching, .connected, .foreground, .background:
+            menuService = AppDependencyProvider.shared.mainMenuService
+        case .initializing, .simulated, .terminating:
+            menuService = nil
+        }
+
+        if let menuService {
+            menuService.buildMenu(with: builder)
+        } else {
+            let baselineMenu = MainMenuSpec(isEnabled: false)
+            MainMenuBuilder().build(baselineMenu, with: builder)
+        }
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

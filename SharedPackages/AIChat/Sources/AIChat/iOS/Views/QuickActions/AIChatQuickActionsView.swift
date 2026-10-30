@@ -111,8 +111,8 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
     }
 
     /// The chips in display order, for a host animating them individually.
-    public var chipViews: [UIView] {
-        chips
+    public var chipViews: [AIChatQuickActionChipView] {
+        chips.compactMap { $0 as? AIChatQuickActionChipView }
     }
 
     private var chips: [UIView] {

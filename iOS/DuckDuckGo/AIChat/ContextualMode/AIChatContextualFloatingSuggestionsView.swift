@@ -24,6 +24,16 @@ import UIKit
 /// Each chip flies out from where its twin sat in the column, so the list visibly leaves the sidebar.
 final class AIChatContextualFloatingSuggestionsView: UIView {
 
+    /// The column's input as the keyboard moves it, in the column's superview. It stays above the chips,
+    /// so a chip passing under it is hidden rather than drawn over its text.
+    struct InputEdge {
+        let leading: CGFloat
+        let fromTop: CGFloat
+        let toTop: CGFloat
+        /// UIKit's animation of the input's move, whose timing the edge copies so the two stay together.
+        let motion: CABasicAnimation
+    }
+
     private enum Constants {
         static let columnSpacing: CGFloat = 16
         static let keyboardSpacing: CGFloat = 16
@@ -37,7 +47,12 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         static let restyleDelay: TimeInterval = 0.08
         static let stagger: TimeInterval = 0.035
         static let dimmedAlpha: CGFloat = 0.4
+        /// The column's gap between its chips and the input, over which a chip passing under the input fades out.
+        static let inputEdgeFade: CGFloat = 12
     }
+
+    /// Show and hide run inside the keyboard's animation, which their own timing must not inherit.
+    private static let ownTiming: UIView.AnimationOptions = [.overrideInheritedDuration, .overrideInheritedCurve, .overrideInheritedOptions]
 
     var onActionSelected: ((ContextualSheetAction) -> Void)? {
         get { chipsView.onActionSelected }
@@ -122,8 +137,8 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
 
     /// Places the chips beside `column`, just above `keyboardTop` (in the column's superview), flying each one out
     /// from the matching frame in `sourceFrames`; chips without one fade in from the column's edge.
-    /// The exact reverse of `hide(animated:to:completion:)`, so the stack leaves the way it comes back.
-    func show(beside column: UIView, keyboardTop: CGFloat, from sourceFrames: [CGRect]) {
+    /// The exact reverse of `hide(animated:to:under:completion:)`, so the stack leaves the way it comes back.
+    func show(beside column: UIView, keyboardTop: CGFloat, from sourceFrames: [CGRect?], under input: InputEdge?) {
         guard let host = column.superview else { return }
         if superview !== host {
             removeFromSuperview()
@@ -135,78 +150,77 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         }
         self.column = column
         self.keyboardTop = keyboardTop
-        UIView.performWithoutAnimation { isSteppedAside = false }
         isShown = true
         removeTakeoffStandIns()
         let chips = chipViews
-        var standIns: [UIView?] = []
-        // Outside the keyboard's animation, which this is often called from: the chips start where they take off.
+        var standIns: [AIChatQuickActionChipView?] = []
+        // The chips start where they take off, rather than animating there with the keyboard.
         UIView.performWithoutAnimation {
+            isSteppedAside = false
             updateFrame()
             for (index, chip) in chips.enumerated() {
                 chip.layer.removeAllAnimations()
                 chip.alpha = 0
-                guard index < sourceFrames.count, index < actions.count else {
+                guard index < actions.count, index < sourceFrames.count, let source = sourceFrames[index] else {
                     chip.transform = tuckedTransform
                     standIns.append(nil)
                     continue
                 }
-                chip.transform = transform(from: sourceFrames[index], to: chip, in: host)
                 // Exactly over its twin in the column, which hides as this appears, so the handover changes no pixel.
-                let source = convert(sourceFrames[index], from: host)
-                let standIn = makeColumnStyleStandIn(for: actions[index])
-                standIn.center = CGPoint(x: source.midX, y: source.midY)
+                let standIn = makeColumnStyleStandIn(for: actions[index], size: source.size)
+                standIn.center = convert(CGPoint(x: source.midX, y: source.midY), from: host)
+                chip.transform = transform(of: chip, ontoTitleOf: standIn, centeredAt: standIn.center)
                 standIns.append(standIn)
             }
         }
-        let chipStandIns = standIns
         takeoffStandIns = standIns.compactMap { $0 }
-        // A pass later, once that start is on screen; a view added in this pass has nothing to animate from.
-        DispatchQueue.main.async { [weak self] in
-            guard let self, isShown else { return }
-            UIView.animate(withDuration: Constants.flightDuration,
-                           delay: 0,
-                           options: [.curveEaseInOut, .allowUserInteraction, .beginFromCurrentState]) {
-                self.pageDimView.alpha = self.pageDimAlpha
-            }
-            let takeoffs = DispatchGroup()
-            for (index, chip) in chips.enumerated() {
-                let delay = Double(index) * Constants.stagger
-                guard let standIn = chipStandIns[index] else {
-                    UIView.animate(withDuration: Constants.fadeDuration,
-                                   delay: delay,
-                                   options: [.curveEaseOut, .allowUserInteraction, .beginFromCurrentState]) {
-                        chip.transform = .identity
-                        chip.alpha = 1
-                    }
-                    continue
-                }
-                let cover = covering(chip, with: standIn)
-                takeoffs.enter()
-                UIView.animate(withDuration: Constants.flightDuration,
+        let inputCover = hideWhatPassesUnder(input, in: host)
+
+        UIView.animate(withDuration: Constants.flightDuration,
+                       delay: 0,
+                       options: [.curveEaseInOut, .allowUserInteraction, .beginFromCurrentState, Self.ownTiming]) {
+            self.pageDimView.alpha = self.pageDimAlpha
+        }
+        let takeoffs = DispatchGroup()
+        for (index, chip) in chips.enumerated() {
+            let delay = Double(index) * Constants.stagger
+            guard let standIn = standIns[index] else {
+                UIView.animate(withDuration: Constants.fadeDuration,
                                delay: delay,
-                               usingSpringWithDamping: Constants.flightDamping,
-                               initialSpringVelocity: 0,
-                               options: [.allowUserInteraction, .beginFromCurrentState],
-                               animations: {
-                                   chip.transform = .identity
-                                   standIn.center = cover.center
-                                   standIn.transform = cover.transform
-                               },
-                               completion: { _ in takeoffs.leave() })
-                // The column's look turns into the glass on the way, timed as the reverse of the trip home.
-                let restyleDelay = Constants.flightDuration - Constants.restyleDelay - Constants.restyleDuration
-                UIView.animate(withDuration: Constants.restyleDuration,
-                               delay: delay + restyleDelay,
-                               options: [.curveEaseInOut, .allowUserInteraction]) {
+                               options: [.curveEaseOut, .allowUserInteraction, .beginFromCurrentState, Self.ownTiming]) {
+                    chip.transform = .identity
                     chip.alpha = 1
-                    standIn.alpha = 0
                 }
+                continue
             }
-            let launched = takeoffStandIns
-            takeoffs.notify(queue: .main) { [weak self] in
-                guard let self, takeoffStandIns == launched else { return }
-                removeTakeoffStandIns()
+            let cover = pose(of: standIn, coveringTitleOf: chip)
+            takeoffs.enter()
+            UIView.animate(withDuration: Constants.flightDuration,
+                           delay: delay,
+                           usingSpringWithDamping: Constants.flightDamping,
+                           initialSpringVelocity: 0,
+                           options: [.allowUserInteraction, .beginFromCurrentState, Self.ownTiming],
+                           animations: {
+                               chip.transform = .identity
+                               standIn.center = cover.center
+                               standIn.transform = cover.transform
+                           },
+                           completion: { _ in takeoffs.leave() })
+            // The column's look turns into the glass on the way, timed as the reverse of the trip home.
+            let restyleDelay = Constants.flightDuration - Constants.restyleDelay - Constants.restyleDuration
+            UIView.animate(withDuration: Constants.restyleDuration,
+                           delay: delay + restyleDelay,
+                           options: [.curveEaseInOut, .allowUserInteraction, Self.ownTiming]) {
+                chip.alpha = 1
+                standIn.alpha = 0
+            }
+        }
+        let launched = takeoffStandIns
+        takeoffs.notify(queue: .main) { [weak self] in
+            guard let self, takeoffStandIns == launched else { return }
+            removeTakeoffStandIns()
+            if mask === inputCover {
+                mask = nil
             }
         }
     }
@@ -239,7 +253,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
 
     /// Flies each chip back onto its twin's frame in `targetFrames` (in the column's superview), or fades it.
     /// `completion` runs once all have landed, when the column's own chips can take over.
-    func hide(animated: Bool, to targetFrames: [CGRect] = [], completion: (() -> Void)? = nil) {
+    func hide(animated: Bool, to targetFrames: [CGRect] = [], under input: InputEdge? = nil, completion: (() -> Void)? = nil) {
         guard isShown else {
             completion?()
             return
@@ -248,13 +262,15 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         removeTakeoffStandIns()
         let chips = chipViews
         guard animated, !chips.isEmpty, let host = superview else {
+            mask = nil
             removeFromSuperview()
             pageDimView.removeFromSuperview()
             pageDimView.alpha = 0
             completion?()
             return
         }
-        UIView.animate(withDuration: Constants.flightDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState]) {
+        hideWhatPassesUnder(input, in: host)
+        UIView.animate(withDuration: Constants.flightDuration, delay: 0, options: [.curveEaseInOut, .beginFromCurrentState, Self.ownTiming]) {
             self.pageDimView.alpha = 0
         }
 
@@ -269,7 +285,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             guard index < targetFrames.count, index < actions.count else {
                 UIView.animate(withDuration: Constants.fadeDuration,
                                delay: delay,
-                               options: [.curveEaseIn, .beginFromCurrentState],
+                               options: [.curveEaseIn, .beginFromCurrentState, Self.ownTiming],
                                animations: {
                                    chip.transform = self.tuckedTransform
                                    chip.alpha = 0
@@ -277,26 +293,33 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
                                completion: landed)
                 continue
             }
-            let target = convert(targetFrames[index], from: host)
-            let standIn = makeColumnStyleStandIn(for: actions[index])
-            let cover = covering(chip, with: standIn)
-            standIn.center = cover.center
-            standIn.transform = cover.transform
-            standIn.alpha = 0
+            let target = targetFrames[index]
+            let standIn = makeColumnStyleStandIn(for: actions[index], size: target.size)
+            let cover = pose(of: standIn, coveringTitleOf: chip)
+            // Outside the keyboard's animation, which this is often called from: the copy starts on the glass chip.
+            UIView.performWithoutAnimation {
+                standIn.center = cover.center
+                standIn.transform = cover.transform
+                standIn.alpha = 0
+            }
             standIns.append(standIn)
+            let landing = convert(CGPoint(x: target.midX, y: target.midY), from: host)
+            let chipLanding = transform(of: chip, ontoTitleOf: standIn, centeredAt: landing)
             UIView.animate(withDuration: Constants.flightDuration,
                            delay: delay,
                            usingSpringWithDamping: Constants.flightDamping,
                            initialSpringVelocity: 0,
-                           options: [.beginFromCurrentState],
+                           options: [.beginFromCurrentState, Self.ownTiming],
                            animations: {
-                               chip.transform = self.transform(from: targetFrames[index], to: chip, in: host)
-                               standIn.center = CGPoint(x: target.midX, y: target.midY)
+                               chip.transform = chipLanding
+                               standIn.center = landing
                                standIn.transform = .identity
                            },
                            completion: landed)
             // The glass turns into the column's look on the way, so it lands as an exact copy of its twin.
-            UIView.animate(withDuration: Constants.restyleDuration, delay: delay + Constants.restyleDelay, options: [.curveEaseInOut]) {
+            UIView.animate(withDuration: Constants.restyleDuration,
+                           delay: delay + Constants.restyleDelay,
+                           options: [.curveEaseInOut, Self.ownTiming]) {
                 chip.alpha = 0
                 standIn.alpha = 1
             }
@@ -306,26 +329,76 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
             // The column's chips now sit exactly under the stand-ins, so removing them changes no pixel.
             standIns.forEach { $0.removeFromSuperview() }
             guard let self, !isShown else { return }
+            mask = nil
             removeFromSuperview()
             pageDimView.removeFromSuperview()
         }
     }
 
-    /// A chip in the column's own style, at its natural size, for a glass chip to cross-fade with in flight.
-    private func makeColumnStyleStandIn(for action: ContextualSheetAction) -> UIView {
+    /// Masks out whatever of the chips is under the input's top edge, moving that edge as the keyboard moves the input.
+    @discardableResult
+    private func hideWhatPassesUnder(_ input: InputEdge?, in host: UIView) -> UIView? {
+        guard let input else {
+            mask = nil
+            return nil
+        }
+        let reach = convert(host.bounds, from: host).insetBy(dx: -host.bounds.width, dy: -host.bounds.height)
+        let cover = UnderInputMask(frame: reach,
+                                   inputLeading: convert(CGPoint(x: input.leading, y: 0), from: host).x,
+                                   fade: Constants.inputEdgeFade)
+        mask = cover
+        cover.moveInputTop(from: convert(CGPoint(x: 0, y: input.fromTop), from: host).y,
+                           to: convert(CGPoint(x: 0, y: input.toTop), from: host).y,
+                           alongside: input.motion)
+        return cover
+    }
+
+    /// A chip in the column's own style, sized like its twin in the column, for a glass chip to cross-fade with in flight.
+    /// Built outside any animation in progress, such as the keyboard's, so its title doesn't grow in from nothing.
+    private func makeColumnStyleStandIn(for action: ContextualSheetAction, size: CGSize) -> AIChatQuickActionChipView {
         let standIn = AIChatQuickActionChipView()
-        standIn.configure(with: action)
-        standIn.bounds = CGRect(origin: .zero, size: standIn.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize))
-        standIn.isUserInteractionEnabled = false
-        addSubview(standIn)
+        UIView.performWithoutAnimation {
+            standIn.configure(with: action)
+            standIn.bounds = CGRect(origin: .zero, size: size)
+            standIn.isUserInteractionEnabled = false
+            addSubview(standIn)
+            standIn.layoutIfNeeded()
+        }
         return standIn
     }
 
-    /// Where `standIn` sits, and how it scales, to cover `chip` at its laid-out spot, whatever transform the chip has.
-    private func covering(_ chip: UIView, with standIn: UIView) -> (center: CGPoint, transform: CGAffineTransform) {
-        let center = chip.superview?.convert(chip.center, to: self) ?? chip.center
-        let scale = standIn.bounds.width > 0 ? chip.bounds.width / standIn.bounds.width : 1
+    /// Where `standIn` sits, and how it scales, to lay its title exactly over `chip`'s at the chip's laid-out spot.
+    /// The two styles differ in font and padding, so lining up their titles is what shows a single chip mid-fade.
+    private func pose(of standIn: AIChatQuickActionChipView,
+                      coveringTitleOf chip: AIChatQuickActionChipView) -> (center: CGPoint, transform: CGAffineTransform) {
+        let chipCenter = chip.superview?.convert(chip.center, to: self) ?? chip.center
+        let standInTitle = standIn.titleFrame
+        guard standInTitle.width > 0 else { return (chipCenter, .identity) }
+        let scale = chip.titleFrame.width / standInTitle.width
+        let chipTitle = titleOffset(of: chip), standInTitleOffset = titleOffset(of: standIn)
+        let center = CGPoint(x: chipCenter.x + chipTitle.dx - standInTitleOffset.dx * scale,
+                             y: chipCenter.y + chipTitle.dy - standInTitleOffset.dy * scale)
         return (center, CGAffineTransform(scaleX: scale, y: scale))
+    }
+
+    /// Lays `chip`'s title exactly over the title of `standIn` centred at `center`, wherever the chip sits now.
+    /// Measured from `center` and `bounds`, which ignore the landing transform a chip keeps after flying home.
+    private func transform(of chip: AIChatQuickActionChipView,
+                           ontoTitleOf standIn: AIChatQuickActionChipView,
+                           centeredAt center: CGPoint) -> CGAffineTransform {
+        let chipTitleWidth = chip.titleFrame.width
+        guard let container = chip.superview, chipTitleWidth > 0 else { return tuckedTransform }
+        let scale = standIn.titleFrame.width / chipTitleWidth
+        let chipCenter = container.convert(chip.center, to: self)
+        let chipTitle = titleOffset(of: chip), standInTitle = titleOffset(of: standIn)
+        return CGAffineTransform(translationX: center.x + standInTitle.dx - chipCenter.x - chipTitle.dx * scale,
+                                 y: center.y + standInTitle.dy - chipCenter.y - chipTitle.dy * scale)
+            .scaledBy(x: scale, y: scale)
+    }
+
+    private func titleOffset(of chip: AIChatQuickActionChipView) -> CGVector {
+        let title = chip.titleFrame
+        return CGVector(dx: title.midX - chip.bounds.midX, dy: title.midY - chip.bounds.midY)
     }
 
     private func removeTakeoffStandIns() {
@@ -333,7 +406,7 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         takeoffStandIns = []
     }
 
-    private var chipViews: [UIView] {
+    private var chipViews: [AIChatQuickActionChipView] {
         chipsView.chipViews.filter { !$0.isHidden }
     }
 
@@ -342,18 +415,53 @@ final class AIChatContextualFloatingSuggestionsView: UIView {
         CGAffineTransform(translationX: Constants.hiddenOffset, y: 0)
             .scaledBy(x: Constants.hiddenScale, y: Constants.hiddenScale)
     }
+}
 
-    /// Maps `chip` at its laid-out frame onto `source`. Measured from `center` and `bounds`, which ignore the
-    /// landing transform a chip keeps after flying home; `convert(_:to:)` would fold it into the target.
-    private func transform(from source: CGRect, to chip: UIView, in host: UIView) -> CGAffineTransform {
-        guard let container = chip.superview else { return tuckedTransform }
-        let center = container.convert(chip.center, to: host)
-        let size = chip.bounds.size
-        let target = CGRect(x: center.x - size.width / 2, y: center.y - size.height / 2, width: size.width, height: size.height)
-        guard target.width > 0, target.height > 0 else { return tuckedTransform }
-        // By width, so the larger glass text lines up with its twin's as it lands.
-        let scale = source.width / target.width
-        return CGAffineTransform(translationX: source.midX - target.midX, y: source.midY - target.midY)
-            .scaledBy(x: scale, y: scale)
+// MARK: - Under Input Mask
+
+/// Shows everything but what lies under the input: right of its leading edge and below its top, fading in over `fade`
+/// above the top so a chip slips under the card rather than being cut off by a line.
+/// Animated with Core Animation: a mask is outside the window, where UIKit animates nothing.
+private final class UnderInputMask: UIView {
+
+    private let besideInput = CALayer()
+    private let aboveInput = CAGradientLayer()
+
+    init(frame: CGRect, inputLeading: CGFloat, fade: CGFloat) {
+        super.init(frame: frame)
+        besideInput.backgroundColor = UIColor.black.cgColor
+        besideInput.frame = CGRect(x: 0, y: 0, width: max(0, inputLeading - frame.minX), height: frame.height)
+        aboveInput.frame = CGRect(origin: .zero, size: frame.size)
+        aboveInput.colors = [UIColor.black.cgColor, UIColor.black.cgColor, UIColor.black.withAlphaComponent(0).cgColor]
+        aboveInput.locations = [0, NSNumber(value: Double(1 - fade / frame.height)), 1]
+        layer.addSublayer(aboveInput)
+        layer.addSublayer(besideInput)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Tops in the masked view's space. Moves the opaque part rather than resizing it, so the fade keeps its length.
+    func moveInputTop(from start: CGFloat, to end: CGFloat, alongside motion: CABasicAnimation) {
+        let startY = positionY(forInputTop: start), endY = positionY(forInputTop: end)
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        aboveInput.position.y = endY
+        CATransaction.commit()
+        guard startY != endY, let edge = motion.copy() as? CABasicAnimation else { return }
+        // A copy keeps UIKit's delegate, which mustn't hear of an animation it didn't start.
+        edge.delegate = nil
+        edge.keyPath = "position.y"
+        edge.isAdditive = false
+        edge.fromValue = startY
+        edge.toValue = endY
+        edge.byValue = nil
+        edge.isRemovedOnCompletion = true
+        aboveInput.add(edge, forKey: "inputTop")
+    }
+
+    private func positionY(forInputTop top: CGFloat) -> CGFloat {
+        top - frame.minY - aboveInput.bounds.height / 2
     }
 }

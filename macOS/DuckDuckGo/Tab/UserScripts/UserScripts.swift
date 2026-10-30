@@ -67,7 +67,7 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
     let faviconScript = FaviconUserScript()
     let webTelemetryScript = WebTelemetryUserScript()
     let tabSuspensionScript = TabSuspensionUserScript()
-    let sponsorBlockSubfeature = SponsorBlockSubfeature()
+    let sponsorBlockSubfeature: SponsorBlockSubfeature
     /// `WebExtensionPageStubUserScript`, typed loosely because the class needs macOS 15.4.
     /// `nil` when web extensions are unavailable or the user is not an internal user.
     let webExtensionPageStubUserScript: UserScript?
@@ -82,6 +82,8 @@ final class UserScripts: UserScriptsProvider, ReleaseNotesUserScriptProvider {
          aiChatDebugURLSettings: (any KeyedStoring<AIChatDebugURLSettings>)? = nil) {
 
         self.contentScopePreferences = contentScopePreferences
+        let featureFlagger = sourceProvider.featureFlagger
+        sponsorBlockSubfeature = SponsorBlockSubfeature(isEnabled: { featureFlagger.isFeatureOn(.sponsorBlock) })
         if #available(macOS 15.4, *) {
             chromeWebStoreUserScript = ChromeWebStoreUserScript(serviceProvider: {
                 NSApp.delegateTyped.webExtensionManager?.chromeWebStore

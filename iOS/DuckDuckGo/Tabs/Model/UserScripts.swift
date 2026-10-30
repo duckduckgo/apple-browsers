@@ -75,7 +75,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var mediaCaptureUserScript: MediaCaptureUserScript?
     private(set) var geolocationUserScript: GeolocationUserScript?
     private(set) var printingSubfeature = PrintingSubfeature()
-    private(set) var sponsorBlockSubfeature = SponsorBlockSubfeature()
+    private(set) var sponsorBlockSubfeature: SponsorBlockSubfeature
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
     private let isAutoconsentExtensionAvailable: Bool
@@ -94,6 +94,7 @@ final class UserScripts: UserScriptsProvider {
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
 
         selectionFrameScript = SelectionFrameUserScript()
+        sponsorBlockSubfeature = SponsorBlockSubfeature(isEnabled: { featureFlagger.isFeatureOn(.sponsorBlock) })
         self.mediaCaptureUserScript = mediaCaptureUserScript
         self.geolocationUserScript = sitePermissionsEnabled ? geolocationUserScript : nil
 

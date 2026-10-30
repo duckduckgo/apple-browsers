@@ -43,9 +43,12 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     public weak var broker: UserScriptMessageBroker?
 
     private let segmentsProvider: SponsorBlockSegmentsProvider
+    /// Combined gate (feature flag, later also the user setting); the page is answered with no segments while it is off.
+    private let isEnabled: () -> Bool
 
-    public init(segmentsProvider: SponsorBlockSegmentsProvider = .shared) {
+    public init(segmentsProvider: SponsorBlockSegmentsProvider = .shared, isEnabled: @escaping () -> Bool) {
         self.segmentsProvider = segmentsProvider
+        self.isEnabled = isEnabled
         super.init()
     }
 
@@ -74,6 +77,7 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
     /// Rejects malformed params, but every lookup failure resolves to an empty list: the page never retries.
     private func handleGetSegments(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         let query = try SponsorBlockSegmentsProvider.Query(params: params)
+        guard isEnabled() else { return GetSegmentsResponse(segments: []) }
         do {
             return GetSegmentsResponse(segments: try await segmentsProvider.segments(for: query))
         } catch {

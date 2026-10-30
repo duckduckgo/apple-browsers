@@ -1081,12 +1081,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     private func scheduleBackgroundLoadRecovery(_ attempt: BackgroundLoadRecoveryAttempt) -> Bool {
         guard let context = attempt.context, canRecoverBackgroundLoad(in: context) else { return false }
-        guard !isApplicationInBackground() else {
+        guard !isApplicationInBackground(), !isBackgroundLoadRecoveryScheduled else {
+            // Preserve the newest failure even in foreground: a queued attempt may skip its old view.
             pendingBackgroundLoadRecovery = attempt
             return false
         }
-        guard !isBackgroundLoadRecoveryScheduled,
-              lastBackgroundLoadRecoveryAt.map({ now().timeIntervalSince($0) >= 60 }) ?? true else { return false }
+        guard lastBackgroundLoadRecoveryAt.map({ now().timeIntervalSince($0) >= 60 }) ?? true else { return false }
         pendingBackgroundLoadRecovery = nil
         isBackgroundLoadRecoveryScheduled = true
         Task { @MainActor [weak self] in

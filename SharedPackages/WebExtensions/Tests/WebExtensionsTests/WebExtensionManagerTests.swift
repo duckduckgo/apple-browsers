@@ -709,6 +709,31 @@ final class WebExtensionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testNewForegroundError6SurvivesOlderQueuedTask() async throws {
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { false })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let firstError = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [firstError]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // Before the queued task runs, WebKit creates another view which also fails in foreground.
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [firstError, NSError(domain: WKWebExtensionContext.errorDomain, code: 6,
+                                                     userInfo: [NSLocalizedDescriptionKey: "New background load failure"])]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let requested = expectation(description: "The newer foreground failure must survive the queued attempt")
+        context.onBackgroundLoad = { requested.fulfill() }
+        await fulfillment(of: [requested], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
     func testNewBackgroundError6SurvivesForegroundBeforeOlderQueuedTask() async throws {
         var isBackground = false
         let pixels = CapturingCPMRestartPixels()

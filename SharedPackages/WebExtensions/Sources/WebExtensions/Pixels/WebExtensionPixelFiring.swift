@@ -98,6 +98,8 @@ public enum WebExtensionPixelEvent {
     /// Intermediate initialization failures, stuck confirmation and reload checks stay local.
     case cpmMessagingEpisode(CPMMessagingEpisodeReport)
     case cpmRecovery(CPMRecoveryFix, outcome: CPMRecoveryOutcome)
+    /// Stages and one terminal observation for a retained-background error-6 restart.
+    case cpmBackgroundLoadRestart(CPMBackgroundLoadRestartOutcome)
     /// Missing first-document dashboard response after a successful first background startup.
     case cpmStartupResponseMissing
 
@@ -250,8 +252,28 @@ private extension WebExtensionReloadTrigger {
         case .scriptletUpdate: return "scriptlet_update"
         case .explicit: return "explicit"
         case .cpmMessagingHang: return "cpm_messaging_hung"
+        case .cpmBackgroundLoadFailure: return "cpm_background_load_failed"
         }
     }
+}
+
+/// Background readiness alone is not proof that a page received its dashboard response.
+public enum CPMBackgroundLoadRestartOutcome: String, CaseIterable, Sendable {
+    case restartStarted = "restart_started"
+    case backgroundReady = "background_ready"
+    case responseReceived = "response_received"
+    /// A measured navigation timed out and no qualifying response arrived within five active minutes.
+    /// This is an observation deadline, not proof of permanent breakage.
+    case noResponseBeforeDeadline = "no_response_before_deadline"
+    /// No post-restart navigation timeout or attributable response was observed by the deadline.
+    case unobserved
+    /// Another context reload or embedded upgrade ended attribution to this restart.
+    case superseded
+    case reloadFailed = "reload_failed"
+    case reloadTimedOut = "reload_timed_out"
+    /// A further error-6 restart was blocked after three attempts without observed messaging recovery.
+    /// Reported once per exhausted budget, independently of the last restart's terminal observation.
+    case restartLimitReached = "restart_limit_reached"
 }
 
 /// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.
@@ -267,6 +289,10 @@ public struct CPMWebExtensionPixelMetadata: Equatable, Sendable {
             name = "web_extension_cpm_startup_response_missing"
             frequency = .dailyAndCount
             parameters = [:]
+        case .cpmBackgroundLoadRestart(let outcome):
+            name = "web_extension_cpm_background_load_restart"
+            frequency = .dailyAndCount
+            parameters = ["outcome": outcome.rawValue]
         case .cpmRecovery(let fix, let outcome):
             name = "web_extension_cpm_\(fix.rawValue)"
             frequency = .dailyAndCount

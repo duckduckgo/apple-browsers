@@ -317,7 +317,7 @@ class TabsBarViewController: UIViewController {
             return
         }
         overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .aiChatChromeShortcutIPad || $0.0 == .aiChatChromeMenuButtonIPad }
+            .filter { $0.0 == .aiChatChromeShortcutIPad }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updateAIChatButtonVisibility()

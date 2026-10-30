@@ -5098,6 +5098,9 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the Sync Promotion banner */
 "sync.promo.bookmarks.title" = "Sync & Back Up Your Bookmarks";
 
+/* Accessibility label for the close button on the Sync Promotion banner */
+"sync.promo.close.accessibility.label" = "Dismiss sync promotion";
+
 /* Title for a button in the Sync Promotion banner to set up Sync */
 "sync.promo.confirm.action" = "Set Up Sync";
 

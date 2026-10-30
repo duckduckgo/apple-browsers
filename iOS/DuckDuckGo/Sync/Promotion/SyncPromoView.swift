@@ -78,7 +78,8 @@ struct SyncPromoView: View {
             }
             .buttonStyle(CloseButtonStyle())
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
-            .accessibilityHidden(true)
+            .accessibilityLabel(UserText.syncPromoCloseAccessibilityLabel)
+            .accessibilityHidden(viewModel.secondaryButtonTitle != nil)
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)

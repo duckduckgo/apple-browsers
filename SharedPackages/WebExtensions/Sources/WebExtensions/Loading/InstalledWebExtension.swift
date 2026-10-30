@@ -55,7 +55,7 @@ public struct InstalledWebExtension: Codable, Equatable, Identifiable {
     public var cpmOriginIdentifier: UUID?
 
     private enum CodingKeys: String, CodingKey {
-        case uniqueIdentifier, filename, name, version, embeddedType, storeIdentity, isDisabled
+        case uniqueIdentifier, filename, name, version, embeddedType, storeIdentity, permissions, isDisabled
         case cpmOriginIdentifier = "cpmStableOriginIdentifier"
     }
 

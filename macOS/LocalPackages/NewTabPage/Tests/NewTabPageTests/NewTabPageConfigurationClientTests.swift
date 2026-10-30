@@ -176,6 +176,18 @@ final class NewTabPageConfigurationClientTests: XCTestCase {
             .init(id: .protections, isVisible: sectionsVisibilityProvider.isProtectionsReportVisible),
         ])
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
+        XCTAssertNil(configuration.omnibar)
+    }
+
+    @MainActor
+    func testThatInitialSetupReturnsOmnibarConfiguration() async throws {
+        sectionsAvailabilityProvider.isOmnibarAvailable = true
+        omnibarConfigProvider.mode = .ai
+        omnibarConfigProvider.isAIChatShortcutEnabled = true
+        omnibarConfigProvider.isAIChatSettingVisible = false
+
+        let configuration: NewTabPageDataModel.NewTabPageConfiguration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.omnibar, .init(mode: .ai, enableAi: true, showAiSetting: false))
     }
 
     // MARK: - widgetsSetConfig

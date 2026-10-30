@@ -37,6 +37,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -45,6 +46,27 @@ final class PreferencesSectionTests: XCTestCase {
         XCTAssertFalse(regularPanesSection.panes.contains(.sync))
         XCTAssertFalse(regularPanesSection.panes.contains(.aiChat))
         XCTAssertFalse(regularPanesSection.panes.contains(.websitePermissions))
+        XCTAssertFalse(regularPanesSection.panes.contains(.extensions))
+    }
+
+    func testExtensionsPaneAddedBeforeAutofillWhenEnabled() throws {
+        // Given
+        let subscriptionState = PreferencesSidebarSubscriptionState()
+
+        // When
+        let sections = PreferencesSection.defaultSections(includingDuckPlayer: false,
+                                                          includingSync: false,
+                                                          includingAIChat: false,
+                                                          includingYouTubeAdBlocking: false,
+                                                          includingWebsitePermissions: false,
+                                                          includingExtensions: true,
+                                                          subscriptionState: subscriptionState)
+
+        // Then
+        let regularPanesSection = sections.first { $0.id == .regularPreferencePanes }!
+        let extensionsIndex = try XCTUnwrap(regularPanesSection.panes.firstIndex(of: .extensions))
+        let autofillIndex = try XCTUnwrap(regularPanesSection.panes.firstIndex(of: .autofill))
+        XCTAssertEqual(extensionsIndex + 1, autofillIndex)
     }
 
     func testWebsitePermissionsPaneAddedBeforeSyncWhenEnabled() throws {
@@ -57,6 +79,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: true,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -79,6 +102,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -101,6 +125,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -123,6 +148,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: shouldIncludeAIChat,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -143,6 +169,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -161,6 +188,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -190,6 +218,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -211,6 +240,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -234,6 +264,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -255,6 +286,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then
@@ -275,6 +307,7 @@ final class PreferencesSectionTests: XCTestCase {
                                                           includingAIChat: false,
                                                           includingYouTubeAdBlocking: false,
                                                           includingWebsitePermissions: false,
+                                                          includingExtensions: false,
                                                           subscriptionState: subscriptionState)
 
         // Then

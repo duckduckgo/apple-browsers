@@ -31,6 +31,10 @@ public protocol ChromeWebStoreManaging: AnyObject {
     /// The catalog's entry for the extension with the Chrome Web Store `identifier`, such as `.bitwarden`,
     /// or `nil` for an extension the catalog doesn't list.
     func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature?
+    /// The entry's store listing, or `nil` when its `name` or `cwsUri` is missing.
+    func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing?
+    /// The help page about adding extensions, or `nil` when the configuration doesn't set one.
+    var learnMoreURL: URL? { get }
 }
 
 @available(macOS 15.4, iOS 18.4, *)
@@ -79,6 +83,14 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
 
     public func catalogEntry(of identifier: String) -> ExtensionsCatalogSubfeature? {
         catalog.catalogEntry(of: identifier)
+    }
+
+    public func listing(of subfeature: ExtensionsCatalogSubfeature) -> ChromeWebStoreListing? {
+        catalog.listing(of: subfeature)
+    }
+
+    public var learnMoreURL: URL? {
+        catalog.learnMoreURL
     }
 
     public func status(for identifier: String) -> ChromeWebStoreStatus {
@@ -137,12 +149,11 @@ public final class ChromeWebStoreService: ChromeWebStoreManaging {
     }
 
     public func remove(identifier: String) async -> Bool {
-        guard !isPerformingOperation, let manager, catalog.contains(identifier),
+        guard !isPerformingOperation, let manager,
               let installed = installedExtension(identifier, manager: manager) else { return false }
         isPerformingOperation = true
         defer { isPerformingOperation = false }
-        guard await presenter.confirmRemoval(name: installed.name ?? identifier),
-              catalog.contains(identifier) else { return false }
+        guard await presenter.confirmRemoval(name: installed.name ?? identifier) else { return false }
         // Another browser entry point (e.g. Debug) may have removed it while the sheet was open.
         guard installedExtension(identifier, manager: manager) != nil else { return true }
         do {

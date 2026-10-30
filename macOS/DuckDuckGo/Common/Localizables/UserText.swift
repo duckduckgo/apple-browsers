@@ -43,6 +43,56 @@ struct UserText {
     static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
     static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
     static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
+    static let betaBadge = NotLocalizedString("webExtensions.settings.beta-badge", value: "Beta", comment: "Copy of badge used to indicate the Extensions settings are in beta")
+    static let extensionsSettingsTitle = NotLocalizedString("webExtensions.settings.title", value: "Extensions", comment: "Title of the option to show the Extensions settings")
+    static let extensionsSettingsDescription = NotLocalizedString("webExtensions.settings.description", value: "Customize your browsing experience with supported third-party extensions. %@", comment: "Description of the Extensions settings; the placeholder is a Learn more link")
+    static let extensionsSettingsLearnMore = NotLocalizedString("webExtensions.settings.learn-more", value: "Learn more", comment: "Link in the Extensions settings description")
+    static let extensionsSettingsAddedHeader = NotLocalizedString("webExtensions.settings.added", value: "Added", comment: "Header of the installed extensions section in the Extensions settings")
+    static let extensionsSettingsMoreExtensionsHeader = NotLocalizedString("webExtensions.settings.more-extensions", value: "More Extensions", comment: "Header of the section listing extensions available to install in the Extensions settings")
+    static let extensionsSettingsPasswordManagersHeader = NotLocalizedString("webExtensions.settings.password-managers", value: "Password Managers", comment: "Header of the password manager extensions section in the Extensions settings")
+    static let extensionsSettingsDetailsMenuItem = NotLocalizedString("webExtensions.settings.details", value: "Details", comment: "Menu item that shows the details of an installed extension in the Extensions settings")
+    static let extensionsSettingsMoreOptions = NotLocalizedString("webExtensions.settings.more-options", value: "More Options", comment: "Accessibility label of the button that shows more options for an installed extension in the Extensions settings")
+    static let extensionsSettingsBack = NotLocalizedString("webExtensions.settings.back", value: "Back", comment: "Accessibility label of the button that returns from an extension's details to the Extensions settings")
+    static let extensionsSettingsVersion = NotLocalizedString("webExtensions.settings.version", value: "Version", comment: "Title of the row showing an installed extension's version in its details")
+    static let extensionsSettingsSource = NotLocalizedString("webExtensions.settings.source", value: "Source", comment: "Title of the row showing where an installed extension came from in its details")
+    static let extensionsSettingsChromeWebStore = NotLocalizedString("webExtensions.settings.chrome-web-store", value: "Chrome Web Store", comment: "Source of an extension installed from the Chrome Web Store")
+    static let extensionsSettingsPermissions = NotLocalizedString("webExtensions.settings.permissions", value: "Permissions", comment: "Title of the row listing an installed extension's permissions in its details")
+    static let extensionsSettingsPermissionAccessibilityFeaturesModify = NotLocalizedString("webExtensions.settings.permission.accessibility-features-modify", value: "change accessibility settings", comment: "Item in the list of an extension's permissions: changing accessibility settings")
+    static let extensionsSettingsPermissionAccessibilityFeaturesRead = NotLocalizedString("webExtensions.settings.permission.accessibility-features-read", value: "accessibility settings", comment: "Item in the list of an extension's permissions: reading accessibility settings")
+    static let extensionsSettingsPermissionBookmarks = NotLocalizedString("webExtensions.settings.permission.bookmarks", value: "bookmarks", comment: "Item in the list of an extension's permissions: reading and changing bookmarks")
+    static let extensionsSettingsPermissionClipboardRead = NotLocalizedString("webExtensions.settings.permission.clipboard-read", value: "reading copied data", comment: "Item in the list of an extension's permissions: reading data you copy and paste")
+    static let extensionsSettingsPermissionClipboardWrite = NotLocalizedString("webExtensions.settings.permission.clipboard-write", value: "changing copied data", comment: "Item in the list of an extension's permissions: changing data you copy and paste")
+    static let extensionsSettingsPermissionContentSettings = NotLocalizedString("webExtensions.settings.permission.content-settings", value: "site settings", comment: "Item in the list of an extension's permissions: changing settings that control websites' access to features")
+    static let extensionsSettingsPermissionDebugger = NotLocalizedString("webExtensions.settings.permission.debugger", value: "page debugger", comment: "Item in the list of an extension's permissions: accessing the page debugger")
+    static let extensionsSettingsPermissionDeclarativeNetRequest = NotLocalizedString("webExtensions.settings.permission.declarative-net-request", value: "content blocking", comment: "Item in the list of an extension's permissions: blocking content on any page")
+    static let extensionsSettingsPermissionDeclarativeNetRequestFeedback = NotLocalizedString("webExtensions.settings.permission.declarative-net-request-feedback", value: "browsing history", comment: "Item in the list of an extension's permissions: reading browsing history")
+    static let extensionsSettingsPermissionDesktopCapture = NotLocalizedString("webExtensions.settings.permission.desktop-capture", value: "screen capture", comment: "Item in the list of an extension's permissions: capturing the content of the screen")
+    static let extensionsSettingsPermissionDownloads = NotLocalizedString("webExtensions.settings.permission.downloads", value: "downloads", comment: "Item in the list of an extension's permissions: managing downloads")
+    static let extensionsSettingsPermissionDownloadsOpen = NotLocalizedString("webExtensions.settings.permission.downloads-open", value: "opening downloads", comment: "Item in the list of an extension's permissions: opening downloaded files")
+    static let extensionsSettingsPermissionDownloadsUI = NotLocalizedString("webExtensions.settings.permission.downloads-ui", value: "downloads bar", comment: "Item in the list of an extension's permissions: changing the downloads interface")
+    static let extensionsSettingsPermissionFavicon = NotLocalizedString("webExtensions.settings.permission.favicon", value: "website icons", comment: "Item in the list of an extension's permissions: reading the icons of visited websites")
+    static let extensionsSettingsPermissionGeolocation = NotLocalizedString("webExtensions.settings.permission.geolocation", value: "location", comment: "Item in the list of an extension's permissions: detecting physical location")
+    static let extensionsSettingsPermissionHistory = NotLocalizedString("webExtensions.settings.permission.history", value: "history", comment: "Item in the list of an extension's permissions: reading and changing browsing history")
+    static let extensionsSettingsPermissionIdentityEmail = NotLocalizedString("webExtensions.settings.permission.identity-email", value: "email address", comment: "Item in the list of an extension's permissions: knowing the user's email address")
+    static let extensionsSettingsPermissionManagement = NotLocalizedString("webExtensions.settings.permission.management", value: "apps and extensions", comment: "Item in the list of an extension's permissions: managing apps, extensions, and themes")
+    static let extensionsSettingsPermissionNativeMessaging = NotLocalizedString("webExtensions.settings.permission.native-messaging", value: "native apps", comment: "Item in the list of an extension's permissions: communicating with cooperating native applications")
+    static let extensionsSettingsPermissionNotifications = NotLocalizedString("webExtensions.settings.permission.notifications", value: "notifications", comment: "Item in the list of an extension's permissions: showing notifications")
+    static let extensionsSettingsPermissionPageCapture = NotLocalizedString("webExtensions.settings.permission.page-capture", value: "page capture", comment: "Item in the list of an extension's permissions: saving pages, which can read all data on websites")
+    static let extensionsSettingsPermissionPrivacy = NotLocalizedString("webExtensions.settings.permission.privacy", value: "privacy settings", comment: "Item in the list of an extension's permissions: changing privacy settings")
+    static let extensionsSettingsPermissionProxy = NotLocalizedString("webExtensions.settings.permission.proxy", value: "proxy settings", comment: "Item in the list of an extension's permissions: changing proxy settings, which can read all data on websites")
+    static let extensionsSettingsPermissionReadingList = NotLocalizedString("webExtensions.settings.permission.reading-list", value: "reading list", comment: "Item in the list of an extension's permissions: reading and changing the reading list")
+    static let extensionsSettingsPermissionSessions = NotLocalizedString("webExtensions.settings.permission.sessions", value: "recently closed tabs", comment: "Item in the list of an extension's permissions: reading recently closed tabs and windows")
+    static let extensionsSettingsPermissionSystemStorage = NotLocalizedString("webExtensions.settings.permission.system-storage", value: "storage devices", comment: "Item in the list of an extension's permissions: identifying and ejecting storage devices")
+    static let extensionsSettingsPermissionTabCapture = NotLocalizedString("webExtensions.settings.permission.tab-capture", value: "tab capture", comment: "Item in the list of an extension's permissions: capturing the content of tabs")
+    static let extensionsSettingsPermissionTabGroups = NotLocalizedString("webExtensions.settings.permission.tab-groups", value: "tab groups", comment: "Item in the list of an extension's permissions: viewing and managing tab groups")
+    static let extensionsSettingsPermissionTabs = NotLocalizedString("webExtensions.settings.permission.tabs", value: "tabs", comment: "Item in the list of an extension's permissions: reading open tabs, including their addresses")
+    static let extensionsSettingsPermissionTopSites = NotLocalizedString("webExtensions.settings.permission.top-sites", value: "most visited sites", comment: "Item in the list of an extension's permissions: reading the most visited websites")
+    static let extensionsSettingsPermissionTtsEngine = NotLocalizedString("webExtensions.settings.permission.tts-engine", value: "spoken text", comment: "Item in the list of an extension's permissions: reading all text spoken using synthesized speech")
+    static let extensionsSettingsPermissionWebAuthenticationProxy = NotLocalizedString("webExtensions.settings.permission.web-authentication-proxy", value: "web authentication", comment: "Item in the list of an extension's permissions: handling web authentication requests")
+    static let extensionsSettingsPermissionWebNavigation = NotLocalizedString("webExtensions.settings.permission.web-navigation", value: "navigation", comment: "Item in the list of an extension's permissions: reading browsing history through navigation events")
+    static let extensionsSettingsRemoveButton = NotLocalizedString("webExtensions.settings.remove", value: "Remove Extension", comment: "Button that removes an installed extension from its details in the Extensions settings")
+    static let extensionsSettingsGetButton = NotLocalizedString("webExtensions.settings.get", value: "Get", comment: "Button that installs an extension from the Extensions settings")
+    static let extensionsSettingsDisclaimer = NotLocalizedString("webExtensions.settings.disclaimer", value: "The extensions on this list are provided by a third party. We provide links to select third-party password managers for your convenience only. Inclusion on this list does not constitute an endorsement, certification, or representation regarding a password manager’s security, privacy practices, or suitability for your needs. DuckDuckGo does not develop, monitor, or control these products and is not responsible for their performance, security, or content. Before installing or using any extension, you should review the provider’s terms, privacy policy, security practices, and other relevant information to determine whether it meets your needs.", comment: "Disclaimer at the bottom of the Extensions settings")
     static let webExtensionRemoveMenuItem = NotLocalizedString("webExtensions.remove.menu-item", value: "Remove from DuckDuckGo", comment: "Context menu item of an extension's toolbar button that removes the extension")
     static let webExtensionRemoveButton = NotLocalizedString("webExtensions.remove.button", value: "Remove", comment: "Confirm removing an extension from its toolbar button")
     static let webExtensionRemoveErrorMessage = NotLocalizedString("webExtensions.remove.error.message", value: "The extension couldn’t be removed. Please try again.", comment: "Error message when removing an extension fails")
@@ -1948,7 +1998,7 @@ struct UserText {
     static let importLoginsPasswordsExplainerEncrypted = NSLocalizedString("import.logins.passwords.explainer.encrypted", value: "Encrypted", comment: "Explanatory label stating that the passwords are encrypted")
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
-    static let importHistory = NotLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
+    static let importHistory = NSLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
@@ -2012,11 +2062,11 @@ struct UserText {
         return String(format: localized, successful, total)
     }
     static func importSummaryHistoryImported(_ count: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.imported", value: "History Imported: %d (last 30 days)", comment: "Summary text showing number of browsing history visits imported from the last 30 days")
+        let localized = NSLocalizedString("import.summary.history.imported", value: "History Imported: %d (last 30 days)", comment: "Summary text showing number of browsing history visits imported from the last 30 days")
         return String(format: localized, count)
     }
     static func importSummaryHistoryImportedPartial(_ successful: Int, _ total: Int) -> String {
-        let localized = NotLocalizedString("import.summary.history.imported.partial", value: "History Imported: %d / %d (last 30 days)", comment: "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days")
+        let localized = NSLocalizedString("import.summary.history.imported.partial", value: "History Imported: %d / %d (last 30 days)", comment: "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days")
         return String(format: localized, successful, total)
     }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
@@ -2064,7 +2114,7 @@ struct UserText {
     static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
     static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
     static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
-    static let importCouldNotImportHistory = NotLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
+    static let importCouldNotImportHistory = NSLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
     static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")
@@ -2157,10 +2207,10 @@ struct UserText {
 
     static func importingHistory(_ numberOfVisits: Int?) -> String {
         if let numberOfVisits, numberOfVisits > 0 {
-            let localized = NotLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
+            let localized = NSLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
             return String(format: localized, numberOfVisits)
         } else {
-            return NotLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
+            return NSLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
         }
     }
 
@@ -2600,6 +2650,10 @@ struct UserText {
     static let updateNewVersionAvailableMenuItem = NSLocalizedString("update.new.version.available.menu.item", value: "New version available - Update DuckDuckGo", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
     static let updateAvailableMenuItemAppStore = NSLocalizedString("update.available.menu.item.app.store", value: "Update Available - Update in the App Store", comment: "Title of the menu item that informs user that a new update is available in the App Store. Clicking on the menu item takes the user to the App Store")
     static let updateReadyMenuItem = NSLocalizedString("update.ready.menu.item", value: "Update Ready - Restart to Update", comment: "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app")
+    static let updateBannerRowTitle = NotLocalizedString("update.banner.row.title", value: "Update ready", comment: "Title of the compact banner at the top of the browser menu that tells the user an update is ready to install")
+    static let updateBannerCardTitle = NotLocalizedString("update.banner.card.title", value: "New version available", comment: "Title of the illustrated card at the top of the browser menu that tells the user a new version of the browser is available")
+    static let updateBannerOpenAppStoreButton = NotLocalizedString("update.banner.open-app-store.button", value: "Open App Store", comment: "Button in the update banner at the top of the browser menu that opens DuckDuckGo in the App Store")
+    static let addressBarUpdateButton = NotLocalizedString("update.address-bar.button", value: "Update now", comment: "Button next to the browser menu button that starts updating the browser")
     static let releaseNotesMenuItem = NSLocalizedString("release.notes.menu.item", value: "Release Notes", comment: "Title of the dialog menu item that opens release notes")
     static let whatsNewMenuItem = NSLocalizedString("whats.new.menu.item", value: "What's New", comment: "Title of the dialog menu item that opens the 'What's New' page")
     static let browserUpdatesTitle = NSLocalizedString("settings.browser.updates.title", value: "Browser Updates", comment: "Title of the section in Settings where people set up automatic vs manual updates")

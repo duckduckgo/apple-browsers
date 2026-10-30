@@ -764,6 +764,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     /// and the NEW badge toggle. Same subfeature key as Android and Windows, so one remote config
     /// change covers every platform.
     case partnershipsHub
+
+    /// Gates the cancellation flow shown from "Cancel Subscription" in Subscription Settings.
+    case subscriptionCancellationFlow
 }
 
 public enum DuckPlayerSubfeature: String, PrivacySubfeature {
@@ -915,6 +918,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Controls retrying failed embedded background content without replacing its context (P2).
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219701603183698
     case cpmBackgroundLoadRecovery
+    /// Failsafe kill switch for restarting the embedded context when a failed background load leaves its view alive.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219970564251181
+    case cpmBackgroundLoadRestart
     /// Failsafe kill switch for reloading the embedded extension after a confirmed CPM messaging hang.
     case cpmMessagingHangRecovery
     /// Preserve surviving shared pinned tabs when WebKit processes a macOS window close.
@@ -926,6 +932,9 @@ public enum WebExtensionsSubfeature: String, PrivacySubfeature {
     /// Failsafe for keeping the embedded CPM origin stable across context reloads.
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1219728649844711
     case cpmStableBaseURL
+    /// Failsafe for upgrading only CPM before launch load and carrying its origin to the replacement.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220009029295774
+    case cpmUpgradeBeforeLoad
     /// Failsafe kill switch for the CPM background-view graveyard treatment.
     case cpmBackgroundGraveyardTreatment
     /// Controls native messaging between web extensions and host apps on macOS.

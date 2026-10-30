@@ -1173,15 +1173,24 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
         backgroundLoadRestartAttempts += 1
         lastBackgroundLoadRecoveryAt = now()
+        await reloadEmbeddedContext(identifier: context.uniqueIdentifier, trigger: .cpmBackgroundLoadFailure)
+    }
+
+    @MainActor
+    private func reloadEmbeddedContext(identifier: String, trigger: WebExtensionReloadTrigger) async {
+        guard !isCPMMessagingRecoveryInProgress else { return }
         isCPMMessagingRecoveryInProgress = true
         defer { isCPMMessagingRecoveryInProgress = false }
         do {
-            try await reloadExtension(identifier: context.uniqueIdentifier, trigger: .cpmBackgroundLoadFailure)
-            backgroundLoadRestartContext = self.context(for: context.uniqueIdentifier)
+            try await reloadExtension(identifier: identifier, trigger: trigger)
+            if trigger == .cpmBackgroundLoadFailure {
+                // Set this before scheduling the background load so even an immediate callback is attributed.
+                backgroundLoadRestartContext = context(for: identifier)
+            }
             // A missing WebKit completion must not hold the recovery guard forever.
             Task { @MainActor [weak self] in await self?.loadEmbeddedExtensionBackgroundContent() }
         } catch {
-            Logger.webExtensions.error("[CPM Background] Failed to restart the embedded extension after a retained background load failure: \(error.localizedDescription)")
+            Logger.webExtensions.error("[CPM] Failed to reload the embedded extension during recovery: \(error.localizedDescription)")
         }
     }
 
@@ -1459,15 +1468,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             return
         }
 
-        isCPMMessagingRecoveryInProgress = true
-        defer { isCPMMessagingRecoveryInProgress = false }
-        do {
-            try await reloadExtension(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
-            // A missing WebKit completion must not hold the recovery guard forever.
-            Task { @MainActor [weak self] in await self?.loadEmbeddedExtensionBackgroundContent() }
-        } catch {
-            Logger.webExtensions.error("[CPM Health Monitor] Failed to reload the embedded extension after a confirmed hang: \(error.localizedDescription)")
-        }
+        await reloadEmbeddedContext(identifier: installedExtension.uniqueIdentifier, trigger: .cpmMessagingHang)
     }
 
     @MainActor
@@ -1615,11 +1616,10 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
             // WebKit clears background-load errors just after this callback. Reset this view's history
             // now: delayed clear/add notifications may both see an equal error from the new view.
             observedBackgroundLoadErrors.removeObject(forKey: extensionContext)
-            cpmNetworkProcessRecovery.watch(webView, identifier: extensionContext.uniqueIdentifier) { [weak controller, weak extensionContext, weak webView] in
+            cpmNetworkProcessRecovery.watch(webView, identifier: extensionContext.uniqueIdentifier) { [weak self, weak controller, weak extensionContext, weak webView] in
                 guard let extensionContext, let webView,
-                      controller?.extensionContexts.contains(extensionContext) == true,
-                      extensionContext.responds(to: Selector.backgroundWebView) else { return false }
-                return extensionContext.value(forKey: NSStringFromSelector(Selector.backgroundWebView)) as? WKWebView === webView
+                      controller?.extensionContexts.contains(extensionContext) == true else { return false }
+                return self?.backgroundWebView(in: extensionContext) === webView
             }
             cpmDiagnosticsRecorder?.didCreateBackgroundWebView(webView, for: extensionContext)
         }

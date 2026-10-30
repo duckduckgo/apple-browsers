@@ -27,7 +27,10 @@ protocol AIChatContextualSidebarHosting: AnyObject {
     /// When false the surface is presented as a sheet instead.
     var canPresentContextualSidebar: Bool { get }
 
-    func presentContextualSidebar(_ viewController: UIViewController)
+    func presentContextualSidebar(_ viewController: UIViewController, animated: Bool)
+
+    /// False once `viewController` starts sliding out, though it stays in the column until it is gone.
+    func isContextualSidebarShowing(_ viewController: UIViewController) -> Bool
 
     /// `completion` runs once `viewController` has left the sidebar, or straight away when it isn't in it.
     func dismissContextualSidebar(_ viewController: UIViewController, animated: Bool, completion: (() -> Void)?)

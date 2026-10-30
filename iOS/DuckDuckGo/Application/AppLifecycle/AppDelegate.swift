@@ -28,7 +28,18 @@ import Common
         super.buildMenu(with: builder)
         guard builder.system == .main else { return }
 
-        AppDependencyProvider.shared.mainMenuService.buildMenu(with: builder)
+        // UIKit can request menus before normal launch setup or during simulated launches.
+        // Access the shared provider only after launch setup has initialized it, even when the menu flag is enabled.
+        switch appStateMachine.currentState {
+        case .launching, .connected, .foreground, .background:
+            if let service = AppDependencyProvider.shared.mainMenuService {
+                service.buildMenu(with: builder)
+                return
+            }
+        case .initializing, .simulated, .terminating:
+            break
+        }
+        MainMenuBuilder().build(MainMenuSpec(isEnabled: false), with: builder)
     }
 
     func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {

@@ -489,7 +489,7 @@ struct Launching: LaunchingHandling {
         )
 #endif
 
-        AppDependencyProvider.shared.mainMenuService.requestRebuild()
+        AppDependencyProvider.shared.mainMenuService?.requestRebuild()
 
         logAppLaunchTime()
         // Keep this init method minimal and think twice before adding anything here.

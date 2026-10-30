@@ -367,12 +367,10 @@ class MainViewController: UIViewController {
     private weak var boundAIChatChromeChipCoordinator: AIChatContextualSheetCoordinator?
     /// Separates "bound to no tab" from "never bound", so a launch onto a tab-less NTP still refreshes.
     private var hasBoundAIChatChromeChip = false
-    var duckAIMenuAnchor: UIView?
     /// iPad only: shows the contextual Duck.ai surface beside the page.
     lazy var contextualSidebarPresenter: AIChatContextualSidebarPresenter? = makeContextualSidebarPresenter()
     /// Watches a live window resize for its end, when the contextual surface settles where it fits.
     var contextualSurfaceResizeEndObservation: NSKeyValueObservation?
-    private var customizableButtonMenuAnchor: UIView?
     private var settingsCancellables = Set<AnyCancellable>()
     private var webViewViewportRefreshCancellable: AnyCancellable?
     private lazy var floatingDomainCapsuleController = FloatingDomainCapsuleController { [weak self] in
@@ -1926,7 +1924,7 @@ class MainViewController: UIViewController {
         }
         updateStatusBarBackgroundColor()
         themeColorManager.updateThemeColor()
-        refreshCustomizableButtonMenuHighlightTarget()
+        refreshCustomizableButtonMenuPreviewContainer()
         if let coordinator = unifiedToggleInputCoordinator, !coordinator.isActive {
             coordinator.viewController.refreshFireMode(fireMode: tabManager.currentTabsModel.currentTab?.fireTab ?? false)
         }
@@ -9788,7 +9786,7 @@ extension MainViewController {
                 }
             }
 
-            refreshCustomizableButtonMenuHighlightTarget()
+            refreshCustomizableButtonMenuPreviewContainer()
             customizableButton?.menu = UIMenu(children: [
                 UIAction(title: "Customize", image: DesignSystemImages.Glyphs.Size16.options) { [weak self] _ in
                     self?.segueToCustomizeAddressBarSettings()
@@ -9797,46 +9795,22 @@ extension MainViewController {
             customizableButton?.showsMenuAsPrimaryAction = false
         } else {
             customizableButton?.menu = nil
-            (customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-            customizableButtonMenuAnchor?.removeFromSuperview()
-            customizableButtonMenuAnchor = nil
+            (customizableButton as? BrowserChromeButton)?.menuPreviewContainer = nil
         }
     }
 
-    private func refreshCustomizableButtonMenuHighlightTarget() {
+    private func refreshCustomizableButtonMenuPreviewContainer() {
         guard mobileCustomization.state.isEnabled,
               isFloatingUIEnabled,
               appSettings.currentAddressBarPosition == .top,
               let customizableButton = omniBar.barView.customizableButton as? BrowserChromeButton else {
-            (omniBar.barView.customizableButton as? BrowserChromeButton)?.menuHighlightTarget = nil
-            customizableButtonMenuAnchor?.removeFromSuperview()
-            customizableButtonMenuAnchor = nil
+            (omniBar.barView.customizableButton as? BrowserChromeButton)?.menuPreviewContainer = nil
             return
         }
 
-        customizableButton.menuHighlightTarget = { [weak self, weak customizableButton] in
-            guard let customizableButton else { return nil }
-            return self?.customizableButtonMenuAnchorView(over: customizableButton)
+        customizableButton.menuPreviewContainer = { [weak self] in
+            self?.viewCoordinator.navigationBarContainer
         }
-    }
-
-    /// UIKit reparents a menu preview view into the platter. The customizable button lives in the
-    /// address bar's glass group, so its preview uses a stand-in outside that group.
-    private func customizableButtonMenuAnchorView(over button: UIView) -> UIView? {
-        guard let container: UIView = viewCoordinator.navigationBarContainer else { return nil }
-        let anchor = customizableButtonMenuAnchor ?? {
-            let view = UIView()
-            view.isUserInteractionEnabled = false
-            view.isAccessibilityElement = false
-            customizableButtonMenuAnchor = view
-            return view
-        }()
-        if anchor.superview !== container {
-            container.addSubview(anchor)
-        }
-        container.layoutIfNeeded()
-        anchor.frame = container.convert(button.bounds, from: button)
-        return anchor
     }
 
     @objc private func performCustomizationActionForToolbar() {

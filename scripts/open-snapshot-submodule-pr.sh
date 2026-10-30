@@ -7,16 +7,16 @@ set -euo pipefail
 # submodule pointer so the monorepo PR points at a pushed commit.
 #
 # Run from the monorepo root, on the feature branch you are about to open a PR
-# from. The push reuses whatever GitHub access you already have: SSH when the
-# monorepo is cloned over SSH, otherwise `gh` credentials, otherwise git's own
+# from. The push reuses whatever GitHub access you already have: the monorepo's
+# SSH remote (host, port and alias included) when it is cloned over SSH, otherwise `gh` credentials, otherwise git's own
 # credential helper. Without an authenticated `gh`, it prints a link to open the
 # PR in the browser instead.
 #
 # Usage: ./scripts/open-snapshot-submodule-pr.sh
 
 SUBMODULE_PATH="SnapshotReferences"
-SUBMODULE_REPO="duckduckgo/apple-browsers-snapshots"
-SUBMODULE_SSH_URL="git@github.com:$SUBMODULE_REPO.git"
+SUBMODULE_REPO_NAME="apple-browsers-snapshots"
+SUBMODULE_REPO="duckduckgo/$SUBMODULE_REPO_NAME"
 SUBMODULE_HTTPS_URL="https://github.com/$SUBMODULE_REPO.git"
 BASE_BRANCH="main"
 
@@ -25,9 +25,12 @@ gh_is_authenticated() {
 }
 
 push_submodule_branch() {
-	case "$(git remote get-url origin 2>/dev/null || true)" in
-		git@github.com:* | ssh://*)
-			git -C "$SUBMODULE_PATH" push "$SUBMODULE_SSH_URL" "HEAD:refs/heads/$BRANCH"
+	local monorepo_url
+	monorepo_url="$(git remote get-url origin 2>/dev/null || true)"
+	case "$monorepo_url" in
+		"" | http://* | https://*) ;;
+		*)
+			git -C "$SUBMODULE_PATH" push "${monorepo_url%/*}/$SUBMODULE_REPO_NAME.git" "HEAD:refs/heads/$BRANCH"
 			return
 			;;
 	esac
@@ -87,7 +90,7 @@ if gh_is_authenticated; then
 		echo "♻️  Reusing existing submodule PR: $PR_URL"
 	fi
 else
-	PR_URL="https://github.com/$SUBMODULE_REPO/compare/$BASE_BRANCH...$BRANCH?expand=1"
+	PR_URL="https://github.com/$SUBMODULE_REPO/compare/$BASE_BRANCH...${BRANCH//\#/%23}?expand=1"
 	echo "⚠️  gh is not installed or not authenticated, so the submodule PR was not opened automatically."
 	echo "   Open it (or find the existing one) here, then use its link instead: $PR_URL"
 fi

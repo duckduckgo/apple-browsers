@@ -23,6 +23,10 @@ import DesignResourcesKitIcons
 import DuckUI
 import MetricBuilder
 
+#if DEBUG
+import PreviewSnapshots
+#endif
+
 struct SyncPromoView: View {
 
     let viewModel: SyncPromoViewModel
@@ -42,26 +46,23 @@ struct SyncPromoView: View {
                         .daxHeadline()
                     Text(viewModel.subtitle)
                         .daxSubheadRegular()
+                        .foregroundColor(subtitleColor)
                         .frame(maxWidth: .infinity)
                 }
 
                 HStack(spacing: ButtonStackMetrics.interButtonSpacing) {
-                    Button {
-                        viewModel.dismissButtonAction?()
-                    } label: {
-                        Text(viewModel.secondaryButtonTitle)
+                    if let secondaryButtonTitle = viewModel.secondaryButtonTitle {
+                        Button {
+                            viewModel.dismissButtonAction?()
+                        } label: {
+                            Text(secondaryButtonTitle)
+                        }
+                        .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
+                        .accessibilityLabel(secondaryButtonTitle)
                     }
-                    .buttonStyle(SecondaryFillButtonStyle(compact: true, fullWidth: true))
-                    .accessibilityLabel(viewModel.secondaryButtonTitle)
 
-                    Button {
-                        viewModel.primaryButtonAction?()
-                    } label: {
-                        Text(viewModel.primaryButtonTitle)
-                    }
-                    .buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
-                    .accessibilityLabel(viewModel.primaryButtonTitle)
-
+                    primaryButton
+                        .accessibilityLabel(viewModel.primaryButtonTitle)
                 }
                 .padding(.top, 12)
             }
@@ -77,7 +78,8 @@ struct SyncPromoView: View {
             }
             .buttonStyle(CloseButtonStyle())
             .padding(ContainerMetrics.closeButtonPadding - CloseButtonStyle.Constant.padding)
-            .accessibilityHidden(true)
+            .accessibilityLabel(UserText.syncPromoCloseAccessibilityLabel)
+            .accessibilityHidden(viewModel.secondaryButtonTitle != nil)
         }
         .background(
             RoundedRectangle(cornerRadius: ContainerMetrics.cornerRadius)
@@ -93,8 +95,46 @@ struct SyncPromoView: View {
             }
         }
     }
+
+    private var subtitleColor: Color? {
+        switch viewModel.design {
+        case .standard:
+            nil
+        case .redesigned:
+            Color(designSystemColor: .textSecondary)
+        }
+    }
+
+    @ViewBuilder
+    private var primaryButton: some View {
+        let button = Button {
+            viewModel.primaryButtonAction?()
+        } label: {
+            Text(viewModel.primaryButtonTitle)
+        }
+
+        switch viewModel.design {
+        case .standard:
+            button.buttonStyle(PrimaryButtonStyle(compact: true, fullWidth: true))
+        case .redesigned:
+            button.buttonStyle(BrandButtonStyle(compact: true, fullWidth: true))
+        }
+    }
 }
 
-#Preview {
-    SyncPromoView(viewModel: SyncPromoViewModel())
+#if DEBUG
+struct SyncPromoView_Previews: PreviewProvider {
+
+    static var previews: some View {
+        snapshots.previews
+    }
+
+    static let snapshots = PreviewSnapshots(configurations: [
+        .init(name: "Standard", state: SyncPromoManager.Design.standard, scope: .previews),
+        .init(name: "Redesigned", state: SyncPromoManager.Design.redesigned)
+    ]) { design in
+        SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, design: design))
+            .background(Color(designSystemColor: .background))
+    }
 }
+#endif

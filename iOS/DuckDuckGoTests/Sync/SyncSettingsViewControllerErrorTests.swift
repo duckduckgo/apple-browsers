@@ -868,6 +868,83 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenOpenedFromBookmarksPromoWithRedesignOnThenShowsSyncAnotherDevicePrompt() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 1)
+    }
+
+    @MainActor
+    func testWhenOpenedFromPasswordsPromoWithRedesignOnThenShowsSyncAnotherDevicePrompt() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.passwordsPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 1)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksPromoWithRedesignOffThenDoesNotStartSetup() async {
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncImprovedPairingFlow]))
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+        promptShown.isInverted = true
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 0.5)
+        XCTAssertFalse(vc.viewModel.isBusy)
+    }
+
+    @MainActor
+    func testWhenOpenedFromBookmarksPromoWithRedesignOnAndAccountCreationUnavailableThenDoesNotStartSetup() async {
+        let syncService = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+        syncService.featureFlags = SyncFeatureFlags.all.subtracting(.accountCreation)
+        let vc = makeVC(source: SyncSettingsViewController.SourceConstants.bookmarksPromotion,
+                        featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.syncPromotionRedesign, .syncImprovedPairingFlow]),
+                        syncService: syncService)
+        let promptShown = expectSyncAnotherDevicePrompt(in: vc)
+        promptShown.isInverted = true
+
+        vc.loadViewIfNeeded()
+
+        await fulfillment(of: [promptShown], timeout: 0.5)
+        XCTAssertFalse(vc.viewModel.isBusy)
+    }
+
+    @MainActor
+    private func makeVC(source: String,
+                        featureFlagger: MockFeatureFlagger,
+                        syncService: MockDDGSyncing = MockDDGSyncing(authState: .inactive, isSyncInProgress: false)) -> SyncSettingsViewController {
+        SyncSettingsViewController(
+            syncService: syncService,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            syncCreditCardsAdapter: syncCreditCardsAdapter,
+            syncPausedStateManager: errorHandler,
+            source: source,
+            featureFlagger: featureFlagger,
+            syncAutoRestoreHandler: syncAutoRestoreHandler
+        )
+    }
+
+    @MainActor
+    private func expectSyncAnotherDevicePrompt(in vc: SyncSettingsViewController) -> XCTestExpectation {
+        let promptShown = expectation(description: "Sync another device prompt shown")
+        vc.viewModel.$connectingSheetPhase
+            .first { $0 == .syncAnotherDevice(isConnecting: false) }
+            .sink { _ in promptShown.fulfill() }
+            .store(in: &cancellables)
+        return promptShown
+    }
+
+    @MainActor
     private func makeSpyVC(pairingURL: URL) throws -> SpySyncSettingsViewController {
         SpySyncSettingsViewController(
             syncService: ddgSyncing,

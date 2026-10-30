@@ -23,6 +23,7 @@ import SwiftUI
 struct SyncPromoViewModel {
 
     var touchpointType: SyncPromoManager.Touchpoint = .bookmarks
+    var design: SyncPromoManager.Design = .standard
 
     var primaryButtonAction: (() -> Void)?
     var dismissButtonAction: (() -> Void)?
@@ -39,25 +40,42 @@ struct SyncPromoViewModel {
     }
 
     var subtitle: String {
-        switch touchpointType {
-        case .bookmarks:
+        switch (touchpointType, design) {
+        case (.bookmarks, .redesigned):
+            UserText.syncPromoBookmarksRedesignMessage
+        case (.bookmarks, .standard):
             UserText.syncPromoBookmarksMessage
-        case .passwords:
+        case (.passwords, _):
             UserText.syncPromoPasswordsMessage
-        case .dataImport, .aiChat:
+        case (.dataImport, _), (.aiChat, _):
             ""
         }
     }
 
     var image: String {
-        return "Sync-Pending-96"
+        switch design {
+        case .standard:
+            "Sync-Pending-96"
+        case .redesigned:
+            "Sync-Pending-Feature-96"
+        }
     }
 
     var primaryButtonTitle: String {
-        UserText.syncPromoConfirmAction
+        switch design {
+        case .standard:
+            UserText.syncPromoConfirmAction
+        case .redesigned:
+            UserText.syncPromoTurnOnAction
+        }
     }
 
-    var secondaryButtonTitle: String {
-        UserText.syncPromoDismissAction
+    var secondaryButtonTitle: String? {
+        switch design {
+        case .standard:
+            UserText.syncPromoDismissAction
+        case .redesigned:
+            nil
+        }
     }
 }

@@ -45,15 +45,19 @@ public final class ContentBlockingUpdating {
         var findInPageImplementation: FindInPageImplementation?
         var sitePermissionsMediaCaptureUserScript: MediaCaptureUserScript?
         var sitePermissionsGeolocationUserScript: GeolocationUserScript?
+        weak var tabInstrumentation: TabInstrumentation?
         var isSitePermissionsEnabled: Bool { sitePermissionsGeolocationUserScript != nil }
         var makeUserScripts: @MainActor (ScriptSourceProviding) -> UserScripts {
-            { [duckAiNativeStorageHandler, findInPageImplementation, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled] sourceProvider in
-                UserScripts(with: sourceProvider,
+            { [duckAiNativeStorageHandler, findInPageImplementation, sitePermissionsMediaCaptureUserScript, sitePermissionsGeolocationUserScript, isSitePermissionsEnabled, weak tabInstrumentation] sourceProvider in
+                let preparation = tabInstrumentation?.begin("Create User Scripts")
+                defer { preparation?.end() }
+                return UserScripts(with: sourceProvider,
                             findInPageImplementation: findInPageImplementation ?? AppDependencyProvider.shared.findInPageImplementation,
                             sitePermissionsEnabled: isSitePermissionsEnabled,
                             mediaCaptureUserScript: sitePermissionsMediaCaptureUserScript,
                             geolocationUserScript: sitePermissionsGeolocationUserScript,
-                            duckAiNativeStorageHandler: duckAiNativeStorageHandler)
+                            duckAiNativeStorageHandler: duckAiNativeStorageHandler,
+                            tabInstrumentation: tabInstrumentation)
             }
         }
 

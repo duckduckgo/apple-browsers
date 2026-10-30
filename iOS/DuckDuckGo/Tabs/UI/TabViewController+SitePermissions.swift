@@ -391,6 +391,12 @@ extension TabViewController {
             mediaCaptureUserScript: mediaCaptureUserScript,
             geolocationUserScript: geolocationUserScript
         )
+        .map { [weak instrumentation] content in
+            var content = content
+            content.tabInstrumentation = instrumentation
+            return content
+        }
+        .eraseToAnyPublisher()
     }
 
     static func sitePermissionsContentBlockingAssetsPublisher(

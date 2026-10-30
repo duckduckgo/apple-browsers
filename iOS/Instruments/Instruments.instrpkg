@@ -29,7 +29,7 @@
         </column>
         <column>
             <mnemonic>website-url</mnemonic>
-            <title>Website URL</title>
+            <title>Navigation ID</title>
             <type>string</type>
             <expression>?website-url</expression>
         </column>
@@ -395,6 +395,7 @@
             <column>tab-id</column>
             <column>website-url</column>
             <column>duration</column>
+            <column>loading-result</column>
         </list>
 
         <aggregation>

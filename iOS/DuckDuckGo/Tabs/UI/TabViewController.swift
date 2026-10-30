@@ -203,7 +203,7 @@ class TabViewController: UIViewController {
 
     var showBarsTapGestureRecogniser: UITapGestureRecognizer!
 
-    private let instrumentation = TabInstrumentation()
+    let instrumentation = TabInstrumentation()
     let tabInteractionStateSource: TabInteractionStateSource?
 
     var isLinkPreview = false
@@ -856,6 +856,7 @@ class TabViewController: UIViewController {
         pageContextRestoredPageNeedsLoad = false
         pageContextProcessTerminated = false
         pageContextInitialRequestPending = true
+        instrumentation.event("Restored Page Reload Requested")
         if webView.reload() == nil {
             pageContextInitialRequestPending = false
         }
@@ -1498,19 +1499,21 @@ class TabViewController: UIViewController {
                        consumeCookies: Bool,
                        loadingInitiatedByParentTab: Bool = false,
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
+        let isReplacingWebView = webView != nil
         cancelWebExtensionNavigationWait()
-        instrumentation.willPrepareWebView()
+        let preparation = instrumentation.prepareWebView(replacing: isReplacingWebView)
+        defer { preparation.end() }
         pageContextNavigationID = UUID()
         pageContextLoadedNavigationID = nil
         pageContextNavigationInProgress = false
         pageContextInitialRequestPending = request != nil
         pageContextRestoredPageNeedsLoad = false
         pageContextProcessTerminated = false
-        let isReplacingWebView = webView != nil
         if isReplacingWebView {
             cancelPendingAIChatTabAttachmentPrompt()
         }
         let mediaCaptureUserScript = makeSitePermissionsMediaCaptureUserScript(replacingWebView: isReplacingWebView)
+        let contentControllerPreparation = instrumentation.begin("Create User Content Controller", parent: preparation)
         let userContentController = UserContentController(
             assetsPublisher: makeTabContentBlockingAssetsPublisher(mediaCaptureUserScript: mediaCaptureUserScript),
             privacyConfigurationManager: privacyConfigurationManager,
@@ -1520,13 +1523,17 @@ class TabViewController: UIViewController {
         userContentController.addUserScript(mediaCaptureUserScript.makeWKUserScriptSync())
         configuration.userContentController = userContentController
         userContentController.delegate = self
+        contentControllerPreparation.end()
 
+        let webViewCreation = instrumentation.begin("Create Web View", parent: preparation)
         if let customWebView {
             webView = customWebView(configuration)
             view.layoutIfNeeded()
         } else {
             webView = WebView(frame: view.bounds, configuration: configuration)
         }
+        webViewCreation.end()
+        let webViewConfiguration = instrumentation.begin("Configure Web View", parent: preparation)
         pageSignalsMonitor.attach(to: webView)
         sitePermissionsDidAttachWebView(replacingWebView: isReplacingWebView)
         if floatingUIManager.isFloatingUIEnabled {
@@ -1571,12 +1578,13 @@ class TabViewController: UIViewController {
         if #available(iOS 16.4, *) {
             updateWebViewInspectability()
         }
+        webViewConfiguration.end()
 
         let didRestoreWebViewState = restoreInteractionStateToWebView(interactionStateData)
         pageContextRestoredPageNeedsLoad = didRestoreWebViewState && pageContextLoadedNavigationID == nil
         pageContextInitialRequestPending = request != nil && (consumeCookies || !didRestoreWebViewState)
 
-        instrumentation.didPrepareWebView()
+        instrumentation.event("Web View Ready", in: preparation)
 
         // Initialize DuckPlayerNavigationHandler
         if let webView = webView {
@@ -1586,6 +1594,7 @@ class TabViewController: UIViewController {
         if consumeCookies {
             consumeCookiesThenLoadRequest(request)
         } else if !didRestoreWebViewState, let urlRequest = request {
+            let requestPreparation = instrumentation.begin("Prepare Initial Request")
             var loadingStopped = false
             linkProtection.getCleanURLRequest(from: urlRequest, onStartExtracting: { [weak self] in
                 if loadingInitiatedByParentTab {
@@ -1595,6 +1604,7 @@ class TabViewController: UIViewController {
                 }
                 self?.showProgressIndicator()
             }, onFinishExtracting: {}, completion: { [weak self] cleanURLRequest in
+                requestPreparation.end()
                 // restart the cleaned-up URL loading here if:
                 //   link protection provided an updated URL
                 //   OR if loading was stopped for a popup loaded by its parent
@@ -1664,9 +1674,11 @@ class TabViewController: UIViewController {
         }
 
         Task { @MainActor in
+            let cookieConsumption = instrumentation.begin("Consume Cookies")
             await webView.configuration.websiteDataStore.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
             let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
             await websiteDataManager.consumeCookies(into: HTTPCookieStoreWrapper(wrapped: cookieStore))
+            cookieConsumption.end()
             doLoad()
         }
     }
@@ -1682,6 +1694,7 @@ class TabViewController: UIViewController {
     }
 
     private func load(url: URL, shouldCancelPendingAIChatTabAttachmentPrompt: Bool) {
+        instrumentation.event("Native Navigation Requested")
         if case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.willLoad(isInternalRetry: !shouldCancelPendingAIChatTabAttachmentPrompt) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -1700,6 +1713,7 @@ class TabViewController: UIViewController {
     }
     
     public func load(backForwardListItem: WKBackForwardListItem) {
+        instrumentation.event("History Navigation Requested")
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
@@ -1730,10 +1744,12 @@ class TabViewController: UIViewController {
         
         lastError = nil
         updateContentMode()
+        let requestPreparation = instrumentation.begin("Prepare Navigation Request")
         linkProtection.getCleanURL(from: url,
                                    onStartExtracting: { showProgressIndicator() },
                                    onFinishExtracting: { },
                                    completion: { [weak self] url in
+            requestPreparation.end()
             // Arm the report here, not in `upgradeToHttps`: link protection may have stripped tracking
             // parameters or resolved an AMP link, and the tracker has to hold the URL we actually
             // request or the navigation that follows won't match it.
@@ -1745,6 +1761,7 @@ class TabViewController: UIViewController {
     }
 
     func prepareForDataClearing() {
+        instrumentation.endAll(.dataCleared)
         freezeMonitor.end(.fire)
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
@@ -1762,6 +1779,8 @@ class TabViewController: UIViewController {
     }
     
     private func load(urlRequest: URLRequest) {
+        let submission = instrumentation.begin("Submit Navigation Request")
+        defer { submission.end() }
         cancelWebExtensionNavigationWait()
         loadViewIfNeeded()
 
@@ -1777,6 +1796,7 @@ class TabViewController: UIViewController {
         dismissJSAlertIfNeeded()
         pendingNativeLoadURL = urlRequest.url
         webView.load(urlRequest)
+        instrumentation.event("Request Submitted To WebKit", in: submission)
     }
     
     // swiftlint:disable block_based_kvo
@@ -1800,6 +1820,7 @@ class TabViewController: UIViewController {
             }
 
         case #keyPath(WKWebView.estimatedProgress):
+            instrumentation.recordProgress(webView.estimatedProgress)
             if isTabCurrentlyPresented() {
                 progressWorker.progressDidChange(webView.estimatedProgress)
             }
@@ -1963,6 +1984,7 @@ class TabViewController: UIViewController {
     }
 
     public func reload() {
+        instrumentation.event("Reload Requested")
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
         safariRedirectHandler.reset()
@@ -1989,6 +2011,7 @@ class TabViewController: UIViewController {
     }
 
     func goBack() {
+        instrumentation.event("Back Navigation Requested")
         freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
@@ -2064,6 +2087,7 @@ class TabViewController: UIViewController {
     }
 
     func goForward() {
+        instrumentation.event("Forward Navigation Requested")
         freezeMonitor.didAttemptNavigation()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
@@ -2548,6 +2572,8 @@ class TabViewController: UIViewController {
     }
 
     func stopLoading() {
+        instrumentation.event("Stop Loading Requested", in: instrumentation.currentLoad)
+        instrumentation.endAll(.stopped)
         cancelPendingAIChatTabAttachmentPrompt()
         cancelWebExtensionNavigationWait()
         sitePermissionsState.cancelContentBlockingWaits()
@@ -2573,6 +2599,9 @@ class TabViewController: UIViewController {
     }
 
     deinit {
+        Task { @MainActor [instrumentation] in
+            instrumentation.endAll(.tabClosed)
+        }
         webExtensionNavigationTask?.cancel()
         if #available(iOS 18.4, *) {
             DispatchQueue.main.asyncOrNow { [webExtensionManagerProvider, id=tabModel.uid] in
@@ -2631,6 +2660,12 @@ extension TabViewController: WKNavigationDelegate {
                  didReceive challenge: URLAuthenticationChallenge,
                  completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
 
+        let authentication = webView === self.webView ? instrumentation.begin("Authentication Challenge") : nil
+        let originalCompletionHandler = completionHandler
+        let completionHandler: (URLSession.AuthChallengeDisposition, URLCredential?) -> Void = { disposition, credential in
+            authentication?.end(disposition == .cancelAuthenticationChallenge ? .cancelled : .completed)
+            originalCompletionHandler(disposition, credential)
+        }
         switch challenge.protectionSpace.authenticationMethod {
         case NSURLAuthenticationMethodHTTPBasic, NSURLAuthenticationMethodHTTPDigest:
             performHTTPAuthentication(protectionSpace: challenge.protectionSpace, completionHandler: completionHandler)
@@ -2670,6 +2705,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
+        if webView === self.webView {
+            instrumentation.didCommitNavigation(navigation)
+        }
         pageSignalsDidCommitNavigation(to: webView.url)
         pendingNativeLoadURL = nil
         sitePermissionsDidCommit(webView, navigation: navigation)
@@ -2682,7 +2720,6 @@ extension TabViewController: WKNavigationDelegate {
             }
             let finalURL = duckPlayerNavigationHandler.getDuckURLFor(url)
             viewModel.captureWebviewDidCommit(finalURL)
-            instrumentation.willLoad(url: url)
         }
 
         addressBarURLFilter.commitNavigation(for: webView.url)
@@ -2734,6 +2771,14 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationResponse: WKNavigationResponse) async -> WKNavigationResponsePolicy {
+        let isInstrumentedResponse = webView === self.webView && navigationResponse.isForMainFrame
+        let load = isInstrumentedResponse ? instrumentation.currentLoad : nil
+        let responsePolicy = isInstrumentedResponse ? instrumentation.begin("Navigation Response Policy", parent: load) : nil
+        if isInstrumentedResponse {
+            let statusCode = (navigationResponse.response as? HTTPURLResponse)?.statusCode
+            instrumentation.event("Main Frame Response Received", in: load,
+                                  detail: statusCode.map { "status=\($0)" } ?? "non-HTTP")
+        }
         if #available(iOS 18.4, *), webView === self.webView, navigationResponse.isForMainFrame,
            let url = navigationResponse.response.url, url.isHttp || url.isHttps {
             // The Network process can change after action policy. Repair before document-start scripts run.
@@ -2751,11 +2796,19 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         // If the navigation has been handled by the special error page handler, cancel navigating to the new content as the special error page will be shown.
+        let decision: WKNavigationResponsePolicy
         if !specialErrorPageNavigationHandler.isSpecialErrorPageRequest, await specialErrorPageNavigationHandler.handleDecidePolicy(for: navigationResponse, webView: webView) {
-            return .cancel
+            decision = .cancel
         } else {
-            return await handleNavigationResponse(navigationResponse)
+            decision = await handleNavigationResponse(navigationResponse)
         }
+        let outcome: TabInstrumentation.Outcome = decision == .allow ? .completed : (decision == .download ? .download : .cancelled)
+        responsePolicy?.end(outcome)
+        if isInstrumentedResponse {
+            instrumentation.event("Response Policy Decided", in: load, detail: outcome.rawValue)
+            instrumentation.endResponsePolicy(load: load, outcome: outcome)
+        }
+        return decision
     }
 
     /// `nil` when the `aiPageContextBlocklist` config is absent/malformed (kill-switch, fail-open).
@@ -2878,6 +2931,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView {
+            instrumentation.didStartNavigation(navigation)
+        }
         if webView === self.webView, case .available = aiChatContextualAttachMoreTabsFeature.state {
             if initialAIChatPromptSession.didStartNavigation(navigation) {
                 userScripts?.aiChatUserScript.cancelPendingTabContextSubmission()
@@ -2938,6 +2994,14 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if webView === self.webView {
+            instrumentation.didFinishNavigation(navigation)
+        }
+        defer {
+            if webView === self.webView {
+                instrumentation.completeNavigation(navigation, outcome: .completed)
+            }
+        }
         terminationReloadMonitor.didFinish()
         updateFloatingPageBackgroundColor(in: webView)
         navigationPixelResponder.didFinish(navigation)
@@ -2956,7 +3020,6 @@ extension TabViewController: WKNavigationDelegate {
         onWebpageDidFinishLoading()
         adBlockingNavigationHandler.handleURLChange(previousURL: nil, newURL: webView.url)
         extractDaxEasterEggLogoIfDuckDuckGoSearch(webView)
-        instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
 
@@ -3060,21 +3123,26 @@ extension TabViewController: WKNavigationDelegate {
     /// only while a JS alert is on screen, since `takeSnapshot` captures web content but not native overlays.
     /// `reportTimeout` fires `web-content_preview-snapshot-timeout` when the snapshot times out; only the tab switcher sets it.
     func preparePreview(reportTimeout: Bool = false, completion: @escaping (UIImage?) -> Void) {
+        let snapshot = instrumentation.begin("Capture Page Preview")
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
 
         DispatchQueue.main.async { [weak self] in
             guard let self, let webView else {
+                snapshot.end(.skipped)
                 completion(nil)
                 return
             }
 
             guard WebViewPreviewSnapshotPolicy.shouldCapture(isLoading: webView.isLoading) else {
+                snapshot.end(.skipped)
                 completion(nil)
                 return
             }
 
             if jsAlertView?.isShown == true {
-                completion(preparePreviewSync(afterScreenUpdates: true))
+                let image = preparePreviewSync(afterScreenUpdates: true)
+                snapshot.end(image == nil ? .failed : .completed)
+                completion(image)
                 return
             }
 
@@ -3084,6 +3152,7 @@ extension TabViewController: WKNavigationDelegate {
                 capturesFullBounds: capturesFullBounds
             )
             guard let visibleRect else {
+                snapshot.end(.skipped)
                 completion(nil)
                 return
             }
@@ -3092,6 +3161,7 @@ extension TabViewController: WKNavigationDelegate {
                                             rect: visibleRect,
                                             timeout: WebViewPreviewSnapshotPolicy.timeout,
                                             waitForScreenUpdates: true) { [weak self] image, result in
+                snapshot.end(result.isTimeout ? .timedOut : (image == nil ? .failed : .completed))
                 if reportTimeout, result.isTimeout {
                     self?.freezeMonitor.previewSnapshotTimedOut(result: result)
                 }
@@ -3117,10 +3187,12 @@ extension TabViewController: WKNavigationDelegate {
             return
         }
 
+        let snapshot = instrumentation.begin("Capture Tab Transition Preview")
         previewSnapshotCapturer.capture(webView: webView,
                                         rect: rect,
                                         timeout: WebViewPreviewSnapshotPolicy.timeout,
-                                        waitForScreenUpdates: false) { image, _ in
+                                        waitForScreenUpdates: false) { image, result in
+            snapshot.end(result.isTimeout ? .timedOut : (image == nil ? .failed : .completed))
             DispatchQueue.main.async {
                 completion(image)
             }
@@ -3132,6 +3204,8 @@ extension TabViewController: WKNavigationDelegate {
     /// native overlays that `takeSnapshot` cannot see.
     private func preparePreviewSync(afterScreenUpdates: Bool = false) -> UIImage? {
         guard let webView, webView.bounds.height > 0, webView.bounds.width > 0 else { return nil }
+        let snapshot = instrumentation.begin("Capture Native Preview")
+        defer { snapshot.end() }
 
         let capturesFullBounds = floatingUIManager.isFloatingUIEnabled
         guard let snapshotRect = WebViewPreviewSnapshotGeometry.visibleRect(
@@ -3417,7 +3491,21 @@ extension TabViewController: WKNavigationDelegate {
         }
     }
 
+    private func instrumentationOutcome(for error: Error) -> TabInstrumentation.Outcome {
+        let error = error as NSError
+        if error.domain == NSURLErrorDomain, error.code == NSURLErrorCancelled {
+            return .cancelled
+        }
+        if error.domain == "WebKitErrorDomain", error.code == 102 {
+            return .download
+        }
+        return .failed
+    }
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView {
+            instrumentation.completeNavigation(navigation, outcome: instrumentationOutcome(for: error))
+        }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -3476,6 +3564,9 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        if webView === self.webView {
+            instrumentation.completeNavigation(navigation, outcome: instrumentationOutcome(for: error))
+        }
         terminationReloadMonitor.didFail(with: error)
         if webView === self.webView, initialAIChatPromptSession.didFailNavigation(navigation) {
             userScripts?.aiChatUserScript.cancelQueuedTabContextSubmissions()
@@ -3557,6 +3648,9 @@ extension TabViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        if webView === self.webView {
+            instrumentation.didRedirectNavigation(navigation)
+        }
         guard let url = webView.url else { return }
 
         self.privacyInfo = makePrivacyInfo(url: url)
@@ -3588,6 +3682,11 @@ extension TabViewController: WKNavigationDelegate {
                  decidePolicyFor navigationAction: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
 
+        let tabInstrumentation = instrumentation
+        let policy = webView === self.webView && navigationAction.isTargetingMainFrame
+            ? tabInstrumentation.beginNavigationPolicy(isSameDocument: navigationAction.isSameDocumentNavigation,
+                                                        isRedirect: navigationAction.isRedirect == true)
+            : nil
         if webView === self.webView, navigationAction.isTargetingMainFrame {
             cancelWebExtensionNavigationWait()
             sitePermissionsState.cancelContentBlockingWaits()
@@ -3602,10 +3701,13 @@ extension TabViewController: WKNavigationDelegate {
         // `didStartProvisional` — no other `decidePolicyFor` can interleave between them.
         let wrappedHandler: (TabNavigationDecision) -> Void = { [weak self] decision in
             if case .allow = decision {
+                tabInstrumentation.endNavigationPolicy(policy, allowed: true)
                 if navigationAction.isTargetingMainFrame {
                     self?.cpmReadinessDocumentIsGET = navigationAction.request.httpMethod == "GET"
                 }
                 self?.navigationPixelResponder.willStart(navigationAction)
+            } else {
+                tabInstrumentation.endNavigationPolicy(policy, allowed: false)
             }
             decisionHandler(decision.webKitPolicy)
         }
@@ -3616,8 +3718,10 @@ extension TabViewController: WKNavigationDelegate {
            navigationAction.isTargetingMainFrame,
            [.http, .https].contains(navigationAction.request.url?.navigationalScheme),
            let initialLoadWaiter = webExtensionInitialLoadWaiterProvider() {
+            let extensionWait = policy.map { instrumentation.begin("Wait For Web Extension Startup", parent: $0.interval) }
             webExtensionNavigationTask = Task { @MainActor [weak self, webView, webExtensionNavigationGate] in
                 guard !Task.isCancelled else {
+                    extensionWait?.end(.cancelled)
                     wrappedHandler(.cancel)
                     return
                 }
@@ -3625,12 +3729,15 @@ extension TabViewController: WKNavigationDelegate {
                                                               url: navigationAction.request.url,
                                                               initialLoadWaiter: initialLoadWaiter)
                 guard !Task.isCancelled, let self, webView === self.webView else {
+                    extensionWait?.end(.cancelled)
                     wrappedHandler(.cancel)
                     return
                 }
+                extensionWait?.end()
                 webExtensionNavigationTask = nil
                 decidePolicyAfterWebExtensionInitialLoad(webView,
                                                          navigationAction: navigationAction,
+                                                         instrumentationPolicy: policy,
                                                          decisionHandler: wrappedHandler)
             }
             return
@@ -3638,6 +3745,7 @@ extension TabViewController: WKNavigationDelegate {
 
         decidePolicyAfterWebExtensionInitialLoad(webView,
                                                  navigationAction: navigationAction,
+                                                 instrumentationPolicy: policy,
                                                  decisionHandler: wrappedHandler)
     }
 
@@ -3648,6 +3756,7 @@ extension TabViewController: WKNavigationDelegate {
 
     private func decidePolicyAfterWebExtensionInitialLoad(_ webView: WKWebView,
                                                           navigationAction: WKNavigationAction,
+                                                          instrumentationPolicy: TabInstrumentation.NavigationPolicy?,
                                                           decisionHandler wrappedHandler: @escaping (TabNavigationDecision) -> Void) {
 
         var isUserInitiated = false
@@ -3680,8 +3789,9 @@ extension TabViewController: WKNavigationDelegate {
                }
                self.decidePolicyAfterWebExtensionInitialLoad(webView,
                                                              navigationAction: navigationAction,
+                                                             instrumentationPolicy: instrumentationPolicy,
                                                              decisionHandler: wrappedHandler)
-           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame) {
+           }, for: url, isMainFrame: navigationAction.isTargetingMainFrame, parentInterval: instrumentationPolicy?.interval) {
             // will wait for Content Blocking to load and re-call on completion
             return
         }
@@ -3764,21 +3874,26 @@ extension TabViewController: WKNavigationDelegate {
         if navigationAction.navigationType != .backForward,
            navigationAction.isTargetingMainFrame,
            !(navigationAction.request.url?.isDuckDuckGoSearch ?? false) {
+            let linkRewrite = instrumentation.begin("Resolve Tracking Link", parent: instrumentationPolicy?.interval)
             let didRewriteLink = linkProtection.requestTrackingLinkRewrite(initiatingURL: webView.url,
                                                                            destinationRequest: navigationAction.request,
                                                                            onStartExtracting: { showProgressIndicator() },
                                                                            onFinishExtracting: { },
                                                                            onLinkRewrite: { [weak self] newRequest in
+                linkRewrite.end()
                 guard let self = self else { return }
+                self.instrumentation.event("Tracking Link Rewritten")
                 self.load(urlRequest: newRequest)
             },
                                                                            policyDecisionHandler: { shouldAllow in
+                linkRewrite.end(shouldAllow ? .completed : .cancelled)
                 wrappedHandler(shouldAllow ? .allow(appLinks: .enabled) : .cancel)
             })
 
             if didRewriteLink {
                 return
             }
+            linkRewrite.end(.skipped)
         }
 
         // Compose the synchronous main-frame request mutations (referrer trimming -> GPC -> search-token
@@ -3830,6 +3945,7 @@ extension TabViewController: WKNavigationDelegate {
         }
 
         if didModifyRequest {
+            instrumentation.event("Navigation Request Rewritten")
             wrappedHandler(.cancel)
             load(urlRequest: modifiedRequest)
             return
@@ -3892,7 +4008,8 @@ extension TabViewController: WKNavigationDelegate {
 
     func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor (Bool) -> Void,
                                                 for url: URL,
-                                                isMainFrame: Bool = true) -> Bool {
+                                                isMainFrame: Bool = true,
+                                                parentInterval: TabInstrumentation.Interval? = nil) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
         let shouldWait = Self.shouldWaitForContentBlockingAssets(
             assetsInstalled: userContentController.contentBlockingAssetsInstalled,
@@ -3907,6 +4024,7 @@ extension TabViewController: WKNavigationDelegate {
             return false
         }
 
+        let contentBlockingWait = isMainFrame ? instrumentation.begin("Wait For Content Blocking Assets", parent: parentInterval) : nil
         guard isSitePermissionsEnabled else {
             // Preserve the existing content-blocking wait when site permissions is disabled for this launch.
             if isMainFrame {
@@ -3918,6 +4036,7 @@ extension TabViewController: WKNavigationDelegate {
                 showProgressIndicator()
                 await userContentController.awaitContentBlockingAssetsInstalled()
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabModel.uid)
+                contentBlockingWait?.end()
                 completion(true)
             }
             return true
@@ -3940,6 +4059,7 @@ extension TabViewController: WKNavigationDelegate {
                 rulesCompilationMonitor.reportTabFinishedWaitingForRules(tabID)
             }
             guard !Task.isCancelled else {
+                contentBlockingWait?.end(.cancelled)
                 completion(false)
                 return
             }
@@ -3955,6 +4075,7 @@ extension TabViewController: WKNavigationDelegate {
             // Remove before completion: success re-enters the navigation policy delegate.
             let isCurrentWait = state?.contentBlockingWaitTasks.removeValue(forKey: waitID) != nil
             guard !Task.isCancelled, isCurrentWait else {
+                contentBlockingWait?.end(.cancelled)
                 completion(false)
                 return
             }
@@ -3964,6 +4085,7 @@ extension TabViewController: WKNavigationDelegate {
             if !isReady, isMainFrame {
                 self?.showSitePermissionsAssetsTimeout(for: url)
             }
+            contentBlockingWait?.end(isReady ? .completed : .timedOut)
             completion(isReady)
         }
         return true
@@ -4164,15 +4286,19 @@ extension TabViewController: WKNavigationDelegate {
     private func upgradeToHttps(url: URL,
                                 allowDecision: TabNavigationDecision,
                                 completion: @escaping (TabNavigationDecision) -> Void) {
+        let upgrade = instrumentation.begin("Resolve HTTPS Upgrade")
         httpsUpgradeTask = Task {
             let result = await PrivacyFeatures.httpsUpgrade.upgrade(url: url)
             guard !Task.isCancelled else {
+                upgrade.end(.cancelled)
                 completion(.cancel)
                 return
             }
             switch result {
             case let .success(upgradedUrl):
+                upgrade.end()
                 if lastUpgradedURL != upgradedUrl {
+                    instrumentation.event("HTTPS Upgrade Applied")
                     lastUpgradedURL = upgradedUrl
                     privacyInfo?.connectionUpgradedTo = upgradedUrl
                     load(url: upgradedUrl, didUpgradeURL: true)
@@ -4181,6 +4307,7 @@ extension TabViewController: WKNavigationDelegate {
                     completion(allowDecision)
                 }
             case .failure:
+                upgrade.end(.skipped)
                 completion(allowDecision)
             }
         }
@@ -4328,6 +4455,8 @@ extension TabViewController {
     }
 
     private func startDownload(with navigationResponse: WKNavigationResponse) async -> (responsePolicy: WKNavigationResponsePolicy, download: Download?) {
+        let handoff = navigationResponse.isForMainFrame ? instrumentation.begin("Hand Off Navigation To Download") : nil
+        defer { handoff?.end() }
         let downloadManager = AppDependencyProvider.shared.downloadManager
         let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
         let url = navigationResponse.response.url!
@@ -4392,6 +4521,9 @@ extension TabViewController {
     }
 
     func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        if webView === self.webView, navigationResponse.isForMainFrame {
+            instrumentation.event("Navigation Became Download")
+        }
         let delegate = InlineWKDownloadDelegate()
         // temporary delegate held strongly in callbacks
         // after destination decision WKDownload delegate will be set
@@ -4734,6 +4866,8 @@ extension TabViewController: WKUIDelegate {
         terminationReloadMonitor.didTerminate()
 
         if webView === self.webView {
+            instrumentation.event("Web Content Process Terminated", in: instrumentation.currentLoad)
+            instrumentation.endAll(.processTerminated)
             cancelPendingAIChatTabAttachmentPrompt()
             cancelWebExtensionNavigationWait()
             freezeMonitor.end(.terminated)
@@ -5012,6 +5146,9 @@ extension TabViewController: UserContentControllerDelegate {
                                didInstallContentRuleLists contentRuleLists: [String: WKContentRuleList],
                                userScripts: UserScriptsProvider,
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
+        let scriptConfiguration = instrumentation.begin("Configure Installed User Scripts")
+        defer { scriptConfiguration.end() }
+        instrumentation.event("Content Blocking Assets Installed")
         guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
 
         userScripts.trackerProtectionSubfeature.delegate = self
@@ -6107,6 +6244,8 @@ private extension TabViewController {
     func restoreInteractionStateToWebView(_ interactionStateData: Data?) -> Bool {
         var didRestoreWebViewState = false
         if let interactionStateData {
+            let restoration = instrumentation.begin("Restore Interaction State")
+            defer { restoration.end(didRestoreWebViewState ? .completed : .failed) }
             let startTime = CFAbsoluteTimeGetCurrent()
             webView.interactionState = interactionStateData
             if webView.url != nil {

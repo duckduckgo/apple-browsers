@@ -832,6 +832,8 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
 
     @MainActor
     private func evictFromCache(_ controller: TabViewController, reason: TabControllerCacheEvictionReason) {
+        controller.instrumentation.event("Tab Controller Evicted")
+        controller.instrumentation.endAll(.evicted)
         if reason != .webContentProcessTermination {
             interactionStateSource?.saveState(controller.webView.interactionState, for: controller.tabModel)
         }
@@ -1020,6 +1022,7 @@ class TabManager: TabManaging, TrackerAnimationSuppressing {
             tab.iPadOmnibarDraft.invalidate()
             previewsSource.removePreview(forTab: tab)
             if let controller = controller(for: tab) {
+                controller.instrumentation.endAll(.tabClosed)
                 removeFromCache(controller)
             }
             interactionStateSource?.removeStateForTab(tab)
@@ -1073,6 +1076,7 @@ extension TabManager {
         tabsModelProvider.clearTabs(for: browsingMode)
 
         for controller in tabsData.tabControllersToDelete {
+            controller.instrumentation.endAll(.tabClosed)
             removeFromCache(controller)
         }
 

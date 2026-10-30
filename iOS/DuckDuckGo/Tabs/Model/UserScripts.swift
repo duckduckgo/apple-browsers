@@ -72,6 +72,7 @@ final class UserScripts: UserScriptsProvider {
     private(set) var trackerProtectionSubfeature = TrackerProtectionSubfeature()
 
     private let isAutoconsentExtensionAvailable: Bool
+    private weak var tabInstrumentation: TabInstrumentation?
 
     init(with sourceProvider: ScriptSourceProviding,
          appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -83,8 +84,10 @@ final class UserScripts: UserScriptsProvider {
          internalFeedbackTabCountProvider: InternalFeedbackTabCountProvider = AppDependencyProvider.shared.internalFeedbackTabCountProvider,
          geolocationUserScript: GeolocationUserScript? = nil,
          duckAiNativeStorageHandler: DuckAiNativeStorageHandling? = nil,
-         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
+         aiChatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings(),
+         tabInstrumentation: TabInstrumentation? = nil) {
 
+        self.tabInstrumentation = tabInstrumentation
         isAutoconsentExtensionAvailable = sourceProvider.webExtensionAvailability?.isAutoconsentExtensionAvailable ?? false
         findInPageScript = findInPageImplementation == .legacy ? FindInPageUserScript() : nil
 
@@ -97,6 +100,8 @@ final class UserScripts: UserScriptsProvider {
 
         loginFormDetectionScript = sourceProvider.loginDetectionEnabled ? LoginFormDetectionUserScript() : nil
         do {
+            let contentScopePreparation = tabInstrumentation?.begin("Create Content Scope Scripts")
+            defer { contentScopePreparation?.end() }
             let configGenerator = ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger,
                                                                                 privacyConfigurationManager: sourceProvider.privacyConfigurationManager,
                                                                                 excludedFeatures: [PrivacyFeature.autoconsent.rawValue, PrivacyFeature.eventHub.rawValue])
@@ -245,11 +250,17 @@ final class UserScripts: UserScriptsProvider {
     
     @MainActor
     func loadWKUserScripts() async -> [WKUserScript] {
+        let preparation = tabInstrumentation?.begin("Prepare WK User Scripts")
+        defer { preparation?.end() }
         return await withTaskGroup(of: (Int, WKUserScriptBox).self) { @MainActor group in
             var indexedScripts = [(Int, WKUserScriptBox)]()
             for (index, userScript) in userScripts.enumerated() {
                 group.addTask { @MainActor in
-                    (index, await userScript.makeWKUserScript())
+                    let scriptPreparation = self.tabInstrumentation?.begin("Prepare WK User Script", parent: preparation)
+                    self.tabInstrumentation?.event("User Script Preparation Started", in: scriptPreparation,
+                                                   detail: String(describing: type(of: userScript)))
+                    defer { scriptPreparation?.end() }
+                    return (index, await userScript.makeWKUserScript())
                 }
             }
             for await result in group {

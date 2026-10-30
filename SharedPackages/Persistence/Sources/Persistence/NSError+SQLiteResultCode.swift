@@ -16,26 +16,23 @@
 //  limitations under the License.
 //
 
+import CoreData
 import Foundation
 
 extension NSError {
 
-    /// The domain of the underlying error created by `unpackingSQLiteResultCode()`, and the `userInfo` key
-    /// under which Core Data stores the SQLite result code of a failed store operation.
-    public static let sqliteErrorDomain = "NSSQLiteErrorDomain"
-
     /// Returns a copy of this error whose `NSUnderlyingError` is an `NSSQLiteErrorDomain` error carrying the
-    /// SQLite result code found in `userInfo["NSSQLiteErrorDomain"]`. The rest of `userInfo` is kept unchanged.
+    /// SQLite result code found in `userInfo[NSSQLiteErrorDomain]`. The rest of `userInfo` is kept unchanged.
     ///
     /// Returns `self` when `userInfo` has no SQLite result code, or when the error already has an underlying error.
-    public func unpackingSQLiteResultCode() -> NSError {
+    func unpackingSQLiteResultCode() -> NSError {
         guard userInfo[NSUnderlyingErrorKey] == nil,
-              let resultCode = userInfo[Self.sqliteErrorDomain] as? NSNumber else {
+              let resultCode = userInfo[NSSQLiteErrorDomain] as? NSNumber else {
             return self
         }
 
         var unpackedUserInfo = userInfo
-        unpackedUserInfo[NSUnderlyingErrorKey] = NSError(domain: Self.sqliteErrorDomain, code: resultCode.intValue)
+        unpackedUserInfo[NSUnderlyingErrorKey] = NSError(domain: NSSQLiteErrorDomain, code: resultCode.intValue)
         return NSError(domain: domain, code: code, userInfo: unpackedUserInfo)
     }
 }

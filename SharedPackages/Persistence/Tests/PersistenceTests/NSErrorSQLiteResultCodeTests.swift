@@ -18,7 +18,7 @@
 
 import CoreData
 import Foundation
-import Persistence
+@testable import Persistence
 import Testing
 
 @Suite("NSError SQLite result code unpacking")
@@ -28,7 +28,7 @@ struct NSErrorSQLiteResultCodeTests {
     @Test("The SQLite result code becomes the underlying error", .timeLimit(.minutes(1)))
     func resultCodeBecomesUnderlyingError() throws {
         let error = NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [
-            NSError.sqliteErrorDomain: NSNumber(value: 4618),
+            NSSQLiteErrorDomain: NSNumber(value: 4618),
             NSFilePathErrorKey: "/path/to/store.sqlite"
         ])
 
@@ -37,9 +37,9 @@ struct NSErrorSQLiteResultCodeTests {
         #expect(unpacked.domain == NSCocoaErrorDomain)
         #expect(unpacked.code == 256)
         #expect(unpacked.userInfo[NSFilePathErrorKey] as? String == "/path/to/store.sqlite")
-        #expect(unpacked.userInfo[NSError.sqliteErrorDomain] as? NSNumber == 4618)
+        #expect(unpacked.userInfo[NSSQLiteErrorDomain] as? NSNumber == 4618)
         let underlying = try #require(unpacked.userInfo[NSUnderlyingErrorKey] as? NSError)
-        #expect(underlying.domain == "NSSQLiteErrorDomain")
+        #expect(underlying.domain == NSSQLiteErrorDomain)
         #expect(underlying.code == 4618)
     }
 
@@ -56,7 +56,7 @@ struct NSErrorSQLiteResultCodeTests {
     func existingUnderlyingErrorIsKept() {
         let underlying = NSError(domain: NSPOSIXErrorDomain, code: 28)
         let error = NSError(domain: NSCocoaErrorDomain, code: 256, userInfo: [
-            NSError.sqliteErrorDomain: NSNumber(value: 13),
+            NSSQLiteErrorDomain: NSNumber(value: 13),
             NSUnderlyingErrorKey: underlying
         ])
 
@@ -78,7 +78,7 @@ struct NSErrorSQLiteResultCodeTests {
 
         let nsError = try #require(error as NSError?)
         let underlying = try #require(nsError.userInfo[NSUnderlyingErrorKey] as? NSError)
-        #expect(underlying.domain == "NSSQLiteErrorDomain")
-        #expect(underlying.code == (nsError.userInfo[NSError.sqliteErrorDomain] as? NSNumber)?.intValue)
+        #expect(underlying.domain == NSSQLiteErrorDomain)
+        #expect(underlying.code == (nsError.userInfo[NSSQLiteErrorDomain] as? NSNumber)?.intValue)
     }
 }

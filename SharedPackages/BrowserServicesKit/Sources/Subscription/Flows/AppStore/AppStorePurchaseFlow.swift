@@ -24,6 +24,7 @@ import Networking
 import Common
 import FoundationExtensions
 import WideEvent
+import JWTKit
 
 public enum AppStorePurchaseFlowError: DDGError {
     case noProductsFound
@@ -304,18 +305,13 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
 
     /// Reads `offerType` from the transaction payload. Our only introductory offers (type 1) are free trials. `nil` if the payload can't be read.
     static func isFreeTrial(transactionJWS: TransactionJWS) -> Bool? {
-        struct Payload: Decodable {
-            let offerType: Int?
-        }
-
-        let segments = transactionJWS.split(separator: ".")
-        guard segments.count == 3 else { return nil }
-
-        var base64 = segments[1].replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
-        base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
-
-        guard let data = Data(base64Encoded: base64),
-              let payload = try? JSONDecoder().decode(Payload.self, from: data) else { return nil }
-        return payload.offerType == 1
+        (try? JWTSigners().unverified(transactionJWS, as: TransactionPayload.self)).map { $0.offerType == 1 }
     }
+}
+
+/// StoreKit already verified the transaction; we only read it.
+private struct TransactionPayload: JWTPayload {
+    let offerType: Int?
+
+    func verify(using signer: JWTSigner) throws {}
 }

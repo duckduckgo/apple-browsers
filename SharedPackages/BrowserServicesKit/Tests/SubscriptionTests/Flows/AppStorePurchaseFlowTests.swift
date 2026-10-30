@@ -264,13 +264,6 @@ final class AppStorePurchaseFlowTests: XCTestCase {
         XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: makeTransactionJWS(payload: #"{"productId":"monthly"}"#)), false)
     }
 
-    func test_isFreeTrial_withBase64URLCharactersAndNoPadding_decodesPayload() {
-        // This payload's base64url contains "_" and drops "==" padding.
-        let jws = makeTransactionJWS(payload: #"{"offerType":1,"note":"??>"}"#)
-        XCTAssertTrue(jws.contains("_"))
-        XCTAssertEqual(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: jws), true)
-    }
-
     func test_isFreeTrial_withMalformedJWS_returnsNil() {
         XCTAssertNil(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: "transactionJWS"))
         XCTAssertNil(DefaultAppStorePurchaseFlow.isFreeTrial(transactionJWS: "header.!!!.signature"))

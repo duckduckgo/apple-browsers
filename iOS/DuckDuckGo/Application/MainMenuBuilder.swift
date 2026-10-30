@@ -41,8 +41,49 @@ struct MainMenuBuilder {
             builder.remove(menu: identifier)
         }
         for menu in spec.mainMenus {
-            let commands = menu.items.map(makeCommand)
-            builder.replaceChildren(ofMenu: menu.identifier) { _ in commands }
+            let elements = makeElements(for: menu)
+            builder.replaceChildren(ofMenu: menu.identifier) { existing in
+                let retained = menu.identifier == .window && spec.shortcutRegistration == .menu ? removingCloseShortcut(from: existing) : existing
+                if menu.identifier == .edit, spec.shortcutRegistration == .menu {
+                    var replacedFind = false
+                    let updated = replacingFind(in: retained, with: elements[0], replaced: &replacedFind)
+                    return updated + (replacedFind ? Array(elements.dropFirst()) : elements)
+                }
+                return menu.placement == .appendChildren ? retained + elements : elements
+            }
+        }
+    }
+
+    private func makeElements(for menu: MainMenuSpec.Menu) -> [UIMenuElement] {
+        menu.items.map(makeCommand) + menu.submenus.map { submenu in
+            UIMenu(title: submenu.title, identifier: submenu.identifier,
+                   options: submenu.inline ? .displayInline : [], children: makeElements(for: submenu))
+        }
+    }
+
+    private func removingCloseShortcut(from elements: [UIMenuElement]) -> [UIMenuElement] {
+        elements.compactMap { element in
+            if let command = element as? UIKeyCommand, command.input == "w", command.modifierFlags == .command {
+                guard let action = command.action else { return nil }
+                return UICommand(title: command.title, image: command.image, action: action,
+                                 propertyList: command.propertyList, attributes: command.attributes, state: command.state)
+            }
+            if let menu = element as? UIMenu {
+                return menu.replacingChildren(removingCloseShortcut(from: menu.children))
+            }
+            return element
+        }
+    }
+
+    private func replacingFind(in elements: [UIMenuElement], with replacement: UIMenuElement,
+                               replaced: inout Bool) -> [UIMenuElement] {
+        elements.map { element in
+            guard let menu = element as? UIMenu else { return element }
+            if menu.identifier == .find {
+                replaced = true
+                return replacement
+            }
+            return menu.replacingChildren(replacingFind(in: menu.children, with: replacement, replaced: &replaced))
         }
     }
 
@@ -50,23 +91,10 @@ struct MainMenuBuilder {
         guard let shortcut = item.shortcut else {
             return UICommand(title: item.title, action: item.command.action)
         }
+        let propertyList: [String: Any] = ["input": shortcut.input, "modifiers": shortcut.modifiers.rawValue]
         let command = UIKeyCommand(title: item.title, action: item.command.action,
-                                   input: shortcut.input, modifierFlags: shortcut.modifiers)
+                                   input: shortcut.input, modifierFlags: shortcut.modifiers, propertyList: propertyList)
         command.wantsPriorityOverSystemBehavior = true
         return command
-    }
-}
-
-extension MainMenuCommand {
-    var action: Selector {
-        switch self {
-        case .settings:
-            return #selector(MainViewController.keyboardSettings)
-        }
-    }
-
-    init?(action: Selector) {
-        guard let command = Self.allCases.first(where: { $0.action == action }) else { return nil }
-        self = command
     }
 }

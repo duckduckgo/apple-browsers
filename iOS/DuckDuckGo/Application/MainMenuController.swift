@@ -24,20 +24,28 @@ import UIKit
 
 final class MainMenuController {
     private let featureFlagger: FeatureFlagger
+    private let contextProvider: () -> MainMenuSpec.Context
     private let idiom: UIUserInterfaceIdiom
     private let rebuildRequests = PassthroughSubject<Void, Never>()
     private var cancellables = Set<AnyCancellable>()
 
     var spec: MainMenuSpec {
-        MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar), idiom: idiom)
+        MainMenuSpec(isEnabled: featureFlagger.isFeatureOn(.ipadMenuBar), idiom: idiom, context: contextProvider())
     }
 
     init(featureFlagger: FeatureFlagger,
          idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom,
+         contextProvider: @escaping () -> MainMenuSpec.Context = { .init() },
+         notificationCenter: NotificationCenter = .default,
          rebuildDelay: DispatchQueue.SchedulerTimeType.Stride = .milliseconds(100),
          rebuild: @escaping () -> Void = { UIMenuSystem.main.setNeedsRebuild() }) {
         self.featureFlagger = featureFlagger
         self.idiom = idiom
+        self.contextProvider = contextProvider
+
+        notificationCenter.publisher(for: .speechRecognizerDidChangeAvailability)
+            .sink { [weak self] _ in self?.requestRebuild() }
+            .store(in: &cancellables)
 
         rebuildRequests
             .debounce(for: rebuildDelay, scheduler: DispatchQueue.main)

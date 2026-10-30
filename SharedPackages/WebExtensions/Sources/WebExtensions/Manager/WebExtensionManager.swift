@@ -1057,11 +1057,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
               !isCPMMessagingRecoveryInProgress,
               lastBackgroundLoadRecoveryAt.map({ Date().timeIntervalSince($0) >= 60 }) ?? true else { return false }
         lastBackgroundLoadRecoveryAt = Date()
-        // Retry only the failed background first. Replacing the whole context invalidates
-        // in-flight content-script replies; keeping it preserves the failed document's init.
-        // The existing confirmed-hang recovery remains the fallback if messaging stays stuck.
-        // A retained failed view is the exception: WebKit returns early from loading while it exists,
-        // so the retry could never replace it and only a restarted context gets out of that state.
         let failedView = backgroundWebView(in: context)
         Task { @MainActor [weak self, weak failedView] in
             guard let self, self.isCPMBackgroundLoadRecoveryEnabled(), !self.isApplicationInBackground(),
@@ -1071,9 +1066,12 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
                 // A different view is WebKit's own recovery, even if it is still loading.
                 // Do not replace it or join its load using the old failure's recovery task.
                 guard currentView === failedView else { return }
+                // WebKit cannot replace a retained failed view with a background-only retry.
                 await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
                 return
             }
+            // Otherwise retry background content without replacing the context, preserving in-flight
+            // content-script replies. Confirmed-hang recovery remains the fallback if messaging stays stuck.
             self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
         }

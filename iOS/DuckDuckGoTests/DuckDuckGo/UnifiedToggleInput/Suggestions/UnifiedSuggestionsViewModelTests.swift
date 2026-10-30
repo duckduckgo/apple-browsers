@@ -43,6 +43,24 @@ final class UnifiedSuggestionsViewModelTests: XCTestCase {
         XCTAssertEqual(sut.content, .list(.search))
     }
 
+    func test_visibleEscapeHatch_hidesLogoUntilRemoved() {
+        let inputs = CurrentValueSubject<UnifiedSuggestionsInputs, Never>(
+            .init(mode: .search, isTyping: false, hasFavorites: false, hasMessages: false, hasRecents: false, resultsPending: false))
+        let sut = UnifiedSuggestionsViewModel(inputsPublisher: inputs.eraseToAnyPublisher(),
+                                              listViewModel: SuggestionsListViewModel(source: EmptySuggestionsSource()))
+
+        XCTAssertTrue(sut.isShowingLogo)
+
+        for placement in [FocusedContentPlacement.embedded, .pinned] {
+            sut.setEscapeHatchPlacement(placement)
+            XCTAssertFalse(sut.isShowingLogo)
+            XCTAssertEqual(sut.content, .logo)
+        }
+
+        sut.setEscapeHatchPlacement(.hidden)
+        XCTAssertTrue(sut.isShowingLogo)
+    }
+
     func test_uneditedURLWithoutRecentChats_hidesQueryRowsUntilTyping() {
         let query = "https://example.com"
         let sections = DuckAISuggestionsSource.sections(from: .init(chats: [], urls: [], isPending: false), query: query)

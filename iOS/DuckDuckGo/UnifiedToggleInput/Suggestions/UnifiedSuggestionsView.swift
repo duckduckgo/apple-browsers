@@ -140,8 +140,7 @@ struct UnifiedSuggestionsView: View {
     }
 
     private var isShowingLogo: Bool {
-        if case .logo = viewModel.content { return true }
-        return false
+        viewModel.isShowingLogo
     }
 
     /// The Dax↔Duck.ai empty-state logo, morphing via bound `logoProgress`. Pinned to the exact
@@ -150,15 +149,7 @@ struct UnifiedSuggestionsView: View {
     /// across Search↔Duck.ai toggles and the keyboard (screen-relative, not bar/keyboard-relative).
     private var logoLayer: some View {
         GeometryReader { proxy in
-            // Rests at the NTP logo's exact screen anchor (so focus/defocus is a crossfade from the NTP
-            // position, and the morph happens in place on a toggle), but kept a minimum gap from the
-            // chrome on *both* sides so the chrome never covers it:
-            //  • pushed DOWN if the top chrome (hatch) comes within `minChromeGap` of the logo's top
-            //    (top-bar Duck.ai); the chrome bottom is `minY + chromeInsetTop`, known as the bar animates.
-            //  • pushed UP if the bar's top edge comes within `minChromeGap` of the logo's bottom
-            //    (bottom-bar omnibar); the bar top is `maxY` — the content-area bottom rides the bar-height
-            //    safe-area inset, so it tracks the bar in the same pass.
-            // With room on both sides the pushes clamp to 0 and the logo stays at the NTP anchor.
+            // Preserve input-bar and keyboard clearance when no escape hatch is shown.
             let frame = proxy.frame(in: .global)
             let nativeViewport = viewModel.logoViewportFrame
             let viewport = nativeViewport ?? frame
@@ -198,27 +189,23 @@ struct UnifiedSuggestionsView: View {
         .ignoresSafeArea(.container, edges: .top)
     }
 
-    /// The logo's screen-center Y: it rests at `restCenterY` (the NTP anchor) but is clamped into the band
-    /// between the chrome — pulled up to keep `bottomBarGap` above the bar/keyboard top edge (`barTop`), and
-    /// held at least `topChromeGap` below the top chrome (`topChromeBottom`, e.g. the hatch). On a short
-    /// screen where the band can't fit the logo plus both gaps, it centers the logo between the two chrome
-    /// edges instead — clearing the keyboard and the hatch as evenly as possible rather than slipping under
-    /// either (the wordmark must not hide behind the keyboard).
+    /// Clamps the resting center between the top chrome and the keyboard/input bar.
+    /// If both margins do not fit, use the center of the available space.
     private static func logoCenterY(restingAt restCenterY: CGFloat,
                                     topChromeBottom: CGFloat,
                                     barTop: CGFloat) -> CGFloat {
         let halfHeight = Metrics.logoHeight / 2
         let barLimit = barTop - Metrics.bottomBarGap - halfHeight
-        let hatchFloor = topChromeBottom + Metrics.topChromeGap + halfHeight
-        guard hatchFloor <= barLimit else { return (topChromeBottom + barTop) / 2 }
-        return min(max(restCenterY, hatchFloor), barLimit)
+        let chromeFloor = topChromeBottom + Metrics.topChromeGap + halfHeight
+        guard chromeFloor <= barLimit else { return (topChromeBottom + barTop) / 2 }
+        return min(max(restCenterY, chromeFloor), barLimit)
     }
 
     private enum Metrics {
         /// Mirrors `NewTabPageDaxLogoView`'s screen-center offset so the focused Search logo lands exactly
         /// where the NTP logo sits — keep in sync with that view.
         static let logoScreenCenterOffset: CGFloat = 55
-        /// Min gap kept below the top chrome (hatch) before the logo is pushed down. Tune.
+        /// Min gap kept below the top chrome before the logo is pushed down. Tune.
         static let topChromeGap: CGFloat = 16
         /// Min gap kept above the bottom bar before the logo is pushed up. Larger than the top gap — the
         /// bottom bar is tall, so the logo needs more breathing room to sit balanced above it. Tune.

@@ -394,6 +394,7 @@ final class UnifiedInputContentContainerViewController: UIViewController {
         let placement = chromePlacement
         unifiedSuggestionsHost?.setFocusedContent(
             mode: switchBarHandler.currentToggleState,
+            escapeHatchPlacement: placement.escapeHatch,
             escapeHatch: placement.escapeHatch == .embedded ? escapeHatchModel : nil,
             syncPromo: placement.syncPromo == .embedded ? syncPromoView : nil)
         updatePinnedChrome()

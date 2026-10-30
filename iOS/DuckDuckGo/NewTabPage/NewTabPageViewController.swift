@@ -42,11 +42,7 @@ final class NewTabPageViewController: UIViewController, NewTabPage, RemoteMessag
     /// `isLogoHidden`/`isFavoritesHidden` flags the focus/dismiss handoff toggles. The dismiss path
     /// uses these to pick the right handoff while those flags are still mid-transition.
     var restingContentIsLogo: Bool {
-        guard favoritesModel.isEmpty else { return false }
-        if newTabPageViewModel.escapeHatch != nil {
-            return view.bounds.width <= view.bounds.height
-        }
-        return true
+        favoritesModel.isEmpty && newTabPageViewModel.escapeHatch == nil
     }
 
     var restingContentIsFavorites: Bool {

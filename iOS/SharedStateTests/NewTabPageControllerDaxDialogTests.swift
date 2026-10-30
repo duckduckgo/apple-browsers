@@ -104,6 +104,22 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = nil
     }
 
+    func testWhenEscapeHatchIsVisibleThenLogoStaysHiddenAfterInputDismissal() {
+        XCTAssertTrue(hvc.isShowingLogo)
+        let hatch = EscapeHatchModel.preview(title: "Website", subtitle: "", tabType: .regular,
+                                             domain: nil, targetTab: Tab(), tabCount: 1, keyValueStore: MockKeyValueFileStore())
+        hvc.setEscapeHatch(hatch)
+        hvc.setLogoHidden(true)
+        hvc.setLogoHidden(false)
+
+        XCTAssertFalse(hvc.isShowingLogo)
+        XCTAssertFalse(hvc.restingContentIsLogo)
+
+        hvc.setEscapeHatch(nil)
+        XCTAssertTrue(hvc.isShowingLogo)
+        XCTAssertTrue(hvc.restingContentIsLogo)
+    }
+
     func testWhenFocusedContentIsConfiguredBeforeLoadingThenHostedPageIsTransparent() throws {
         let (configuration, _) = makeConfiguration(withScheduledMessage: false)
         let controller = makeNewTabPage(openedAfterIdle: false, homePageMessagesConfiguration: configuration)
@@ -271,7 +287,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
                 probeRevision += 1
             })
         host.setUsesRedesignedNewTabPageLayout(usesRedesign)
-        host.setFocusedContent(mode: .aiChat, escapeHatch: nil, syncPromo: probe)
+        host.setFocusedContent(mode: .aiChat, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: probe)
 
         let parent = UIViewController()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
@@ -366,7 +382,7 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             onSelectRow: { _ in },
             onDeleteRow: { _ in },
             onTapAheadRow: { _ in }), usesScrollableEscapeHatch: usesScrollableEscapeHatch)
-        host.setFocusedContent(mode: .search, escapeHatch: nil, syncPromo: nil)
+        host.setFocusedContent(mode: .search, escapeHatchPlacement: .hidden, escapeHatch: nil, syncPromo: nil)
         let parent = UIViewController()
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
             .first { $0.activationState == .foregroundActive })

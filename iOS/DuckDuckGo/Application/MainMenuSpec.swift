@@ -47,6 +47,7 @@ struct MainMenuSpec {
         let command: MainMenuCommand
         let title: String
         let shortcut: Shortcut?
+        let requirement: KeyPath<Context, Bool>?
     }
 
     struct Menu {
@@ -62,6 +63,14 @@ struct MainMenuSpec {
         var inline = false
 
         var allItems: [Item] { items + submenus.flatMap(\.allItems) }
+
+        func resolved(in context: Context) -> Menu {
+            let resolvedItems = items.filter { item in
+                item.requirement.map { context[keyPath: $0] } ?? true
+            }
+            return Menu(identifier: identifier, items: resolvedItems, placement: placement,
+                        submenus: submenus.map { $0.resolved(in: context) }, title: title, inline: inline)
+        }
     }
 
     let menus: [Menu]
@@ -71,58 +80,14 @@ struct MainMenuSpec {
 
     init(isEnabled: Bool, idiom: UIUserInterfaceIdiom = UIDevice.current.userInterfaceIdiom, context: Context = Context()) {
         shortcutRegistration = isEnabled ? (idiom == .pad ? .menu : .responder) : .legacy
-        baselineMenus = [Menu(identifier: .preferences, items: [
-            Self.item(.settings, UserText.settingsTitle, ",", .command)
-        ])]
-        let settings = Menu(identifier: .preferences, items: [
-            Self.item(.settings, isEnabled ? UserText.menuSettings : UserText.settingsTitle, ",", .command)
-        ])
+        baselineMenus = [Self.settingsMenu(title: UserText.settingsTitle)]
         guard isEnabled else {
-            menus = [settings]
+            menus = baselineMenus
             removedMenus = []
             return
         }
         removedMenus = shortcutRegistration == .menu ? [.format] : []
-        var newTabs = [Self.item(.newTab, UserText.keyCommandNewTab, "t", .command)]
-        if context.fireModeEnabled {
-            newTabs.append(Self.item(.newFireTab, UserText.keyCommandNewFireTab, "n", [.shift, .command]))
-        }
-        if context.voiceSearchEnabled {
-            newTabs.append(Self.item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command]))
-        }
-        let file = Menu(identifier: .file, items: [], submenus: [
-            Self.group("file.new", newTabs),
-            Self.group("file.location", [Self.item(.location, UserText.menuOpenLocation, "l", .command)]),
-            Self.group("file.close", [Self.item(.closeTab, UserText.keyCommandCloseTab, "w", .command)]),
-            Self.group("file.share", [Self.item(.share, UserText.actionShare)]),
-            Self.group("file.print", [Self.item(.printPage, UserText.menuPrint, "p", .command)])
-        ])
-        let edit = Menu(identifier: .edit, items: [], placement: .appendChildren, submenus: [
-            Self.group("edit.find", [Self.item(.find, UserText.keyCommandFind, "f", .command)])
-        ])
-        let view = Menu(identifier: .view, items: [], submenus: [
-            Self.group("view.loading", [Self.item(.stop, UserText.menuStop, ".", .command),
-                                        Self.item(.reload, UserText.keyCommandReload, "r", .command)]),
-            Self.group("view.panels", [Self.item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
-                                       Self.item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
-                                       Self.item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
-            Self.group("view.zoom", [Self.item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
-                                     Self.item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
-                                     Self.item(.actualSize, UserText.menuActualSize, "0", .command)])
-        ])
-        let window = Menu(identifier: .window, items: [], placement: .appendChildren, submenus: [
-            Self.group("window.tabs", [Self.item(.newTabOnRight, UserText.menuNewTabOnRight),
-                                       Self.item(.duplicateTab, UserText.menuDuplicateTab)]),
-            Self.group("window.select", [Self.item(.previousTab, UserText.menuPreviousTab, "[", [.shift, .command]),
-                                         Self.item(.nextTab, UserText.menuNextTab, "]", [.shift, .command])])
-        ])
-        let help = Menu(identifier: .help, items: [], placement: .appendChildren, submenus: [
-            Self.group("help.about", [Self.item(.about, UserText.settingsAboutDDG),
-                                      Self.item(.feedback, UserText.menuFeedback)]),
-            Menu(identifier: UIMenu.Identifier("com.duckduckgo.moreShortcuts"), items: Self.moreShortcuts,
-                 title: UserText.menuMoreShortcuts)
-        ])
-        menus = [settings, file, edit, view, window, help]
+        menus = Self.browserMenus.map { $0.resolved(in: context) }
     }
 
     var mainMenus: [Menu] {
@@ -158,12 +123,73 @@ struct MainMenuSpec {
     }
 
     private static func item(_ command: MainMenuCommand, _ title: String,
-                             _ input: String? = nil, _ modifiers: UIKeyModifierFlags = []) -> Item {
-        Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) })
+                             _ input: String? = nil, _ modifiers: UIKeyModifierFlags = [],
+                             requires requirement: KeyPath<Context, Bool>? = nil) -> Item {
+        Item(command: command, title: title, shortcut: input.map { Shortcut(input: $0, modifiers: modifiers) },
+             requirement: requirement)
     }
 
     private static func group(_ identifier: String, _ items: [Item]) -> Menu {
         Menu(identifier: UIMenu.Identifier("com.duckduckgo." + identifier), items: items, inline: true)
+    }
+
+    private static var browserMenus: [Menu] {
+        [settingsMenu(title: UserText.menuSettings), fileMenu, editMenu, viewMenu, windowMenu, helpMenu]
+    }
+
+    private static func settingsMenu(title: String) -> Menu {
+        Menu(identifier: .preferences, items: [item(.settings, title, ",", .command)])
+    }
+
+    private static var fileMenu: Menu {
+        Menu(identifier: .file, items: [], submenus: [
+            group("file.new", [
+                item(.newTab, UserText.keyCommandNewTab, "t", .command),
+                item(.newFireTab, UserText.keyCommandNewFireTab, "n", [.shift, .command], requires: \.fireModeEnabled),
+                item(.voiceSearch, UserText.menuVoiceSearch, ".", [.shift, .command], requires: \.voiceSearchEnabled)
+            ]),
+            group("file.location", [item(.location, UserText.menuOpenLocation, "l", .command)]),
+            group("file.close", [item(.closeTab, UserText.keyCommandCloseTab, "w", .command)]),
+            group("file.share", [item(.share, UserText.actionShare)]),
+            group("file.print", [item(.printPage, UserText.menuPrint, "p", .command)])
+        ])
+    }
+
+    private static var editMenu: Menu {
+        Menu(identifier: .edit, items: [], placement: .appendChildren, submenus: [
+            group("edit.find", [item(.find, UserText.keyCommandFind, "f", .command)])
+        ])
+    }
+
+    private static var viewMenu: Menu {
+        Menu(identifier: .view, items: [], submenus: [
+            group("view.loading", [item(.stop, UserText.menuStop, ".", .command),
+                                   item(.reload, UserText.keyCommandReload, "r", .command)]),
+            group("view.panels", [item(.showTabs, UserText.menuShowTabs, "\\", [.shift, .command]),
+                                  item(.showPasswords, UserText.menuShowPasswords, "a", [.shift, .command]),
+                                  item(.showDownloads, UserText.menuShowDownloads, "j", [.shift, .command])]),
+            group("view.zoom", [item(.zoomIn, UserText.keyCommandZoomIn, "+", .command),
+                                item(.zoomOut, UserText.keyCommandZoomOut, "-", .command),
+                                item(.actualSize, UserText.menuActualSize, "0", .command)])
+        ])
+    }
+
+    private static var windowMenu: Menu {
+        Menu(identifier: .window, items: [], placement: .appendChildren, submenus: [
+            group("window.tabs", [item(.newTabOnRight, UserText.menuNewTabOnRight),
+                                  item(.duplicateTab, UserText.menuDuplicateTab)]),
+            group("window.select", [item(.previousTab, UserText.menuPreviousTab, "[", [.shift, .command]),
+                                    item(.nextTab, UserText.menuNextTab, "]", [.shift, .command])])
+        ])
+    }
+
+    private static var helpMenu: Menu {
+        Menu(identifier: .help, items: [], placement: .appendChildren, submenus: [
+            group("help.about", [item(.about, UserText.settingsAboutDDG),
+                                 item(.feedback, UserText.menuFeedback)]),
+            Menu(identifier: UIMenu.Identifier("com.duckduckgo.moreShortcuts"), items: moreShortcuts,
+                 title: UserText.menuMoreShortcuts)
+        ])
     }
 
     private static var moreShortcuts: [Item] {
@@ -180,5 +206,48 @@ struct MainMenuSpec {
             item(.openBackgroundLink, UserText.menuOpenBackgroundLink),
             item(.fire, UserText.menuClearTabsAndData, UIKeyCommand.inputBackspace, [.control, .alternate])
         ]
+    }
+}
+
+extension MainMenuCommand {
+    var action: Selector {
+        switch self {
+        case .settings: return #selector(MainViewController.keyboardSettings)
+        case .newTab: return #selector(MainViewController.keyboardNewTab)
+        case .newFireTab: return #selector(MainViewController.keyboardNewFireTab)
+        case .voiceSearch: return #selector(MainViewController.menuVoiceSearch)
+        case .location: return #selector(MainViewController.keyboardLocation)
+        case .closeTab: return #selector(MainViewController.keyboardCloseTab)
+        case .share: return #selector(MainViewController.menuShare)
+        case .printPage: return #selector(MainViewController.keyboardPrint)
+        case .find: return #selector(MainViewController.keyboardFind)
+        case .stop: return #selector(MainViewController.menuStop)
+        case .reload: return #selector(MainViewController.keyboardReload)
+        case .showTabs: return #selector(MainViewController.keyboardShowAllTabs)
+        case .showPasswords: return #selector(MainViewController.menuTogglePasswords)
+        case .showDownloads: return #selector(MainViewController.menuToggleDownloads)
+        case .zoomIn: return #selector(MainViewController.keyboardZoomIn)
+        case .zoomOut: return #selector(MainViewController.keyboardZoomOut)
+        case .actualSize: return #selector(MainViewController.keyboardZoomReset)
+        case .newTabOnRight: return #selector(MainViewController.menuNewTabOnRight)
+        case .duplicateTab: return #selector(MainViewController.menuDuplicateTab)
+        case .previousTab: return #selector(MainViewController.keyboardPreviousTab)
+        case .nextTab: return #selector(MainViewController.keyboardNextTab)
+        case .about: return #selector(MainViewController.menuAbout)
+        case .feedback: return #selector(MainViewController.menuFeedback)
+        case .selectTab: return #selector(MainViewController.keyboardSelectTab(_:))
+        case .back: return #selector(MainViewController.keyboardBrowserBack)
+        case .forward: return #selector(MainViewController.keyboardBrowserForward)
+        case .findNext: return #selector(MainViewController.keyboardFindNext)
+        case .findPrevious: return #selector(MainViewController.keyboardFindPrevious)
+        case .fire: return #selector(MainViewController.keyboardFire)
+        case .openLink: return #selector(MainViewController.menuOpenLink)
+        case .openBackgroundLink: return #selector(MainViewController.menuOpenBackgroundLink)
+        }
+    }
+
+    init?(action: Selector) {
+        guard let command = Self.allCases.first(where: { $0.action == action }) else { return nil }
+        self = command
     }
 }

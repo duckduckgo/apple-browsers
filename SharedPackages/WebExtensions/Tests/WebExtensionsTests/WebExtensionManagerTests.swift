@@ -1014,14 +1014,17 @@ final class WebExtensionManagerTests: XCTestCase {
 
     @MainActor
     func testCPMSyncErrorMarksOnlyBeforeLoadAndPreservesCause() async throws {
-        let bundle = try XCTUnwrap(EmbeddedWebExtensionRegistry.descriptor(for: .embedded)?.bundledURL)
+        let directory = try makeTestExtensionDirectory(embeddedType: .embedded)
+        let bundle = directory.appendingPathExtension("zip")
+        createdTestExtensionDirs.append(bundle)
+        try FileManager.default.zipItem(at: directory, to: bundle, shouldKeepParent: false)
         let cause = NSError(domain: NSPOSIXErrorDomain, code: 13)
         let original = NSError(domain: NSCocoaErrorDomain,
                                code: CocoaError.fileWriteNoPermission.rawValue,
                                userInfo: [NSUnderlyingErrorKey: cause, "test_context": "retained"])
         storageProvidingMock.mockCopyError = original
         storageProvidingMock.mockExtractError = original
-        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: "old-cpm", version: "2000.1.1", embeddedType: .embedded))
+        installedExtensionStoringMock.add(makeInstalledWebExtension(uniqueIdentifier: "old-cpm", version: "0.0.1", embeddedType: .embedded))
         let pixels = EventCapturingPixelFiring()
         let manager = makeManager(pixelFiring: pixels, bundledExtensionURL: { _ in bundle })
 

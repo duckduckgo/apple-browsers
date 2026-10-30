@@ -60,8 +60,9 @@ final class UTIPromptLengthGate {
         return measure(text).isOverLimit
     }
 
-    func sheetLimit(for paste: AIChatPastedText) -> Int {
-        max(0, measure(inputs.promptText()).limit(forEditing: paste))
+    func sheetMode(for paste: AIChatPastedText) -> PastedTextSheetMode {
+        let length = measure(inputs.promptText())
+        return .editable(limit: length.limit, otherCount: length.count - paste.length)
     }
 
     func refresh() {

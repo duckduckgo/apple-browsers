@@ -39,12 +39,17 @@ def pick_dri(rotation_tasks: List[Dict], today: date) -> Optional[Dict]:
 
 
 def notes_html(notes: str) -> str:
-    """Asana rich text for plain notes: "Label: value" lines get a bold label, and URLs become links."""
+    """Asana rich text for plain notes: "Label: value" lines other than "- " bullets get a bold label, and
+    Markdown links and URLs become links."""
     lines = []
     for line in notes.strip().split('\n'):
-        line = html.escape(line, quote=True)
-        line = re.sub(r'(https?://\S+)', r'<a href="\1">\1</a>', line)
-        line = re.sub(r'^([^:<]{1,60}):(\s)', r'<strong>\1:</strong>\2', line)
+        line = html.escape(line, quote=False)  # Asana shows &#x27; and &quot; literally in text.
+        line = re.sub(
+            r'\[([^\]]+)\]\((https?://[^)\s]+)\)|(https?://\S+)',
+            lambda match: f'<a href="{match[2]}">{match[1]}</a>' if match[2] else f'<a href="{match[3]}">{match[3]}</a>',
+            line
+        )
+        line = re.sub(r'^(?!- )([^:<]{1,60}):(\s)', r'<strong>\1:</strong>\2', line)
         lines.append(line)
     return '<body>' + '\n'.join(lines) + '</body>'
 
@@ -105,8 +110,26 @@ class AsanaClient:
     def sections(self, project_id: str) -> List[Dict]:
         return self._get_all(f'/projects/{project_id}/sections', {'opt_fields': 'name'})
 
+    def section_tasks(self, section_id: str, since: date) -> List[Dict]:
+        return self._get_all(f'/sections/{section_id}/tasks', {
+            'completed_since': f'{since.isoformat()}T00:00:00Z',
+            'opt_fields': 'name',
+        })
+
+    def subtasks(self, task_id: str) -> List[Dict]:
+        return self._get_all(f'/tasks/{task_id}/subtasks', {'opt_fields': 'name'})
+
     def create_task(self, body: Dict) -> Dict:
         return self._request('POST', '/tasks', {'opt_fields': 'permalink_url'}, body)
+
+    def task(self, task_id: str) -> Dict:
+        return self._request('GET', f'/tasks/{task_id}', {'opt_fields': 'completed,assignee,parent.assignee'})
+
+    def update_task(self, task_id: str, body: Dict) -> Dict:
+        return self._request('PUT', f'/tasks/{task_id}', body=body)
+
+    def add_comment(self, task_id: str, html_text: str) -> Dict:
+        return self._request('POST', f'/tasks/{task_id}/stories', body={'html_text': html_text})
 
 
 def log(message: str):

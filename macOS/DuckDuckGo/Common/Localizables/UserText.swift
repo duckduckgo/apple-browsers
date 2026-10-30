@@ -43,6 +43,13 @@ struct UserText {
     static let chromeWebStoreErrorMessage = NotLocalizedString("webExtensions.store.error.message", value: "Please check your connection and try again.", comment: "Extension operation error message")
     static let chromeWebStoreUnsupportedMessage = NotLocalizedString("webExtensions.store.error.unsupported", value: "This extension requires features that DuckDuckGo does not support.", comment: "Unsupported extension explanation")
     static let chromeWebStoreInvalidPackageMessage = NotLocalizedString("webExtensions.store.error.invalid", value: "The extension’s identity or downloaded package could not be verified.", comment: "Extension verification failure explanation")
+    static let betaBadge = NotLocalizedString("webExtensions.settings.beta-badge", value: "Beta", comment: "Copy of badge used to indicate the Extensions settings are in beta")
+    static let extensionsSettingsTitle = NotLocalizedString("webExtensions.settings.title", value: "Extensions", comment: "Title of the option to show the Extensions settings")
+    static let extensionsSettingsDescription = NotLocalizedString("webExtensions.settings.description", value: "Customize your browsing experience with supported third-party extensions. %@", comment: "Description of the Extensions settings; the placeholder is a Learn more link")
+    static let extensionsSettingsLearnMore = NotLocalizedString("webExtensions.settings.learn-more", value: "Learn more", comment: "Link in the Extensions settings description")
+    static let extensionsSettingsPasswordManagersHeader = NotLocalizedString("webExtensions.settings.password-managers", value: "Password Managers", comment: "Header of the password manager extensions section in the Extensions settings")
+    static let extensionsSettingsGetButton = NotLocalizedString("webExtensions.settings.get", value: "Get", comment: "Button that installs an extension from the Extensions settings")
+    static let extensionsSettingsDisclaimer = NotLocalizedString("webExtensions.settings.disclaimer", value: "The extensions on this list are provided by a third party. We provide links to select third-party password managers for your convenience only. Inclusion on this list does not constitute an endorsement, certification, or representation regarding a password manager’s security, privacy practices, or suitability for your needs. DuckDuckGo does not develop, monitor, or control these products and is not responsible for their performance, security, or content. Before installing or using any extension, you should review the provider’s terms, privacy policy, security practices, and other relevant information to determine whether it meets your needs.", comment: "Disclaimer at the bottom of the Extensions settings")
     static let webExtensionRemoveMenuItem = NotLocalizedString("webExtensions.remove.menu-item", value: "Remove from DuckDuckGo", comment: "Context menu item of an extension's toolbar button that removes the extension")
     static let webExtensionRemoveButton = NotLocalizedString("webExtensions.remove.button", value: "Remove", comment: "Confirm removing an extension from its toolbar button")
     static let webExtensionRemoveErrorMessage = NotLocalizedString("webExtensions.remove.error.message", value: "The extension couldn’t be removed. Please try again.", comment: "Error message when removing an extension fails")
@@ -833,6 +840,23 @@ struct UserText {
     static let aiChatAttachMenuRecentTabsHeader = NSLocalizedString("aichat.attach-menu.recent-tabs-header", value: "Recent Tabs", comment: "Section header inside the AI chat omnibar add-attachment menu listing the user's currently open browser tabs")
     static let aiChatAttachMenuNoOpenTabs = NSLocalizedString("aichat.attach-menu.no-open-tabs", value: "No page content available", comment: "Placeholder shown inside the AI chat add-tabs modal when none of the user's open tabs can be attached (e.g. all are filtered out as NTP / duck.ai / DDG homepage). Phrased as 'no page content' rather than 'no open tabs' because tabs may be open but their content isn't attachable.")
     static let aiChatAttachMenuAttachTabs = NSLocalizedString("aichat.attach-menu.attach-tabs", value: "Add Tabs", comment: "Item in the AI chat omnibar add-attachment menu that opens a modal for selecting multiple open tabs to attach")
+    // Duck.ai screenshots
+    static let aiChatAddScreenshot = NSLocalizedString("aichat.attach-menu.add-screenshot", value: "Add Screenshot", comment: "Submenu in the Duck.ai omnibar add-attachment menu that captures a screenshot and attaches it")
+    static let aiChatScreenshotDragToSelect = NSLocalizedString("aichat.attach-menu.screenshot.drag-to-select", value: "Drag to Select", comment: "Add Screenshot submenu item: drag a rectangle on the screen to capture it")
+    static let aiChatScreenshotSelectWindowOrDisplay = NSLocalizedString("aichat.attach-menu.screenshot.select-window-or-display", value: "Select Window or Display", comment: "Add Screenshot submenu item: pick a window or a display to capture")
+    static let aiChatScreenshotAttachmentName = NSLocalizedString("aichat.attachments.screenshot-name", value: "Screenshot", comment: "Name of an image attachment captured with Add Screenshot")
+    static let aiChatPastedImageAttachmentName = NSLocalizedString("aichat.attachments.pasted-image-name", value: "Pasted Image", comment: "Name of an image attachment pasted into the Duck.ai prompt")
+    static let aiChatScreenshotCaptureFailed = NSLocalizedString("aichat.attachments.screenshot-failed", value: "Couldn't capture screenshot", comment: "Error shown under the Duck.ai prompt when a screenshot capture fails")
+    static let aiChatScreenshotPickerSelectWindow = NSLocalizedString("aichat.screenshot.picker.select-window", value: "Select Window", comment: "Title of the Duck.ai screenshot picker while it shows open windows")
+    static let aiChatScreenshotPickerSelectDisplay = NSLocalizedString("aichat.screenshot.picker.select-display", value: "Select Display", comment: "Title of the Duck.ai screenshot picker while it shows displays")
+    static let aiChatScreenshotPickerWindowsTab = NSLocalizedString("aichat.screenshot.picker.windows-tab", value: "Windows", comment: "Tab in the Duck.ai screenshot picker showing open windows")
+    static let aiChatScreenshotPickerDisplaysTab = NSLocalizedString("aichat.screenshot.picker.displays-tab", value: "Displays", comment: "Tab in the Duck.ai screenshot picker showing displays")
+    static let aiChatScreenshotPickerNoWindows = NSLocalizedString("aichat.screenshot.picker.no-windows", value: "No windows to capture", comment: "Shown in the Duck.ai screenshot picker when no window can be captured")
+    static let aiChatScreenshotPickerCapture = NSLocalizedString("aichat.screenshot.picker.capture", value: "Capture", comment: "Button in the Duck.ai screenshot picker that captures the selected window or display")
+    static let screenRecordingPermissionTitle = NSLocalizedString("aichat.screenshot.permission.title", value: "Allow screenshots in Duck.ai?", comment: "Title of the alert shown when a Duck.ai screenshot needs the macOS Screen Recording permission")
+    static let screenRecordingPermissionMessage = NSLocalizedString("aichat.screenshot.permission.message", value: "macOS will ask for Screen Recording access. We only capture the image you choose to take, never video or audio.", comment: "Body of the alert shown when a Duck.ai screenshot needs the macOS Screen Recording permission, before macOS asks for it")
+    static let screenRecordingPermissionSettingsMessage = NSLocalizedString("aichat.screenshot.permission.settings-message", value: "Turn on Screen & System Audio Recording for DuckDuckGo in System Settings. We only capture the image you choose to take, never video or audio.", comment: "Body of the alert shown when a Duck.ai screenshot needs the macOS Screen Recording permission and macOS has already asked for it once. 'Screen & System Audio Recording' is the name of the macOS setting")
+    static let screenRecordingPermissionOpenSettings = NSLocalizedString("aichat.screenshot.permission.open-settings", value: "Open System Settings", comment: "Button in the Duck.ai screenshot permission alert that opens the Screen Recording pane of System Settings")
     static let aiChatAttachTabsModalSearchPlaceholder = NSLocalizedString("aichat.attach-tabs-modal.search-placeholder", value: "Search", comment: "Placeholder in the search field of the AI chat add-tabs modal, filters the list of open tabs")
     static let aiChatAttachTabsModalAttachButton = NSLocalizedString("aichat.attach-tabs-modal.attach", value: "Add", comment: "Confirm button in the AI chat add-tabs modal, adds the selected tabs")
     static let aiChatAttachTabsModalUpdateButton = NSLocalizedString("aichat.attach-tabs-modal.update", value: "Update", comment: "Confirm button in the AI chat add-tabs modal when it opened with tabs already attached, since confirming can remove them as well as add")
@@ -1813,6 +1837,9 @@ struct UserText {
     static let aboutUpdateInfoAppStoreLink = NSLocalizedString("preferences.about.update-info.appstore.link", value: "App Store", comment: "The clickable 'App Store' text that appears within the App Store update info message")
     static let aboutUpdateInfoAppStoreMenu = NSLocalizedString("preferences.about.update-info.appstore.menu", value: "App Store menu", comment: "The 'App Store menu' text that appears bold within the App Store update info message")
     static let aboutUpdateInfoAppStoreSettings = NSLocalizedString("preferences.about.update-info.appstore.settings", value: "Settings", comment: "The 'Settings' text that appears bold within the App Store update info message")
+    static let aboutAppStoreUpdatesTitle = NotLocalizedString("preferences.about.appstore-updates.title", value: "Turn on automatic updates", comment: "Title of the card on the About screen for App Store builds that explains how to turn on automatic updates")
+    static let aboutAppStoreUpdatesMessage = NotLocalizedString("preferences.about.appstore-updates.message", value: "Get the latest fixes and improvements as soon as they're ready. In the App Store, choose App Store › Settings in the menu bar, then turn on Automatic Updates.", comment: "Message on the About screen for App Store builds explaining how to turn on automatic updates in the App Store app")
+    static let aboutAppStoreUpdatesButton = NotLocalizedString("preferences.about.appstore-updates.button", value: "Open App Store", comment: "Button on the About screen for App Store builds that opens DuckDuckGo in the Mac App Store")
 
     static let sendFeedback = NSLocalizedString("preferences.about.send-feedback", value: "Send Feedback", comment: "Feedback button in the about preferences page")
 
@@ -1928,6 +1955,7 @@ struct UserText {
     static let importLoginsPasswordsExplainerEncrypted = NSLocalizedString("import.logins.passwords.explainer.encrypted", value: "Encrypted", comment: "Explanatory label stating that the passwords are encrypted")
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
+    static let importHistory = NSLocalizedString("import.history", value: "History", comment: "Title text for the browsing History import option")
 
     static let importBookmarksButtonTitle = NSLocalizedString("bookmarks.import.button.title", value: "Import", comment: "Button text to open bookmark import dialog")
     static let skipBookmarksImport = NSLocalizedString("import.data.skip.bookmarks", value: "Skip bookmarks", comment: "Button text to skip bookmarks manual import")
@@ -1990,6 +2018,14 @@ struct UserText {
         let localized = NSLocalizedString("import.summary.credit.cards.imported.partial", value: "Credit Cards Imported: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
         return String(format: localized, successful, total)
     }
+    static func importSummaryHistoryImported(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.history.imported", value: "History Imported: %d (last 30 days)", comment: "Summary text showing number of browsing history visits imported from the last 30 days")
+        return String(format: localized, count)
+    }
+    static func importSummaryHistoryImportedPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.history.imported.partial", value: "History Imported: %d / %d (last 30 days)", comment: "Summary text showing number of new browsing history visits imported out of all visits found in the last 30 days")
+        return String(format: localized, successful, total)
+    }
     static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
         let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")
         return String(format: localized, count)
@@ -2035,6 +2071,7 @@ struct UserText {
     static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
     static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
     static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
+    static let importCouldNotImportHistory = NSLocalizedString("import.could.not.import.history", value: "Couldn't import History", comment: "Error message when browsing history could not be imported")
     static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")
@@ -2122,6 +2159,15 @@ struct UserText {
             return String(format: localized, numberOfCreditCards)
         } else {
             return NSLocalizedString("import.credit-cards.indefinite.progress.text", value: "Importing credit cards…", comment: "Operation progress info message about indefinite number of passwords being imported")
+        }
+    }
+
+    static func importingHistory(_ numberOfVisits: Int?) -> String {
+        if let numberOfVisits, numberOfVisits > 0 {
+            let localized = NSLocalizedString("import.history.number.progress.text", value: "Importing history (%d)…", comment: "Operation progress info message about %d number of history visits being imported")
+            return String(format: localized, numberOfVisits)
+        } else {
+            return NSLocalizedString("import.history.indefinite.progress.text", value: "Importing history…", comment: "Operation progress info message about an indefinite number of history visits being imported")
         }
     }
 
@@ -2561,6 +2607,10 @@ struct UserText {
     static let updateNewVersionAvailableMenuItem = NSLocalizedString("update.new.version.available.menu.item", value: "New version available - Update DuckDuckGo", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
     static let updateAvailableMenuItemAppStore = NSLocalizedString("update.available.menu.item.app.store", value: "Update Available - Update in the App Store", comment: "Title of the menu item that informs user that a new update is available in the App Store. Clicking on the menu item takes the user to the App Store")
     static let updateReadyMenuItem = NSLocalizedString("update.ready.menu.item", value: "Update Ready - Restart to Update", comment: "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app")
+    static let updateBannerRowTitle = NotLocalizedString("update.banner.row.title", value: "Update ready", comment: "Title of the compact banner at the top of the browser menu that tells the user an update is ready to install")
+    static let updateBannerCardTitle = NotLocalizedString("update.banner.card.title", value: "New version available", comment: "Title of the illustrated card at the top of the browser menu that tells the user a new version of the browser is available")
+    static let updateBannerOpenAppStoreButton = NotLocalizedString("update.banner.open-app-store.button", value: "Open App Store", comment: "Button in the update banner at the top of the browser menu that opens DuckDuckGo in the App Store")
+    static let addressBarUpdateButton = NotLocalizedString("update.address-bar.button", value: "Update now", comment: "Button next to the browser menu button that starts updating the browser")
     static let releaseNotesMenuItem = NSLocalizedString("release.notes.menu.item", value: "Release Notes", comment: "Title of the dialog menu item that opens release notes")
     static let whatsNewMenuItem = NSLocalizedString("whats.new.menu.item", value: "What's New", comment: "Title of the dialog menu item that opens the 'What's New' page")
     static let browserUpdatesTitle = NSLocalizedString("settings.browser.updates.title", value: "Browser Updates", comment: "Title of the section in Settings where people set up automatic vs manual updates")

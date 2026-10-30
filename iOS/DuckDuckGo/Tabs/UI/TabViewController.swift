@@ -316,6 +316,7 @@ class TabViewController: UIViewController {
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
     var featureFlagger: FeatureFlagger
+    let findInPageImplementation: FindInPageImplementation
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -533,7 +534,7 @@ class TabViewController: UIViewController {
 
     var isShowingDocument: Bool {
         // Local (file://) pages aren't attachable, so don't offer the document menu for a local PDF.
-        guard featureFlagger.isFeatureOn(.aiChatPdfPageContext), let url, !url.isFileURL else { return false }
+        guard let url, !url.isFileURL else { return false }
         return DocumentPageContextProvider.isSupportedDocument(mimeType: lastMainFramePageContextMIMEType(for: url), url: url)
     }
 
@@ -649,6 +650,7 @@ class TabViewController: UIViewController {
                                    webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
                                    pixelFiring: (any PixelKitFiring)? = PixelKit.shared,
                                    sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+                                   findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
                                    sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) -> TabViewController {
 
         return TabViewController(tabModel: model,
@@ -691,6 +693,7 @@ class TabViewController: UIViewController {
                                  pixelFiring: pixelFiring,
                                  webExtensionManagerProvider: webExtensionManagerProvider,
                                  sitePermissionsEnabled: sitePermissionsEnabled,
+                                 findInPageImplementation: findInPageImplementation,
                                  webExtensionInitialLoadWaiterProvider: webExtensionInitialLoadWaiterProvider,
                                  sitePermissionsDependenciesProvider: sitePermissionsDependenciesProvider)
     }
@@ -822,8 +825,7 @@ class TabViewController: UIViewController {
             userScriptProvider: { [weak self] in self?.userScripts?.pageContextUserScript },
             faviconProvider: { [weak self] url in self?.getFaviconBase64(for: url) },
             attachabilityPolicyProvider: { [weak self] in self?.currentPageContextAttachabilityPolicy() },
-            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) },
-            isDocumentContextEnabled: { [weak self] in self?.featureFlagger.isFeatureOn(.aiChatPdfPageContext) ?? false }
+            mimeTypeProvider: { [weak self] url in self?.lastMainFramePageContextMIMEType(for: url) }
         )
     }
 
@@ -932,6 +934,7 @@ class TabViewController: UIViewController {
          tabTerminationErrorPageInstrumentation: (any TabTerminationErrorPageInstrumenting)? = nil,
          webExtensionManagerProvider: @escaping () -> WebExtensionManaging? = { nil },
          sitePermissionsEnabled: Bool = AppDependencyProvider.shared.isSitePermissionsEnabled,
+         findInPageImplementation: FindInPageImplementation = AppDependencyProvider.shared.findInPageImplementation,
          webExtensionInitialLoadWaiterProvider: @escaping @MainActor () -> WebExtensionInitialLoadWaiter? = { nil },
          sitePermissionsDependenciesProvider: @escaping @MainActor () -> SitePermissionsDependencies? = { nil }) {
 
@@ -943,13 +946,18 @@ class TabViewController: UIViewController {
         self.historyManager = historyManager
         self.syncService = syncService
         self.userScriptsDependencies = userScriptsDependencies
-        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher.map { content in
+            var content = content
+            content.findInPageImplementation = findInPageImplementation
+            return content
+        }.eraseToAnyPublisher()
         self.certificateTrustEvaluator = certificateTrustEvaluator
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.findInPageImplementation = findInPageImplementation
         self.isFloatingUIFeatureEnabledForCurrentLaunch = isFloatingUIFeatureEnabledForCurrentLaunch
             ?? featureFlagger.isFloatingUIFeatureEnabled()
         self.contentScopeExperimentsManager = contentScopeExperimentManager
@@ -1973,6 +1981,11 @@ class TabViewController: UIViewController {
     
     func updateContentMode() {
         webView.configuration.defaultWebpagePreferences.preferredContentMode = tabModel.isDesktop ? .desktop : .mobile
+
+        // Desktop sites expect the Fullscreen API that iPhone Safari's mobile mode doesn't expose.
+        if #available(iOS 16.0, *), UIDevice.current.userInterfaceIdiom == .phone {
+            webView.configuration.preferences.isElementFullscreenEnabled = tabModel.isDesktop && featureFlagger.isFeatureOn(.elementFullscreen)
+        }
     }
 
     func goBack() {
@@ -4808,7 +4821,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4828,7 +4841,7 @@ extension TabViewController: WKUIDelegate {
         
         let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: message,
@@ -4847,9 +4860,9 @@ extension TabViewController: WKUIDelegate {
             return
         }
         
-        let alert = WebJSAlert(domain: frame.request.url?.host
+        let alert = WebJSAlert(domain: frame.safeRequest?.url?.host
                                // in case the web view is navigating to another host
-                               ?? webView.backForwardList.currentItem?.url.host
+                               ?? webView.backForwardList.currentItem?.safeURL?.host
                                ?? self.url?.absoluteString
                                ?? "",
                                message: prompt,
@@ -4913,12 +4926,10 @@ extension TabViewController: UIGestureRecognizerDelegate {
     func requestFindInPage() {
         pixelFiring?.fire(FindInPagePixel.opened, frequency: .daily)
 
-        if #available(iOS 16.0, *) {
+        if #available(iOS 16.0, *), findInPageImplementation == .system {
             webView.isFindInteractionEnabled = true
             let findInteraction = webView.findInteraction
-            // Ignore repeat invocations while find is open so in-progress text isn't replaced with a stored query.
             guard findInteraction?.isFindNavigatorVisible == false else { return }
-            // Default to empty (not nil) so this tab's field doesn't fall back to the system-wide retained query from another tab.
             findInteraction?.searchText = (webView as? WebView)?.lastFindInPageQuery ?? ""
             findInteraction?.presentFindNavigator(showingReplace: false)
             (webView as? WebView)?.beginTrackingFindInPageQuery()

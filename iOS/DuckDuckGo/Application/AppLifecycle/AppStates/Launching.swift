@@ -85,8 +85,7 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(
             appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore,
-            featureFlagger: featureFlagger,
-            aiChatBonusService: aiChatBonusService
+            featureFlagger: featureFlagger
         )
 
         var isBookmarksDBFilePresent: Bool?
@@ -663,6 +662,14 @@ struct DuckAiNativeStoragePixelAdapter: DuckAiNativeStoragePixelFiring {
         case .lastUsedReasoningModeParseError(let error):
             PixelKit.fire(Pixel.Event.duckAiNativeStorageLastUsedReasoningModeParseError.withError(error),
                           frequency: .dailyAndStandard)
+        case .invalidValue(let invalidValue):
+            PixelKit.fire(DuckAiNativeStorageInvalidValuePixel(parameters: invalidValue.parameters), frequency: .dailyAndCount)
         }
     }
+}
+
+struct DuckAiNativeStorageInvalidValuePixel: PixelKit.Event {
+    let parameters: [String: String]?
+    var name: String { DuckAiNativeStorageInvalidValue.pixelName }
+    var standardParameters: [PixelKitStandardParameter]? { nil }
 }

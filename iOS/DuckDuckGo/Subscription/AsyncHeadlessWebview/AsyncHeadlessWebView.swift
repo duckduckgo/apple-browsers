@@ -34,17 +34,20 @@ struct AsyncHeadlessWebViewSettings {
     let bounces: Bool
     let javascriptEnabled: Bool
     let allowedDomains: [String]?
+    let reportsHTTPErrors: Bool
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?
     let featureFlagger: FeatureFlagger
 
     init(bounces: Bool = true,
          javascriptEnabled: Bool = true,
          allowedDomains: [String]? = nil,
+         reportsHTTPErrors: Bool = false,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?,
          featureFlagger: FeatureFlagger) {
         self.bounces = bounces
         self.javascriptEnabled = javascriptEnabled
         self.allowedDomains = allowedDomains
+        self.reportsHTTPErrors = reportsHTTPErrors
         self.userScriptsDependencies = userScriptsDependencies
         self.featureFlagger = featureFlagger
     }

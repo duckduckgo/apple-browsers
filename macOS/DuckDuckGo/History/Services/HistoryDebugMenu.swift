@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import History
 import PrivacyConfig
 
@@ -54,6 +55,22 @@ final class HistoryDebugMenu: NSMenu {
             ).withAccessibilityIdentifier("HistoryDebugMenu.populate100slow")
 
             NSMenuItem.separator()
+
+            NSMenuItem(
+                title: "Import from Chrome",
+                action: #selector(importFromChrome),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromChrome")
+            NSMenuItem(
+                title: "Import from Firefox",
+                action: #selector(importFromFirefox),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromFirefox")
+            NSMenuItem(
+                title: "Import from Safari…",
+                action: #selector(importFromSafari),
+                target: self
+            ).withAccessibilityIdentifier("HistoryDebugMenu.importFromSafari")
         }
     }
 
@@ -68,6 +85,80 @@ final class HistoryDebugMenu: NSMenu {
         DispatchQueue.main.async {
             self.populateHistory(maxVisitsPerDay, pool.urls)
         }
+    }
+
+    /// Imports the last month of history from Chrome's default profile through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromChrome(_ sender: NSMenuItem) {
+        guard let profile = ThirdPartyBrowser.chrome.browserProfiles().defaultProfile else {
+            showAlert(title: "Chrome History Import Failed", message: "No Chrome profile found")
+            return
+        }
+
+        let importer = ChromiumDataImporter(profile: profile,
+                                            loginImporter: nil,
+                                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                            faviconManager: NSApp.delegateTyped.faviconManager,
+                                            historyReader: ChromiumHistoryReader(chromiumDataDirectoryURL: profile.profileURL),
+                                            historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
+        importHistory(with: importer, browserName: "Chrome")
+    }
+
+    /// Imports the last month of history from Firefox's default profile through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromFirefox(_ sender: NSMenuItem) {
+        guard let profile = ThirdPartyBrowser.firefox.browserProfiles().defaultProfile else {
+            showAlert(title: "Firefox History Import Failed", message: "No Firefox profile found")
+            return
+        }
+
+        let importer = FirefoxDataImporter(profile: profile,
+                                           primaryPassword: nil,
+                                           loginImporter: SecureVaultLoginImporter(),
+                                           bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                           faviconManager: NSApp.delegateTyped.faviconManager,
+                                           historyReader: FirefoxHistoryVisitsReader(firefoxDataDirectoryURL: profile.profileURL),
+                                           historyImporter: HistoryImporter(historyCoordinator: historyCoordinator))
+        importHistory(with: importer, browserName: "Firefox")
+    }
+
+    /// Imports the last month of history from a Safari "Export Browsing Data" archive through the importer the data import flow uses.
+    @MainActor
+    @objc func importFromSafari(_ sender: NSMenuItem) {
+        let panel = NSOpenPanel(allowedFileTypes: [.zip])
+        guard case .OK = panel.runModal(), let archiveURL = panel.url else { return }
+
+        let importer = SafariArchiveImporter(archiveURL: archiveURL,
+                                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
+                                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
+                                             faviconManager: NSApp.delegateTyped.faviconManager,
+                                             historyImporter: HistoryImporter(historyCoordinator: historyCoordinator),
+                                             featureFlagger: featureFlagger,
+                                             secureVaultReporter: SecureVaultReporter.shared,
+                                             tld: Application.appDelegate.tld)
+        importHistory(with: importer, browserName: "Safari")
+    }
+
+    @MainActor
+    private func importHistory(with importer: DataImporter, browserName: String) {
+        Task { @MainActor in
+            switch await importer.importData(types: [.history]).task.value[.history] {
+            case .success(let summary):
+                showAlert(title: "\(browserName) History Imported", message: "Imported: \(summary.successful)\nAlready in history: \(summary.duplicate)")
+            case .failure(let error):
+                showAlert(title: "\(browserName) History Import Failed", message: "\(error)")
+            case nil:
+                showAlert(title: "\(browserName) History Import Failed", message: "History wasn't imported")
+            }
+        }
+    }
+
+    @MainActor
+    private func showAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.runModal()
     }
 
     @MainActor

@@ -89,13 +89,7 @@ final class NewTabPageOnboardingCoordinator {
     }
 
     func pageWillDisappear() {
-        // Must run before the parent-check below, which would zero isShowingDuckAICompletionDialog
-        // and prevent the seen flag from being set (e.g. on a tab switch without editing ending).
         dismissDuckAICompletionDialogIfNeededOnEditingEnd()
-        // Clean up any stale hosting controller parented to mainVC before this NTP leaves.
-        if let hostingController, hostingController.parent !== page {
-            dismissHostingController(didFinishNTPOnboarding: false)
-        }
     }
 
     func detach() {
@@ -305,18 +299,13 @@ final class NewTabPageOnboardingCoordinator {
         }
 
         // Overlays the NTP view, visible after the omnibar closes.
-        // Parented to mainVC because the existing NTP is a UIHostingController<NewTabPageView>:
-        // adding one _UIHostingView as a subview of another UIHostingController.view is
-        // unsupported and triggers a UIKit warning. the page's superview is the content
-        // container's plain UIView, so it is safe to host into.
         let ntpRoot = newTabDialogFactory.createDuckAIFireOnboardingCompletionDialog(message: message, onDismiss: onDismiss)
         let ntpHC = UIHostingController(rootView: ntpRoot)
         ntpHC.view.backgroundColor = .clear
         ntpHC.view.translatesAutoresizingMaskIntoConstraints = false
         self.hostingController = ntpHC
-        let ntpContainer: UIView = page.view.superview ?? mainVC.view
-        mainVC.addChild(ntpHC)
-        ntpContainer.addSubview(ntpHC.view)
+        page.addChild(ntpHC)
+        page.view.addSubview(ntpHC.view)
         // Also shown with the input card focused, so it needs the same offset.
         let ntpTopConstraint = ntpHC.view.topAnchor.constraint(equalTo: page.view.topAnchor,
                                                               constant: floatingDaxDialogTopInset)
@@ -327,7 +316,7 @@ final class NewTabPageOnboardingCoordinator {
             ntpHC.view.trailingAnchor.constraint(equalTo: page.view.trailingAnchor),
             ntpHC.view.bottomAnchor.constraint(equalTo: page.view.bottomAnchor),
         ])
-        ntpHC.didMove(toParent: mainVC)
+        ntpHC.didMove(toParent: page)
     }
 
     private func showNextDaxDialogNew(dialogProvider: NewTabDialogSpecProvider, factory: any NewTabDaxDialogProviding) {

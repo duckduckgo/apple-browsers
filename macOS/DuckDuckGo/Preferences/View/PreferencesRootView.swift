@@ -25,6 +25,7 @@ import SwiftUI
 import SwiftUIExtensions
 import SyncUI_macOS
 import PrivacyConfig
+import WebExtensions
 import PixelKit
 import WideEvent
 import Subscription
@@ -80,6 +81,9 @@ enum Preferences {
         let blackFridayCampaignProvider: BlackFridayCampaignProviding
         let pixelHandler: (SubscriptionPixel, PixelKit.Frequency) -> Void
         let pinningManager: PinningManager
+        let privacyConfigurationManager: PrivacyConfigurationManaging
+        let webExtensionManager: WebExtensionManaging?
+        let windowControllersManager: WindowControllersManagerProtocol
         private var colorsProvider: ColorsProviding {
             themeManager.theme.colorsProvider
         }
@@ -105,6 +109,9 @@ enum Preferences {
             wideEvent: WideEventManaging,
             pinningManager: PinningManager,
             permissionManager: PermissionManagerProtocol,
+            privacyConfigurationManager: PrivacyConfigurationManaging,
+            webExtensionManager: WebExtensionManaging?,
+            windowControllersManager: WindowControllersManagerProtocol,
             websitePermissionDefaults: WebsitePermissionDefaultsProtocol = NSApp.delegateTyped.websitePermissionDefaults,
             winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
             showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
@@ -131,6 +138,9 @@ enum Preferences {
             self.blackFridayCampaignProvider = blackFridayCampaignProvider
             self.pixelHandler = pixelHandler
             self.pinningManager = pinningManager
+            self.privacyConfigurationManager = privacyConfigurationManager
+            self.webExtensionManager = webExtensionManager
+            self.windowControllersManager = windowControllersManager
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -248,6 +258,12 @@ enum Preferences {
                     DuckPlayerView(model: model.duckPlayerPreferences)
                 case .websitePermissions:
                     PreferencesWebsitePermissionsView(model: websitePermissionsModel)
+                case .extensions:
+                    if #available(macOS 15.4, *) {
+                        ExtensionsManagementView(configurationManager: privacyConfigurationManager,
+                                                 webExtensionManager: webExtensionManager,
+                                                 windowControllersManager: windowControllersManager)
+                    }
                 case .otherPlatforms, .partnershipsHub:
                     // Opens a new tab
                     Spacer()
@@ -441,15 +457,19 @@ enum Preferences {
                                                         blackFridayCampaignProvider: blackFridayCampaignProvider,
                                                         isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) },
                                                         cancelPendingDowngradeHandler: { [flowPerformer] productId in
-                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, contextName: "CancelDowngradeButton")
+                _ = await flowPerformer.performTierChange(to: productId, changeType: nil, wideEventFunnelName: "CancelDowngradeButton")
             })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
             DispatchQueue.main.async {
+                let parameterName = switch subscriptionURL {
+                // Plan changes must not send origin to the page; planChangeEntry is read natively for wide events only.
+                case .plans, .upgradeToTier: SubscriptionURL.PlanChangeParameter.entry
+                default: AttributionParameter.origin
+                }
                 let url = subscriptionManager.url(for: subscriptionURL)
-                    .appendingParameter(name: AttributionParameter.origin,
-                                        value: SubscriptionFunnelOrigin.appSettings.rawValue)
+                    .appendingParameter(name: parameterName, value: SubscriptionFunnelOrigin.appSettings.rawValue)
                 showTab(.subscription(url))
 
                 if subscriptionURL == .purchase {

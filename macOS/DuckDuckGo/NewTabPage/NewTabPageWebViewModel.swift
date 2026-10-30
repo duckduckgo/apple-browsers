@@ -23,6 +23,16 @@ import PrivacyConfig
 import UniformTypeIdentifiers
 import WebKit
 
+protocol NewTabPageCustomBackgroundPublishing {
+    var customBackgroundPublisher: Published<CustomBackground?>.Publisher { get }
+}
+
+extension NewTabPageCustomizationModel: NewTabPageCustomBackgroundPublishing {
+    var customBackgroundPublisher: Published<CustomBackground?>.Publisher {
+        $customBackground
+    }
+}
+
 /**
  * This class manages a dedicated web view for displaying New Tab Page.
  *
@@ -40,7 +50,13 @@ final class NewTabPageWebViewModel: NSObject {
     private let newTabPageLoadMetrics: NewTabPageLoadMetrics
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger, actionsManager: NewTabPageActionsManager, newTabPageLoadMetrics: NewTabPageLoadMetrics) {
+    init(
+        featureFlagger: FeatureFlagger,
+        actionsManager: NewTabPageActionsManager,
+        newTabPageLoadMetrics: NewTabPageLoadMetrics,
+        customizationModel: NewTabPageCustomBackgroundPublishing,
+        themeManager: ThemeManaging
+    ) {
         newTabPageUserScript = NewTabPageUserScript()
         actionsManager.registerUserScript(newTabPageUserScript)
 
@@ -54,6 +70,8 @@ final class NewTabPageWebViewModel: NSObject {
 
         webView.navigationDelegate = self
         webView.uiDelegate = self
+        // Without this, WebKit paints white until the page's first frame, flashing in dark themes.
+        webView.setValue(false, forKey: "drawsBackground")
         webView.load(URLRequest(url: URL.newtab))
         newTabPageUserScript.webView = webView
 
@@ -68,6 +86,22 @@ final class NewTabPageWebViewModel: NSObject {
                 }
             }
             .store(in: &cancellables)
+
+        // Each attach gets a new container, so other tab content never inherits this colour.
+        Publishers.CombineLatest3(
+            customizationModel.customBackgroundPublisher,
+            themeManager.themePublisher.map(\.palette.surfaceCanvas),
+            webView.publisher(for: \.effectiveAppearance).map { $0.effectiveThemeAppearance == .dark }
+        )
+        .map { NewTabPageBackgroundColor.color(customBackground: $0, canvas: $1, isDark: $2) }
+        .removeDuplicates()
+        .combineLatest(webView.publisher(for: \.superview))
+        .sink { color, container in
+            guard let container else { return }
+            container.wantsLayer = true
+            container.layer?.backgroundColor = color.cgColor
+        }
+        .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: .newTabPageSectionsAvailabilityDidChange)
             .receive(on: DispatchQueue.main)

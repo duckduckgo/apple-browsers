@@ -1,5 +1,5 @@
 {
-  "originHash" : "3756d29637ca427b8a479912785dd4266e0de41af5be74de0e54dadb4cefb42f",
+  "originHash" : "b5e18ceff56c7832ffc449ee8cba6f7d4222e601fb218c48403f990294629471",
   "pins" : [
     {
       "identity" : "apple-toolbox",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts.git",
       "state" : {
-        "revision" : "0e9cb240a0aa30197c9a50e64f10685b0652da04",
-        "version" : "17.29.0"
+        "revision" : "809a5bb8b4b7d815b9f3cf6a689dbc478d65775c",
+        "version" : "18.0.0"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/sparkle-project/Sparkle.git",
       "state" : {
-        "revision" : "eef1a539a373c1f1a320624b1130fc5de7b2e100",
-        "version" : "2.10.0"
+        "revision" : "ab7d71291238df6e0492143b120c9b696a35f603",
+        "version" : "2.10.1"
       }
     },
     {

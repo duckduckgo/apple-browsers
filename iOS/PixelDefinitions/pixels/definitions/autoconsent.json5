@@ -151,6 +151,12 @@
             "fromExtension",
             "consentHeuristicEnabled",
             {
+                "key": "siteRank",
+                "description": "Popularity bucket of the top-level sites where the counted events happened: top10k if the registrable domain is in the bundled top 10k sites list, otherwise other. Events of each bucket are sent in a separate summary pixel. Not set by older versions.",
+                "type": "string",
+                "enum": ["top10k", "other"]
+            },
+            {
                 "key": "init",
                 "description": "Number of autoconsent init pixels fired.",
                 "type": "number"

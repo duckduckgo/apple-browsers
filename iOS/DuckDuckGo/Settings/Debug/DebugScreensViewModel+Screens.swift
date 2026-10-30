@@ -302,7 +302,7 @@ extension DebugScreensViewModel {
                     guard let capturedController else { return }
 
                     let viewModel = OnboardingIntroFactory.makeViewModel(
-                        pixelReporter: OnboardingPixelReporter(),
+                        pixelReporter: OnboardingPixelReporter(subscriptionManager: AppDependencyProvider.shared.subscriptionManager),
                         systemSettingsPiPTutorialManager: d.systemSettingsPiPTutorialManager,
                         daxDialogsManager: d.daxDialogManager,
                         syncAutoRestoreHandler: d.syncAutoRestoreHandler,
@@ -341,8 +341,7 @@ extension DebugScreensViewModel {
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {
-        guard #available(iOS 18.4, *),
-              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+        guard #available(iOS 18.4, *) else {
             return nil
         }
 

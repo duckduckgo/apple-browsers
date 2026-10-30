@@ -30,6 +30,7 @@ import PrivacyConfigTestsUtils
 @_spi(Testing) import SharedTestUtilities
 import SubscriptionTestingUtilities
 import SubscriptionUI
+import WebExtensions
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 @testable import Subscription
@@ -113,6 +114,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                     includingAIChat: false,
                     includingYouTubeAdBlocking: false,
                     includingWebsitePermissions: false,
+                    includingExtensions: false,
                     subscriptionState: PreferencesSidebarSubscriptionState()
                 )
             },
@@ -153,7 +155,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
         )
     }
 
-    private func PreferencesSidebarModel(loadSections: @escaping (PreferencesSidebarSubscriptionState) -> [PreferencesSection]) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+    private func PreferencesSidebarModel(loadSections: @escaping (PreferencesSidebarSubscriptionState) -> [PreferencesSection],
+                                         webExtensionAvailability: WebExtensionAvailabilityProviding? = nil) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let windowControllersManager = WindowControllersManagerMock()
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
             loadSections: loadSections,
@@ -191,7 +194,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 )
                 return YouTubeAdBlockingPreferences(duckPlayerPreferences: prefs)
             }(),
-            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager
+            winBackOfferVisibilityManager: mockWinBackOfferVisibilityManager,
+            webExtensionAvailability: webExtensionAvailability
         )
     }
 
@@ -204,6 +208,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 includingAIChat: includeAIChat,
                 includingYouTubeAdBlocking: false,
                 includingWebsitePermissions: false,
+                includingExtensions: false,
                 subscriptionState: currentSubscriptionFeatures
             )
         }
@@ -610,6 +615,40 @@ final class PreferencesSidebarModelTests: XCTestCase {
         }
     }
 
+    func testWhenExtensionManagementAvailabilityChangesThenExtensionsPaneVisibilityUpdates() async {
+        let webExtensionAvailability = MockWebExtensionAvailability(isExtensionManagementAvailable: false)
+        let model = makeExtensionsSidebarModel(webExtensionAvailability: webExtensionAvailability)
+        XCTAssertFalse(model.sections.flatMap(\.panes).contains(.extensions))
+
+        for isAvailable in [true, false] {
+            let updated = expectation(description: "Extensions availability becomes \(isAvailable)")
+            let cancellable = model.$sections
+                .dropFirst()
+                .filter { $0.flatMap(\.panes).contains(.extensions) == isAvailable }
+                .prefix(1)
+                .sink { _ in updated.fulfill() }
+
+            webExtensionAvailability.isExtensionManagementAvailable = isAvailable
+            mockFeatureFlagger.triggerUpdate()
+            await fulfillment(of: [updated], timeout: 1)
+            withExtendedLifetime(cancellable) {}
+        }
+    }
+
+    private func makeExtensionsSidebarModel(webExtensionAvailability: WebExtensionAvailabilityProviding) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        PreferencesSidebarModel(loadSections: { state in
+            PreferencesSection.defaultSections(
+                includingDuckPlayer: false,
+                includingSync: false,
+                includingAIChat: false,
+                includingYouTubeAdBlocking: false,
+                includingWebsitePermissions: false,
+                includingExtensions: webExtensionAvailability.isExtensionManagementAvailable,
+                subscriptionState: state
+            )
+        }, webExtensionAvailability: webExtensionAvailability)
+    }
+
     private func makeWebsitePermissionsSidebarModel() -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         let featureFlagger: MockFeatureFlagger = mockFeatureFlagger
         return PreferencesSidebarModel(loadSections: { state in
@@ -619,6 +658,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
                 includingAIChat: false,
                 includingYouTubeAdBlocking: false,
                 includingWebsitePermissions: featureFlagger.isFeatureOn(.websitePermissionsSettings),
+                includingExtensions: false,
                 subscriptionState: state
             )
         })
@@ -732,6 +772,19 @@ final class PreferencesSidebarModelTests: XCTestCase {
         pixelFiringMock.verifyExpectations()
     }
 
+    func testWhenExtensionsPaneIsSelectedThenPixelIsSent() throws {
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .extensions])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+
+        model.selectPane(.extensions)
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.extensions), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
     func testWhenSelectedPaneIsUpdatedWithTheSameValueThenPixelIsNotSent() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .duckPlayer, .general, .accessibility])]
         let model = PreferencesSidebarModel(loadSections: sections)
@@ -801,6 +854,22 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertFalse(model.isPaneNew(pane: .personalInformationRemoval))
         XCTAssertFalse(model.isPaneNew(pane: .identityTheftRestoration))
         XCTAssertFalse(model.isPaneNew(pane: .paidAIChat))
+    }
+
+    // MARK: - isPaneBeta tests
+
+    func testIsPaneBetaReturnsTrueForExtensions() throws {
+        let model = PreferencesSidebarModel(loadSections: [.init(id: .regularPreferencePanes, panes: [.extensions, .autofill])])
+
+        XCTAssertTrue(model.isPaneBeta(pane: .extensions))
+    }
+
+    func testIsPaneBetaReturnsFalseForOtherPanes() throws {
+        let model = PreferencesSidebarModel(loadSections: [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill])])
+
+        XCTAssertFalse(model.isPaneBeta(pane: .appearance))
+        XCTAssertFalse(model.isPaneBeta(pane: .autofill))
+        XCTAssertFalse(model.isPaneBeta(pane: .youTubeAdBlocking))
     }
 
     // MARK: - shouldShowWinBackCampaignBadge tests
@@ -994,5 +1063,15 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertTrue(model.isSidebarItemEnabled(for: .paidAIChat))
         let protectionStatus = model.protectionStatus(for: .paidAIChat)
         XCTAssertEqual(protectionStatus?.status, .off)
+    }
+}
+
+private final class MockWebExtensionAvailability: WebExtensionAvailabilityProviding {
+    var isAvailable = false
+    var isAutoconsentExtensionAvailable = false
+    var isExtensionManagementAvailable: Bool
+
+    init(isExtensionManagementAvailable: Bool) {
+        self.isExtensionManagementAvailable = isExtensionManagementAvailable
     }
 }

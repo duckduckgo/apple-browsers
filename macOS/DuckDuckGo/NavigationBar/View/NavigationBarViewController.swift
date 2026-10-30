@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import CombineExtensions
 import Common
+import DDGNavigation
 import DesignResourcesKitIcons
 import FoundationExtensions
 import Freemium
@@ -30,10 +31,12 @@ import NetworkProtectionIPC
 import NetworkProtectionUI
 import os.log
 import PageRefreshMonitor
+import Persistence
 import PixelKit
 import PrivacyConfig
 import Subscription
 import SubscriptionUI
+import SwiftUI
 import VPN
 import WebExtensions
 
@@ -82,6 +85,7 @@ final class NavigationBarViewController: NSViewController {
 
     private var feedbackButton: MouseOverButton?
     private var feedbackButtonSpacer: NSView?
+    private var addressBarUpdateButton: NSView?
     private var feedbackTipController: QuickFeedbackTipController?
     private var internalUserCancellable: AnyCancellable?
     /// Owns the toolbar buttons of the loaded web extensions. `nil` when web extensions are unavailable.
@@ -188,10 +192,6 @@ final class NavigationBarViewController: NSViewController {
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
-
-    /// Deprecated: Remove when `appRebranding` Ships
-    private var leftFocusSpacer: NSView?
-    private var rightFocusSpacer: NSView?
 
     private var daxFadeInAnimation: DispatchWorkItem?
     private var heightChangeAnimation: DispatchWorkItem?
@@ -740,6 +740,7 @@ final class NavigationBarViewController: NSViewController {
         setupOverflowMenu()
         setupNetworkProtectionButton()
         setupQuickFeedbackButton()
+        setupAddressBarUpdateButton()
 
         subscribeToThemeChanges()
         listenToPasswordManagerNotifications()
@@ -846,23 +847,19 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            /// Use the taller, wider layout whenever there's user-provided input or Duck.ai is active; compact only
-            /// for `.inactive` + `.browsing` (see `AddressBarViewController.shouldUseTallAddressBarLayout`).
-            let isAddressBarFocused = addressBarViewController?.shouldUseTallAddressBarLayout ?? false
-
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass, focused: isAddressBarFocused)
+            height.constant = addressBarStyleProvider.navigationBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
-            barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass, focused: isAddressBarFocused)
+            barTop.constant = addressBarStyleProvider.addressBarTopPadding(for: sizeClass)
 
             let bottom: NSLayoutConstraint = animated ? addressBarBottomConstraint.animator() : addressBarBottomConstraint
-            bottom.constant = addressBarStyleProvider.addressBarBottomPadding(for: sizeClass, focused: isAddressBarFocused)
+            bottom.constant = addressBarStyleProvider.addressBarBottomPadding(for: sizeClass)
 
             let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
             logoWidth.constant = sizeClass.logoWidth
 
-            resizeAddressBarWidth(isAddressBarFocused: isAddressBarFocused)
+            resizeAddressBarWidth()
         }
 
         let prepareNavigationBar = { [weak self] in
@@ -910,45 +907,8 @@ final class NavigationBarViewController: NSViewController {
         heightChange()
     }
 
-    private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
-        let styleProvider = theme.addressBarStyleProvider
-        if !styleProvider.shouldUseLegacyAddressBarSpacingMechanism {
-            addressBarViewController?.refreshAddressBarBackgroundWidth()
-            return
-        }
-
-        /// Will be removed when `.appRebranding` ships
-        if styleProvider.shouldShowNewSearchIcon {
-            if !isAddressBarFocused {
-                if leftFocusSpacer == nil {
-                    leftFocusSpacer = NSView()
-                    leftFocusSpacer?.wantsLayer = true
-                    leftFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
-                    leftFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
-                }
-                if rightFocusSpacer == nil {
-                    rightFocusSpacer = NSView()
-                    rightFocusSpacer?.wantsLayer = true
-                    rightFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
-                    rightFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
-                }
-                if let left = leftFocusSpacer, !addressBarStack.arrangedSubviews.contains(left) {
-                    addressBarStack.insertArrangedSubview(left, at: 0)
-                }
-                if let right = rightFocusSpacer, !addressBarStack.arrangedSubviews.contains(right) {
-                    addressBarStack.insertArrangedSubview(right, at: addressBarStack.arrangedSubviews.count)
-                }
-            } else {
-                if let left = leftFocusSpacer, addressBarStack.arrangedSubviews.contains(left) {
-                    addressBarStack.removeArrangedSubview(left)
-                    left.removeFromSuperview()
-                }
-                if let right = rightFocusSpacer, addressBarStack.arrangedSubviews.contains(right) {
-                    addressBarStack.removeArrangedSubview(right)
-                    right.removeFromSuperview()
-                }
-            }
-        }
+    private func resizeAddressBarWidth() {
+        addressBarViewController?.refreshAddressBarBackgroundWidth()
     }
 
     private func updatePasswordManagementButton() {
@@ -1645,7 +1605,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.url) {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.safeURL) {
             selectedTabViewModel.tab.goBack()
         }
     }
@@ -1655,7 +1615,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.url) {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.safeURL) {
             selectedTabViewModel.tab.goForward()
         }
     }
@@ -2361,6 +2321,48 @@ extension NavigationBarViewController: NSMenuDelegate {
     func showNetworkProtectionStatus() {
         popovers.showNetworkProtectionPopover(positionedBelow: networkProtectionButton,
                                               withDelegate: networkProtectionButtonModel)
+    }
+
+    // MARK: - Address Bar Update Button
+
+    /// Shows the prominent update button to the left of the browser menu button while `moreProminentUpdates` is on
+    /// and `Debug → Updates → More Prominent Updates` enables it.
+    private func setupAddressBarUpdateButton() {
+        guard !isInPopUpWindow else { return }
+
+        updateAddressBarUpdateButton()
+        NotificationCenter.default.publisher(for: .moreProminentUpdatesDebugSettingsDidChange)
+            .map { _ in }
+            .merge(with: featureFlagger.updatesPublisher)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.updateAddressBarUpdateButton()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateAddressBarUpdateButton() {
+        let debugSettings: any KeyedStoring<MoreProminentUpdatesDebugSettings> = UserDefaults.standard.keyedStoring()
+        if featureFlagger.isFeatureOn(.moreProminentUpdates) && debugSettings.isShowingAddressBarButton {
+            addAddressBarUpdateButton()
+        } else {
+            addressBarUpdateButton?.removeFromSuperview()
+            addressBarUpdateButton = nil
+        }
+    }
+
+    private func addAddressBarUpdateButton() {
+        guard addressBarUpdateButton == nil else { return }
+
+        let button = AddressBarUpdateButton(title: UserText.addressBarUpdateButton) {
+            Application.appDelegate.updateController?.runUpdate()
+        }.embeddedInHostingView()
+
+        let index = menuButtons.arrangedSubviews.firstIndex(of: optionsButton) ?? menuButtons.arrangedSubviews.count
+        menuButtons.insertArrangedSubview(button, at: index)
+        menuButtons.setCustomSpacing(8, after: button)
+
+        addressBarUpdateButton = button
     }
 
     // MARK: - Quick Feedback Button

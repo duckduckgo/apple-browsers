@@ -27,19 +27,13 @@ import DesignResourcesKitIcons
 import UIComponents
 
 @NewInstructionsView.InstructionsBuilder
-func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> [NewInstructionsView.InstructionsItem] {
+func newFileImportMultipleTypeInstructionsBuilder(
+    source: DataImport.Source,
+    dataTypes: Set<DataImport.DataType>
+) -> [NewInstructionsView.InstructionsItem] {
     switch source {
     case .safari, .safariTechnologyPreview:
-        NSLocalizedString("import.zip.instructions.safari", value: """
-        %d Open %@ **Safari → File → Export Browsing Data to File...**
-        %d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file
-        %d Upload the exported ZIP or CSV file to DuckDuckGo
-        """, comment: """
-        Instructions to import multiple data types exported as ZIP from Safari.
-        %N$d - step number
-        %2$@ - browser icon
-        **bold text**; _italic text_
-        """)
+        safariArchiveInstructions(for: dataTypes)
         (source.importSourceImage ?? DataImport.Source.safari.importSourceImage!).resizedToFaviconSize()
     case // browsers
          .brave, .chrome, .chromium, .coccoc,
@@ -52,6 +46,44 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
          .csv, .bookmarksHTML, .fileImport:
         []
         assertionFailure("Invalid source for multi import")
+    }
+}
+
+private func safariArchiveInstructions(for dataTypes: Set<DataImport.DataType>) -> String {
+    switch (dataTypes.contains(.bookmarks), dataTypes.contains(.passwords)) {
+    case (true, false):
+        NSLocalizedString("import.zip.instructions.safari.bookmarks", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Choose **Bookmarks** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or HTML file to DuckDuckGo
+        """, comment: """
+        Instructions to import bookmarks and credit cards exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    case (false, true):
+        NSLocalizedString("import.zip.instructions.safari.passwords", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Choose **Passwords** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        """, comment: """
+        Instructions to import passwords and credit cards exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
+    default:
+        NSLocalizedString("import.zip.instructions.safari", value: """
+        %d Open %@ **Safari → File → Export Browsing Data to File...**
+        %d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file
+        %d Upload the exported ZIP or CSV file to DuckDuckGo
+        """, comment: """
+        Instructions to import multiple data types exported as ZIP from Safari.
+        %N$d - step number
+        %2$@ - browser icon
+        **bold text**; _italic text_
+        """)
     }
 }
 
@@ -383,7 +415,8 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
         (.csv, .bookmarks),
-        (_, .creditCards):
+        (_, .creditCards),
+        (_, .history):
         assertionFailure("Invalid source/dataType")
     }
 }
@@ -444,8 +477,8 @@ struct NewDataImportFilePickerScreenView: View {
 
     private var titleText: Text {
         switch mode {
-        case .fallback(.creditCards):
-            assert(false, "Credit card import fallback not handled yet")
+        case .fallback(.creditCards), .fallback(.history):
+            assert(false, "\(mode) import fallback not handled")
             fallthrough
         case .fallback(.passwords):
             return Text(UserText.importPasswordsManuallyTitle)
@@ -460,12 +493,12 @@ struct NewDataImportFilePickerScreenView: View {
 struct NewFileImportView: View {
     enum Kind {
         case individual(dataType: DataImport.DataType)
-        case archive
+        case archive(dataTypes: Set<DataImport.DataType>)
 
         func supportedFileTypes(for source: DataImport.Source) -> [UTType] {
             switch self {
-            case .archive:
-                return Array(source.archiveImportSupportedFiles)
+            case .archive(let dataTypes):
+                return Array(source.archiveImportSupportedFiles(for: dataTypes))
             case .individual(dataType: let dataType):
                 return dataType.allowedFileTypes
             }
@@ -495,8 +528,8 @@ struct NewFileImportView: View {
         VStack(alignment: .leading, spacing: 20) {
             NewInstructionsView {
                 switch kind {
-                case .archive:
-                    newFileImportMultipleTypeInstructionsBuilder(source: source)
+                case .archive(let dataTypes):
+                    newFileImportMultipleTypeInstructionsBuilder(source: source, dataTypes: dataTypes)
                 case .individual(let dataType):
                     newFileImportSingleTypeInstructionsBuilder(source: source, dataType: dataType)
                 }
@@ -802,7 +835,7 @@ struct NewCircleNumberView: View {
     VStack(spacing: 20) {
         Text("Safari Multi-Type Import", bundle: #bundle).font(.headline)
         NewInstructionsView {
-            newFileImportMultipleTypeInstructionsBuilder(source: .safari)
+            newFileImportMultipleTypeInstructionsBuilder(source: .safari, dataTypes: [.bookmarks, .passwords, .creditCards])
         }
     }
     .padding()

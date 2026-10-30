@@ -17,12 +17,13 @@
 //
 
 import Foundation
+import WebExtensions
 
 final class AutoconsentManagement {
 
     var sitesNotifiedCache = Set<String>()
 
-    var pixelCounter = [String: Int]()
+    var pixelCounter = [CPMSiteRank?: [String: Int]]()
 
     var detectedByPatternsCache = Set<String>()
     var detectedByBothCache = Set<String>()

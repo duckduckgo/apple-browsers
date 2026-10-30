@@ -68,6 +68,7 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
         isBottomFloatingField ? Metrics.floatingEmbeddedHeight : Metrics.height
     }
     static let expectedHeight: CGFloat = Metrics.height
+    static let bottomPositionFieldBottomPadding: CGFloat = Metrics.textAreaBottomPaddingAdjustedSpacing
 
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
@@ -679,7 +680,6 @@ final class DefaultOmniBarView: UIView, OmniBarView, ExpandableOmniBarView {
     var isPromptOverLimit = false {
         didSet {
             guard oldValue != isPromptOverLimit else { return }
-            attachmentsStripView.showsPromptLengthError = isPromptOverLimit
             updateAIChatSendButton(hasText: !(aiChatTextView.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
     }

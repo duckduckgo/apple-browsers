@@ -55,7 +55,6 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
 
     /// Message names that this subfeature handles.
     enum MessageNames: String, CaseIterable {
-        case log
         case getSegments
     }
 
@@ -65,8 +64,6 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         switch MessageNames(rawValue: methodName) {
-        case .log:
-            return { [weak self] in try await self?.handleLog(params: $0, original: $1) }
         case .getSegments:
             return { [weak self] in try await self?.handleGetSegments(params: $0, original: $1) }
         default:
@@ -74,21 +71,16 @@ public final class SponsorBlockSubfeature: NSObject, Subfeature {
         }
     }
 
-    @MainActor
-    private func handleLog(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let message = (params as? [String: Any])?["message"] as? String ?? String(describing: params)
-        Logger.sponsorBlock.debug("[\(original.frameInfo.securityOrigin.host)] \(message)")
-        return nil
-    }
-
+    /// Rejects malformed params, but every lookup failure resolves to an empty list: the page never retries.
     private func handleGetSegments(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let query = try SponsorBlockSegmentsProvider.Query(params: params)
         do {
-            let query = try SponsorBlockSegmentsProvider.Query(params: params)
-            let segments = try await segmentsProvider.segments(for: query)
-            return GetSegmentsResponse(segments: segments)
+            return GetSegmentsResponse(segments: try await segmentsProvider.segments(for: query))
         } catch {
-            Logger.sponsorBlock.error("getSegments failed: \(error.localizedDescription, privacy: .public)")
-            throw error
+            // Domain and code only: a URLError description can carry the request URL, which holds the hash prefix.
+            let error = error as NSError
+            Logger.sponsorBlock.error("getSegments lookup failed: \(error.domain, privacy: .public) \(error.code)")
+            return GetSegmentsResponse(segments: [])
         }
     }
 }

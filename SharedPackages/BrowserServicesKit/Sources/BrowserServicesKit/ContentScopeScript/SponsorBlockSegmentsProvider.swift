@@ -42,26 +42,31 @@ public actor SponsorBlockSegmentsProvider {
     }
 
     public struct Query: Hashable {
+        // ponytail: MVP scope fixed in native; read from the sponsorBlock privacy-config settings once that entry exists.
+        public static let defaultCategories = ["sponsor"]
+        public static let defaultActionTypes = ["skip"]
+
         public let videoID: String
         public let categories: [String]
         public let actionTypes: [String]
 
-        /// Validates params received from a web page.
-        public init(params: Any) throws {
-            guard let dict = params as? [String: Any],
-                  let videoID = dict["videoID"] as? String,
-                  Self.isValidVideoID(videoID) else {
-                throw ProviderError.invalidParams("videoID")
-            }
-            guard let categories = dict["categories"] as? [String], Self.isValidList(categories) else {
-                throw ProviderError.invalidParams("categories")
-            }
-            guard let actionTypes = dict["actionTypes"] as? [String], Self.isValidList(actionTypes) else {
-                throw ProviderError.invalidParams("actionTypes")
-            }
+        public init(videoID: String,
+                    categories: [String] = Self.defaultCategories,
+                    actionTypes: [String] = Self.defaultActionTypes) throws {
+            guard Self.isValidVideoID(videoID) else { throw ProviderError.invalidParams("videoID") }
+            guard Self.isValidList(categories) else { throw ProviderError.invalidParams("categories") }
+            guard Self.isValidList(actionTypes) else { throw ProviderError.invalidParams("actionTypes") }
             self.videoID = videoID
             self.categories = categories
             self.actionTypes = actionTypes
+        }
+
+        /// Validates params received from a web page. Only `videoID` is read; the page does not choose what it gets back.
+        public init(params: Any) throws {
+            guard let videoID = (params as? [String: Any])?["videoID"] as? String else {
+                throw ProviderError.invalidParams("videoID")
+            }
+            try self.init(videoID: videoID)
         }
 
         static func isValidVideoID(_ videoID: String) -> Bool {
@@ -157,13 +162,11 @@ public actor SponsorBlockSegmentsProvider {
     // MARK: - Network
 
     static func fetchSegments(for query: Query, load: DataLoader) async throws -> [Segment] {
-        let url = try url(for: query)
-        Logger.sponsorBlock.debug("Fetching segments from server: \(url.absoluteString)")
-        let (data, response) = try await load(URLRequest(url: url))
+        // Never log the URL or the video ID: the hash prefix must not reach the logs.
+        let (data, response) = try await load(URLRequest(url: try url(for: query)))
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ProviderError.invalidResponse
         }
-        Logger.sponsorBlock.debug("Fetched segments from server for \(query.videoID): HTTP \(httpResponse.statusCode), \(data.count) bytes")
         switch httpResponse.statusCode {
         case 200: return try parseSegments(from: data, videoID: query.videoID)
         case 404: return []

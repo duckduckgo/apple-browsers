@@ -24,7 +24,7 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
     private typealias Provider = SponsorBlockSegmentsProvider
 
     private let videoID = "dQw4w9WgXcQ"
-    private lazy var validParams: [String: Any] = ["videoID": videoID, "categories": ["sponsor"], "actionTypes": ["skip"]]
+    private lazy var validQuery = try! Provider.Query(videoID: videoID)
 
     // MARK: - Validation
 
@@ -47,11 +47,20 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
         XCTAssertFalse(Provider.Query.isValidList(Array(repeating: "sponsor", count: 21)))
     }
 
-    func testQueryRejectsBadParams() {
+    func testQueryFromPageParamsReadsOnlyVideoID() throws {
         XCTAssertThrowsError(try Provider.Query(params: "not a dictionary"))
-        XCTAssertThrowsError(try Provider.Query(params: ["videoID": videoID, "actionTypes": ["skip"]]))
-        XCTAssertThrowsError(try Provider.Query(params: ["videoID": videoID, "categories": [1], "actionTypes": ["skip"]]))
-        XCTAssertNoThrow(try Provider.Query(params: validParams))
+        XCTAssertThrowsError(try Provider.Query(params: ["categories": ["sponsor"]]))
+        XCTAssertThrowsError(try Provider.Query(params: ["videoID": "too-short"]))
+
+        let query = try Provider.Query(params: ["videoID": videoID, "categories": ["selfpromo"], "actionTypes": ["mute"]])
+        XCTAssertEqual(query, validQuery)
+        XCTAssertEqual(query.categories, ["sponsor"])
+        XCTAssertEqual(query.actionTypes, ["skip"])
+    }
+
+    func testQueryRejectsInvalidLists() {
+        XCTAssertThrowsError(try Provider.Query(videoID: videoID, categories: []))
+        XCTAssertThrowsError(try Provider.Query(videoID: videoID, actionTypes: ["Skip"]))
     }
 
     // MARK: - Request
@@ -64,7 +73,7 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
     }
 
     func testURLEncodesListsAsPercentEncodedJSON() throws {
-        let query = try Provider.Query(params: ["videoID": videoID, "categories": ["sponsor", "selfpromo"], "actionTypes": ["skip"]])
+        let query = try Provider.Query(videoID: videoID, categories: ["sponsor", "selfpromo"], actionTypes: ["skip"])
         XCTAssertEqual(try Provider.url(for: query).absoluteString,
                        "https://web-dew-1.duckduckgo.com/sponsorblock/v1/segments/5f6b?categories=%5B%22sponsor%22%2C%22selfpromo%22%5D&actionTypes=%5B%22skip%22%5D")
     }
@@ -104,14 +113,14 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
 
     func testNotFoundReturnsEmptySegments() async throws {
         let provider = Provider(load: { request in (Data("Not Found".utf8), Self.response(404, for: request)) })
-        let segments = try await provider.segments(for: try Provider.Query(params: validParams))
+        let segments = try await provider.segments(for: validQuery)
         XCTAssertEqual(segments, [])
     }
 
     func testUnexpectedStatusThrows() async throws {
         let provider = Provider(load: { request in (Data(), Self.response(500, for: request)) })
         do {
-            _ = try await provider.segments(for: try Provider.Query(params: validParams))
+            _ = try await provider.segments(for: validQuery)
             XCTFail("Expected an error")
         } catch {
             XCTAssertEqual(error.localizedDescription, "SponsorBlock request failed with HTTP status 500")
@@ -127,7 +136,7 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
             try await Task.sleep(nanoseconds: 50_000_000)
             return (Data("[]".utf8), Self.response(404, for: request))
         })
-        let query = try Provider.Query(params: validParams)
+        let query = validQuery
 
         async let first = provider.segments(for: query)
         async let second = provider.segments(for: query)
@@ -145,7 +154,7 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
             await counter.increment()
             return (Data(), Self.response(404, for: request))
         }, now: { now }, timeToLive: 60)
-        let query = try Provider.Query(params: validParams)
+        let query = validQuery
 
         _ = try await provider.segments(for: query)
         now += 61
@@ -161,8 +170,8 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
             await counter.increment()
             return (Data(), Self.response(404, for: request))
         }, capacity: 1)
-        let first = try Provider.Query(params: validParams)
-        let second = try Provider.Query(params: ["videoID": "aaaaaaaaaaa", "categories": ["sponsor"], "actionTypes": ["skip"]])
+        let first = validQuery
+        let second = try Provider.Query(videoID: "aaaaaaaaaaa")
 
         _ = try await provider.segments(for: first)
         _ = try await provider.segments(for: second)

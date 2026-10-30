@@ -42,16 +42,32 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
 
     func testHandlerRouting() {
         let subfeature = SponsorBlockSubfeature()
-        XCTAssertNotNil(subfeature.handler(forMethodNamed: "log"))
         XCTAssertNotNil(subfeature.handler(forMethodNamed: "getSegments"))
+        XCTAssertNil(subfeature.handler(forMethodNamed: "log"))
         XCTAssertNil(subfeature.handler(forMethodNamed: "unknownMethod"))
     }
 
     @MainActor
-    func testLogHandlerReturnsNoResponse() async throws {
-        let handler = try XCTUnwrap(SponsorBlockSubfeature().handler(forMethodNamed: "log"))
-        let response = try await handler(["message": "hello"], WKScriptMessage.mock(name: "log", body: [:]))
-        XCTAssertNil(response)
+    func testGetSegmentsResolvesToEmptyWhenLookupFails() async throws {
+        let provider = SponsorBlockSegmentsProvider(load: { _ in throw URLError(.notConnectedToInternet) })
+        let subfeature = SponsorBlockSubfeature(segmentsProvider: provider)
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
+        let response = try await handler(["videoID": "dQw4w9WgXcQ"], WKScriptMessage.mock(name: "getSegments", body: [:]))
+        let segments = try XCTUnwrap(response as? SponsorBlockSubfeature.GetSegmentsResponse).segments
+        XCTAssertEqual(segments, [])
+    }
+
+    @MainActor
+    func testGetSegmentsIgnoresCategoriesSentByThePage() async throws {
+        let provider = SponsorBlockSegmentsProvider(load: { request in
+            let url = request.url!.absoluteString
+            XCTAssertTrue(url.contains("%22sponsor%22"), url)
+            XCTAssertFalse(url.contains("selfpromo"), url)
+            return (Data("[]".utf8), HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!)
+        })
+        let subfeature = SponsorBlockSubfeature(segmentsProvider: provider)
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
+        _ = try await handler(["videoID": "dQw4w9WgXcQ", "categories": ["selfpromo"]], WKScriptMessage.mock(name: "getSegments", body: [:]))
     }
 
     @MainActor
@@ -60,7 +76,8 @@ final class SponsorBlockSubfeatureTests: XCTestCase {
             XCTFail("Invalid params must not reach the network")
             throw URLError(.badURL)
         })
-        let handler = try XCTUnwrap(SponsorBlockSubfeature(segmentsProvider: provider).handler(forMethodNamed: "getSegments"))
+        let subfeature = SponsorBlockSubfeature(segmentsProvider: provider)
+        let handler = try XCTUnwrap(subfeature.handler(forMethodNamed: "getSegments"))
         do {
             _ = try await handler(["videoID": "too-short"], WKScriptMessage.mock(name: "getSegments", body: [:]))
             XCTFail("Expected an error")

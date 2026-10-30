@@ -133,6 +133,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
         _ = await handler.handleMessage(message)
 
         XCTAssertEqual(monitor.extensionTabIdentifier, 42)
+        XCTAssertEqual(monitor.extensionIdentifier, message.extensionIdentifier)
         XCTAssertEqual(monitor.url, URL(string: "https://example.com/article"))
     }
 
@@ -466,6 +467,7 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
     // MARK: - getResourceIfNew
 
     func testWhenGetResourceIfNewWithSameVersionThenReturnsNotUpdated() async {
+        mockPrivacyConfiguration.version = "1.0.0"
         mockPrivacyConfigurationManager.currentConfigString = """
         {
             "version": "1.0.0",
@@ -485,6 +487,26 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
             XCTAssertEqual(dict?["updated"] as? Bool, false)
             XCTAssertNil(dict?["data"])
             XCTAssertNil(dict?["version"])
+        } else {
+            XCTFail("Expected success result")
+        }
+    }
+
+    func testWhenGetResourceIfNewWithSameVersionThenDoesNotParseRawConfig() async {
+        mockPrivacyConfiguration.version = "1.0.0"
+        mockPrivacyConfigurationManager.currentConfigString = "invalid json"
+
+        let message = createMessage(
+            method: "getResourceIfNew",
+            params: ["name": "config", "version": "1.0.0"]
+        )
+
+        let result = await handler.handleMessage(message)
+
+        if case .success(let response) = result {
+            let dict = response as? [String: Any]
+            XCTAssertEqual(dict?["updated"] as? Bool, false)
+            XCTAssertNil(dict?["data"])
         } else {
             XCTFail("Expected success result")
         }
@@ -827,11 +849,13 @@ final class AutoconsentWebExtensionMessageHandlerTests: XCTestCase {
 @MainActor
 private final class RecordingCPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private(set) var extensionTabIdentifier: Int?
+    private(set) var extensionIdentifier: String?
     private(set) var url: URL?
 
     func handle(_ event: CPMMessagingHealthEvent) {
-        guard case .dashboardResponse(let extensionTabIdentifier, let url) = event else { return }
+        guard case .dashboardResponse(let extensionTabIdentifier, let url, let extensionIdentifier) = event else { return }
         self.extensionTabIdentifier = extensionTabIdentifier
+        self.extensionIdentifier = extensionIdentifier
         self.url = url
     }
 }

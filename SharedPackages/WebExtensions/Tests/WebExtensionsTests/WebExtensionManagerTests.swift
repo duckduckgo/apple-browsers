@@ -22,6 +22,11 @@ import PrivacyConfig
 import PrivacyConfigTestsUtils
 import WebKit
 import ZIPFoundation
+#if os(iOS)
+import UIKit
+#else
+import AppKit
+#endif
 @testable import WebExtensions
 import WebExtensionsTestSupport
 
@@ -103,6 +108,8 @@ final class WebExtensionManagerTests: XCTestCase {
                              pixelFiring: WebExtensionPixelFiring = NoOpWebExtensionPixelFiring(),
                              isCPMMessagingHangRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
                              isCPMBackgroundLoadRecoveryEnabled: @escaping @MainActor () -> Bool = { true },
+                             isCPMBackgroundLoadRestartEnabled: @escaping @MainActor () -> Bool = { false },
+                             backgroundLoadRecoveryCooldown: TimeInterval = 60,
                              isCPMStableBaseURLEnabled: @escaping @MainActor () -> Bool = { false },
                              isCPMLateBackgroundDocumentRecoveryEnabled: @escaping @MainActor () -> Bool = { false },
                              isApplicationInBackground: @escaping @MainActor () -> Bool = { false },
@@ -124,6 +131,8 @@ final class WebExtensionManagerTests: XCTestCase {
             cpmMessagingHealthMonitor: cpmMessagingHealthMonitor,
             isCPMMessagingHangRecoveryEnabled: isCPMMessagingHangRecoveryEnabled,
             isCPMBackgroundLoadRecoveryEnabled: isCPMBackgroundLoadRecoveryEnabled,
+            isCPMBackgroundLoadRestartEnabled: isCPMBackgroundLoadRestartEnabled,
+            backgroundLoadRecoveryCooldown: backgroundLoadRecoveryCooldown,
             isApplicationInBackground: isApplicationInBackground,
             isCPMLateBackgroundDocumentRecoveryEnabled: isCPMLateBackgroundDocumentRecoveryEnabled,
             isCPMStableBaseURLEnabled: isCPMStableBaseURLEnabled,
@@ -350,12 +359,12 @@ final class WebExtensionManagerTests: XCTestCase {
         let context = try await loadEmbeddedContext("embedded", into: manager)
         let error = NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)
         XCTAssertNil(manager.cpmDiagnosticsRecorder)
-        let skipped = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        let skipped = manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
         XCTAssertFalse(skipped)
         isBackground = false
-        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
         XCTAssertTrue(scheduled, "Skipping in background must not consume the foreground retry")
-        let throttled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        let throttled = manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
         XCTAssertFalse(throttled)
         manager.unloadAllExtensions()
     }
@@ -366,10 +375,10 @@ final class WebExtensionManagerTests: XCTestCase {
         let manager = makeManager(isCPMBackgroundLoadRecoveryEnabled: { isEnabled })
         let context = try await loadEmbeddedContext("embedded", into: manager)
         let error = NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)
-        let skipped = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        let skipped = manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
         XCTAssertFalse(skipped)
         isEnabled = true
-        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(error, context: context)
         XCTAssertTrue(scheduled)
         manager.unloadAllExtensions()
     }
@@ -384,7 +393,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let retried = expectation(description: "Background-only recovery is independent of the restart flag")
         context.onBackgroundLoad = { retried.fulfill() }
 
-        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
 
         XCTAssertTrue(scheduled)
@@ -395,6 +404,985 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertFalse(webExtensionLoadingMock.loadWebExtensionCalled)
         context.finishBackgroundLoads()
         await startup.value
+    }
+
+    /// WebKit's `loadBackgroundWebViewIfNeeded` returns early while the failed background view still exists,
+    /// so `loadBackgroundContent` can never replace it. Only restarting the context gets out of that state.
+    @MainActor
+    func testRetainedFailedBackgroundViewRestartsContextInsteadOfRetrying() async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { true },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let reloaded = expectation(description: "A retained failed background view restarts the context")
+        let observer = Task { @MainActor in
+            for await event in manager.lifecycleEvents {
+                guard case .reloaded(let identifier, _, _) = event, identifier == "embedded" else { continue }
+                reloaded.fulfill()
+                return
+            }
+        }
+        defer { observer.cancel() }
+
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
+
+        XCTAssertTrue(scheduled)
+        await fulfillment(of: [reloaded], timeout: 3)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled, "The failed view is replaced by unloading its context")
+        XCTAssertEqual(webExtensionLoadingMock.loadedIdentifiers, ["embedded"])
+        observer.cancel()
+        await observer.value
+    }
+
+    @MainActor
+    func testOldContextResponseAfterUpgradeCannotResetRestartLimit() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for _ in 0..<3 {
+            try await applyError6Restart(in: manager, context: old)
+            date += 61
+        }
+        let oldURL = URL(string: "https://old-document.example")!
+        monitor.handle(.navigationStarted(tabIdentifier: "old-tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "old-tab", url: oldURL))
+        // Production upgrades install the new identifier before removing the old version.
+        let replacement = try await loadDeferredEmbeddedContext("upgraded", into: manager)
+        manager.reportLifecycleEvent(.loaded(identifier: "upgraded", type: .embedded))
+        XCTAssertIdentical(manager.embeddedBackgroundContextForNavigation, replacement)
+        XCTAssertIdentical(manager.context(for: "embedded"), old)
+        XCTAssertEqual(pixels.outcomes.last, .superseded)
+        // This document belongs to the old context. Its late reply must not heal the replacement.
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 1, url: oldURL, extensionIdentifier: "embedded"))
+        replacement.retainedBackgroundWebView = WKWebView()
+        let disturbed = expectation(description: "An old-context response cannot grant a fourth restart")
+        disturbed.isInverted = true
+        replacement.onBackgroundLoad = { disturbed.fulfill() }
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: replacement)
+        await fulfillment(of: [disturbed], timeout: 0.15)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 3)
+        XCTAssertEqual(pixels.outcomes.last, .restartLimitReached)
+        replacement.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testNewContextResponseAfterUpgradeResetsRestartLimit() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let old = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for _ in 0..<3 {
+            try await applyError6Restart(in: manager, context: old)
+            date += 61
+        }
+        let replacement = try await loadDeferredEmbeddedContext("upgraded", into: manager)
+        manager.reportLifecycleEvent(.loaded(identifier: "upgraded", type: .embedded))
+        let url = URL(string: "https://new-document.example")!
+        monitor.handle(.navigationStarted(tabIdentifier: "new-tab", navigationKind: .other))
+        monitor.handle(.navigationCommitted(tabIdentifier: "new-tab", url: url))
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: 2, url: url, extensionIdentifier: "upgraded"))
+        try await applyError6Restart(in: manager, context: replacement)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 4)
+        XCTAssertFalse(pixels.outcomes.contains(.restartLimitReached))
+    }
+
+    @MainActor
+    func testError6RestartLimitSurvivesReplacementContextsAndReportsOnce() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        var context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for attempt in 1...3 {
+            try await applyError6Restart(in: manager, context: context)
+            XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, attempt)
+            // The loader mock leaves the original context loaded. Replace it explicitly so the
+            // next error belongs to a fresh generation, as it would after a production restart.
+            try manager.controller.unload(context)
+            context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+            date += 61
+        }
+        let blocked = expectation(description: "A fourth restart is blocked and reported")
+        pixels.onOutcome = { if $0 == .restartLimitReached { blocked.fulfill() } }
+        context.retainedBackgroundWebView = WKWebView()
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
+        await fulfillment(of: [blocked], timeout: 1)
+        pixels.onOutcome = nil
+        let disturbed = expectation(description: "Repeated errors and foreground events cannot restart after the limit")
+        disturbed.isInverted = true
+        context.onBackgroundLoad = { disturbed.fulfill() }
+        for _ in 0..<3 {
+            date += 61
+            _ = manager.recoverEmbeddedBackgroundLoadFailure(
+                NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+            postCPMRecoveryReady()
+            await Task.yield()
+        }
+        await fulfillment(of: [disturbed], timeout: 0.1)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 3)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartLimitReached }.count, 1)
+
+        // The cap applies to context restarts, not the existing retry when no failed view remains.
+        context.retainedBackgroundWebView = nil
+        let retried = expectation(description: "A background-only retry is still allowed")
+        context.onBackgroundLoad = { retried.fulfill() }
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+        await fulfillment(of: [retried], timeout: 1)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testError6RestartLimitResetsOnlyForAttributedReplacementResponse() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels)
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let old = monitor.beginMeasurement(tabIdentifier: "old", navigationKind: .other)
+        for _ in 0..<3 {
+            try await applyError6Restart(in: manager, context: context)
+            date += 61
+        }
+        monitor.reportSuccess(old)
+        monitor.handle(.dashboardResponse(extensionTabIdentifier: nil, url: URL(string: "https://unmatched.example")!))
+        let blocked = expectation(description: "Old or unmatched responses do not reset the limit")
+        pixels.onOutcome = { if $0 == .restartLimitReached { blocked.fulfill() } }
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+        await fulfillment(of: [blocked], timeout: 1)
+        pixels.onOutcome = nil
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "current", navigationKind: .other))
+        XCTAssertEqual(pixels.outcomes.last, .responseReceived)
+        for _ in 0..<3 {
+            date += 61
+            try await applyError6Restart(in: manager, context: context)
+        }
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 6,
+                       "Confirmed messaging recovery grants a fresh budget of three restarts")
+        let blockedAgain = expectation(description: "The next exhausted budget is reported once again")
+        pixels.onOutcome = { if $0 == .restartLimitReached { blockedAgain.fulfill() } }
+        date += 61
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+        await fulfillment(of: [blockedAgain], timeout: 1)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartLimitReached }.count, 2)
+    }
+
+    @MainActor
+    func testError6RestartLimitResetsForPageResponsesAfterObservationExpires() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for index in 0..<3 {
+            try await applyError6Restart(in: manager, context: context)
+            // The first page opens only after the restart's telemetry observation has expired.
+            date += 301
+            let tab = "healthy-\(index)"
+            let url = URL(string: "https://example.com/\(index)")!
+            monitor.handle(.navigationStarted(tabIdentifier: tab, navigationKind: .other))
+            XCTAssertEqual(pixels.outcomes.last, .unobserved)
+            monitor.handle(.navigationCommitted(tabIdentifier: tab, url: url))
+            // A pre-finish response has no measurement; it must reset recovery independently.
+            monitor.handle(.dashboardResponse(extensionTabIdentifier: index + 1, url: url))
+            XCTAssertEqual(pixels.outcomes.filter { $0 == .unobserved }.count, index + 1)
+            XCTAssertFalse(pixels.outcomes.contains(.responseReceived), "Expired pixel observations must stay closed")
+            date += 3_600
+        }
+        try await applyError6Restart(in: manager, context: context)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 4)
+        XCTAssertFalse(pixels.outcomes.contains(.restartLimitReached))
+    }
+
+    @MainActor
+    func testError6RestartLimitResetsForMeasuredResponseAfterAnotherReload() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let monitor = CPMMessagingHealthMonitor(pixelFiring: pixels, episodeLifetime: 300, now: { date })
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), cpmMessagingHealthMonitor: monitor,
+                                  pixelFiring: pixels, isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        for _ in 0..<3 {
+            try await applyError6Restart(in: manager, context: context)
+            date += 61
+        }
+        try await manager.reloadExtension(identifier: "embedded")
+        XCTAssertEqual(pixels.outcomes.last, .superseded)
+        let blocked = expectation(description: "Another reload alone does not reset the exhausted limit")
+        pixels.onOutcome = { if $0 == .restartLimitReached { blocked.fulfill() } }
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+        await fulfillment(of: [blocked], timeout: 1)
+        pixels.onOutcome = nil
+
+        monitor.reportSuccess(monitor.beginMeasurement(tabIdentifier: "recovered", navigationKind: .other))
+        XCTAssertFalse(pixels.outcomes.contains(.responseReceived), "Superseded pixel observations must stay closed")
+        date += 61
+        try await applyError6Restart(in: manager, context: context)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 4)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartLimitReached }.count, 1)
+    }
+
+    @MainActor
+    func testError6RestartLimitCountsReloadFailures() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+        for _ in 0..<3 {
+            let failed = expectation(description: "A failed reload still consumes an attempt")
+            pixels.onOutcome = { if $0 == .reloadFailed { failed.fulfill() } }
+            _ = manager.recoverEmbeddedBackgroundLoadFailure(
+                NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+            await fulfillment(of: [failed], timeout: 1)
+            date += 61
+        }
+        webExtensionLoadingMock.mockUnloadError = nil
+        let blocked = expectation(description: "Three failed reloads also exhaust the restart budget")
+        pixels.onOutcome = { if $0 == .restartLimitReached { blocked.fulfill() } }
+        _ = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context)
+        await fulfillment(of: [blocked], timeout: 1)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted, .reloadFailed, .restartStarted, .reloadFailed,
+                                       .restartStarted, .reloadFailed, .restartLimitReached])
+    }
+
+    @MainActor
+    func testError6RestartLimitHandlesSkippedViewsAndPendingCooldownAcrossWake() async throws {
+        var date = Date()
+        var isBackground = true
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true }, backgroundLoadRecoveryCooldown: 0.03,
+                                  isApplicationInBackground: { isBackground }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        for _ in 0..<4 {
+            context.retainedBackgroundWebView = WKWebView()
+            XCTAssertFalse(manager.recoverEmbeddedBackgroundLoadFailure(error, context: context))
+            // WebKit replaces the failed view itself while backgrounded. The deferred task skips it.
+            context.retainedBackgroundWebView = WKWebView()
+            let skipped = expectation(description: "Self-recovered views consume no restart attempts")
+            skipped.isInverted = true
+            context.onBackgroundLoad = { skipped.fulfill() }
+            isBackground = false
+            postCPMRecoveryReady()
+            await fulfillment(of: [skipped], timeout: 0.03)
+            isBackground = true
+        }
+        XCTAssertTrue(pixels.outcomes.isEmpty)
+        isBackground = false
+        for attempt in 1...3 {
+            try await applyError6Restart(in: manager, context: context)
+            if attempt < 3 { date += 61 }
+        }
+        let premature = expectation(description: "The fourth attempt waits for cooldown and foreground")
+        premature.isInverted = true
+        context.onBackgroundLoad = { premature.fulfill() }
+        XCTAssertFalse(manager.recoverEmbeddedBackgroundLoadFailure(error, context: context))
+        isBackground = true
+        date += 61
+        await fulfillment(of: [premature], timeout: 0.1)
+        XCTAssertFalse(pixels.outcomes.contains(.restartLimitReached))
+        let blocked = expectation(description: "Wake services the pending attempt but the restart cap blocks it")
+        pixels.onOutcome = { if $0 == .restartLimitReached { blocked.fulfill() } }
+        isBackground = false
+        postCPMRecoveryReady()
+        postCPMRecoveryReady()
+        await fulfillment(of: [blocked], timeout: 1)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartStarted }.count, 3)
+        XCTAssertEqual(pixels.outcomes.filter { $0 == .restartLimitReached }.count, 1)
+        XCTAssertTrue(context.completions.isEmpty)
+    }
+
+    @MainActor
+    private func applyError6Restart(in manager: WebExtensionManager, context: DeferredCPMBackgroundContext) async throws {
+        context.retainedBackgroundWebView = WKWebView()
+        let restarted = expectation(description: "An eligible error-6 restart loads background content")
+        context.onBackgroundLoad = { restarted.fulfill() }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
+        await fulfillment(of: [restarted], timeout: 1)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testError6DoesNotRestartBackgroundReplacedBeforeQueuedRecovery() async throws {
+        try await assertError6DoesNotRestartNewBackground(retainedFailedView: true)
+    }
+
+    @MainActor
+    func testError6DoesNotRestartNewBackgroundWhenFailedViewWasReleased() async throws {
+        try await assertError6DoesNotRestartNewBackground(retainedFailedView: false)
+    }
+
+    @MainActor
+    private func assertError6DoesNotRestartNewBackground(retainedFailedView: Bool) async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = retainedFailedView ? WKWebView() : nil
+        context.recordedErrors = [NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)]
+
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // WebKit replaces the failed view before the queued recovery gets its main-actor turn.
+        let replacement = WKWebView()
+        context.retainedBackgroundWebView = replacement
+        context.recordedErrors = []
+        let restarted = expectation(description: "A self-recovered background must not be restarted")
+        restarted.isInverted = true
+        let observer = Task { @MainActor in
+            for await event in manager.lifecycleEvents {
+                if case .reloaded = event { restarted.fulfill() }
+            }
+        }
+        defer { observer.cancel() }
+
+        await fulfillment(of: [restarted], timeout: 0.2)
+
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertIdentical(context.retainedBackgroundWebView, replacement)
+        XCTAssertTrue(context.completions.isEmpty, "Do not disturb the replacement with another load request")
+    }
+
+    @MainActor
+    func testBackgroundError6RestartsOnForegroundWithoutAnotherErrorNotification() async throws {
+        var date = Date()
+        var isBackground = true
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertTrue(context.completions.isEmpty)
+        XCTAssertTrue(pixels.outcomes.isEmpty)
+
+        let requested = expectation(description: "Foreground resumes the deferred error-6 restart")
+        context.onBackgroundLoad = { requested.fulfill() }
+        postCPMRecoveryReady()
+        XCTAssertTrue(context.completions.isEmpty, "An early notification while still backgrounded must keep recovery pending")
+        isBackground = false
+        postCPMRecoveryReady()
+        postCPMRecoveryReady()
+        await fulfillment(of: [requested], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+        XCTAssertEqual(context.completions.count, 1)
+        context.finishBackgroundLoads()
+        date += 61
+        let replayed = expectation(description: "A completed deferred recovery must not replay after its cooldown")
+        replayed.isInverted = true
+        context.onBackgroundLoad = { replayed.fulfill() }
+        postCPMRecoveryReady()
+        await fulfillment(of: [replayed], timeout: 0.1)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted, .backgroundReady])
+    }
+
+    @MainActor
+    func testQueuedError6EnteringBackgroundResumesWithoutConsumingCooldown() async throws {
+        var isBackground = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
+        isBackground = true
+        let premature = expectation(description: "Recovery waits until foreground")
+        premature.isInverted = true
+        context.onBackgroundLoad = { premature.fulfill() }
+        await fulfillment(of: [premature], timeout: 0.1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+
+        let requested = expectation(description: "The skipped task did not consume the recovery cooldown")
+        context.onBackgroundLoad = { requested.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [requested], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testDeferredError6LeavesReplacementViewUntouchedOnForeground() async throws {
+        try await assertDeferredError6LeavesReplacementViewUntouched(retainedFailedView: true)
+    }
+
+    @MainActor
+    func testDeferredError6LeavesViewCreatedDuringBackgroundUntouched() async throws {
+        try await assertDeferredError6LeavesReplacementViewUntouched(retainedFailedView: false)
+    }
+
+    @MainActor
+    private func assertDeferredError6LeavesReplacementViewUntouched(retainedFailedView: Bool) async throws {
+        for restartEnabled in [false, true] {
+            var isBackground = true
+            let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                      isCPMBackgroundLoadRestartEnabled: { restartEnabled },
+                                      isApplicationInBackground: { isBackground })
+            let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+            defer { manager.unloadAllExtensions() }
+            context.retainedBackgroundWebView = retainedFailedView ? WKWebView() : nil
+            context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+            let replacement = WKWebView()
+            context.retainedBackgroundWebView = replacement
+            context.recordedErrors = []
+            let disturbed = expectation(description: "Foreground must not disturb WebKit's replacement")
+            disturbed.isInverted = true
+            context.onBackgroundLoad = { disturbed.fulfill() }
+            isBackground = false
+            postCPMRecoveryReady()
+            postCPMRecoveryReady()
+            await fulfillment(of: [disturbed], timeout: 0.1)
+            XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+            XCTAssertIdentical(context.retainedBackgroundWebView, replacement)
+            XCTAssertTrue(context.completions.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testDeferredError6DoesNotRecoverSupersededContextOnForeground() async throws {
+        var isBackground = true
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let old = try await loadDeferredEmbeddedContext("old", into: manager)
+        defer { manager.unloadAllExtensions() }
+        old.retainedBackgroundWebView = WKWebView()
+        old.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: old)
+        let replacement = try await loadDeferredEmbeddedContext("replacement", into: manager)
+        replacement.retainedBackgroundWebView = WKWebView()
+        let disturbed = expectation(description: "The deferred failure belongs to the superseded context")
+        disturbed.isInverted = true
+        old.onBackgroundLoad = { disturbed.fulfill() }
+        replacement.onBackgroundLoad = { disturbed.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [disturbed], timeout: 0.1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertTrue(old.completions.isEmpty)
+        XCTAssertTrue(replacement.completions.isEmpty)
+    }
+
+    @MainActor
+    func testDeferredError6HonorsRecoveryKillSwitchAndDoesNotReplayLater() async throws {
+        var isBackground = true
+        var recoveryEnabled = true
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { recoveryEnabled },
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let disturbed = expectation(description: "The runtime kill switch discards deferred recovery")
+        disturbed.isInverted = true
+        context.onBackgroundLoad = { disturbed.fulfill() }
+        recoveryEnabled = false
+        isBackground = false
+        postCPMRecoveryReady()
+        recoveryEnabled = true
+        postCPMRecoveryReady()
+        await fulfillment(of: [disturbed], timeout: 0.1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertTrue(context.completions.isEmpty)
+    }
+
+    @MainActor
+    func testDeferredError6HonorsRestartKillSwitchAtForeground() async throws {
+        var isBackground = true
+        var restartEnabled = true
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { restartEnabled },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let retried = expectation(description: "Disabling restart preserves the background-only retry")
+        context.onBackgroundLoad = { retried.fulfill() }
+        restartEnabled = false
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [retried], timeout: 1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testDeferredError6DoesNotRetainFailedViewAndRetriesWhenReleased() async throws {
+        var isBackground = true
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  cpmMessagingHealthMonitor: CapturingCPMLifecycleMonitor(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        weak var failedView: WKWebView?
+        autoreleasepool {
+            context.retainedBackgroundWebView = WKWebView()
+            failedView = context.retainedBackgroundWebView
+            context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+            context.retainedBackgroundWebView = nil
+        }
+        // UIKit/WebKit may release their temporary ownership on a later main-loop turn.
+        for _ in 0..<150 where failedView != nil {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertNil(failedView, "Pending recovery must not keep WebKit's failed view alive")
+        XCTAssertNil(manager.cpmDiagnosticsRecorder)
+        let retried = expectation(description: "Foreground recovery works with a custom health monitor and no diagnostics")
+        context.onBackgroundLoad = { retried.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [retried], timeout: 1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testDeferredError6DoesNotBypassCooldownOnForeground() async throws {
+        var date = Date()
+        var isBackground = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground }, now: { date })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let firstRetry = expectation(description: "The initial retry starts the cooldown")
+        context.onBackgroundLoad = { firstRetry.fulfill() }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
+        await fulfillment(of: [firstRetry], timeout: 1)
+        context.finishBackgroundLoads()
+        context.retainedBackgroundWebView = WKWebView()
+        date += 10
+        isBackground = true
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let disturbed = expectation(description: "Foreground must not bypass a cooldown from an actual recovery")
+        disturbed.isInverted = true
+        context.onBackgroundLoad = { disturbed.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [disturbed], timeout: 0.1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertTrue(context.completions.isEmpty)
+        date += 61
+        let recovered = expectation(description: "The deferred failure survives until cooldown expires")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        postCPMRecoveryReady()
+        await fulfillment(of: [recovered], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testCooldownRetriesNewestFailedViewWithoutAnotherForegroundEvent() async throws {
+        var date = Date()
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  backgroundLoadRecoveryCooldown: 0.05, now: { date })
+        let context = try await startBackgroundRecoveryCooldown(in: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        // A newer view fails with the same error while the timer is already pending.
+        context.retainedBackgroundWebView = WKWebView()
+        manager.webExtensionController(manager.controller, didCreateBackgroundWebView: try XCTUnwrap(context.retainedBackgroundWebView),
+                                       forExtensionContext: context)
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let recovered = expectation(description: "Cooldown expiry services the newest failed view without another event")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        date += 1
+        await fulfillment(of: [recovered], timeout: 2)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted, .backgroundReady, .superseded, .restartStarted])
+        XCTAssertEqual(context.completions.count, 1)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testCooldownExpiringInBackgroundRetainsFailureUntilForeground() async throws {
+        var date = Date()
+        var isBackground = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  backgroundLoadRecoveryCooldown: 0.05,
+                                  isApplicationInBackground: { isBackground }, now: { date })
+        let context = try await startBackgroundRecoveryCooldown(in: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        isBackground = true
+        date += 1
+        let premature = expectation(description: "Timer expiry must not apply recovery in background")
+        premature.isInverted = true
+        context.onBackgroundLoad = { premature.fulfill() }
+        await fulfillment(of: [premature], timeout: 0.15)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        let recovered = expectation(description: "Foreground services the failure whose cooldown already expired")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [recovered], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testCooldownLeavesHealthyReplacementUntouched() async throws {
+        var date = Date()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  backgroundLoadRecoveryCooldown: 0.05, now: { date })
+        let context = try await startBackgroundRecoveryCooldown(in: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let healthy = WKWebView()
+        context.retainedBackgroundWebView = healthy
+        manager.webExtensionController(manager.controller, didCreateBackgroundWebView: healthy, forExtensionContext: context)
+        // WebKit clears errors after the creation callback; delayed historical notifications see no failure.
+        context.recordedErrors = []
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let disturbed = expectation(description: "Cooldown expiry must not disturb WebKit's healthy replacement")
+        disturbed.isInverted = true
+        context.onBackgroundLoad = { disturbed.fulfill() }
+        date += 1
+        await fulfillment(of: [disturbed], timeout: 0.15)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertIdentical(context.retainedBackgroundWebView, healthy)
+        XCTAssertTrue(context.completions.isEmpty)
+    }
+
+    @MainActor
+    private func startBackgroundRecoveryCooldown(in manager: WebExtensionManager) async throws -> DeferredCPMBackgroundContext {
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        context.retainedBackgroundWebView = WKWebView()
+        let restarted = expectation(description: "An applied restart starts the cooldown")
+        context.onBackgroundLoad = { restarted.fulfill() }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: WKWebExtensionContext.errorDomain, code: 6), context: context))
+        await fulfillment(of: [restarted], timeout: 1)
+        // Restart schedules its background load after releasing the recovery guard and draining pending
+        // attempts. Unlike a plain retry, its completion cannot later drain a pending cooldown attempt.
+        context.finishBackgroundLoads()
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        webExtensionLoadingMock.unloadExtensionCalled = false
+        return context
+    }
+
+    @MainActor
+    func testCoalescedErrorRemovalAndNewFailureKeepsLatestView() async throws {
+        var isBackground = true
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // Like WebKit, queue notifications without capturing the errors array at mutation time.
+        context.retainedBackgroundWebView = WKWebView()
+        manager.webExtensionController(manager.controller, didCreateBackgroundWebView: try XCTUnwrap(context.retainedBackgroundWebView),
+                                       forExtensionContext: context)
+        context.recordedErrors = []
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        }
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6)]
+        let notificationsDelivered = expectation(description: "Both delayed error updates arrive")
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+            notificationsDelivered.fulfill()
+        }
+        await fulfillment(of: [notificationsDelivered], timeout: 1)
+        let recovered = expectation(description: "Wake recovers the newly failed view")
+        context.onBackgroundLoad = { recovered.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [recovered], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testNewForegroundError6SurvivesOlderQueuedTask() async throws {
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { false })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let firstError = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [firstError]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // Before the queued task runs, WebKit creates another view which also fails in foreground.
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [firstError, NSError(domain: WKWebExtensionContext.errorDomain, code: 6,
+                                                     userInfo: [NSLocalizedDescriptionKey: "New background load failure"])]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let requested = expectation(description: "The newer foreground failure must survive the queued attempt")
+        context.onBackgroundLoad = { requested.fulfill() }
+        await fulfillment(of: [requested], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testNewBackgroundError6SurvivesForegroundBeforeOlderQueuedTask() async throws {
+        var isBackground = false
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true },
+                                  isApplicationInBackground: { isBackground })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let firstError = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [firstError]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        // Before the queued task runs, WebKit creates another view which also fails in background.
+        isBackground = true
+        context.retainedBackgroundWebView = WKWebView()
+        context.recordedErrors = [firstError, NSError(domain: WKWebExtensionContext.errorDomain, code: 6,
+                                                     userInfo: [NSLocalizedDescriptionKey: "New background load failure"])]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let requested = expectation(description: "Foreground must preserve the newer deferred failure")
+        context.onBackgroundLoad = { requested.fulfill() }
+        isBackground = false
+        postCPMRecoveryReady()
+        await fulfillment(of: [requested], timeout: 1)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    private func postCPMRecoveryReady() {
+#if os(iOS)
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+#else
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.didWakeNotification, object: nil)
+#endif
+    }
+
+    @MainActor
+    func testHistoricalError6NotificationDoesNotRestartHealthyBackground() async throws {
+        var recoveryEnabled = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { recoveryEnabled },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+
+        // Recovery can happen independently while WebKit keeps the historical error entry.
+        let healthyView = WKWebView()
+        context.retainedBackgroundWebView = healthyView
+        recoveryEnabled = true
+        context.recordedErrors = [NSError(domain: WKWebExtensionContext.errorDomain, code: 6), NSError(domain: "unrelated", code: 1)]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        let restarted = expectation(description: "Historical error must not restart a healthy context")
+        restarted.isInverted = true
+        let observer = Task { @MainActor in
+            for await event in manager.lifecycleEvents {
+                if case .reloaded = event { restarted.fulfill() }
+            }
+        }
+        defer { observer.cancel() }
+        await fulfillment(of: [restarted], timeout: 0.2)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        XCTAssertIdentical(context.retainedBackgroundWebView, healthyView)
+        XCTAssertTrue(context.completions.isEmpty)
+    }
+
+    @MainActor
+    func testAdditionalEqualError6StillRestartsRetainedBackground() async throws {
+        try await assertNewError6RestartsRetainedBackground(removeHistoricalError: false)
+    }
+
+    @MainActor
+    func testError6ReappearingAfterRemovalStillRestartsRetainedBackground() async throws {
+        try await assertNewError6RestartsRetainedBackground(removeHistoricalError: true)
+    }
+
+    @MainActor
+    private func assertNewError6RestartsRetainedBackground(removeHistoricalError: Bool) async throws {
+        var recoveryEnabled = false
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { recoveryEnabled },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        let error = NSError(domain: WKWebExtensionContext.errorDomain, code: 6)
+        context.recordedErrors = [error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        if removeHistoricalError {
+            context.recordedErrors = []
+            NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        }
+        recoveryEnabled = true
+        context.retainedBackgroundWebView = WKWebView()
+        let restarted = expectation(description: "A new failure must still restart the retained view")
+        context.onBackgroundLoad = { restarted.fulfill() }
+        context.recordedErrors = removeHistoricalError ? [error] : [error, error]
+        NotificationCenter.default.post(name: WKWebExtensionContext.errorsDidUpdateNotification, object: context)
+        await fulfillment(of: [restarted], timeout: 2)
+        XCTAssertTrue(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testQueuedError6RestartHonorsRuntimeKillSwitch() async throws {
+        var restartEnabled = true
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRestartEnabled: { restartEnabled })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let retried = expectation(description: "Disabling restart before execution keeps the plain retry")
+        context.onBackgroundLoad = { retried.fulfill() }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context))
+        restartEnabled = false
+
+        await fulfillment(of: [retried], timeout: 1)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testError6RestartBackgroundReadinessDoesNotClaimPageRecovery() async throws {
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let requested = expectation(description: "Replacement background load requested")
+        context.onBackgroundLoad = { requested.fulfill() }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context))
+        await fulfillment(of: [requested], timeout: 2)
+        XCTAssertEqual(pixels.outcomes, [.restartStarted])
+
+        context.finishBackgroundLoads()
+
+        XCTAssertEqual(pixels.outcomes, [.restartStarted, .backgroundReady])
+        XCTAssertFalse(pixels.outcomes.contains(.responseReceived), "Only a dashboard response proves messaging recovery")
+    }
+
+    @MainActor
+    func testError6RestartReportsContextReloadFailure() async throws {
+        let pixels = CapturingCPMRestartPixels()
+        let manager = makeManager(controllerConfiguration: .nonPersistent(), pixelFiring: pixels,
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        webExtensionLoadingMock.mockUnloadError = NSError(domain: "test", code: 1)
+        let failed = expectation(description: "Failed context replacement is reported")
+        pixels.onOutcome = { if $0 == .reloadFailed { failed.fulfill() } }
+        XCTAssertTrue(manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context))
+        await fulfillment(of: [failed], timeout: 2)
+
+        XCTAssertEqual(pixels.outcomes, [.restartStarted, .reloadFailed])
+    }
+
+    @MainActor
+    func testRetainedFailedBackgroundViewKeepsPlainRetryWhenRestartFlagIsOff() async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { true },
+                                  isCPMBackgroundLoadRestartEnabled: { false })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        context.retainedBackgroundWebView = WKWebView()
+        let retried = expectation(description: "With the restart flag off the plain retry is kept")
+        context.onBackgroundLoad = { retried.fulfill() }
+
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
+
+        XCTAssertTrue(scheduled)
+        await fulfillment(of: [retried], timeout: 2)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled, "The restart flag must veto the context reload")
+        context.finishBackgroundLoads()
+    }
+
+    @MainActor
+    func testReleasedFailedBackgroundViewStillRetriesWithoutRestartingContext() async throws {
+        let manager = makeManager(controllerConfiguration: .nonPersistent(),
+                                  isCPMBackgroundLoadRecoveryEnabled: { true },
+                                  isCPMBackgroundLoadRestartEnabled: { true })
+        let context = try await loadDeferredEmbeddedContext("embedded", into: manager)
+        defer { manager.unloadAllExtensions() }
+        XCTAssertNil(context.retainedBackgroundWebView)
+        let retried = expectation(description: "A released failed view is replaced by the plain retry")
+        context.onBackgroundLoad = { retried.fulfill() }
+
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(
+            NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
+
+        XCTAssertTrue(scheduled)
+        await fulfillment(of: [retried], timeout: 2)
+        XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
+        context.finishBackgroundLoads()
     }
 
     @MainActor
@@ -414,7 +1402,7 @@ final class WebExtensionManagerTests: XCTestCase {
             }
         }
         defer { observer.cancel() }
-        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
         XCTAssertFalse(scheduled)
         XCTAssertFalse(webExtensionLoadingMock.unloadExtensionCalled)
@@ -439,7 +1427,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let retried = expectation(description: "Disabling the retry flag vetoes queued recovery")
         retried.isInverted = true
         context.onBackgroundLoad = { retried.fulfill() }
-        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(
             NSError(domain: "WKWebExtensionContextErrorDomain", code: 6), context: context)
         XCTAssertTrue(scheduled)
         enabled = false
@@ -479,9 +1467,9 @@ final class WebExtensionManagerTests: XCTestCase {
         let oldContext = try await loadEmbeddedContext("old", into: manager)
         let replacement = try await loadEmbeddedContext("replacement", into: manager)
         let error = NSError(domain: "WKWebExtensionContextErrorDomain", code: 6)
-        let skipped = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: oldContext)
+        let skipped = manager.recoverEmbeddedBackgroundLoadFailure(error, context: oldContext)
         XCTAssertFalse(skipped)
-        let scheduled = await manager.recoverEmbeddedBackgroundLoadFailure(error, context: replacement)
+        let scheduled = manager.recoverEmbeddedBackgroundLoadFailure(error, context: replacement)
         XCTAssertTrue(scheduled)
         manager.unloadAllExtensions()
     }
@@ -2134,6 +3122,8 @@ private final class DeferredCPMBackgroundContext: WKWebExtensionContext {
     var completions: [(Swift.Error?) -> Void] = []
     var recordedErrors: [Swift.Error] = []
     var onBackgroundLoad: (() -> Void)?
+    /// Stands in for WebKit's private `_backgroundWebView`, which the manager reads to see whether a failed view is retained.
+    @objc(_backgroundWebView) var retainedBackgroundWebView: WKWebView?
 
     override var errors: [Swift.Error] { recordedErrors }
 
@@ -2148,6 +3138,18 @@ private final class DeferredCPMBackgroundContext: WKWebExtensionContext {
         completions.removeAll()
         onBackgroundLoad = nil
         for completion in pending { completion(nil) }
+    }
+}
+
+@available(macOS 15.4, iOS 18.4, *)
+private final class CapturingCPMRestartPixels: WebExtensionPixelFiring {
+    private(set) var outcomes: [CPMBackgroundLoadRestartOutcome] = []
+    var onOutcome: ((CPMBackgroundLoadRestartOutcome) -> Void)?
+
+    func fire(_ event: WebExtensionPixelEvent) {
+        guard case .cpmBackgroundLoadRestart(let outcome) = event else { return }
+        outcomes.append(outcome)
+        onOutcome?(outcome)
     }
 }
 

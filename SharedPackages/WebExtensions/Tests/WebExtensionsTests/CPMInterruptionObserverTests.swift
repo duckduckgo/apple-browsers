@@ -78,6 +78,43 @@ final class CPMInterruptionObserverTests: XCTestCase {
         withExtendedLifetime(observer) {}
     }
 
+    func testRecoveryWaitsForSeparateReadyNotification() {
+        let center = NotificationCenter()
+        let ended = Notification.Name("test.interruption.ended")
+        let ready = Notification.Name("test.recovery.ready")
+        let monitor = RecordingHealthMonitor()
+        var recoveryCount = 0
+        let observer = CPMInterruptionObserver(monitor: monitor, center: center,
+                                              began: Notification.Name("unused"), ended: ended,
+                                              recoveryReady: ready, onRecoveryReady: { recoveryCount += 1 })
+        center.post(name: ended, object: nil)
+        XCTAssertEqual(monitor.events, ["ended"])
+        XCTAssertEqual(recoveryCount, 0, "Resuming clocks does not mean iOS has left background yet")
+        center.post(name: ready, object: nil)
+        XCTAssertEqual(recoveryCount, 1)
+        XCTAssertEqual(monitor.events, ["ended"], "Recovery-ready must not resume the monitor twice")
+        withExtendedLifetime(observer) {}
+    }
+
+    func testProductionRecoveryReadyNotifications() {
+        let monitor = RecordingHealthMonitor()
+        var recoveryCount = 0
+        let observer = CPMInterruptionObserver(monitor: monitor, onRecoveryReady: { recoveryCount += 1 })
+#if os(iOS)
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        XCTAssertEqual(recoveryCount, 0)
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+#else
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.willSleepNotification, object: nil)
+        XCTAssertEqual(recoveryCount, 0)
+        NSWorkspace.shared.notificationCenter.post(name: NSWorkspace.didWakeNotification, object: nil)
+#endif
+        XCTAssertEqual(recoveryCount, 1)
+        XCTAssertEqual(monitor.events, ["began", "ended"])
+        withExtendedLifetime(observer) {}
+    }
+
     func testBecomingInactiveIsNotAnInterruption() {
         let monitor = RecordingHealthMonitor()
         let observer = CPMInterruptionObserver(monitor: monitor)

@@ -300,8 +300,29 @@ class ToWebViewTransition: WebViewTransition {
     }
 
     override func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
+        guard let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController,
+              let currentTab = mainViewController.currentTab else {
+            animate(using: transitionContext, preview: nil)
+            return
+        }
+
+        // A preview stored before a rotation grows into the wrong shape, so retake it at the new size.
+        let storedPreview = tabSwitcherViewController.previewsSource.preview(for: currentTab.tabModel)
+        guard let storedPreview,
+              !WebViewTransitionGeometry.hasSameOrientation(storedPreview.size, as: transitionContext.containerView.bounds.size) else {
+            animate(using: transitionContext, preview: storedPreview)
+            return
+        }
+
+        mainViewController.view.layoutIfNeeded()
+        currentTab.preparePreviewForTabTransition { image in
+            self.animate(using: transitionContext, preview: image)
+        }
+    }
+
+    private func animate(using transitionContext: UIViewControllerContextTransitioning, preview: UIImage?) {
         prepareSubviews(using: transitionContext)
-        
+
         guard let mainViewController = transitionContext.viewController(forKey: .to) as? MainViewController,
               let webView = mainViewController.currentTab?.webView,
               let tab = mainViewController.currentTab?.tabModel,
@@ -346,7 +367,6 @@ class ToWebViewTransition: WebViewTransition {
         if usesFloatingTopBackdrop {
             mainViewController.viewCoordinator.navigationBarContainer.backgroundColor = transitionBackgroundColor
         }
-        let preview = tabSwitcherViewController.previewsSource.preview(for: tab)
         preparePreview(preview, rowIndex: rowIndex, fadesIn: cellSnapshot != nil)
         
         scrollIfOutsideViewport(collectionView: tabSwitcherViewController.collectionView, rowIndex: rowIndex, attributes: layoutAttr)

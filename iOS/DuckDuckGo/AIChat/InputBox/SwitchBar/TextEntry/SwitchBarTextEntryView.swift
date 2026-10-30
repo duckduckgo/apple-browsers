@@ -237,6 +237,7 @@ class SwitchBarTextEntryView: UIView {
     var canExpandOnSelectionChange = false
 
     var hasBeenInteractedWith = false
+    private var needsTextHeightUpdate = false
     var isURL: Bool {
         let text = usesTextField ? (textField.text ?? "") : (textView.text ?? "")
         return URL(string: text)?.navigationalScheme != nil
@@ -746,12 +747,11 @@ class SwitchBarTextEntryView: UIView {
     override func layoutSubviews() {
         super.layoutSubviews()
 
-        // UITextField inset is pre-computed from intrinsic button sizes and only changes when
-        // button state changes — skip recomputing on every animation-frame layout pass.
-        if !usesTextField {
+        if needsTextHeightUpdate || !usesTextField {
             adjustTextViewContentInset()
         }
-        if !hasBeenInteractedWith {
+        if needsTextHeightUpdate || !hasBeenInteractedWith {
+            needsTextHeightUpdate = false
             updateTextViewHeight()
         }
     }
@@ -759,9 +759,8 @@ class SwitchBarTextEntryView: UIView {
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
         if previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory {
-            /// Dynamic Type size changed, calculate views layout
-            updateTextViewHeight()
-            adjustTextViewContentInset()
+            needsTextHeightUpdate = true
+            setNeedsLayout()
         }
     }
 

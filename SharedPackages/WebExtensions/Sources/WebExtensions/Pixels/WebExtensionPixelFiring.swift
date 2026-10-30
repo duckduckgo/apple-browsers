@@ -271,6 +271,9 @@ public enum CPMBackgroundLoadRestartOutcome: String, CaseIterable, Sendable {
     case superseded
     case reloadFailed = "reload_failed"
     case reloadTimedOut = "reload_timed_out"
+    /// A further error-6 restart was blocked after three attempts without observed messaging recovery.
+    /// Reported once per exhausted budget, independently of the last restart's terminal observation.
+    case restartLimitReached = "restart_limit_reached"
 }
 
 /// Canonical CPM pixel contract. Platform adapters preserve these names and let PixelKit apply its standard platform suffix policy.

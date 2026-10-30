@@ -203,6 +203,8 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     private let observedBackgroundLoadErrors = NSMapTable<WKWebExtensionContext, NSArray>.weakToStrongObjects()
     private var backgroundStartupFix: [String: CPMRecoveryFix] = [:]
     private weak var backgroundLoadRestartContext: WKWebExtensionContext?
+    /// Three restarts without an attributed response; four means the exhausted budget was reported.
+    private var backgroundLoadRestartAttempts = 0
     private var navigationWaitContexts: Set<String> = []
     /// Distinguishes first startup from idle wakes without retaining replaced contexts.
     private let preparedEmbeddedBackgroundContexts = NSHashTable<WKWebExtensionContext>.weakObjects()
@@ -414,6 +416,9 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
         }
 
         if let healthMonitor = self.cpmMessagingHealthMonitor as? CPMMessagingHealthMonitor {
+            healthMonitor.onHealthyResponse = { [weak self] in
+                self?.backgroundLoadRestartAttempts = 0
+            }
             healthMonitor.onConfirmedHang = { [weak self] in
                 Task { @MainActor [weak self] in
                     await self?.reloadEmbeddedExtensionAfterCPMMessagingHang()
@@ -1119,8 +1124,6 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             // Keep the original failure's view across suspension. A new view is WebKit's own recovery,
             // even if the replacement is still loading; do not restart it or join its load.
             guard currentView == nil || currentView === attempt.failedView else { return }
-            // A task skipped in the background has not applied recovery and must not consume its cooldown.
-            self.lastBackgroundLoadRecoveryAt = self.now()
             if self.isCPMBackgroundLoadRestartEnabled(), currentView != nil {
                 // WebKit cannot replace a retained failed view with a background-only retry.
                 await self.restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(context)
@@ -1128,6 +1131,7 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             }
             // Otherwise retry background content without replacing the context, preserving in-flight
             // content-script replies. Confirmed-hang recovery remains the fallback if messaging stays stuck.
+            self.lastBackgroundLoadRecoveryAt = self.now()
             self.backgroundStartupFix[context.uniqueIdentifier] = .backgroundLoadRetry
             await self.loadEmbeddedExtensionBackgroundContent(in: context)
         }
@@ -1160,6 +1164,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
     @MainActor
     private func restartEmbeddedExtensionAfterRetainedBackgroundLoadFailure(_ context: WKWebExtensionContext) async {
         guard !isCPMMessagingRecoveryInProgress, self.context(for: context.uniqueIdentifier) === context else { return }
+        guard backgroundLoadRestartAttempts < 3 else {
+            if backgroundLoadRestartAttempts == 3 {
+                backgroundLoadRestartAttempts += 1
+                pixelFiring.fire(.cpmBackgroundLoadRestart(.restartLimitReached))
+            }
+            return
+        }
+        backgroundLoadRestartAttempts += 1
+        lastBackgroundLoadRecoveryAt = now()
         isCPMMessagingRecoveryInProgress = true
         defer { isCPMMessagingRecoveryInProgress = false }
         do {

@@ -121,6 +121,10 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     /// Called once when a failure episode is confirmed as a CPM messaging hang. The first
     /// initialization failure only begins the episode; the next qualifying failure confirms it.
     var onConfirmedHang: (() -> Void)?
+    /// Lets the manager reset the three-restart limit when the current extension answers a page,
+    /// even after a pixel observation ends. Old-context responses and successful background-load
+    /// callbacks do not count as recovery.
+    var onHealthyResponse: (() -> Void)?
     var backgroundReadinessRecovery: CPMBackgroundReadinessRecovery?
 
     public func registerReadinessRecoveryDocument(tabIdentifier: String, webView: WKWebView, isGET: Bool) {
@@ -653,9 +657,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
     private func markResponseReceived(in tabIdentifier: String) {
         backgroundReadinessRecovery?.responseReceived(in: tabIdentifier)
         guard var state = tabs[tabIdentifier] else { return }
-        if backgroundLoadRestartObservation?.generation == state.extensionReloadGeneration {
-            finishBackgroundLoadRestartObservation(.responseReceived)
-        }
+        recordHealthyResponse(in: state.extensionReloadGeneration)
         Logger.webExtensions.debug("[CPM Health Monitor] Dashboard response attributed to tab=\(tabIdentifier, privacy: .public)")
         state.didReceiveResponse = true
         // This document now has provable evidence, which supersedes any earlier response that could
@@ -669,6 +671,14 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
             reportSuccess(measurement)
             tabs[tabIdentifier]?.measurement = nil
         }
+    }
+
+    private func recordHealthyResponse(in generation: UInt) {
+        guard generation == extensionReloadGeneration else { return }
+        if backgroundLoadRestartObservation?.generation == generation {
+            finishBackgroundLoadRestartObservation(.responseReceived)
+        }
+        onHealthyResponse?()
     }
 
     /// Drops a navigation's measurement without reporting either outcome, and stops a later
@@ -907,9 +917,7 @@ public final class CPMMessagingHealthMonitor: CPMMessagingHealthMonitoring {
         if postReloadMeasurementIdentifier == measurement.identifier {
             postReloadMeasurementIdentifier = nil
         }
-        if backgroundLoadRestartObservation?.generation == measurement.extensionReloadGeneration {
-            finishBackgroundLoadRestartObservation(.responseReceived)
-        }
+        recordHealthyResponse(in: measurement.extensionReloadGeneration)
         guard let episode else { return }
 
         // Once a reload occurs, only a measurement begun against that generation can validate it.

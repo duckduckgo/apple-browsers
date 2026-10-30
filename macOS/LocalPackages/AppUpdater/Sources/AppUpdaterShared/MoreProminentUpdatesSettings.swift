@@ -17,46 +17,72 @@
 //
 
 import Foundation
+import FoundationExtensions
 import PrivacyConfig
 
-/// Remotely configurable prompt thresholds for the `moreProminentUpdates` feature, read from the
+/// Remotely configurable timings for the `moreProminentUpdates` feature, read from the
 /// `macOSBrowserConfig.moreProminentUpdates` subfeature settings.
 ///
-/// Each value falls back to its default when the setting is missing or invalid.
+/// Internal users read the `internal`-prefixed settings, which have shorter defaults.
+/// A missing or negative value falls back to its default, and if the second prompt would come
+/// before the first, both prompt timings fall back to their defaults.
 public struct MoreProminentUpdatesSettings: Equatable {
 
-    public static let defaultDaysUntilFirstPrompt = 2
-    public static let defaultDaysUntilSecondPrompt = 4
-    public static let defaultVersionsBehindBeforePrompt = 1
+    public struct Defaults {
+        public let hoursUntilFirstPrompt: Double
+        public let hoursUntilSecondPrompt: Double
+        public let hoursUntilAppStoreUpdateAvailable: Double
 
-    /// Days after a new version becomes available before the first prompt shows.
-    public let daysUntilFirstPrompt: Int
-
-    /// Days after a new version becomes available before the second prompt shows.
-    public let daysUntilSecondPrompt: Int
-
-    /// Number of versions behind the latest release before prompting.
-    public let versionsBehindBeforePrompt: Int
-
-    public init(daysUntilFirstPrompt: Int = Self.defaultDaysUntilFirstPrompt,
-                daysUntilSecondPrompt: Int = Self.defaultDaysUntilSecondPrompt,
-                versionsBehindBeforePrompt: Int = Self.defaultVersionsBehindBeforePrompt) {
-        self.daysUntilFirstPrompt = daysUntilFirstPrompt
-        self.daysUntilSecondPrompt = daysUntilSecondPrompt
-        self.versionsBehindBeforePrompt = versionsBehindBeforePrompt
+        public static let external = Defaults(hoursUntilFirstPrompt: 48, hoursUntilSecondPrompt: 96, hoursUntilAppStoreUpdateAvailable: 24)
+        public static let `internal` = Defaults(hoursUntilFirstPrompt: 2, hoursUntilSecondPrompt: 4, hoursUntilAppStoreUpdateAvailable: 1)
     }
 
-    public init(privacyConfig: PrivacyConfiguration) {
+    /// Time after day 0 before the first prompt shows.
+    public let firstPromptDelay: TimeInterval
+
+    /// Time after day 0 before the second prompt shows.
+    public let secondPromptDelay: TimeInterval
+
+    /// Time after an App Store release starts before the new version counts as available.
+    public let appStoreUpdateAvailableDelay: TimeInterval
+
+    public init(hoursUntilFirstPrompt: Double,
+                hoursUntilSecondPrompt: Double,
+                hoursUntilAppStoreUpdateAvailable: Double) {
+        self.firstPromptDelay = .hours(hoursUntilFirstPrompt)
+        self.secondPromptDelay = .hours(hoursUntilSecondPrompt)
+        self.appStoreUpdateAvailableDelay = .hours(hoursUntilAppStoreUpdateAvailable)
+    }
+
+    public init(_ defaults: Defaults) {
+        self.init(hoursUntilFirstPrompt: defaults.hoursUntilFirstPrompt,
+                  hoursUntilSecondPrompt: defaults.hoursUntilSecondPrompt,
+                  hoursUntilAppStoreUpdateAvailable: defaults.hoursUntilAppStoreUpdateAvailable)
+    }
+
+    public init(privacyConfig: PrivacyConfiguration, isInternalUser: Bool) {
         let settings = privacyConfig.settings(for: MacOSBrowserConfigSubfeature.moreProminentUpdates)
             .flatMap { $0.data(using: .utf8) }
             .flatMap { try? JSONDecoder().decode(RemoteSettings.self, from: $0) }
 
-        self.init(daysUntilFirstPrompt: Self.validThreshold(settings?.daysUntilFirstPrompt) ?? Self.defaultDaysUntilFirstPrompt,
-                  daysUntilSecondPrompt: Self.validThreshold(settings?.daysUntilSecondPrompt) ?? Self.defaultDaysUntilSecondPrompt,
-                  versionsBehindBeforePrompt: Self.validThreshold(settings?.versionsBehindBeforePrompt) ?? Self.defaultVersionsBehindBeforePrompt)
+        let defaults: Defaults = isInternalUser ? .internal : .external
+        let first = isInternalUser ? settings?.internalHoursUntilFirstPrompt : settings?.hoursUntilFirstPrompt
+        let second = isInternalUser ? settings?.internalHoursUntilSecondPrompt : settings?.hoursUntilSecondPrompt
+        let appStore = isInternalUser ? settings?.internalHoursUntilAppStoreUpdateAvailable : settings?.hoursUntilAppStoreUpdateAvailable
+
+        var hoursUntilFirstPrompt = Self.validHours(first) ?? defaults.hoursUntilFirstPrompt
+        var hoursUntilSecondPrompt = Self.validHours(second) ?? defaults.hoursUntilSecondPrompt
+        if hoursUntilSecondPrompt < hoursUntilFirstPrompt {
+            hoursUntilFirstPrompt = defaults.hoursUntilFirstPrompt
+            hoursUntilSecondPrompt = defaults.hoursUntilSecondPrompt
+        }
+
+        self.init(hoursUntilFirstPrompt: hoursUntilFirstPrompt,
+                  hoursUntilSecondPrompt: hoursUntilSecondPrompt,
+                  hoursUntilAppStoreUpdateAvailable: Self.validHours(appStore) ?? defaults.hoursUntilAppStoreUpdateAvailable)
     }
 
-    private static func validThreshold(_ value: Int?) -> Int? {
+    private static func validHours(_ value: Double?) -> Double? {
         guard let value, value >= 0 else { return nil }
         return value
     }
@@ -64,8 +90,11 @@ public struct MoreProminentUpdatesSettings: Equatable {
 
 private extension MoreProminentUpdatesSettings {
     struct RemoteSettings: Decodable {
-        let daysUntilFirstPrompt: Int?
-        let daysUntilSecondPrompt: Int?
-        let versionsBehindBeforePrompt: Int?
+        let hoursUntilFirstPrompt: Double?
+        let hoursUntilSecondPrompt: Double?
+        let hoursUntilAppStoreUpdateAvailable: Double?
+        let internalHoursUntilFirstPrompt: Double?
+        let internalHoursUntilSecondPrompt: Double?
+        let internalHoursUntilAppStoreUpdateAvailable: Double?
     }
 }

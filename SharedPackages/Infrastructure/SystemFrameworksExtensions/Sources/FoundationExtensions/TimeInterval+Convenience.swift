@@ -37,6 +37,10 @@ public extension TimeInterval {
         .minutes(60) * TimeInterval(amount)
     }
 
+    static func hours(_ amount: Double) -> TimeInterval {
+        .minutes(60) * amount
+    }
+
     static func days(_ amount: Int) -> TimeInterval {
         .hours(24) * TimeInterval(amount)
     }

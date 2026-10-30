@@ -653,8 +653,15 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(nextButton.waitForHittable(timeout: timeout))
         nextButton.tap()
         nextButton.tap()
-        XCTAssertTrue(app.staticTexts["3 of 3"].waitForExistence(timeout: timeout))
+        let resultCount = app.staticTexts["3 of 3"]
+        XCTAssertTrue(resultCount.waitForExistence(timeout: timeout))
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: timeout))
+
+        if floatingUIEnabled {
+            let clearButton = app.buttons["FindInPage.Clear"]
+            XCTAssertTrue(clearButton.waitForHittable(timeout: timeout))
+            XCTAssertLessThan(resultCount.frame.maxX, clearButton.frame.minX)
+        }
 
         let matches = webView.staticTexts.matching(identifier: "hackers")
         XCTAssertEqual(matches.count, 3)
@@ -663,6 +670,53 @@ class FloatingUIXCUITestCase: XCTestCase {
 
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Find in Page - Keyboard Clearance"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        let initialMatchY = selectedMatch.frame.minY
+        let dragStart = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+        let dragEnd = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.3))
+        dragStart.press(forDuration: 0.1, thenDragTo: dragEnd)
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: timeout))
+        XCTAssertTrue(findField.exists)
+        XCTAssertTrue(waitUntil(timeout: timeout) { selectedMatch.frame.minY < initialMatchY - 10 })
+
+        let dismissedScreenshot = XCTAttachment(screenshot: app.screenshot())
+        dismissedScreenshot.name = "Find in Page - Keyboard Dismissed"
+        dismissedScreenshot.lifetime = .keepAlways
+        add(dismissedScreenshot)
+
+        if floatingUIEnabled {
+            app.buttons["FindInPage.Clear"].tap()
+            XCTAssertEqual(findField.value as? String, "")
+            XCTAssertFalse(resultCount.exists)
+        }
+    }
+
+    func verifyIPadFindInPageUsesGlassWithFloatingFlagOff() {
+        app.terminate()
+        launchApp(additionalArguments: [
+            "-ff.floatingUIiOS26", "false",
+            "-ff.floatingUIiOS27", "false",
+            "-ff.legacyFindInPage", "true",
+        ])
+        openPage(path: "/page-one", heading: Page.oneHeading)
+
+        element(withIdentifier: "Browser.OmniBar.Button.BrowsingMenu").tap()
+        let findAction = app.buttons["Find in Page"]
+        XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
+        findAction.tap()
+
+        let findField = app.searchFields["Find in Page"]
+        XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        findField.typeText("Floating")
+        XCTAssertTrue(app.staticTexts["1 of 1"].waitForExistence(timeout: timeout))
+        let clearButton = app.buttons["FindInPage.Clear"]
+        XCTAssertTrue(clearButton.waitForHittable(timeout: timeout))
+        XCTAssertLessThan(app.staticTexts["1 of 1"].frame.maxX, clearButton.frame.minX)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Find in Page - iPad Glass With Floating Flag Off"
         screenshot.lifetime = .keepAlways
         add(screenshot)
     }
@@ -778,9 +832,11 @@ class FloatingUIXCUITestCase: XCTestCase {
         app.launch()
 
         XCTAssertTrue(searchField.waitForHittable(timeout: timeout), "Browser chrome did not become ready.")
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarFire).exists)
-        XCTAssertTrue(tabSwitcherButton.exists)
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarMenu).exists)
+        if UIDevice.current.userInterfaceIdiom != .pad {
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarFire).exists)
+            XCTAssertTrue(tabSwitcherButton.exists)
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.toolbarMenu).exists)
+        }
         let dismissButton = element(withIdentifier: AccessibilityID.utiDismiss)
         if dismissButton.exists, dismissButton.isHittable {
             dismissButton.tap()
@@ -957,7 +1013,9 @@ class FloatingUIXCUITestCase: XCTestCase {
 
     private func openPage(path: String, heading: String, file: StaticString = #filePath, line: UInt = #line) {
         searchField.tap()
-        XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout), file: file, line: line)
+        if UIDevice.current.userInterfaceIdiom != .pad {
+            XCTAssertTrue(element(withIdentifier: AccessibilityID.utiDismiss).waitForHittable(timeout: timeout), file: file, line: line)
+        }
         let activeSearchField = searchField
         XCTAssertTrue(activeSearchField.waitForHittable(timeout: timeout), file: file, line: line)
         activeSearchField.typeText("\(serverBaseURL)\(path)\r")
@@ -1269,4 +1327,11 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testChromeDuringSlowLoading() { verifyChromeDuringSlowLoading() }
     func testChromeOnErrorPage() { verifyChromeOnErrorPage() }
     func testFloatingSwipeTabs() { verifyFloatingSwipeTabs() }
+}
+
+final class FindInPagePadTests: FloatingUIXCUITestCase {
+
+    override var barPosition: FloatingUIBarPosition { .top }
+
+    func testGlassWithFloatingFlagOff() { verifyIPadFindInPageUsesGlassWithFloatingFlagOff() }
 }

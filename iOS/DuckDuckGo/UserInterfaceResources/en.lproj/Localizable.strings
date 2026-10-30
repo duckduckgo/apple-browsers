@@ -2893,6 +2893,9 @@
 /* No comment provided by engineer. */
 "feedback.websiteLoading.form.urlPlaceholder" = "Which website has issues?";
 
+/* Clear Find in Page query */
+"findInPage.clear" = "Clear search";
+
 /* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
 "findinpage.count" = "%1$d of %2$d";
 

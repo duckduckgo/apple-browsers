@@ -41,6 +41,8 @@ class FindInPageView: UIView {
 
     weak var delegate: FindInPageViewDelegate?
     weak var findInPage: FindInPage?
+    private var usesFloatingUI = false
+    private var clearButton: UIButton?
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -68,6 +70,7 @@ class FindInPageView: UIView {
 
     @available(iOS 26.0, *)
     func applyFloatingUI() {
+        usesFloatingUI = true
         backgroundColor = UIColor.black.withAlphaComponent(0.2)
         layer.shadowOpacity = 0
         container.backgroundColor = .clear
@@ -81,9 +84,20 @@ class FindInPageView: UIView {
         NSLayoutConstraint.deactivate(searchBackground.constraints.filter {
             $0.firstAttribute == .height && $0.secondItem == nil
         })
-        searchBackground.constraints.first {
-            $0.firstItem === searchBackground && $0.firstAttribute == .trailing && $0.secondItem === counterLabel
-        }?.constant = 16
+        NSLayoutConstraint.deactivate(searchBackground.constraints.filter {
+            $0.firstItem === counterLabel && $0.firstAttribute == .leading
+                || $0.firstItem === searchBackground && $0.firstAttribute == .trailing && $0.secondItem === counterLabel
+        })
+
+        let clearButton = UIButton(type: .system)
+        clearButton.setImage(UIImage(systemName: "xmark.circle.fill"), for: .normal)
+        clearButton.tintColor = .tertiaryLabel
+        clearButton.accessibilityLabel = NSLocalizedString("findInPage.clear", value: "Clear search", comment: "Clear Find in Page query")
+        clearButton.accessibilityIdentifier = "FindInPage.Clear"
+        clearButton.translatesAutoresizingMaskIntoConstraints = false
+        clearButton.addTarget(self, action: #selector(clearSearch), for: .touchUpInside)
+        searchBackground.addSubview(clearButton)
+        self.clearButton = clearButton
 
         let doneEffect = UIGlassEffect(style: .regular)
         doneEffect.tintColor = .systemBlue
@@ -107,7 +121,7 @@ class FindInPageView: UIView {
         navigationGlass.contentView.addSubview(nextButton)
 
         NSLayoutConstraint.activate([
-            container.widthAnchor.constraint(equalTo: widthAnchor, constant: -24),
+            container.widthAnchor.constraint(lessThanOrEqualToConstant: 768),
             container.heightAnchor.constraint(equalToConstant: 48),
             doneGlass.leadingAnchor.constraint(equalTo: container.leadingAnchor),
             doneGlass.topAnchor.constraint(equalTo: container.topAnchor),
@@ -138,8 +152,18 @@ class FindInPageView: UIView {
             nextButton.trailingAnchor.constraint(equalTo: navigationGlass.contentView.trailingAnchor),
             nextButton.bottomAnchor.constraint(equalTo: navigationGlass.contentView.bottomAnchor),
             activityView.trailingAnchor.constraint(equalTo: searchGlass.contentView.trailingAnchor, constant: -8),
-            activityView.centerYAnchor.constraint(equalTo: searchGlass.contentView.centerYAnchor)
+            activityView.centerYAnchor.constraint(equalTo: searchGlass.contentView.centerYAnchor),
+            clearButton.trailingAnchor.constraint(equalTo: searchBackground.trailingAnchor, constant: -12),
+            clearButton.centerYAnchor.constraint(equalTo: searchBackground.centerYAnchor),
+            clearButton.widthAnchor.constraint(equalToConstant: 28),
+            clearButton.heightAnchor.constraint(equalToConstant: 28),
+            counterLabel.trailingAnchor.constraint(equalTo: clearButton.leadingAnchor, constant: -8),
+            inputText.trailingAnchor.constraint(equalTo: counterLabel.leadingAnchor, constant: -8)
         ])
+
+        let containerWidth = container.widthAnchor.constraint(equalTo: widthAnchor, constant: -24)
+        containerWidth.priority = .defaultHigh
+        containerWidth.isActive = true
 
         tintColor = .label
         doneButton.tintColor = .white
@@ -150,8 +174,14 @@ class FindInPageView: UIView {
         counterLabel.textColor = .secondaryLabel
         searchBackground.backgroundColor = .clear
         inputText.textColor = .label
-        inputText.clearButtonMode = .whileEditing
+        inputText.clearButtonMode = .never
         searchLoupe.tintColor = .label
+        clearButton.isHidden = inputText.text?.isEmpty ?? true
+    }
+
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        guard !usesFloatingUI || container.frame.contains(point) else { return nil }
+        return super.hitTest(point, with: event)
     }
     
     override func resignFirstResponder() -> Bool {
@@ -171,6 +201,7 @@ class FindInPageView: UIView {
         let current = findInPage?.current ?? 0
         let total = findInPage?.total ?? 0
         counterLabel.text = UserText.findInPageCount.format(arguments: current, total)
+        clearButton?.isHidden = inputText.text?.isEmpty ?? true
     }
 
     override func becomeFirstResponder() -> Bool {
@@ -202,12 +233,19 @@ class FindInPageView: UIView {
             return
         }
         counterLabel.isHidden = true
+        clearButton?.isHidden = text.isEmpty
         
         guard let findInpage = findInPage,
             findInpage.search(forText: text) else {
                 return
         }
         activityView.startAnimating()
+    }
+
+    @objc private func clearSearch() {
+        inputText.text = ""
+        textChanged()
+        inputText.becomeFirstResponder()
     }
     
 }

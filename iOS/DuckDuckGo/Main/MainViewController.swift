@@ -140,6 +140,7 @@ class MainViewController: UIViewController {
     private var didFindInPageHideChrome = false
     private var findInPageDismissalTimer: Timer?
     private var findResultVisibilityWorkItem: DispatchWorkItem?
+    private weak var findInPagePanGestureRecognizer: UIPanGestureRecognizer?
 
     weak var notificationView: UIView?
 
@@ -918,6 +919,7 @@ class MainViewController: UIViewController {
         chromeMorphAnimator.cancel()
         findInPageDismissalTimer?.invalidate()
         findResultVisibilityWorkItem?.cancel()
+        findInPagePanGestureRecognizer?.removeTarget(self, action: #selector(findInPageWebViewDidPan))
     }
 
     func loadFindInPage() {
@@ -925,7 +927,7 @@ class MainViewController: UIViewController {
         let view = FindInPageView.loadFromXib()
         let usesFloatingUI: Bool
         if #available(iOS 26.0, *) {
-            usesFloatingUI = isFloatingUIEnabled
+            usesFloatingUI = isFloatingUIEnabled || UIDevice.current.userInterfaceIdiom == .pad
             if usesFloatingUI {
                 view.applyFloatingUI()
             }
@@ -4391,7 +4393,21 @@ class MainViewController: UIViewController {
         findInPageView?.update(with: currentTab?.findInPage, updateTextField: true)
         findInPageView?.updateConstraints()
         bringFindInPageToFrontIfNeeded()
+        updateFindInPagePanGesture()
         scheduleCurrentFindResultVisibility()
+    }
+
+    private func updateFindInPagePanGesture() {
+        let gesture = currentTab?.findInPage != nil ? currentTab?.webView.scrollView.panGestureRecognizer : nil
+        guard gesture !== findInPagePanGestureRecognizer else { return }
+        findInPagePanGestureRecognizer?.removeTarget(self, action: #selector(findInPageWebViewDidPan))
+        gesture?.addTarget(self, action: #selector(findInPageWebViewDidPan))
+        findInPagePanGestureRecognizer = gesture
+    }
+
+    @objc private func findInPageWebViewDidPan(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .began, findInPageView?.inputText.isFirstResponder == true else { return }
+        findInPageView?.resignFirstResponder()
     }
 
     private func scheduleCurrentFindResultVisibility(after delay: TimeInterval = 0.2) {
@@ -5493,6 +5509,7 @@ extension MainViewController: FindInPageViewDelegate {
     func done(findInPageView: FindInPageView) {
         findResultVisibilityWorkItem?.cancel()
         currentTab?.findInPage = nil
+        updateFindInPagePanGesture()
         viewCoordinator.toolbar.accessibilityElementsHidden = false
 
         viewCoordinator.showNavigationBarWithBottomPosition()

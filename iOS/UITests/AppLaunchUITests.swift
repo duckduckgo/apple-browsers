@@ -349,7 +349,7 @@ final class AppLaunchUITests: XCTestCase {
         fire.tap()
         XCTAssertTrue(slider.waitForExistence(timeout: UITestTimeouts.navigation))
         assertFireModalWidth(modal, equals: landscapeWidth)
-        let thumbRadius = (slider.frame.height - 8) / 2
+        let thumbRadius = (slider.frame.height - 6) / 2
         slider.coordinate(withNormalizedOffset: .zero)
             .withOffset(CGVector(dx: slider.frame.height / 2, dy: slider.frame.height / 2 - thumbRadius * 1.05))
             .press(forDuration: 0.3,

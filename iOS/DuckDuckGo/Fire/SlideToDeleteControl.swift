@@ -140,7 +140,7 @@ struct SlideToDeleteControl: View {
     @StateObject private var feedback = SlideToDeleteFeedback()
 
     private let minimumHeight: CGFloat = 60
-    private let handleInset: CGFloat = 4
+    private let handleInset: CGFloat = 3
     private var effectiveStyle: SlideToDeleteStyle { style.resolved(isGlassAvailable: SlideToDeleteStyle.isGlassAvailable) }
     private var direction: CGFloat { layoutDirection == .rightToLeft ? -1 : 1 }
     private var completionHoldID: Int? {
@@ -226,18 +226,27 @@ struct SlideToDeleteControl: View {
         let travel = max(size.width - size.height, 0)
         let progress = state.isComplete ? 1 : state.progress(translation: translation, travel: travel)
         let showsCompletion = progress >= SlideToDeleteState.completionThreshold
+        let fillHeight = max(size.height - handleInset * 2, 0)
+        let fillWidth = fillHeight + progress * travel
         return ZStack {
             Capsule()
                 .fill(Color(designSystemColor: .controlsFillPrimary))
-            Capsule()
-                .fill(Color(designSystemColor: .destructivePrimary))
-                .opacity(progress)
-            if variant == .shimmer {
-                LinearGradient(colors: [Color(designSystemColor: .destructivePrimary), Color(singleUseColor: .fireModeAccent)],
-                               startPoint: .leading, endPoint: .trailing)
-                    .opacity(showsCompletion ? 1 : 0)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: showsCompletion)
-            }
+            Color(designSystemColor: .destructivePrimary)
+                .overlay {
+                    if variant == .shimmer {
+                        LinearGradient(stops: [
+                            .init(color: Color(designSystemColor: .destructivePrimary), location: 0),
+                            .init(color: Color(designSystemColor: .destructivePrimary), location: 0.5),
+                            .init(color: Color(singleUseColor: .fireModeAccent), location: 1)
+                        ], startPoint: .leading, endPoint: .trailing)
+                            .opacity(min(max((progress - 0.6) / 0.4, 0), 1))
+                    }
+                }
+                .frame(width: fillWidth, height: fillHeight)
+                .clipShape(Capsule())
+                .frame(width: max(size.width - handleInset * 2, 0), alignment: .leading)
+                .padding(handleInset)
+                .opacity(progress > 0 ? 1 : 0)
             Text(title)
                 .font(.body.weight(.medium))
                 .lineLimit(1)
@@ -250,6 +259,7 @@ struct SlideToDeleteControl: View {
             SlideToDeleteCompletionEffect(variant: variant,
                                           isActive: showsCompletion,
                                           showCompletionLabel: isDragging && state.shouldShowCompletionLabel)
+                .padding(handleInset)
         }
         .clipShape(Capsule())
         .allowsHitTesting(false)
@@ -261,10 +271,9 @@ struct SlideToDeleteControl: View {
         let diameter = max(size.height - inset * 2, 0)
         let travel = max(size.width - size.height, 0)
         let progress = state.isComplete ? 1 : state.progress(translation: translation, travel: travel)
-        let showsCompletion = progress >= SlideToDeleteState.completionThreshold
         return thumb(diameter: diameter)
             .contentShape(Circle().inset(by: -diameter * 0.05))
-            .opacity(state.isComplete || (effectiveStyle == .original && showsCompletion) ? 0 : 1)
+            .opacity(state.isComplete ? 0 : 1)
             .offset(x: direction * progress * travel)
             .gesture(dragGesture(travel: travel))
             .frame(width: size.width - inset * 2, height: diameter, alignment: .leading)

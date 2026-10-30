@@ -569,13 +569,15 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
             let loadResult = try await loader.loadWebExtension(identifier: identifier, into: controller)
             unloadGuard.recordLoad(of: identifier)
 
+            let permissions = context(for: identifier)?.webExtension.requiredPermissionNames
             let installedExtension = InstalledWebExtension(
                 uniqueIdentifier: identifier,
                 filename: loadResult.filename,
                 name: loadResult.displayName,
                 version: loadResult.version,
                 embeddedType: embeddedType,
-                storeIdentity: storeIdentity
+                storeIdentity: storeIdentity,
+                permissions: permissions
             )
 
             installationStore.add(installedExtension)
@@ -1420,6 +1422,13 @@ open class WebExtensionManager: NSObject, WebExtensionManaging, WebExtensionInst
 
     public func extensionVersion(for identifier: String) -> String? {
         installationStore.installedExtension(withUniqueIdentifier: identifier)?.version
+    }
+
+    public func extensionPermissions(for identifier: String) -> [String] {
+        // Records saved before permissions were stored fall back to the loaded extension.
+        installationStore.installedExtension(withUniqueIdentifier: identifier)?.permissions
+            ?? context(for: identifier)?.webExtension.requiredPermissionNames
+            ?? []
     }
 
     public func extensionContext(for url: URL) -> WKWebExtensionContext? {

@@ -68,10 +68,10 @@ struct PrivacyConfigurationOverrideMarkerTests {
         marker.set(true)
         var removals = 0
 
-        #expect(marker.resetIfNeeded(userDefaults: launchArguments) { removals += 1 })
+        #expect(marker.resetIfNeeded(userDefaults: launchArguments, isInternalUser: true) { removals += 1 })
         #expect(removals == 1)
         #expect(!marker.isSet)
-        #expect(!marker.resetIfNeeded(userDefaults: launchArguments) { removals += 1 })
+        #expect(!marker.resetIfNeeded(userDefaults: launchArguments, isInternalUser: true) { removals += 1 })
         #expect(removals == 1)
     }
 
@@ -80,10 +80,39 @@ struct PrivacyConfigurationOverrideMarkerTests {
     func keepsWithValidArgument() throws {
         let (marker, launchArguments, cleanUp) = try makeMarker(argument: "http://localhost:8080/ios-config.json")
         defer { cleanUp() }
-        marker.set(true)
+        marker.set(true, source: URL(string: "http://localhost:8080/ios-config.json")!)
 
-        #expect(!marker.resetIfNeeded(userDefaults: launchArguments) { Issue.record("Unexpected removal") })
+        #expect(!marker.resetIfNeeded(userDefaults: launchArguments, isInternalUser: true) { Issue.record("Unexpected removal") })
         #expect(marker.isSet)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A non-internal launch discards an earlier override", .timeLimit(.minutes(1)))
+    func resetsForNonInternalUser() throws {
+        let url = "http://localhost:8080/ios-config.json"
+        let (marker, launchArguments, cleanUp) = try makeMarker(argument: url)
+        defer { cleanUp() }
+        marker.set(true, source: URL(string: url)!)
+        var removals = 0
+
+        #expect(marker.resetIfNeeded(userDefaults: launchArguments, isInternalUser: false) { removals += 1 })
+        #expect(removals == 1)
+        #expect(!marker.isSet)
+    }
+
+    @available(iOS 16, macOS 13, *)
+    @Test("A new override URL discards cached configuration", .timeLimit(.minutes(1)), arguments: [nil, "http://localhost:9090/old.json"])
+    func resetsWhenOverrideURLChanges(previousSource: String?) throws {
+        let (marker, launchArguments, cleanUp) = try makeMarker(argument: "http://localhost:8080/ios-config.json")
+        defer { cleanUp() }
+        if let previousSource {
+            marker.set(true, source: URL(string: previousSource)!)
+        }
+        var removals = 0
+
+        #expect(marker.resetIfNeeded(userDefaults: launchArguments, isInternalUser: true) { removals += 1 })
+        #expect(removals == 1)
+        #expect(!marker.isSet)
     }
 
     @available(iOS 16, macOS 13, *)
@@ -92,7 +121,7 @@ struct PrivacyConfigurationOverrideMarkerTests {
         let (marker, launchArguments, cleanUp) = try makeMarker(argument: nil)
         defer { cleanUp() }
 
-        #expect(!marker.resetIfNeeded(userDefaults: launchArguments) { Issue.record("Unexpected removal") })
+        #expect(!marker.resetIfNeeded(userDefaults: launchArguments, isInternalUser: true) { Issue.record("Unexpected removal") })
     }
 
     private func makeMarker(argument: String?) throws -> (PrivacyConfigurationOverrideMarker, UserDefaults, () -> Void) {

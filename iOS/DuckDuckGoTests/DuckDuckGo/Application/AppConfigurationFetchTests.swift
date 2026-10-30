@@ -46,7 +46,8 @@ class AppConfigurationFetchTests: XCTestCase {
         defaults.app.set(Date(), forKey: key)
         var removals = 0
 
-        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(markerDefaults: defaults.marker,
+        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(isInternalUser: true,
+                                                                                            markerDefaults: defaults.marker,
                                                                                             argumentDefaults: defaults.arguments,
                                                                                             appDefaults: defaults.app) { removals += 1 }
 
@@ -60,7 +61,8 @@ class AppConfigurationFetchTests: XCTestCase {
         let key = UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue
         defaults.app.set(Date(), forKey: key)
 
-        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(markerDefaults: defaults.marker,
+        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(isInternalUser: true,
+                                                                                            markerDefaults: defaults.marker,
                                                                                             argumentDefaults: defaults.arguments,
                                                                                             appDefaults: defaults.app) { XCTFail("Unexpected removal") }
 
@@ -70,12 +72,13 @@ class AppConfigurationFetchTests: XCTestCase {
 
     func testWhenOverrideArgumentIsPresentThenRefreshThrottleIsKept() {
         let defaults = makeOverrideDefaults()
-        PrivacyConfigurationOverrideMarker(defaults: defaults.marker).set(true)
+        PrivacyConfigurationOverrideMarker(defaults: defaults.marker).set(true, source: URL(string: "http://localhost:8080/ios-config.json")!)
         defaults.arguments.set("http://localhost:8080/ios-config.json", forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
         let key = UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue
         defaults.app.set(Date(), forKey: key)
 
-        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(markerDefaults: defaults.marker,
+        let didReset = ContentBlocking.discardStoredPrivacyConfigurationFromEarlierOverride(isInternalUser: true,
+                                                                                            markerDefaults: defaults.marker,
                                                                                             argumentDefaults: defaults.arguments,
                                                                                             appDefaults: defaults.app) { XCTFail("Unexpected removal") }
 

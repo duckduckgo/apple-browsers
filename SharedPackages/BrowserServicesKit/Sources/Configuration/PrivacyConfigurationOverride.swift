@@ -40,11 +40,11 @@ public enum PrivacyConfigurationOverrideArgument {
     }
 }
 
-/// Remembers that the stored privacy configuration came from a launch-argument override,
-/// so the next launch without the argument replaces it with production.
+/// Tracks the source of a stored override so a later launch can discard a config fetched from another URL.
 public struct PrivacyConfigurationOverrideMarker {
 
     private static let key = "PrivacyConfigurationOverride.storedFromLaunchArgument"
+    private static let sourceKey = "PrivacyConfigurationOverride.sourceURL"
     private let defaults: UserDefaults
 
     public init(defaults: UserDefaults) {
@@ -55,23 +55,29 @@ public struct PrivacyConfigurationOverrideMarker {
         defaults.bool(forKey: Self.key)
     }
 
-    func set(_ isSet: Bool) {
-        defaults.set(isSet, forKey: Self.key)
+    private var storedSource: URL? {
+        defaults.string(forKey: Self.sourceKey).flatMap(URL.init(string:))
     }
 
-    /// Drops a stored privacy configuration that came from an earlier override, when this launch has no valid argument.
-    ///
-    /// Call it before anything reads the stored configuration, so the app starts on its embedded configuration
-    /// and fetches production as usual.
-    /// - Returns: true when the stored configuration was removed.
+    func set(_ isSet: Bool, source: URL? = nil) {
+        defaults.set(isSet, forKey: Self.key)
+        if let source {
+            defaults.set(source.absoluteString, forKey: Self.sourceKey)
+        } else {
+            defaults.removeObject(forKey: Self.sourceKey)
+        }
+    }
+
+    /// Call before reading the store. A new override URL must not reuse the previous URL's ETag or data.
     @discardableResult
-    public func resetIfNeeded(userDefaults: UserDefaults, removeStoredConfiguration: () -> Void) -> Bool {
-        guard isSet else { return false }
+    public func resetIfNeeded(userDefaults: UserDefaults, isInternalUser: Bool, removeStoredConfiguration: () -> Void) -> Bool {
         let argument = userDefaults.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
-        guard PrivacyConfigurationOverrideArgument.url(fromLaunchArgument: argument) == nil else { return false }
+        let source = isInternalUser ? PrivacyConfigurationOverrideArgument.url(fromLaunchArgument: argument) : nil
+        guard isSet || source != nil else { return false }
+        if isSet, let source, storedSource == source { return false }
         removeStoredConfiguration()
         set(false)
-        Logger.config.log("privacy config override: removed stored override configuration")
+        Logger.config.log("privacy config override: cleared stored privacy configuration")
         return true
     }
 }
@@ -114,12 +120,7 @@ public final class PrivacyConfigurationOverrideHandler {
         self.logError = logError
     }
 
-    /// Sets the override for this launch, then runs `fetch` in a task.
-    ///
-    /// `fetch` must fetch and apply the privacy configuration, and return true when the applied configuration is
-    /// the downloaded one. Without an argument there is nothing to do: `PrivacyConfigurationOverrideMarker.resetIfNeeded`
-    /// has already dropped any stored override. Call this on every cold launch, before any scheduled refresh.
-    /// - Returns: the fetch task, or nil when there is nothing to fetch.
+    /// `fetch` returns true only when it applied downloaded config. Call after preparing the stored config for this launch.
     @discardableResult
     public func handle(argument: String?, fetch: @escaping () async throws -> Bool) -> Task<Void, Never>? {
         guard let argument else { return nil }
@@ -134,7 +135,7 @@ public final class PrivacyConfigurationOverrideHandler {
         }
         urlProvider.setSessionURL(url, for: .privacyConfiguration)
         // Set before the fetch: any later fetch this launch, including a scheduled refresh, stores the override config.
-        overrideMarker.set(true)
+        overrideMarker.set(true, source: url)
         Logger.config.log("privacy config override: launch argument handled")
 
         return Task {

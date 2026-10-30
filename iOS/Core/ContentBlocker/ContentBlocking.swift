@@ -47,8 +47,8 @@ public final class ContentBlocking {
     }
 
     private init(privacyConfigurationManager: PrivacyConfigurationManaging? = nil) {
-        Self.discardStoredPrivacyConfigurationFromEarlierOverride()
         let internalUserDecider = DefaultInternalUserDecider(store: InternalUserStore())
+        Self.discardStoredPrivacyConfigurationFromEarlierOverride(isInternalUser: internalUserDecider.isInternalUser)
         let statisticsStore = StatisticsUserDefaults()
         let privacyConfigurationManager = privacyConfigurationManager
             ?? PrivacyConfigurationManager(fetchedETag: UserDefaultsETagStorage().loadEtag(for: .privacyConfiguration),
@@ -84,11 +84,10 @@ public final class ContentBlocking {
                                                                           compilationErrorReporting: Self.debugEvents)
     }
 
-    /// A launch without `-privacyConfigURL` must not read a privacy configuration stored by an earlier override.
-    /// Called from `init`, because it must run before the privacy configuration manager reads the store.
-    /// After a reset it also clears the refresh throttle, so the first production fetch isn't delayed by up to 30 minutes.
+    /// Clear stale config before the manager reads it, then allow an immediate fetch.
     @discardableResult
     static func discardStoredPrivacyConfigurationFromEarlierOverride(
+        isInternalUser: Bool,
         markerDefaults: UserDefaults = UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults(),
         argumentDefaults: UserDefaults = .app,
         appDefaults: UserDefaults = .app,
@@ -98,7 +97,7 @@ public final class ContentBlocking {
         }
     ) -> Bool {
         let marker = PrivacyConfigurationOverrideMarker(defaults: markerDefaults)
-        return marker.resetIfNeeded(userDefaults: argumentDefaults) {
+        return marker.resetIfNeeded(userDefaults: argumentDefaults, isInternalUser: isInternalUser) {
             removeStoredConfiguration()
             appDefaults.removeObject(forKey: UserDefaultsWrapper<Date>.Key.lastConfigurationRefreshDate.rawValue)
         }

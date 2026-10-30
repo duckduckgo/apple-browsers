@@ -791,9 +791,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // When TEST_PRIVACY_CONFIG_PATH is set, skip cached config to use the test config from embedded data provider
         let useTestConfig = (buildType.isDebugBuild || buildType.isReviewBuild) && ProcessInfo.processInfo.environment[AppPrivacyConfigurationDataProvider.EnvironmentKeys.testPrivacyConfigPath] != nil
 
-        // A launch without `-privacyConfigURL` must not read a privacy configuration stored by an earlier override.
+        // Clear cached config before loading it when the override source changes or is no longer eligible.
         let overrideMarker = PrivacyConfigurationOverrideMarker(defaults: UserDefaults.appConfiguration)
-        overrideMarker.resetIfNeeded(userDefaults: .standard) { [configurationStore] in
+        overrideMarker.resetIfNeeded(userDefaults: .standard, isInternalUser: internalUserDecider.isInternalUser) { [configurationStore] in
             configurationStore.removeStoredPrivacyConfiguration()
         }
 
@@ -1848,10 +1848,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
         let configurationManager = configurationManager
         let argument = UserDefaults.standard.string(forKey: PrivacyConfigurationOverrideArgument.launchArgumentKey)
-        handler.handle(argument: argument) {
+        let overrideTask = handler.handle(argument: argument) {
             try await configurationManager.fetchPrivacyConfiguration(isDebug: true)
         }
-        configurationManager.start()
+        if let overrideTask {
+            Task { @MainActor in
+                await overrideTask.value
+                configurationManager.start()
+            }
+        } else {
+            configurationManager.start()
+        }
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {

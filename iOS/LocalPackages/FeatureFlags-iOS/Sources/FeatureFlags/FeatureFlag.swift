@@ -476,7 +476,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213965646075290
     case fireButtonRefinements
 
-    /// TODO: Asana task URL.
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1220050958443794?focus=true
     case swipeToDelete
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1213728968355833?focus=true

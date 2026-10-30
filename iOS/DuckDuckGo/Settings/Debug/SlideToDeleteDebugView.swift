@@ -46,7 +46,7 @@ struct SlideToDeleteDebugView: View {
                         style = option
                     } label: {
                         HStack {
-                            Text(option.title)
+                            Text(verbatim: option.title)
                                 .foregroundColor(Color(designSystemColor: available ? .textPrimary : .textSecondary))
                             Spacer()
                             if option == style.resolved(isGlassAvailable: SlideToDeleteStyle.isGlassAvailable) {
@@ -61,32 +61,36 @@ struct SlideToDeleteDebugView: View {
                     .accessibilityAddTraits(option == style.resolved(isGlassAvailable: SlideToDeleteStyle.isGlassAvailable) ? .isSelected : [])
                 }
             } header: {
-                Text("Slider style")
+                Text(verbatim: "Slider style")
             } footer: {
-                Text(SlideToDeleteStyle.isGlassAvailable
+                Text(verbatim: SlideToDeleteStyle.isGlassAvailable
                      ? "The selected style also applies to the Fire confirmation sheet."
                      : "Liquid Glass requires iOS 26 or later. Original is used on this device.")
                     .accessibilityIdentifier("SlideToDelete.Debug.StyleAvailability")
             }
 
             Section {
-                Picker("Completion effect", selection: $variant) {
+                Picker(selection: $variant) {
                     ForEach(SlideToDeleteVariant.allCases) { variant in
-                        Text(variant.title).tag(variant)
+                        Text(verbatim: variant.title).tag(variant)
                     }
+                } label: {
+                    Text(verbatim: "Completion effect")
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("SlideToDelete.Debug.Variant")
-                Text("The selected effect also applies to the Fire confirmation sheet.")
+                Text(verbatim: "The selected effect also applies to the Fire confirmation sheet.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
             } header: {
-                Text("Completion effect")
+                Text(verbatim: "Completion effect")
             }
 
             Section {
-                Toggle("Double-length text", isOn: $doubleLength)
-                    .accessibilityIdentifier("SlideToDelete.Debug.DoubleLength")
+                Toggle(isOn: $doubleLength) {
+                    Text(verbatim: "Double-length text")
+                }
+                .accessibilityIdentifier("SlideToDelete.Debug.DoubleLength")
                 SlideToDeleteControl(title: title,
                                      variant: variant,
                                      style: style,
@@ -98,32 +102,36 @@ struct SlideToDeleteDebugView: View {
                 .id(previewID)
                 .accessibilityIdentifier("SlideToDelete.Debug.Preview")
                 .listRowInsets(EdgeInsets(top: 16, leading: 12, bottom: 16, trailing: 12))
-                Text(completed ? "Slide completed. No data deleted." : "Slide to the end, move back, then try again. Release at the end to complete.")
+                Text(verbatim: completed ? "Slide completed. No data deleted." : "Slide to the end, move back, then try again. Release at the end to complete.")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .accessibilityIdentifier("SlideToDelete.Debug.Status")
-                Text("Haptic requests: \(hapticRequests) · Label reveals: \(labelReveals)")
+                Text(verbatim: "Haptic requests: \(hapticRequests) · Label reveals: \(labelReveals)")
                     .font(.footnote)
                     .accessibilityIdentifier("SlideToDelete.Debug.Diagnostics")
-                Text("Touch requests: \(touchRequests)")
+                Text(verbatim: "Touch requests: \(touchRequests)")
                     .font(.footnote)
                     .accessibilityIdentifier("SlideToDelete.Debug.TouchDiagnostics")
-                Button("Reset Preview", action: resetPreview)
-                Button("Test haptic") {
+                Button(action: resetPreview) {
+                    Text(verbatim: "Reset Preview")
+                }
+                Button {
                     feedback.prepare()
                     if feedback.impact() {
                         hapticRequests += 1
                     }
+                } label: {
+                    Text(verbatim: "Test haptic")
                 }
                 .background(SlideToDeleteFeedbackView(feedback: feedback))
                 .accessibilityIdentifier("SlideToDelete.Debug.TestHaptic")
             } header: {
-                Text("Safe preview")
+                Text(verbatim: "Safe preview")
             } footer: {
-                Text("No data is deleted here. Hold at the end to reveal Shimmer’s label; release to complete immediately. Feel a light tap on touch and a firmer tick near the end. Diagnostics show requests, not vibrations felt. Test on an iPhone with System Haptics and Accessibility > Touch > Vibration enabled.")
+                Text(verbatim: "No data is deleted here. Hold at the end to reveal Shimmer’s label; release to complete immediately. Feel a light tap on touch and a firmer tick near the end. Diagnostics show requests, not vibrations felt. Test on an iPhone with System Haptics and Accessibility > Touch > Vibration enabled.")
             }
         }
-        .navigationTitle("Slide to Delete")
+        .navigationTitle(Text(verbatim: "Slide to Delete"))
         .onChange(of: variant) { _ in resetPreview() }
         .onChange(of: style) { _ in resetPreview() }
         .onChange(of: doubleLength) { _ in resetPreview() }

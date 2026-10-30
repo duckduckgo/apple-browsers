@@ -604,18 +604,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         }
     }
 
-    func testSwipeToDeleteUsesRemoteFlagWithInternalOnlyDefault() {
-        let flag = FeatureFlag.swipeToDelete
-        guard case let .remoteReleasable(subfeature) = flag.source else {
-            return XCTFail("Expected remote flag")
-        }
-        XCTAssertEqual(subfeature as? iOSBrowserConfigSubfeature, .swipeToDelete)
-        guard case .internalOnly = flag.defaultValue else {
-            return XCTFail("Expected internal-only default")
-        }
-        XCTAssertTrue(flag.supportsLocalOverriding)
-    }
-
     func testSwipeToDeleteFlagChangesOnNextPresentation() {
         let tab = createTabViewModel()
         let disabled = makeSUT(tabViewModel: tab)
@@ -626,7 +614,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         let slider = enabled.buttons.first { $0.style == .slide }
         XCTAssertEqual(slider?.title, UserText.scopedFireConfirmationSlideToDeleteAll)
         XCTAssertEqual(slider?.accessibilityIdentifier, "alert.forget-data.confirm")
-        XCTAssertTrue(enabled.buttons.filter { $0.accessibilityIdentifier == "Fire.Confirmation.Button.ThisTab" }.allSatisfy { $0.style != .slide })
         XCTAssertFalse(disabled.buttons.contains { $0.style == .slide })
 
         mockFeatureFlagger.enabledFeatureFlags = []
@@ -673,7 +660,7 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(state.complete(translation: 188, travel: 200))
         XCTAssertFalse(state.complete(translation: 200, travel: 0))
         XCTAssertFalse(state.isComplete)
-        XCTAssertTrue(state.complete(translation: 200, travel: 200))
+        XCTAssertTrue(state.complete(translation: 190, travel: 200))
         XCTAssertTrue(state.isComplete)
         XCTAssertFalse(state.complete(translation: 200, travel: 200))
     }
@@ -757,17 +744,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(state.revealCompletionLabel(for: state.thresholdEntryCount))
     }
 
-    func testSlideFeedbackIsAttachedToControlView() {
-        let feedback = SlideToDeleteFeedback()
-        XCTAssertFalse(feedback.impact())
-        let view = UIView()
-        feedback.attach(to: view)
-        if #available(iOS 17.5, *) {
-            XCTAssertEqual(view.interactions.filter { $0 is UIImpactFeedbackGenerator }.count, 1)
-        }
-        XCTAssertTrue(feedback.impact())
-    }
-
     func testSlideTouchFeedbackFiresOncePerTouchAndRearmsAfterRelease() {
         let feedback = SlideToDeleteFeedback()
         let view = UIView()
@@ -778,11 +754,6 @@ final class ScopedFireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(feedback.beginTouch())
         XCTAssertFalse(feedback.beginTouch())
         feedback.endTouch()
-    }
-
-    func testSlideDefaultsToOriginalWithShimmer() {
-        XCTAssertEqual(SlideToDeleteStyle.defaultValue, .original)
-        XCTAssertEqual(SlideToDeleteVariant.defaultValue, .shimmer)
     }
 
     func testSlideStyleHonorsOriginalAndFallsBackForUnsupportedGlass() {

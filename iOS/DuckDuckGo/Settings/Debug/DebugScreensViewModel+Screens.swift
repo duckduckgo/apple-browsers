@@ -338,8 +338,7 @@ extension DebugScreensViewModel {
     }
 
     private var webExtensionsDebugScreen: DebugScreen? {
-        guard #available(iOS 18.4, *),
-              AppDependencyProvider.shared.featureFlagger.isFeatureOn(.webExtensions) else {
+        guard #available(iOS 18.4, *) else {
             return nil
         }
 

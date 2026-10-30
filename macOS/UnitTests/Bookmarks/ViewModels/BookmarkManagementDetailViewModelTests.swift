@@ -709,11 +709,56 @@ final class BookmarkManagementDetailViewModelTests: XCTestCase {
         XCTAssertEqual(triggerCounter.count, 2)
     }
 
-    private func makeViewController(bookmarkManager: MockBookmarkManager) -> BookmarkManagementDetailViewController {
+    // MARK: - Sync promo displayed pixel
+
+    func testWhenSyncPromoBecomesVisibleThenDisplayedPixelFiresOncePerAppearance() {
+        let (bookmarkOne, bookmarkTwo, bookmarkThree) = createBookmarks()
+        let folder = BookmarkFolder(id: "4", title: "Folder")
+        let syncPromoManager = MockSyncPromoManager()
+        let pixelFiring = PixelKitMock()
+        let viewController = makeViewController(bookmarkManager: createBookmarkManager(with: [bookmarkOne, bookmarkTwo, bookmarkThree, folder]),
+                                                syncPromoManager: syncPromoManager,
+                                                pixelFiring: pixelFiring)
+
+        viewController.viewDidAppear()
+        XCTAssertTrue(pixelFiring.actualFireCalls.isEmpty)
+
+        syncPromoManager.isPromoActiveSubject.send(true)
+        viewController.update(selectionState: .folder(folder))
+        viewController.update(selectionState: .empty)
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+        XCTAssertEqual(pixelFiring.actualFireCalls.first?.additionalParameters, ["source": "bookmarks"])
+
+        viewController.viewWillDisappear()
+        viewController.viewDidAppear()
+
+        XCTAssertEqual(pixelFiring.actualFireCalls.map(\.pixel.name), [SyncPromoPixelKitEvent.syncPromoDisplayed.name, SyncPromoPixelKitEvent.syncPromoDisplayed.name])
+    }
+
+    func testWhenSyncPromoIsActiveInAFolderThenDisplayedPixelIsNotFired() {
+        let folder = BookmarkFolder(id: "1", title: "Folder")
+        let syncPromoManager = MockSyncPromoManager()
+        syncPromoManager.isPromoActiveSubject.send(true)
+        let pixelFiring = PixelKitMock()
+        let viewController = makeViewController(bookmarkManager: createBookmarkManager(with: [folder]),
+                                                syncPromoManager: syncPromoManager,
+                                                pixelFiring: pixelFiring)
+        viewController.update(selectionState: .folder(folder))
+
+        viewController.viewDidAppear()
+
+        XCTAssertFalse(pixelFiring.firedSyncPromoDisplayed)
+    }
+
+    private func makeViewController(bookmarkManager: MockBookmarkManager,
+                                    syncPromoManager: SyncPromoManaging = SyncPromoManager.makeForTesting(content: .bookmarks),
+                                    pixelFiring: PixelKitMock? = nil) -> BookmarkManagementDetailViewController {
         let viewController = BookmarkManagementDetailViewController(bookmarkManager: bookmarkManager,
                                                                     dragDropManager: BookmarkDragDropManager(bookmarkManager: bookmarkManager),
                                                                     pinningManager: MockPinningManager(),
-                                                                    syncPromoManager: SyncPromoManager.makeForTesting(content: .bookmarks))
+                                                                    syncPromoManager: syncPromoManager,
+                                                                    pixelFiring: pixelFiring)
         _ = viewController.view
         return viewController
     }

@@ -1,0 +1,24 @@
+{
+    "dataimport_history_source-file-missing_macos": {
+        "description": "Fired when history import finds no history file where it looks for one: the selected browser profile's folder can be read but has no history database ('History' for Chromium browsers, 'places.sqlite' for Firefox), or a Safari export archive has a file that looks like history (named 'History' or with a 'history' list) but isn't a history export we can read. Fired on every Safari archive import, whatever data types were selected. Tells us when a browser renames, moves or changes the format of its history file.",
+        "owners": ["andremartingo"],
+        "triggers": ["user_interaction"],
+        "suffixes": ["daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "channel",
+            {
+                "key": "source",
+                "description": "The browser the user is importing data from",
+                "type": "string",
+                "enum": ["brave", "chrome", "edge", "firefox", "opera", "other", "safari"]
+            },
+            {
+                "key": "source_browser_version",
+                "description": "Major version of the browser the user is importing from, when known",
+                "type": "string"
+            }
+        ]
+    }
+}

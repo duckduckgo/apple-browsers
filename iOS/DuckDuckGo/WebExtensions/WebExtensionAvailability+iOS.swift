@@ -73,7 +73,7 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
 
     var isAvailable: Bool {
         guard #available(iOS 18.4, *) else { return false }
-        return featureFlagger.isFeatureOn(.webExtensions)
+        return true
     }
 
     var isAutoconsentExtensionAvailable: Bool {
@@ -89,5 +89,9 @@ final class WebExtensionAvailability: WebExtensionAvailabilityProviding {
             }
         }
         return false
+    }
+
+    var isExtensionManagementAvailable: Bool {
+        false
     }
 }

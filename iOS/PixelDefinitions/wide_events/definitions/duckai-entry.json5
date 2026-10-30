@@ -1,0 +1,110 @@
+{
+    "ios-duckai-entry": {
+        "description": "Sent at the end of one entry into Duck.ai on iOS: from the entry point (whenever m_aichat_entry_point fires) until the user leaves Duck.ai, enters it again through another entry point, backgrounds the app, or the process ends. Measures which entry points lead to a prompt.",
+        "owners": ["SabrinaTardio"],
+        "meta": {
+            "type": "ios-duckai-entry",
+            "version": "1.1"
+        },
+        "feature": {
+            "name": "duckai_entry",
+            "status": ["SUCCESS", "CANCELLED", "UNKNOWN"],
+            "data": {
+                "ext": {
+                    "status_reason": {
+                        "type": "string",
+                        "description": "How the entry ended. left_duckai (SUCCESS): the user left Duck.ai. new_entry (SUCCESS): another entry point fired while in Duck.ai, which starts a new entry. app_backgrounded (CANCELLED): the app moved to the background. app_terminated (UNKNOWN): the process ended before another outcome was recorded; completed at the next launch.",
+                        "enum": ["left_duckai", "new_entry", "app_backgrounded", "app_terminated"]
+                    },
+                    "exit_trigger": {
+                        "type": "string",
+                        "description": "The action that left Duck.ai, with the same values as ios-duckai-session. Present only when status_reason is left_duckai.",
+                        "enum": [
+                            "back_or_close",
+                            "tab_switched",
+                            "new_tab_opened",
+                            "fire_tab_opened",
+                            "search_started",
+                            "other_navigation",
+                            "chat_deleted"
+                        ]
+                    },
+                    "source": {
+                        "type": "string",
+                        "description": "The entry point, with the same values as m_aichat_entry_point.",
+                        "enum": [
+                            "menu_bar_open",
+                            "menu_bar_new_chat",
+                            "menu_bar_voice_chat",
+                            "menu_bar_image_chat",
+                            "menu_bar_recent_chat",
+                            "address_bar_prompt",
+                            "address_bar_icon",
+                            "address_bar_shortcut_chip",
+                            "address_bar_editing_state",
+                            "suggestion_ask_ai",
+                            "ipad_toggle_prompt",
+                            "browsing_menu_ntp",
+                            "browsing_menu_webpage",
+                            "browsing_menu_duckai",
+                            "duck_ai_new_chat",
+                            "tab_switcher",
+                            "tab_switcher_existing_chat",
+                            "tabs_bar_existing_chat",
+                            "tabs_bar_button",
+                            "new_tab_long_press_menu",
+                            "chat_history_new_chat",
+                            "chat_history_open_chat",
+                            "chat_history_view_all",
+                            "voice",
+                            "onboarding",
+                            "subscription_onboarding",
+                            "paid_settings",
+                            "direct_url",
+                            "serp",
+                            "icon_shortcut",
+                            "contextual_chat",
+                            "widget_quick_actions",
+                            "widget_quick_actions_medium",
+                            "widget_favorite",
+                            "widget_lock_screen",
+                            "widget_control_center",
+                            "siri",
+                            "deep_link_other",
+                            "return_to_chat_card",
+                            "ddg_homepage"
+                        ]
+                    },
+                    "has_prompt": {
+                        "type": "boolean",
+                        "description": "True when the user arrived with a prompt already, e.g. typed in the address bar."
+                    },
+                    "chat_state": {
+                        "type": "string",
+                        "description": "new when the entry starts a new chat; existing when it opens one. For a Duck.ai tab, read from the chat ID in its URL when the tab is first shown; for the contextual sheet, whether it reopens a chat. Absent when the entry ended before its Duck.ai tab was shown. The identifier itself is never sent.",
+                        "enum": ["new", "existing"]
+                    },
+                    "surface": {
+                        "type": "string",
+                        "description": "Where Duck.ai is shown: a full Duck.ai tab, or the contextual sheet over a web page.",
+                        "enum": ["duck_ai_tab", "contextual_sheet"]
+                    },
+                    "prompt_submitted": {
+                        "type": "boolean",
+                        "description": "True when a prompt was sent during the entry. Detected from the Duck.ai page, so prompts the page sends automatically count."
+                    },
+                    "time_to_first_prompt_ms_bucketed": {
+                        "type": "string",
+                        "description": "Time from the entry to the first prompt, bucketed (lower end of bucket, in ms). Absent when no prompt was sent.",
+                        "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                    },
+                    "time_in_duckai_ms_bucketed": {
+                        "type": "string",
+                        "description": "Time from the entry to its end, bucketed (lower end of bucket, in ms). Absent when the entry was recovered at the next launch (app_terminated).",
+                        "enum": ["0", "1000", "5000", "10000", "30000", "60000", "300000", "600000"]
+                    }
+                }
+            }
+        }
+    }
+}

@@ -308,6 +308,56 @@ enum SubscriptionContainerViewFactory {
             .environmentObject(navigationCoordinator)
     }
 
+    static func makeCancellationFlowViewModel(subscriptionManager: SubscriptionManager,
+                                              subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                              userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                              internalUserDecider: InternalUserDecider,
+                                              dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                              wideEvent: WideEventManaging,
+                                              featureFlagger: FeatureFlagger) -> SubscriptionContainerViewModel {
+
+        let pendingTransactionHandler = DefaultPendingTransactionHandler(userDefaults: subscriptionUserDefaults,
+                                                                         pixelHandler: SubscriptionPixelHandler(source: .mainApp, pixelKit: PixelKit.shared))
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(subscriptionManager: subscriptionManager,
+                                                             storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                             pendingTransactionHandler: pendingTransactionHandler)
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlow(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                               appStoreRestoreFlow: appStoreRestoreFlow,
+                                                               wideEvent: wideEvent,
+                                                               pendingTransactionHandler: pendingTransactionHandler)
+        let subscriptionFlowsExecuter = DefaultSubscriptionFlowsExecuter(subscriptionManager: subscriptionManager,
+                                                                   appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                   wideEvent: wideEvent,
+                                                                   pendingTransactionHandler: pendingTransactionHandler)
+
+        return SubscriptionContainerViewModel(
+            subscriptionManager: subscriptionManager,
+            initialURL: subscriptionManager.url(for: .cancellationFlow),
+            flowType: .cancellation,
+            isInternalUser: internalUserDecider.isInternalUser,
+            userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+                                                                       subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                       subscriptionAttributionOrigin: nil,
+                                                                       planChangeEntry: SubscriptionFunnelOrigin.appSettings.rawValue,
+                                                                       appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                       appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                       internalUserDecider: internalUserDecider,
+                                                                       wideEvent: wideEvent,
+                                                                       pendingTransactionHandler: pendingTransactionHandler,
+                                                                       subscriptionFlowsExecuter: subscriptionFlowsExecuter,
+                                                                       requestValidator: DefaultScriptRequestValidator(subscriptionManager: subscriptionManager),
+                                                                       subscriptionExperimentAttributionProvider: DefaultSubscriptionExperimentAttributionProvider(
+                                                                           featureFlagger: featureFlagger)),
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider,
+            onboardingKeyValueStore: nil,
+            meetsPIRLocaleRequirement: { false }
+        )
+    }
+
     static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
                                 subscriptionManager: SubscriptionManager,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,

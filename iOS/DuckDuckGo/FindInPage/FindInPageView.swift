@@ -65,6 +65,91 @@ class FindInPageView: UIView {
 
         decorate()
     }
+
+    @available(iOS 26.0, *)
+    func applyFloatingUI() {
+        backgroundColor = UIColor.black.withAlphaComponent(0.2)
+        layer.shadowOpacity = 0
+        container.backgroundColor = .clear
+
+        NSLayoutConstraint.deactivate(constraints.filter {
+            $0.firstItem === container && $0.firstAttribute == .top
+        })
+        NSLayoutConstraint.deactivate(container.constraints)
+        NSLayoutConstraint.deactivate(nextButton.constraints)
+        NSLayoutConstraint.deactivate(previousButton.constraints)
+        NSLayoutConstraint.deactivate(searchBackground.constraints.filter {
+            $0.firstAttribute == .height && $0.secondItem == nil
+        })
+
+        let doneEffect = UIGlassEffect(style: .regular)
+        doneEffect.tintColor = .systemBlue
+        let doneGlass = UIVisualEffectView(effect: doneEffect)
+        let searchGlass = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
+        let navigationGlass = UIVisualEffectView(effect: UIGlassEffect(style: .regular))
+        for glass in [doneGlass, searchGlass, navigationGlass] {
+            glass.cornerConfiguration = .capsule()
+            glass.translatesAutoresizingMaskIntoConstraints = false
+            container.addSubview(glass)
+        }
+
+        let doneLabel = doneButton.title(for: .normal)
+        doneButton.setTitle(nil, for: .normal)
+        doneButton.setImage(UIImage(systemName: "checkmark", withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)), for: .normal)
+        doneButton.accessibilityLabel = doneLabel
+        doneGlass.contentView.addSubview(doneButton)
+        searchGlass.contentView.addSubview(searchBackground)
+        searchGlass.contentView.addSubview(activityView)
+        navigationGlass.contentView.addSubview(previousButton)
+        navigationGlass.contentView.addSubview(nextButton)
+
+        NSLayoutConstraint.activate([
+            container.widthAnchor.constraint(equalTo: widthAnchor, constant: -24),
+            container.heightAnchor.constraint(equalToConstant: 48),
+            doneGlass.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            doneGlass.topAnchor.constraint(equalTo: container.topAnchor),
+            doneGlass.widthAnchor.constraint(equalToConstant: 48),
+            doneGlass.heightAnchor.constraint(equalToConstant: 48),
+            searchGlass.leadingAnchor.constraint(equalTo: doneGlass.trailingAnchor, constant: 8),
+            searchGlass.topAnchor.constraint(equalTo: container.topAnchor),
+            searchGlass.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            navigationGlass.leadingAnchor.constraint(equalTo: searchGlass.trailingAnchor, constant: 8),
+            navigationGlass.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            navigationGlass.topAnchor.constraint(equalTo: container.topAnchor),
+            navigationGlass.widthAnchor.constraint(equalToConstant: 80),
+            navigationGlass.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            doneButton.topAnchor.constraint(equalTo: doneGlass.contentView.topAnchor),
+            doneButton.leadingAnchor.constraint(equalTo: doneGlass.contentView.leadingAnchor),
+            doneButton.trailingAnchor.constraint(equalTo: doneGlass.contentView.trailingAnchor),
+            doneButton.bottomAnchor.constraint(equalTo: doneGlass.contentView.bottomAnchor),
+            searchBackground.topAnchor.constraint(equalTo: searchGlass.contentView.topAnchor),
+            searchBackground.leadingAnchor.constraint(equalTo: searchGlass.contentView.leadingAnchor),
+            searchBackground.trailingAnchor.constraint(equalTo: searchGlass.contentView.trailingAnchor),
+            searchBackground.bottomAnchor.constraint(equalTo: searchGlass.contentView.bottomAnchor),
+            previousButton.topAnchor.constraint(equalTo: navigationGlass.contentView.topAnchor),
+            previousButton.leadingAnchor.constraint(equalTo: navigationGlass.contentView.leadingAnchor),
+            previousButton.widthAnchor.constraint(equalToConstant: 40),
+            previousButton.bottomAnchor.constraint(equalTo: navigationGlass.contentView.bottomAnchor),
+            nextButton.topAnchor.constraint(equalTo: navigationGlass.contentView.topAnchor),
+            nextButton.leadingAnchor.constraint(equalTo: previousButton.trailingAnchor),
+            nextButton.trailingAnchor.constraint(equalTo: navigationGlass.contentView.trailingAnchor),
+            nextButton.bottomAnchor.constraint(equalTo: navigationGlass.contentView.bottomAnchor),
+            activityView.trailingAnchor.constraint(equalTo: searchGlass.contentView.trailingAnchor, constant: -8),
+            activityView.centerYAnchor.constraint(equalTo: searchGlass.contentView.centerYAnchor)
+        ])
+
+        tintColor = .label
+        doneButton.tintColor = .white
+        nextButton.setImage(UIImage(systemName: "chevron.down"), for: .normal)
+        nextButton.tintColor = .secondaryLabel
+        previousButton.setImage(UIImage(systemName: "chevron.up"), for: .normal)
+        previousButton.tintColor = .secondaryLabel
+        counterLabel.textColor = .secondaryLabel
+        searchBackground.backgroundColor = .clear
+        inputText.textColor = .label
+        inputText.clearButtonMode = .whileEditing
+        searchLoupe.tintColor = .label
+    }
     
     override func resignFirstResponder() -> Bool {
         return inputText.resignFirstResponder()

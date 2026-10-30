@@ -921,6 +921,15 @@ class MainViewController: UIViewController {
     func loadFindInPage() {
 
         let view = FindInPageView.loadFromXib()
+        let usesFloatingUI: Bool
+        if #available(iOS 26.0, *) {
+            usesFloatingUI = isFloatingUIEnabled
+            if usesFloatingUI {
+                view.applyFloatingUI()
+            }
+        } else {
+            usesFloatingUI = false
+        }
         self.view.addSubview(view)
 
         let container = view.container!
@@ -928,15 +937,20 @@ class MainViewController: UIViewController {
         // Avoids coercion swiftlint warnings
         let superview = self.view!
 
-        NSLayoutConstraint.activate([
+        var findInPageConstraints = [
 
-            container.bottomAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor),
+            container.bottomAnchor.constraint(equalTo: superview.keyboardLayoutGuide.topAnchor,
+                                              constant: usesFloatingUI ? -12 : 0),
             view.bottomAnchor.constraint(equalTo: superview.bottomAnchor),
             view.heightAnchor.constraint(greaterThanOrEqualToConstant: 0),
             view.trailingAnchor.constraint(equalTo: superview.trailingAnchor),
             view.leadingAnchor.constraint(equalTo: superview.leadingAnchor),
 
-        ])
+        ]
+        if usesFloatingUI {
+            findInPageConstraints.append(view.topAnchor.constraint(equalTo: superview.topAnchor))
+        }
+        NSLayoutConstraint.activate(findInPageConstraints)
 
         findInPageView = view
 

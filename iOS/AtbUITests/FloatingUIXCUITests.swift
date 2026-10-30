@@ -604,6 +604,32 @@ class FloatingUIXCUITestCase: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["New Tab"].exists)
     }
 
+    func verifyFindInPageGlass() {
+        app.terminate()
+        launchApp(additionalArguments: ["-ff.legacyFindInPage", "true"])
+        openPage(path: "/page-one", heading: Page.oneHeading)
+
+        element(withIdentifier: AccessibilityID.toolbarMenu).tap()
+        let findAction = app.buttons["Find in Page"]
+        XCTAssertTrue(findAction.waitForHittable(timeout: timeout))
+        findAction.tap()
+
+        let findField = app.searchFields["Find in Page"]
+        XCTAssertTrue(findField.waitForHittable(timeout: timeout))
+        findField.typeText("Floating")
+        XCTAssertTrue(app.staticTexts["1 of 1"].waitForExistence(timeout: timeout))
+        let doneButton = app.buttons["Done"]
+        XCTAssertTrue(doneButton.waitForHittable(timeout: timeout))
+        XCTAssertLessThan(doneButton.frame.maxX, findField.frame.minX)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Find in Page - Floating UI"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        doneButton.tap()
+        XCTAssertTrue(findField.waitForNonExistence(timeout: timeout))
+    }
+
     func verifyDefaultCustomizableFireButton() {
         let fireButton = element(withIdentifier: AccessibilityID.toolbarFire)
         XCTAssertTrue(fireButton.waitForHittable(timeout: timeout))
@@ -1129,6 +1155,7 @@ final class FloatingUITopBarTests: FloatingUIXCUITestCase {
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
+    func testFindInPageGlass() { verifyFindInPageGlass() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }
@@ -1166,6 +1193,7 @@ final class FloatingUIBottomBarTests: FloatingUIXCUITestCase {
     func testBrowserChromeInLandscape() { verifyBrowserChromeInLandscape() }
     func testDomainCapsuleAppears() { verifyDomainCapsuleAppears() }
     func testBrowsingMenuOpens() { verifyBrowsingMenuOpens() }
+    func testFindInPageGlass() { verifyFindInPageGlass() }
     func testDefaultCustomizableFireButton() { verifyDefaultCustomizableFireButton() }
     func testNewTabPageScenarios() { verifyNewTabPageScenarios() }
     func testBrowsingScenarios() { verifyBrowsingScenarios() }

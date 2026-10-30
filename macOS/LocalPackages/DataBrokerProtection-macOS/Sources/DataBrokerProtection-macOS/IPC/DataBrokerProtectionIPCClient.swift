@@ -207,3 +207,21 @@ extension DataBrokerProtectionIPCClient: IPCServerInterface {
 
 extension DataBrokerProtectionIPCClient: XPCClientInterface {
 }
+
+extension DataBrokerProtectionIPCClient {
+    public enum DebugLaunchCommand {
+        case readiness
+        case startServer
+    }
+
+    public func performDebugLaunchCommand(_ command: DebugLaunchCommand, completion: @escaping (Bool) -> Void) {
+        xpc.execute(call: { server in
+            switch command {
+            case .readiness:
+                server.getDebugMetadata { completion($0 != nil) }
+            case .startServer:
+                server.startDebugServer(completion: completion)
+            }
+        }, xpcReplyErrorHandler: { _ in completion(false) })
+    }
+}

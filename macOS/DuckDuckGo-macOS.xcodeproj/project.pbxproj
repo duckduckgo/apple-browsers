@@ -416,6 +416,7 @@
 		3158B1492B0BF73000AF130C /* DBPHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3192EC872A4DCF21001E97A5 /* DBPHomeViewController.swift */; };
 		3158B14A2B0BF74300AF130C /* DataBrokerProtectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316850712AF3AD58009A2828 /* DataBrokerProtectionDebugMenu.swift */; };
 		3158B14D2B0BF74D00AF130C /* DataBrokerProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3139A1512AA4B3C000969C7D /* DataBrokerProtectionManager.swift */; };
+		41AA083B398CABC8CB7A5BAF /* PIRDebugLaunchOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E1EC3532F1B7BE340AE954 /* PIRDebugLaunchOptions.swift */; };
 		3158B1532B0BF75700AF130C /* LoginItem+DataBrokerProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8FA00B2AC5BDCE005DD0D0 /* LoginItem+DataBrokerProtection.swift */; };
 		3158B1562B0BF75D00AF130C /* DataBrokerProtectionFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C5FFB82AF64D120008A79F /* DataBrokerProtectionFeatureGatekeeper.swift */; };
 		3158B1592B0BF76400AF130C /* DataBrokerProtectionFeatureDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3199C6F82AF94F5B002A7BA1 /* DataBrokerProtectionFeatureDisabler.swift */; };
@@ -487,6 +488,7 @@
 		31E3FD732CE39C4600A392C8 /* AIChatDebugURLSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E3FD702CE39C4600A392C8 /* AIChatDebugURLSettings.swift */; };
 		31EF1E802B63FFA800E6DB17 /* DBPHomeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3192EC872A4DCF21001E97A5 /* DBPHomeViewController.swift */; };
 		31EF1E812B63FFB800E6DB17 /* DataBrokerProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3139A1512AA4B3C000969C7D /* DataBrokerProtectionManager.swift */; };
+		B5A5152F98D8A3F7B870E037 /* PIRDebugLaunchOptions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75E1EC3532F1B7BE340AE954 /* PIRDebugLaunchOptions.swift */; };
 		31EF1E832B63FFCA00E6DB17 /* LoginItem+DataBrokerProtection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8FA00B2AC5BDCE005DD0D0 /* LoginItem+DataBrokerProtection.swift */; };
 		31EF1E842B63FFD100E6DB17 /* DataBrokerProtectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316850712AF3AD58009A2828 /* DataBrokerProtectionDebugMenu.swift */; };
 		31F25EFF2CC3CA02002F9084 /* AIChatMenuConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F25EFE2CC3CA00002F9084 /* AIChatMenuConfigurationTests.swift */; };
@@ -4479,7 +4481,11 @@
 		DD7A0104301D500100000003 /* AppIcon-Review.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC4301CC10E00D1A0A0 /* AppIcon-Review.icon */; };
 		DD7A0104301D500100000004 /* AppIcon-Alpha.icon in Resources */ = {isa = PBXBuildFile; fileRef = ED314EC3301CC10E00D1A0A0 /* AppIcon-Alpha.icon */; };
 		DDAC10022F90000100000002 /* LaunchOptionsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */; };
+		FE8DBC25657ACE6A58EAC8F6 /* PIRDebugLaunchOptionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330ABB1C6DB5C6ECDD13D31 /* PIRDebugLaunchOptionsTests.swift */; };
+		31D90D4E2C7299653A76D392 /* PIRDebugAgentReadinessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA052A65B8236137950B3984 /* PIRDebugAgentReadinessTests.swift */; };
 		DDAC10032F90000100000003 /* LaunchOptionsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */; };
+		44274E92B447334415A03290 /* PIRDebugLaunchOptionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B330ABB1C6DB5C6ECDD13D31 /* PIRDebugLaunchOptionsTests.swift */; };
+		92188446E9A48DC804885CC7 /* PIRDebugAgentReadinessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA052A65B8236137950B3984 /* PIRDebugAgentReadinessTests.swift */; };
 		DDBB9E343D3A8AA3C0A9FBF7 /* AIChatDebugServer in Frameworks */ = {isa = PBXBuildFile; productRef = 30EF23C27554D957E2FCC6EE /* AIChatDebugServer */; };
 		DDBEF6F94ACA9D46E81F83C8 /* AIChatUsageWarningCardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00B29DA364F80278F19D6649 /* AIChatUsageWarningCardViewTests.swift */; };
 		DE1820374EC543D5A398BD90 /* PreferencesWebsitePermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 637378A7DE5641D7AF4A7BE1 /* PreferencesWebsitePermissionsView.swift */; };
@@ -5306,6 +5312,7 @@
 		3135647A2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarPromptExtractor.swift; sourceTree = "<group>"; };
 		3135647D2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarPromptExtractorTests.swift; sourceTree = "<group>"; };
 		3139A1512AA4B3C000969C7D /* DataBrokerProtectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionManager.swift; sourceTree = "<group>"; };
+		75E1EC3532F1B7BE340AE954 /* PIRDebugLaunchOptions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRDebugLaunchOptions.swift; sourceTree = "<group>"; };
 		3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutTooltip.swift; sourceTree = "<group>"; };
 		3148727D2CC68F6200EEF89B /* AIChatTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabExtension.swift; sourceTree = "<group>"; };
 		31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuVisibilityConfigurable.swift; sourceTree = "<group>"; };
@@ -7275,6 +7282,8 @@
 		DD4063303C52EE98D9AC6FAC /* MacOSEventHubIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSEventHubIntegration.swift; sourceTree = "<group>"; };
 		DD582F0992E9E5E353BCFACF /* MacOSEventHubPixelFiringTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacOSEventHubPixelFiringTests.swift; sourceTree = "<group>"; };
 		DDAC10012F90000100000001 /* LaunchOptionsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchOptionsHandlerTests.swift; sourceTree = "<group>"; };
+		B330ABB1C6DB5C6ECDD13D31 /* PIRDebugLaunchOptionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRDebugLaunchOptionsTests.swift; sourceTree = "<group>"; };
+		CA052A65B8236137950B3984 /* PIRDebugAgentReadinessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PIRDebugAgentReadinessTests.swift; sourceTree = "<group>"; };
 		DE23BCBB398F7F7C6B345D72 /* NonBlockingOnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonBlockingOnboardingTests.swift; sourceTree = "<group>"; };
 		DEFB09B8049FE0BBF313CC78 /* AutofillEmptyStatePromoDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillEmptyStatePromoDelegate.swift; sourceTree = "<group>"; };
 		E03DA09FC744669CD57C604C /* QuitSurveyPromoObserverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyPromoObserverTests.swift; sourceTree = "<group>"; };
@@ -8470,6 +8479,7 @@
 				F1C70D782BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift */,
 				31AA6B962B960B870025014E /* DataBrokerProtectionLoginItemPixels.swift */,
 				3139A1512AA4B3C000969C7D /* DataBrokerProtectionManager.swift */,
+				75E1EC3532F1B7BE340AE954 /* PIRDebugLaunchOptions.swift */,
 				316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */,
 				BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */,
 				3192EC872A4DCF21001E97A5 /* DBPHomeViewController.swift */,
@@ -8500,6 +8510,8 @@
 			isa = PBXGroup;
 			children = (
 				C1D8BE432C1739BF0057E426 /* Tests */,
+				B330ABB1C6DB5C6ECDD13D31 /* PIRDebugLaunchOptionsTests.swift */,
+				CA052A65B8236137950B3984 /* PIRDebugAgentReadinessTests.swift */,
 			);
 			path = DBP;
 			sourceTree = "<group>";
@@ -15937,6 +15949,7 @@
 				36E8D3762F86C96200861037 /* SubscriptionPromoDebugMenu.swift in Sources */,
 				3707C718294B5D0F00682A9F /* AdClickAttributionTabExtension.swift in Sources */,
 				31EF1E812B63FFB800E6DB17 /* DataBrokerProtectionManager.swift in Sources */,
+				B5A5152F98D8A3F7B870E037 /* PIRDebugLaunchOptions.swift in Sources */,
 				B6AFE6BC29A5D3F8002FF962 /* PrivacyDashboardTabExtension.swift in Sources */,
 				3706FB32293F65D500E42796 /* FirefoxBookmarksReader.swift in Sources */,
 				EE098E782C8EDE2C009EBA7F /* AutofillCredentialsImportManager.swift in Sources */,
@@ -17322,6 +17335,8 @@
 				31A2FD182BAB43BA00D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */,
 				9FFBEE732DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */,
 				DDAC10022F90000100000002 /* LaunchOptionsHandlerTests.swift in Sources */,
+				FE8DBC25657ACE6A58EAC8F6 /* PIRDebugLaunchOptionsTests.swift in Sources */,
+				31D90D4E2C7299653A76D392 /* PIRDebugAgentReadinessTests.swift in Sources */,
 				3706FE46293F661700E42796 /* EncryptedValueTransformerTests.swift in Sources */,
 				9F3910632B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */,
 				3706FE47293F661700E42796 /* URLExtensionTests.swift in Sources */,
@@ -18568,6 +18583,7 @@
 				1E1B24AE2F4729C100D239CE /* WebExtensionAvailability+macOS.swift in Sources */,
 				B6CC266C2BAD9CD800F53F8D /* FileProgressPresenter.swift in Sources */,
 				3158B14D2B0BF74D00AF130C /* DataBrokerProtectionManager.swift in Sources */,
+				41AA083B398CABC8CB7A5BAF /* PIRDebugLaunchOptions.swift in Sources */,
 				E2BC1B232E210AF200F58D61 /* NewTabPageOmnibarConfigProvider.swift in Sources */,
 				D1A7B0010000000000000002 /* NewTabPageOmnibarTabsProvider.swift in Sources */,
 				9F609DD3A7C2C92427DCADFF /* NewTabPageOmnibarScreenshotProvider.swift in Sources */,
@@ -19809,6 +19825,8 @@
 				4BB99D1026FE1A84001E4761 /* FirefoxBookmarksReaderTests.swift in Sources */,
 				9FFBEE742DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */,
 				DDAC10032F90000100000003 /* LaunchOptionsHandlerTests.swift in Sources */,
+				44274E92B447334415A03290 /* PIRDebugLaunchOptionsTests.swift in Sources */,
+				92188446E9A48DC804885CC7 /* PIRDebugAgentReadinessTests.swift in Sources */,
 				9FBD84702BB3DD8400220859 /* MockAttributionsPixelHandler.swift in Sources */,
 				37657FC52DB8D564003D749E /* TabCrashRecoveryExtensionTests.swift in Sources */,
 				DBDE0003000000000000BDE0 /* NavigationPixelNavigationResponderTests.swift in Sources */,

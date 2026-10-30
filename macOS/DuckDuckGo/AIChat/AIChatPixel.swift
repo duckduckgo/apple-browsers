@@ -484,6 +484,12 @@ enum AIChatPixel: PixelKit.Event {
     /// Event Trigger: User submits a prompt while web search mode is active on the New Tab Page
     case aiChatNtpWebSearchSubmitted
 
+    // MARK: - NTP Suggested Prompts
+
+    /// Event Trigger: User sends a prompt by picking a suggested-prompt chip on the New Tab Page.
+    /// `promptId` is the FE's fixed catalog key.
+    case aiChatNtpSuggestedPromptSubmitted(promptId: String)
+
     // MARK: - Customize Responses
 
     /// Event Trigger: User opens Customize Responses from the native address bar Tools menu
@@ -916,6 +922,8 @@ enum AIChatPixel: PixelKit.Event {
             return "aichat_ntp_image_generation_submitted"
         case .aiChatNtpWebSearchSubmitted:
             return "aichat_ntp_web_search_submitted"
+        case .aiChatNtpSuggestedPromptSubmitted:
+            return "aichat_ntp_suggested_prompt_submitted"
         case .aiChatAddressBarCustomizeResponsesOpened:
             return "aichat_addressbar_customize_responses_opened"
         case .aiChatNtpCustomizeResponsesOpened:
@@ -1247,6 +1255,8 @@ enum AIChatPixel: PixelKit.Event {
             return ["reason": reason.rawValue]
         case .aiChatSuggestionSelected(let suggestionId, let pageType):
             return ["suggestionId": suggestionId, "pageType": pageType]
+        case .aiChatNtpSuggestedPromptSubmitted(let promptId):
+            return ["promptId": promptId]
         case .aiChatSuggestionsViewed(let isSmart, let pageType):
             return ["isSmart": String(isSmart), "pageType": pageType]
         }
@@ -1383,6 +1393,7 @@ enum AIChatPixel: PixelKit.Event {
                 .aiChatNewVoiceChatOmnibarNtp,
                 .aiChatNtpImageGenerationSubmitted,
                 .aiChatNtpWebSearchSubmitted,
+                .aiChatNtpSuggestedPromptSubmitted,
                 .aiChatViewAllChatsClicked,
                 .aiChatModelsFetchFailed,
                 .aiChatMetricStartNewConversation,

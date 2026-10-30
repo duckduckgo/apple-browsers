@@ -228,12 +228,17 @@ public actor SponsorBlockSegmentsProvider {
     }
 
     private static func makeEphemeralLoader() -> DataLoader {
+        let session = URLSession(configuration: makeSessionConfiguration())
+        return { try await session.data(for: $0) }
+    }
+
+    /// No cookies in either direction and no cache, so requests carry nothing but the hash prefix.
+    static func makeSessionConfiguration() -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpCookieAcceptPolicy = .never
         configuration.httpShouldSetCookies = false
         configuration.urlCache = nil
         configuration.timeoutIntervalForRequest = 10
-        let session = URLSession(configuration: configuration)
-        return { try await session.data(for: $0) }
+        return configuration
     }
 }

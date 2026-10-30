@@ -78,6 +78,14 @@ final class SponsorBlockSegmentsProviderTests: XCTestCase {
                        "https://web-dew-1.duckduckgo.com/sponsorblock/v1/segments/5f6b?categories=%5B%22sponsor%22%2C%22selfpromo%22%5D&actionTypes=%5B%22skip%22%5D")
     }
 
+    func testSessionSendsNoCookiesAndCachesNothing() {
+        let configuration = Provider.makeSessionConfiguration()
+        XCTAssertFalse(configuration.httpShouldSetCookies)
+        XCTAssertEqual(configuration.httpCookieAcceptPolicy, .never)
+        XCTAssertNil(configuration.urlCache)
+        XCTAssertNil(configuration.httpCookieStorage?.cookies?.first)
+    }
+
     // MARK: - Response
 
     func testParseKeepsOnlyRequestedVideoSortedAndDropsMalformedSegments() throws {

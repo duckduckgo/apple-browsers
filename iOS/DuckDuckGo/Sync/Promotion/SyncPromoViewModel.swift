@@ -53,12 +53,7 @@ struct SyncPromoViewModel {
     }
 
     var image: String {
-        switch design {
-        case .standard:
-            "Sync-Pending-96"
-        case .redesigned:
-            "Sync-Pending-Feature-96"
-        }
+        return "Sync-Pending-96"
     }
 
     var primaryButtonTitle: String {

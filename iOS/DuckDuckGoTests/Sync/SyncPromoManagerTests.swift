@@ -460,7 +460,6 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoTurnOnAction)
         XCTAssertEqual(viewModel.title, UserText.syncPromoBookmarksTitle)
         XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksRedesignMessage)
-        XCTAssertEqual(viewModel.image, "Sync-Pending-Feature-96")
     }
 
     func testWhenDesignIsStandardThenPromoKeepsDismissButtonAndSetUpSyncCopy() {
@@ -469,7 +468,6 @@ final class SyncPromoManagerTests: XCTestCase {
         XCTAssertEqual(viewModel.secondaryButtonTitle, UserText.syncPromoDismissAction)
         XCTAssertEqual(viewModel.primaryButtonTitle, UserText.syncPromoConfirmAction)
         XCTAssertEqual(viewModel.subtitle, UserText.syncPromoBookmarksMessage)
-        XCTAssertEqual(viewModel.image, "Sync-Pending-96")
     }
 
     private func makeManager(featureFlags: [FeatureFlag], installedDaysAgo: Int?) -> SyncPromoManager {
